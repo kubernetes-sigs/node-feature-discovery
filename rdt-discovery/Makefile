@@ -8,9 +8,9 @@ LDLIBS=-lpqos
 CFLAGS=-I$(INCDIR)
 
 
-default: 	
+default:
 	$(MAKE) all
 all:
 	$(CC) $(CFLAGS) -o mon-discovery monitoring-discovery.c $(LDFLAGS) $(LDLIBS)
 	$(CC) $(CFLAGS) -o l3-alloc-discovery l3-allocation-discovery.c $(LDFLAGS) $(LDLIBS)
-	$(CC) $(CFLAGS) -o l2-alloc-discovery l2-allocation-discovery.c $(LDFLAGS) $(LDLIBS)	
+	$(CC) $(CFLAGS) -o l2-alloc-discovery l2-allocation-discovery.c $(LDFLAGS) $(LDLIBS)

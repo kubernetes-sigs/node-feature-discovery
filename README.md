@@ -1,87 +1,128 @@
-#CPU Feature Discovery for Kubernetes
-This software enables Intel Architecture (IA) feature discovery for Kubernetes. It detects the CPU features, such as Intel [Resource Director Technology][intel-rdt] (RDT), available in each node of the Kubernetes cluster and labels them appropriately. 
+# CPU Feature Discovery for Kubernetes
 
- - [Getting Started](#getting-started)
-   * [System Requirements](#system-requirements)
-   * [Installation](#installation)
-   * [Usage](#usage)
- - [Documentation](#documentation)
- - [License](#license)
+- [Overview](#overview)
+- [Getting Started](#getting-started)
+  * [System Requirements](#system-requirements)
+  * [Usage](#usage)
+- [Building from source](#building-from-source)
+- [License](#license)
 
-##Getting Started
+## Overview
+
+This software enables Intel Architecture (IA) feature discovery for Kubernetes.
+It detects CPU features available on each node in a Kubernetes cluster, such as
+Intel [Resource Director Technology][intel-rdt] and advertises those
+features using node labels.
+
+### Intel Resource Director Technology (RDT) Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| RDTMON         | Intel Cache Monitoring Technology (CMT) and Intel Memory Bandwidth Monitoring (MBM)
+| RDTL3CA        | Intel L3 Cache Allocation Technology
+| RDTL2CA        | Intel L2 Cache Allocation Technology
+
+### Other Features (Partial List)
+
+| Feature name   | Description                                                  |
+| :------------: | :----------------------------------------------------------: |
+| ADX            | Multi-Precision Add-Carry Instruction Extensions (ADX)
+| AESNI          | Advanced Encryption Standard (AES) New Instructions (AES-NI)
+| AVX            | Advanced Vector Extensions (AVX)
+| AVX2           | Advanced Vector Extensions 2 (AVX2)
+| BMI1           | Bit Manipulation Instruction Set 1 (BMI)
+| BMI2           | Bit Manipulation Instruction Set 2 (BMI2)
+| SSE4.1         | Streaming SIMD Extensions 4.1 (SSE4.1)
+| SSE4.2         | Streaming SIMD Extensions 4.2 (SSE4.2)
+| SGX            | Software Guard Extensions (SGX)
+
+The published node labels encode a few pieces of information:
+
+- A "namespace" to denote vendor-specific information
+  (`node.alpha.intel.com`).
+- The version of this discovery code (e.g. `v0.1.0`) that wrote the
+  label.
+- The relevant hardware component each label describes (e.g. `cpu`).
+- The name of the discovered feature as it appears in the underlying
+  source, mostly `cpuid` (e.g. `AESNI`).
+
+_Note: only features that are available on a given node are labeled, so the
+only label value published is the string `"true"`. This feature discovery code
+will not add a label with the falue `"false"` for features that are not
+present._
+
+```
+"node.alpha.intel.com/v0.1.0/cpu/<feature-name>": "true"
+```
+
 ### System Requirements
+
 At a minimum, you will need:
- 1. [Docker] [docker-down] (only required to build and push docker images)
- 2. [GCC] [gcc-down] (only required to build software to detect Intel RDT feature set)
- 3. Linux (x86_64)
- 4. [kubectl] [kubectl-setup] (properly setup and configured to work with a Kubernetes cluster)
 
-###Installation
-####Downloading the Source Code
-```
-git clone https://github.com/intelsdi-x/dbi-iafeature-discovery <repo-name>
-``` 
+1. Linux (x86_64)
+1. [kubectl] [kubectl-setup] (properly set up and configured to work with your Kubernetes cluster)
+1. [GCC] [gcc-down] (only required to build software to detect Intel RDT feature set)
+1. [Docker] [docker-down] (only required to build and push docker images)
 
-####Building from Source
-The build steps described below are optional. The default docker image in Docker hub at `intelsdi/nodelabels` can be used to decorate the Kubernetes node with IA features. Skip to usage instructions if you do not need to build your own docker image. 
- 
-Build the Intel RDT Detection Software Using `make` (Optional):
+### Usage
+
+Feature discovery is done as a one-shot job. There is an example script in this
+repo that demonstrates how to deploy the job to unlabeled nodes.
+
 ```
-cd <rep-name>/rdt-discovery
-make 
+./label-nodes.sh
 ```
 
-Build the Docker Image (Optional): 
+The discovery script will launch a job on each each unlabeled node in the
+cluster. When the job runs, it contacts the Kubernetes API server to add
+labels to the node to advertise hardware features (initially, from `cpuid` and
+RDT).
+
+## Building from source
+
+Download the source code.
+
 ```
-cd <repo-name>
+git clone https://github.com/intelsdi-x/dbi-iafeature-discovery
+```
+
+The build steps described below are optional. The default docker image in
+Dockerhub at `intelsdi/nodelabels` can be used to decorate the Kubernetes node
+with CPU features. Skip to usage instructions if you do not need to build your
+own docker image.
+
+**Build the Intel RDT Detection Software Using `make` (Optional):**
+
+```
+cd <project-root>/rdt-discovery
+make
+```
+
+**Build the Docker image (optional):**
+
+```
+cd <project-root>
 docker build -t <user-name>/<image-name> .
 ```
 
-Push the Docker Image (Optional)
+Push the Docker Image (optional)
+
 ```
 docker push
 ```
 
-Change the Job Spec to Use the Appropriate Image (Optional): 
-Change line #40 in `featurelabeling-job.json.template` to the appropriate image name in the `<user-name>/<image-name>` format used for building the image above or use the default `intelsdi/nodelabels` image.
+**Change the job spec to use your new image (optional):**
 
-###Usage
-Deploying Kubernetes Job for Node Feature Labeling:
-```
-./label-nodes.sh
-```
-The above command will label each node in the cluster with the features from cpuid. The labeling format used is 
-```
-<key, val> = <"node.alpha.intel.com/<feature-name>", "true">
-```
-Note that only features that are available in that node are labelled. 
+To use your published image from the step above instead of the
+`intelsdi/nodelabels` image, edit line 40 in the file
+`[featurelabeling-job.json.template](featurelabeling-job.json.template)` to
+the new location (`<user>/<image-name>`).
 
-##Documentation
-This software determines the Intel Architecture (IA) features associated with a processor using `cpuid`. The following set of features are discovered and labelled by this software. 
+## License
 
-###Intel Resource Director Technology (RDT) Features
-|   Label        |  Feature(s) Represented                                                             | 
-| :------------: | :---------------------------------------------------------------------------------: | 
-| RDTMON         | Intel Cache Monitoring Technology (CMT) and Intel Memory Bandwidth Monitoring (MBM) |
-| RDTL3CA        | Intel L3 Cache Allocation Technology |
-| RDTL2CA        | Intel L2 Cache Allocation Technology |
+This is open source software released under the [Apache 2.0 License](LICENSE).
 
-###Other Features (Partial List)
-|   Label        |  Feature(s) Represented                                                             | 
-| :------------: | :---------------------------------------------------------------------------------: | 
-| ADX            | Multi-Precision Add-Carry Instruction Extensions (ADX) |  
-| AESNI            | Advanced Encryption Standard (AES) New Instructions (AES-NI) |  
-| AVX            | Advanced Vector Extensions (AVX)|  
-| AVX2            | Advanced Vector Extensions 2 (AVX2)|  
-| BMI1            | Bit Manipulation Instruction Set 1 (BMI)|  
-| BMI2            | Bit Manipulation Instruction Set 2 (BMI2)|  
-| SSE4.1           | Streaming SIMD Extensions 4.1 (SSE4.1)|  
-| SSE4.2           | Streaming SIMD Extensions 4.2 (SSE4.2)|  
-| SGX            | Software Guard Extensions (SGX) |  
-
-##License
-This is an Open Source software released under the Apache 2.0 [License](LICENSE).
-
+<!-- Links -->
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [docker-down]: https://docs.docker.com/engine/installation/
 [golang-down]: https://golang.org/dl/
