@@ -1,6 +1,6 @@
 {
     "apiVersion": "extensions/v1beta1",
-    "kind": "DaemonSet",
+    "kind": "Job",
     "metadata": {
         "labels": {
             "app": "dbi-nodelabel"
@@ -8,6 +8,8 @@
         "name": "dbi-nodelabel"
     },
     "spec": {
+	"completions": COMPLETION_COUNT,
+	"parallelism": PARALLELISM_COUNT,
         "template": {
             "metadata": {
                 "labels": {
@@ -37,14 +39,15 @@
                         ],
                         "image": "intelsdi/nodelabels",
                         "name": "nodelabeler",
-                        "resources": {
-                            "limits": {
-                                "cpu": "1000m",
-                                "memory": "1000Mi"
+                        "ports": [
+                            {
+                                "containerPort": 2233,
+                                "hostPort": 7156
                             }
-                        }
+                        ]
                     }
-                ]
+                ],
+		"restartPolicy": "Never"
             }
         }
     }
