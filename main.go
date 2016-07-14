@@ -77,8 +77,8 @@ func main() {
 	outString := string(out[:])
 	if outString == "DETECTED" {
 		node.Labels["node.alpha.intel.com/v"+version+"-cpu-RDTMON"] = "true"
+		log.Printf("RDT Monitoring Detected\n")
 	}
-	log.Printf("RDT Monitoring Detected\n")
 
 	cmd = "/go/src/github.com/intelsdi-x/dbi-iafeature-discovery/rdt-discovery/l3-alloc-discovery"
 	out, err = exec.Command("bash", "-c", cmd).Output()
@@ -89,9 +89,9 @@ func main() {
 	outString = string(out[:])
 	if outString == "DETECTED" {
 		node.Labels["node.alpha.intel.com/v"+version+"-cpu-RDTL3CA"] = "true"
+		log.Printf("RDT L3 Cache Allocation Detected\n")
 	}
-	log.Printf("RDT L3 Cache Allocation Detected\n")
-
+	
 	cmd = "/go/src/github.com/intelsdi-x/dbi-iafeature-discovery/rdt-discovery/l2-alloc-discovery"
 	out, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
@@ -101,8 +101,21 @@ func main() {
 	outString = string(out[:])
 	if outString == "DETECTED" {
 		node.Labels["node.alpha.intel.com/v"+version+"-cpu-RDTL2CA"] = "true"
+		log.Printf("RDT L2 Cache Allocation Detected\n")
 	}
-	log.Printf("RDT L2 Cache Allocation Detected\n")
+
+	// If turbo boost is enabled, add it as a node label
+	cmd = "cat /sys/devices/system/cpu/intel_pstate/no_turbo"
+	out, err = exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		log.Fatalf("Can't Dectect if Turbo Boost is Enabled: %v", err)
+	}
+
+	outString = string(out[:])
+	if outString == "0\n" {
+		node.Labels["node.alpha.intel.com/v"+version+"-cpu-turbo"] = "true"
+		log.Printf("Turbo Boost is Enabled\n")
+	}
 
 	// Update the node with the node labels
 	_, err = cli.Nodes().Update(node)

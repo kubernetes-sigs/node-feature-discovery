@@ -53,7 +53,7 @@ will not add a label with the value `"false"` for features that are not
 present._
 
 ```
-"node.alpha.intel.com/v0.1.0/cpu/<feature-name>": "true"
+"node.alpha.intel.com/v0.1.0-cpu-<feature-name>": "true"
 ```
 
 ### System Requirements
@@ -142,7 +142,7 @@ how to target the Intel RDT L3 cache allocation (RDTL3CA) feature.
             }
         ],
         "nodeSelector": {
-                ""node.alpha.intel.com/v0.1.0-cpu-RDTL3CA": "true"
+                "node.alpha.intel.com/v0.1.0-cpu-RDTL3CA": "true"
         }
     }
 }

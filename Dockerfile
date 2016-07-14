@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #========================================================================
-FROM golang
+FROM golang:1.6
 
 ADD ./main.go /go/src/github.com/intelsdi-x/dbi-iafeature-discovery/
 ADD ./glide.yaml /go/src/github.com/intelsdi-x/dbi-iafeature-discovery/
