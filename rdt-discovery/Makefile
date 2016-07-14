@@ -1,12 +1,10 @@
 CC=gcc
 LIBDIR=/usr/local/lib
-INCDIR=$(HOME)/intel-cmt-cat/lib/
+INCDIR=/go/src/github.com/intelsdi-x/dbi-iafeature-discovery/intel-cmt-cat/lib/
 
 LDFLAGS=-L$(LIBDIR)
 LDLIBS=-lpqos
-
 CFLAGS=-I$(INCDIR)
-
 
 default:
 	$(MAKE) all

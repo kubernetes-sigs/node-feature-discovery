@@ -5,6 +5,7 @@
   * [System Requirements](#system-requirements)
   * [Usage](#usage)
 - [Building from source](#building-from-source)
+- [Targeting Nodes with Specific Features](#targeting-nodes-with-specific-features)
 - [License](#license)
 
 ## Overview
@@ -48,7 +49,7 @@ The published node labels encode a few pieces of information:
 
 _Note: only features that are available on a given node are labeled, so the
 only label value published is the string `"true"`. This feature discovery code
-will not add a label with the falue `"false"` for features that are not
+will not add a label with the value `"false"` for features that are not
 present._
 
 ```
@@ -115,8 +116,40 @@ docker push
 
 To use your published image from the step above instead of the
 `intelsdi/nodelabels` image, edit line 40 in the file
-`[featurelabeling-job.json.template](featurelabeling-job.json.template)` to
+`[dbi-iafeature-discovery-job.json.template](dbi-iafeature-discoverz-job.json.template)` to
 the new location (`<user>/<image-name>`).
+
+## Targeting Nodes with Specific Features
+
+Nodes with specific features can be targeted using the `nodeSelector` field. The following example shows
+how to target the Intel RDT L3 cache allocation (RDTL3CA) feature.
+
+```json
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "labels": {
+            "env": "test"
+        },
+        "name": "golang-test"
+    },
+    "spec": {
+        "containers": [
+            {
+                "image": "golang",
+                "name": "go1",
+            }
+        ],
+        "nodeSelector": {
+                ""node.alpha.intel.com/v0.1.0-cpu-RDTL3CA": "true"
+        }
+    }
+}
+```
+
+For more details on targeting nodes, see [node selection][node-sel].
+
 
 ## License
 
@@ -129,3 +162,4 @@ This is open source software released under the [Apache 2.0 License](LICENSE).
 [gcc-down]: https://gcc.gnu.org/
 [kubectl-setup]: https://coreos.com/kubernetes/docs/latest/configure-kubectl.html
 [balaji-github]: https://github.com/balajismaniam
+[node-sel]: http://kubernetes.io/docs/user-guide/node-selection/ 

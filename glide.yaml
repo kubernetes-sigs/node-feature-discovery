@@ -1,0 +1,8 @@
+package: github.com/intelsdi-x/dbi-iafeature-discovery
+import:
+- package: github.com/klauspost/cpuid
+  version: v1.0
+- package: k8s.io/kubernetes
+  version: v1.3.0
+  subpackages:
+  - pkg/client/unversioned

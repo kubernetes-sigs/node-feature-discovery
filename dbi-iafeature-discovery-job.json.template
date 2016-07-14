@@ -3,9 +3,9 @@
     "kind": "Job",
     "metadata": {
         "labels": {
-            "app": "dbi-nodelabel"
+            "app": "dbi-iafeature-discovery"
         },
-        "name": "dbi-nodelabel"
+        "name": "dbi-iafeature-discovery"
     },
     "spec": {
 	"completions": COMPLETION_COUNT,
