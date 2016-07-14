@@ -1,5 +1,7 @@
 # CPU Feature Discovery for Kubernetes
 
+[![Build Status](https://travis-ci.com/intelsdi-x/dbi-iafeature-discovery.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/dbi-iafeature-discovery)
+
 - [Overview](#overview)
 - [Getting Started](#getting-started)
   * [System Requirements](#system-requirements)
@@ -41,8 +43,10 @@ The published node labels encode a few pieces of information:
 
 - A "namespace" to denote vendor-specific information
   (`node.alpha.intel.com`).
-- The version of this discovery code (e.g. `v0.1.0`) that wrote the
-  label.
+- The version of this discovery code that wrote the label, for example
+  `"node.alpha.intel.com/dbi-iafeature-discovery.version": "v0.1.0"`.
+  The value of this label corresponds to the output from
+  `git describe --tags --dirty --always`.
 - The relevant hardware component each label describes (e.g. `cpu`).
 - The name of the discovered feature as it appears in the underlying
   source, mostly `cpuid` (e.g. `AESNI`).

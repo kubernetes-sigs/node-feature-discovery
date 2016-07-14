@@ -14,6 +14,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -22,18 +23,18 @@ import (
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
-const (
-	version = "0.1.0"
-)
+const namespace = "node.alpha.intel.com"
+
+var version = "" // Must not be const, set using ldflags at build time
+var prefix = fmt.Sprintf("%s/%s", namespace, version)
 
 func main() {
-	// Setting-up a logger file
-	fd, err := os.OpenFile("dbi-iafeature-discovery.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("Can't Open File for Logging: %v", err)
+	// Assert that the version is known
+	if version == "" {
+		log.Fatalf("`main.version` not set! Set -ldflags '-X main.version `git describe --tags --dirty --always`' during build or run.")
 	}
-	defer fd.Close()
-	log.SetOutput(fd)
+	log.Printf("Version: [%s]", version)
+	log.Printf("Label prefix: [%s]", prefix)
 
 	// Setting-up K8S client
 	cli, err := client.NewInCluster()
@@ -59,12 +60,15 @@ func main() {
 		log.Fatalf("Can't Get Node: %v", err)
 	}
 
+	// Add the version of this discovery code as a node label
+	node.Labels[fmt.Sprintf("%s/dbi-ia-feature-discovery.version", prefix)] = version
+
 	// Get the cpu features as strings
 	features := cpuid.CPU.Features.Strings()
 	log.Printf("CPU Features Detected from cpuid: %s\n", features)
 	// Add each of the cpu feature as the node label
 	for _, feature := range features {
-		node.Labels["node.alpha.intel.com/v"+version+"-cpu-"+feature] = "true"
+		node.Labels[fmt.Sprintf("%s-cpu-%s", prefix, feature)] = "true"
 	}
 
 	// If supported, add CMT, MBM and CAT features as a node label
@@ -76,7 +80,7 @@ func main() {
 
 	outString := string(out[:])
 	if outString == "DETECTED" {
-		node.Labels["node.alpha.intel.com/v"+version+"-cpu-RDTMON"] = "true"
+		node.Labels[fmt.Sprintf("%s-cpu-RDTMON", prefix)] = "true"
 		log.Printf("RDT Monitoring Detected\n")
 	}
 
@@ -88,10 +92,10 @@ func main() {
 
 	outString = string(out[:])
 	if outString == "DETECTED" {
-		node.Labels["node.alpha.intel.com/v"+version+"-cpu-RDTL3CA"] = "true"
+		node.Labels[fmt.Sprintf("%s-cpu-RDTL3CA", prefix)] = "true"
 		log.Printf("RDT L3 Cache Allocation Detected\n")
 	}
-	
+
 	cmd = "/go/src/github.com/intelsdi-x/dbi-iafeature-discovery/rdt-discovery/l2-alloc-discovery"
 	out, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
@@ -100,7 +104,7 @@ func main() {
 
 	outString = string(out[:])
 	if outString == "DETECTED" {
-		node.Labels["node.alpha.intel.com/v"+version+"-cpu-RDTL2CA"] = "true"
+		node.Labels[fmt.Sprintf("%s-cpu-RDTL2CA", prefix)] = "true"
 		log.Printf("RDT L2 Cache Allocation Detected\n")
 	}
 
@@ -113,7 +117,7 @@ func main() {
 
 	outString = string(out[:])
 	if outString == "0\n" {
-		node.Labels["node.alpha.intel.com/v"+version+"-cpu-turbo"] = "true"
+		node.Labels[fmt.Sprintf("%s-cpu-turbo", prefix)] = "true"
 		log.Printf("Turbo Boost is Enabled\n")
 	}
 
