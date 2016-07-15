@@ -116,7 +116,7 @@ docker push
 
 To use your published image from the step above instead of the
 `intelsdi/nodelabels` image, edit line 40 in the file
-`[dbi-iafeature-discovery-job.json.template](dbi-iafeature-discoverz-job.json.template)` to
+[dbi-iafeature-discovery-job.json.template](dbi-iafeature-discovery-job.json.template) to
 the new location (`<user>/<image-name>`).
 
 ## Targeting Nodes with Specific Features
