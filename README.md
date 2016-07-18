@@ -66,7 +66,6 @@ At a minimum, you will need:
 
 1. Linux (x86_64)
 1. [kubectl] [kubectl-setup] (properly set up and configured to work with your Kubernetes cluster)
-1. [GCC] [gcc-down] (only required to build software to detect Intel RDT feature set)
 1. [Docker] [docker-down] (only required to build and push docker images)
 
 ### Usage
@@ -91,19 +90,7 @@ Download the source code.
 git clone https://github.com/intelsdi-x/dbi-iafeature-discovery
 ```
 
-The build steps described below are optional. The default docker image in
-Dockerhub at `intelsdi/nodelabels` can be used to decorate the Kubernetes node
-with CPU features. Skip to usage instructions if you do not need to build your
-own docker image.
-
-**Build the Intel RDT Detection Software Using `make` (Optional):**
-
-```
-cd <project-root>/rdt-discovery
-make
-```
-
-**Build the Docker image (optional):**
+**Build the Docker image:**
 
 ```
 cd <project-root>
@@ -116,17 +103,18 @@ Push the Docker Image (optional)
 docker push
 ```
 
-**Change the job spec to use your new image (optional):**
+**Change the job spec to use your custom image (optional):**
 
 To use your published image from the step above instead of the
 `intelsdi/nodelabels` image, edit line 40 in the file
-[dbi-iafeature-discovery-job.json.template](dbi-iafeature-discovery-job.json.template) to
-the new location (`<user>/<image-name>`).
+[dbi-iafeature-discovery-job.json.template](dbi-iafeature-discovery-job.json.template)
+to the new location (`<user>/<image-name>`).
 
 ## Targeting Nodes with Specific Features
 
-Nodes with specific features can be targeted using the `nodeSelector` field. The following example shows
-how to target the Intel RDT L3 cache allocation (RDTL3CA) feature.
+Nodes with specific features can be targeted using the `nodeSelector` field.
+The following example shows how to target the Intel RDT L3 cache allocation
+(RDTL3CA) feature.
 
 ```json
 {
