@@ -2,7 +2,10 @@ package: github.com/intelsdi-x/dbi-iafeature-discovery
 import:
 - package: github.com/klauspost/cpuid
   version: v1.0
+- package: github.com/docopt/docopt.go
+  version: ^0.6.2
 - package: k8s.io/kubernetes
   version: v1.3.0
   subpackages:
+  - pkg/api
   - pkg/client/unversioned

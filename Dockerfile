@@ -22,7 +22,7 @@ RUN cd rdt-discovery; make
 RUN go get github.com/Masterminds/glide
 RUN glide install
 RUN go install \
-  -ldflags "-X main.version=`git describe --tags --dirty --always`" \
+  -ldflags "-s -w -X main.version=`git describe --tags --dirty --always`" \
   github.com/intelsdi-x/dbi-iafeature-discovery
 
-ENTRYPOINT /go/bin/dbi-iafeature-discovery
+ENTRYPOINT ["/go/bin/dbi-iafeature-discovery"]
