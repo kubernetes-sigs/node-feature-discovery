@@ -47,6 +47,23 @@ var (
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
+// APIHelpers represents a set of API helpers for Kubernetes
+type APIHelpers interface {
+	// GetClient returns a client
+	GetClient() (*client.Client, error)
+
+	// GetNode returns the Kubernetes node on which this container is running.
+	GetNode(*client.Client) (*api.Node, error)
+
+	// addLabels modifies the supplied node's labels collection.
+	// In order to publish the labels, the node must be subsequently updated via the
+	// API server using the client library.
+	AddLabels(*api.Node, Labels)
+
+	// UpdateNode updates the node via the API server using a client.
+	UpdateNode(*client.Client, *api.Node) error
+}
+
 func main() {
 	// Assert that the version is known
 	if version == "" {
@@ -109,7 +126,12 @@ func main() {
 
 	// Do feature discovery from all configured sources.
 	for _, source := range sources {
-		for name, value := range featureLabels(source) {
+		labelsFromSource, err := getFeatureLabels(source)
+		if err != nil {
+			log.Fatalf("discovery failed for source [%s]: %s", source.Name(), err.Error())
+		}
+
+		for name, value := range labelsFromSource {
 			labels[name] = value
 			// Log discovered feature.
 			log.Printf("%s = %s", name, value)
@@ -118,50 +140,72 @@ func main() {
 
 	// Update the node with the node labels, unless disabled via flags.
 	if !noPublish {
-		// Set up K8S client.
-		cli, err := client.NewInCluster()
+		helper := APIHelpers(k8sHelpers{})
+		err := advertiseFeatureLabels(helper, labels)
 		if err != nil {
-			log.Fatalf("can't get kubernetes client: %s", err.Error())
-		}
-
-		// Get the current node.
-		node := getNode(cli)
-		// Add labels to the node object.
-		addLabels(node, labels)
-		// Send the updated node to the apiserver.
-		_, err = cli.Nodes().Update(node)
-		if err != nil {
-			log.Fatalf("can't update node: %s", err.Error())
+			log.Fatalf("failed to advertise labels: %s", err.Error())
 		}
 	}
 }
 
-// featureLabels returns node labels for features discovered by the
+// getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func featureLabels(source FeatureSource) Labels {
+func getFeatureLabels(source FeatureSource) (Labels, error) {
 	labels := Labels{}
 	features, err := source.Discover()
 	if err != nil {
-		log.Fatalf("discovery failed for source [%s]: %s", source.Name(), err.Error())
+		return nil, err
 	}
 	for _, f := range features {
 		labels[fmt.Sprintf("%s-%s-%s", prefix, source.Name(), f)] = "true"
 	}
-	return labels
+	return labels, nil
 }
 
-// addLabels modifies the supplied node's labels collection.
-//
-// In order to publish the labels, the node must be subsequently updated via the
-// API server using the client library.
-func addLabels(n *api.Node, labels Labels) {
-	for k, v := range labels {
-		n.Labels[k] = v
+// advertiseFeatureLabels advertises the feature labels to a Kubernetes node
+// via the API server.
+func advertiseFeatureLabels(helper APIHelpers, labels Labels) error {
+	// Set up K8S client.
+	cli, err := helper.GetClient()
+	if err != nil {
+		log.Printf("can't get kubernetes client: %s", err.Error())
+		return err
 	}
+
+	// Get the current node.
+	node, err := helper.GetNode(cli)
+	if err != nil {
+		log.Printf("failed to get node: %s", err.Error())
+		return err
+	}
+
+	// Add labels to the node object.
+	helper.AddLabels(node, labels)
+
+	// Send the updated node to the apiserver.
+	err = helper.UpdateNode(cli, node)
+	if err != nil {
+		log.Printf("can't update node: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
-// getNode returns the Kubernetes node on which this container is running.
-func getNode(cli *client.Client) *api.Node {
+// Implements main.APIHelpers
+type k8sHelpers struct{}
+
+func (h k8sHelpers) GetClient() (*client.Client, error) {
+	// Set up K8S client.
+	cli, err := client.NewInCluster()
+	if err != nil {
+		return nil, err
+	}
+
+	return cli, nil
+}
+
+func (h k8sHelpers) GetNode(cli *client.Client) (*api.Node, error) {
 	// Get the pod name and pod namespace from the env variables
 	podName := os.Getenv(PodNameEnv)
 	podns := os.Getenv(PodNamespaceEnv)
@@ -171,14 +215,32 @@ func getNode(cli *client.Client) *api.Node {
 	// Get the pod object using the pod name and pod namespace
 	pod, err := cli.Pods(podns).Get(podName)
 	if err != nil {
-		log.Fatalf("can't get pod: %s", err.Error())
+		log.Printf("can't get pods: %s", err.Error())
+		return nil, err
 	}
 
 	// Get the node object using the pod name and pod namespace
 	node, err := cli.Nodes().Get(pod.Spec.NodeName)
 	if err != nil {
-		log.Fatalf("can't get node: %s", err.Error())
+		log.Printf("can't get node: %s", err.Error())
+		return nil, err
 	}
 
-	return node
+	return node, nil
+}
+
+func (h k8sHelpers) AddLabels(n *api.Node, labels Labels) {
+	for k, v := range labels {
+		n.Labels[k] = v
+	}
+}
+
+func (h k8sHelpers) UpdateNode(c *client.Client, n *api.Node) error {
+	// Send the updated node to the apiserver.
+	_, err := c.Nodes().Update(n)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

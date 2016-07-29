@@ -1,5 +1,5 @@
-hash: b3a6656f552e85def420fa859d14f27dc2897209ce315ed25ce9cadeff6fae21
-updated: 2016-07-20T00:33:41.257155246-07:00
+hash: 9943a35009296355c6a66485228855db99eefab65890c8fa89a4776cba9c9b71
+updated: 2016-07-28T17:22:20.295749043-07:00
 imports:
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
@@ -173,6 +173,10 @@ imports:
   - libcontainer/utils
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
 - name: github.com/prometheus/client_golang
   version: 3b78d7a77f51ccbc364d4bc170920153022cfd08
   subpackages:
@@ -189,13 +193,28 @@ imports:
   - model
 - name: github.com/prometheus/procfs
   version: 490cc6eb5fa45bf8a8b7b73c8bc82a8160e8531d
+- name: github.com/smartystreets/goconvey
+  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
+  subpackages:
+  - convey
+  - convey/reporting
+  - convey/gotest
 - name: github.com/spf13/pflag
   version: 08b1a584251b5b62f458943640fc8ebd4d50aaa5
+- name: github.com/stretchr/objx
+  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
+- name: github.com/stretchr/testify
+  version: f390dcf405f7b83c997eac1b06768bb9f44dec18
+  subpackages:
+  - mock
+  - assert
 - name: github.com/ugorji/go
   version: f4485b318aadd133842532f841dc205a8e339d74
   subpackages:
   - codec
   - codec/codecgen
+- name: github.com/vektra/errors
+  version: c64d83aba85aa4392895aadeefabbd24e89f3580
 - name: golang.org/x/net
   version: 62685c2d7ca23c807425dca88b11a3e2323dab41
   subpackages:
@@ -333,4 +352,15 @@ imports:
   - pkg/kubelet/qos/util
   - pkg/util/hash
   - pkg/util/net/sets
-testImports: []
+testImports:
+- name: github.com/gopherjs/gopherjs
+  version: 72e303cb5f235b23471872477b57e573dc1c71d0
+  subpackages:
+  - js
+- name: github.com/jtolds/gls
+  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
+- name: github.com/smartystreets/assertions
+  version: 2063fd1cc7c975db70502811a34b06ad034ccdf2
+  subpackages:
+  - internal/go-render/render
+  - internal/oglematchers

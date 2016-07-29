@@ -41,6 +41,7 @@ func (s cpuidSource) Discover() ([]string, error) {
 ////////////////////////////////////////////////////////////////////////////////
 // RDT (Intel Resource Director Technology) Source
 
+// Implements main.FeatureSource.
 type rdtSource struct{}
 
 func (s rdtSource) Name() string { return "rdt" }
@@ -51,7 +52,7 @@ func (s rdtSource) Discover() ([]string, error) {
 
 	out, err := exec.Command("bash", "-c", path.Join(RDTBin, "mon-discovery")).Output()
 	if err != nil {
-		return nil, fmt.Errorf("can't detect support for RDT monitoring: %v", err)
+		return nil, fmt.Errorf("can't detect support for RDT monitoring: %s", err.Error())
 	}
 	if string(out[:]) == DETECTED {
 		// RDT monitoring detected.
@@ -60,7 +61,7 @@ func (s rdtSource) Discover() ([]string, error) {
 
 	out, err = exec.Command("bash", "-c", path.Join(RDTBin, "l3-alloc-discovery")).Output()
 	if err != nil {
-		return nil, fmt.Errorf("can't detect support for RDT L3 allocation: %v", err)
+		return nil, fmt.Errorf("can't detect support for RDT L3 allocation: %s", err.Error())
 	}
 	if string(out[:]) == DETECTED {
 		// RDT L3 cache allocation detected.
@@ -69,7 +70,7 @@ func (s rdtSource) Discover() ([]string, error) {
 
 	out, err = exec.Command("bash", "-c", path.Join(RDTBin, "l2-alloc-discovery")).Output()
 	if err != nil {
-		return nil, fmt.Errorf("can't detect support for RDT L2 allocation: %v", err)
+		return nil, fmt.Errorf("can't detect support for RDT L2 allocation: %s", err.Error())
 	}
 	if string(out[:]) == DETECTED {
 		// RDT L2 cache allocation detected.
