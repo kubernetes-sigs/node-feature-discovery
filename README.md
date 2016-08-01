@@ -38,6 +38,16 @@ the only label value published for features is the string `"true"`._
 }
 ```
 
+### References
+
+Github issues
+
+- [#28310](https://github.com/kubernetes/kubernetes/issues/28310)
+- [#28311](https://github.com/kubernetes/kubernetes/issues/28311)
+- [#28312](https://github.com/kubernetes/kubernetes/issues/28312)
+
+[Design proposal](https://docs.google.com/document/d/1uulT2AjqXjc_pLtDu0Kw9WyvvXm-WAZZaSiUziKsr68/edit)
+
 ## License
 
 This is open source software released under the [Apache 2.0 License](LICENSE).
