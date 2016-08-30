@@ -48,6 +48,14 @@ Github issues
 
 [Design proposal](https://docs.google.com/document/d/1uulT2AjqXjc_pLtDu0Kw9WyvvXm-WAZZaSiUziKsr68/edit)
 
+## Kubernetes Incubator
+
+This is a [Kubernetes Incubator project](https://github.com/kubernetes/community/blob/master/incubator.md).
+
+- Sponsor: Dawn Chen
+- Champion: David Opp
+- SIG: sig-node
+
 ## License
 
 This is open source software released under the [Apache 2.0 License](LICENSE).
