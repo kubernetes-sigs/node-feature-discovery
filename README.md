@@ -185,6 +185,13 @@ Github issues
 
 [Design proposal](https://docs.google.com/document/d/1uulT2AjqXjc_pLtDu0Kw9WyvvXm-WAZZaSiUziKsr68/edit)
 
+## Kubernetes Incubator
+
+This is a [Kubernetes Incubator project](https://github.com/kubernetes/community/blob/master/incubator.md). The project was established 2016-08-29. The incubator team for the project is:
+
+- Sponsor: Dawn Chen (@dchen1107)
+- Champion: David Oppenheimer (@davidopp)
+- SIG: sig-node
 
 ## License
 
