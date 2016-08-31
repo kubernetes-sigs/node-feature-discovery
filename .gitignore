@@ -1,0 +1,7 @@
+node-feature-discovery
+node-feature-discovery-job.json
+vendor/
+intel-cmt-cat/
+rdt-discovery/l2-alloc-discovery
+rdt-discovery/l3-alloc-discovery
+rdt-discovery/mon-discovery
