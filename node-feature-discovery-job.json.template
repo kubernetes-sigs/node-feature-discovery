@@ -37,7 +37,7 @@
                 }
               }
             ],
-            "image": "kubernetesincubator/node-feature-discovery",
+            "image": "quay.io/kubernetes_incubator/node-feature-discovery",
             "name": "node-feature-discovery",
             "ports": [
               {
