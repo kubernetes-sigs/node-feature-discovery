@@ -128,21 +128,22 @@ cd <project-root>
 make
 ```
 
-**NOTE: To override the `DOCKER_REGISTRY_USER` use the `-e` option as follows:
-`DOCKER_REGISTRY_USER=<my-username> make docker -e`**
+**NOTE: Our default docker image is hosted in quay.io. To override the 
+`QUAY_REGISTRY_USER` use the `-e` option as follows: 
+`QUAY_REGISTRY_USER=<my-username> make docker -e`**
 
 Push the Docker Image (optional)
 
 ```
-docker push <registry-user>/<image-name>:<version>
+docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
 ```
 
 **Change the job spec to use your custom image (optional):**
 
 To use your published image from the step above instead of the
-`kubernetesincubator/node-feature-discovery` image, edit line 40 in the file
+`quay.io/kubernetes_incubator/node-feature-discovery` image, edit line 40 in the file
 [node-feature-discovery-job.json.template](node-feature-discovery-job.json.template)
-to the new location (`<registry-user>/<image-name>[:<version>]`).
+to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
 
 ## Targeting Nodes with Specific Features
 
