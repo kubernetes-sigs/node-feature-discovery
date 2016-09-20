@@ -13,6 +13,8 @@
 - [References](#references)
 - [License](#license)
 
+_**NOTE:** We are gathering evidence in order to graduate from the Kubernetes incubator. If you are a user of the project, please add yourself to [this list](https://github.com/kubernetes-incubator/node-feature-discovery/wiki/Users) with as much detail as you are comfortable providing (name and email optional)._
+
 ## Overview
 
 This software enables node feature discovery for Kubernetes. It detects
