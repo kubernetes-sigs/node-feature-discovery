@@ -1,5 +1,7 @@
 # Node feature discovery for [Kubernetes](https://kubernetes.io)
 
+[![Build Status](https://api.travis-ci.org/kubernetes-incubator/node-feature-discovery.svg?branch=master)](https://travis-ci.com/kubernetes-incubator/node-feature-discovery)
+
 - [Overview](#overview)
 - [Command line interface](#command-line-interface)
 - [Feature discovery](#feature-discovery)
