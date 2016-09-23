@@ -1,0 +1,25 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "name": "demo-parsec-NUM"
+    },
+    "spec": {
+        "containers": [
+            {
+                "image": "intelsdi/node-feature-discovery-APP",
+                "name": "demo-container-parsec-NUM",
+                "ports": [
+                    {
+                        "containerPort": 3351,
+                        "hostPort": 10001
+                    }
+                ]
+            }
+        ],
+        "nodeSelector": {
+            "node.alpha.intel.com/VER-pstate-turbo": "true"
+        },
+        "restartPolicy": "Never"
+    }
+}
