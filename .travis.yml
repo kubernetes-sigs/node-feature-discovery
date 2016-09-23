@@ -1,7 +1,7 @@
 sudo: required
 
 services:
-  - docker
+    - docker
 
 script:
-  - docker build -t intelsdi/dbi-iafeature-discovery .
+    - docker build -t quay.io/kubernetes_incubator/node-feature-discovery .
