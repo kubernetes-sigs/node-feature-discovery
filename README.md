@@ -14,6 +14,7 @@
 - [Targeting nodes with specific features](#targeting-nodes-with-specific-features)
 - [References](#references)
 - [License](#license)
+- [Demo](#demo)
 
 _**NOTE:** We are gathering evidence in order to graduate from the Kubernetes incubator. If you are a user of the project, please add yourself to [this list](https://github.com/kubernetes-incubator/node-feature-discovery/wiki/Users) with as much detail as you are comfortable providing (name and email optional)._
 
@@ -25,20 +26,7 @@ those features using node labels.
 
 ## Command line interface
 
-```
-node-feature-discovery.
-
-	Usage:
-	node-feature-discovery [--no-publish --sources=<sources>]
-	node-feature-discovery -h | --help
-	node-feature-discovery --version
-
-	Options:
-	-h --help           Show this screen.
-	--version           Output version and exit.
-	--sources=<sources> Comma separated list of feature sources. [Default: cpuid,rdt,pstate]
-	--no-publish        Do not publish discovered features to the cluster-local Kubernetes API server.
-```
+[![asciicast](https://asciinema.org/a/arabw7ch52jev90sjjk242vh9.png)](https://asciinema.org/a/arabw7ch52jev90sjjk242vh9)
 
 ## Feature discovery
 
@@ -115,7 +103,9 @@ repo that demonstrates how to deploy the job to unlabeled nodes.
 
 The discovery script will launch a job on each each unlabeled node in the
 cluster. When the job runs, it contacts the Kubernetes API server to add labels
-to the node to advertise hardware features (initially, from `cpuid` and RDT).
+to the node to advertise hardware features (initially, from `cpuid`, RDT and p-state).
+
+[![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
 ## Building from source
 
@@ -201,6 +191,10 @@ This is a [Kubernetes Incubator project](https://github.com/kubernetes/community
 ## License
 
 This is open source software released under the [Apache 2.0 License](LICENSE).
+
+## Demo
+
+A demo on the benefits of using node feature discovery can be found in [demo](demo/). 
 
 <!-- Links -->
 [cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
