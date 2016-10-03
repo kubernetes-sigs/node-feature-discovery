@@ -23,7 +23,7 @@ metadata:
 spec:
     containers:
         - name: demo-container-cloverleaf-NUM
-          image: intelsdi/node-feature-discovery-APP
+          image: quay.io/kubernetes_incubator/node-feature-discovery-APP
           ports: 
             - containerPort: 3551
               hostPort: 10001
