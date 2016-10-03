@@ -1,6 +1,7 @@
 # Demo on Node Feature Discovery
 - [Demo Overview](#demo-overview)
 - [Instructions to Reproduce the Demo](#instructions-to-reproduce-the-demo)
+- [Source for the Demo Images](#source-for-the-demo-images)
 
 ## Demo Overview 
 In order to show the potential performance benefit from the node feature discovery project, we ran an experiment on three identical Kubernetes nodes. Each node consists of a single-socket Intel(R) Xeon(R) D-1521 with eight cores. 
@@ -74,6 +75,9 @@ Following the above steps will produce the performance and normalized performanc
     -a APPLICATION_NAME     run the pods with APPLICATION_NAME application.
                             APPLICATION_NAME can be one of parsec or cloverleaf
 ```
+
+### Source for the Demo Images
+The Dockerfiles for the demo images can be found in [docker-images](docker-images/). The Dockerfile for the PARSEC demo is [Dockerfile-PARSEC](docker-images/Dockerfile-PARSEC) and the CloverLeaf demo is [Dockerfile-CloverLeaf](docker-images/Dockerfile-CloverLeaf). The demo images are hosted in `quay.io` under the `kubernetes_incubator` organization. 
 
 <!-- Links -->
 [parsec]: http://parsec.cs.princeton.edu/
