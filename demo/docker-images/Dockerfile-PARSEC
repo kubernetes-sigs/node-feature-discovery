@@ -15,7 +15,7 @@ FROM debian:testing
 RUN apt-get update && apt-get install build-essential -y 
 ADD http://parsec.cs.princeton.edu/download/3.0/parsec-3.0-core.tar.gz /root/
 RUN cd /root; tar -xzf parsec-3.0-core.tar.gz
-COPY ./parsec-3.0/ferret/input/input_native.tar /root/parsec-3.0/pkgs/apps/ferret/inputs/
+ADD https://s3.amazonaws.com/nfd-artifacts/parsec-ferret-input/input_native.tar /root/parsec-3.0/pkgs/apps/ferret/inputs/
 WORKDIR /root/parsec-3.0
 RUN ./bin/parsecmgmt -a build -p ferret -c gcc
 ENTRYPOINT ["./bin/parsecmgmt", "-a", "run", "-p", "ferret", "-i", "native", "-n", "8"]
