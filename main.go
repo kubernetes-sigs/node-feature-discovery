@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/docopt/docopt-go"
@@ -60,17 +61,19 @@ func main() {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
-  %s [--no-publish --sources=<sources>]
+  %s [--no-publish --sources=<sources> --label-whitelist=<pattern>]
   %s -h | --help
   %s --version
 
   Options:
-  -h --help           Show this screen.
-  --version           Output version and exit.
-  --sources=<sources> Comma separated list of feature sources.
-                      [Default: cpuid,rdt,pstate]
-  --no-publish        Do not publish discovered features to the cluster-local
-                      Kubernetes API server.`,
+  -h --help                   Show this screen.
+  --version                   Output version and exit.
+  --sources=<sources>         Comma separated list of feature sources.
+                              [Default: cpuid,rdt,pstate]
+  --no-publish                Do not publish discovered features to the cluster-local
+                              Kubernetes API server.
+  --label-whitelist=<pattern> Regular expression to filter label names to publish to the Kubernetes API server.
+                              [Default: ]`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -83,6 +86,7 @@ func main() {
 	// Parse argument values as usable types.
 	noPublish := arguments["--no-publish"].(bool)
 	sourcesArg := strings.Split(arguments["--sources"].(string), ",")
+	whiteListArg := arguments["--label-whitelist"].(string)
 
 	enabledSources := map[string]struct{}{}
 	for _, s := range sourcesArg {
@@ -103,8 +107,13 @@ func main() {
 		}
 	}
 
-	labels := Labels{}
+	// compile whiteListArg regex
+	labelWhiteList, err := regexp.Compile(whiteListArg)
+	if err != nil {
+		log.Fatalf("Error parsing whitelist regex (%s): %s", whiteListArg, err)
+	}
 
+	labels := Labels{}
 	// Add the version of this discovery code as a node label
 	versionLabel := fmt.Sprintf("%s/%s.version", Namespace, ProgramName)
 	labels[versionLabel] = version
@@ -119,9 +128,14 @@ func main() {
 		}
 
 		for name, value := range labelsFromSource {
-			labels[name] = value
 			// Log discovered feature.
 			log.Printf("%s = %s", name, value)
+			// Skip if label doesn't match labelWhiteList
+			if !labelWhiteList.Match([]byte(name)) {
+				log.Printf("%s does not match the whitelist (%s) and will not be published.", name, whiteListArg)
+				continue
+			}
+			labels[name] = value
 		}
 	}
 
