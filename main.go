@@ -98,6 +98,7 @@ func main() {
 		cpuidSource{},
 		rdtSource{},
 		pstateSource{},
+		fakeSource{},
 	}
 
 	sources := []FeatureSource{}
