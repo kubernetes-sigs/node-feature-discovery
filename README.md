@@ -42,7 +42,7 @@ The current set of feature sources are the following:
 
 The published node labels encode a few pieces of information:
 
-- A "namespace" to denote the vendor/provider (e.g. `node.alpha.intel.com`).
+- A "namespace" (e.g. `node.alpha.intel.com/nfd`).
 - The version of this discovery code that wrote the label, according to
   `git describe --tags --dirty --always`.
 - The source for each label (e.g. `cpuid`).
@@ -55,9 +55,9 @@ the only label value published for features is the string `"true"`._
 ```json
 {
   "node.alpha.intel.com/node-feature-discovery.version": "v0.1.0",
-  "node.alpha.intel.com/v0.1.0-cpuid-<feature-name>": "true",
-  "node.alpha.intel.com/v0.1.0-rdt-<feature-name>": "true",
-  "node.alpha.intel.com/v0.1.0-pstate-<feature-name>": "true"
+  "node.alpha.intel.com/nfd-cpuid-<feature-name>": "true",
+  "node.alpha.intel.com/nfd-rdt-<feature-name>": "true",
+  "node.alpha.intel.com/nfd-pstate-<feature-name>": "true"
 }
 ```
 
@@ -162,7 +162,7 @@ following example shows how to target nodes with Intel TurboBoost enabled.
             }
         ],
         "nodeSelector": {
-                "node.alpha.intel.com/v0.1.0-pstate-turbo": "true"
+                "node.alpha.intel.com/nfd-pstate-turbo": "true"
         }
     }
 }
