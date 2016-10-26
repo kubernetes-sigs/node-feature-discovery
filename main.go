@@ -70,10 +70,10 @@ func main() {
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpuid,rdt,pstate]
-  --no-publish                Do not publish discovered features to the cluster-local
-                              Kubernetes API server.
-  --label-whitelist=<pattern> Regular expression to filter label names to publish to the Kubernetes API server.
-                              [Default: ]`,
+  --no-publish                Do not publish discovered features to the
+                              cluster-local Kubernetes API server.
+  --label-whitelist=<pattern> Regular expression to filter label names to
+                              publish to the Kubernetes API server. [Default: ]`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
