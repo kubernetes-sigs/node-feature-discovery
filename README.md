@@ -59,7 +59,7 @@ The current set of feature sources are the following:
 
 The published node labels encode a few pieces of information:
 
-- A "namespace" (e.g. `node.alpha.intel.com/nfd`).
+- A "namespace" (e.g. `node.alpha.kubernetes-incubator.io/nfd`).
 - The version of this discovery code that wrote the label, according to
   `git describe --tags --dirty --always`.
 - The source for each label (e.g. `cpuid`).
@@ -71,10 +71,10 @@ the only label value published for features is the string `"true"`._
 
 ```json
 {
-  "node.alpha.intel.com/node-feature-discovery.version": "v0.1.0",
-  "node.alpha.intel.com/nfd-cpuid-<feature-name>": "true",
-  "node.alpha.intel.com/nfd-rdt-<feature-name>": "true",
-  "node.alpha.intel.com/nfd-pstate-<feature-name>": "true"
+  "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.1.0",
+  "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true"
 }
 ```
 
@@ -179,7 +179,7 @@ following example shows how to target nodes with Intel TurboBoost enabled.
             }
         ],
         "nodeSelector": {
-                "node.alpha.intel.com/nfd-pstate-turbo": "true"
+                "node.alpha.kubernetes-incubator.io/nfd-pstate-turbo": "true"
         }
     }
 }
