@@ -29,7 +29,7 @@ const (
 
 var (
 	version = "" // Must not be const, set using ldflags at build time
-	prefix  = fmt.Sprintf("%s/%s", Namespace, version)
+	prefix  = fmt.Sprintf("%s/nfd", Namespace)
 )
 
 // Labels are a Kubernetes representation of discovered features.
