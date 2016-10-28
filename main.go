@@ -43,7 +43,12 @@ type APIHelpers interface {
 	// GetNode returns the Kubernetes node on which this container is running.
 	GetNode(*client.Client) (*api.Node, error)
 
-	// addLabels modifies the supplied node's labels collection.
+	// RemoveLabels removes labels from the supplied node that contain the
+	// search string provided. In order to publish the changes, the node must
+	// subsequently be updated via the API server using the client library.
+	RemoveLabels(*api.Node, string)
+
+	// AddLabels modifies the supplied node's labels collection.
 	// In order to publish the labels, the node must be subsequently updated via the
 	// API server using the client library.
 	AddLabels(*api.Node, Labels)
@@ -181,6 +186,8 @@ func advertiseFeatureLabels(helper APIHelpers, labels Labels) error {
 		return err
 	}
 
+	// Remove labels with our prefix
+	helper.RemoveLabels(node, prefix)
 	// Add labels to the node object.
 	helper.AddLabels(node, labels)
 
@@ -229,6 +236,16 @@ func (h k8sHelpers) GetNode(cli *client.Client) (*api.Node, error) {
 	}
 
 	return node, nil
+}
+
+// RemoveLabels searches through all labels on Node n and removes
+// any where the key contain the search string.
+func (h k8sHelpers) RemoveLabels(n *api.Node, search string) {
+	for k := range n.Labels {
+		if strings.Contains(k, search) {
+			delete(n.Labels, k)
+		}
+	}
 }
 
 func (h k8sHelpers) AddLabels(n *api.Node, labels Labels) {

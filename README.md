@@ -80,6 +80,11 @@ the only label value published for features is the string `"true"`._
 
 The `--sources` flag controls which sources to use for discovery.
 
+_Note: Consecutive runs of node-feature-discovery will update the labels on a
+given node. If features are not discovered on a consecutive run, the corresponding
+label will be removed. This includes any restrictions placed on the consecutive run,
+such as restricting discovered features with the --label-whitelist option._
+
 ### Intel Resource Director Technology (RDT) Features
 
 | Feature name   | Description                                                                         |
