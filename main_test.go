@@ -56,6 +56,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, prefix).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(nil).Once()
 			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels)
 
@@ -89,6 +90,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, prefix).Return().Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(expectedError).Once()
 			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels)
@@ -98,5 +100,68 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			})
 		})
 
+	})
+}
+
+func TestAddLabels(t *testing.T) {
+	Convey("When adding labels", t, func() {
+		helper := k8sHelpers{}
+		labels := Labels{}
+		n := &api.Node{
+			ObjectMeta: api.ObjectMeta{
+				Labels: map[string]string{},
+			},
+		}
+
+		Convey("If no labels are passed", func() {
+			helper.AddLabels(n, labels)
+
+			Convey("None should be added", func() {
+				So(len(n.Labels), ShouldEqual, 0)
+			})
+		})
+
+		Convey("They should be added to the node.Labels", func() {
+			test1 := prefix + ".test1"
+			labels[test1] = "true"
+			helper.AddLabels(n, labels)
+			So(n.Labels, ShouldContainKey, test1)
+		})
+	})
+}
+
+func TestRemoveLabels(t *testing.T) {
+	Convey("When removing labels", t, func() {
+		helper := k8sHelpers{}
+		n := &api.Node{
+			ObjectMeta: api.ObjectMeta{
+				Labels: map[string]string{
+					"single":     "123",
+					"multiple_A": "a",
+					"multiple_B": "b",
+				},
+			},
+		}
+
+		Convey("a unique label should be removed", func() {
+			helper.RemoveLabels(n, "single")
+			So(len(n.Labels), ShouldEqual, 2)
+			So(n.Labels, ShouldNotContainKey, "single")
+		})
+
+		Convey("a non-unique search string should remove all matching keys", func() {
+			helper.RemoveLabels(n, "multiple")
+			So(len(n.Labels), ShouldEqual, 1)
+			So(n.Labels, ShouldNotContainKey, "multiple_A")
+			So(n.Labels, ShouldNotContainKey, "multiple_B")
+		})
+
+		Convey("a search string with no matches should not alter labels", func() {
+			helper.RemoveLabels(n, "unique")
+			So(n.Labels, ShouldContainKey, "single")
+			So(n.Labels, ShouldContainKey, "multiple_A")
+			So(n.Labels, ShouldContainKey, "multiple_B")
+			So(len(n.Labels), ShouldEqual, 3)
+		})
 	})
 }
