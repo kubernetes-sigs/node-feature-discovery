@@ -32,6 +32,12 @@ var (
 	prefix  = fmt.Sprintf("%s/nfd", Namespace)
 )
 
+// package loggers
+var (
+	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
+	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
+)
+
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
@@ -60,7 +66,7 @@ type APIHelpers interface {
 func main() {
 	// Assert that the version is known
 	if version == "" {
-		log.Fatalf("main.version not set! Set -ldflags \"-X main.version `git describe --tags --dirty --always`\" during build or run.")
+		stderrLogger.Fatalf("main.version not set! Set -ldflags \"-X main.version `git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	usage := fmt.Sprintf(`%s.
@@ -116,29 +122,30 @@ func main() {
 	// compile whiteListArg regex
 	labelWhiteList, err := regexp.Compile(whiteListArg)
 	if err != nil {
-		log.Fatalf("Error parsing whitelist regex (%s): %s", whiteListArg, err)
+		stderrLogger.Fatalf("Error parsing whitelist regex (%s): %s", whiteListArg, err)
 	}
 
 	labels := Labels{}
 	// Add the version of this discovery code as a node label
 	versionLabel := fmt.Sprintf("%s/%s.version", Namespace, ProgramName)
 	labels[versionLabel] = version
+
 	// Log version label.
-	log.Printf("%s = %s", versionLabel, version)
+	stdoutLogger.Printf("%s = %s", versionLabel, version)
 
 	// Do feature discovery from all configured sources.
 	for _, source := range sources {
 		labelsFromSource, err := getFeatureLabels(source)
 		if err != nil {
-			log.Fatalf("discovery failed for source [%s]: %s", source.Name(), err.Error())
+			stderrLogger.Fatalf("discovery failed for source [%s]: %s", source.Name(), err.Error())
 		}
 
 		for name, value := range labelsFromSource {
 			// Log discovered feature.
-			log.Printf("%s = %s", name, value)
+			stdoutLogger.Printf("%s = %s", name, value)
 			// Skip if label doesn't match labelWhiteList
 			if !labelWhiteList.Match([]byte(name)) {
-				log.Printf("%s does not match the whitelist (%s) and will not be published.", name, whiteListArg)
+				stderrLogger.Printf("%s does not match the whitelist (%s) and will not be published.", name, whiteListArg)
 				continue
 			}
 			labels[name] = value
@@ -150,7 +157,7 @@ func main() {
 		helper := APIHelpers(k8sHelpers{})
 		err := advertiseFeatureLabels(helper, labels)
 		if err != nil {
-			log.Fatalf("failed to advertise labels: %s", err.Error())
+			stderrLogger.Fatalf("failed to advertise labels: %s", err.Error())
 		}
 	}
 }
@@ -175,14 +182,14 @@ func advertiseFeatureLabels(helper APIHelpers, labels Labels) error {
 	// Set up K8S client.
 	cli, err := helper.GetClient()
 	if err != nil {
-		log.Printf("can't get kubernetes client: %s", err.Error())
+		stderrLogger.Printf("can't get kubernetes client: %s", err.Error())
 		return err
 	}
 
 	// Get the current node.
 	node, err := helper.GetNode(cli)
 	if err != nil {
-		log.Printf("failed to get node: %s", err.Error())
+		stderrLogger.Printf("failed to get node: %s", err.Error())
 		return err
 	}
 
@@ -194,7 +201,7 @@ func advertiseFeatureLabels(helper APIHelpers, labels Labels) error {
 	// Send the updated node to the apiserver.
 	err = helper.UpdateNode(cli, node)
 	if err != nil {
-		log.Printf("can't update node: %s", err.Error())
+		stderrLogger.Printf("can't update node: %s", err.Error())
 		return err
 	}
 
@@ -218,20 +225,20 @@ func (h k8sHelpers) GetNode(cli *client.Client) (*api.Node, error) {
 	// Get the pod name and pod namespace from the env variables
 	podName := os.Getenv(PodNameEnv)
 	podns := os.Getenv(PodNamespaceEnv)
-	log.Printf("%s: %s", PodNameEnv, podName)
-	log.Printf("%s: %s", PodNamespaceEnv, podns)
+	stdoutLogger.Printf("%s: %s", PodNameEnv, podName)
+	stdoutLogger.Printf("%s: %s", PodNamespaceEnv, podns)
 
 	// Get the pod object using the pod name and pod namespace
 	pod, err := cli.Pods(podns).Get(podName)
 	if err != nil {
-		log.Printf("can't get pods: %s", err.Error())
+		stderrLogger.Printf("can't get pods: %s", err.Error())
 		return nil, err
 	}
 
 	// Get the node object using the pod name and pod namespace
 	node, err := cli.Nodes().Get(pod.Spec.NodeName)
 	if err != nil {
-		log.Printf("can't get node: %s", err.Error())
+		stderrLogger.Printf("can't get node: %s", err.Error())
 		return nil, err
 	}
 
