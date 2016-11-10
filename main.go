@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/docopt/docopt-go"
-	"k8s.io/kubernetes/pkg/api"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	k8sclient "k8s.io/client-go/kubernetes"
+	api "k8s.io/client-go/pkg/api/v1"
+	restclient "k8s.io/client-go/rest"
 )
 
 const (
@@ -44,10 +45,10 @@ type Labels map[string]string
 // APIHelpers represents a set of API helpers for Kubernetes
 type APIHelpers interface {
 	// GetClient returns a client
-	GetClient() (*client.Client, error)
+	GetClient() (*k8sclient.Clientset, error)
 
 	// GetNode returns the Kubernetes node on which this container is running.
-	GetNode(*client.Client) (*api.Node, error)
+	GetNode(*k8sclient.Clientset) (*api.Node, error)
 
 	// RemoveLabels removes labels from the supplied node that contain the
 	// search string provided. In order to publish the changes, the node must
@@ -60,7 +61,7 @@ type APIHelpers interface {
 	AddLabels(*api.Node, Labels)
 
 	// UpdateNode updates the node via the API server using a client.
-	UpdateNode(*client.Client, *api.Node) error
+	UpdateNode(*k8sclient.Clientset, *api.Node) error
 }
 
 func main() {
@@ -179,7 +180,6 @@ func getFeatureLabels(source FeatureSource) (Labels, error) {
 // advertiseFeatureLabels advertises the feature labels to a Kubernetes node
 // via the API server.
 func advertiseFeatureLabels(helper APIHelpers, labels Labels) error {
-	// Set up K8S client.
 	cli, err := helper.GetClient()
 	if err != nil {
 		stderrLogger.Printf("can't get kubernetes client: %s", err.Error())
@@ -211,17 +211,20 @@ func advertiseFeatureLabels(helper APIHelpers, labels Labels) error {
 // Implements main.APIHelpers
 type k8sHelpers struct{}
 
-func (h k8sHelpers) GetClient() (*client.Client, error) {
-	// Set up K8S client.
-	cli, err := client.NewInCluster()
+func (h k8sHelpers) GetClient() (*k8sclient.Clientset, error) {
+	// Set up an in-cluster K8S client.
+	config, err := restclient.InClusterConfig()
 	if err != nil {
 		return nil, err
 	}
-
-	return cli, nil
+	clientset, err := k8sclient.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return clientset, nil
 }
 
-func (h k8sHelpers) GetNode(cli *client.Client) (*api.Node, error) {
+func (h k8sHelpers) GetNode(cli *k8sclient.Clientset) (*api.Node, error) {
 	// Get the pod name and pod namespace from the env variables
 	podName := os.Getenv(PodNameEnv)
 	podns := os.Getenv(PodNamespaceEnv)
@@ -229,14 +232,14 @@ func (h k8sHelpers) GetNode(cli *client.Client) (*api.Node, error) {
 	stdoutLogger.Printf("%s: %s", PodNamespaceEnv, podns)
 
 	// Get the pod object using the pod name and pod namespace
-	pod, err := cli.Pods(podns).Get(podName)
+	pod, err := cli.Core().Pods(podns).Get(podName)
 	if err != nil {
 		stderrLogger.Printf("can't get pods: %s", err.Error())
 		return nil, err
 	}
 
 	// Get the node object using the pod name and pod namespace
-	node, err := cli.Nodes().Get(pod.Spec.NodeName)
+	node, err := cli.Core().Nodes().Get(pod.Spec.NodeName)
 	if err != nil {
 		stderrLogger.Printf("can't get node: %s", err.Error())
 		return nil, err
@@ -261,9 +264,9 @@ func (h k8sHelpers) AddLabels(n *api.Node, labels Labels) {
 	}
 }
 
-func (h k8sHelpers) UpdateNode(c *client.Client, n *api.Node) error {
+func (h k8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	// Send the updated node to the apiserver.
-	_, err := c.Nodes().Update(n)
+	_, err := c.Core().Nodes().Update(n)
 	if err != nil {
 		return err
 	}

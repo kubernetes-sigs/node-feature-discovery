@@ -6,8 +6,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vektra/errors"
-	"k8s.io/kubernetes/pkg/api"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	k8sclient "k8s.io/client-go/kubernetes"
+	api "k8s.io/client-go/pkg/api/v1"
 )
 
 func TestDiscoveryWithMockSources(t *testing.T) {
@@ -49,7 +49,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 
 		mockAPIHelper := new(MockAPIHelpers)
 		testHelper := APIHelpers(mockAPIHelper)
-		var mockClient *client.Client
+		var mockClient *k8sclient.Clientset
 		var mockNode *api.Node
 
 		Convey("When I successfully advertise feature labels to a node", func() {
