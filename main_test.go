@@ -165,3 +165,18 @@ func TestRemoveLabels(t *testing.T) {
 		})
 	})
 }
+
+func TestGetFeatureLabels(t *testing.T) {
+	Convey("When I get feature labels and panic occurs during discovery of a feature source", t, func() {
+		fakePanicFeatureSource := FeatureSource(new(fakePanicSource))
+
+		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource)
+		Convey("No label is returned", func() {
+			So(len(returnedLabels), ShouldEqual, 0)
+		})
+		Convey("Error is produced and panic error is returned", func() {
+			So(err, ShouldResemble, fmt.Errorf("fake panic error"))
+		})
+
+	})
+}
