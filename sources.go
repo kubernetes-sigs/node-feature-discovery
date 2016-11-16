@@ -102,19 +102,3 @@ func (s pstateSource) Discover() ([]string, error) {
 
 	return features, nil
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// Fake Source (used only for testing)
-
-// Implements main.FeatureSource.
-type fakeSource struct{}
-
-func (s fakeSource) Name() string { return "fake" }
-func (s fakeSource) Discover() ([]string, error) {
-	features := []string{}
-
-	// Adding three fake features.
-	features = append(features, "fakefeature1", "fakefeature2", "fakefeature3")
-
-	return features, nil
-}

@@ -138,7 +138,9 @@ func main() {
 	for _, source := range sources {
 		labelsFromSource, err := getFeatureLabels(source)
 		if err != nil {
-			stderrLogger.Fatalf("discovery failed for source [%s]: %s", source.Name(), err.Error())
+			stderrLogger.Printf("discovery failed for source [%s]: %s", source.Name(), err.Error())
+			stderrLogger.Printf("continuing ...")
+			continue
 		}
 
 		for name, value := range labelsFromSource {
@@ -165,8 +167,15 @@ func main() {
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source FeatureSource) (Labels, error) {
-	labels := Labels{}
+func getFeatureLabels(source FeatureSource) (labels Labels, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			stderrLogger.Printf("panic occured during discovery of source [%s]: %v", source.Name(), r)
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+
+	labels = Labels{}
 	features, err := source.Discover()
 	if err != nil {
 		return nil, err
