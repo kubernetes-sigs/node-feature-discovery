@@ -107,7 +107,8 @@ such as restricting discovered features with the --label-whitelist option._
 | SSE4.2         | Streaming SIMD Extensions 4.2 (SSE4.2)
 | SGX            | Software Guard Extensions (SGX)
 
-### System Requirements
+## Getting started
+### System requirements
 
 1. Linux (x86_64)
 1. [kubectl] [kubectl-setup] (properly set up and configured to work with your

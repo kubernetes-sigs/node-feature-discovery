@@ -18,7 +18,7 @@
             }
         ],
         "nodeSelector": {
-            "node.alpha.intel.com/VER-pstate-turbo": "true"
+            "node.alpha.kubernetes-incubator.io/nfd-pstate-turbo": "true"
         },
         "restartPolicy": "Never"
     }

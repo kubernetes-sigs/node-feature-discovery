@@ -37,21 +37,22 @@ Scripts to reproduce our demo results can be found in [helper-scripts](helper-sc
 Follow these easy steps to reproduce the demo. 
 
 1. `cd <helper-script-root>`
-2. `./run-with-discovery.sh -v <node-feature-discovery-version> -a parsec`
-3. `./run-with-discovery.sh -v <node-feature-discovery-version> -a cloverleaf`
-4. `/aggregate-logs-and-plot.sh -a parsec`
-5. `/aggregate-logs-and-plot.sh -a cloverleaf`
+2. `./run-with-discovery.sh -a parsec`
+3. `./run-with-discovery.sh -a cloverleaf`
+4. `./run-without-discovery.sh -a parsec`
+5. `./run-without-discovery.sh -a cloverleaf`
+6. `/aggregate-logs-and-plot.sh -a parsec`
+7. `/aggregate-logs-and-plot.sh -a cloverleaf`
 
 Following the above steps will produce the performance and normalized performance logs and their corresponding plots for each application. 
 
 ### Script Documentation
-`run-with-discovery.sh` takes the node feature discovery version and the application name as the input and runs ten application instances using node feature discovery. 
+`run-with-discovery.sh` takes the application name as the input and runs ten application instances using node feature discovery. 
 ```sh
 > ./run-with-discovery.sh -h
-    Usage: run-with-discovery.sh [-v DISCOVERY_VERSION] [-a APPLICATION_NAME]
+    Usage: run-with-discovery.sh [-a APPLICATION_NAME]
     Runs pods ten times with discovery enabled.
 
-    -v DISCOVERY_VERSION    target discovery version DISCOVERY_VERSION.
     -a APPLICATION_NAME     run the pods with APPLICATION_NAME application.
                             APPLICATION_NAME can be one of parsec or cloverleaf.
 ```
