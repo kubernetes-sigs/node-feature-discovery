@@ -17,6 +17,14 @@
         }
       },
       "spec": {
+        "volumes": [
+          {
+            "name": "nfd-node-volume",
+            "hostPath": {
+              "path": "/sys"
+            }
+          }
+        ],
         "containers": [
           {
             "env": [
@@ -39,6 +47,13 @@
             ],
             "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0",
             "name": "node-feature-discovery",
+            "volumeMounts": [
+              {
+                "mountPath": "/hostsys",
+                "name": "nfd-node-volume",
+		"readOnly": true
+              }
+            ],
             "ports": [
               {
                 "containerPort": 2233,
@@ -52,3 +67,4 @@
     }
   }
 }
+

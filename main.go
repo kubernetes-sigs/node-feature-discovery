@@ -110,7 +110,7 @@ func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate]
+                              [Default: cpuid,rdt,pstate,netid]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
