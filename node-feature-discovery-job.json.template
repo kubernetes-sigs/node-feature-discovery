@@ -17,6 +17,7 @@
         }
       },
       "spec": {
+        "hostNetwork": true,
         "containers": [
           {
             "env": [
@@ -41,7 +42,7 @@
             "name": "node-feature-discovery",
             "ports": [
               {
-                "containerPort": 2233,
+                "containerPort": 7156,
                 "hostPort": 7156
               }
             ]
