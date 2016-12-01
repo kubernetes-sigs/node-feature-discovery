@@ -17,7 +17,11 @@
         }
       },
       "spec": {
+<<<<<<< HEAD
 	"hostNetwork": true,
+=======
+        "hostNetwork": true,
+>>>>>>> SR-IOV capability discovery in NFD : code update after PR review
         "containers": [
           {
             "env": [
