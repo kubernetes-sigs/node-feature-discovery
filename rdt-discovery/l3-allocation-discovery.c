@@ -13,18 +13,16 @@ int main(int argc, char *argv[]) {
   lcpuid(0x7, 0x0, &res);
   if (!(res.ebx & (1 << 15))) {
     det = 0;
-    printf("NOT DETECTED");
+    return EXIT_FAILURE;
   }
   else {
     lcpuid(0x10, 0x0, &res);
     if (!(res.ebx & (1 << 1))) {
       det = 0;
-      printf("NOT DETECTED");
+      return EXIT_FAILURE;
     }
   }
 
   if (det)
-    printf("DETECTED");
-
-  return 0;
+    return EXIT_SUCCESS;
 }
