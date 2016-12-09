@@ -19,9 +19,6 @@ type FeatureSource interface {
 }
 
 const (
-	// DETECTED is compared with stdout for RDT detection helper programs.
-	DETECTED = "DETECTED"
-
 	// RDTBin is the path to RDT detection helpers.
 	RDTBin = "/go/src/github.com/kubernetes-incubator/node-feature-discovery/rdt-discovery"
 )
@@ -50,30 +47,27 @@ func (s rdtSource) Name() string { return "rdt" }
 func (s rdtSource) Discover() ([]string, error) {
 	features := []string{}
 
-	out, err := exec.Command("bash", "-c", path.Join(RDTBin, "mon-discovery")).Output()
-	if err != nil {
-		return nil, fmt.Errorf("can't detect support for RDT monitoring: %s", err.Error())
-	}
-	if string(out[:]) == DETECTED {
+	cmd := exec.Command("bash", "-c", path.Join(RDTBin, "mon-discovery"))
+	if err := cmd.Run(); err != nil {
+		stderrLogger.Printf("support for RDT monitoring was not detected: %s", err.Error())
+	} else {
 		// RDT monitoring detected.
 		features = append(features, "RDTMON")
 	}
 
-	out, err = exec.Command("bash", "-c", path.Join(RDTBin, "l3-alloc-discovery")).Output()
-	if err != nil {
-		return nil, fmt.Errorf("can't detect support for RDT L3 allocation: %s", err.Error())
-	}
-	if string(out[:]) == DETECTED {
-		// RDT L3 cache allocation detected.
+	cmd = exec.Command("bash", "-c", path.Join(RDTBin, "l3-alloc-discovery"))
+	if err := cmd.Run(); err != nil {
+		stderrLogger.Printf("support for RDT L3 allocation was not detected: %s", err.Error())
+	} else {
+		// RDT monitoring detected.
 		features = append(features, "RDTL3CA")
 	}
 
-	out, err = exec.Command("bash", "-c", path.Join(RDTBin, "l2-alloc-discovery")).Output()
-	if err != nil {
-		return nil, fmt.Errorf("can't detect support for RDT L2 allocation: %s", err.Error())
-	}
-	if string(out[:]) == DETECTED {
-		// RDT L2 cache allocation detected.
+	cmd = exec.Command("bash", "-c", path.Join(RDTBin, "l2-alloc-discovery"))
+	if err := cmd.Run(); err != nil {
+		stderrLogger.Printf("support for RDT L2 allocation was not detected: %s", err.Error())
+	} else {
+		// RDT monitoring detected.
 		features = append(features, "RDTL2CA")
 	}
 
