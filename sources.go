@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/klauspost/cpuid"
+	api "k8s.io/client-go/pkg/api/v1"
 )
 
 // FeatureSource represents a source of discovered node features.
@@ -14,8 +15,11 @@ type FeatureSource interface {
 	// Returns a friendly name for this source of node features.
 	Name() string
 
-	// Returns discovered features for this node.
+	// Returns discovered binary features for this node.
 	Discover() ([]string, error)
+
+	// Returns quantities of discovered opaque integer resources for this node.
+	DiscoverResources() (api.ResourceList, error)
 }
 
 const (
@@ -33,6 +37,9 @@ func (s cpuidSource) Name() string { return "cpuid" }
 func (s cpuidSource) Discover() ([]string, error) {
 	// Get the cpu features as strings
 	return cpuid.CPU.Features.Strings(), nil
+}
+func (s cpuidSource) DiscoverResources() (api.ResourceList, error) {
+	return nil, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,6 +80,9 @@ func (s rdtSource) Discover() ([]string, error) {
 
 	return features, nil
 }
+func (s rdtSource) DiscoverResources() (api.ResourceList, error) {
+	return nil, nil
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // PState Source
@@ -95,4 +105,7 @@ func (s pstateSource) Discover() ([]string, error) {
 	}
 
 	return features, nil
+}
+func (s pstateSource) DiscoverResources() (api.ResourceList, error) {
+	return nil, nil
 }
