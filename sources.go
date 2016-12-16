@@ -30,6 +30,8 @@ const (
 type cpuidSource struct{}
 
 func (s cpuidSource) Name() string { return "cpuid" }
+
+// Returns feature names for all the supported CPU features.
 func (s cpuidSource) Discover() ([]string, error) {
 	// Get the cpu features as strings
 	return cpuid.CPU.Features.Strings(), nil
@@ -43,7 +45,7 @@ type rdtSource struct{}
 
 func (s rdtSource) Name() string { return "rdt" }
 
-// Returns feature names for CMT, MBM and CAT if suppported.
+// Returns feature names for CMT and CAT if suppported.
 func (s rdtSource) Discover() ([]string, error) {
 	features := []string{}
 
@@ -59,7 +61,7 @@ func (s rdtSource) Discover() ([]string, error) {
 	if err := cmd.Run(); err != nil {
 		stderrLogger.Printf("support for RDT L3 allocation was not detected: %s", err.Error())
 	} else {
-		// RDT monitoring detected.
+		// RDT L3 cache allocation detected.
 		features = append(features, "RDTL3CA")
 	}
 
@@ -67,7 +69,7 @@ func (s rdtSource) Discover() ([]string, error) {
 	if err := cmd.Run(); err != nil {
 		stderrLogger.Printf("support for RDT L2 allocation was not detected: %s", err.Error())
 	} else {
-		// RDT monitoring detected.
+		// RDT L2 cache allocation detected.
 		features = append(features, "RDTL2CA")
 	}
 
@@ -81,6 +83,8 @@ func (s rdtSource) Discover() ([]string, error) {
 type pstateSource struct{}
 
 func (s pstateSource) Name() string { return "pstate" }
+
+// Returns feature names for p-state related features such as turbo boost.
 func (s pstateSource) Discover() ([]string, error) {
 	features := []string{}
 

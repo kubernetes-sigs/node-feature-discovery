@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -52,16 +53,28 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		var mockClient *k8sclient.Clientset
 		var mockNode *api.Node
 
-		Convey("When I successfully advertise feature labels to a node", func() {
+		Convey("When I successfully update the node with feature labels", func() {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
 			mockAPIHelper.On("RemoveLabels", mockNode, prefix).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(nil).Once()
-			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels)
+			noPublish := false
+			err := updateNodeWithFeatureLabels(testHelper, noPublish, fakeFeatureLabels)
 
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When I fail to update the node with feature labels", func() {
+			expectedError := errors.New("fake error")
+			mockAPIHelper.On("GetClient").Return(nil, expectedError)
+			noPublish := false
+			err := updateNodeWithFeatureLabels(testHelper, noPublish, fakeFeatureLabels)
+
+			Convey("Error is produced", func() {
+				So(err, ShouldEqual, expectedError)
 			})
 		})
 
@@ -100,6 +113,151 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			})
 		})
 
+	})
+}
+
+func TestArgsParse(t *testing.T) {
+	Convey("When parsing command line arguments", t, func() {
+		argv1 := []string{"--no-publish"}
+		argv2 := []string{"--sources=fake1,fake2,fake3"}
+		argv3 := []string{"--label-whitelist=.*rdt.*"}
+		argv4 := []string{"--no-publish", "--sources=fake1,fake2,fake3"}
+
+		Convey("When --no-publish flag is passed", func() {
+			noPublish, sourcesArg, whiteListArg := argsParse(argv1)
+
+			Convey("noPublish is set and sourcesArg is set to the default value", func() {
+				So(noPublish, ShouldBeTrue)
+				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate"})
+				So(len(whiteListArg), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When --sources flag is passed and set to some values", func() {
+			noPublish, sourcesArg, whiteListArg := argsParse(argv2)
+
+			Convey("sourcesArg is set to appropriate values", func() {
+				So(noPublish, ShouldBeFalse)
+				So(sourcesArg, ShouldResemble, []string{"fake1", "fake2", "fake3"})
+				So(len(whiteListArg), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When --label-whitelist flag is passed and set to some value", func() {
+			noPublish, sourcesArg, whiteListArg := argsParse(argv3)
+
+			Convey("whiteListArg is set to appropriate value and sourcesArg is set to default value", func() {
+				So(noPublish, ShouldBeFalse)
+				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate"})
+				So(whiteListArg, ShouldResemble, ".*rdt.*")
+			})
+		})
+
+		Convey("When --no-publish and --sources flag are passed and --sources flag is set to some value", func() {
+			noPublish, sourcesArg, whiteListArg := argsParse(argv4)
+
+			Convey("--no-publish is set and sourcesArg is set to appropriate values", func() {
+				So(noPublish, ShouldBeTrue)
+				So(sourcesArg, ShouldResemble, []string{"fake1", "fake2", "fake3"})
+				So(len(whiteListArg), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestConfigureParameters(t *testing.T) {
+	Convey("When configuring parameters for node feature discovery", t, func() {
+
+		Convey("When no sourcesArg and whiteListArg are passed", func() {
+			sourcesArg := []string{}
+			whiteListArg := ""
+			emptyRegexp, _ := regexp.Compile("")
+			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+
+			Convey("Error should not be produced", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("No sources or labelWhiteList are returned", func() {
+				So(len(sources), ShouldEqual, 0)
+				So(labelWhiteList, ShouldResemble, emptyRegexp)
+			})
+		})
+
+		Convey("When sourcesArg is passed", func() {
+			sourcesArg := []string{"fake"}
+			whiteListArg := ""
+			emptyRegexp, _ := regexp.Compile("")
+			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+
+			Convey("Error should not be produced", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Proper sources are returned", func() {
+				So(len(sources), ShouldEqual, 1)
+				So(sources[0], ShouldHaveSameTypeAs, fakeSource{})
+				So(labelWhiteList, ShouldResemble, emptyRegexp)
+			})
+		})
+
+		Convey("When invalid whiteListArg is passed", func() {
+			sourcesArg := []string{""}
+			whiteListArg := "*"
+			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+
+			Convey("Error is produced", func() {
+				So(sources, ShouldBeNil)
+				So(labelWhiteList, ShouldBeNil)
+				So(err, ShouldNotBeNil)
+			})
+		})
+
+		Convey("When valid whiteListArg is passed", func() {
+			sourcesArg := []string{""}
+			whiteListArg := ".*rdt.*"
+			expectRegexp, err := regexp.Compile(".*rdt.*")
+			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+
+			Convey("Error should not be produced", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Proper labelWhiteList is returned", func() {
+				So(len(sources), ShouldEqual, 0)
+				So(labelWhiteList, ShouldResemble, expectRegexp)
+			})
+		})
+	})
+}
+
+func TestCreateFeatureLabels(t *testing.T) {
+	Convey("When creating feature labels from the configured sources", t, func() {
+		Convey("When fake feature source is configured", func() {
+			emptyLabelWL, _ := regexp.Compile("")
+			fakeFeatureSource := FeatureSource(new(fakeSource))
+			sources := []FeatureSource{}
+			sources = append(sources, fakeFeatureSource)
+			labels := createFeatureLabels(sources, emptyLabelWL)
+
+			Convey("Proper fake labels are returned", func() {
+				So(len(labels), ShouldEqual, 4)
+				So(labels, ShouldContainKey, prefix+"-fake-fakefeature1")
+				So(labels, ShouldContainKey, prefix+"-fake-fakefeature2")
+				So(labels, ShouldContainKey, prefix+"-fake-fakefeature3")
+			})
+		})
+		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
+			emptyLabelWL, _ := regexp.Compile(".*rdt.*")
+			fakeFeatureSource := FeatureSource(new(fakeSource))
+			sources := []FeatureSource{}
+			sources = append(sources, fakeFeatureSource)
+			labels := createFeatureLabels(sources, emptyLabelWL)
+
+			Convey("fake labels are not returned", func() {
+				So(len(labels), ShouldEqual, 1)
+				So(labels, ShouldNotContainKey, prefix+"-fake-fakefeature1")
+				So(labels, ShouldNotContainKey, prefix+"-fake-fakefeature2")
+				So(labels, ShouldNotContainKey, prefix+"-fake-fakefeature3")
+			})
+		})
 	})
 }
 

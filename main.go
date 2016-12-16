@@ -70,6 +70,29 @@ func main() {
 		stderrLogger.Fatalf("main.version not set! Set -ldflags \"-X main.version `git describe --tags --dirty --always`\" during build or run.")
 	}
 
+	// Parse command-line arguments.
+	noPublish, sourcesArg, whiteListArg := argsParse(nil)
+
+	// Configure the parameters for feature discovery.
+	sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+	if err != nil {
+		stderrLogger.Fatalf("error occured while configuring parameters: %s", err.Error())
+	}
+
+	// Get the set of feature labels.
+	labels := createFeatureLabels(sources, labelWhiteList)
+
+	helper := APIHelpers(k8sHelpers{})
+	// Update the node with the feature labels.
+	err = updateNodeWithFeatureLabels(helper, noPublish, labels)
+	if err != nil {
+		stderrLogger.Fatalf("error occured while updating node with feature labels: %s", err.Error())
+	}
+}
+
+// argsParse parses the command line arguments passed to the program.
+// The argument argv is passed only for testing purposes.
+func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg string) {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
@@ -92,14 +115,20 @@ func main() {
 		ProgramName,
 	)
 
-	arguments, _ := docopt.Parse(usage, nil, true,
+	arguments, _ := docopt.Parse(usage, argv, true,
 		fmt.Sprintf("%s %s", ProgramName, version), false)
 
 	// Parse argument values as usable types.
-	noPublish := arguments["--no-publish"].(bool)
-	sourcesArg := strings.Split(arguments["--sources"].(string), ",")
-	whiteListArg := arguments["--label-whitelist"].(string)
+	noPublish = arguments["--no-publish"].(bool)
+	sourcesArg = strings.Split(arguments["--sources"].(string), ",")
+	whiteListArg = arguments["--label-whitelist"].(string)
 
+	return noPublish, sourcesArg, whiteListArg
+}
+
+// configureParameters returns all the variables required to perform feature
+// discovery based on command line arguments.
+func configureParameters(sourcesArg []string, whiteListArg string) (sources []FeatureSource, labelWhiteList *regexp.Regexp, err error) {
 	enabledSources := map[string]struct{}{}
 	for _, s := range sourcesArg {
 		enabledSources[strings.TrimSpace(s)] = struct{}{}
@@ -113,20 +142,27 @@ func main() {
 		fakeSource{},
 	}
 
-	sources := []FeatureSource{}
+	sources = []FeatureSource{}
 	for _, s := range allSources {
 		if _, enabled := enabledSources[s.Name()]; enabled {
 			sources = append(sources, s)
 		}
 	}
 
-	// compile whiteListArg regex
-	labelWhiteList, err := regexp.Compile(whiteListArg)
+	// Compile whiteListArg regex
+	labelWhiteList, err = regexp.Compile(whiteListArg)
 	if err != nil {
-		stderrLogger.Fatalf("Error parsing whitelist regex (%s): %s", whiteListArg, err)
+		stderrLogger.Printf("error parsing whitelist regex (%s): %s", whiteListArg, err)
+		return nil, nil, err
 	}
 
-	labels := Labels{}
+	return sources, labelWhiteList, nil
+}
+
+// createFeatureLabels returns the set of feature labels from the enabled
+// sources and the whitelist argument.
+func createFeatureLabels(sources []FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels) {
+	labels = Labels{}
 	// Add the version of this discovery code as a node label
 	versionLabel := fmt.Sprintf("%s/%s.version", Namespace, ProgramName)
 	labels[versionLabel] = version
@@ -148,21 +184,26 @@ func main() {
 			stdoutLogger.Printf("%s = %s", name, value)
 			// Skip if label doesn't match labelWhiteList
 			if !labelWhiteList.Match([]byte(name)) {
-				stderrLogger.Printf("%s does not match the whitelist (%s) and will not be published.", name, whiteListArg)
+				stderrLogger.Printf("%s does not match the whitelist (%s) and will not be published.", name, labelWhiteList.String())
 				continue
 			}
 			labels[name] = value
 		}
 	}
+	return labels
+}
 
-	// Update the node with the node labels, unless disabled via flags.
+// updateNodeWithFeatureLabels updates the node with the feature labels, unless
+// disabled via --no-publish flag.
+func updateNodeWithFeatureLabels(helper APIHelpers, noPublish bool, labels Labels) error {
 	if !noPublish {
-		helper := APIHelpers(k8sHelpers{})
 		err := advertiseFeatureLabels(helper, labels)
 		if err != nil {
-			stderrLogger.Fatalf("failed to advertise labels: %s", err.Error())
+			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
 // getFeatureLabels returns node labels for features discovered by the
