@@ -57,7 +57,7 @@ The current set of feature sources are the following:
 - [CPUID][cpuid] for x86 CPU details
 - [Intel Resource Director Technology][intel-rdt]
 - [Intel P-State driver][intel-pstate]
-- [Network][network]
+- Network
 
 ### Feature labels
 
@@ -116,7 +116,7 @@ such as restricting discovered features with the --label-whitelist option._
 
 | Feature name   | Description                                                                         |
 | :------------: | :---------------------------------------------------------------------------------: |
-| SRIOV          | Single Root Input/Output Virtualization (SR-IOV) enabled Network Interface Card
+| [SRIOV][sriov] | Single Root Input/Output Virtualization (SR-IOV) enabled Network Interface Card
 
 ## Getting started
 ### System requirements
@@ -137,7 +137,7 @@ repo that demonstrates how to deploy the job to unlabeled nodes.
 
 The discovery script will launch a job on each unlabeled node in the
 cluster. When the job runs, it contacts the Kubernetes API server to add labels
-to the node to advertise hardware features (initially, from `cpuid`, RDT ,p-state and network).
+to the node to advertise hardware features (initially, from `cpuid`, RDT, p-state and network).
 
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
@@ -234,7 +234,7 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
-[network]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
+[sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
 [docker-down]: https://docs.docker.com/engine/installation
 [golang-down]: https://golang.org/dl
 [gcc-down]: https://gcc.gnu.org
