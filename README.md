@@ -234,7 +234,7 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
-[sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html 
+[sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
 [docker-down]: https://docs.docker.com/engine/installation
 [golang-down]: https://golang.org/dl
 [gcc-down]: https://gcc.gnu.org
