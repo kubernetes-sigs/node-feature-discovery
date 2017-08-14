@@ -126,7 +126,7 @@ repo that demonstrates how to deploy the job to unlabeled nodes.
 ./label-nodes.sh
 ```
 
-The discovery script will launch a job on each each unlabeled node in the
+The discovery script will launch a job on each unlabeled node in the
 cluster. When the job runs, it contacts the Kubernetes API server to add labels
 to the node to advertise hardware features (initially, from `cpuid`, RDT and p-state).
 
