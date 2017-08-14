@@ -76,7 +76,7 @@ func main() {
 	// Configure the parameters for feature discovery.
 	sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
 	if err != nil {
-		stderrLogger.Fatalf("error occured while configuring parameters: %s", err.Error())
+		stderrLogger.Fatalf("error occurred while configuring parameters: %s", err.Error())
 	}
 
 	// Get the set of feature labels.
@@ -86,7 +86,7 @@ func main() {
 	// Update the node with the feature labels.
 	err = updateNodeWithFeatureLabels(helper, noPublish, labels)
 	if err != nil {
-		stderrLogger.Fatalf("error occured while updating node with feature labels: %s", err.Error())
+		stderrLogger.Fatalf("error occurred while updating node with feature labels: %s", err.Error())
 	}
 }
 
@@ -211,7 +211,7 @@ func updateNodeWithFeatureLabels(helper APIHelpers, noPublish bool, labels Label
 func getFeatureLabels(source FeatureSource) (labels Labels, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			stderrLogger.Printf("panic occured during discovery of source [%s]: %v", source.Name(), r)
+			stderrLogger.Printf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
 			err = fmt.Errorf("%v", r)
 		}
 	}()
