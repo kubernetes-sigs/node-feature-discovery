@@ -18,7 +18,7 @@ const (
 	ProgramName = "node-feature-discovery"
 
 	// Namespace is the prefix for all published labels.
-	Namespace = "node.alpha.kubernetes-incubator.io"
+	Namespace = "nfd.alpha.kubernetes.io"
 
 	// PodNameEnv is the environment variable that contains this pod's name.
 	PodNameEnv = "POD_NAME"
