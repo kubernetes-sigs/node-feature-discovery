@@ -25,7 +25,7 @@ import (
 
 const (
 	// RDTBin is the path to RDT detection helpers.
-	RDTBin = "/go/src/github.com/kubernetes-incubator/node-feature-discovery/rdt-discovery"
+	RDTBin = "/go/src/k8s.io/node-feature-discovery/rdt-discovery"
 )
 
 // Source implements FeatureSource.

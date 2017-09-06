@@ -1,22 +1,17 @@
-package: github.com/kubernetes-incubator/node-feature-discovery
+package: k8s.io/node-feature-discovery
 import:
-- package: github.com/docopt/docopt-go
-  version: ^0.6.2
+- package: github.com/golang/glog
 - package: github.com/klauspost/cpuid
-  version: ^1.0.0
 - package: github.com/stretchr/testify
-  version: ^1.1.4
   subpackages:
   - mock
 - package: k8s.io/client-go
-  version: ^2.0.0-alpha.0
   subpackages:
-  - 1.4/kubernetes
-  - 1.4/pkg/api
-  - 1.4/rest
+  - kubernetes
+  - pkg/api/v1
+  - rest
 testImport:
 - package: github.com/smartystreets/goconvey
-  version: ^1.6.2
   subpackages:
   - convey
 - package: github.com/vektra/errors
