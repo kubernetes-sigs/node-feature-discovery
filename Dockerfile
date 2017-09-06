@@ -26,9 +26,9 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
 
 # Build node feature discovery and set it as entrypoint.
-ADD . /go/src/github.com/kubernetes-incubator/node-feature-discovery
+ADD . /go/src/k8s.io/node-feature-discovery
 
-WORKDIR /go/src/github.com/kubernetes-incubator/node-feature-discovery
+WORKDIR /go/src/k8s.io/node-feature-discovery
 
 ARG NFD_VERSION
 RUN git clone --depth 1 https://github.com/01org/intel-cmt-cat.git
@@ -38,6 +38,6 @@ RUN go get github.com/Masterminds/glide
 RUN glide install
 RUN go install \
   -ldflags "-s -w -X main.version=$NFD_VERSION" \
-  github.com/kubernetes-incubator/node-feature-discovery
+  k8s.io/node-feature-discovery
 
 ENTRYPOINT ["/go/bin/node-feature-discovery"]

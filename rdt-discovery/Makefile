@@ -1,6 +1,6 @@
 CC=gcc
 LIBDIR=/usr/local/lib
-INCDIR=/go/src/github.com/kubernetes-incubator/node-feature-discovery/intel-cmt-cat/lib/
+INCDIR=/go/src/k8s.io/node-feature-discovery/intel-cmt-cat/lib/
 
 LDFLAGS=-L$(LIBDIR)
 LDLIBS=-lpqos
