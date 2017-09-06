@@ -34,8 +34,7 @@ ARG NFD_VERSION
 RUN git clone --depth 1 https://github.com/01org/intel-cmt-cat.git
 RUN cd intel-cmt-cat/lib; make install
 RUN cd rdt-discovery; make
-RUN go get github.com/Masterminds/glide
-RUN glide install
+RUN go get github.com/tools/godep
 RUN go install \
   -ldflags "-s -w -X main.version=$NFD_VERSION" \
   k8s.io/node-feature-discovery

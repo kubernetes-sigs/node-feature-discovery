@@ -1,6 +1,5 @@
 node-feature-discovery
 node-feature-discovery-job.json
-vendor/
 demo/helper-scripts/*.pdf
 demo/helper-scripts/*.log
 intel-cmt-cat/
