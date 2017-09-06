@@ -7,10 +7,16 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/docopt/docopt-go"
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/pstate"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
 	k8sclient "k8s.io/client-go/kubernetes"
 	api "k8s.io/client-go/pkg/api/v1"
 	restclient "k8s.io/client-go/rest"
+	"github.com/docopt/docopt-go"
 )
 
 const (
@@ -128,21 +134,22 @@ func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg
 
 // configureParameters returns all the variables required to perform feature
 // discovery based on command line arguments.
-func configureParameters(sourcesArg []string, whiteListArg string) (sources []FeatureSource, labelWhiteList *regexp.Regexp, err error) {
+func configureParameters(sourcesArg []string, whiteListArg string) (sources []source.FeatureSource, labelWhiteList *regexp.Regexp, err error) {
 	enabledSources := map[string]struct{}{}
 	for _, s := range sourcesArg {
 		enabledSources[strings.TrimSpace(s)] = struct{}{}
 	}
 
 	// Configure feature sources.
-	allSources := []FeatureSource{
-		cpuidSource{},
-		rdtSource{},
-		pstateSource{},
-		fakeSource{},
+	allSources := []source.FeatureSource{
+		cpuid.Source{},
+		rdt.Source{},
+		pstate.Source{},
+		fake.Source{},
+		panic_fake.Source{},
 	}
 
-	sources = []FeatureSource{}
+	sources = []source.FeatureSource{}
 	for _, s := range allSources {
 		if _, enabled := enabledSources[s.Name()]; enabled {
 			sources = append(sources, s)
@@ -161,7 +168,7 @@ func configureParameters(sourcesArg []string, whiteListArg string) (sources []Fe
 
 // createFeatureLabels returns the set of feature labels from the enabled
 // sources and the whitelist argument.
-func createFeatureLabels(sources []FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels) {
+func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels) {
 	labels = Labels{}
 	// Add the version of this discovery code as a node label
 	versionLabel := fmt.Sprintf("%s/%s.version", Namespace, ProgramName)
@@ -208,7 +215,7 @@ func updateNodeWithFeatureLabels(helper APIHelpers, noPublish bool, labels Label
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source FeatureSource) (labels Labels, err error) {
+func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stderrLogger.Printf("panic occurred during discovery of source [%s]: %v", source.Name(), r)

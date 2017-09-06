@@ -5,6 +5,9 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vektra/errors"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -20,7 +23,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		for _, f := range fakeFeatures {
 			fakeFeatureLabels[fmt.Sprintf("%s-testSource-%s", prefix, f)] = "true"
 		}
-		fakeFeatureSource := FeatureSource(mockFeatureSource)
+		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
 
 		Convey("When I successfully get the labels from the mock source", func() {
 			mockFeatureSource.On("Name").Return(fakeFeatureSourceName)
@@ -194,7 +197,7 @@ func TestConfigureParameters(t *testing.T) {
 			})
 			Convey("Proper sources are returned", func() {
 				So(len(sources), ShouldEqual, 1)
-				So(sources[0], ShouldHaveSameTypeAs, fakeSource{})
+				So(sources[0], ShouldHaveSameTypeAs, fake.Source{})
 				So(labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
@@ -232,8 +235,8 @@ func TestCreateFeatureLabels(t *testing.T) {
 	Convey("When creating feature labels from the configured sources", t, func() {
 		Convey("When fake feature source is configured", func() {
 			emptyLabelWL, _ := regexp.Compile("")
-			fakeFeatureSource := FeatureSource(new(fakeSource))
-			sources := []FeatureSource{}
+			fakeFeatureSource := source.FeatureSource(new(fake.Source))
+			sources := []source.FeatureSource{}
 			sources = append(sources, fakeFeatureSource)
 			labels := createFeatureLabels(sources, emptyLabelWL)
 
@@ -246,8 +249,8 @@ func TestCreateFeatureLabels(t *testing.T) {
 		})
 		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
 			emptyLabelWL, _ := regexp.Compile(".*rdt.*")
-			fakeFeatureSource := FeatureSource(new(fakeSource))
-			sources := []FeatureSource{}
+			fakeFeatureSource := source.FeatureSource(new(fake.Source))
+			sources := []source.FeatureSource{}
 			sources = append(sources, fakeFeatureSource)
 			labels := createFeatureLabels(sources, emptyLabelWL)
 
@@ -326,7 +329,7 @@ func TestRemoveLabels(t *testing.T) {
 
 func TestGetFeatureLabels(t *testing.T) {
 	Convey("When I get feature labels and panic occurs during discovery of a feature source", t, func() {
-		fakePanicFeatureSource := FeatureSource(new(fakePanicSource))
+		fakePanicFeatureSource := source.FeatureSource(new(panic_fake.Source))
 
 		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource)
 		Convey("No label is returned", func() {
