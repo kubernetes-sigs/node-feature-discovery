@@ -5,13 +5,13 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/kubernetes-incubator/node-feature-discovery/source"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vektra/errors"
 	k8sclient "k8s.io/client-go/kubernetes"
 	api "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/node-feature-discovery/source"
+	"k8s.io/node-feature-discovery/source/fake"
+	"k8s.io/node-feature-discovery/source/panic_fake"
 )
 
 func TestDiscoveryWithMockSources(t *testing.T) {

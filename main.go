@@ -7,16 +7,16 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kubernetes-incubator/node-feature-discovery/source"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/pstate"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
+	"github.com/docopt/docopt-go"
 	k8sclient "k8s.io/client-go/kubernetes"
 	api "k8s.io/client-go/pkg/api/v1"
 	restclient "k8s.io/client-go/rest"
-	"github.com/docopt/docopt-go"
+	"k8s.io/node-feature-discovery/source"
+	"k8s.io/node-feature-discovery/source/cpuid"
+	"k8s.io/node-feature-discovery/source/fake"
+	"k8s.io/node-feature-discovery/source/panic_fake"
+	"k8s.io/node-feature-discovery/source/pstate"
+	"k8s.io/node-feature-discovery/source/rdt"
 )
 
 const (
