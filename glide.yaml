@@ -9,11 +9,12 @@ import:
   subpackages:
   - mock
 - package: k8s.io/client-go
-  version: ^2.0.0-alpha.0
-  subpackages:
-  - 1.4/kubernetes
-  - 1.4/pkg/api
-  - 1.4/rest
+#  version: ^2.0.0-alpha.0
+#  subpackages:
+#  - 1.4/kubernetes
+#  - 1.4/pkg/api
+#  - 1.4/rest
+  version: v5.0.1
 testImport:
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2

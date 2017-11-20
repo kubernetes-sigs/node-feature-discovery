@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "batch/v1",
   "kind": "Job",
   "metadata": {
     "labels": {
@@ -17,6 +17,11 @@
         }
       },
       "spec": {
+<<<<<<< HEAD
+	"hostNetwork": true,
+=======
+        "hostNetwork": true,
+>>>>>>> SR-IOV capability discovery in NFD : code update after PR review
         "containers": [
           {
             "env": [
@@ -41,7 +46,7 @@
             "name": "node-feature-discovery",
             "ports": [
               {
-                "containerPort": 2233,
+                "containerPort": 7156,
                 "hostPort": 7156
               }
             ]
