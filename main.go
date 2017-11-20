@@ -10,6 +10,7 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/network"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/pstate"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
@@ -145,6 +146,7 @@ func configureParameters(sourcesArg []string, whiteListArg string) (sources []so
 		cpuid.Source{},
 		rdt.Source{},
 		pstate.Source{},
+		network.Source{},
 		fake.Source{},
 		panic_fake.Source{},
 	}

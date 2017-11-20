@@ -17,7 +17,7 @@
         }
       },
       "spec": {
-        "hostNetwork": true,
+	"hostNetwork": true,
         "containers": [
           {
             "env": [
