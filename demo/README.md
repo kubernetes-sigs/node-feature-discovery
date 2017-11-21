@@ -78,7 +78,7 @@ Following the above steps will produce the performance and normalized performanc
 ```
 
 ### Source for the Demo Images
-The Dockerfiles for the demo images can be found in [docker-images](docker-images/). The Dockerfile for the PARSEC demo is [Dockerfile-PARSEC](docker-images/Dockerfile-PARSEC) and the CloverLeaf demo is [Dockerfile-CloverLeaf](docker-images/Dockerfile-CloverLeaf). The demo images are hosted in `quay.io` under the `kubernetes_incubator` organization. 
+The Dockerfiles for the demo images can be found in [docker-images](docker-images/). The Dockerfile for the PARSEC demo is [Dockerfile-PARSEC](docker-images/Dockerfile-PARSEC) and the CloverLeaf demo is [Dockerfile-CloverLeaf](docker-images/Dockerfile-CloverLeaf). The demo images are hosted in `quay.io` under the `kubernetes` organization. 
 
 <!-- Links -->
 [parsec]: http://parsec.cs.princeton.edu/

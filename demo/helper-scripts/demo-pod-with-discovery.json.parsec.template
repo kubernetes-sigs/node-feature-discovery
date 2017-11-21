@@ -7,7 +7,7 @@
     "spec": {
         "containers": [
             {
-                "image": "quay.io/kubernetes_incubator/node-feature-discovery-APP",
+                "image": "quay.io/kubernetes/node-feature-discovery-APP",
                 "name": "demo-container-parsec-NUM",
                 "ports": [
                     {
