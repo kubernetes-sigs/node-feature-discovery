@@ -35,7 +35,7 @@ RUN git clone --depth 1 https://github.com/01org/intel-cmt-cat.git
 RUN cd intel-cmt-cat/lib; make install
 RUN cd rdt-discovery; make
 RUN go get github.com/Masterminds/glide
-RUN glide install
+RUN glide install --strip-vendor
 RUN go install \
   -ldflags "-s -w -X main.version=$NFD_VERSION" \
   github.com/kubernetes-incubator/node-feature-discovery
