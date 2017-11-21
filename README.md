@@ -161,7 +161,7 @@ docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
 **Change the job spec to use your custom image (optional):**
 
 To use your published image from the step above instead of the
-`quay.io/kubernetes_incubator/node-feature-discovery` image, edit line 40 in the file
+`quay.io/kubernetes/node-feature-discovery` image, edit line 40 in the file
 [node-feature-discovery-job.json.template](node-feature-discovery-job.json.template)
 to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
 
