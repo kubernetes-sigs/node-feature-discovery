@@ -41,7 +41,7 @@ node-feature-discovery.
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate]
+                              [Default: cpuid,rdt,pstate,network]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -57,6 +57,7 @@ The current set of feature sources are the following:
 - [CPUID][cpuid] for x86 CPU details
 - [Intel Resource Director Technology][intel-rdt]
 - [Intel P-State driver][intel-pstate]
+- Network
 
 ### Feature labels
 
@@ -77,7 +78,8 @@ the only label value published for features is the string `"true"`._
   "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.1.0",
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true"
+  "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true"
 }
 ```
 
@@ -110,6 +112,12 @@ such as restricting discovered features with the --label-whitelist option._
 | SSE4.2         | Streaming SIMD Extensions 4.2 (SSE4.2)
 | SGX            | Software Guard Extensions (SGX)
 
+### Network Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| [SRIOV][sriov] | Single Root Input/Output Virtualization (SR-IOV) enabled Network Interface Card
+
 ## Getting started
 ### System requirements
 
@@ -129,7 +137,7 @@ repo that demonstrates how to deploy the job to unlabeled nodes.
 
 The discovery script will launch a job on each unlabeled node in the
 cluster. When the job runs, it contacts the Kubernetes API server to add labels
-to the node to advertise hardware features (initially, from `cpuid`, RDT and p-state).
+to the node to advertise hardware features (initially, from `cpuid`, RDT, p-state and network).
 
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
@@ -226,6 +234,7 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
+[sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
 [docker-down]: https://docs.docker.com/engine/installation
 [golang-down]: https://golang.org/dl
 [gcc-down]: https://gcc.gnu.org
