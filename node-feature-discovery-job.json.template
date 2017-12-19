@@ -8,7 +8,8 @@
     "name": "node-feature-discovery"
   },
   "spec": {
-    "completions": COMPLETION_COUNT,
+    "completions": COMPLETION_COUNT
+,
     "parallelism": PARALLELISM_COUNT,
     "template": {
       "metadata": {
@@ -17,7 +18,7 @@
         }
       },
       "spec": {
-	"hostNetwork": true,
+        "hostNetwork": true,
         "containers": [
           {
             "env": [
@@ -39,13 +40,30 @@
               }
             ],
             "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0",
+            "securityContext": {
+              "privileged": true
+            },
             "name": "node-feature-discovery",
+            "volumeMounts": [
+              {
+                "mountPath": "/sys",
+                "name": "efi-volume"
+              }
+            ],
             "ports": [
               {
                 "containerPort": 7156,
                 "hostPort": 7156
               }
             ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "efi-volume",
+            "hostPath": {
+              "path": "/sys"
+            }
           }
         ],
         "restartPolicy": "Never"

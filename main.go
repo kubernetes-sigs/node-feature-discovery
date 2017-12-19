@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/docopt/docopt-go"
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
@@ -14,10 +15,10 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/pstate"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/security"
 	k8sclient "k8s.io/client-go/kubernetes"
 	api "k8s.io/client-go/pkg/api/v1"
 	restclient "k8s.io/client-go/rest"
-	"github.com/docopt/docopt-go"
 )
 
 const (
@@ -111,7 +112,7 @@ func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate,network]
+                              [Default: cpuid,rdt,pstate,network,security]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -147,6 +148,7 @@ func configureParameters(sourcesArg []string, whiteListArg string) (sources []so
 		rdt.Source{},
 		pstate.Source{},
 		network.Source{},
+		security.Source{},
 		fake.Source{},
 		panic_fake.Source{},
 	}

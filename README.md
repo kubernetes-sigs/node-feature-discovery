@@ -41,7 +41,7 @@ node-feature-discovery.
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate,network]
+                              [Default: cpuid,rdt,pstate,network,security]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -58,6 +58,7 @@ The current set of feature sources are the following:
 - [Intel Resource Director Technology][intel-rdt]
 - [Intel P-State driver][intel-pstate]
 - Network
+- Security
 
 ### Feature labels
 
@@ -79,7 +80,8 @@ the only label value published for features is the string `"true"`._
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true"
+  "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-security<feature-name>": "true"
 }
 ```
 
@@ -118,8 +120,15 @@ such as restricting discovered features with the --label-whitelist option._
 | :------------: | :---------------------------------------------------------------------------------: |
 | [SRIOV][sriov] | Single Root Input/Output Virtualization (SR-IOV) enabled Network Interface Card
 
-## Getting started
-### System requirements
+###  Security Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| [BootGuard][bootguard]         | A hardware-based boot integrity protection mechanism (New feature on Purley).
+| [UEFI Secure Boot][secureboot]  | Boot Firmware verification and authorization of OS Loader/Kernel components
+
+# Getting started
+## System requirements
 
 1. Linux (x86_64)
 1. [kubectl] [kubectl-setup] (properly set up and configured to work with your
@@ -228,7 +237,7 @@ This is open source software released under the [Apache 2.0 License](LICENSE).
 
 ## Demo
 
-A demo on the benefits of using node feature discovery can be found in [demo](demo/). 
+A demo on the benefits of using node feature discovery can be found in [demo](demo/).
 
 <!-- Links -->
 [cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
@@ -240,3 +249,5 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [gcc-down]: https://gcc.gnu.org
 [kubectl-setup]: https://coreos.com/kubernetes/docs/latest/configure-kubectl.html
 [node-sel]: http://kubernetes.io/docs/user-guide/node-selection
+[secureboot]: https://github.com/advanced-threat-research/firmware-security-training/blob/master/BIOS-UEFI-Security.2-BootkitsSecureBoot.pdf
+[bootguard]: https://github.com/advanced-threat-research/firmware-security-training/blob/master/BIOS-UEFI-Security.6-Mitigations.pdf
