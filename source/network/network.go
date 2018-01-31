@@ -19,11 +19,11 @@ package network
 import (
 	"bytes"
 	"fmt"
+	"github.com/golang/glog"
 	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
-	"github.com/golang/glog"
 )
 
 // Source implements FeatureSource.
