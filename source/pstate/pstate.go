@@ -24,6 +24,7 @@ import (
 // Source implements FeatureSource.
 type Source struct{}
 
+// Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "pstate" }
 
 // Discover returns feature names for p-state related features such as turbo boost.

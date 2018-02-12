@@ -29,9 +29,10 @@ import (
 // Source implements FeatureSource.
 type Source struct{}
 
+// Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "network" }
 
-// returns feature names sriov-configured and sriov if SR-IOV capable NICs are present and/or SR-IOV virtual functions are configured on the node
+// Discover returns feature names sriov-configured and sriov if SR-IOV capable NICs are present and/or SR-IOV virtual functions are configured on the node
 func (s Source) Discover() ([]string, error) {
 	features := []string{}
 	netInterfaces, err := net.Interfaces()
