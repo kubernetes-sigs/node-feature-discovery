@@ -28,12 +28,8 @@ const (
 	// Namespace is the prefix for all published labels.
 	Namespace = "node.alpha.kubernetes-incubator.io"
 
-	// PodNameEnv is the environment variable that contains this pod's name.
-	PodNameEnv = "POD_NAME"
-
-	// PodNamespaceEnv is the environment variable that contains this pod's
-	// namespace.
-	PodNamespaceEnv = "POD_NAMESPACE"
+	// NodeNameEnv is the environment variable that contains this node's name.
+	NodeNameEnv = "NODE_NAME"
 )
 
 var (
@@ -286,20 +282,11 @@ func (h k8sHelpers) GetClient() (*k8sclient.Clientset, error) {
 
 func (h k8sHelpers) GetNode(cli *k8sclient.Clientset) (*api.Node, error) {
 	// Get the pod name and pod namespace from the env variables
-	podName := os.Getenv(PodNameEnv)
-	podns := os.Getenv(PodNamespaceEnv)
-	stdoutLogger.Printf("%s: %s", PodNameEnv, podName)
-	stdoutLogger.Printf("%s: %s", PodNamespaceEnv, podns)
+	nodeName := os.Getenv(NodeNameEnv)
+	stdoutLogger.Printf("%s: %s", NodeNameEnv, nodeName)
 
-	// Get the pod object using the pod name and pod namespace
-	pod, err := cli.Core().Pods(podns).Get(podName, meta_v1.GetOptions{})
-	if err != nil {
-		stderrLogger.Printf("can't get pods: %s", err.Error())
-		return nil, err
-	}
-
-	// Get the node object using the pod name and pod namespace
-	node, err := cli.Core().Nodes().Get(pod.Spec.NodeName, meta_v1.GetOptions{})
+	// Get the node object using node name
+	node, err := cli.Core().Nodes().Get(nodeName, meta_v1.GetOptions{})
 	if err != nil {
 		stderrLogger.Printf("can't get node: %s", err.Error())
 		return nil, err
