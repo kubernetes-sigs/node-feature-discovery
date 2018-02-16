@@ -5,6 +5,8 @@ ADD . /go/src/github.com/kubernetes-incubator/node-feature-discovery
 
 WORKDIR /go/src/github.com/kubernetes-incubator/node-feature-discovery
 
+ENV CMT_CAT_SRCDIR="/go/src/github.com/kubernetes-incubator/node-feature-discovery/intel-cmt-cat"
+
 ARG NFD_VERSION
 
 RUN case $(dpkg --print-architecture) in \
