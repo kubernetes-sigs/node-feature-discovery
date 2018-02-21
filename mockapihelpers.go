@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/stretchr/testify/mock"
+	api "k8s.io/api/core/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
-	api "k8s.io/client-go/pkg/api/v1"
 )
 
 type MockAPIHelpers struct {

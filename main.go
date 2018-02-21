@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/docopt/docopt-go"
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
@@ -14,10 +15,10 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/pstate"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
+	api "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
-	api "k8s.io/client-go/pkg/api/v1"
 	restclient "k8s.io/client-go/rest"
-	"github.com/docopt/docopt-go"
 )
 
 const (
@@ -291,14 +292,14 @@ func (h k8sHelpers) GetNode(cli *k8sclient.Clientset) (*api.Node, error) {
 	stdoutLogger.Printf("%s: %s", PodNamespaceEnv, podns)
 
 	// Get the pod object using the pod name and pod namespace
-	pod, err := cli.Core().Pods(podns).Get(podName)
+	pod, err := cli.Core().Pods(podns).Get(podName, meta_v1.GetOptions{})
 	if err != nil {
 		stderrLogger.Printf("can't get pods: %s", err.Error())
 		return nil, err
 	}
 
 	// Get the node object using the pod name and pod namespace
-	node, err := cli.Core().Nodes().Get(pod.Spec.NodeName)
+	node, err := cli.Core().Nodes().Get(pod.Spec.NodeName, meta_v1.GetOptions{})
 	if err != nil {
 		stderrLogger.Printf("can't get node: %s", err.Error())
 		return nil, err
