@@ -131,7 +131,7 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("noPublish is set and sourcesArg is set to the default value", func() {
 				So(noPublish, ShouldBeTrue)
-				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate"})
+				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate", "network"})
 				So(len(whiteListArg), ShouldEqual, 0)
 			})
 		})
@@ -151,7 +151,7 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("whiteListArg is set to appropriate value and sourcesArg is set to default value", func() {
 				So(noPublish, ShouldBeFalse)
-				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate"})
+				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate", "network"})
 				So(whiteListArg, ShouldResemble, ".*rdt.*")
 			})
 		})
