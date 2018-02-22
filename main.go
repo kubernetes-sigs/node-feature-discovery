@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/docopt/docopt-go"
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
@@ -75,6 +76,7 @@ type APIHelpers interface {
 type Args struct {
 	labelWhiteList string
 	noPublish      bool
+	oneshot        bool
 	sources        []string
 }
 
@@ -93,14 +95,23 @@ func main() {
 		stderrLogger.Fatalf("error occurred while configuring parameters: %s", err.Error())
 	}
 
-	// Get the set of feature labels.
-	labels := createFeatureLabels(enabledSources, labelWhiteList)
-
 	helper := APIHelpers(k8sHelpers{})
-	// Update the node with the feature labels.
-	err = updateNodeWithFeatureLabels(helper, args.noPublish, labels)
-	if err != nil {
-		stderrLogger.Fatalf("error occurred while updating node with feature labels: %s", err.Error())
+
+	for {
+		// Get the set of feature labels.
+		labels := createFeatureLabels(enabledSources, labelWhiteList)
+
+		// Update the node with the feature labels.
+		err = updateNodeWithFeatureLabels(helper, args.noPublish, labels)
+		if err != nil {
+			stderrLogger.Fatalf("error occurred while updating node with feature labels: %s", err.Error())
+		}
+
+		if args.oneshot {
+			break
+		}
+
+		time.Sleep(60 * time.Second)
 	}
 }
 
@@ -110,7 +121,7 @@ func argsParse(argv []string) (args Args) {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
-  %s [--no-publish --sources=<sources> --label-whitelist=<pattern>]
+  %s [--no-publish --sources=<sources> --label-whitelist=<pattern> --oneshot]
   %s -h | --help
   %s --version
 
@@ -122,7 +133,8 @@ func argsParse(argv []string) (args Args) {
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
-                              publish to the Kubernetes API server. [Default: ]`,
+                              publish to the Kubernetes API server. [Default: ]
+  --oneshot                   Label once and exit.`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -136,6 +148,7 @@ func argsParse(argv []string) (args Args) {
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.sources = strings.Split(arguments["--sources"].(string), ",")
 	args.labelWhiteList = arguments["--label-whitelist"].(string)
+	args.oneshot = arguments["--oneshot"].(bool)
 
 	return args
 }

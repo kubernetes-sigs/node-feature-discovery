@@ -32,6 +32,7 @@
             ],
             "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0",
             "name": "node-feature-discovery",
+            "args": ["--oneshot"],
             "ports": [
               {
                 "containerPort": 7156,

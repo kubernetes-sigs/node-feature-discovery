@@ -33,7 +33,7 @@ This project uses GitHub [milestones](https://github.com/kubernetes-incubator/no
 node-feature-discovery.
 
   Usage:
-  node-feature-discovery [--no-publish --sources=<sources> --label-whitelist=<pattern>]
+  node-feature-discovery [--no-publish --sources=<sources> --label-whitelist=<pattern> --oneshot]
   node-feature-discovery -h | --help
   node-feature-discovery --version
 
@@ -46,6 +46,7 @@ node-feature-discovery.
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
                               publish to the Kubernetes API server. [Default: ]
+  --oneshot                   Label once and exit.
 ```
 
 ## Feature discovery
