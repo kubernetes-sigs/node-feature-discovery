@@ -171,8 +171,20 @@ such as restricting discovered features with the --label-whitelist option._
 
 ### Usage
 
-Feature discovery is done as a one-shot job. There is an example script in this
-repo that demonstrates how to deploy the job to unlabeled nodes.
+Feature discovery is preferably run as a Kubernetes DaemonSet. There is an
+example spec that can be used as a template, or, as is when just trying out the
+service:
+```
+kubectl create -f node-feature-discovery-daemonset.json.template
+```
+
+When run as a daemonset, nodes are re-labeled at an interval specified using
+the `--sleep-interval` option. In the [template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.json.template#L38) the default interval is set to 60s
+which is also the default when no `--sleep-interval` is specified.
+
+Feature discovery can alternatively be configured as a one-shot job. There is
+an example script in this repo that demonstrates how to deploy the job to
+unlabeled nodes.
 
 ```
 ./label-nodes.sh
