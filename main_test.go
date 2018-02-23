@@ -128,42 +128,42 @@ func TestArgsParse(t *testing.T) {
 		argv4 := []string{"--no-publish", "--sources=fake1,fake2,fake3"}
 
 		Convey("When --no-publish flag is passed", func() {
-			noPublish, sourcesArg, whiteListArg := argsParse(argv1)
+			args := argsParse(argv1)
 
-			Convey("noPublish is set and sourcesArg is set to the default value", func() {
-				So(noPublish, ShouldBeTrue)
-				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate", "memory", "network", "storage", "selinux"})
-				So(len(whiteListArg), ShouldEqual, 0)
+			Convey("noPublish is set and args.sources is set to the default value", func() {
+				So(args.noPublish, ShouldBeTrue)
+				So(args.sources, ShouldResemble, []string{"cpuid", "rdt", "pstate", "memory", "network", "storage", "selinux"})
+				So(len(args.labelWhiteList), ShouldEqual, 0)
 			})
 		})
 
 		Convey("When --sources flag is passed and set to some values", func() {
-			noPublish, sourcesArg, whiteListArg := argsParse(argv2)
+			args := argsParse(argv2)
 
-			Convey("sourcesArg is set to appropriate values", func() {
-				So(noPublish, ShouldBeFalse)
-				So(sourcesArg, ShouldResemble, []string{"fake1", "fake2", "fake3"})
-				So(len(whiteListArg), ShouldEqual, 0)
+			Convey("args.sources is set to appropriate values", func() {
+				So(args.noPublish, ShouldBeFalse)
+				So(args.sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
+				So(len(args.labelWhiteList), ShouldEqual, 0)
 			})
 		})
 
 		Convey("When --label-whitelist flag is passed and set to some value", func() {
-			noPublish, sourcesArg, whiteListArg := argsParse(argv3)
+			args := argsParse(argv3)
 
-			Convey("whiteListArg is set to appropriate value and sourcesArg is set to default value", func() {
-				So(noPublish, ShouldBeFalse)
-				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate", "memory", "network", "storage","selinux"})
-				So(whiteListArg, ShouldResemble, ".*rdt.*")
+			Convey("args.labelWhiteList is set to appropriate value and args.sources is set to default value", func() {
+				So(args.noPublish, ShouldBeFalse)
+				So(args.sources, ShouldResemble, []string{"cpuid", "rdt", "pstate", "memory", "network", "storage", "selinux"})
+				So(args.labelWhiteList, ShouldResemble, ".*rdt.*")
 			})
 		})
 
 		Convey("When --no-publish and --sources flag are passed and --sources flag is set to some value", func() {
-			noPublish, sourcesArg, whiteListArg := argsParse(argv4)
+			args := argsParse(argv4)
 
-			Convey("--no-publish is set and sourcesArg is set to appropriate values", func() {
-				So(noPublish, ShouldBeTrue)
-				So(sourcesArg, ShouldResemble, []string{"fake1", "fake2", "fake3"})
-				So(len(whiteListArg), ShouldEqual, 0)
+			Convey("--no-publish is set and args.sources is set to appropriate values", func() {
+				So(args.noPublish, ShouldBeTrue)
+				So(args.sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
+				So(len(args.labelWhiteList), ShouldEqual, 0)
 			})
 		})
 	})
@@ -172,60 +172,60 @@ func TestArgsParse(t *testing.T) {
 func TestConfigureParameters(t *testing.T) {
 	Convey("When configuring parameters for node feature discovery", t, func() {
 
-		Convey("When no sourcesArg and whiteListArg are passed", func() {
-			sourcesArg := []string{}
-			whiteListArg := ""
+		Convey("When no sourcesWhiteList and labelWhiteListStr are passed", func() {
+			sourcesWhiteList := []string{}
+			labelWhiteListStr := ""
 			emptyRegexp, _ := regexp.Compile("")
-			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error should not be produced", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("No sources or labelWhiteList are returned", func() {
-				So(len(sources), ShouldEqual, 0)
+			Convey("No sourcesWhiteList or labelWhiteList are returned", func() {
+				So(len(enabledSources), ShouldEqual, 0)
 				So(labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("When sourcesArg is passed", func() {
-			sourcesArg := []string{"fake"}
-			whiteListArg := ""
+		Convey("When sourcesWhiteList is passed", func() {
+			sourcesWhiteList := []string{"fake"}
+			labelWhiteListStr := ""
 			emptyRegexp, _ := regexp.Compile("")
-			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error should not be produced", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("Proper sources are returned", func() {
-				So(len(sources), ShouldEqual, 1)
-				So(sources[0], ShouldHaveSameTypeAs, fake.Source{})
+			Convey("Proper sourcesWhiteList are returned", func() {
+				So(len(enabledSources), ShouldEqual, 1)
+				So(enabledSources[0], ShouldHaveSameTypeAs, fake.Source{})
 				So(labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("When invalid whiteListArg is passed", func() {
-			sourcesArg := []string{""}
-			whiteListArg := "*"
-			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+		Convey("When invalid labelWhiteListStr is passed", func() {
+			sourcesWhiteList := []string{""}
+			labelWhiteListStr := "*"
+			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error is produced", func() {
-				So(sources, ShouldBeNil)
+				So(enabledSources, ShouldBeNil)
 				So(labelWhiteList, ShouldBeNil)
 				So(err, ShouldNotBeNil)
 			})
 		})
 
-		Convey("When valid whiteListArg is passed", func() {
-			sourcesArg := []string{""}
-			whiteListArg := ".*rdt.*"
+		Convey("When valid labelWhiteListStr is passed", func() {
+			sourcesWhiteList := []string{""}
+			labelWhiteListStr := ".*rdt.*"
 			expectRegexp, err := regexp.Compile(".*rdt.*")
-			sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error should not be produced", func() {
 				So(err, ShouldBeNil)
 			})
 			Convey("Proper labelWhiteList is returned", func() {
-				So(len(sources), ShouldEqual, 0)
+				So(len(enabledSources), ShouldEqual, 0)
 				So(labelWhiteList, ShouldResemble, expectRegexp)
 			})
 		})
