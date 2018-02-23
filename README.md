@@ -33,7 +33,8 @@ This project uses GitHub [milestones](https://github.com/kubernetes-incubator/no
 node-feature-discovery.
 
   Usage:
-  node-feature-discovery [--no-publish --sources=<sources> --label-whitelist=<pattern> --oneshot]
+  node-feature-discovery [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
+     [--oneshot | --sleep-interval=<seconds>]
   node-feature-discovery -h | --help
   node-feature-discovery --version
 
@@ -47,6 +48,9 @@ node-feature-discovery.
   --label-whitelist=<pattern> Regular expression to filter label names to
                               publish to the Kubernetes API server. [Default: ]
   --oneshot                   Label once and exit.
+  --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
+                              value implies no re-labeling (i.e. infinite
+                              sleep). [Default: 60s]
 ```
 
 ## Feature discovery

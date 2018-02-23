@@ -77,6 +77,7 @@ type Args struct {
 	labelWhiteList string
 	noPublish      bool
 	oneshot        bool
+	sleepInterval  time.Duration
 	sources        []string
 }
 
@@ -111,7 +112,12 @@ func main() {
 			break
 		}
 
-		time.Sleep(60 * time.Second)
+		if args.sleepInterval > 0 {
+			time.Sleep(args.sleepInterval)
+		} else {
+			// Sleep forever
+			select {}
+		}
 	}
 }
 
@@ -121,7 +127,8 @@ func argsParse(argv []string) (args Args) {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
-  %s [--no-publish --sources=<sources> --label-whitelist=<pattern> --oneshot]
+  %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
+     [--oneshot | --sleep-interval=<seconds>]
   %s -h | --help
   %s --version
 
@@ -134,7 +141,10 @@ func argsParse(argv []string) (args Args) {
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
                               publish to the Kubernetes API server. [Default: ]
-  --oneshot                   Label once and exit.`,
+  --oneshot                   Label once and exit.
+  --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
+                              value implies no re-labeling (i.e. infinite
+                              sleep). [Default: 60s]`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -145,10 +155,21 @@ func argsParse(argv []string) (args Args) {
 		fmt.Sprintf("%s %s", ProgramName, version), false)
 
 	// Parse argument values as usable types.
+	var err error
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.sources = strings.Split(arguments["--sources"].(string), ",")
 	args.labelWhiteList = arguments["--label-whitelist"].(string)
 	args.oneshot = arguments["--oneshot"].(bool)
+	args.sleepInterval, err = time.ParseDuration(arguments["--sleep-interval"].(string))
+
+	// Check that sleep interval has a sane value
+	if err != nil {
+		stderrLogger.Fatalf("invalid --sleep-interval specified: %s", err.Error())
+	}
+	if args.sleepInterval > 0 && args.sleepInterval < time.Second {
+		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s", args.sleepInterval.String())
+		args.sleepInterval = time.Second
+	}
 
 	return args
 }

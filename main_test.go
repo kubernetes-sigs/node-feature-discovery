@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
@@ -123,7 +124,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 func TestArgsParse(t *testing.T) {
 	Convey("When parsing command line arguments", t, func() {
 		argv1 := []string{"--no-publish", "--oneshot"}
-		argv2 := []string{"--sources=fake1,fake2,fake3"}
+		argv2 := []string{"--sources=fake1,fake2,fake3", "--sleep-interval=30s"}
 		argv3 := []string{"--label-whitelist=.*rdt.*"}
 		argv4 := []string{"--no-publish", "--sources=fake1,fake2,fake3"}
 
@@ -131,6 +132,7 @@ func TestArgsParse(t *testing.T) {
 			args := argsParse(argv1)
 
 			Convey("noPublish is set and args.sources is set to the default value", func() {
+				So(args.sleepInterval, ShouldEqual, 60*time.Second)
 				So(args.noPublish, ShouldBeTrue)
 				So(args.oneshot, ShouldBeTrue)
 				So(args.sources, ShouldResemble, []string{"cpuid", "rdt", "pstate", "memory", "network", "storage", "selinux"})
@@ -138,10 +140,11 @@ func TestArgsParse(t *testing.T) {
 			})
 		})
 
-		Convey("When --sources flag is passed and set to some values", func() {
+		Convey("When --sources flag is passed and set to some values, --sleep-inteval is specified", func() {
 			args := argsParse(argv2)
 
 			Convey("args.sources is set to appropriate values", func() {
+				So(args.sleepInterval, ShouldEqual, 30*time.Second)
 				So(args.noPublish, ShouldBeFalse)
 				So(args.oneshot, ShouldBeFalse)
 				So(args.sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
