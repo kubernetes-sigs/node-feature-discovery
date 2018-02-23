@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Get the node count in the Kubernetes cluster
+# Get the number of nodes in Ready state in the Kubernetes cluster
 NumNodes=$(kubectl get nodes | grep -i ready | wc -l)
 
 # We set the .spec.completions and .spec.parallelism to the node count
