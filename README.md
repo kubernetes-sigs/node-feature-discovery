@@ -29,6 +29,10 @@ This project uses GitHub [milestones](https://github.com/kubernetes-incubator/no
 
 ## Command line interface
 
+To try out stand-alone, one can run a Docker container where node-feature-discovery is already set as entry point.
+Such run is useful for checking features-detection part, but labeling part is expected to fail.
+It is recommended to use --no-publish and --oneshot to achieve clean run in stand-alone case.
+
 ```
 node-feature-discovery.
 
@@ -182,6 +186,9 @@ kubectl create -f rbac.yaml
 kubectl create -f node-feature-discovery-daemonset.json.template
 ```
 
+When the job runs, it contacts the Kubernetes API server to add labels
+to the node to advertise hardware features.
+
 If you have RBAC authorization enabled (as is the default e.g. with clusters initialized with kubeadm) you need to configure the appropriate ClusterRoles, ClusterRoleBindings and a ServiceAccount in order for NFD to create node labels. The provided templates will configure these for you.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
@@ -189,16 +196,15 @@ the `--sleep-interval` option. In the [template](https://github.com/kubernetes-i
 which is also the default when no `--sleep-interval` is specified.
 
 Feature discovery can alternatively be configured as a one-shot job. There is
-an example script in this repo that demonstrates how to deploy the job to
-unlabeled nodes.
+an example script in this repo that demonstrates how to deploy the job in the cluster.
 
 ```
 ./label-nodes.sh
 ```
 
-The discovery script will launch a job on each unlabeled node in the
-cluster. When the job runs, it contacts the Kubernetes API server to add labels
-to the node to advertise hardware features (initially, from `cpuid`, RDT, p-state and network).
+The label-nodes.sh script tries to launch as many jobs as there are Ready nodes.
+Note that this approach does not guarantee running once on every node.
+For example, if some node is tainted NoSchedule or fails to start a job for some other reason, then some other node will run extra job instance(s) to satisfy the request and the tainted/failed node does not get labeled.
 
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
