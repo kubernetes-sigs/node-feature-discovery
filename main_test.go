@@ -10,8 +10,9 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vektra/errors"
+	api "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
-	api "k8s.io/client-go/pkg/api/v1"
 )
 
 func TestDiscoveryWithMockSources(t *testing.T) {
@@ -131,7 +132,7 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("noPublish is set and sourcesArg is set to the default value", func() {
 				So(noPublish, ShouldBeTrue)
-				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate"})
+				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate", "network"})
 				So(len(whiteListArg), ShouldEqual, 0)
 			})
 		})
@@ -151,7 +152,7 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("whiteListArg is set to appropriate value and sourcesArg is set to default value", func() {
 				So(noPublish, ShouldBeFalse)
-				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate"})
+				So(sourcesArg, ShouldResemble, []string{"cpuid", "rdt", "pstate", "network"})
 				So(whiteListArg, ShouldResemble, ".*rdt.*")
 			})
 		})
@@ -269,7 +270,7 @@ func TestAddLabels(t *testing.T) {
 		helper := k8sHelpers{}
 		labels := Labels{}
 		n := &api.Node{
-			ObjectMeta: api.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Labels: map[string]string{},
 			},
 		}
@@ -295,7 +296,7 @@ func TestRemoveLabels(t *testing.T) {
 	Convey("When removing labels", t, func() {
 		helper := k8sHelpers{}
 		n := &api.Node{
-			ObjectMeta: api.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Labels: map[string]string{
 					"single":     "123",
 					"multiple_A": "a",

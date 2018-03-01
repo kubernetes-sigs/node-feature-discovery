@@ -22,5 +22,5 @@ type Source struct{}
 func (s Source) Name() string { return "panic_fake" }
 
 func (s Source) Discover() ([]string, error) {
-	panic("panic fake error")
+	panic("fake panic error")
 }
