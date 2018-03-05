@@ -19,8 +19,10 @@ package panic_fake
 // Source implements FeatureSource.
 type Source struct{}
 
+// Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "panic_fake" }
 
+// Discover calls panic().
 func (s Source) Discover() ([]string, error) {
 	panic("fake panic error")
 }

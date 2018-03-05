@@ -19,8 +19,10 @@ package fake
 // Source implements FeatureSource.
 type Source struct{}
 
+// Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "fake" }
 
+// Discover returns feature names for some fake features.
 func (s Source) Discover() ([]string, error) {
 	features := []string{}
 

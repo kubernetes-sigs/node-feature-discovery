@@ -31,9 +31,10 @@ const (
 // Source implements FeatureSource.
 type Source struct{}
 
+// Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "rdt" }
 
-// Returns feature names for CMT and CAT if suppported.
+// Discover returns feature names for CMT and CAT if suppported.
 func (s Source) Discover() ([]string, error) {
 	features := []string{}
 

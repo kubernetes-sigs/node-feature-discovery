@@ -21,6 +21,7 @@ import "github.com/klauspost/cpuid"
 // Source implements FeatureSource.
 type Source struct{}
 
+// Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "cpuid" }
 
 // Discover returns feature names for all the supported CPU features.
