@@ -41,7 +41,7 @@ node-feature-discovery.
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate,memory,network,storage]
+                              [Default: cpuid,rdt,pstate,memory,network,storage,selinux]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -60,6 +60,7 @@ The current set of feature sources are the following:
 - Memory
 - Network
 - Storage
+- Selinux
 
 ### Feature labels
 
@@ -83,7 +84,8 @@ the only label value published for features is the string `"true"`._
   "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-storage-<feature-name>": "true"
+  "node.alpha.kubernetes-incubator.io/nfd-storage-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-selinux-<feature-name>": "true"
 }
 ```
 
@@ -133,6 +135,12 @@ such as restricting discovered features with the --label-whitelist option._
 | Feature name       | Description                                                                         |
 | :--------------:   | :---------------------------------------------------------------------------------: |
 | nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
+
+### Selinux Features
+
+| Feature name       | Description                                                                         |
+| :--------------:   | :---------------------------------------------------------------------------------: |
+| selinux            | selinux is enabled on the node
 
 ## Getting started
 ### System requirements
