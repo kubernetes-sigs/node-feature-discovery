@@ -60,7 +60,7 @@ node-feature-discovery.
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.json.template)
+[template spec](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
 
 ## Feature discovery
@@ -197,7 +197,7 @@ example spec that can be used as a template, or, as is when just trying out the
 service:
 ```
 kubectl create -f rbac.yaml
-kubectl create -f node-feature-discovery-daemonset.json.template
+kubectl create -f node-feature-discovery-daemonset.yaml.template
 ```
 
 When the job runs, it contacts the Kubernetes API server to add labels
@@ -206,7 +206,7 @@ to the node to advertise hardware features.
 If you have RBAC authorization enabled (as is the default e.g. with clusters initialized with kubeadm) you need to configure the appropriate ClusterRoles, ClusterRoleBindings and a ServiceAccount in order for NFD to create node labels. The provided templates will configure these for you.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
-the `--sleep-interval` option. In the [template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.json.template#L38) the default interval is set to 60s
+the `--sleep-interval` option. In the [template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template#L26) the default interval is set to 60s
 which is also the default when no `--sleep-interval` is specified.
 
 Feature discovery can alternatively be configured as a one-shot job. There is
@@ -256,7 +256,7 @@ docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
 
 To use your published image from the step above instead of the
 `quay.io/kubernetes_incubator/node-feature-discovery` image, edit line 40 in the file
-[node-feature-discovery-job.json.template](node-feature-discovery-job.json.template)
+[node-feature-discovery-job.yaml.template](node-feature-discovery-job.yaml.template)
 to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
 
 ## Targeting Nodes with Specific Features

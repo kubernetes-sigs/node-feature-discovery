@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: node-feature-discovery
+  name: node-feature-discovery
+spec:
+  completions: COMPLETION_COUNT
+  parallelism: PARALLELISM_COUNT
+  template:
+    metadata:
+      labels:
+        app: node-feature-discovery
+    spec:
+      hostNetwork: true
+      serviceAccount: node-feature-discovery
+      containers:
+        - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          image: quay.io/kubernetes_incubator/node-feature-discovery:v0.3.0
+          name: node-feature-discovery
+          args:
+            - "--oneshot"
+          ports:
+            - containerPort: 7156
+              hostPort: 7156
+          volumeMounts:
+            - name: host-sys
+              mountPath: "/host-sys"
+      restartPolicy: Never
+      volumes:
+        - name: host-sys
+          hostPath:
+            path: "/sys"
