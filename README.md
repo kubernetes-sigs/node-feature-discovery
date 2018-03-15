@@ -264,28 +264,19 @@ to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>
 Nodes with specific features can be targeted using the `nodeSelector` field. The
 following example shows how to target nodes with Intel TurboBoost enabled.
 
-```json
-{
-    "apiVersion": "v1",
-    "kind": "Pod",
-    "metadata": {
-        "labels": {
-            "env": "test"
-        },
-        "name": "golang-test"
-    },
-    "spec": {
-        "containers": [
-            {
-                "image": "golang",
-                "name": "go1",
-            }
-        ],
-        "nodeSelector": {
-                "node.alpha.kubernetes-incubator.io/nfd-pstate-turbo": "true"
-        }
-    }
-}
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    env: test
+  name: golang-test
+spec:
+  containers:
+    - image: golang
+      name: go1
+  nodeSelector:
+    node.alpha.kubernetes-incubator.io/nfd-pstate-turbo: 'true'
 ```
 
 For more details on targeting nodes, see [node selection][node-sel].
