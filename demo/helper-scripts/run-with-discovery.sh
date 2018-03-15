@@ -49,8 +49,8 @@ for i in {1..10}
 do
     if [ "$app" == "parsec" ]
     then
-        sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-1/" demo-pod-with-discovery.json.parsec.template > demo-pod-with-discovery.json
-        kubectl create -f demo-pod-with-discovery.json
+        sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-1/" demo-pod-with-discovery.yaml.parsec.template > demo-pod-with-discovery.yaml
+        kubectl create -f demo-pod-with-discovery.yaml
     else
         sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-2/" demo-pod-with-discovery.yaml.cloverleaf.template > demo-pod-with-discovery.yaml
         kubectl create -f demo-pod-with-discovery.yaml
@@ -59,4 +59,4 @@ do
 done 
 echo "Ten pods with node feature discovery enabled started."
 
-rm -f demo-pod-with-discovery.json demo-pod-with-discovery.yaml
+rm -f demo-pod-with-discovery.yaml

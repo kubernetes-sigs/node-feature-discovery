@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-parsec-NUM
+spec:
+  containers:
+    - image: quay.io/kubernetes_incubator/node-feature-discovery-APP
+      name: demo-container-parsec-NUM
+      ports:
+        - containerPort: 3351
+          hostPort: 10001
+  nodeSelector:
+    node.alpha.kubernetes-incubator.io/nfd-pstate-turbo: 'true'
+  restartPolicy: Never
