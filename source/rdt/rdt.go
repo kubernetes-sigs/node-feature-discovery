@@ -18,14 +18,8 @@ package rdt
 
 import (
 	"os/exec"
-	"path"
 
 	"github.com/golang/glog"
-)
-
-const (
-	// RDTBin is the path to RDT detection helpers.
-	RDTBin = "/go/src/github.com/kubernetes-incubator/node-feature-discovery/rdt-discovery"
 )
 
 // Source implements FeatureSource.
@@ -38,7 +32,7 @@ func (s Source) Name() string { return "rdt" }
 func (s Source) Discover() ([]string, error) {
 	features := []string{}
 
-	cmd := exec.Command("bash", "-c", path.Join(RDTBin, "mon-discovery"))
+	cmd := exec.Command("bash", "-c", "mon-discovery")
 	if err := cmd.Run(); err != nil {
 		glog.Errorf("support for RDT monitoring was not detected: %v", err)
 	} else {
@@ -46,7 +40,7 @@ func (s Source) Discover() ([]string, error) {
 		features = append(features, "RDTMON")
 	}
 
-	cmd = exec.Command("bash", "-c", path.Join(RDTBin, "l3-alloc-discovery"))
+	cmd = exec.Command("bash", "-c", "l3-alloc-discovery")
 	if err := cmd.Run(); err != nil {
 		glog.Errorf("support for RDT L3 allocation was not detected: %v", err)
 	} else {
@@ -54,7 +48,7 @@ func (s Source) Discover() ([]string, error) {
 		features = append(features, "RDTL3CA")
 	}
 
-	cmd = exec.Command("bash", "-c", path.Join(RDTBin, "l2-alloc-discovery"))
+	cmd = exec.Command("bash", "-c", "l2-alloc-discovery")
 	if err := cmd.Run(); err != nil {
 		glog.Errorf("support for RDT L2 allocation was not detected: %v", err)
 	} else {
