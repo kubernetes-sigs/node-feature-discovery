@@ -8,8 +8,8 @@
     "name": "node-feature-discovery"
   },
   "spec": {
-    "completions": COMPLETION_COUNT,
-    "parallelism": PARALLELISM_COUNT,
+    "completions": "COMPLETION_COUNT",
+    "parallelism": "PARALLELISM_COUNT",
     "template": {
       "metadata": {
         "labels": {
