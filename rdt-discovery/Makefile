@@ -1,6 +1,6 @@
 CC=gcc
 LIBDIR=/usr/local/lib
-INCDIR=$(CMT_CAT_SRCDIR)/lib/
+INCDIR=../intel-cmt-cat/lib/
 
 LDFLAGS=-L$(LIBDIR)
 LDLIBS=-lpqos
