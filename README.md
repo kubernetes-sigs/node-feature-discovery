@@ -41,7 +41,7 @@ node-feature-discovery.
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate,network,storage]
+                              [Default: cpuid,rdt,pstate,memory,network,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -57,6 +57,7 @@ The current set of feature sources are the following:
 - [CPUID][cpuid] for x86 CPU details
 - [Intel Resource Director Technology][intel-rdt]
 - [Intel P-State driver][intel-pstate]
+- Memory
 - Network
 - Storage
 
@@ -80,6 +81,7 @@ the only label value published for features is the string `"true"`._
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-storage-<feature-name>": "true"
 }
@@ -113,6 +115,12 @@ such as restricting discovered features with the --label-whitelist option._
 | SSE4.1         | Streaming SIMD Extensions 4.1 (SSE4.1)
 | SSE4.2         | Streaming SIMD Extensions 4.2 (SSE4.2)
 | SGX            | Software Guard Extensions (SGX)
+
+### Memory Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| numa           | Multiple memory nodes i.e. NUMA architecture detected
 
 ### Network Features
 
