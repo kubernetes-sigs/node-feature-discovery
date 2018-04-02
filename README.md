@@ -162,7 +162,7 @@ to the node to advertise hardware features (initially, from `cpuid`, RDT, p-stat
 Download the source code.
 
 ```
-git clone https://github.com/kubernetes-incubator/node-feature-discovery
+git clone --recurse-submodules https://github.com/kubernetes-incubator/node-feature-discovery
 ```
 
 **Build the Docker image:**

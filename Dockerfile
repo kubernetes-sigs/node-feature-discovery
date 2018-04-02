@@ -7,8 +7,6 @@ WORKDIR /go/src/github.com/kubernetes-incubator/node-feature-discovery
 
 ENV PATH="/go/src/github.com/kubernetes-incubator/node-feature-discovery/rdt-discovery:${PATH}"
 
-ENV CMT_CAT_SRCDIR="/go/src/github.com/kubernetes-incubator/node-feature-discovery/intel-cmt-cat"
-
 ARG NFD_VERSION
 
 RUN case $(dpkg --print-architecture) in \
@@ -16,9 +14,8 @@ RUN case $(dpkg --print-architecture) in \
                 echo "skip rdt on Arm64 platform" \
                 ;; \
         *) \
-                git clone --depth 1 https://github.com/01org/intel-cmt-cat.git \
-                && cd intel-cmt-cat/lib; make install \
-                && cd ../../rdt-discovery; make \
+                make -C intel-cmt-cat/lib install && \
+                make -C rdt-discovery \
                 ;; \
         esac
 
