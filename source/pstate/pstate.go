@@ -19,6 +19,7 @@ package pstate
 import (
 	"fmt"
 	"io/ioutil"
+	"runtime"
 )
 
 // Source implements FeatureSource.
@@ -30,6 +31,13 @@ func (s Source) Name() string { return "pstate" }
 // Discover returns feature names for p-state related features such as turbo boost.
 func (s Source) Discover() ([]string, error) {
 	features := []string{}
+
+	// On Arm platform, the frequency boost mechanism is software-based.
+	// So skip pstate detection on Arm.
+	switch runtime.GOARCH {
+	case "arm64":
+		return features, nil
+	}
 
 	// Only looking for turbo boost for now...
 	bytes, err := ioutil.ReadFile("/sys/devices/system/cpu/intel_pstate/no_turbo")
