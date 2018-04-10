@@ -54,7 +54,7 @@ node-feature-discovery.
 
 The current set of feature sources are the following:
 
-- [CPUID][cpuid] for x86 CPU details
+- [CPUID][cpuid] for x86/Arm64 CPU details
 - [Intel Resource Director Technology][intel-rdt]
 - [Intel P-State driver][intel-pstate]
 - Memory
@@ -104,7 +104,7 @@ such as restricting discovered features with the --label-whitelist option._
 | RDTL3CA        | Intel L3 Cache Allocation Technology
 | RDTL2CA        | Intel L2 Cache Allocation Technology
 
-### CPUID Features (Partial List)
+### X86 CPUID Features (Partial List)
 
 | Feature name   | Description                                                  |
 | :------------: | :----------------------------------------------------------: |
@@ -123,6 +123,20 @@ such as restricting discovered features with the --label-whitelist option._
 | Feature name   | Description                                                                         |
 | :------------: | :---------------------------------------------------------------------------------: |
 | numa           | Multiple memory nodes i.e. NUMA architecture detected
+
+### Arm64 CPUID Features (Partial List)
+
+| Feature name   | Description                                                  |
+| :------------: | :----------------------------------------------------------: |
+| AES            | Announcing the Advanced Encryption Standard
+| EVSTRM         | Event Stream Frequency Features
+| FPHP           | Half Precision(16bit) Floating Point Data Processing Instructions
+| ASIMDHP        | Half Precision(16bit) Asimd Data Processing Instructions
+| ATOMICS        | Atomic Instructions to the A64
+| ASIMRDM        | Support for Rounding Double Multiply Add/Subtract
+| PMULL          | Optional Cryptographic and CRC32 Instructions
+| JSCVT          | Perform Conversion to Match Javascript
+| DCPOP          | Persistent Memory Support
 
 ### Network Features
 
@@ -145,7 +159,7 @@ such as restricting discovered features with the --label-whitelist option._
 ## Getting started
 ### System requirements
 
-1. Linux (x86_64)
+1. Linux (x86_64/Arm64)
 1. [kubectl] [kubectl-setup] (properly set up and configured to work with your
    Kubernetes cluster)
 1. [Docker] [docker-down] (only required to build and push docker images)
