@@ -1,6 +1,6 @@
 {
-  "apiVersion": "batch/v1",
-  "kind": "Job",
+  "apiVersion": "apps/v1",
+  "kind": "DaemonSet",
   "metadata": {
     "labels": {
       "app": "node-feature-discovery"
@@ -8,8 +8,11 @@
     "name": "node-feature-discovery"
   },
   "spec": {
-    "completions": COMPLETION_COUNT,
-    "parallelism": PARALLELISM_COUNT,
+    "selector": {
+      "matchLabels": {
+        "app": "node-feature-discovery"
+      }
+    },
     "template": {
       "metadata": {
         "labels": {
@@ -32,28 +35,7 @@
             ],
             "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0",
             "name": "node-feature-discovery",
-            "args": ["--oneshot"],
-            "ports": [
-              {
-                "containerPort": 7156,
-                "hostPort": 7156
-              }
-            ],
-            "volumeMounts": [
-              {
-                "name": "host-sys",
-                "mountPath": "/host-sys"
-              }
-            ]
-          }
-        ],
-        "restartPolicy": "Never",
-        "volumes": [
-          {
-            "name": "host-sys",
-            "hostPath": {
-              "path": "/sys"
-            }
+            "args": ["--sleep-interval=60s"]
           }
         ]
       }

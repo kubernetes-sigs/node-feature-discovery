@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/docopt/docopt-go"
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
@@ -15,9 +16,9 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source/network"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/pstate"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/storage"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/selinux"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/storage"
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -71,6 +72,15 @@ type APIHelpers interface {
 	UpdateNode(*k8sclient.Clientset, *api.Node) error
 }
 
+// Command line arguments
+type Args struct {
+	labelWhiteList string
+	noPublish      bool
+	oneshot        bool
+	sleepInterval  time.Duration
+	sources        []string
+}
+
 func main() {
 	// Assert that the version is known
 	if version == "" {
@@ -78,32 +88,47 @@ func main() {
 	}
 
 	// Parse command-line arguments.
-	noPublish, sourcesArg, whiteListArg := argsParse(nil)
+	args := argsParse(nil)
 
 	// Configure the parameters for feature discovery.
-	sources, labelWhiteList, err := configureParameters(sourcesArg, whiteListArg)
+	enabledSources, labelWhiteList, err := configureParameters(args.sources, args.labelWhiteList)
 	if err != nil {
 		stderrLogger.Fatalf("error occurred while configuring parameters: %s", err.Error())
 	}
 
-	// Get the set of feature labels.
-	labels := createFeatureLabels(sources, labelWhiteList)
-
 	helper := APIHelpers(k8sHelpers{})
-	// Update the node with the feature labels.
-	err = updateNodeWithFeatureLabels(helper, noPublish, labels)
-	if err != nil {
-		stderrLogger.Fatalf("error occurred while updating node with feature labels: %s", err.Error())
+
+	for {
+		// Get the set of feature labels.
+		labels := createFeatureLabels(enabledSources, labelWhiteList)
+
+		// Update the node with the feature labels.
+		err = updateNodeWithFeatureLabels(helper, args.noPublish, labels)
+		if err != nil {
+			stderrLogger.Fatalf("error occurred while updating node with feature labels: %s", err.Error())
+		}
+
+		if args.oneshot {
+			break
+		}
+
+		if args.sleepInterval > 0 {
+			time.Sleep(args.sleepInterval)
+		} else {
+			// Sleep forever
+			select {}
+		}
 	}
 }
 
 // argsParse parses the command line arguments passed to the program.
 // The argument argv is passed only for testing purposes.
-func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg string) {
+func argsParse(argv []string) (args Args) {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
-  %s [--no-publish --sources=<sources> --label-whitelist=<pattern>]
+  %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
+     [--oneshot | --sleep-interval=<seconds>]
   %s -h | --help
   %s --version
 
@@ -115,7 +140,11 @@ func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
-                              publish to the Kubernetes API server. [Default: ]`,
+                              publish to the Kubernetes API server. [Default: ]
+  --oneshot                   Label once and exit.
+  --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
+                              value implies no re-labeling (i.e. infinite
+                              sleep). [Default: 60s]`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -126,19 +155,32 @@ func argsParse(argv []string) (noPublish bool, sourcesArg []string, whiteListArg
 		fmt.Sprintf("%s %s", ProgramName, version), false)
 
 	// Parse argument values as usable types.
-	noPublish = arguments["--no-publish"].(bool)
-	sourcesArg = strings.Split(arguments["--sources"].(string), ",")
-	whiteListArg = arguments["--label-whitelist"].(string)
+	var err error
+	args.noPublish = arguments["--no-publish"].(bool)
+	args.sources = strings.Split(arguments["--sources"].(string), ",")
+	args.labelWhiteList = arguments["--label-whitelist"].(string)
+	args.oneshot = arguments["--oneshot"].(bool)
+	args.sleepInterval, err = time.ParseDuration(arguments["--sleep-interval"].(string))
 
-	return noPublish, sourcesArg, whiteListArg
+	// Check that sleep interval has a sane value
+	if err != nil {
+		stderrLogger.Fatalf("invalid --sleep-interval specified: %s", err.Error())
+	}
+	if args.sleepInterval > 0 && args.sleepInterval < time.Second {
+		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s", args.sleepInterval.String())
+		args.sleepInterval = time.Second
+	}
+
+	return args
 }
 
 // configureParameters returns all the variables required to perform feature
 // discovery based on command line arguments.
-func configureParameters(sourcesArg []string, whiteListArg string) (sources []source.FeatureSource, labelWhiteList *regexp.Regexp, err error) {
-	enabledSources := map[string]struct{}{}
-	for _, s := range sourcesArg {
-		enabledSources[strings.TrimSpace(s)] = struct{}{}
+func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (enabledSources []source.FeatureSource, labelWhiteList *regexp.Regexp, err error) {
+	// A map for lookup
+	sourcesWhiteListMap := map[string]struct{}{}
+	for _, s := range sourcesWhiteList {
+		sourcesWhiteListMap[strings.TrimSpace(s)] = struct{}{}
 	}
 
 	// Configure feature sources.
@@ -154,21 +196,21 @@ func configureParameters(sourcesArg []string, whiteListArg string) (sources []so
 		panic_fake.Source{},
 	}
 
-	sources = []source.FeatureSource{}
+	enabledSources = []source.FeatureSource{}
 	for _, s := range allSources {
-		if _, enabled := enabledSources[s.Name()]; enabled {
-			sources = append(sources, s)
+		if _, enabled := sourcesWhiteListMap[s.Name()]; enabled {
+			enabledSources = append(enabledSources, s)
 		}
 	}
 
-	// Compile whiteListArg regex
-	labelWhiteList, err = regexp.Compile(whiteListArg)
+	// Compile labelWhiteList regex
+	labelWhiteList, err = regexp.Compile(labelWhiteListStr)
 	if err != nil {
-		stderrLogger.Printf("error parsing whitelist regex (%s): %s", whiteListArg, err)
+		stderrLogger.Printf("error parsing whitelist regex (%s): %s", labelWhiteListStr, err)
 		return nil, nil, err
 	}
 
-	return sources, labelWhiteList, nil
+	return enabledSources, labelWhiteList, nil
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
