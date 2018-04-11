@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
   struct cpuid_out res;
 
-  // Logic below from https://github.com/01org/intel-cmt-cat/blob/master/lib/host_cap.c
+  // Logic below from https://github.com/intel/intel-cmt-cat/blob/master/lib/cap.c
   lcpuid(0x7, 0x0, &res);
   if (!(res.ebx & (1 << 12))) {
     return EXIT_FAILURE;
