@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
   struct cpuid_out res;
 
-  // Logic below from https://github.com/01org/intel-cmt-cat/blob/master/lib/host_cap.c
+  // Logic below from https://github.com/intel/intel-cmt-cat/blob/master/lib/cap.c
   // TODO(balajismaniam): Implement L3 CAT detection using brand string and MSR probing if
   // not detected using cpuid
   lcpuid(0x7, 0x0, &res);

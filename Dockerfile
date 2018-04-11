@@ -16,7 +16,7 @@ RUN case $(dpkg --print-architecture) in \
                 echo "skip rdt on Arm64 platform" \
                 ;; \
         *) \
-                git clone --depth 1 -b $CMT_CAT_VERSION https://github.com/01org/intel-cmt-cat.git && \
+                git clone --depth 1 -b $CMT_CAT_VERSION https://github.com/intel/intel-cmt-cat.git && \
                 make -C intel-cmt-cat/lib install && \
                 make -C rdt-discovery \
                 ;; \
