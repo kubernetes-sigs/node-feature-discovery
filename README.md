@@ -105,9 +105,12 @@ such as restricting discovered features with the --label-whitelist option._
 
 | Feature name   | Description                                                                         |
 | :------------: | :---------------------------------------------------------------------------------: |
-| RDTMON         | Intel Cache Monitoring Technology (CMT) and Intel Memory Bandwidth Monitoring (MBM)
+| RDTMON         | Intel RDT Monitoring Technology
+| RDTCMT         | Intel Cache Monitoring (CMT)
+| RDTMBM         | Intel Memory Bandwidth Monitoring (MBM)
 | RDTL3CA        | Intel L3 Cache Allocation Technology
 | RDTL2CA        | Intel L2 Cache Allocation Technology
+| RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
 
 ### X86 CPUID Features (Partial List)
 
