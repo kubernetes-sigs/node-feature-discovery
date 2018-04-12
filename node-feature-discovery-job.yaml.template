@@ -33,6 +33,9 @@ spec:
               readOnly: true
             - name: host-sys
               mountPath: "/host-sys"
+            - name: systemd
+              mountPath: "/run/systemd"
+              readOnly: true
       restartPolicy: Never
       volumes:
         - name: host-boot
@@ -41,3 +44,6 @@ spec:
         - name: host-sys
           hostPath:
             path: "/sys"
+        - name: systemd
+          hostPath:
+            path: "/run/systemd"

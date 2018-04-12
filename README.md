@@ -179,6 +179,12 @@ Kernel config file to use, and, the set of config options to be detected are
 configurable.
 See [configuration options](#configuration-options) for more information.
 
+### System Features
+
+| Feature | Attribute  | Description                                           |
+| ------- | ---------- | ----------------------------------------------------- |
+| systemd | irqbalance | Check the service of irqbalance is active or not
+
 ### Local (User-specific Features)
 
 NFD has a special feature source named *local* which is designed for running

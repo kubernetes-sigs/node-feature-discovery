@@ -36,6 +36,7 @@ FROM debian:stretch-slim
 
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /bin/systemctl /bin/systemctl
 COPY --from=builder /etc/kubernetes/node-feature-discovery /etc/kubernetes/node-feature-discovery
 RUN ldconfig
 COPY --from=builder /go/bin/node-feature-discovery /usr/bin/node-feature-discovery
