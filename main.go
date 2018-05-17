@@ -19,6 +19,7 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source/rdt"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/selinux"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/storage"
+	"github.com/kubernetes-incubator/node-feature-discovery/version"
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -37,8 +38,7 @@ const (
 )
 
 var (
-	version = "" // Must not be const, set using ldflags at build time
-	prefix  = fmt.Sprintf("%s/nfd", Namespace)
+	prefix = fmt.Sprintf("%s/nfd", Namespace)
 )
 
 // package loggers
@@ -83,8 +83,8 @@ type Args struct {
 
 func main() {
 	// Assert that the version is known
-	if version == "" {
-		stderrLogger.Fatalf("main.version not set! Set -ldflags \"-X main.version `git describe --tags --dirty --always`\" during build or run.")
+	if version.Get() == "undefined" {
+		stderrLogger.Fatalf("version not set! Set -ldflags \"-X github.com/kubernetes-incubator/node-feature-discovery/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	// Parse command-line arguments.
@@ -152,7 +152,7 @@ func argsParse(argv []string) (args Args) {
 	)
 
 	arguments, _ := docopt.Parse(usage, argv, true,
-		fmt.Sprintf("%s %s", ProgramName, version), false)
+		fmt.Sprintf("%s %s", ProgramName, version.Get()), false)
 
 	// Parse argument values as usable types.
 	var err error
@@ -218,11 +218,12 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels) {
 	labels = Labels{}
 	// Add the version of this discovery code as a node label
+	version_str := version.Get()
 	versionLabel := fmt.Sprintf("%s/%s.version", Namespace, ProgramName)
-	labels[versionLabel] = version
+	labels[versionLabel] = version_str
 
 	// Log version label.
-	stdoutLogger.Printf("%s = %s", versionLabel, version)
+	stdoutLogger.Printf("%s = %s", versionLabel, version_str)
 
 	// Do feature discovery from all configured sources.
 	for _, source := range sources {

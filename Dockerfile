@@ -25,7 +25,7 @@ RUN case $(dpkg --print-architecture) in \
 RUN go get github.com/Masterminds/glide
 RUN glide install --strip-vendor
 RUN go install \
-  -ldflags "-s -w -X main.version=$NFD_VERSION" \
+  -ldflags "-s -w -X github.com/kubernetes-incubator/node-feature-discovery/version.version=$NFD_VERSION" \
   github.com/kubernetes-incubator/node-feature-discovery
 
 ENTRYPOINT ["/go/bin/node-feature-discovery"]
