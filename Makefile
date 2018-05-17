@@ -19,3 +19,8 @@ docker:
 		--build-arg no_proxy=$(no_proxy) \
 		--build-arg NO_PROXY=$(NO_PROXY) \
 		-t $(QUAY_DOMAIN_NAME)/$(QUAY_REGISTRY_USER)/$(DOCKER_IMAGE_NAME):$(VERSION) ./
+
+nfdadm:
+	go install \
+		-ldflags "-s -w -X github.com/kubernetes-incubator/node-feature-discovery/version.version=$(VERSION)" \
+		github.com/kubernetes-incubator/node-feature-discovery/tools/nfdadm
