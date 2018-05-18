@@ -1,5 +1,5 @@
 hash: a488111e226d9a9d752f9b533b5cba022a0f0ebf497b5d39c6381e54cc1c707e
-updated: 2018-06-14T15:04:55.35064782+03:00
+updated: 2018-06-14T15:07:18.544531386+03:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 87df7c60d5820d0f8ae11afede5aa52325c09717
@@ -50,6 +50,10 @@ imports:
   version: 787624de3eb7bd915c329cba748687a3b22666a6
   subpackages:
   - diskcache
+- name: github.com/howeyc/gopass
+  version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
+- name: github.com/imdario/mergo
+  version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/json-iterator/go
@@ -85,6 +89,10 @@ imports:
   subpackages:
   - assert
   - mock
+- name: golang.org/x/crypto
+  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
@@ -92,6 +100,11 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+- name: golang.org/x/sys
+  version: 95c6576299259db960f6c5b9b69ea52422860fce
+  subpackages:
+  - unix
+  - windows
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
@@ -217,12 +230,17 @@ imports:
   - pkg/version
   - rest
   - rest/watch
+  - tools/auth
+  - tools/clientcmd
   - tools/clientcmd/api
+  - tools/clientcmd/api/latest
+  - tools/clientcmd/api/v1
   - tools/metrics
   - tools/reference
   - transport
   - util/cert
   - util/flowcontrol
+  - util/homedir
   - util/integer
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
