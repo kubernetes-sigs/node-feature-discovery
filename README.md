@@ -178,8 +178,11 @@ Feature discovery is preferably run as a Kubernetes DaemonSet. There is an
 example spec that can be used as a template, or, as is when just trying out the
 service:
 ```
+kubectl create -f rbac.yaml
 kubectl create -f node-feature-discovery-daemonset.json.template
 ```
+
+If you have RBAC authorization enabled (as is the default e.g. with clusters initialized with kubeadm) you need to configure the appropriate ClusterRoles, ClusterRoleBindings and a ServiceAccount in order for NFD to create node labels. The provided templates will configure these for you.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
 the `--sleep-interval` option. In the [template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.json.template#L38) the default interval is set to 60s

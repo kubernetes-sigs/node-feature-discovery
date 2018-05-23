@@ -21,6 +21,7 @@
       },
       "spec": {
         "hostNetwork": true,
+        "serviceAccount": "node-feature-discovery",
         "containers": [
           {
             "env": [
