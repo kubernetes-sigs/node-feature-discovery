@@ -40,6 +40,22 @@ func (s Source) Discover() ([]string, error) {
 		features = append(features, "RDTMON")
 	}
 
+	cmd = exec.Command("bash", "-c", "mon-cmt-discovery")
+	if err := cmd.Run(); err != nil {
+		glog.Errorf("support for RDT CMT monitoring was not detected: %v", err)
+	} else {
+		// RDT CMT monitoring detected.
+		features = append(features, "RDTCMT")
+	}
+
+	cmd = exec.Command("bash", "-c", "mon-mbm-discovery")
+	if err := cmd.Run(); err != nil {
+		glog.Errorf("support for RDT MBM monitoring was not detected: %v", err)
+	} else {
+		// RDT MBM monitoring detected.
+		features = append(features, "RDTMBM")
+	}
+
 	cmd = exec.Command("bash", "-c", "l3-alloc-discovery")
 	if err := cmd.Run(); err != nil {
 		glog.Errorf("support for RDT L3 allocation was not detected: %v", err)
@@ -54,6 +70,14 @@ func (s Source) Discover() ([]string, error) {
 	} else {
 		// RDT L2 cache allocation detected.
 		features = append(features, "RDTL2CA")
+	}
+
+	cmd = exec.Command("bash", "-c", "mem-bandwidth-alloc-discovery")
+	if err := cmd.Run(); err != nil {
+		glog.Errorf("support for RDT Memory bandwidth allocation was not detected: %v", err)
+	} else {
+		// RDT Memory bandwidth allocation detected.
+		features = append(features, "RDTMBA")
 	}
 
 	return features, nil
