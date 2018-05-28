@@ -31,7 +31,7 @@ RUN go test .
 
 
 # Create production image for running node feature discovery
-FROM golang:1.8
+FROM debian:stretch-slim
 
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/local/lib /usr/local/lib
