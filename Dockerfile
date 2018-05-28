@@ -1,11 +1,9 @@
-FROM golang:1.8 
+# Build node feature discovery
+FROM golang:1.8 as builder
 
-# Build node feature discovery and set it as entrypoint.
 ADD . /go/src/github.com/kubernetes-incubator/node-feature-discovery
 
 WORKDIR /go/src/github.com/kubernetes-incubator/node-feature-discovery
-
-ENV PATH="/go/src/github.com/kubernetes-incubator/node-feature-discovery/rdt-discovery:${PATH}"
 
 ENV CMT_CAT_VERSION="v1.2.0"
 
@@ -18,7 +16,8 @@ RUN case $(dpkg --print-architecture) in \
         *) \
                 git clone --depth 1 -b $CMT_CAT_VERSION https://github.com/intel/intel-cmt-cat.git && \
                 make -C intel-cmt-cat/lib install && \
-                make -C rdt-discovery \
+                make -C rdt-discovery && \
+                make -C rdt-discovery install \
                 ;; \
         esac
 
@@ -28,4 +27,15 @@ RUN go install \
   -ldflags "-s -w -X main.version=$NFD_VERSION" \
   github.com/kubernetes-incubator/node-feature-discovery
 
-ENTRYPOINT ["/go/bin/node-feature-discovery"]
+RUN go test .
+
+
+# Create production image for running node feature discovery
+FROM golang:1.8
+
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/lib /usr/local/lib
+RUN ldconfig
+COPY --from=builder /go/bin/node-feature-discovery /usr/bin/node-feature-discovery
+
+ENTRYPOINT ["/usr/bin/node-feature-discovery"]
