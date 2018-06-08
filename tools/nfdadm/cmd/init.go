@@ -33,6 +33,7 @@ import (
 type InitCmdFlags struct {
 	image      string
 	kubeconfig string
+	namespace  string
 }
 
 var initCmdFlags = &InitCmdFlags{}
@@ -42,6 +43,7 @@ func init() {
 
 	initCmd.Flags().StringVarP(&initCmdFlags.image, "image", "i", "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0", "Image to use for the node-feature-discovery binary")
 	initCmd.Flags().StringVarP(&initCmdFlags.kubeconfig, "kubeconfig", "c", defaultKubeconfig(), "Kubeconfig file to use for communicating with the API server")
+	initCmd.Flags().StringVarP(&initCmdFlags.namespace, "namespace", "n", "default", "Namespace where node-feature-discovery is created")
 }
 
 var initCmd = &cobra.Command{
@@ -61,6 +63,11 @@ var initCmd = &cobra.Command{
 			glog.Exitf("failed to create clientset: %v", err)
 		}
 
+		_, err = createNamespace(initCmdFlags.namespace, clientset)
+		if err != nil {
+			glog.Exitf("failed to create namespace: %v", err)
+		}
+
 		// Configure RBAC objects
 		glog.Info("configuring RBAC")
 		err = configureRBAC(initCmdFlags, clientset)
@@ -77,8 +84,26 @@ var initCmd = &cobra.Command{
 	},
 }
 
+func createNamespace(name string, clientset kubernetes.Interface) (*v1.Namespace, error) {
+	ns := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	// Check if namespace already exists
+	ns, err := clientset.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if err == nil {
+		glog.Infof("Namespace '%v' found", name)
+		return ns, nil
+	}
+
+	glog.Infof("Creating namespace '%v'", name)
+	return clientset.CoreV1().Namespaces().Create(ns)
+}
+
 func configureRBAC(flags *InitCmdFlags, clientset kubernetes.Interface) error {
-	_, err := createServiceAccount("default", clientset)
+	_, err := createServiceAccount(flags.namespace, clientset)
 	if err != nil {
 		glog.Errorf("failed to create ServiceAccount: %v", err)
 		return err
@@ -90,7 +115,7 @@ func configureRBAC(flags *InitCmdFlags, clientset kubernetes.Interface) error {
 		return err
 	}
 
-	_, err = createClusterRoleBinding("default", clientset)
+	_, err = createClusterRoleBinding(flags.namespace, clientset)
 	if err != nil {
 		glog.Errorf("failed to create ClusterRoleBinding: %v", err)
 		return err
@@ -161,7 +186,7 @@ func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*apps
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "node-feature-discovery",
-			Namespace: "default",
+			Namespace: flags.namespace,
 			Labels: map[string]string{
 				"app": "node-feature-discovery",
 			},
@@ -220,7 +245,7 @@ func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*apps
 		},
 	}
 
-	return clientset.AppsV1().DaemonSets("default").Create(ds)
+	return clientset.AppsV1().DaemonSets(flags.namespace).Create(ds)
 }
 
 func defaultKubeconfig() string {
