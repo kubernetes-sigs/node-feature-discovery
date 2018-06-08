@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -60,6 +61,13 @@ var initCmd = &cobra.Command{
 			glog.Exitf("failed to create clientset: %v", err)
 		}
 
+		// Configure RBAC objects
+		glog.Info("configuring RBAC")
+		err = configureRBAC(initCmdFlags, clientset)
+		if err != nil {
+			glog.Exitf("failed to configure RBAC: %v", err)
+		}
+
 		// Configure DaemonSet
 		glog.Info("creating DaemonSet object for Node Feature Discovery")
 		_, err = createDaemonSet(initCmdFlags, clientset)
@@ -67,6 +75,85 @@ var initCmd = &cobra.Command{
 			glog.Exitf("failed to create DaemonSet: %v", err)
 		}
 	},
+}
+
+func configureRBAC(flags *InitCmdFlags, clientset kubernetes.Interface) error {
+	_, err := createServiceAccount("default", clientset)
+	if err != nil {
+		glog.Errorf("failed to create ServiceAccount: %v", err)
+		return err
+	}
+
+	_, err = createClusterRole(clientset)
+	if err != nil {
+		glog.Errorf("failed to create ClusterRole: %v", err)
+		return err
+	}
+
+	_, err = createClusterRoleBinding("default", clientset)
+	if err != nil {
+		glog.Errorf("failed to create ClusterRoleBinding: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func createServiceAccount(namespace string, clientset kubernetes.Interface) (*v1.ServiceAccount, error) {
+	sa := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "node-feature-discovery",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "node-feature-discovery",
+			},
+		},
+	}
+	return clientset.CoreV1().ServiceAccounts(namespace).Create(sa)
+}
+
+func createClusterRole(clientset kubernetes.Interface) (*rbacv1.ClusterRole, error) {
+	cr := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "node-feature-discovery",
+			Labels: map[string]string{
+				"app": "node-feature-discovery",
+			},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"nodes", "pods"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+		},
+	}
+	return clientset.RbacV1().ClusterRoles().Create(cr)
+}
+
+func createClusterRoleBinding(namespace string, clientset kubernetes.Interface) (*rbacv1.ClusterRoleBinding, error) {
+	crb := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "node-feature-discovery",
+			Labels: map[string]string{
+				"app": "node-feature-discovery",
+			},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      "node-feature-discovery",
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     "node-feature-discovery",
+		},
+	}
+
+	return clientset.RbacV1().ClusterRoleBindings().Create(crb)
 }
 
 func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*appsv1.DaemonSet, error) {
@@ -126,7 +213,8 @@ func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*apps
 							},
 						},
 					},
-					HostNetwork: true,
+					ServiceAccountName: "node-feature-discovery",
+					HostNetwork:        true,
 				},
 			},
 		},
