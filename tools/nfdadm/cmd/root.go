@@ -17,10 +17,12 @@ limitations under the License.
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var rootCmd = &cobra.Command{
@@ -30,6 +32,13 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	// Add flags from glog
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	rootCmd.PersistentFlags().AddFlagSet(pflag.CommandLine)
+
+	// Print all logs to stderr, too
+	flag.Set("alsologtostderr", "true")
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
