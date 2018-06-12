@@ -23,6 +23,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,6 +33,7 @@ import (
 
 type InitCmdFlags struct {
 	image      string
+	job        bool
 	kubeconfig string
 	namespace  string
 }
@@ -42,6 +44,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 
 	initCmd.Flags().StringVarP(&initCmdFlags.image, "image", "i", "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0", "Image to use for the node-feature-discovery binary")
+	initCmd.Flags().BoolVarP(&initCmdFlags.job, "job", "j", false, "Deploy node feature discovery as a one-shot Job, instead of DaemonSet")
 	initCmd.Flags().StringVarP(&initCmdFlags.kubeconfig, "kubeconfig", "c", defaultKubeconfig(), "Kubeconfig file to use for communicating with the API server")
 	initCmd.Flags().StringVarP(&initCmdFlags.namespace, "namespace", "n", "default", "Namespace where node-feature-discovery is created")
 }
@@ -75,11 +78,20 @@ var initCmd = &cobra.Command{
 			glog.Exitf("failed to configure RBAC: %v", err)
 		}
 
-		// Configure DaemonSet
-		glog.Info("creating DaemonSet object for Node Feature Discovery")
-		_, err = createDaemonSet(initCmdFlags, clientset)
-		if err != nil {
-			glog.Exitf("failed to create DaemonSet: %v", err)
+		if initCmdFlags.job == false {
+			// Configure DaemonSet
+			glog.Info("creating DaemonSet object for Node Feature Discovery")
+			_, err = createDaemonSet(initCmdFlags, clientset)
+			if err != nil {
+				glog.Exitf("failed to create DaemonSet: %v", err)
+			}
+		} else {
+			// Configure Job
+			glog.Info("creating Job object for Node Feature Discovery")
+			_, err = createJob(initCmdFlags, clientset)
+			if err != nil {
+				glog.Exitf("failed to create Job: %v", err)
+			}
 		}
 	},
 }
@@ -181,8 +193,52 @@ func createClusterRoleBinding(namespace string, clientset kubernetes.Interface) 
 	return clientset.RbacV1().ClusterRoleBindings().Create(crb)
 }
 
-func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*appsv1.DaemonSet, error) {
+func podSpecCommon(imageName string) v1.PodSpec {
+	return v1.PodSpec{
+		Volumes: []v1.Volume{
+			{
+				Name: "host-sys",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/sys",
+					},
+				},
+			},
+		},
+		Containers: []v1.Container{
+			{
+				Name:  "node-feature-discovery",
+				Image: imageName,
+				Env: []v1.EnvVar{
+					{
+						Name: "NODE_NAME",
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								FieldPath: "spec.nodeName",
+							},
+						},
+					},
+				},
+				VolumeMounts: []v1.VolumeMount{
+					{
+						Name:      "host-sys",
+						ReadOnly:  true,
+						MountPath: "/host-sys",
+					},
+				},
+			},
+		},
+		ServiceAccountName: "node-feature-discovery",
+		HostNetwork:        true,
+	}
+}
 
+func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*appsv1.DaemonSet, error) {
+	// Create pod spec from the common template
+	podSpec := podSpecCommon(flags.image)
+	podSpec.Containers[0].Args = []string{"--sleep-interval=60s"}
+
+	// Define the complete daemonset object
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "node-feature-discovery",
@@ -203,49 +259,71 @@ func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*apps
 						"app": "node-feature-discovery",
 					},
 				},
-				Spec: v1.PodSpec{
-					Volumes: []v1.Volume{
-						{
-							Name: "host-sys",
-							VolumeSource: v1.VolumeSource{
-								HostPath: &v1.HostPathVolumeSource{
-									Path: "/sys",
-								},
-							},
-						},
-					},
-					Containers: []v1.Container{
-						{
-							Name:  "node-feature-discovery",
-							Image: flags.image,
-							Args:  []string{"--sleep-interval=60s"},
-							Env: []v1.EnvVar{
-								{
-									Name: "NODE_NAME",
-									ValueFrom: &v1.EnvVarSource{
-										FieldRef: &v1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-							},
-							VolumeMounts: []v1.VolumeMount{
-								{
-									Name:      "host-sys",
-									ReadOnly:  true,
-									MountPath: "/host-sys",
-								},
-							},
-						},
-					},
-					ServiceAccountName: "node-feature-discovery",
-					HostNetwork:        true,
-				},
+				Spec: podSpec,
 			},
 		},
 	}
 
 	return clientset.AppsV1().DaemonSets(flags.namespace).Create(ds)
+}
+
+func createJob(flags *InitCmdFlags, clientset kubernetes.Interface) (*batchv1.Job, error) {
+	// Create pod spec from the common template
+	podSpec := podSpecCommon(flags.image)
+	podSpec.RestartPolicy = v1.RestartPolicyNever
+	podSpec.Containers[0].Args = []string{"--oneshot"}
+
+	numReadyNodes, err := getAvailableNodes(clientset)
+	if err != nil {
+		return nil, err
+	}
+
+	// Define the complete Job object
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "node-feature-discovery",
+			Namespace: flags.namespace,
+			Labels: map[string]string{
+				"app": "node-feature-discovery",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Parallelism: &numReadyNodes,
+			Completions: &numReadyNodes,
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "node-feature-discovery",
+					},
+				},
+				Spec: podSpec,
+			},
+		},
+	}
+
+	return clientset.BatchV1().Jobs(flags.namespace).Create(job)
+}
+
+// Get nodes that are available for running a workload
+func getAvailableNodes(clientset kubernetes.Interface) (int32, error) {
+	var readyNodes int32 = 0
+	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		glog.Errorf("failed to query nodes: %v", err)
+		return 0, err
+	}
+
+	for _, node := range nodes.Items {
+		if node.Spec.Unschedulable == false {
+			for _, condition := range node.Status.Conditions {
+				if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
+					readyNodes += 1
+				}
+			}
+		}
+	}
+
+	return readyNodes, nil
 }
 
 func defaultKubeconfig() string {
