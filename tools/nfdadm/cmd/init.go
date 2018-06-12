@@ -17,10 +17,8 @@ limitations under the License.
 package cmd
 
 import (
-	"os/user"
-	"path/filepath"
-
 	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/node-feature-discovery/tools/nfdadm/common"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -45,7 +43,7 @@ func init() {
 
 	initCmd.Flags().StringVarP(&initCmdFlags.image, "image", "i", "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0", "Image to use for the node-feature-discovery binary")
 	initCmd.Flags().BoolVarP(&initCmdFlags.job, "job", "j", false, "Deploy node feature discovery as a one-shot Job, instead of DaemonSet")
-	initCmd.Flags().StringVarP(&initCmdFlags.kubeconfig, "kubeconfig", "c", defaultKubeconfig(), "Kubeconfig file to use for communicating with the API server")
+	initCmd.Flags().StringVarP(&initCmdFlags.kubeconfig, "kubeconfig", "c", common.DefaultKubeconfig(), "Kubeconfig file to use for communicating with the API server")
 	initCmd.Flags().StringVarP(&initCmdFlags.namespace, "namespace", "n", "default", "Namespace where node-feature-discovery is created")
 }
 
@@ -324,12 +322,4 @@ func getAvailableNodes(clientset kubernetes.Interface) (int32, error) {
 	}
 
 	return readyNodes, nil
-}
-
-func defaultKubeconfig() string {
-	usr, err := user.Current()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(usr.HomeDir, ".kube", "config")
 }
