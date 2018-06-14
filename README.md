@@ -174,20 +174,53 @@ such as restricting discovered features with the --label-whitelist option._
 
 ### Usage
 
-Feature discovery is preferably run as a Kubernetes DaemonSet. There is an
-example spec that can be used as a template, or, as is when just trying out the
-service:
+The project provides a helper tool, `nfdadm`, for deploying Node Feature
+Discovery in a Kubernetes cluster. It provides configuration flags e.g. for
+choosing between DaemonSet and a Job, namespace where NFD is deployed etc.
+
+Currently, there are no pre-built binaries for `nfdadm`
+available, and, you need to build it yourself. You can either build it inside
+Docker or directly on your host system (see the section *Building from source*
+below).
+
+There are also template configuration files that can be used for deploying node
+feature discovery, if you need greater flexibility, or do not want to use
+`nfdadm` for some other reason.
+
+### DaemonSet
+
+Feature discovery is preferably run as a Kubernetes DaemonSet.
+```
+./nfdadm init
+```
+
+Alternatively, there is also an example spec that can be used as a template,
+or, as is, when just trying out the service:
 ```
 kubectl create -f node-feature-discovery-daemonset.json.template
 ```
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
-the `--sleep-interval` option. In the [template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.json.template#L38) the default interval is set to 60s
-which is also the default when no `--sleep-interval` is specified.
+the `--sleep-interval` option. The default is set to 60s. You can specify it
+using the `--nfd-arg` flag of `nfdadm
+```
+./nfdadm init --nfd-arg=--sleep-interval=60s
+ ``
 
-Feature discovery can alternatively be configured as a one-shot job. There is
-an example script in this repo that demonstrates how to deploy the job to
-unlabeled nodes.
+Or alternatively, by modifying the
+[template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.json.template#L38)
+if using kubectl directly.
+
+### Job
+
+Feature discovery can alternatively be configured as a one-shot job.
+
+```
+./nfdadm init --job
+```
+
+Alternatively, there is alse an example spec, and, an example script that
+demonstrates how to deploy the job.
 
 ```
 ./label-nodes.sh
@@ -199,26 +232,48 @@ to the node to advertise hardware features (initially, from `cpuid`, RDT, p-stat
 
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
+### Undeploying Node Feature Discovery
+```
+./nfdadm delete
+```
+`nfdadm` takes care of removing DaemonSet and Job configurations, as well as
+removing the related RBAC objects. However, the namespace is not removed, even
+if it was empty after all NFD objects are deleted.
+
+
 ## Building from source
 
-Download the source code.
+Download the source code and enter the source code directory.
 
 ```
 git clone https://github.com/kubernetes-incubator/node-feature-discovery
+cd node-feature-discovery
 ```
 
-**Build the Docker image:**
+### Building `nfdadm` only
+If you only need the `nfdadm` tool, you can build it on your host system. It
+requires that you have Golang and [Glide](https://github.com/Masterminds/glide)
+installed.
+```
+glide install -v
+make nfdadm
+```
+
+### Building the Docker image
 
 ```
-cd <project-root>
 make
 ```
+
+This will also build the `nfdadm` tool and copy it to your current working
+directory.
+
 
 **NOTE: Our default docker image is hosted in quay.io. To override the 
 `QUAY_REGISTRY_USER` use the `-e` option as follows: 
 `QUAY_REGISTRY_USER=<my-username> make docker -e`**
 
-Push the Docker Image (optional)
+Push the Docker Image (optional):
 
 ```
 docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
@@ -226,10 +281,14 @@ docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
 
 **Change the job spec to use your custom image (optional):**
 
-To use your published image from the step above instead of the
-`quay.io/kubernetes_incubator/node-feature-discovery` image, edit line 40 in the file
-[node-feature-discovery-job.json.template](node-feature-discovery-job.json.template)
-to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
+To use your published image from the step above, use the `--image` option of `nfdadm`
+```
+./nfdadm init --image <quay-domain-name>/<registry-user>/<image-name>:<version>
+```
+
+If using kubectl directly, edit the template spec you're using
+([node-feature-discovery-daemonset.json.template](node-feature-discovery-daemonset.json.template#L36) or
+[node-feature-discovery-job.json.template](node-feature-discovery-job.json.template#L33)) .
 
 ## Targeting Nodes with Specific Features
 
