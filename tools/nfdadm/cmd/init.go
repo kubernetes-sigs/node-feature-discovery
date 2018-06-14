@@ -34,6 +34,7 @@ type InitCmdFlags struct {
 	job        bool
 	kubeconfig string
 	namespace  string
+	nfdArgs    []string
 }
 
 var initCmdFlags = &InitCmdFlags{}
@@ -45,6 +46,7 @@ func init() {
 	initCmd.Flags().BoolVarP(&initCmdFlags.job, "job", "j", false, "Deploy node feature discovery as a one-shot Job, instead of DaemonSet")
 	initCmd.Flags().StringVarP(&initCmdFlags.kubeconfig, "kubeconfig", "c", common.DefaultKubeconfig(), "Kubeconfig file to use for communicating with the API server")
 	initCmd.Flags().StringVarP(&initCmdFlags.namespace, "namespace", "n", "default", "Namespace where node-feature-discovery is created")
+	initCmd.Flags().StringArrayVarP(&initCmdFlags.nfdArgs, "nfd-arg", "a", []string{}, "Extra argument for the node-feature-discovery binary (can be specified multiple times)")
 }
 
 var initCmd = &cobra.Command{
@@ -234,7 +236,7 @@ func podSpecCommon(imageName string) v1.PodSpec {
 func createDaemonSet(flags *InitCmdFlags, clientset kubernetes.Interface) (*appsv1.DaemonSet, error) {
 	// Create pod spec from the common template
 	podSpec := podSpecCommon(flags.image)
-	podSpec.Containers[0].Args = []string{"--sleep-interval=60s"}
+	podSpec.Containers[0].Args = append([]string{"--sleep-interval=60s"}, initCmdFlags.nfdArgs...)
 
 	// Define the complete daemonset object
 	ds := &appsv1.DaemonSet{
@@ -269,7 +271,7 @@ func createJob(flags *InitCmdFlags, clientset kubernetes.Interface) (*batchv1.Jo
 	// Create pod spec from the common template
 	podSpec := podSpecCommon(flags.image)
 	podSpec.RestartPolicy = v1.RestartPolicyNever
-	podSpec.Containers[0].Args = []string{"--oneshot"}
+	podSpec.Containers[0].Args = append([]string{"--oneshot"}, initCmdFlags.nfdArgs...)
 
 	numReadyNodes, err := getAvailableNodes(clientset)
 	if err != nil {
