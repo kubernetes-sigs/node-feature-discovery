@@ -36,7 +36,21 @@
             ],
             "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.1.0",
             "name": "node-feature-discovery",
-            "args": ["--sleep-interval=60s"]
+            "args": ["--sleep-interval=60s"],
+            "volumeMounts": [
+              {
+                "name": "host-sys",
+                "mountPath": "/host-sys"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "host-sys",
+            "hostPath": {
+              "path": "/sys"
+            }
           }
         ]
       }
