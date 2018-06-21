@@ -19,6 +19,8 @@ package storage
 import (
 	"fmt"
 	"io/ioutil"
+
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 // Source implements FeatureSource.
@@ -28,8 +30,8 @@ type Source struct{}
 func (s Source) Name() string { return "storage" }
 
 // Discover returns feature names for storage: nonrotationaldisk if any SSD drive present.
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 
 	// Check if there is any non-rotational block devices attached to the node
 	blockdevices, err := ioutil.ReadDir("/sys/block/")
@@ -42,7 +44,7 @@ func (s Source) Discover() ([]string, error) {
 			}
 			if bytes[0] == byte('0') {
 				// Non-rotational storage is present, add label.
-				features = append(features, "nonrotationaldisk")
+				features["nonrotationaldisk"] = true
 				break
 			}
 		}

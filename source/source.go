@@ -16,11 +16,27 @@ limitations under the License.
 
 package source
 
+// Value of a feature
+type FeatureValue interface {
+}
+
+// Boolean feature value
+type BoolFeatureValue bool
+
+func (b BoolFeatureValue) String() string {
+	if b == true {
+		return "true"
+	}
+	return "false"
+}
+
+type Features map[string]FeatureValue
+
 // FeatureSource represents a source of a discovered node feature.
 type FeatureSource interface {
 	// Name returns a friendly name for this source of node feature.
 	Name() string
 
 	// Discover returns discovered features for this node.
-	Discover() ([]string, error)
+	Discover() (Features, error)
 }

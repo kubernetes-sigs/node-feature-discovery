@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 // Source implements FeatureSource.
@@ -29,8 +31,8 @@ type Source struct{}
 func (s Source) Name() string { return "memory" }
 
 // Discover returns feature names for memory: numa if more than one memory node is present.
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 
 	// Find out how many nodes are online
 	// Multiple nodes is a sign of NUMA
@@ -44,7 +46,7 @@ func (s Source) Discover() ([]string, error) {
 	// presence of newline requires TrimSpace
 	if strings.TrimSpace(string(bytes)) != "0" {
 		// more than one node means NUMA
-		features = append(features, "numa")
+		features["numa"] = true
 	}
 
 	return features, nil

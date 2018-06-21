@@ -24,6 +24,8 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 // Source implements FeatureSource.
@@ -33,8 +35,8 @@ type Source struct{}
 func (s Source) Name() string { return "network" }
 
 // Discover returns feature names sriov-configured and sriov if SR-IOV capable NICs are present and/or SR-IOV virtual functions are configured on the node
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
 		return nil, fmt.Errorf("can't obtain the network interfaces details: %s", err.Error())
@@ -57,7 +59,7 @@ func (s Source) Discover() ([]string, error) {
 			if t > 0 {
 				glog.Infof("SR-IOV capability is detected on the network interface: %s", netInterface.Name)
 				glog.Infof("%d maximum supported number of virtual functions on network interface: %s", t, netInterface.Name)
-				features = append(features, "sriov.capable")
+				features["sriov.capable"] = true
 				numVfsPath := "/sys/class/net/" + netInterface.Name + "/device/sriov_numvfs"
 				numBytes, err := ioutil.ReadFile(numVfsPath)
 				if err != nil {
@@ -72,7 +74,7 @@ func (s Source) Discover() ([]string, error) {
 				}
 				if n > 0 {
 					glog.Infof("%d virtual functions configured on network interface: %s", n, netInterface.Name)
-					features = append(features, "sriov.configured")
+					features["sriov.configured"] = true
 					break
 				} else if n == 0 {
 					glog.Errorf("SR-IOV not configured on network interface: %s", netInterface.Name)

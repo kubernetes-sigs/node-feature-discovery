@@ -16,6 +16,8 @@ limitations under the License.
 
 package panic_fake
 
+import "github.com/kubernetes-incubator/node-feature-discovery/source"
+
 // Source implements FeatureSource.
 type Source struct{}
 
@@ -23,6 +25,6 @@ type Source struct{}
 func (s Source) Name() string { return "panic_fake" }
 
 // Discover calls panic().
-func (s Source) Discover() ([]string, error) {
+func (s Source) Discover() (source.Features, error) {
 	panic("fake panic error")
 }

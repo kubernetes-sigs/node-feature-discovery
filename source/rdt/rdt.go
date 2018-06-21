@@ -20,6 +20,7 @@ import (
 	"os/exec"
 
 	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 // Source implements FeatureSource.
@@ -29,15 +30,15 @@ type Source struct{}
 func (s Source) Name() string { return "rdt" }
 
 // Discover returns feature names for CMT and CAT if supported.
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 
 	cmd := exec.Command("bash", "-c", "mon-discovery")
 	if err := cmd.Run(); err != nil {
 		glog.Errorf("support for RDT monitoring was not detected: %v", err)
 	} else {
 		// RDT monitoring detected.
-		features = append(features, "RDTMON")
+		features["RDTMON"] = true
 	}
 
 	cmd = exec.Command("bash", "-c", "mon-cmt-discovery")
@@ -45,7 +46,7 @@ func (s Source) Discover() ([]string, error) {
 		glog.Errorf("support for RDT CMT monitoring was not detected: %v", err)
 	} else {
 		// RDT CMT monitoring detected.
-		features = append(features, "RDTCMT")
+		features["RDTCMT"] = true
 	}
 
 	cmd = exec.Command("bash", "-c", "mon-mbm-discovery")
@@ -53,7 +54,7 @@ func (s Source) Discover() ([]string, error) {
 		glog.Errorf("support for RDT MBM monitoring was not detected: %v", err)
 	} else {
 		// RDT MBM monitoring detected.
-		features = append(features, "RDTMBM")
+		features["RDTMBM"] = true
 	}
 
 	cmd = exec.Command("bash", "-c", "l3-alloc-discovery")
@@ -61,7 +62,7 @@ func (s Source) Discover() ([]string, error) {
 		glog.Errorf("support for RDT L3 allocation was not detected: %v", err)
 	} else {
 		// RDT L3 cache allocation detected.
-		features = append(features, "RDTL3CA")
+		features["RDTL3CA"] = true
 	}
 
 	cmd = exec.Command("bash", "-c", "l2-alloc-discovery")
@@ -69,7 +70,7 @@ func (s Source) Discover() ([]string, error) {
 		glog.Errorf("support for RDT L2 allocation was not detected: %v", err)
 	} else {
 		// RDT L2 cache allocation detected.
-		features = append(features, "RDTL2CA")
+		features["RDTL2CA"] = true
 	}
 
 	cmd = exec.Command("bash", "-c", "mem-bandwidth-alloc-discovery")
@@ -77,7 +78,7 @@ func (s Source) Discover() ([]string, error) {
 		glog.Errorf("support for RDT Memory bandwidth allocation was not detected: %v", err)
 	} else {
 		// RDT Memory bandwidth allocation detected.
-		features = append(features, "RDTMBA")
+		features["RDTMBA"] = true
 	}
 
 	return features, nil

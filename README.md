@@ -96,6 +96,7 @@ The published node labels encode a few pieces of information:
 - The source for each label (e.g. `cpuid`).
 - The name of the discovered feature as it appears in the underlying
   source, (e.g. `AESNI` from cpuid).
+- The value of the discovered feature.
 
 Feature label names adhere to the following pattern:
 ```

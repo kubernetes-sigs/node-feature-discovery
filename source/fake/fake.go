@@ -16,6 +16,8 @@ limitations under the License.
 
 package fake
 
+import "github.com/kubernetes-incubator/node-feature-discovery/source"
+
 // Source implements FeatureSource.
 type Source struct{}
 
@@ -23,11 +25,13 @@ type Source struct{}
 func (s Source) Name() string { return "fake" }
 
 // Discover returns feature names for some fake features.
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
-
+func (s Source) Discover() (source.Features, error) {
 	// Adding three fake features.
-	features = append(features, "fakefeature1", "fakefeature2", "fakefeature3")
+	features := source.Features{
+		"fakefeature1": true,
+		"fakefeature2": true,
+		"fakefeature3": true,
+	}
 
 	return features, nil
 }
