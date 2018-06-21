@@ -332,8 +332,8 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range features {
-		labels[fmt.Sprintf("%s-%s-%s", prefix, source.Name(), f)] = "true"
+	for k := range features {
+		labels[fmt.Sprintf("%s-%s-%s", prefix, source.Name(), k)] = fmt.Sprintf("%v", features[k])
 	}
 	return labels, nil
 }

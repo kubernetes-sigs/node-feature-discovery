@@ -19,6 +19,8 @@ package iommu
 import (
 	"fmt"
 	"io/ioutil"
+
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 // Implement FeatureSource interface
@@ -26,8 +28,8 @@ type Source struct{}
 
 func (s Source) Name() string { return "iommu" }
 
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 
 	// Check if any iommu devices are available
 	devices, err := ioutil.ReadDir("/sys/class/iommu/")
@@ -36,7 +38,7 @@ func (s Source) Discover() ([]string, error) {
 	}
 
 	if len(devices) > 0 {
-		features = append(features, "enabled")
+		features["enabled"] = true
 	}
 
 	return features, nil

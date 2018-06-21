@@ -1,6 +1,9 @@
 package main
 
-import "github.com/stretchr/testify/mock"
+import (
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
+	"github.com/stretchr/testify/mock"
+)
 
 type MockFeatureSource struct {
 	mock.Mock
@@ -23,15 +26,15 @@ func (_m *MockFeatureSource) Name() string {
 
 // Discover provides a mock function with no input arguments
 // and []string and error as the return values
-func (_m *MockFeatureSource) Discover() ([]string, error) {
+func (_m *MockFeatureSource) Discover() (source.Features, error) {
 	ret := _m.Called()
 
-	var r0 []string
-	if rf, ok := ret.Get(0).(func() []string); ok {
+	var r0 source.Features
+	if rf, ok := ret.Get(0).(func() source.Features); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).(source.Features)
 		}
 	}
 

@@ -23,6 +23,8 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 type pciDeviceInfo map[string]string
@@ -48,8 +50,8 @@ type Source struct{}
 func (s Source) Name() string { return "pci" }
 
 // Discover features
-func (s Source) Discover() ([]string, error) {
-	features := map[string]bool{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 
 	devs, err := detectPci()
 	if err != nil {
@@ -100,12 +102,7 @@ func (s Source) Discover() ([]string, error) {
 		}
 	}
 
-	feature_list := []string{}
-	for feature := range features {
-		feature_list = append(feature_list, feature)
-	}
-
-	return feature_list, nil
+	return features, nil
 }
 
 // Read information of one PCI device

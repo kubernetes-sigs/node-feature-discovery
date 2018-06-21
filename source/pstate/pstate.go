@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
+
+	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
 // Source implements FeatureSource.
@@ -29,8 +31,8 @@ type Source struct{}
 func (s Source) Name() string { return "pstate" }
 
 // Discover returns feature names for p-state related features such as turbo boost.
-func (s Source) Discover() ([]string, error) {
-	features := []string{}
+func (s Source) Discover() (source.Features, error) {
+	features := source.Features{}
 
 	// On Arm platform, the frequency boost mechanism is software-based.
 	// So skip pstate detection on Arm.
@@ -46,7 +48,7 @@ func (s Source) Discover() ([]string, error) {
 	}
 	if bytes[0] == byte('0') {
 		// Turbo boost is enabled.
-		features = append(features, "turbo")
+		features["turbo"] = true
 	}
 
 	return features, nil
