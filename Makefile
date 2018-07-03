@@ -6,6 +6,8 @@ DOCKER_IMAGE_NAME := node-feature-discovery
 
 VERSION := $(shell git describe --tags --dirty --always)
 
+DOCKER_TAG = $(QUAY_DOMAIN_NAME)/$(QUAY_REGISTRY_USER)/$(DOCKER_IMAGE_NAME):$(VERSION)
+
 all: docker
 
 # To override QUAY_REGISTRY_USER use the -e option as follows:
@@ -18,4 +20,14 @@ docker:
 		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
 		--build-arg no_proxy=$(no_proxy) \
 		--build-arg NO_PROXY=$(NO_PROXY) \
-		-t $(QUAY_DOMAIN_NAME)/$(QUAY_REGISTRY_USER)/$(DOCKER_IMAGE_NAME):$(VERSION) ./
+		-t $(DOCKER_TAG) ./
+
+	@echo "Copying nfdadm tool from container..."
+	@container_id=`docker create $(DOCKER_TAG)`; \
+	docker cp $${container_id}:/go/bin/nfdadm .; \
+	docker rm -v $${container_id} > /dev/null
+
+nfdadm:
+	go install \
+		-ldflags "-s -w -X github.com/kubernetes-incubator/node-feature-discovery/version.version=$(VERSION)" \
+		github.com/kubernetes-incubator/node-feature-discovery/tools/nfdadm
