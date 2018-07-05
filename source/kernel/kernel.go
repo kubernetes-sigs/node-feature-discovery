@@ -17,13 +17,26 @@ limitations under the License.
 package kernel
 
 import (
+	"bytes"
+	"compress/gzip"
 	"io/ioutil"
+	"log"
+	"os"
 	"regexp"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
+
+// Default kconfig flags
+var defaultKconfigFlags = [...]string{
+	"NO_HZ",
+	"NO_HZ_IDLE",
+	"NO_HZ_FULL",
+	"PREEMPT",
+}
+
+var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 // Implement FeatureSource interface
 type Source struct{}
@@ -36,12 +49,26 @@ func (s Source) Discover() (source.Features, error) {
 	// Read kernel version
 	version, err := parseVersion()
 	if err != nil {
-		glog.Errorf("Failed to get kernel version: %v", err)
+		logger.Printf("ERROR: Failed to get kernel version: %s", err)
 	} else {
 		for key := range version {
 			features["version."+key] = version[key]
 		}
 	}
+
+	// Read kconfig
+	kconfig, err := parseKconfig()
+	if err != nil {
+		logger.Printf("ERROR: Failed to read kconfig: %s", err)
+	}
+
+	// Check flags
+	for _, flag := range defaultKconfigFlags {
+		if _, ok := kconfig[flag]; ok {
+			features["config."+flag] = true
+		}
+	}
+
 	return features, nil
 }
 
@@ -69,4 +96,65 @@ func parseVersion() (map[string]string, error) {
 	}
 
 	return version, nil
+}
+
+// Read gzipped kernel config
+func readKconfigGzip(filename string) ([]byte, error) {
+	// Open file for reading
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	// Uncompress data
+	r, err := gzip.NewReader(f)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	return ioutil.ReadAll(r)
+}
+
+// Read kconfig into a map
+func parseKconfig() (map[string]bool, error) {
+	kconfig := map[string]bool{}
+	raw := []byte(nil)
+
+	// First, try to read from /proc as this is the most reliable source
+	raw, err := readKconfigGzip("/proc/config.gz")
+	if err != nil {
+		logger.Printf("ERROR: Failed to read /proc/config.gz: %s", err)
+	}
+
+	// Last, try to read from /boot/
+	if raw == nil {
+		// Get kernel version
+		unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
+		uname := strings.TrimSpace(string(unameRaw))
+		if err != nil {
+			return nil, err
+		}
+		// Read kconfig
+		raw, err = ioutil.ReadFile("/host-boot/config-" + uname)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Regexp for matching kconfig flags
+	re := regexp.MustCompile(`^CONFIG_(?P<flag>\w+)=(?P<value>.+)`)
+
+	// Process data, line-by-line
+	lines := bytes.Split(raw, []byte("\n"))
+	for _, line := range lines {
+		if m := re.FindStringSubmatch(string(line)); m != nil {
+			if m[2] == "y" || m[2] == "m" {
+				kconfig[m[1]] = true
+			}
+		}
+	}
+
+	return kconfig, nil
 }

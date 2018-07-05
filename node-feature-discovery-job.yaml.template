@@ -28,10 +28,16 @@ spec:
             - containerPort: 7156
               hostPort: 7156
           volumeMounts:
+            - name: host-boot
+              mountPath: "/host-boot"
+              readOnly: true
             - name: host-sys
               mountPath: "/host-sys"
       restartPolicy: Never
       volumes:
+        - name: host-boot
+          hostPath:
+            path: "/boot"
         - name: host-sys
           hostPath:
             path: "/sys"
