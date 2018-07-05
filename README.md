@@ -46,7 +46,7 @@ node-feature-discovery.
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,memory,network,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -64,6 +64,7 @@ node-feature-discovery.
 The current set of feature sources are the following:
 
 - [CPUID][cpuid] for x86/Arm64 CPU details
+- IOMMU
 - Memory
 - Network
 - Pstate ([Intel P-State driver][intel-pstate])
@@ -89,6 +90,7 @@ the only label value published for features is the string `"true"`._
 {
   "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.2.0",
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-iommu-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
@@ -132,6 +134,12 @@ such as restricting discovered features with the --label-whitelist option._
 | PMULL          | Optional Cryptographic and CRC32 Instructions
 | JSCVT          | Perform Conversion to Match Javascript
 | DCPOP          | Persistent Memory Support
+
+### IOMMU Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| enabled        | IOMMU is present and enabled in the kernel
 
 ### Memory Features
 

@@ -12,6 +12,7 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/iommu"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/memory"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/network"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
@@ -136,7 +137,7 @@ func argsParse(argv []string) (args Args) {
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,memory,network,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -187,6 +188,7 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 	allSources := []source.FeatureSource{
 		cpuid.Source{},
 		fake.Source{},
+		iommu.Source{},
 		memory.Source{},
 		network.Source{},
 		panic_fake.Source{},
