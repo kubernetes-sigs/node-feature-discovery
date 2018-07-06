@@ -1,4 +1,10 @@
 #sources:
+#  kernel:
+#    kconfigFile: "/path/to/kconfig"
+#    configOpts:
+#      - "NO_HZ"
+#      - "X86"
+#      - "DMI"
 #  pci:
 #    deviceClassWhitelist:
 #      - "0200"
