@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/docopt/docopt-go"
+	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/cpuid"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
@@ -48,6 +50,14 @@ var (
 	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
+// Global config
+type NFDConfig struct {
+	Sources struct {
+	} `json:"sources,omitempty"`
+}
+
+var config = NFDConfig{}
+
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
@@ -76,6 +86,7 @@ type APIHelpers interface {
 // Command line arguments
 type Args struct {
 	labelWhiteList string
+	configFile     string
 	noPublish      bool
 	oneshot        bool
 	sleepInterval  time.Duration
@@ -90,6 +101,12 @@ func main() {
 
 	// Parse command-line arguments.
 	args := argsParse(nil)
+
+	// Read the config file
+	err := configParse(args.configFile)
+	if err != nil {
+		stderrLogger.Print(err)
+	}
 
 	// Configure the parameters for feature discovery.
 	enabledSources, labelWhiteList, err := configureParameters(args.sources, args.labelWhiteList)
@@ -129,13 +146,15 @@ func argsParse(argv []string) (args Args) {
 
   Usage:
   %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
-     [--oneshot | --sleep-interval=<seconds>]
+     [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
   %s -h | --help
   %s --version
 
   Options:
   -h --help                   Show this screen.
   --version                   Output version and exit.
+  --config=<path>             Config file to use.
+                              [Default: /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf]
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
@@ -157,6 +176,7 @@ func argsParse(argv []string) (args Args) {
 
 	// Parse argument values as usable types.
 	var err error
+	args.configFile = arguments["--config"].(string)
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.sources = strings.Split(arguments["--sources"].(string), ",")
 	args.labelWhiteList = arguments["--label-whitelist"].(string)
@@ -173,6 +193,22 @@ func argsParse(argv []string) (args Args) {
 	}
 
 	return args
+}
+
+// Parse configuration file
+func configParse(filepath string) error {
+	data, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("Failed to read config file: %s", err)
+	}
+
+	// Read config file
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return fmt.Errorf("Failed to parse config file: %s", err)
+	}
+
+	return nil
 }
 
 // configureParameters returns all the variables required to perform feature

@@ -26,6 +26,7 @@ RUN glide install --strip-vendor
 RUN go install \
   -ldflags "-s -w -X main.version=$NFD_VERSION" \
   github.com/kubernetes-incubator/node-feature-discovery
+RUN install -D -m644 node-feature-discovery.conf.example /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf
 
 RUN go test .
 
@@ -35,6 +36,7 @@ FROM debian:stretch-slim
 
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /etc/kubernetes/node-feature-discovery /etc/kubernetes/node-feature-discovery
 RUN ldconfig
 COPY --from=builder /go/bin/node-feature-discovery /usr/bin/node-feature-discovery
 

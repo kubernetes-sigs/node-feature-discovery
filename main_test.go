@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -169,6 +171,32 @@ func TestArgsParse(t *testing.T) {
 				So(args.noPublish, ShouldBeTrue)
 				So(args.sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
 				So(len(args.labelWhiteList), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestConfigParse(t *testing.T) {
+	Convey("When parsing configuration file", t, func() {
+		Convey("When non-accessible file is given", func() {
+			err := configParse("non-existing-file")
+
+			Convey("Should return error", func() {
+				So(err, ShouldNotBeNil)
+			})
+		})
+		// Create a temporary config file
+		f, err := ioutil.TempFile("", "nfd-test-")
+		defer os.Remove(f.Name())
+		So(err, ShouldBeNil)
+		f.WriteString(`sources:`)
+		f.Close()
+
+		Convey("When proper config file is given", func() {
+			err := configParse(f.Name())
+
+			Convey("Should return error", func() {
+				So(err, ShouldBeNil)
 			})
 		})
 	})

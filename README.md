@@ -38,13 +38,15 @@ node-feature-discovery.
 
   Usage:
   node-feature-discovery [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
-     [--oneshot | --sleep-interval=<seconds>]
+     [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
   node-feature-discovery -h | --help
   node-feature-discovery --version
 
   Options:
   -h --help                   Show this screen.
   --version                   Output version and exit.
+  --config=<path>             Config file to use.
+                              [Default: /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf]
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
@@ -230,6 +232,43 @@ Note that this approach does not guarantee running once on every node.
 For example, if some node is tainted NoSchedule or fails to start a job for some other reason, then some other node will run extra job instance(s) to satisfy the request and the tainted/failed node does not get labeled.
 
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
+
+### Configuration file
+
+NFD supports a configuration file. The default location is
+`/etc/kubernetes/node-feature-discovery/node-feature-discovery.conf`, but,
+this can be changed by specifying the`--config` command line flag. The file is
+read inside the Docker image, and thus, Volumes and VolumeMounts are needed to
+make your configuration available for NFD. The preferred method is to use a
+ConfigMap.
+For example, create a config map using the example config as a template:
+```
+cp node-feature-discovery.conf.example node-feature-discovery.conf
+vim node-feature-discovery.conf  # edit the configuration
+kubectl create configmap node-feature-discovery-config --from-file=node-feature-discovery.conf
+```
+Then, configure Volumes and VolumeMounts in the Pod spec (just the relevant
+snippets shown below):
+```
+...
+  containers:
+      volumeMounts:
+        - name: node-feature-discovery-config
+          mountPath: "/etc/kubernetes/node-feature-discovery/"
+...
+  volumes:
+    - name: node-feature-discovery-config
+      configMap:
+        name: node-feature-discovery-config
+...
+```
+You could also use other types of volumes, of course. That is, hostPath if
+different config for different nodes would be required, for example.
+
+The (empty-by-default)
+[example config](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery.conf.example)
+is used as a config in the NFD Docker image. Thus, this can be used as default
+configuration in custom-built images.
 
 ## Building from source
 
