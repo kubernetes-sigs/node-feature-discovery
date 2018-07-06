@@ -205,6 +205,9 @@ func TestConfigParse(t *testing.T) {
 		defer os.Remove(f.Name())
 		So(err, ShouldBeNil)
 		f.WriteString(`sources:
+  kernel:
+    configOpts:
+      - "DMI"
   pci:
     deviceClassWhitelist:
       - "ff"`)
@@ -215,6 +218,7 @@ func TestConfigParse(t *testing.T) {
 
 			Convey("Should return error", func() {
 				So(err, ShouldBeNil)
+				So(config.Sources.Kernel.ConfigOpts, ShouldResemble, []string{"DMI"})
 				So(config.Sources.Pci.DeviceClassWhitelist, ShouldResemble, []string{"ff"})
 			})
 		})

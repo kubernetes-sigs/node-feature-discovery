@@ -28,15 +28,23 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
 
-// Default kconfig flags
-var defaultKconfigFlags = [...]string{
-	"NO_HZ",
-	"NO_HZ_IDLE",
-	"NO_HZ_FULL",
-	"PREEMPT",
+// Configuration file options
+type NFDConfig struct {
+	KconfigFile string
+	ConfigOpts  []string `json:"configOpts,omitempty"`
 }
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
+
+var Config = NFDConfig{
+	KconfigFile: "",
+	ConfigOpts: []string{
+		"NO_HZ",
+		"NO_HZ_IDLE",
+		"NO_HZ_FULL",
+		"PREEMPT",
+	},
+}
 
 // Implement FeatureSource interface
 type Source struct{}
@@ -63,9 +71,9 @@ func (s Source) Discover() (source.Features, error) {
 	}
 
 	// Check flags
-	for _, flag := range defaultKconfigFlags {
-		if _, ok := kconfig[flag]; ok {
-			features["config."+flag] = true
+	for _, opt := range Config.ConfigOpts {
+		if _, ok := kconfig[opt]; ok {
+			features["config."+opt] = true
 		}
 	}
 
@@ -121,11 +129,22 @@ func readKconfigGzip(filename string) ([]byte, error) {
 func parseKconfig() (map[string]bool, error) {
 	kconfig := map[string]bool{}
 	raw := []byte(nil)
+	err := error(nil)
 
-	// First, try to read from /proc as this is the most reliable source
-	raw, err := readKconfigGzip("/proc/config.gz")
-	if err != nil {
-		logger.Printf("ERROR: Failed to read /proc/config.gz: %s", err)
+	// First, try kconfig specified in the config file
+	if len(Config.KconfigFile) > 0 {
+		raw, err = ioutil.ReadFile(Config.KconfigFile)
+		if err != nil {
+			logger.Printf("ERROR: Failed to read kernel config from %s: %s", Config.KconfigFile, err)
+		}
+	}
+
+	// Then, try to read from /proc
+	if raw == nil {
+		raw, err = readKconfigGzip("/proc/config.gz")
+		if err != nil {
+			logger.Printf("Failed to read /proc/config.gz: %s", err)
+		}
 	}
 
 	// Last, try to read from /boot/

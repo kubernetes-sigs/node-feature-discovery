@@ -170,16 +170,17 @@ such as restricting discovered features with the --label-whitelist option._
 
 ### Kernel Features
 
-| Feature | Attribute   | Description                                          |
-| ------- | ----------- | ---------------------------------------------------- |
-| config  | NO_HZ       | Kernel config option is enabled
-| <br>    | NO_HZ_FULL  |
-| <br>    | NO_HZ_IDLE  |
-| <br>    | PREEMPT     |
-| version | full        | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde')
-| <br>    | major       | First component of the kernel version (e.g. '4')
-| <br>    | minor       | Second component of the kernel version (e.g. '5')
-| <br>    | revision    | Third component of the kernel version (e.g. '6')
+| Feature | Attribute           | Description                                  |
+| ------- | ------------------- | -------------------------------------------- |
+| config  | &lt;option name&gt; | Kernel config option is enabled (set 'y' or 'm').<br> Default options are `NO_HZ`, `NO_HZ_IDLE`, `NO_HZ_FULL` and `PREEMPT`
+| version | full                | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde')
+| <br>    | major               | First component of the kernel version (e.g. '4')
+| <br>    | minor               | Second component of the kernel version (e.g. '5')
+| <br>    | revision            | Third component of the kernel version (e.g. '6')
+
+Kernel config file to use, and, the set of config options to be detected are
+configurable.
+See [configuration options](#configuration-options) for more information.
 
 ### Memory Features
 
@@ -326,7 +327,7 @@ Configuration options specified from the command line will override those read
 from the config file.
 
 Currently, the only available configuration options are related to the
-[PCI feature source](#pci-features).
+[PCI](#pci-features) and [Kernel](#kernel-features) feature sources.
 
 ## Building from source
 
