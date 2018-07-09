@@ -15,3 +15,7 @@ all: image
 image:
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
 		-t $(QUAY_DOMAIN_NAME)/$(QUAY_REGISTRY_USER)/$(DOCKER_IMAGE_NAME):$(VERSION) ./
+
+mock:
+	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
+	mockery --name=APIHelpers --inpkg --note="Re-generate by running 'make mock'"
