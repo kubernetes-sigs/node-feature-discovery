@@ -54,7 +54,7 @@ node-feature-discovery.
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,memory,network,pci,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,kernel,memory,network,pci,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -79,6 +79,7 @@ The current set of feature sources are the following:
 
 - [CPUID][cpuid] for x86/Arm64 CPU details
 - IOMMU
+- Kernel
 - Memory
 - Network
 - Pstate ([Intel P-State driver][intel-pstate])
@@ -114,6 +115,7 @@ the only label value published for features is the string `"true"`._
   "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.3.0",
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-iommu-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-kernel-version.<version component>": "<version number>",
   "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-pci-<device label>.present": "true",
@@ -164,6 +166,15 @@ such as restricting discovered features with the --label-whitelist option._
 | Feature name   | Description                                                                         |
 | :------------: | :---------------------------------------------------------------------------------: |
 | enabled        | IOMMU is present and enabled in the kernel
+
+### Kernel Features
+
+| Feature | Attribute | Description                                            |
+| ------- | --------- | ------------------------------------------------------ |
+| version | full      | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde')
+| <br>    | major     | First component of the kernel version (e.g. '4')
+| <br>    | minor     | Second component of the kernel version (e.g. '5')
+| <br>    | revision  | Third component of the kernel version (e.g. '6')
 
 ### Memory Features
 
