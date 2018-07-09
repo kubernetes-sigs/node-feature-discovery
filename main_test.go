@@ -21,7 +21,7 @@ import (
 
 func TestDiscoveryWithMockSources(t *testing.T) {
 	Convey("When I discover features from fake source and update the node using fake client", t, func() {
-		mockFeatureSource := new(MockFeatureSource)
+		mockFeatureSource := new(source.MockFeatureSource)
 		fakeFeatureSourceName := string("testSource")
 		fakeFeatureNames := []string{"testfeature1", "testfeature2", "testfeature3"}
 		fakeFeatures := source.Features{}
