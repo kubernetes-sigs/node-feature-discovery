@@ -52,7 +52,7 @@ node-feature-discovery.
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -85,6 +85,7 @@ The current set of feature sources are the following:
 - RDT ([Intel Resource Director Technology][intel-rdt])
 - Selinux
 - Storage
+- System
 
 ### Feature labels
 
@@ -120,6 +121,7 @@ the only label value published for features is the string `"true"`._
   "feature.node.kubernetes.io/rdt-<feature-name>": "true",
   "feature.node.kubernetes.io/selinux-<feature-name>": "true",
   "feature.node.kubernetes.io/storage-<feature-name>": "true",
+  "feature.node.kubernetes.io/system-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/<hook name>-<feature name>": "<feature value>"
 }
 ```
@@ -289,6 +291,13 @@ for more information on NFD config.
 | Feature name       | Description                                                                         |
 | :--------------:   | :---------------------------------------------------------------------------------: |
 | nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
+
+### System Features
+
+| Feature     | Attribute  | Description                                       |
+| ----------- | ---------- | --------------------------------------------------|
+| os_release  | ID         | Operating system identifier
+| <br>        | VERSION_ID | Operating system version identifier
 
 ## Getting started
 ### System requirements

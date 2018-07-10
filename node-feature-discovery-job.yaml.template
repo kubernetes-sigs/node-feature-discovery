@@ -31,6 +31,9 @@ spec:
             - name: host-boot
               mountPath: "/host-boot"
               readOnly: true
+            - name: host-os-release
+              mountPath: "/host-etc/os-release"
+              readOnly: true
             - name: host-sys
               mountPath: "/host-sys"
       restartPolicy: Never
@@ -38,6 +41,9 @@ spec:
         - name: host-boot
           hostPath:
             path: "/boot"
+        - name: host-os-release
+          hostPath:
+            path: "/etc/os-release"
         - name: host-sys
           hostPath:
             path: "/sys"
