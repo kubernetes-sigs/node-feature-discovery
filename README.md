@@ -54,7 +54,7 @@ node-feature-discovery.
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,kernel,memory,network,pci,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -80,6 +80,7 @@ The current set of feature sources are the following:
 - [CPUID][cpuid] for x86/Arm64 CPU details
 - IOMMU
 - Kernel
+- Local (user-specific features)
 - Memory
 - Network
 - Pstate ([Intel P-State driver][intel-pstate])
@@ -122,7 +123,8 @@ the only label value published for features is the string `"true"`._
   "feature.node.kubernetes.io/nfd-pstate-<feature-name>": "true",
   "feature.node.kubernetes.io/nfd-rdt-<feature-name>": "true",
   "feature.node.kubernetes.io/nfd-selinux-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-storage-<feature-name>": "true"
+  "feature.node.kubernetes.io/nfd-storage-<feature-name>": "true",
+  "feature.node.kubernetes.io/<hook name>-<feature name>": "true"
 }
 ```
 
@@ -175,6 +177,47 @@ such as restricting discovered features with the --label-whitelist option._
 | <br>    | major     | First component of the kernel version (e.g. '4')
 | <br>    | minor     | Second component of the kernel version (e.g. '5')
 | <br>    | revision  | Third component of the kernel version (e.g. '6')
+
+### Local (User-specific Features)
+
+NFD has a special feature source named *local* which is designed for running
+user-specific feature detector hooks. It provides a mechanism for users to
+implement custom feature sources in a pluggable way, without modifying nfd
+source code or Docker images. The local feature source can be used to advertise
+new user-specific features, and, for overriding labels created by the other
+feature sources.
+
+The *local* feature source tries to execute files found under
+`/etc/kubernetes/node-feature-discovery/source.d/` directory. The hooks must be
+available inside the Docker image so Volumes and VolumeMounts must be used if
+standard NFD images are used.
+
+The hook files must be executable. When executed, the hooks are supposed to
+print all discovered features in `stdout`, one feature per line. The output in
+stdout is used in the node label as is. Unlike other feature sources, the
+source name (i.e. `local`) is not used as a prefix in the label. The full name
+of node label name will conform to the following convention:
+`feature.node.kubernetes.io/<hook name>-<feature name>`.
+`stderr` output of the hooks is propagated to NFD log so it can be used for
+debugging and logging.
+
+**An example:**
+User has a shell script
+`/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
+following `stdout` output:
+```
+MY_FEATURE_1
+MY_FEATURE_2
+```
+which, in turn, will translate into the following node labels:
+```
+feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
+feature.node.kubernetes.io/my-source-MY_FEATURE_2=true
+```
+
+**NOTE!** NFD will blindly run any executables placed/mounted in the hooks
+directory. It is the user's responsibility to review the hooks for e.g.
+possible security implications.
 
 ### Memory Features
 

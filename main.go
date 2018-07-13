@@ -17,6 +17,7 @@ import (
 	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/iommu"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/kernel"
+	"github.com/kubernetes-incubator/node-feature-discovery/source/local"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/memory"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/network"
 	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
@@ -179,7 +180,7 @@ func argsParse(argv []string) (args Args) {
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,kernel,memory,network,pci,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -266,6 +267,9 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		rdt.Source{},
 		selinux.Source{},
 		storage.Source{},
+		// local needs to be the last source so that it is able to override
+		// labels from other sources
+		local.Source{},
 	}
 
 	enabledSources = []source.FeatureSource{}
@@ -351,7 +355,13 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 		return nil, err
 	}
 	for k := range features {
-		labels[fmt.Sprintf("%s-%s", source.Name(), k)] = fmt.Sprintf("%v", features[k])
+		prefix := source.Name() + "-"
+		switch source.(type) {
+		case local.Source:
+			// Do not prefix labels from the hooks
+			prefix = ""
+		}
+		labels[fmt.Sprintf("%s%s", prefix, k)] = fmt.Sprintf("%v", features[k])
 	}
 	return labels, nil
 }
