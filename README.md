@@ -52,7 +52,7 @@ node-feature-discovery.
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
+                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -75,6 +75,7 @@ for up-to-date information about the required volume mounts.
 
 The current set of feature sources are the following:
 
+- CPU
 - [CPUID][cpuid] for x86/Arm64 CPU details
 - IOMMU
 - Kernel
@@ -110,6 +111,7 @@ the only label value published for features is the string `"true"`._
 
 ```json
 {
+  "feature.node.kubernetes.io/cpu-<feature-name>": "true",
   "feature.node.kubernetes.io/cpuid-<feature-name>": "true",
   "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-config.<option-name>": "true",
@@ -132,6 +134,17 @@ _Note: Consecutive runs of node-feature-discovery will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
 such as restricting discovered features with the --label-whitelist option._
+
+### CPU Features
+
+The CPU feature source differs from the CPUID feature source in that it
+discovers CPU related features that are actually enabled, whereas CPUID only
+reports *supported* CPU capabilities (i.e. a capability might be supported but
+not enabled) as reported by the `cpuid` instruction.
+
+| Feature name            | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| hardware_multithreading | Hardware multithreading, such as Intel HTT, enabled (number of locical CPUs is greater than physical CPUs)
 
 ### X86 CPUID Features (Partial List)
 

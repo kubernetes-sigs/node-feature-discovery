@@ -17,6 +17,7 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/cpu"
 	"sigs.k8s.io/node-feature-discovery/source/cpuid"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/iommu"
@@ -183,7 +184,7 @@ func argsParse(argv []string) (args Args) {
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
+                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -259,6 +260,7 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 
 	// Configure feature sources.
 	allSources := []source.FeatureSource{
+		cpu.Source{},
 		cpuid.Source{},
 		fake.Source{},
 		iommu.Source{},
