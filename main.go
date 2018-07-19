@@ -136,7 +136,7 @@ func argsParse(argv []string) (args Args) {
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate,memory,network,storage,selinux]
+                              [Default: cpuid,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -186,14 +186,14 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 	// Configure feature sources.
 	allSources := []source.FeatureSource{
 		cpuid.Source{},
-		rdt.Source{},
-		pstate.Source{},
+		fake.Source{},
 		memory.Source{},
 		network.Source{},
-		storage.Source{},
-		selinux.Source{},
-		fake.Source{},
 		panic_fake.Source{},
+		pstate.Source{},
+		rdt.Source{},
+		selinux.Source{},
+		storage.Source{},
 	}
 
 	enabledSources = []source.FeatureSource{}
