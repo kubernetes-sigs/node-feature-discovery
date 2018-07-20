@@ -19,8 +19,8 @@ package network
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/glog"
 	"io/ioutil"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -47,37 +47,37 @@ func (s Source) Discover() (source.Features, error) {
 			totalVfsPath := "/sys/class/net/" + netInterface.Name + "/device/sriov_totalvfs"
 			totalBytes, err := ioutil.ReadFile(totalVfsPath)
 			if err != nil {
-				glog.Errorf("SR-IOV not supported for network interface: %s: %v", netInterface.Name, err)
+				log.Printf("SR-IOV not supported for network interface: %s: %v", netInterface.Name, err)
 				continue
 			}
 			total := bytes.TrimSpace(totalBytes)
 			t, err := strconv.Atoi(string(total))
 			if err != nil {
-				glog.Errorf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", netInterface.Name, err)
+				log.Printf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", netInterface.Name, err)
 				continue
 			}
 			if t > 0 {
-				glog.Infof("SR-IOV capability is detected on the network interface: %s", netInterface.Name)
-				glog.Infof("%d maximum supported number of virtual functions on network interface: %s", t, netInterface.Name)
+				log.Printf("SR-IOV capability is detected on the network interface: %s", netInterface.Name)
+				log.Printf("%d maximum supported number of virtual functions on network interface: %s", t, netInterface.Name)
 				features["sriov.capable"] = true
 				numVfsPath := "/sys/class/net/" + netInterface.Name + "/device/sriov_numvfs"
 				numBytes, err := ioutil.ReadFile(numVfsPath)
 				if err != nil {
-					glog.Errorf("SR-IOV not configured for network interface: %s: %s", netInterface.Name, err)
+					log.Printf("SR-IOV not configured for network interface: %s: %s", netInterface.Name, err)
 					continue
 				}
 				num := bytes.TrimSpace(numBytes)
 				n, err := strconv.Atoi(string(num))
 				if err != nil {
-					glog.Errorf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", netInterface.Name, err)
+					log.Printf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", netInterface.Name, err)
 					continue
 				}
 				if n > 0 {
-					glog.Infof("%d virtual functions configured on network interface: %s", n, netInterface.Name)
+					log.Printf("%d virtual functions configured on network interface: %s", n, netInterface.Name)
 					features["sriov.configured"] = true
 					break
 				} else if n == 0 {
-					glog.Errorf("SR-IOV not configured on network interface: %s", netInterface.Name)
+					log.Printf("SR-IOV not configured on network interface: %s", netInterface.Name)
 				}
 			}
 		}
