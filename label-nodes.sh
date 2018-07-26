@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Get the number of nodes in Ready state in the Kubernetes cluster
-NumNodes=$(kubectl get nodes | grep -i ready | wc -l)
+NumNodes=$(kubectl get nodes | grep -i ' ready ' | wc -l)
 
 # We set the .spec.completions and .spec.parallelism to the node count
 # We request a specific hostPort in the job spec to limit the number of pods
