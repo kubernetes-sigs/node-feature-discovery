@@ -4,5 +4,4 @@ services:
     - docker
 
 script:
-    - docker build -t quay.io/kubernetes_incubator/node-feature-discovery .
-    - docker run --entrypoint=go quay.io/kubernetes_incubator/node-feature-discovery test
+    - ./build.sh

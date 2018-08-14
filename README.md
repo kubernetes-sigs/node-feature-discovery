@@ -228,12 +228,12 @@ git clone https://github.com/kubernetes-incubator/node-feature-discovery
 
 ```
 cd <project-root>
-make
+./build.sh
 ```
 
-**NOTE: Our default docker image is hosted in quay.io. To override the 
-`QUAY_REGISTRY_USER` use the `-e` option as follows: 
-`QUAY_REGISTRY_USER=<my-username> make docker -e`**
+**NOTE: Our default docker image is hosted in quay.io. The quay.io username can
+be overridden from the command line as follows:
+`DOCKER_REGISTRY_USER=<my-username> ./build.sh`**
 
 Push the Docker Image (optional)
 
