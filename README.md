@@ -46,7 +46,7 @@ node-feature-discovery.
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,rdt,pstate,memory,network,storage,selinux]
+                              [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -64,12 +64,13 @@ node-feature-discovery.
 The current set of feature sources are the following:
 
 - [CPUID][cpuid] for x86/Arm64 CPU details
-- [Intel Resource Director Technology][intel-rdt]
-- [Intel P-State driver][intel-pstate]
+- IOMMU
 - Memory
 - Network
-- Storage
+- Pstate ([Intel P-State driver][intel-pstate])
+- RDT ([Intel Resource Director Technology][intel-rdt])
 - Selinux
+- Storage
 
 ### Feature labels
 
@@ -89,12 +90,13 @@ the only label value published for features is the string `"true"`._
 {
   "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.2.0",
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-iommu-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-storage-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-selinux-<feature-name>": "true"
+  "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-selinux-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-storage-<feature-name>": "true"
 }
 ```
 
@@ -104,17 +106,6 @@ _Note: Consecutive runs of node-feature-discovery will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
 such as restricting discovered features with the --label-whitelist option._
-
-### Intel Resource Director Technology (RDT) Features
-
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| RDTMON         | Intel RDT Monitoring Technology
-| RDTCMT         | Intel Cache Monitoring (CMT)
-| RDTMBM         | Intel Memory Bandwidth Monitoring (MBM)
-| RDTL3CA        | Intel L3 Cache Allocation Technology
-| RDTL2CA        | Intel L2 Cache Allocation Technology
-| RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
 
 ### X86 CPUID Features (Partial List)
 
@@ -130,12 +121,6 @@ such as restricting discovered features with the --label-whitelist option._
 | SSE4.2         | Streaming SIMD Extensions 4.2 (SSE4.2)
 | SGX            | Software Guard Extensions (SGX)
 
-### Memory Features
-
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| numa           | Multiple memory nodes i.e. NUMA architecture detected
-
 ### Arm64 CPUID Features (Partial List)
 
 | Feature name   | Description                                                  |
@@ -150,23 +135,46 @@ such as restricting discovered features with the --label-whitelist option._
 | JSCVT          | Perform Conversion to Match Javascript
 | DCPOP          | Persistent Memory Support
 
+### IOMMU Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| enabled        | IOMMU is present and enabled in the kernel
+
+### Memory Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| numa           | Multiple memory nodes i.e. NUMA architecture detected
+
 ### Network Features
 
 | Feature name   | Description                                                                         |
 | :------------: | :---------------------------------------------------------------------------------: |
 | [SRIOV][sriov] | Single Root Input/Output Virtualization (SR-IOV) enabled Network Interface Card
 
-### Storage Features
+### RDT (Intel Resource Director Technology) Features
 
-| Feature name       | Description                                                                         |
-| :--------------:   | :---------------------------------------------------------------------------------: |
-| nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| RDTMON         | Intel RDT Monitoring Technology
+| RDTCMT         | Intel Cache Monitoring (CMT)
+| RDTMBM         | Intel Memory Bandwidth Monitoring (MBM)
+| RDTL3CA        | Intel L3 Cache Allocation Technology
+| RDTL2CA        | Intel L2 Cache Allocation Technology
+| RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
 
 ### Selinux Features
 
 | Feature name       | Description                                                                         |
 | :--------------:   | :---------------------------------------------------------------------------------: |
 | selinux            | selinux is enabled on the node
+
+### Storage Features
+
+| Feature name       | Description                                                                         |
+| :--------------:   | :---------------------------------------------------------------------------------: |
+| nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
 
 ## Getting started
 ### System requirements
