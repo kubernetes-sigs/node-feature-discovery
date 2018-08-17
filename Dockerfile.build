@@ -1,0 +1,30 @@
+# Build node feature discovery
+FROM golang:1.8
+
+ADD . /go/src/github.com/kubernetes-incubator/node-feature-discovery
+
+WORKDIR /go/src/github.com/kubernetes-incubator/node-feature-discovery
+
+ENV CMT_CAT_VERSION="v1.2.0"
+
+ARG NFD_VERSION
+
+RUN case $(dpkg --print-architecture) in \
+        arm64) \
+                echo "skip rdt on Arm64 platform" \
+                ;; \
+        *) \
+                git clone --depth 1 -b $CMT_CAT_VERSION https://github.com/intel/intel-cmt-cat.git && \
+                make -C intel-cmt-cat/lib install && \
+                make -C rdt-discovery && \
+                make -C rdt-discovery install \
+                ;; \
+        esac
+
+RUN go get github.com/Masterminds/glide
+RUN glide install --strip-vendor
+RUN go install \
+  -ldflags "-s -w -X main.version=$NFD_VERSION" \
+  github.com/kubernetes-incubator/node-feature-discovery
+
+RUN go test .
