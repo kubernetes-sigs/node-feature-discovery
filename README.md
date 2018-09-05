@@ -248,8 +248,7 @@ Feature discovery is preferably run as a Kubernetes DaemonSet. There is an
 example spec that can be used as a template, or, as is when just trying out the
 service:
 ```
-kubectl create -f rbac.yaml
-kubectl create -f node-feature-discovery-daemonset.yaml.template
+kubectl apply -f node-feature-discovery-daemonset.yaml.template
 ```
 
 When the job runs, it contacts the Kubernetes API server to add labels
