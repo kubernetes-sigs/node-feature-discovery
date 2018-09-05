@@ -435,7 +435,7 @@ possible security implications.
 Nfd-master runs as a DaemonSet, by default in the master node(s) only. You can
 use the template spec provided to deploy nfd-master:
 ```
-kubectl create -f nfd-master.yaml.template
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-master.yaml.template
 ```
 Nfd-master listens for connections from nfd-worker(s) and connects to the
 Kubernetes API server to adds node labels advertised by them.
@@ -452,7 +452,7 @@ Nfd-worker is preferably run as a Kubernetes DaemonSet. There is an
 example spec that can be used as a template, or, as is when just trying out the
 service:
 ```
-kubectl create -f nfd-worker-daemonset.yaml.template
+kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-worker-daemonset.yaml.template
 ```
 
 Nfd-worker connects to the nfd-master service to advertise hardware features.
@@ -462,7 +462,9 @@ the `--sleep-interval` option. In the [template](https://github.com/kubernetes-s
 which is also the default when no `--sleep-interval` is specified.
 
 Feature discovery can alternatively be configured as a one-shot job. There is
-an example script in this repo that demonstrates how to deploy the job in the cluster.
+an example script in this repo that demonstrates how to deploy the job in the
+cluster. For this you need to have the NFD sources (or at least the
+`label-nodes.sh` script and the Job template spec) available locally:
 
 ```
 ./label-nodes.sh
@@ -476,7 +478,7 @@ For example, if some node is tainted NoSchedule or fails to start a job for some
 
 You can also run nfd-master and nfd-worker inside a single pod:
 ```
-kubectl apply -f nfd-daemonset-combined.yaml.template
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-daemonset-combined.yaml.template
 ```
 Similar to the nfd-worker setup above, this creates a DaemonSet that schedules
 an NFD Pod an all worker nodes, with the difference that the Pod also also
