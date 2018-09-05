@@ -194,8 +194,8 @@ kubectl create -f rbac.yaml
 kubectl create -f node-feature-discovery-daemonset.json.template
 ```
 
-When the job runs, it contacts the Kubernetes API server to add labels
-to the node to advertise hardware features.
+When the NFD pods run, they contact the Kubernetes API server to add labels
+to the nodes to advertise hardware features.
 
 If you have RBAC authorization enabled (as is the default e.g. with clusters initialized with kubeadm) you need to configure the appropriate ClusterRoles, ClusterRoleBindings and a ServiceAccount in order for NFD to create node labels. The provided templates will configure these for you.
 
