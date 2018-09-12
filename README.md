@@ -224,7 +224,7 @@ Download the source code.
 git clone https://github.com/kubernetes-incubator/node-feature-discovery
 ```
 
-**Build the Docker image:**
+**Build the container image:**
 
 ```
 cd <project-root>
@@ -233,9 +233,14 @@ make
 
 **NOTE: Our default docker image is hosted in quay.io. To override the 
 `QUAY_REGISTRY_USER` use the `-e` option as follows: 
-`QUAY_REGISTRY_USER=<my-username> make docker -e`**
+`QUAY_REGISTRY_USER=<my-username> make image -e`**
 
-Push the Docker Image (optional)
+You can also specify a build tool different from Docker, for example:
+```
+make IMAGE_BUILD_CMD="buildah bud"
+```
+
+Push the container image (optional, this example with Docker)
 
 ```
 docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
