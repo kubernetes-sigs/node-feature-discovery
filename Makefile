@@ -1,17 +1,19 @@
 .PHONY: all
 
+IMAGE_BUILD_CMD := docker build
+
 QUAY_DOMAIN_NAME := quay.io
 QUAY_REGISTRY_USER := kubernetes_incubator
 DOCKER_IMAGE_NAME := node-feature-discovery
 
 VERSION := $(shell git describe --tags --dirty --always)
 
-all: docker
+all: image
 
 # To override QUAY_REGISTRY_USER use the -e option as follows:
 # QUAY_REGISTRY_USER=<my-username> make docker -e.
-docker:
-	docker build --build-arg NFD_VERSION=$(VERSION) \
+image:
+	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
 		--build-arg http_proxy=$(http_proxy) \
 		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
 		--build-arg https_proxy=$(https_proxy) \
