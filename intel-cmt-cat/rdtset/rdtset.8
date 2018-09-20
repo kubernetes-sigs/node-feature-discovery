@@ -1,0 +1,174 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH RDTSET 8 "February 21, 2017"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+rtdset \- Task CPU affinity and Intel(R) Resource Director Technology control tool
+.br
+.SH SYNOPSIS
+.B rdtset
+.RI "-t <feature=value;...cpu=cpulist>... -c <cpulist> [-I] (-p <pidlist> | [-k] cmd [<args>...])"
+.br
+.B rdtset
+.RI "-r <cpulist> -t <feature=value;...cpu=cpulist>... -c <cpulist> [-I] (-p <pidlist> | [-k] cmd [<args>...])"
+.br
+.B rdtset
+.RI "-r <cpulist> -c <cpulist> (-p <pidlist> | [-k] cmd [<args>...])"
+.br
+.B rdtset
+.RI "-r <cpulist> -t <feature=value;...cpu=cpulist>... [-I] -p <pidlist>"
+.br
+.B rdtset
+.RI "-t <feature=value> -I [-c <cpulist>] (-p <pidlist> | [-k] cmd [<args>...])"
+.SH DESCRIPTION
+For more details on Intel(R) Resource Director Technology see
+.br
+http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
+.br
+or https://github.com/01org/intel-cmt-cat/wiki
+.PP
+The rdtset tool provides support to set up the CAT (Cache Allocation Technology) and MBA (Memory
+Bandwidth Allocation) capabilities for a task and set its CPU affinity. Current Intel(R) RDT allocation
+operations of the utility are based on controlling MSR registers (via libpqos library). Class of service 0 (CLOS0)
+is assumed as default one. In command mode, rdtset forks and one process executes the command. Another
+process waits for the task to terminate and restores default allocation state by assigning cpu's back to CLOS0.
+This behavior is not in place in PID mode.
+.SH OPTIONS
+rdtset options are as follow:
+.TP
+.B \-h, \-\-help
+Show help
+.TP
+.B \-v, \-\-verbose
+Verbose mode
+.TP
+.B \-I, \-\-iface-os
+Set the library to use the kernel implementation. If not set the default implementation is to program the MSR's directly.
+.TP
+.B \-t\, \-\-rdt\ feature=value;...cpu=cpulist
+Specify Intel(R) RDT configuration, single class configuration per -t, multiple -t options allowed.
+.br
+Accepted values for features:
+.br
+.B 2, l2   for level 2 cache
+.br
+.B 3, l3   for level 3 cache
+.br
+.B m, mba  for MBA
+
+For example:
+
+.B \-t\ 'l3=0xf;cpu=1'
+.br
+CPU 1 uses four L3 cache-ways (mask 0xf)
+
+.B \-t\ 'l3=0xf;cpu=2' -t 'l3=0xf0;cpu=3,4,5'
+.br
+CPU 2 uses four L3 cache-ways (mask 0xf), CPUs 3-5 share four L3 cache-ways
+(mask 0xf0), L3 cache-ways used by CPU 2 and 3-4 are non-overlapping
+
+.B \-t\ 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5'
+.br
+CPUs 0-2 share four L3 cache-ways (mask 0xf), CPUs 3-5 share four L3 cache-ways
+(mask 0xf0), L3 cache-ways used by CPUs 0-2 and 3-5 are non-overlapping
+
+.B \-t\ 'l3=0xf,0xf0;cpu=1'
+.br
+On CDP enabled system, CPU 1 uses four cache-ways for code (mask 0xf)
+and four cache-ways for data (mask 0xf0),
+data and code cache-ways are non-overlapping
+
+.B \-t\ 'mba=70;cpu=0-2'
+.br
+CPUs 0-2 can utilize up to 70% of available memory bandwidth
+
+.B \-t\ 'mba=50;l3=0xf;cpu=1'
+.br
+CPU 1 uses four L3 (mask 0xf) cache-ways and can utilize up to 50% of available memory bandwidth
+
+Example PID type allocation configuration (requires -I option):
+
+.B \-t\ 'l3=0xf'
+.br
+Allocate four L3 (mask 0xf) cache-ways to specified PIDs (-p option) or command
+
+.B \-t\ 'l3=0xf;cpu=1;l3=0x1'
+.br
+CPU 1 uses four L3 (mask 0xf) cache-ways
+.br
+Specified PIDs (-p option) or command uses one L3 (mask 0x1) cache-way
+
+.TP
+.B \-c <cpulist>, \-\-cpu <cpulist>
+Specify CPU affinity configuration, a numerical list of processors. The numbers
+are separated by commas and may include ranges. For example:
+.BR 1-3,4,5 .
+.TP
+.B \-p <pidlist>, \-\-pid <pidlist>
+Operate on existing PIDs
+.TP
+.B \-r <cpulist>, \-\-reset <cpulist>
+Reset allocation for CPUs (assign COS#0 to listed CPUs)
+.br
+For example:
+
+.B \-r 0-5
+.br
+Reset allocation for CPUs 0-5
+
+.B \-r 0-5 \-t\ 'l3=0xf0;cpu=0-5' \-c 0-5 \-p $BASHPID
+.br
+Reconfigure allocation for CPUs 0-5
+.br
+In order to reconfigure allocation, it is needed to reset current configuration
+
+.TP
+.B \-k, \-\-sudokeep
+Do not drop sudo elevated privileges
+.SH NOTES
+.PP
+CAT and MBA are configured using Model Specific Registers (MSRs)
+to set up the class of service masks and manage
+the association of the cores/logical threads to a class of service.
+The rdtset software executes in user space, and access to the MSRs is
+obtained through a standard Linux*/FreeBSD* interface.
+Under Linux, the virtual file system structure /dev/cpu/CPUNUM/msr provides
+an interface to read and write the MSRs, under FreeBSD it is /dev/cpuctlCPUNUM.
+The msr/cpuctl file interface is protected and requires root
+privileges. The msr/cpuctl driver might not be auto-loaded and on some
+modular kernels the driver may need to be loaded manually:
+.PP
+Under Linux:
+.br
+sudo modprobe msr
+.PP
+Under FreeBSD:
+.br
+sudo kldload cpuctl
+.PP
+.PP
+Interface enforcement:
+.br
+If you require system wide interface enforcement you can do so by setting the "RDT_IFACE" environment variable.
+.SH SEE ALSO
+.BR msr (4)
+.SH AUTHOR
+rdtset was written by Wojciech Andralojc <wojciechx.andralojc@intel.com>,
+Tomasz Kantecki <tomasz.kantecki@intel.com>, Michal Aleksinski <michalx.aleksinski@intel.com>,
+Marcel Cornu <marcel.d.cornu@intel.com>
+.P
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

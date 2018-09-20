@@ -1,0 +1,71 @@
+
+
+========================================================================
+README for PQoS/Intel(R) RDT library
+
+April 2016
+========================================================================
+
+
+Contents
+========
+
+- Overview
+- Installation
+- Legal Disclaimer
+
+
+Overview
+========
+
+PQoS library provides API to detect and configure Intel(R) RDT including:
+Cache Monitoring Technology (CMT), Memory Bandwidth Monitoring (MBM),
+Cache Allocation Technology (CAT), Code and Data Prioritization (CDP) Technology.
+For more information about Intel(R) RDT please see top level README.
+
+
+Installation
+============
+
+NOTE to FreeBSD users, remember to replace "make" with "gmake" in
+the steps described below.
+
+The following steps are required to compile and install library:
+$ make
+$ sudo make install
+
+By default make builds shared library.
+
+"make" accepts extra options e.g.:
+"SHARED=n" - for static library
+"DEBUG=y" - for library for debugging
+
+"sudo make install" installs compiled library into system directories.
+
+By default, library files are installed in "lib" directory below "/usr/local"
+but it can be changed with use of PREFIX to install files below "/some/where":
+$ sudo make install PREFIX=/some/where
+
+Library files can be removed but the same PREFIX has to be
+used for uninstall and install targets.
+
+To remove files from below default PREFIX:
+$ sudo make uninstall
+
+To remove from below /some/where:
+$ sudo make uninstall PREFIX=/some/where
+
+For more info about make targets, please run "make help" command.
+
+
+Legal Disclaimer
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

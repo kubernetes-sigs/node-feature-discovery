@@ -1,0 +1,10 @@
+To build a RPM using our spec file please follow the instructions outlined on the following wiki:
+https://github.com/01org/intel-cmt-cat/wiki/FAQ#how-do-i-build-and-install-from-a-rpm-spec-file
+
+
+Public location of our Fedora RPMs:
+https://admin.fedoraproject.org/pkgdb/package/rpms/intel-cmt-cat/
+
+
+Other locations of where to find our RPMs:
+https://www.rpmfind.net/    	     (Search for "intel-cmt-cat")

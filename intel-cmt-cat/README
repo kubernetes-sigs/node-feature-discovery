@@ -1,0 +1,264 @@
+========================================================================
+README for Intel(R) RDT Software Package
+
+November 2017
+
+========================================================================
+
+
+Contents
+========
+
+- Overview
+- Package Content
+- Hardware Support
+- Software Compatibility
+- Legal Disclaimer
+
+
+Overview
+========
+
+This software package provides basic support for
+Intel(R) Resource Director Technology (Intel(R) RDT) including:
+Cache Monitoring Technology (CMT), Memory Bandwidth Monitoring (MBM),
+Cache Allocation Technology (CAT), Code and Data Prioritization (CDP)
+and Memory Bandwidth Allocation (MBA).
+
+In principle, the software programs the technologies via
+Model Specific Registers (MSR) on a hardware thread basis.
+MSR access is arranged via a standard operating system driver:
+msr on Linux and cpuctl on FreeBSD. In the most common architectural
+implementations, presence of the technologies is detected via the
+CPUID instruction.
+
+In a limited number of special cases where CAT is not architecturally
+supported on a particular SKU (but instead a non-architectural
+(model-specific) implementation exists) it can be detected via brand
+string. This brand string is read from CPUID and compared to a table
+of known-supported SKUs. If needed, a final check is to probe the
+specific MSR’s to discover hardware capabilities, however it is
+recommended that CPUID enumeration should be used wherever possible.
+
+From software version v1.0.0 the library adds option to use Intel(R) RDT via
+available OS interfaces (perf and resctrl on Linux). The library detects
+presence of these interfaces and allows to select the preferred one through
+a configuration option.
+As the result, existing tools like 'pqos' or 'rdtset' can also be used
+to manage Intel(R) RDT in an OS compatible way. MSR interface remains
+the default option for now. 'pqos' tool wrappers have been added to help with
+the interface selection. 'pqos-os' and 'pqos-msr' for OS and MSR interface
+operations respectively.
+
+PID API compile time option has been removed and the APIs are always available.
+Note that proper operation of these APIs depends on availability and
+selection of OS interface.
+
+This software package is maintained, updated and developed on
+https://github.com/01org/intel-cmt-cat
+
+https://github.com/01org/intel-cmt-cat/wiki provides FAQ, usage examples and
+useful links.
+
+Please refer to INSTALL file for package installation instructions.
+
+
+Package Content
+===============
+
+"lib" directory:
+    Includes software library files providing API's for
+    technology detection, monitoring and allocation.
+    Please refer to the library README for more details (lib/README).
+“lib/perl” directory:
+    Includes PQoS library Perl wrapper.
+    Please refer to the interface README for more details (lib/perl/README).
+"pqos" directory:
+    Includes utility files providing command line access to
+    Intel(R) RDT. The utility links against the library and programs
+    the technologies via its API's.
+    Please refer to the utility README for more details "pqos/README".
+    Manual page of "pqos" utility also provides information about tool usage:
+    $ man pqos
+"rdtset" directory:
+    Includes files of utility that provides "taskset"-like functionality and
+    CAT configuration.
+    The utility links against the library and programs the technologies
+    via its API's.
+    Please refer to the utility README for more details "rdtset/README".
+    Manual page of "rdtset" utility also provides information about tool usage:
+    $ man rdtset
+"examples" directory:
+    Includes C and Perl examples of Intel(R) RDT usage via the library API's.
+    Please refer to README file for more details "examples/README".
+"snmp" directory:
+    Includes Net-SNMP AgentX subagent written in Perl to demonstrate the use of
+    the PQoS library Perl wrapper API.
+    Please refer to README file for more details "snmp/README".
+"srpm" directory:
+    Includes *.src.rpm and *.spec files for the software package.
+"ChangeLog" file:
+    Brief description of changes between releases.
+"INSTALL" file:
+    Installation instructions.
+"LICENSE" file:
+    License of the package.
+
+
+Hardware Support
+================
+
+Table 1. Intel(R) RDT hardware support
++--------------------------------------------------------------------------------------------+
+|                                            | CMT | MBM | L3 CAT | L3 CDP | L2 CAT | MBA    |
+|--------------------------------------------+-----+-----+--------+--------+--------+--------|
+|Intel(R) Xeon(R) processor E5 v3            | Yes | No  | Yes (1)| No     | No     | No     |
+|--------------------------------------------+-----+-----+--------+--------+--------+--------|
+|Intel(R) Xeon(R) processor D                | Yes | Yes | Yes (2)| No     | No     | No     |
+|--------------------------------------------+-----+-----+--------+--------+--------+--------|
+|Intel(R) Xeon(R) processor E3 v4            | No  | No  | Yes (3)| No     | No     | No     |
+|--------------------------------------------+-----+-----+--------+--------+--------+--------|
+|Intel(R) Xeon(R) processor E5 v4            | Yes | Yes | Yes (2)| Yes    | No     | No     |
+|--------------------------------------------+-----+-----+--------+--------+--------+--------|
+|Intel(R) Xeon(R) Scalable Processors (6)    | Yes | Yes | Yes (2)| Yes    | No     | Yes (5)|
+|--------------------------------------------+-----+-----+--------+--------+--------+--------|
+|Intel(R) Atom(R) processor for Server C3000 | No  | No  | No     | No     | Yes (4)| No     |
++--------------------------------------------------------------------------------------------+
+
+References:
+(1) Selected SKU's only:
+        Intel(R) Xeon(R) processor E5-2658 v3
+        Intel(R) Xeon(R) processor E5-2648L v3
+        Intel(R) Xeon(R) processor E5-2628L v3
+        Intel(R) Xeon(R) processor E5-2618L v3
+        Intel(R) Xeon(R) processor E5-2608L v3
+        Intel(R) Xeon(R) processor E5-2658A v3
+    Four L3 CAT classes of service (CLOS) and a set of pre-defined classes that
+    should not be changed at run time.
+    L3 CAT CLOS to hardware thread association can be changed at run time.
+
+(2) Sixteen L3 CAT classes of service (CLOS). There are no pre-defined
+    classes of service and they can be changed at run time.
+    L3 CAT CLOS to hardware thread association can be changed at run time.
+
+(3) Selected SKU's only:
+        Intel(R) Xeon(R) processor E3-1258L v4
+        Intel(R) Xeon(R) processor E3-1278L v4
+    Four L3 CAT classes of service (CLOS) and a set of pre-defined classes that
+    should not be changed at run time.
+    L3 CAT CLOS to hardware thread association can be changed at run time.
+
+(4) Four L2 CAT classes of service (CLOS) per L2 cluster.
+    L2 CAT CLOS to hardware thread association can be changed at run time.
+
+(5) Eight MBA classes of service (CLOS). There are no pre-defined
+    classes of service and they can be changed at run time.
+    MBA CLOS to hardware thread association can be changed at run time.
+
+(6) Please find errata for Intel(R) Xeon(R) Processor Scalable Family at:
+    https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/xeon-scalable-spec-update.pdf?asset=14615
+
+
+For additional Intel(R) RDT details please refer to the Intel(R)
+Architecture Software Development Manuals available at:
+http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
+Specific information can be found in volume 3, Chapters 17.18 and 17.19 (revision 064).
+
+Software Compatibility
+======================
+
+In short, use intel-cmt-cat or Intel(R) PCM software together with
+Linux perf and cgroup frameworks is not allowed at the moment.
+
+As disappointing as it is, use of Linux perf for CMT & MBM and
+intel-cmt-cat for CAT & CDP is not allowed. This is because
+Linux perf overrides existing CAT configuration during its operations.
+
+There are a number of options to choose from in order to make use of CAT:
+- intel-cmt-cat software for CMT/MBM/CAT and CDP (core granularity only)
+- use Linux resctrl for CAT and Linux perf for monitoring (kernel 4.10+)
+- patch kernel with an out of tree cgroup patch (CAT) and
+  only use perf for monitoring (CMT kernels 4.1+, MBM kernels 4.6+)
+
+Table 2. Software interoperability matrix
++-----------------------------------------------------------------------------------------------+
+|                  | intel-cmt-cat | Intel(R) PCM |  Linux perf  | Linux cgroup | Linux resctrl |
+|------------------+---------------+--------------+--------------+--------------|---------------|
+|intel-cmt-cat     | Yes(1)        | Yes(2)       | Yes(5)       | No           | Yes(5)        |
+|------------------+---------------+--------------+--------------+--------------|---------------|
+|Intel(R) PCM      | Yes(2)        | Yes          | No           | No           | No            |
+|------------------+---------------+--------------+--------------+--------------|---------------|
+|Linux perf        | Yes(5)        | No           | Yes          | Yes(3)       | Yes           |
+|------------------+---------------+--------------+--------------+--------------|---------------|
+|Linux cgroup      | No            | No           | Yes          | Yes(3)       | No            |
+|------------------+---------------+--------------+--------------+--------------|---------------|
+|Linux resctrl (4) | Yes(5)        | No           | Yes          | No           | Yes           |
++-----------------------------------------------------------------------------------------------+
+
+References:
+(1) pqos monitoring from intel-cmt-cat can detect other
+    pqos monitoring processes in the system.
+    rdtset from intel-cmt-cat detects other processes started with rdtset and
+    it will not use their CAT/CDP resources.
+
+(2) pqos from intel-cmt-cat can detect that Intel(R) PCM monitors cores and
+    it will not attempt to hijack the cores unless forced.
+    However, if pqos monitoring is started first and then
+    Intel(R) PCM is started then the latter one will hijack monitoring
+    infrastructure from pqos for its use.
+
+(3) Linux cgroup is an out of tree patch
+    https://github.com/vshiva1/linux/tree/catv15
+
+(4) Linux kernel version 4.10 and newer.
+    A wiki for Intel resctrl is available at:
+    https://github.com/01org/intel-cmt-cat/wiki/resctrl
+
+(5) Only with Linux kernel version 4.10 (and newer),
+    intel-cmt-cat version 1.0.0 (and newer) with selected OS interface
+    See '-I' option in 'man pqos' or 'pqos-os'.
+
+Intel(R) PCM is available at
+https://software.intel.com/en-us/articles/intel-performance-counter-monitor
+
+
+Table 3. Intel(R) RDT software enabling status.
++---------------------------------------------------------------------------------------+
+|                  | Core  | Task  |  CMT  |  MBM  | L3 CAT | L3 CDP  | L2 CAT |  MBA   |
+|------------------+-------+-------+-------+-------+--------+---------+--------+--------|
+|intel-cmt-cat     | Yes   | Yes(7)| Yes   | Yes   | Yes    | Yes     | Yes    | Yes    |
+|------------------+-------+-------+-------+-------+--------+---------+--------+--------|
+|Intel(R) PCM      | Yes   | No    | Yes   | Yes   | No     | No      | No     | No     |
+|------------------+-------+-------+-------+-------+--------+---------+--------+--------|
+|Linux perf        | Yes(6)| Yes   | Yes(1)| Yes(2)| No(3)  | No(3)   | No(3)  | No     |
+|------------------+-------+-------+-------+-------+--------+---------+--------+--------|
+|Linux cgroup      | No    | Yes   | No    | No    | Yes(4) | No      | No     | No     |
+|------------------+-------+-------+-------+-------+--------+---------+--------+--------|
+|Linux resctrl (5) | Yes   | Yes   | No    | No    | Yes    | Yes     | Yes    | No     |
++---------------------------------------------------------------------------------------+
+
+Legend:
+Core  - use of technology with core granularity
+Task  - use of technology per task or group of tasks
+
+References:
+(1) Linux kernel version 4.1 and newer
+(2) Linux kernel version 4.6 and newer
+(3) Linux perf corrupts CAT and CDP configuration even though
+    it doesn't enable it
+(4) This is out of tree patch and relies on Linux perf enabling
+(5) Linux kernel version 4.10 and newer
+(6) perf API allows for CMT/MBM core monitoring but returned values are incorrect
+(7) intel-cmt-cat version 1.0.0 monitoring only and depends on kernel support
+
+Legal Disclaimer
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

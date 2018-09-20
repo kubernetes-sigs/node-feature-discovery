@@ -1,0 +1,126 @@
+========================================================================
+README for PSEUDO LOCK Sample Code
+
+January 2016
+========================================================================
+
+CONTENTS
+========
+
+- Overview
+- Compilation
+- Usage
+- Design
+- Examples
+- FAQ
+- Legal Disclaimer
+
+OVERVIEW
+========
+
+This is just an example code demonstrating concept of data pseudo locking in
+LLC. It operates in user space and uses PQoS and C libraries only. It is far from
+being perfect and it may not function as expected at every execution.
+
+The concept is to use CAT to bring latency sensitive data into selected LLC cache
+ways and then exclude these cache ways from use so that this data
+doesn't get evicted. Data locking results in better determinism of the code that
+depends on accesses to sensitive data.
+This method is called "pseudo locking" as there are numerous flows that
+can evict "locked" data and no guarantees can be given.
+Just to mention some of the flows:
+- instructions like WBINVD or INVD will evict "locked" data
+- CLFLUSH instruction will evict the data
+- PCI devices may be allowed to fill into "locked" cache ways resulting in
+  eviction of the data
+- power management may cause data eviction
+- weakly ordered or uncachable access to "locked" memory will evict the data
+- some fragments of data may not get locked due to data layout in physical memory
+- finally, this approach is not architecturally supported and it may not work on
+  future CPU models
+
+COMPILATION
+===========
+
+Note: The PQoS/Intel(R) RDT library should be installed before compilation.
+
+Run "make all" or "make" to compile the program. If compilation is successful
+"pseudo_lock" binary should be present in the directory.
+
+Run "make clean" to clean the build files.
+
+USAGE
+=====
+
+-bash-4.3$ sudo ./pseudo_lock
+Usage: ./pseudo_lock <core_id> <lock|nolock>
+
+Where:
+  core_id     - identifies CPU to be used to lock the data
+  lock|nolock - apply data pseudo locking or not
+
+As the result of execution program prints cycle cost statistics of the timer
+handler procedure.
+
+DESIGN
+======
+
+Design of the program is very simple. It is split into three modules:
+  tsc   - provides API to run cycle cost statistics
+  dlock - provides API to pseudo lock the data (uses PQoS)
+  pseudo_lock - main module with application control logic. This is where
+                timer handler and main thread workloads are implemented.
+		Timer handler kicks in fixed intervals and does arithmetic
+		operations on random memory locations on memory block A.
+		Main thread runs memory intensive workload on memory block B
+		- this normally results in evicting data from block A used by
+		the timer handler.
+
+EXAMPLES
+========
+
+With data pseudo locking:
+
+-bash-4.3$ sudo ./pseudo_lock 1 lock
+main_thread() started. please wait ...
+main_thread() has finished.
+[Timer Handler] work items 145; cycles per work item: avg=343999.724 min=326052.000 max=730548.000 jitter=404496.000
+-bash-4.3$
+
+Without data pseudo locking:
+
+-bash-4.3$ sudo ./pseudo_lock 1 nolock
+main_thread() started. please wait ...
+main_thread() has finished.
+[Timer Handler] work items 143; cycles per work item: avg=607408.643 min=588868.000 max=1016704.000 jitter=427836.000
+-bash-4.3$
+
+Typically data pseudo-locking code delivers lower avg, min and max cycle costs. This may also result in lower jitter.
+
+FAQ
+===
+
+Q: How do I know pseudo locking works?
+A: With pseudo locking in place "avg", "min" and "max" cycle costs
+   should be lower for "lock" run vs "nolock" one. Due to code imperfections
+   data may not get locked as expected every time and "max" may be higher for
+   "lock" case.
+
+Q: "max" cycle cost is higher for "lock" than for "nolock". What is wrong?
+A: This is user space code demonstrating concept of data pseudo locking.
+   This procedure is far from perfect and ideally pseudo locking should be
+   done kernel space. When all timer data is not locked properly then extra
+   timer handler may pay big cost of accessing the data from RAM.
+
+
+LEGAL DISCLAIMER
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

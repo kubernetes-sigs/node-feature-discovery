@@ -1,0 +1,73 @@
+
+
+========================================================================
+README for libpqos SWIG interface
+
+March 2016
+========================================================================
+
+
+Contents
+========
+
+- Overview
+- Requirements, compilation and installation
+- Usage
+- Legal Disclaimer
+
+
+Overview
+========
+
+In this folder you'll find "pqos.i" a SWIG interface file
+that allow libpqos usage in scripting languages (e.g. in Perl).
+Currently the full API is exported but only CAT and CMT (LLC occupancy) related
+parts were tested.
+
+
+Requirements, compilation and installation
+==========================================
+
+Requires SWIG and Perl (-devel).
+Tested Linux running SWIG Version 3.0.5 and Perl v5.18.4
+and FreeBSD running SWIG Version 3.0.8 and Perl v5.14.2
+
+To compile lipqos interface file:
+        "perl Makefile.PL" to generate Makefile.
+        "make" to build SWIG Perl interface (Perl module and shared lib).
+        "make clean" for cleaning.
+        "sudo make test" to test.
+        "sudo make install" to install SWIG Perl interface.
+
+
+Usage
+=====
+
+Add "use pqos;" to your Perl script.
+
+Note:
+        In case of error while running "sudo make install" such as:
+        "touch: cannot touch ‘pqos.bs’: Permission denied
+        Makefile:442: recipe for target 'pqos.bs' failed
+        make: *** [pqos.bs] Error 1"
+        please rerun make
+
+        In case of error while running script such as:
+        "Can't locate pqos.pm in @INC ..."
+        or
+        "Can't locate loadable object for module pqos in @INC"
+        make sure that you have installed SWIG Perl interface,
+        if not, just run "sudo make install"
+
+
+Legal Disclaimer
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

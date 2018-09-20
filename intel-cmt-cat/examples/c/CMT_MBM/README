@@ -1,0 +1,63 @@
+================================================================================
+README for CMT MBM Sample Code
+
+April 2016
+================================================================================
+
+CONTENTS
+========
+
+- Overview
+- Compilation
+- Usage
+- Legal Disclaimer
+
+
+OVERVIEW
+========
+
+This is example code to demonstrate the use of PQoS/Intel(R) Resource Director
+Technology (Intel(R) RDT) library APIs to manage Cache Monitoring Technology
+(CMT), Memory Bandwidth Monitoring (MBM). Refer to
+https://github.com/01org/intel-cmt-cat/blob/master/README table 1 for a list
+of processors supporting CMT and MBM.
+CMT_MBM sample application build will create one target as follows:
+1. monitor_app - Demonstrates usage of PQoS/Intel(R) RDT library APIs related
+to monitoring events like cache occupancy, local memory bandwidth usage and
+remote memory bandwidth usage. It operates in user space and uses PQoS/Intel(R)
+RDT and C libraries only.
+Note: Monitor events are hardware dependant. Only supported event will be shown.
+
+
+COMPILATION
+===========
+
+Note: The PQoS/Intel(R) RDT library should be installed before compilation.
+
+Run "make all" or "make" to compile the program. If compilation is successful
+"monitor_app" binary should be present in the directory.
+
+Run "make clean" to clean the build files.
+
+
+USAGE
+=====
+
+To run:
+$ sudo ./monitor_app
+
+For more usage options:
+$ sudo ./monitor_app -h
+
+
+LEGAL DISCLAIMER
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

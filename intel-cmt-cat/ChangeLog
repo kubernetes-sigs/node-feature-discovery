@@ -1,0 +1,216 @@
+======================================================================
+Release  v1.2  2017-11-29
+======================================================================
+
+Contributors (alphabetical order):
+        Aaron Hetherington <aaron.hetherington@intel.com>
+        Brian Dooley <brian.dooley@intel.com>
+        Jessica Bizimungu <jessica.bizimungu@intel.com>
+        Marcel Cornu <marcel.d.cornu@intel.com>
+        Michal Aleksinski <michalx.aleksinski@intel.com>
+        Radoslaw Jablonski <radoslawx.jablonski@intel.com>
+        Wojciech Andralojc <wojciechx.andralojc@intel.com>
+
+Summary:
+1. Library
+        - Added support for MBA configuration via OS interface
+2. PQoS Utility
+        - Added better feature enumeration functionality
+        - Added top-pids monitoring functionality
+
+======================================================================
+Release  v1.1  2017-07-19
+======================================================================
+
+Contributors (alphabetical order):
+	Aaron Hetherington <aaron.hetherington@intel.com>
+        Bernhard M. Wiedemann <bernhard@zq1.de>
+        Brian Dooley <brian.dooley@intel.com>
+        Jessica Bizimungu <jessica.bizimungu@intel.com>
+	Marcel Cornu <marcel.d.cornu@intel.com>
+	Michal Aleksinski <michalx.aleksinski@intel.com>
+
+Summary:
+1. Library
+        - Added PID support for L2CAT, L3CAT and CDP
+        - Added global RDT interface enforcement.
+2. PQoS Utility
+        - Added PID support for L2CAT, L3CAT and CDP
+3. rdtset Utility
+        - Added PID support for L2CAT, L3CAT and CDP
+        - Updated to work with multiple PID's
+4. General
+        - Bug fixes
+
+======================================================================
+Release  v1.0.1  2017-06-06
+======================================================================
+
+Contributors (alphabetical order):
+	Aaron Hetherington <aaron.hetherington@intel.com>
+        Bernhard M. Wiedemann <bernhard@zq1.de>
+        Brian Dooley <brian.dooley@intel.com>
+	Marcel Cornu <marcel.d.cornu@intel.com>
+	Michal Aleksinski <michalx.aleksinski@intel.com>
+
+Summary:
+1. snmp
+        - Added OS interface support to Net-SNMP sub-agent
+2. General
+	- Build improvements
+	- Bug fixes
+
+======================================================================
+Release  v1.0.0  2017-05-16
+======================================================================
+
+Contributors (alphabetical order):
+	Aaron Hetherington <aaron.hetherington@intel.com>
+        Colin Ian King <colin.king@canonical.com>
+	Marcel Cornu <marcel.d.cornu@intel.com>
+	Michal Aleksinski <michalx.aleksinski@intel.com>
+	Tomasz Kantecki <tomasz.kantecki@intel.com>
+
+Summary:
+1. Library
+        - Removed NO_PID_API compile time option
+        - Added OS interface to support L3/L2 CAT & CDP
+        - Updated support for CMT per PID
+2. PQoS Utility
+        - Added pqos-os & pqos-msr wrapper scripts
+        - Added option to select OS or MSR interface
+3. rdtset Utility
+        - Added option to select OS or MSR interface
+4. Examples
+        - Support for new OS/MSR interface added to CMT/MBM examples
+
+======================================================================
+Release  v0.1.5-1  2017-02-09
+======================================================================
+
+Contributors (alphabetical order):
+	Aaron Hetherington <aaron.hetherington@intel.com>
+	Marcel Cornu <marcel.d.cornu@intel.com>
+	Michal Aleksinski <michalx.aleksinski@intel.com>
+	Tomasz Kantecki <tomasz.kantecki@intel.com>
+	Wojciech Andralojc <wojciechx.andralojc@intel.com>
+
+Summary:
+1. Library
+	- Perl interface extended to support L2 CAT and CMT
+        - Logging extended to allow callback and silence functionality
+	- L2 CAT updated to operate on a per cluster/L2 ID basis
+	- Support for MBA
+2. SNMP
+	- Added CMT support to Net-SNMP sub-agent
+3. PQoS Utility
+	- L2 CAT updated to operate on a per cluster/L2 ID basis
+	- Support for MBA
+4. rdtset Utility
+	- L2 CAT updated to operate on a per cluster/L2 ID basis
+	- Support of MBA
+
+======================================================================
+Release  v0.1.5  2016-09-20
+======================================================================
+
+Contributors (alphabetical order):
+	Aaron Hetherington <aaron.hetherington@intel.com>
+	Colin Ian King <colin.king@canonical.com>
+	Fan Du <fan.du@intel.com>
+	Marcel Cornu <marcel.d.cornu@intel.com>
+	Pablo Marcos Oltra <pablo.marcos.oltra@intel.com>
+	Tomasz Kantecki <tomasz.kantecki@intel.com>
+	Wojciech Andralojc <wojciechx.andralojc@intel.com>
+
+Summary:
+1. General
+	- Project file layout changed to accommodate extensions
+	- Support for FreeBSD
+	- Travis CI
+2. Library
+	- Support for Intel(R) Xeon(R) processor E5 v4
+	- DSO built by default
+	- examples moved to the top folder
+	- Perl interface created for the library
+	- PID API no longer compiled by default
+	- Support for L2 CAT
+	- Makefile dependencies improved
+3. PQoS Utility
+	- pqos directory created to accommodate the utility files
+	- Link against DSO
+	- COS management on a per socket basis
+	- Support for L2 CAT
+	- Makefile dependencies improved
+4. rdtset Utility
+	- rdtset directory created to accommodate the utility files
+	- Link against DSO
+	- taskset-like functionality and CAT configuration
+	- Support for L2 CAT
+	- Makefile dependencies improved
+5. Examples
+	- Copied examples previously located in library directory
+	- Perl hello world script created
+6. SNMP
+	- Net-SNMP sub-agent created to allow remote CAT configuration
+7. SRPM
+	- Source package file and spec file
+
+======================================================================
+Release  v0.1.4  2016-02-04
+======================================================================
+
+Contributors (alphabetical order):
+	Aaron Hetherington <aaron.hetherington@intel.com>
+	Colin Ian King <colin.king@canonical.com>
+	Colm Moore <colm.moore@intel.com>
+	Jacek Turek <jacekx.turek@intel.com>
+	James Hunt <james.o.hunt@intel.com>
+	Marcel Cornu <marcel.d.cornu@intel.com>
+	Priya Autee <priya.v.autee@intel.com>
+	Tomasz Kantecki <tomasz.kantecki@intel.com>
+
+Summary:
+1. Hardware support
+	Intel(R) Xeon(R) processor E3 v4 support (selected SKU's)
+2. Monitoring
+	- PID/TID monitoring through Linux perf
+	- IPC (instructions per clock) performance event
+	- LLC misses performance event
+	- CSV output
+	- Monitoring core groups
+3. Allocation
+	- CDP (code data prioritization) detection and management
+4. General
+	- man page
+	- install and uninstall rules
+	- cppcheck & coding style rules
+
+======================================================================
+Release  v0.1.3  2015-05-01
+======================================================================
+
+Contributors (alphabetical order):
+	Pandi Maharajan <pandi.maharajan@intel.com>
+	Priya Autee <priya.v.autee@intel.com>
+	Rahul Shah <rahul.r.shah@intel.com>
+	Tomasz Kantecki <tomasz.kantecki@intel.com>
+
+Summary:
+1. Hardware support
+	Intel(R) Xeon(R) processor E5 v3 support (selected SKU's)
+	Intel(R) Xeon(R) processor D support
+2. Monitoring
+	- CMT (Cache Monitoring Technology) and
+	  MBM (Memory Bandwidth Monitoring) detection
+	- XML and text output formats
+	- output on console or file
+	- monitoring reset
+	- top mode - highest LLC occupancy first
+	- example CMT/MBM application
+3. Allocation
+	- CAT detection & management
+	- CAT reset
+	- example CAT application
+4. General
+	- configuration file support
