@@ -1,0 +1,52 @@
+
+
+========================================================================
+README for hello_world.pl Perl script
+
+April 2016
+========================================================================
+
+
+Contents
+========
+
+- Overview
+- Requirements
+- Usage
+- Legal Disclaimer
+
+
+Overview
+========
+
+hello_world.pl is a simple Perl script to demonstrate the use of the
+PQoS/Intel(R) RDT library Perl wrapper API. This script shows how to
+initialize the library, read COS bitmasks and associations and shutdown
+the library.
+
+Requirements
+============
+
+Tested with SWIG Version 3.0.5 and Perl v5.18.4.
+
+The hello_world.pl script depends on the pqos.pm Perl module generated
+by SWIG. For more information about this module and how to build it,
+please refer to the README found in the "lib/perl" directory.
+
+Usage
+=====
+
+To run the hello_world.pl script:
+        "sudo ./hello_world.pl"
+
+Legal Disclaimer
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

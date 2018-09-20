@@ -1,0 +1,115 @@
+
+
+========================================================================
+README for PQoS/Intel(R) RDT utility
+
+November 2017
+
+========================================================================
+
+
+Contents
+========
+
+- Overview
+- Requirements and Installation
+- Usage
+- Legal Disclaimer
+
+
+Overview
+========
+
+This software package provides basic support for
+Cache Monitoring Technology (CMT), Memory Bandwidth Monitoring (MBM)
+and Cache Allocation Technology (CAT).
+This release supports last level cache occupancy monitoring and
+memory bandwidth monitoring on a per core or logical thread basis.
+MBM supports two types of events reporting local and remote
+memory bandwidth.
+Both events are reported on a per core or logical thread basis.
+Local memory bandwidth reports the bandwidth of a thread accessing
+memory associated with the local socket.
+In a dual socket system, the remote memory bandwidth reports the
+bandwidth of a thread accessing the remote socket.
+The monitoring utility does not track application migration across
+cores as this would require scheduler integration.
+Instead, applications should be pinned to cores to track
+last level cache occupancy and memory bandwidth.
+Scheduler-integrated alternatives such as cgroups and perf are being
+researched to track the application PID (and all associated TIDs)
+rather than static assignment. The monitoring utility currently associates
+a Resource Monitoring ID (RMID) per hardware thread or group of hardware
+threads when monitoring is started. By default, PID tracking is not enabled.
+Details on enabling this feature can be found in INSTALL and lib/README.
+
+The command line utility provides the necessary functionality to set
+up the CAT capabilities. The software provides flags to configure the
+class of service (CLOS) and associate cores / logical threads with a
+class of service.
+
+Use of concurrent monitoring instances is possible as long as each
+instance monitors exclusive set of cores. Library APIs are also thread safe.
+
+For additional CMT, MBM and CAT details please see refer to the Intel(R)
+Architecture Software Development Manuals available at:
+http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
+Specific information with regard to CMT, MBM and CAT can be found in
+Chapter 17.16 and 17.17.
+
+
+Requirements and Installation
+=============================
+
+For installation of the Intel(R) RDT utility, ensure the library is
+installed and follow below instructions to create pqos executable.
+
+To compile Intel(R) RDT utility:
+        "make" or "make all" for building utility.
+        "make all DEBUG=y" for building utility for debugging.
+        "make clean" for clearing even more files than "make rinse".
+        Note: Having both local and installed copies of the library
+        may cause undefined behaviour when building the utility.
+
+To install the Intel(R) RDT utility (optional), first compile, then:
+        "sudo make install" to install below /usr/local.
+        "sudo make install PREFIX=/some/where" to install below /some/where.
+
+
+Note: For installation of the PQoS utility on FreeBSD, simply follow the steps
+      above for Linux installation replacing "make" with "gmake".
+
+Currently verified configuration is:
+- FreeBSD 9.1
+- GNU Compiler Collection 5 (gcc 5.3.1)
+- GNU Make 4.1
+
+
+Usage
+=====
+
+After compilation the PQoS executable can be used to configure the
+last level cache allocation feature and monitor the last level cache
+occupancy as well as memory bandwidth.
+
+Usage: For pqos utility:
+        "./pqos -h"    This option will display extensive help page.
+                       Please refer to "-h" option for usage details.
+        "./pqos -s"    Shows current Intel(R) RDT configuration.
+        "./pqos -d"    Shows detected Intel(R) RDT capabilities (-D for verbose mode).
+        "./pqos -T"    Starts CMT and MBM monitoring on all detected
+                       cores (depends of hardware feature availability).
+        Note: It may be necessary to set "LD_LIBRARY_PATH=path/to/libpqos.so"
+              when running the utility with local shared library.
+
+Legal Disclaimer
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

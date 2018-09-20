@@ -1,0 +1,122 @@
+
+
+========================================================================
+INSTALLATION Instructions for Intel(R) RDT Software Package
+
+April 2016
+
+========================================================================
+
+
+Contents
+========
+
+- Overview
+- Installation Steps
+- Linux Requirements
+- FreeBSD Requirements (experimental)
+- Legal Disclaimer
+
+
+Installation Steps
+==================
+
+For installation of the software package untar the gzip image and follow
+below instructions. As the results the following components will be built and
+installed:
+- PQoS DSO and its header file (libpqos.so and pqos.h)
+- PQoS utility executable (pqos)
+- PQoS utility MSR wrapper script
+- PQoS utility OS/Kernel wrapper script
+- PQoS man page (pqos.8)
+- rdtset tool executable (rdtset)
+- rdtset man page (rdtset.8)
+
+NOTE to FreeBSD users, remember to replace "make" with "gmake" in
+the steps described below.
+
+The following steps are required to compile and install the package:
+$ make
+$ sudo make install
+
+"make" compiles all software components of the package.
+"sudo make install" installs compiled files into system directories.
+
+By default, files are installed below /usr/local but it can be changed
+with use of PREFIX to install files below /some/where:
+$ sudo make install PREFIX=/some/where
+
+Software package files can be removed but the same PREFIX has to be
+used for uninstall and install targets.
+To remove files from below default PREFIX:
+$ sudo make uninstall
+To remove from below /some/where:
+$ sudo make uninstall PREFIX=/some/where
+
+Software package files can be cleaned with "make clean" command.
+
+NOTE
+If you require system wide interface enforcement you can do so by setting the
+"RDT_IFACE" environment variable.
+
+Linux
+=====
+
+CMT, MBM and CAT are configured using Model Specific Registers (MSRs)
+to measure occupancy, set up the class of service masks and manage
+the association of the cores/logical threads to a class of service.
+The pqos software executes in user space, and access to the MSRs is
+obtained through a standard Linux* interface. The virtual file system
+structure /dev/cpu/CPUNUM/msr provides an interface to read and write
+the MSRs. The msr file interface is protected and requires root
+privileges. The msr driver might not be auto-loaded and on some
+modular kernels the driver may need to be loaded manually:
+
+$ modprobe msr
+
+For instructions on package installation please see "Installation Steps"
+section.
+
+
+FreeBSD (experimental)
+======================
+
+CMT, MBM and CAT are configured using Model Specific Registers (MSRs)
+to measure occupancy, set up the class of service masks and manage
+the association of the cores/logical threads to a class of service.
+The pqos software executes in user space, and access to the MSRs is
+obtained through a standard FreeBSD* cpuctl driver interface. The virtual
+file system structure /dev/cpuctlCPUNUM provides an interface to read
+and write the MSR registers. The MSR file interface is protected and
+requires root privileges.
+The cpuctl driver might not be auto-loaded on some systems. Please follow
+cpuctl (4) man page to load cpuctl driver on your system.
+
+$ man 4 cpuctl
+
+Please note that all project build scripts have been written for GNU Make so
+it is required to install GNU Make on FreeBSD in order to compile the project.
+
+$ pkg install gmake
+
+For instructions on package installation please see "Installation Steps"
+section. Remember to replace "make" with "gmake" on FreeBSD.
+
+Currently verified configuration is:
+- Intel(R) Xeon(R) processor D
+- FreeBSD 9.1
+- GNU Compiler Collection 5 (gcc 5.3.1)
+- GNU Make 4.1
+
+
+Legal Disclaimer
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

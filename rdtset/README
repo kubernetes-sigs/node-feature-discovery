@@ -1,0 +1,200 @@
+================================================================================
+README for rdtset
+
+February 2017
+================================================================================
+
+CONTENTS
+========
+
+- Overview
+- Features
+- Compilation
+- Usage
+- Legal Disclaimer
+
+
+OVERVIEW
+========
+
+rdtset is a taskset like tool allowing the user to launch a new command with
+a given CPU affinity and Intel(R) Resource Director Technology allocation.
+
+
+FEATURES
+========
+The following Intel(R) RDT features are supported:
+ - L2 CAT (Cache Allocation Technology)
+ - L3 CAT (Cache Allocation Technology)
+ - MBA (Memory Bandwitch Allocation)
+
+Supports Linux and FreeBSD.
+ - Linux supports allocation on a per core or PID basis (kernel 4.10+ required for PID support)
+ - FreeBSD supports allocation on a per core basis only
+
+
+COMPILATION
+===========
+
+Note: The PQoS/Intel(R) RDT library should be installed before compilation.
+
+Run "make all" or "make" to compile the programs. If compilation is successful
+"rdtset" binary should be present in the directory.
+
+Run "make clean" to clean the build files.
+
+
+USAGE
+=====
+
+Usage: rdtset -t <feature=value;...cpu=cpulist>... -c <cpulist> [-I] (-p <pidlist> | [-k] cmd [<args>...])
+       rdtset -r <cpulist> -t <feature=value;...cpu=cpulist>... -c <cpulist> [-I] (-p <pidlist> | [-k] cmd [<args>...])
+       rdtset -r <cpulist> -c <cpulist> (-p <pidlist> | [-k] cmd [<args>...])
+       rdtset -r <cpulist> -t <feature=value;...cpu=cpulist>... [-I] -p <pidlist>
+       rdtset -t <feature=value> -I [-c <cpulist>] (-p <pidlist> | [-k] cmd [<args>...])
+
+Options:
+ -t/--rdt feature=value;...cpu=cpulist specify RDT configuration
+  Features:
+   2, l2
+   3, l3
+   m, mba
+ -c <cpulist>, --cpu <cpulist>         specify CPUs (affinity)
+ -p <pid>, --pid <pid>                 operate on existing PIDs
+ -r <cpulist>, --reset <cpulist>       reset allocation for CPUs
+ -k, --sudokeep                        do not drop sudo elevated privileges
+ -v, --verbose                         prints out additional logging information
+ -I, --iface-os                        set the library interface to use the kernel
+                                       implementation. If not set the default
+				       implementation is to program the MSR's directly
+ -h, --help                            display help
+
+Run "id" command on CPU 1 using four L3 cache-ways (mask 0xf),
+keeping sudo elevated privileges:
+    -t 'l3=0xf;cpu=1' -c 1 -k id
+
+Example allocation configuration strings:
+    -t 'l3=0xf;cpu=1'
+        CPU 1 uses four L3 cache-ways (mask 0xf)
+
+    -t 'l2=0x1;l3=0xf;cpu=1'
+        CPU 1 uses one L2 (mask 0x1) and four L3 (mask 0xf) cache-ways
+
+    -t 'l2=0x1;l3=0xf;cpu=1' -t 'l2=0x1;cpu=2'
+        CPU 1 uses one L2 (mask 0x1) and four L3 (mask 0xf) cache-ways
+        CPU 2 uses one L2 (mask 0x1) and default number of L3 cache-ways
+        L2 cache-ways used by CPU 1 and 2 are overlapping
+
+    -t 'l3=0xf;cpu=2' -t 'l3=0xf0;cpu=3,4,5'
+        CPU 2 uses four L3 cache-ways (mask 0xf), CPUs 3-5 share four L3 cache-ways
+        (mask 0xf0), L3 cache-ways used by CPU 2 and 3-4 are non-overlapping
+
+    -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5'
+        CPUs 0-2 share four L3 cache-ways (mask 0xf), CPUs 3-5 share four L3 cache-ways
+        (mask 0xf0), L3 cache-ways used by CPUs 0-2 and 3-5 are non-overlapping
+
+    -t 'l3=0xf,0xf0;cpu=1'
+        On CDP enabled system, CPU 1 uses four L3 cache-ways for code (mask 0xf)
+        and four L3 cache-ways for data (mask 0xf0),
+        data and code L3 cache-ways are non-overlapping
+
+    -t 'mba=70;cpu=0-2'
+        CPUs 0-2 can utilize up to 70% of available memory bandwidth
+
+    -t 'mba=50;l3=0xf;cpu=1'
+        CPU 1 uses four L3 (mask 0xf) cache-ways and can utilize up to 50% of available memory bandwidth
+
+Example PID type allocation configuration string (requires -I option):
+    -t 'l3=0xf'
+        Allocate four L3 (mask 0xf) cache-ways to specified PIDs (-p option) or command
+
+    -t 'l3=0xf;cpu=1;l3=0x1'
+        CPU 1 uses four L3 (mask 0xf) cache-ways
+	Specified PIDs (-p option) or command uses one L3 (mask 0x1) cache-way
+
+Example CPUs configuration string:
+    -c 0-3,4,5
+        CPUs 0,1,2,3,4,5
+
+Example RESET configuration string:
+    -r 0-3,4,5
+        reset allocation for CPUs 0,1,2,3,4,5
+
+Example usage of RESET option:
+    -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-5 -p $BASHPID
+        Configure L3 CAT and CPU affinity for BASH process
+
+    -r 0-5 -t 'l3=0xff;cpu=0-5' -c 0-5 -p $BASHPID
+        Change L3 CAT configuration of CPUs used by BASH process
+
+    -r 0-5 -p $BASHPID
+        Reset allocation configuration of CPUs used by BASH process
+
+1. Run "id" command to test privilege drop:
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 id
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 -k id
+
+1.1 OS interface:
+ $ sudo rdtset -I -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 -k id
+
+2. Show current proc status to verify CPU affinity:
+2.1 Linux:
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 cat /proc/self/status
+
+2.2 FreeBSD:
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 -k bash -c 'bash -c "sleep 1" & cpuset -g -p `pgrep -n bash`'
+
+ $ bash -c 'bash -c "sleep 1" & cpuset -g -p `pgrep -n bash`'
+
+3. Display current L3 CAT configuration to verify L3 configuration (and clean-up on exit):
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 -k pqos -s
+
+ $ sudo pqos -s
+
+4. Test operation on existing, given PID:
+4.1 Linux:
+ $ taskset -pc $BASHPID
+
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 -p $BASHPID
+
+ $ taskset -pc $BASHPID
+ $ sudo pqos -s
+
+ In order to reconfigure allocation, it is needed to reset current configuration:
+ $ sudo rdtset -r 0-5 -t 'l3=0xff;cpu=0-5' -c 0-5 -p $BASHPID
+
+ $ sudo pqos -s
+
+4.2 FreeBSD:
+ $ cpuset -g -p $BASHPID
+
+ $ sudo rdtset -t 'l3=0xf;cpu=0-2' -t 'l3=0xf0;cpu=3,4,5' -c 0-3,4,5 -p $BASHPID
+
+ $ cpuset -g -p $BASHPID
+ $ sudo pqos -s
+
+ In order to reconfigure allocation, it is needed to reset current configuration:
+ $ sudo rdtset -r 0-5 -t 'l3=0xff;cpu=0-5' -c 0-5 -p $BASHPID
+
+ $ sudo pqos -s
+
+5. Configuring allocation on a PID basis (Linux kernel 4.10+ required)
+ $ sudo rdtset -I -t 'l3=0xf' -p 23434-23442,34531,5642
+ Allocate 4 cache-ways for specified range of processes
+
+ $ sudo rdtset -I -t 'mba=50' -k memtester 10M
+ Restrict memory B/W availability to 50% for the memtester application (using PID allocation)
+
+ Note: Currently the max allowed PID's to configure allocation for is 128.
+
+LEGAL DISCLAIMER
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

@@ -1,0 +1,69 @@
+================================================================================
+README for CAT Sample Code
+
+April 2016
+================================================================================
+
+CONTENTS
+========
+
+- Overview
+- Compilation
+- Usage
+- Legal Disclaimer
+
+
+OVERVIEW
+========
+
+This is example code to demonstrate the use of PQoS/Intel(R) Resource Director
+Technology (Intel(R) RDT) library APIs to manage Cache Allocation Technology
+(CAT). Refer to https://github.com/01org/intel-cmt-cat/blob/master/README table
+1 for a list of processors supporting CAT. CAT sample application build will
+create three targets as follows:
+1. allocation_app - Demonstrates usage of PQoS/Intel(R) RDT library APIs
+related to set bit mask for class of service (CLOS) and displaying
+class of service (CLOS) and associated bit mask.
+2. association_app - Demonstrates usage of PQoS/Intel(R) RDT library APIs
+related to association of class of service (CLOS) to cores and displaying
+class of service (CLOS) and core association.
+3. reset_app - Demonstrates usage of PQoS/Intel(R) RDT library APIs related to
+resetting all classes of service to system default bit mask.
+All apps operate in user space and use PQoS/Intel(R) RDT and C libraries only.
+
+
+COMPILATION
+===========
+
+Note: The PQoS/Intel(R) RDT library should be installed before compilation.
+
+Run "make all" or "make" to compile the programs. If compilation is successful
+"allocation_app", "association_app" and "reset_app" binaries should be present
+in the directory.
+
+Run "make clean" to clean the build files.
+
+
+USAGE
+=====
+
+To run:
+$ sudo ./allocation_app
+$ sudo ./association_app
+$ sudo ./reset_app
+
+For more usage options:
+Run the app as stated up above with the "-h" option.
+
+
+LEGAL DISCLAIMER
+================
+
+THIS SOFTWARE IS PROVIDED BY INTEL"AS IS". NO LICENSE, EXPRESS OR
+IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS
+ARE GRANTED THROUGH USE. EXCEPT AS PROVIDED IN INTEL'S TERMS AND
+CONDITIONS OF SALE, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR
+USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO
+FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT
+OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.

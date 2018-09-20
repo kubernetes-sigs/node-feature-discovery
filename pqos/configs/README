@@ -1,0 +1,144 @@
+
+================================================================================
+README for PQoS Utility Configuration files
+
+July 2016
+================================================================================
+
+Contents
+========
+- 1 Overview
+- 2 General Settings
+- 3 Allocation Settings
+- 4 Monitoring Settings
+
+
+================================================================================
+1.0             Overview
+================================================================================
+
+Configuration files are used to set up the PQoS utility with pre-defined
+settings for custom use cases. The "./pqos -f" option is used to
+specify a config file to be parsed by the utility on startup.
+
+        - E.g. "./pqos -f path/to/config/example.cfg"
+
+Found below are a list of settings that can be used to pass options to
+the utility.
+
+
+================================================================================
+2.0             General Settings
+================================================================================
+
+Description:    Selects showing current allocation settings
+Syntax:         show-alloc: <no args required>
+Example:
+                show-alloc:
+
+
+Description:    Selects verbose mode on
+Syntax:         verbose-mode: <no args required>
+Example:
+                verbose-mode:
+
+
+Description:    Selects log file
+Syntax:         log-file: <log file>
+Exmaple:
+                log-file: /tmp/example.log
+
+
+Description:    Selects event monitoring time
+Syntax:         monitor-time: <time in seconds>
+Example:
+                monitor-time: 4
+                monitor-time: inf
+
+
+Description:    Selects monitoring interval (1 = 100ms)
+Syntax:         monitor-interval: <interval in 100ms>
+Example:
+                monitor-interval: 10
+
+
+Description:    Selects event monitoring output file
+Syntax:         monitor-file: <file name>
+Example:
+                monitor-file: /tmp/example.xml
+
+
+Description:    Selects type of event monitoring output file
+Syntax:         monitor-file-type: <file type>
+Example:
+                monitor-file-type: xml
+		
+
+================================================================================
+3.0             Allocation Settings
+================================================================================
+
+Currently supported allocation type(s):
+
+- Last Level Cache (llc)
+
+
+3.1 LLC Allocation
+==================
+
+Description:    Resets allocation technologies (L2/L3 CAT) and
+                optionally reconfigures L3 CDP.
+Syntax:         reset-cat: [l3cdp-on|l3cdp-off|l3cdp-any]
+Example:        reset-cat: l3cdp-on
+
+Description:    Sets allocation class(es) of service
+                For CDP, 'c' or 'd' letters can be used after class id to
+                identify if definition applies to code or data mask
+Syntax:         alloc-class-set: <alloc type>:<class id>[cdCD]= \
+                                 <class definition>;
+Example:
+                (CDP - 20LLC ways)
+                alloc-class-set: llc:0d=0xfff;llc:0c=0xfff00; \
+                                 llc:1=0x0fff;llc:2=0x0ff;llc:3=0x00f;
+                (Non CDP - 20LLC ways)
+                alloc-class-set: llc:0=0xfffff;llc:1=0x00fff; \
+                                 llc:2=0x000ff;llc:3=0x0000f;
+
+
+Description:    Sets association between core(s) and allocation class(es)
+                of service
+Syntax:         alloc-assoc-set: <alloc type>:<class id>=<list of cores>
+Example:
+                alloc-assoc-set: llc:0=0-2
+                alloc-assoc-set: llc:1=3
+                alloc-assoc-set: llc:2=4
+                alloc-assoc-set: llc:3=5
+
+
+Description:    Defines allocation class(es) of service from profile
+Syntax:         alloc-class-select: <profile name>
+Example:
+                alloc-class-select: CFG0
+
+
+================================================================================
+4.0             Monitoring Settings
+================================================================================
+
+Currently supported event type(s):
+
+- Last Level Cache Occupancy (llc)
+- Local Memory Bandwidth (mbl)
+- Remote Memory Bandwidth (mbr)
+
+
+Description:    Selects core(s) and events to be monitored
+Syntax:         monitor-cores: <event type>:<list of cores>
+Example:
+                monitor-cores: mbl:0-5
+
+
+Description:    Selects PID/TID(s) and events to be monitored
+Syntax:         monitor-pids: <event type>:<list of pids>
+Example:
+                monitor-pids: llc:1,22,3075
