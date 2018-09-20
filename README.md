@@ -54,7 +54,7 @@ node-feature-discovery.
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
+                              [Default: cpuid,iommu,memory,network,pci,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -115,6 +115,7 @@ the only label value published for features is the string `"true"`._
   "node.alpha.kubernetes-incubator.io/nfd-iommu-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
+  "node.alpha.kubernetes-incubator.io/nfd-pci-<device label>.present": "true",
   "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-selinux-<feature-name>": "true",
@@ -175,6 +176,21 @@ such as restricting discovered features with the --label-whitelist option._
 | ------- | ---------- | ----------------------------------------------------- |
 | sriov   | capable    | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
 | <br>    | configured | SR-IOV virtual functions have been configured
+
+### PCI Features
+
+| Feature              | Attribute | Description                               |
+| -------------------- | --------- | ----------------------------------------- |
+| &lt;device label&gt; | present   | PCI device is detected
+
+The `<device label>` part is composed of raw PCI IDs, and has the following
+format: `<class>_<vendor>`. E.g.
+```
+node.alpha.kubernetes-incubator.io/nfd-pci-1200_8086.present=true
+```
+
+Only device classes (0x)03, (0x)0b40 and (0x)12, i.e. GPUs, co-processors and
+accelerator cards are deteted.
 
 ### RDT (Intel Resource Director Technology) Features
 
