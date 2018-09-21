@@ -4,3 +4,9 @@
 #      - "0200"
 #      - "03"
 #      - "12"
+#    deviceLabelFields:
+#      - "class"
+#      - "vendor"
+#      - "device"
+#      - "subsystem_vendor"
+#      - "subsystem_device"
