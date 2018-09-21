@@ -31,11 +31,15 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 type NFDConfig struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
+	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
 }
 
 var Config = NFDConfig{
 	DeviceClassWhitelist: []string{"03", "0b40", "12"},
+	DeviceLabelFields:    []string{"class", "vendor"},
 }
+
+var devLabelAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
 
 // Implement FeatureSource interface
 type Source struct{}
@@ -52,11 +56,45 @@ func (s Source) Discover() ([]string, error) {
 		return nil, fmt.Errorf("Failed to detect PCI devices: %s", err.Error())
 	}
 
+	// Construct a device label format, a sorted list of valid attributes
+	deviceLabelFields := []string{}
+	configLabelFields := map[string]bool{}
+	for _, field := range Config.DeviceLabelFields {
+		configLabelFields[field] = true
+	}
+
+	for _, attr := range devLabelAttrs {
+		if _, ok := configLabelFields[attr]; ok {
+			deviceLabelFields = append(deviceLabelFields, attr)
+			delete(configLabelFields, attr)
+		}
+	}
+	if len(configLabelFields) > 0 {
+		keys := []string{}
+		for key := range configLabelFields {
+			keys = append(keys, key)
+		}
+		log.Printf("WARNING: invalid fields '%v' in deviceLabelFields, ignoring...", keys)
+	}
+	if len(deviceLabelFields) == 0 {
+		log.Printf("WARNING: no valid fields in deviceLabelFields defined, using the defaults")
+		deviceLabelFields = []string{"class", "vendor"}
+	}
+
+	// Iterate over all device classes
 	for class, classDevs := range devs {
 		for _, white := range Config.DeviceClassWhitelist {
 			if strings.HasPrefix(class, strings.ToLower(white)) {
 				for _, dev := range classDevs {
-					features[fmt.Sprintf("%s_%s.present", dev["class"], dev["vendor"])] = true
+					devLabel := ""
+					for i, attr := range deviceLabelFields {
+						devLabel += dev[attr]
+						if i < len(deviceLabelFields)-1 {
+							devLabel += "_"
+						}
+					}
+					devLabel += ".present"
+					features[devLabel] = true
 				}
 			}
 		}
@@ -74,8 +112,7 @@ func (s Source) Discover() ([]string, error) {
 func readDevInfo(devPath string) (pciDeviceInfo, error) {
 	info := pciDeviceInfo{}
 
-	attrs := []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
-	for _, attr := range attrs {
+	for _, attr := range devLabelAttrs {
 		data, err := ioutil.ReadFile(path.Join(devPath, attr))
 		if err != nil {
 			return info, fmt.Errorf("Failed to read device %s: %s", attr, err)
