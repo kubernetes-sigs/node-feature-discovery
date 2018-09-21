@@ -39,6 +39,7 @@ node-feature-discovery.
   Usage:
   node-feature-discovery [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
+     [--options=<config>]
   node-feature-discovery -h | --help
   node-feature-discovery --version
 
@@ -47,6 +48,11 @@ node-feature-discovery.
   --version                   Output version and exit.
   --config=<path>             Config file to use.
                               [Default: /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf]
+  --options=<config>          Specify config options from command line. Config
+                              options are specified in the same format as in the
+                              config file (i.e. json or yaml). These options
+                              will override settings read from the config file.
+                              [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
@@ -233,7 +239,7 @@ For example, if some node is tainted NoSchedule or fails to start a job for some
 
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
-### Configuration file
+### Configuration options
 
 NFD supports a configuration file. The default location is
 `/etc/kubernetes/node-feature-discovery/node-feature-discovery.conf`, but,
@@ -267,8 +273,15 @@ different config for different nodes would be required, for example.
 
 The (empty-by-default)
 [example config](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery.conf.example)
-is used as a config in the NFD Docker image. Thus, this can be used as default
+is used as a config in the NFD Docker image. Thus, this can be used as a default
 configuration in custom-built images.
+
+Configuration options can also be specified via the `--options` command line
+flag, in which case no mounts need to be used. The same format as in the config
+file must be used, i.e. JSON (or YAML).
+
+Configuration options specified from the command line will override those read
+from the config file.
 
 ## Building from source
 
