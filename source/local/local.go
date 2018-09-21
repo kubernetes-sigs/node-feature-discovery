@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/kubernetes-incubator/node-feature-discovery/source"
 )
@@ -58,8 +59,8 @@ func (s Source) Discover() (source.Features, error) {
 			log.Printf("ERROR: source hook '%v' failed: %v", hook, err)
 			continue
 		}
-		for _, feature := range hookFeatures {
-			features[hook+"-"+feature] = true
+		for feature, value := range hookFeatures {
+			features[hook+"-"+feature] = value
 		}
 	}
 
@@ -67,8 +68,8 @@ func (s Source) Discover() (source.Features, error) {
 }
 
 // Run one hook
-func runHook(file string) ([]string, error) {
-	var features []string
+func runHook(file string) (map[string]string, error) {
+	features := map[string]string{}
 
 	path := filepath.Join(hookDir, file)
 	filestat, err := os.Stat(path)
@@ -106,7 +107,12 @@ func runHook(file string) ([]string, error) {
 		lines = bytes.Split(stdout.Bytes(), []byte("\n"))
 		for _, line := range lines {
 			if len(line) > 0 {
-				features = append(features, string(line))
+				lineSplit := strings.SplitN(string(line), "=", 2)
+				if len(lineSplit) == 1 {
+					features[lineSplit[0]] = "true"
+				} else {
+					features[lineSplit[0]] = lineSplit[1]
+				}
 			}
 		}
 	}
