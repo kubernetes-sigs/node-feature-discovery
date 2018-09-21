@@ -29,7 +29,13 @@ type pciDeviceInfo map[string]string
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
-var deviceClassWhitelist = []string{"03", "0b40", "12"}
+type NFDConfig struct {
+	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
+}
+
+var Config = NFDConfig{
+	DeviceClassWhitelist: []string{"03", "0b40", "12"},
+}
 
 // Implement FeatureSource interface
 type Source struct{}
@@ -47,8 +53,8 @@ func (s Source) Discover() ([]string, error) {
 	}
 
 	for class, classDevs := range devs {
-		for _, white := range deviceClassWhitelist {
-			if strings.HasPrefix(class, white) {
+		for _, white := range Config.DeviceClassWhitelist {
+			if strings.HasPrefix(class, strings.ToLower(white)) {
 				for _, dev := range classDevs {
 					features[fmt.Sprintf("%s_%s.present", dev["class"], dev["vendor"])] = true
 				}

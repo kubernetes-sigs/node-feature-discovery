@@ -1,1 +1,6 @@
 #sources:
+#  pci:
+#    deviceClassWhitelist:
+#      - "0200"
+#      - "03"
+#      - "12"

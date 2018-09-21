@@ -189,8 +189,10 @@ format: `<class>_<vendor>`. E.g.
 node.alpha.kubernetes-incubator.io/nfd-pci-1200_8086.present=true
 ```
 
-Only device classes (0x)03, (0x)0b40 and (0x)12, i.e. GPUs, co-processors and
-accelerator cards are deteted.
+The set of PCI device classes that the feature source detects is configurable.
+By default, device classes (0x)03, (0x)0b40 and (0x)12, i.e. GPUs,
+co-processors and accelerator cards are deteted.
+See [configuration options](#configuration-options) for more information.
 
 ### RDT (Intel Resource Director Technology) Features
 
@@ -294,10 +296,15 @@ configuration in custom-built images.
 
 Configuration options can also be specified via the `--options` command line
 flag, in which case no mounts need to be used. The same format as in the config
-file must be used, i.e. JSON (or YAML).
-
+file must be used, i.e. JSON (or YAML). For example:
+```
+--options='{"sources": { "pci": { "deviceClassWhitelist": ["12"] } } }'
+```
 Configuration options specified from the command line will override those read
 from the config file.
+
+Currently, the only available configuration options are related to the
+[PCI feature source](#pci-features).
 
 ## Building from source
 
