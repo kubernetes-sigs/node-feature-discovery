@@ -88,6 +88,7 @@ type Args struct {
 	labelWhiteList string
 	configFile     string
 	noPublish      bool
+	options        string
 	oneshot        bool
 	sleepInterval  time.Duration
 	sources        []string
@@ -102,8 +103,8 @@ func main() {
 	// Parse command-line arguments.
 	args := argsParse(nil)
 
-	// Read the config file
-	err := configParse(args.configFile)
+	// Parse config
+	err := configParse(args.configFile, args.options)
 	if err != nil {
 		stderrLogger.Print(err)
 	}
@@ -147,6 +148,7 @@ func argsParse(argv []string) (args Args) {
   Usage:
   %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
+     [--options=<config>]
   %s -h | --help
   %s --version
 
@@ -155,6 +157,11 @@ func argsParse(argv []string) (args Args) {
   --version                   Output version and exit.
   --config=<path>             Config file to use.
                               [Default: /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf]
+  --options=<config>          Specify config options from command line. Config
+                              options are specified in the same format as in the
+                              config file (i.e. json or yaml). These options
+                              will override settings read from the config file.
+                              [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpuid,iommu,memory,network,pstate,rdt,selinux,storage]
   --no-publish                Do not publish discovered features to the
@@ -178,6 +185,7 @@ func argsParse(argv []string) (args Args) {
 	var err error
 	args.configFile = arguments["--config"].(string)
 	args.noPublish = arguments["--no-publish"].(bool)
+	args.options = arguments["--options"].(string)
 	args.sources = strings.Split(arguments["--sources"].(string), ",")
 	args.labelWhiteList = arguments["--label-whitelist"].(string)
 	args.oneshot = arguments["--oneshot"].(bool)
@@ -195,8 +203,8 @@ func argsParse(argv []string) (args Args) {
 	return args
 }
 
-// Parse configuration file
-func configParse(filepath string) error {
+// Parse configuration options
+func configParse(filepath string, overrides string) error {
 	data, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return fmt.Errorf("Failed to read config file: %s", err)
@@ -206,6 +214,12 @@ func configParse(filepath string) error {
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		return fmt.Errorf("Failed to parse config file: %s", err)
+	}
+
+	// Parse config overrides
+	err = yaml.Unmarshal([]byte(overrides), &config)
+	if err != nil {
+		return fmt.Errorf("Failed to parse --options: %s", err)
 	}
 
 	return nil

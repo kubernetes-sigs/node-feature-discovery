@@ -179,7 +179,7 @@ func TestArgsParse(t *testing.T) {
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration file", t, func() {
 		Convey("When non-accessible file is given", func() {
-			err := configParse("non-existing-file")
+			err := configParse("non-existing-file", "")
 
 			Convey("Should return error", func() {
 				So(err, ShouldNotBeNil)
@@ -193,7 +193,7 @@ func TestConfigParse(t *testing.T) {
 		f.Close()
 
 		Convey("When proper config file is given", func() {
-			err := configParse(f.Name())
+			err := configParse(f.Name(), "")
 
 			Convey("Should return error", func() {
 				So(err, ShouldBeNil)
