@@ -54,6 +54,7 @@ var (
 // Global config
 type NFDConfig struct {
 	Sources struct {
+		Pci *pci.NFDConfig `json:"pci,omitempty"`
 	} `json:"sources,omitempty"`
 }
 
@@ -206,6 +207,8 @@ func argsParse(argv []string) (args Args) {
 
 // Parse configuration options
 func configParse(filepath string, overrides string) error {
+	config.Sources.Pci = &pci.Config
+
 	data, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return fmt.Errorf("Failed to read config file: %s", err)

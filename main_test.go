@@ -189,7 +189,10 @@ func TestConfigParse(t *testing.T) {
 		f, err := ioutil.TempFile("", "nfd-test-")
 		defer os.Remove(f.Name())
 		So(err, ShouldBeNil)
-		f.WriteString(`sources:`)
+		f.WriteString(`sources:
+  pci:
+    deviceClassWhitelist:
+      - "ff"`)
 		f.Close()
 
 		Convey("When proper config file is given", func() {
@@ -197,6 +200,7 @@ func TestConfigParse(t *testing.T) {
 
 			Convey("Should return error", func() {
 				So(err, ShouldBeNil)
+				So(config.Sources.Pci.DeviceClassWhitelist, ShouldResemble, []string{"ff"})
 			})
 		})
 	})
