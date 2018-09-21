@@ -124,7 +124,7 @@ the only label value published for features is the string `"true"`._
   "feature.node.kubernetes.io/nfd-rdt-<feature-name>": "true",
   "feature.node.kubernetes.io/nfd-selinux-<feature-name>": "true",
   "feature.node.kubernetes.io/nfd-storage-<feature-name>": "true",
-  "feature.node.kubernetes.io/<hook name>-<feature name>": "true"
+  "feature.node.kubernetes.io/<hook name>-<feature name>": "<feature value>"
 }
 ```
 
@@ -193,11 +193,15 @@ available inside the Docker image so Volumes and VolumeMounts must be used if
 standard NFD images are used.
 
 The hook files must be executable. When executed, the hooks are supposed to
-print all discovered features in `stdout`, one feature per line. The output in
-stdout is used in the node label as is. Unlike other feature sources, the
-source name (i.e. `local`) is not used as a prefix in the label. The full name
-of node label name will conform to the following convention:
+print all discovered features in `stdout`, one feature per line. Hook can
+advertise both binary and non-binary labels, using either `<feature name>` or
+`<feature name>=<feature value>` output format. Unlike other feature sources,
+the source name (i.e. `local`) is not used as a prefix. The hook name is used
+as the prefix, instead. The full name of node label name will conform to the
+following convention:
 `feature.node.kubernetes.io/<hook name>-<feature name>`.
+The value of the label is either `true` (for binary labels) or `<feature name>`
+(for non-binary labels).
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
 
@@ -207,12 +211,12 @@ User has a shell script
 following `stdout` output:
 ```
 MY_FEATURE_1
-MY_FEATURE_2
+MY_FEATURE_2=myvalue
 ```
 which, in turn, will translate into the following node labels:
 ```
 feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
-feature.node.kubernetes.io/my-source-MY_FEATURE_2=true
+feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
 ```
 
 **NOTE!** NFD will blindly run any executables placed/mounted in the hooks
