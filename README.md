@@ -94,7 +94,7 @@ the only label value published for features is the string `"true"`._
 
 ```json
 {
-  "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.2.0",
+  "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.3.0",
   "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-iommu-<feature-name>": "true",
   "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
