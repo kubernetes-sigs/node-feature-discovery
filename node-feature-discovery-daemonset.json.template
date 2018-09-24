@@ -34,7 +34,7 @@
                 }
               }
             ],
-            "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.2.0",
+            "image": "quay.io/kubernetes_incubator/node-feature-discovery:v0.3.0",
             "name": "node-feature-discovery",
             "args": ["--sleep-interval=60s"],
             "volumeMounts": [
