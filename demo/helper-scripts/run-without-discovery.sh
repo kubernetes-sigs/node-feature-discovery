@@ -49,13 +49,13 @@ for i in {1..10}
 do
     if [ "$app" == "parsec" ]
     then
-        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-1/" -e "s/APP/$app/" demo-pod-without-discovery.json.template > demo-pod-without-discovery.json
+        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-1/" -e "s/APP/$app/" demo-pod-without-discovery.yaml.template > demo-pod-without-discovery.yaml
     else
-        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-2/" -e "s/APP/$app/" demo-pod-without-discovery.json.template > demo-pod-without-discovery.json
+        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-2/" -e "s/APP/$app/" demo-pod-without-discovery.yaml.template > demo-pod-without-discovery.yaml
     fi
-    kubectl create -f demo-pod-without-discovery.json
+    kubectl create -f demo-pod-without-discovery.yaml
     echo "WithoutDiscovery" >> labels-without-discovery-$app.log
 done 
 echo "Ten pods without node feature discovery started."
 
-rm -f demo-pod-without-discovery.json
+rm -f demo-pod-without-discovery.yaml

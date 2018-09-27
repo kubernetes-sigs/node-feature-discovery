@@ -10,7 +10,7 @@ We wanted to demonstrate how to target nodes with turbo boost using node feature
 
 Our experiment involved running the same application ten times with and without node feature discovery. We use the Ferret benchmark from the PARSEC benchmark suite [[2]][parsec] as our application. The benchmark implements an image similarity search. It is expected to benefit from turbo boost as it is CPU intensive [[3][ref-3], [4][ref-4]]. 
 
-Without node feature discovery, two-thirds of the application instances will run on nodes without turbo boost and as a result be less-performant. By using feature discovery, we are able to target the node with turbo boost and gain performance. A pod template to express affinity to nodes with turbo boost can be found [here](helper-scripts/demo-pod-with-discovery.json.parsec.template). 
+Without node feature discovery, two-thirds of the application instances will run on nodes without turbo boost and as a result be less-performant. By using feature discovery, we are able to target the node with turbo boost and gain performance. A pod template to express affinity to nodes with turbo boost can be found [here](helper-scripts/demo-pod-with-discovery.yaml.parsec.template).
 
 The figure below shows box plots that illustrates the variability in normalized execution time of running ten application instances with and without node feature discovery. The execution time of the runs are normalized to the best-performing run and the change in the normalized execution time is shown (0 represents the best performing run). With node feature discovery, under this experimental setup, we can see significant improvement in performance. Moreover, we also reduce the performance variability between different application instances.
 

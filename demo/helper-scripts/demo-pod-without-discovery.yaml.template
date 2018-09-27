@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-APP-NUM
+spec:
+  containers:
+    - image: quay.io/kubernetes_incubator/node-feature-discovery-IMG
+          name: demo-container-APP-NUM
+      ports:
+        - containerPort: 3351
+                hostPort: 10001
+  restartPolicy: Never
