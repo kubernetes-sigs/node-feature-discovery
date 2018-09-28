@@ -46,7 +46,8 @@ const (
 )
 
 var (
-	version = "" // Must not be const, set using ldflags at build time
+	version            = "" // Must not be const, set using ldflags at build time
+	validFeatureNameRe = regexp.MustCompile(`^([-.\w]*)?[A-Za-z0-9]$`)
 )
 
 // package loggers
@@ -351,6 +352,11 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 		return nil, err
 	}
 	for k := range features {
+		// Validate label
+		if !validFeatureNameRe.MatchString(k) {
+			stderrLogger.Printf("Invalid feature name '%s', ignoring...", k)
+			continue
+		}
 		labels[fmt.Sprintf("%s-%s", source.Name(), k)] = fmt.Sprintf("%v", features[k])
 	}
 	return labels, nil
