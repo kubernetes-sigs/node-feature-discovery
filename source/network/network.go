@@ -57,7 +57,7 @@ func (s Source) Discover() ([]string, error) {
 			if t > 0 {
 				glog.Infof("SR-IOV capability is detected on the network interface: %s", netInterface.Name)
 				glog.Infof("%d maximum supported number of virtual functions on network interface: %s", t, netInterface.Name)
-				features = append(features, "sriov")
+				features = append(features, "sriov.capable")
 				numVfsPath := "/sys/class/net/" + netInterface.Name + "/device/sriov_numvfs"
 				numBytes, err := ioutil.ReadFile(numVfsPath)
 				if err != nil {
@@ -72,7 +72,7 @@ func (s Source) Discover() ([]string, error) {
 				}
 				if n > 0 {
 					glog.Infof("%d virtual functions configured on network interface: %s", n, netInterface.Name)
-					features = append(features, "sriov-configured")
+					features = append(features, "sriov.configured")
 					break
 				} else if n == 0 {
 					glog.Errorf("SR-IOV not configured on network interface: %s", netInterface.Name)
