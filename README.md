@@ -82,12 +82,20 @@ The current set of feature sources are the following:
 
 The published node labels encode a few pieces of information:
 
-- A "namespace" (e.g. `node.alpha.kubernetes-incubator.io/nfd`).
+- A "namespace" (e.g. `node.alpha.kubernetes-incubator.io`).
 - The version of this discovery code that wrote the label, according to
   `git describe --tags --dirty --always`.
 - The source for each label (e.g. `cpuid`).
 - The name of the discovered feature as it appears in the underlying
   source, (e.g. `AESNI` from cpuid).
+
+Feature label names adhere to the following pattern:
+```
+<namespace>/nfd-<source name>-<feature name>[.<attribute name>]
+```
+The last component (i.e. `attribute-name`) is optional, and only used if a
+feature logically has sub-hierarchy, e.g. `sriov.capable` and
+`sriov.configure` from the `network` source.
 
 _Note: only features that are available on a given node are labeled, so
 the only label value published for features is the string `"true"`._
@@ -155,9 +163,10 @@ such as restricting discovered features with the --label-whitelist option._
 
 ### Network Features
 
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| [SRIOV][sriov] | Single Root Input/Output Virtualization (SR-IOV) enabled Network Interface Card
+| Feature | Attribute  | Description                                           |
+| ------- | ---------- | ----------------------------------------------------- |
+| sriov   | capable    | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
+| <br>    | configured | SR-IOV virtual functions have been configured
 
 ### RDT (Intel Resource Director Technology) Features
 
