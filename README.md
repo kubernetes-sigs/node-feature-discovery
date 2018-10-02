@@ -231,6 +231,12 @@ feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
 
+### P-State Features
+
+| Feature name | Description                                                   |
+| :----------: | ------------------------------------------------------------- |
+| turbo        | Turbo frequencies are enabled in Intel pstate driver
+
 ### Memory Features
 
 | Feature name   | Description                                                                         |
