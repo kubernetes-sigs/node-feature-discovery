@@ -28,7 +28,7 @@ type Source struct{}
 // Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "rdt" }
 
-// Discover returns feature names for CMT and CAT if suppported.
+// Discover returns feature names for CMT and CAT if supported.
 func (s Source) Discover() ([]string, error) {
 	features := []string{}
 
