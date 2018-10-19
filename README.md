@@ -82,6 +82,7 @@ The current set of feature sources are the following:
 - Local (user-specific features)
 - Memory
 - Network
+- PCI
 - Pstate ([Intel P-State driver][intel-pstate])
 - RDT ([Intel Resource Director Technology][intel-rdt])
 - Storage
