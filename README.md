@@ -196,10 +196,10 @@ such as restricting discovered features with the --label-whitelist option._
 | -------------------- | --------- | ----------------------------------------- |
 | &lt;device label&gt; | present   | PCI device is detected
 
-The `<device label>` part is composed of raw PCI IDs, separated by dashes.
+`<device label>` is composed of raw PCI IDs, separated by underscores.
 The set of fields used in `<device label>` is configurable, valid fields being
 `class`, `vendor`, `device`, `subsystem_vendor` and `subsystem_device`.
-Defaults fields are `class` and `vendor`. An example label using the default
+Defaults are `class` and `vendor`. An example label using the default
 label fields:
 ```
 node.alpha.kubernetes-incubator.io/nfd-pci-1200_8086.present=true
@@ -207,7 +207,7 @@ node.alpha.kubernetes-incubator.io/nfd-pci-1200_8086.present=true
 
 Also  the set of PCI device classes that the feature source detects is
 configurable. By default, device classes (0x)03, (0x)0b40 and (0x)12, i.e.
-GPUs, co-processors and accelerator cards are deteted.
+GPUs, co-processors and accelerator cards are detected.
 
 See [configuration options](#configuration-options)
 for more information on NFD config.
