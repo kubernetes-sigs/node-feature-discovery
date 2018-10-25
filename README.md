@@ -271,10 +271,10 @@ possible security implications.
 | -------------------- | --------- | ----------------------------------------- |
 | &lt;device label&gt; | present   | PCI device is detected
 
-The `<device label>` part is composed of raw PCI IDs, separated by dashes.
+`<device label>` is composed of raw PCI IDs, separated by underscores.
 The set of fields used in `<device label>` is configurable, valid fields being
 `class`, `vendor`, `device`, `subsystem_vendor` and `subsystem_device`.
-Defaults fields are `class` and `vendor`. An example label using the default
+Defaults are `class` and `vendor`. An example label using the default
 label fields:
 ```
 feature.node.kubernetes.io/pci-1200_8086.present=true
