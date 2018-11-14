@@ -272,7 +272,7 @@ The label-nodes.sh script tries to launch as many jobs as there are Ready nodes.
 Note that this approach does not guarantee running once on every node.
 For example, if some node is tainted NoSchedule or fails to start a job for some other reason, then some other node will run extra job instance(s) to satisfy the request and the tainted/failed node does not get labeled.
 
-[![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.png)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
+[![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.svg)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
 ### Configuration options
 
@@ -356,8 +356,8 @@ docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
 **Change the job spec to use your custom image (optional):**
 
 To use your published image from the step above instead of the
-`quay.io/kubernetes_incubator/node-feature-discovery` image, edit line 40 in the file
-[node-feature-discovery-job.yaml.template](node-feature-discovery-job.yaml.template)
+`quay.io/kubernetes_incubator/node-feature-discovery` image, edit `image` attribute in the file
+[node-feature-discovery-job.yaml.template](node-feature-discovery-job.yaml.template#L23)
 to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
 
 ## Targeting Nodes with Specific Features
