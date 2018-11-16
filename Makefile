@@ -2,6 +2,7 @@
 .FORCE:
 
 IMAGE_BUILD_CMD := docker build
+IMAGE_PUSH_CMD := docker push
 
 VERSION := $(shell git describe --tags --dirty --always)
 
@@ -39,3 +40,6 @@ mock:
 
 test:
 	go test ./cmd/... ./pkg/...
+
+push:
+	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
