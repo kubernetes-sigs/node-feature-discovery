@@ -2,6 +2,7 @@
 .FORCE:
 
 IMAGE_BUILD_CMD := docker build
+IMAGE_BUILD_EXTRA_OPTS :=
 IMAGE_PUSH_CMD := docker push
 
 VERSION := $(shell git describe --tags --dirty --always)
@@ -20,7 +21,8 @@ all: image
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
-		-t $(IMAGE_TAG) ./
+		-t $(IMAGE_TAG) \
+		$(IMAGE_BUILD_EXTRA_OPTS) ./
 
 yamls: $(yaml_instances)
 
