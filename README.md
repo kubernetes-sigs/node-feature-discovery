@@ -556,32 +556,26 @@ Currently, the only available configuration options are related to the
 
 ## Building from source
 
-Download the source code.
+**Download the source code:**
 
 ```
 git clone https://github.com/kubernetes-sigs/node-feature-discovery
 ```
 
-**Build the container image:**
+**Build the container image:**<br>
+See [customizing the build](#customizing-the-build) below for altering the
+container image registry, for example.
 
 ```
 cd <project-root>
 make
 ```
 
-**NOTE**: Our default docker image is hosted in quay.io. To override the
-`QUAY_REGISTRY_USER` use the `-e` option as follows:
-`QUAY_REGISTRY_USER=<my-username> make image -e`
-
-You can also specify a build tool different from Docker, for example:
-```
-make IMAGE_BUILD_CMD="buildah bud"
-```
-
-Push the container image (optional, this example with Docker)
+**Push the container image:**<br>
+Optional, this example with Docker.
 
 ```
-docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
+docker push <image registry>/<image-name>:<version>
 ```
 
 **Change the job spec to use your custom image (optional):**
@@ -590,6 +584,29 @@ To use your published image from the step above instead of the
 `quay.io/kubernetes_incubator/node-feature-discovery` image, edit `image`
 attribute in the spec template(s) to the new location
 (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
+
+### Customizing the Build
+There are several Makefile variables that control the build process and the
+name of the resulting container image.
+
+| Variable        | Description                          | Default value
+| --------------  | ------------------------------------ | ------------------- |
+| IMAGE_BUILD_CMD | Command to build the image           | docker build
+| IMAGE_REGISTRY  | Container image registry to use      | quay.io/kubernetes_incubator
+| IMAGE_NAME      | Container image name                 | node-feature-discovery
+| IMAGE_TAG_NAME  | Container image tag name             | &lt;nfd version&gt;
+| IMAGE_REPO      | Container image repository to use    | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
+| IMAGE_TAG       | Full image:tag to tag the image with | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
+
+For example, to use a custom registry:
+```
+make IMAGE_REGISTRY=<my custom registry uri>
+
+```
+Or to specify a build tool different from Docker:
+```
+make IMAGE_BUILD_CMD="buildah bud"
+```
 
 ## Targeting Nodes with Specific Features
 
