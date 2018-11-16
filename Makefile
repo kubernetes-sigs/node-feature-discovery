@@ -2,19 +2,20 @@
 
 IMAGE_BUILD_CMD := docker build
 
-QUAY_DOMAIN_NAME := quay.io
-QUAY_REGISTRY_USER := kubernetes_incubator
-DOCKER_IMAGE_NAME := node-feature-discovery
-
 VERSION := $(shell git describe --tags --dirty --always)
+
+IMAGE_REGISTRY := quay.io/kubernetes_incubator
+IMAGE_NAME := node-feature-discovery
+IMAGE_TAG_NAME := $(VERSION)
+IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
+IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
+
 
 all: image
 
-# To override QUAY_REGISTRY_USER use the -e option as follows:
-# QUAY_REGISTRY_USER=<my-username> make docker -e.
 image:
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
-		-t $(QUAY_DOMAIN_NAME)/$(QUAY_REGISTRY_USER)/$(DOCKER_IMAGE_NAME):$(VERSION) ./
+		-t $(IMAGE_TAG) ./
 
 mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
