@@ -622,6 +622,7 @@ name of the resulting container image.
 | IMAGE_REPO             | Container image repository to use            | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
 | IMAGE_TAG              | Full image:tag to tag the image with         | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
 | K8S_NAMESPACE          | nfd-master and nfd-worker namespace          | kube-system
+| KUBECONFIG             | Kubeconfig for running e2e-tests             | *empty*
 
 For example, to use a custom registry:
 ```

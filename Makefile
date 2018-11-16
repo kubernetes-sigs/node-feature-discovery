@@ -13,6 +13,7 @@ IMAGE_TAG_NAME := $(VERSION)
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 K8S_NAMESPACE := kube-system
+KUBECONFIG :=
 
 yaml_templates := $(wildcard *.yaml.template)
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
@@ -42,6 +43,10 @@ mock:
 
 test:
 	go test ./cmd/... ./pkg/...
+
+e2e-test:
+	dep ensure -v
+	go test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) -kubeconfig=$(KUBECONFIG)
 
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
