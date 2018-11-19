@@ -8,7 +8,7 @@ WORKDIR /go/src/sigs.k8s.io/node-feature-discovery
 ARG NFD_VERSION
 
 RUN go get github.com/golang/dep/cmd/dep
-RUN dep ensure
+RUN dep ensure -v
 RUN go install \
   -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$NFD_VERSION" \
   ./cmd/*
