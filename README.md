@@ -91,7 +91,7 @@ The current set of feature sources are the following:
 
 The published node labels encode a few pieces of information:
 
-- A "namespace" (e.g. `node.alpha.kubernetes-incubator.io`).
+- Namespace, i.e. `feature.node.kubernetes.io`
 - The version of this discovery code that wrote the label, according to
   `git describe --tags --dirty --always`.
 - The source for each label (e.g. `cpuid`).
@@ -112,17 +112,17 @@ the only label value published for features is the string `"true"`._
 
 ```json
 {
-  "node.alpha.kubernetes-incubator.io/node-feature-discovery.version": "v0.3.0",
-  "node.alpha.kubernetes-incubator.io/nfd-cpuid-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-iommu-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-kernel-version.<version component>": "<version number>",
-  "node.alpha.kubernetes-incubator.io/nfd-memory-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-network-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-pci-<device label>.present": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-pstate-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-rdt-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-selinux-<feature-name>": "true",
-  "node.alpha.kubernetes-incubator.io/nfd-storage-<feature-name>": "true"
+  "feature.node.kubernetes.io/node-feature-discovery.version": "v0.3.0",
+  "feature.node.kubernetes.io/nfd-cpuid-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-iommu-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-kernel-version.<version component>": "<version number>",
+  "feature.node.kubernetes.io/nfd-memory-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-network-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-pci-<device label>.present": "true",
+  "feature.node.kubernetes.io/nfd-pstate-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-rdt-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-selinux-<feature-name>": "true",
+  "feature.node.kubernetes.io/nfd-storage-<feature-name>": "true"
 }
 ```
 
@@ -201,7 +201,7 @@ The set of fields used in `<device label>` is configurable, valid fields being
 Defaults fields are `class` and `vendor`. An example label using the default
 label fields:
 ```
-node.alpha.kubernetes-incubator.io/nfd-pci-1200_8086.present=true
+feature.node.kubernetes.io/nfd-pci-1200_8086.present=true
 ```
 
 Also  the set of PCI device classes that the feature source detects is
@@ -377,7 +377,7 @@ spec:
     - image: golang
       name: go1
   nodeSelector:
-    node.alpha.kubernetes-incubator.io/nfd-pstate-turbo: 'true'
+    feature.node.kubernetes.io/nfd-pstate-turbo: 'true'
 ```
 
 For more details on targeting nodes, see [node selection][node-sel].

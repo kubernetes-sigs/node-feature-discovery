@@ -10,5 +10,5 @@ spec:
         - containerPort: 3351
           hostPort: 10001
   nodeSelector:
-    node.alpha.kubernetes-incubator.io/nfd-pstate-turbo: 'true'
+    feature.node.kubernetes.io/nfd-pstate-turbo: 'true'
   restartPolicy: Never

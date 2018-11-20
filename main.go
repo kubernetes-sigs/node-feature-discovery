@@ -35,7 +35,7 @@ const (
 	ProgramName = "node-feature-discovery"
 
 	// Namespace is the prefix for all published labels.
-	Namespace = "node.alpha.kubernetes-incubator.io"
+	Namespace = "feature.node.kubernetes.io"
 
 	// NodeNameEnv is the environment variable that contains this node's name.
 	NodeNameEnv = "NODE_NAME"
