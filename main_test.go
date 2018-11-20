@@ -25,9 +25,10 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		fakeFeatureNames := []string{"testfeature1", "testfeature2", "testfeature3"}
 		fakeFeatures := source.Features{}
 		fakeFeatureLabels := Labels{}
+		fakeAnnotations := Annotations{"version": version}
 		for _, f := range fakeFeatureNames {
 			fakeFeatures[f] = true
-			fakeFeatureLabels[fmt.Sprintf("%s-testSource-%s", prefix, f)] = "true"
+			fakeFeatureLabels[fmt.Sprintf("%s-testSource-%s", labelPrefix, f)] = "true"
 		}
 		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
 
@@ -66,7 +67,8 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, prefix).Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(nil).Once()
 			noPublish := false
 			err := updateNodeWithFeatureLabels(testHelper, noPublish, fakeFeatureLabels)
@@ -90,7 +92,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		Convey("When I fail to get a mock client while advertising feature labels", func() {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels)
+			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels, fakeAnnotations)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -101,7 +103,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(nil, expectedError).Once()
-			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels)
+			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels, fakeAnnotations)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -112,10 +114,11 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, prefix).Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, labelPrefix).Return().Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
+			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(expectedError).Once()
-			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels)
+			err := advertiseFeatureLabels(testHelper, fakeFeatureLabels, fakeAnnotations)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -281,10 +284,10 @@ func TestCreateFeatureLabels(t *testing.T) {
 			labels := createFeatureLabels(sources, emptyLabelWL)
 
 			Convey("Proper fake labels are returned", func() {
-				So(len(labels), ShouldEqual, 4)
-				So(labels, ShouldContainKey, prefix+"-fake-fakefeature1")
-				So(labels, ShouldContainKey, prefix+"-fake-fakefeature2")
-				So(labels, ShouldContainKey, prefix+"-fake-fakefeature3")
+				So(len(labels), ShouldEqual, 3)
+				So(labels, ShouldContainKey, labelPrefix+"-fake-fakefeature1")
+				So(labels, ShouldContainKey, labelPrefix+"-fake-fakefeature2")
+				So(labels, ShouldContainKey, labelPrefix+"-fake-fakefeature3")
 			})
 		})
 		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
@@ -295,10 +298,10 @@ func TestCreateFeatureLabels(t *testing.T) {
 			labels := createFeatureLabels(sources, emptyLabelWL)
 
 			Convey("fake labels are not returned", func() {
-				So(len(labels), ShouldEqual, 1)
-				So(labels, ShouldNotContainKey, prefix+"-fake-fakefeature1")
-				So(labels, ShouldNotContainKey, prefix+"-fake-fakefeature2")
-				So(labels, ShouldNotContainKey, prefix+"-fake-fakefeature3")
+				So(len(labels), ShouldEqual, 0)
+				So(labels, ShouldNotContainKey, labelPrefix+"-fake-fakefeature1")
+				So(labels, ShouldNotContainKey, labelPrefix+"-fake-fakefeature2")
+				So(labels, ShouldNotContainKey, labelPrefix+"-fake-fakefeature3")
 			})
 		})
 	})
@@ -323,7 +326,7 @@ func TestAddLabels(t *testing.T) {
 		})
 
 		Convey("They should be added to the node.Labels", func() {
-			test1 := prefix + ".test1"
+			test1 := labelPrefix + ".test1"
 			labels[test1] = "true"
 			helper.AddLabels(n, labels)
 			So(n.Labels, ShouldContainKey, test1)

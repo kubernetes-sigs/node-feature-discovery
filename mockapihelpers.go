@@ -70,6 +70,12 @@ func (_m *MockAPIHelpers) AddLabels(_a0 *api.Node, _a1 Labels) {
 	_m.Called(_a0, _a1)
 }
 
+// AddAnnotations provides a mock function with *api.Node and main.Annotations as the input arguments and
+// no return value
+func (_m *MockAPIHelpers) AddAnnotations(_a0 *api.Node, _a1 Annotations) {
+	_m.Called(_a0, _a1)
+}
+
 // UpdateNode provides a mock function with *k8sclient.Clientset and *api.Node as the input arguments and
 // error as the return value
 func (_m *MockAPIHelpers) UpdateNode(_a0 *k8sclient.Clientset, _a1 *api.Node) error {
