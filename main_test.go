@@ -68,6 +68,8 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
 			mockAPIHelper.On("RemoveLabels", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
 			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(nil).Once()
 			noPublish := false
@@ -115,6 +117,8 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("RemoveLabels", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
+			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
 			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(expectedError).Once()
