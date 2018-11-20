@@ -365,6 +365,10 @@ func advertiseFeatureLabels(helper APIHelpers, labels Labels, annotations Annota
 
 	// Remove labels with our prefix
 	helper.RemoveLabels(node, labelPrefix)
+	// Also, remove all labels with the old prefix, and the old version label
+	helper.RemoveLabels(node, "node.alpha.kubernetes-incubator.io/nfd")
+	helper.RemoveLabels(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")
+
 	// Add labels to the node object.
 	helper.AddLabels(node, labels)
 
