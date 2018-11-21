@@ -73,7 +73,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
-			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, labelNs).Return().Once()
 			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
 			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
 			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
@@ -122,7 +122,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
-			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, labelNs).Return().Once()
 			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
 			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
@@ -339,7 +339,7 @@ func TestAddLabels(t *testing.T) {
 			test1 := "test1"
 			labels[test1] = "true"
 			helper.AddLabels(n, labels)
-			So(n.Labels, ShouldContainKey, labelPrefix+test1)
+			So(n.Labels, ShouldContainKey, labelNs+test1)
 		})
 	})
 }

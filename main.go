@@ -46,8 +46,7 @@ const (
 )
 
 var (
-	version     = "" // Must not be const, set using ldflags at build time
-	labelPrefix = labelNs + "nfd-"
+	version = "" // Must not be const, set using ldflags at build time
 )
 
 // package loggers
@@ -443,13 +442,13 @@ func (h k8sHelpers) RemoveLabelsWithPrefix(n *api.Node, search string) {
 // RemoveLabels removes given NFD labels
 func (h k8sHelpers) RemoveLabels(n *api.Node, labelNames []string) {
 	for _, l := range labelNames {
-		delete(n.Labels, labelPrefix+l)
+		delete(n.Labels, labelNs+l)
 	}
 }
 
 func (h k8sHelpers) AddLabels(n *api.Node, labels Labels) {
 	for k, v := range labels {
-		n.Labels[labelPrefix+k] = v
+		n.Labels[labelNs+k] = v
 	}
 }
 
