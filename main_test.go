@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,11 +26,16 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		fakeFeatureNames := []string{"testfeature1", "testfeature2", "testfeature3"}
 		fakeFeatures := source.Features{}
 		fakeFeatureLabels := Labels{}
-		fakeAnnotations := Annotations{"version": version}
+		fakeAnnotations := Annotations{"version": version,
+			"feature-labels": "testSource-testfeature1,testSource-testfeature2,testSource-testfeature3"}
+		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureNames))
 		for _, f := range fakeFeatureNames {
 			fakeFeatures[f] = true
-			fakeFeatureLabels[fmt.Sprintf("testSource-%s", f)] = "true"
+			labelName := fakeFeatureSourceName + "-" + f
+			fakeFeatureLabels[labelName] = "true"
+			fakeFeatureLabelNames = append(fakeFeatureLabelNames, labelName)
 		}
+		fakeAnnotations["feature-labels"] = strings.Join(fakeFeatureLabelNames, ",")
 		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
 
 		Convey("When I successfully get the labels from the mock source", func() {
@@ -60,16 +66,16 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 
 		mockAPIHelper := new(MockAPIHelpers)
 		testHelper := APIHelpers(mockAPIHelper)
+		mockNode := &api.Node{}
 		var mockClient *k8sclient.Clientset
-		var mockNode *api.Node
 
 		Convey("When I successfully update the node with feature labels", func() {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, labelPrefix).Return().Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
 			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(nil).Once()
 			noPublish := false
@@ -116,9 +122,9 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient).Return(mockNode, nil).Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, labelPrefix).Return().Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
-			mockAPIHelper.On("RemoveLabels", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, labelPrefix).Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/nfd").Return().Once()
+			mockAPIHelper.On("RemoveLabelsWithPrefix", mockNode, "node.alpha.kubernetes-incubator.io/node-feature-discovery").Return().Once()
 			mockAPIHelper.On("AddLabels", mockNode, fakeFeatureLabels).Return().Once()
 			mockAPIHelper.On("AddAnnotations", mockNode, fakeAnnotations).Return().Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(expectedError).Once()
@@ -338,7 +344,7 @@ func TestAddLabels(t *testing.T) {
 	})
 }
 
-func TestRemoveLabels(t *testing.T) {
+func TestRemoveLabelsWithPrefix(t *testing.T) {
 	Convey("When removing labels", t, func() {
 		helper := k8sHelpers{}
 		n := &api.Node{
@@ -352,20 +358,20 @@ func TestRemoveLabels(t *testing.T) {
 		}
 
 		Convey("a unique label should be removed", func() {
-			helper.RemoveLabels(n, "single")
+			helper.RemoveLabelsWithPrefix(n, "single")
 			So(len(n.Labels), ShouldEqual, 2)
 			So(n.Labels, ShouldNotContainKey, "single")
 		})
 
 		Convey("a non-unique search string should remove all matching keys", func() {
-			helper.RemoveLabels(n, "multiple")
+			helper.RemoveLabelsWithPrefix(n, "multiple")
 			So(len(n.Labels), ShouldEqual, 1)
 			So(n.Labels, ShouldNotContainKey, "multiple_A")
 			So(n.Labels, ShouldNotContainKey, "multiple_B")
 		})
 
 		Convey("a search string with no matches should not alter labels", func() {
-			helper.RemoveLabels(n, "unique")
+			helper.RemoveLabelsWithPrefix(n, "unique")
 			So(n.Labels, ShouldContainKey, "single")
 			So(n.Labels, ShouldContainKey, "multiple_A")
 			So(n.Labels, ShouldContainKey, "multiple_B")
