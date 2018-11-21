@@ -46,7 +46,7 @@ const (
 
 var (
 	version     = "" // Must not be const, set using ldflags at build time
-	labelPrefix = labelNs + "nfd"
+	labelPrefix = labelNs + "nfd-"
 )
 
 // package loggers
@@ -83,7 +83,7 @@ type APIHelpers interface {
 	// subsequently be updated via the API server using the client library.
 	RemoveLabels(*api.Node, string)
 
-	// AddLabels modifies the supplied node's labels collection.
+	// AddLabels adds new NFD labels to the node object.
 	// In order to publish the labels, the node must be subsequently updated via the
 	// API server using the client library.
 	AddLabels(*api.Node, Labels)
@@ -342,7 +342,7 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 		return nil, err
 	}
 	for k := range features {
-		labels[fmt.Sprintf("%s-%s-%s", labelPrefix, source.Name(), k)] = fmt.Sprintf("%v", features[k])
+		labels[fmt.Sprintf("%s-%s", source.Name(), k)] = fmt.Sprintf("%v", features[k])
 	}
 	return labels, nil
 }
@@ -428,7 +428,7 @@ func (h k8sHelpers) RemoveLabels(n *api.Node, search string) {
 
 func (h k8sHelpers) AddLabels(n *api.Node, labels Labels) {
 	for k, v := range labels {
-		n.Labels[k] = v
+		n.Labels[labelPrefix+k] = v
 	}
 }
 
