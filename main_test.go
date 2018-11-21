@@ -28,7 +28,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		fakeAnnotations := Annotations{"version": version}
 		for _, f := range fakeFeatureNames {
 			fakeFeatures[f] = true
-			fakeFeatureLabels[fmt.Sprintf("%s-testSource-%s", labelPrefix, f)] = "true"
+			fakeFeatureLabels[fmt.Sprintf("testSource-%s", f)] = "true"
 		}
 		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
 
@@ -289,9 +289,9 @@ func TestCreateFeatureLabels(t *testing.T) {
 
 			Convey("Proper fake labels are returned", func() {
 				So(len(labels), ShouldEqual, 3)
-				So(labels, ShouldContainKey, labelPrefix+"-fake-fakefeature1")
-				So(labels, ShouldContainKey, labelPrefix+"-fake-fakefeature2")
-				So(labels, ShouldContainKey, labelPrefix+"-fake-fakefeature3")
+				So(labels, ShouldContainKey, "fake-fakefeature1")
+				So(labels, ShouldContainKey, "fake-fakefeature2")
+				So(labels, ShouldContainKey, "fake-fakefeature3")
 			})
 		})
 		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
@@ -303,9 +303,9 @@ func TestCreateFeatureLabels(t *testing.T) {
 
 			Convey("fake labels are not returned", func() {
 				So(len(labels), ShouldEqual, 0)
-				So(labels, ShouldNotContainKey, labelPrefix+"-fake-fakefeature1")
-				So(labels, ShouldNotContainKey, labelPrefix+"-fake-fakefeature2")
-				So(labels, ShouldNotContainKey, labelPrefix+"-fake-fakefeature3")
+				So(labels, ShouldNotContainKey, "fake-fakefeature1")
+				So(labels, ShouldNotContainKey, "fake-fakefeature2")
+				So(labels, ShouldNotContainKey, "fake-fakefeature3")
 			})
 		})
 	})
@@ -330,10 +330,10 @@ func TestAddLabels(t *testing.T) {
 		})
 
 		Convey("They should be added to the node.Labels", func() {
-			test1 := labelPrefix + ".test1"
+			test1 := "test1"
 			labels[test1] = "true"
 			helper.AddLabels(n, labels)
-			So(n.Labels, ShouldContainKey, test1)
+			So(n.Labels, ShouldContainKey, labelPrefix+test1)
 		})
 	})
 }
