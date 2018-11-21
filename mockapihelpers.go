@@ -58,9 +58,15 @@ func (_m *MockAPIHelpers) GetNode(_a0 *k8sclient.Clientset) (*api.Node, error) {
 	return r0, r1
 }
 
-// RemoveLabels provides a mock function with *api.Node and main.Labels as the input arguments and
+// RemoveLabelsWithPrefix provides a mock function with *api.Node and main.Labels as the input arguments and
 // no return value
-func (_m *MockAPIHelpers) RemoveLabels(_a0 *api.Node, _a1 string) {
+func (_m *MockAPIHelpers) RemoveLabelsWithPrefix(_a0 *api.Node, _a1 string) {
+	_m.Called(_a0, _a1)
+}
+
+// RemoveLabels provides a mock function with *api.Node and []strings as the input arguments and
+// no return value
+func (_m *MockAPIHelpers) RemoveLabels(_a0 *api.Node, _a1 []string) {
 	_m.Called(_a0, _a1)
 }
 

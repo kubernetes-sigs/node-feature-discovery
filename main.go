@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -78,10 +79,13 @@ type APIHelpers interface {
 	// GetNode returns the Kubernetes node on which this container is running.
 	GetNode(*k8sclient.Clientset) (*api.Node, error)
 
-	// RemoveLabels removes labels from the supplied node that contain the
+	// RemoveLabelsWithPrefix removes labels from the supplied node that contain the
 	// search string provided. In order to publish the changes, the node must
 	// subsequently be updated via the API server using the client library.
-	RemoveLabels(*api.Node, string)
+	RemoveLabelsWithPrefix(*api.Node, string)
+
+	// RemoveLabels removes NFD labels from a node object
+	RemoveLabels(*api.Node, []string)
 
 	// AddLabels adds new NFD labels to the node object.
 	// In order to publish the labels, the node must be subsequently updated via the
@@ -314,8 +318,14 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.
 // disabled via --no-publish flag.
 func updateNodeWithFeatureLabels(helper APIHelpers, noPublish bool, labels Labels) error {
 	if !noPublish {
-		// Advertise NFD version as an annotation
-		annotations := Annotations{"version": version}
+		// Advertise NFD version and label names as annotations
+		keys := make([]string, 0, len(labels))
+		for k, _ := range labels {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		annotations := Annotations{"version": version,
+			"feature-labels": strings.Join(keys, ",")}
 
 		err := advertiseFeatureLabels(helper, labels, annotations)
 		if err != nil {
@@ -363,11 +373,15 @@ func advertiseFeatureLabels(helper APIHelpers, labels Labels, annotations Annota
 		return err
 	}
 
-	// Remove labels with our prefix
-	helper.RemoveLabels(node, labelPrefix)
+	// Remove old labels
+	if l, ok := node.Annotations[annotationNs+"feature-labels"]; ok {
+		oldLabels := strings.Split(l, ",")
+		helper.RemoveLabels(node, oldLabels)
+	}
+
 	// Also, remove all labels with the old prefix, and the old version label
-	helper.RemoveLabels(node, "node.alpha.kubernetes-incubator.io/nfd")
-	helper.RemoveLabels(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")
+	helper.RemoveLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/nfd")
+	helper.RemoveLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")
 
 	// Add labels to the node object.
 	helper.AddLabels(node, labels)
@@ -416,13 +430,20 @@ func (h k8sHelpers) GetNode(cli *k8sclient.Clientset) (*api.Node, error) {
 	return node, nil
 }
 
-// RemoveLabels searches through all labels on Node n and removes
+// RemoveLabelsWithPrefix searches through all labels on Node n and removes
 // any where the key contain the search string.
-func (h k8sHelpers) RemoveLabels(n *api.Node, search string) {
+func (h k8sHelpers) RemoveLabelsWithPrefix(n *api.Node, search string) {
 	for k := range n.Labels {
 		if strings.Contains(k, search) {
 			delete(n.Labels, k)
 		}
+	}
+}
+
+// RemoveLabels removes given NFD labels
+func (h k8sHelpers) RemoveLabels(n *api.Node, labelNames []string) {
+	for _, l := range labelNames {
+		delete(n.Labels, labelPrefix+l)
 	}
 }
 
