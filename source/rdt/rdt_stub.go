@@ -1,5 +1,7 @@
+// +build !amd64
+
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,25 +18,6 @@ limitations under the License.
 
 package rdt
 
-import (
-	"sigs.k8s.io/node-feature-discovery/source"
-)
-
-// Source implements FeatureSource.
-type Source struct{}
-
-// Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "rdt" }
-
-// Discover returns feature names for CMT and CAT if supported.
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
-
-	rdtFeatures := discoverRDT()
-
-	for _, f := range rdtFeatures {
-		features[f] = true
-	}
-
-	return features, nil
+func discoverRDT() []string {
+	return []string{}
 }
