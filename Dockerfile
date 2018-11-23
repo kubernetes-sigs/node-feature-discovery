@@ -20,7 +20,7 @@ RUN make test
 
 
 # Create production image for running node feature discovery
-FROM debian:buster-slim
+FROM k8s.gcr.io/build-image/debian-base:v2.1.3
 
 # Run as unprivileged user
 USER 65534:65534
