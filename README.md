@@ -193,30 +193,38 @@ available inside the Docker image so Volumes and VolumeMounts must be used if
 standard NFD images are used.
 
 The hook files must be executable. When executed, the hooks are supposed to
-print all discovered features in `stdout`, one feature per line. Hook can
-advertise both binary and non-binary labels, using either `<feature name>` or
-`<feature name>=<feature value>` output format. Unlike other feature sources,
-the source name (i.e. `local`) is not used as a prefix. The hook name is used
-as the prefix, instead. The full name of node label name will conform to the
-following convention:
-`feature.node.kubernetes.io/<hook name>-<feature name>`.
-The value of the label is either `true` (for binary labels) or `<feature name>`
+print all discovered features in `stdout`, one feature per line. Hooks can
+advertise both binary and non-binary labels, using either `<name>` or
+`<name>=<value>` output format.
+
+Unlike the other feature sources, the name of the hook, instead of the name of
+the feature source (that would be `local` in this case), is used as a prefix in
+the label name, normally. However, if the `<name>` printed by the hook starts
+with a slash (`/`) it is used as the label name as is, without any additional
+prefix. This makes it possible for the hooks to fully control the feature
+label names, e.g. for overriding labels created by other feature sources.
+
+The value of the label is either `true` (for binary labels) or `<value>`
 (for non-binary labels).
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
 
-**An example:**
+**An example:**<br/>
 User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
 following `stdout` output:
 ```
 MY_FEATURE_1
 MY_FEATURE_2=myvalue
+/override_source-OVERRIDE_BOOL
+/override_source-OVERRIDE_VALUE=123
 ```
 which, in turn, will translate into the following node labels:
 ```
 feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
+feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
+feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
 ```
 
 **NOTE!** NFD will blindly run any executables placed/mounted in the hooks
