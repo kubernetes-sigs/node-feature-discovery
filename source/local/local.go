@@ -60,7 +60,13 @@ func (s Source) Discover() (source.Features, error) {
 			continue
 		}
 		for feature, value := range hookFeatures {
-			features[hook+"-"+feature] = value
+			if feature[0] == '/' {
+				// Use feature name as the label as is if it is prefixed with a slash
+				features[feature[1:]] = value
+			} else {
+				// Normally, use hook name as label prefix
+				features[hook+"-"+feature] = value
+			}
 		}
 	}
 
