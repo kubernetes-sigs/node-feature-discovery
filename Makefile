@@ -14,10 +14,4 @@ all: image
 # QUAY_REGISTRY_USER=<my-username> make docker -e.
 image:
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
-		--build-arg http_proxy=$(http_proxy) \
-		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
-		--build-arg https_proxy=$(https_proxy) \
-		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
-		--build-arg no_proxy=$(no_proxy) \
-		--build-arg NO_PROXY=$(NO_PROXY) \
 		-t $(QUAY_DOMAIN_NAME)/$(QUAY_REGISTRY_USER)/$(DOCKER_IMAGE_NAME):$(VERSION) ./
