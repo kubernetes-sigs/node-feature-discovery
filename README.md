@@ -1,7 +1,7 @@
 # Node feature discovery for [Kubernetes](https://kubernetes.io)
 
-[![Build Status](https://api.travis-ci.org/kubernetes-incubator/node-feature-discovery.svg?branch=master)](https://travis-ci.com/kubernetes-incubator/node-feature-discovery)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-incubator/node-feature-discovery)](https://goreportcard.com/report/github.com/kubernetes-incubator/node-feature-discovery)
+[![Build Status](https://api.travis-ci.org/kubernetes-sigs/node-feature-discovery.svg?branch=master)](https://travis-ci.com/kubernetes-sigs/node-feature-discovery)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/node-feature-discovery)](https://goreportcard.com/report/github.com/kubernetes-sigs/node-feature-discovery)
 
 - [Overview](#overview)
 - [Command line interface](#command-line-interface)
@@ -17,15 +17,13 @@
 - [License](#license)
 - [Demo](#demo)
 
-_**NOTE:** We are gathering evidence in order to graduate from the Kubernetes incubator. If you are a user of the project, please add yourself to [this list](https://github.com/kubernetes-incubator/node-feature-discovery/wiki/Users) with as much detail as you are comfortable providing (name and email optional)._
-
 ## Overview
 
 This software enables node feature discovery for Kubernetes. It detects
 hardware features available on each node in a Kubernetes cluster, and advertises
 those features using node labels.
 
-This project uses GitHub [milestones](https://github.com/kubernetes-incubator/node-feature-discovery/milestones) for release planning.
+This project uses GitHub [milestones](https://github.com/kubernetes-sigs/node-feature-discovery/milestones) for release planning.
 
 ## Command line interface
 
@@ -68,7 +66,7 @@ node-feature-discovery.
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template)
+[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
 
 ## Feature discovery
@@ -316,7 +314,7 @@ to the node to advertise hardware features.
 If you have RBAC authorization enabled (as is the default e.g. with clusters initialized with kubeadm) you need to configure the appropriate ClusterRoles, ClusterRoleBindings and a ServiceAccount in order for NFD to create node labels. The provided templates will configure these for you.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
-the `--sleep-interval` option. In the [template](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template#L26) the default interval is set to 60s
+the `--sleep-interval` option. In the [template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template#L26) the default interval is set to 60s
 which is also the default when no `--sleep-interval` is specified.
 
 Feature discovery can alternatively be configured as a one-shot job. There is
@@ -365,7 +363,7 @@ You could also use other types of volumes, of course. That is, hostPath if
 different config for different nodes would be required, for example.
 
 The (empty-by-default)
-[example config](https://github.com/kubernetes-incubator/node-feature-discovery/blob/master/node-feature-discovery.conf.example)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/node-feature-discovery.conf.example)
 is used as a config in the NFD Docker image. Thus, this can be used as a default
 configuration in custom-built images.
 
@@ -386,7 +384,7 @@ Currently, the only available configuration options are related to the
 Download the source code.
 
 ```
-git clone https://github.com/kubernetes-incubator/node-feature-discovery
+git clone https://github.com/kubernetes-sigs/node-feature-discovery
 ```
 
 **Build the container image:**
@@ -450,13 +448,14 @@ Github issues
 
 [Design proposal](https://docs.google.com/document/d/1uulT2AjqXjc_pLtDu0Kw9WyvvXm-WAZZaSiUziKsr68/edit)
 
-## Kubernetes Incubator
+## Governance
 
-This is a [Kubernetes Incubator project](https://github.com/kubernetes/community/blob/master/incubator.md). The project was established 2016-08-29. The incubator team for the project is:
-
-- Sponsor: Dawn Chen (@dchen1107)
-- Champion: David Oppenheimer (@davidopp)
-- SIG: sig-node
+This is a [SIG-node](https://github.com/kubernetes/community/blob/master/sig-node/README.md)
+subproject, hosted under the
+[Kubernetes SIGs](https://github.com/kubernetes-sigs) organization in
+Github. The project was established in 2016 as a
+[Kubernetes Incubator](https://github.com/kubernetes/community/blob/master/incubator.md)
+project and migrated to Kubernetes SIGs in 2018.
 
 ## License
 
