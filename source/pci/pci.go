@@ -24,7 +24,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/kubernetes-incubator/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 type pciDeviceInfo map[string]string

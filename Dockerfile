@@ -1,9 +1,9 @@
 # Build node feature discovery
 FROM golang:1.8 as builder
 
-ADD . /go/src/github.com/kubernetes-incubator/node-feature-discovery
+ADD . /go/src/sigs.k8s.io/node-feature-discovery
 
-WORKDIR /go/src/github.com/kubernetes-incubator/node-feature-discovery
+WORKDIR /go/src/sigs.k8s.io/node-feature-discovery
 
 ENV CMT_CAT_VERSION="v1.2.0"
 
@@ -25,7 +25,7 @@ RUN go get github.com/Masterminds/glide
 RUN glide install --strip-vendor
 RUN go install \
   -ldflags "-s -w -X main.version=$NFD_VERSION" \
-  github.com/kubernetes-incubator/node-feature-discovery
+  sigs.k8s.io/node-feature-discovery
 RUN install -D -m644 node-feature-discovery.conf.example /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf
 
 RUN go test .
