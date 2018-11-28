@@ -16,7 +16,7 @@ limitations under the License.
 
 package panic_fake
 
-import "github.com/kubernetes-incubator/node-feature-discovery/source"
+import "sigs.k8s.io/node-feature-discovery/source"
 
 // Source implements FeatureSource.
 type Source struct{}

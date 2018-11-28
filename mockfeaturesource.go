@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kubernetes-incubator/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source"
 	"github.com/stretchr/testify/mock"
 )
 

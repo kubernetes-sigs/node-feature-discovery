@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubernetes-incubator/node-feature-discovery/source"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/fake"
-	"github.com/kubernetes-incubator/node-feature-discovery/source/panic_fake"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vektra/errors"
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/fake"
+	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
 )
 
 func TestDiscoveryWithMockSources(t *testing.T) {

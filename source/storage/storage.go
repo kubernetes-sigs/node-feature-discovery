@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/kubernetes-incubator/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 // Source implements FeatureSource.
