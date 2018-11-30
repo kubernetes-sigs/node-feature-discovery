@@ -102,7 +102,7 @@ The published node labels encode a few pieces of information:
 
 Feature label names adhere to the following pattern:
 ```
-<namespace>/nfd-<source name>-<feature name>[.<attribute name>]
+<namespace>/<source name>-<feature name>[.<attribute name>]
 ```
 The last component (i.e. `attribute-name`) is optional, and only used if a
 feature logically has sub-hierarchy, e.g. `sriov.capable` and
@@ -114,17 +114,17 @@ the only label value published for features is the string `"true"`._
 ```json
 {
   "feature.node.kubernetes.io/node-feature-discovery.version": "v0.3.0",
-  "feature.node.kubernetes.io/nfd-cpuid-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-iommu-<feature-name>": "true",
+  "feature.node.kubernetes.io/cpuid-<feature-name>": "true",
+  "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-config.<option-name>": "true",
-  "feature.node.kubernetes.io/nfd-kernel-version.<version component>": "<version number>",
-  "feature.node.kubernetes.io/nfd-memory-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-network-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-pci-<device label>.present": "true",
-  "feature.node.kubernetes.io/nfd-pstate-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-rdt-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-selinux-<feature-name>": "true",
-  "feature.node.kubernetes.io/nfd-storage-<feature-name>": "true",
+  "feature.node.kubernetes.io/kernel-version.<version component>": "<version number>",
+  "feature.node.kubernetes.io/memory-<feature-name>": "true",
+  "feature.node.kubernetes.io/network-<feature-name>": "true",
+  "feature.node.kubernetes.io/pci-<device label>.present": "true",
+  "feature.node.kubernetes.io/pstate-<feature-name>": "true",
+  "feature.node.kubernetes.io/rdt-<feature-name>": "true",
+  "feature.node.kubernetes.io/selinux-<feature-name>": "true",
+  "feature.node.kubernetes.io/storage-<feature-name>": "true",
   "feature.node.kubernetes.io/<hook name>-<feature name>": "<feature value>"
 }
 ```
@@ -262,7 +262,7 @@ The set of fields used in `<device label>` is configurable, valid fields being
 Defaults fields are `class` and `vendor`. An example label using the default
 label fields:
 ```
-feature.node.kubernetes.io/nfd-pci-1200_8086.present=true
+feature.node.kubernetes.io/pci-1200_8086.present=true
 ```
 
 Also  the set of PCI device classes that the feature source detects is
@@ -438,7 +438,7 @@ spec:
     - image: golang
       name: go1
   nodeSelector:
-    feature.node.kubernetes.io/nfd-pstate-turbo: 'true'
+    feature.node.kubernetes.io/pstate-turbo: 'true'
 ```
 
 For more details on targeting nodes, see [node selection][node-sel].
