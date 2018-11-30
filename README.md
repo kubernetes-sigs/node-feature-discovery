@@ -93,8 +93,6 @@ The current set of feature sources are the following:
 The published node labels encode a few pieces of information:
 
 - Namespace, i.e. `feature.node.kubernetes.io`
-- The version of this discovery code that wrote the label, according to
-  `git describe --tags --dirty --always`.
 - The source for each label (e.g. `cpuid`).
 - The name of the discovered feature as it appears in the underlying
   source, (e.g. `AESNI` from cpuid).
@@ -113,7 +111,6 @@ the only label value published for features is the string `"true"`._
 
 ```json
 {
-  "feature.node.kubernetes.io/node-feature-discovery.version": "v0.3.0",
   "feature.node.kubernetes.io/cpuid-<feature-name>": "true",
   "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-config.<option-name>": "true",
