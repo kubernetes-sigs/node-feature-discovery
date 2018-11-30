@@ -11,7 +11,7 @@ metadata:
                             {
                                 "matchExpressions": [
                                     {
-                                        "key": "feature.node.kubernetes.io/nfd-pstate-turbo",
+                                        "key": "feature.node.kubernetes.io/pstate-turbo",
                                         "operator": "DoesNotExist"
                                     }
                                 ]
