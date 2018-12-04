@@ -50,6 +50,7 @@ const (
 var (
 	version            = "" // Must not be const, set using ldflags at build time
 	validFeatureNameRe = regexp.MustCompile(`^([-.\w]*)?[A-Za-z0-9]$`)
+	validFeatureValRe  = regexp.MustCompile(`^(([A-Za-z0-9][-.\w]*)?[A-Za-z0-9])?$`)
 )
 
 // package loggers
@@ -359,20 +360,28 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 	if err != nil {
 		return nil, err
 	}
-	for k := range features {
-		// Validate label
+	for k, v := range features {
+		// Validate label name
 		if !validFeatureNameRe.MatchString(k) {
 			stderrLogger.Printf("Invalid feature name '%s', ignoring...", k)
 			continue
 		}
-
 		prefix := source.Name() + "-"
 		switch source.(type) {
 		case local.Source:
 			// Do not prefix labels from the hooks
 			prefix = ""
 		}
-		labels[fmt.Sprintf("%s%s", prefix, k)] = fmt.Sprintf("%v", features[k])
+		label := prefix + k
+
+		// Validate label value
+		value := fmt.Sprintf("%v", v)
+		if !validFeatureValRe.MatchString(value) {
+			stderrLogger.Printf("Invalid value '%s' for label '%s', ignoring...", value, label)
+			continue
+		}
+
+		labels[label] = value
 	}
 	return labels, nil
 }
