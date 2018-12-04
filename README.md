@@ -234,9 +234,11 @@ possible security implications.
 
 ### Memory Features
 
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| numa           | Multiple memory nodes i.e. NUMA architecture detected
+| Feature              | Attribute  | Description                                             |
+| -------------------- | ---------- | ------------------------------------------------------- |
+| numa                 | <br>       | Multiple memory nodes i.e. NUMA architecture detected
+| transparent_hugepage | enabled    | Check Transparent hugepage is enabled or not
+| <br>                 | defrag     | Check the defrag efforts for THP is enabled or not
 
 ### Network Features
 
