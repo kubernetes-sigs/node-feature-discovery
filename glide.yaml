@@ -1,4 +1,4 @@
-package: github.com/kubernetes-incubator/node-feature-discovery
+package: sigs.k8s.io/node-feature-discovery
 import:
 - package: github.com/docopt/docopt-go
   version: ^0.6.2
