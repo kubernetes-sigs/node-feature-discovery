@@ -34,8 +34,6 @@ type NFDConfig struct {
 	ConfigOpts  []string `json:"configOpts,omitempty"`
 }
 
-var logger = log.New(os.Stderr, "", log.LstdFlags)
-
 var Config = NFDConfig{
 	KconfigFile: "",
 	ConfigOpts: []string{
@@ -57,7 +55,7 @@ func (s Source) Discover() (source.Features, error) {
 	// Read kernel version
 	version, err := parseVersion()
 	if err != nil {
-		logger.Printf("ERROR: Failed to get kernel version: %s", err)
+		log.Printf("ERROR: Failed to get kernel version: %s", err)
 	} else {
 		for key := range version {
 			features["version."+key] = version[key]
@@ -67,7 +65,7 @@ func (s Source) Discover() (source.Features, error) {
 	// Read kconfig
 	kconfig, err := parseKconfig()
 	if err != nil {
-		logger.Printf("ERROR: Failed to read kconfig: %s", err)
+		log.Printf("ERROR: Failed to read kconfig: %s", err)
 	}
 
 	// Check flags
@@ -79,7 +77,7 @@ func (s Source) Discover() (source.Features, error) {
 
 	selinux, err := SelinuxEnabled()
 	if err != nil {
-		logger.Print(err)
+		log.Print(err)
 	} else if selinux {
 		features["selinux.enabled"] = true
 	}
@@ -142,7 +140,7 @@ func parseKconfig() (map[string]bool, error) {
 	if len(Config.KconfigFile) > 0 {
 		raw, err = ioutil.ReadFile(Config.KconfigFile)
 		if err != nil {
-			logger.Printf("ERROR: Failed to read kernel config from %s: %s", Config.KconfigFile, err)
+			log.Printf("ERROR: Failed to read kernel config from %s: %s", Config.KconfigFile, err)
 		}
 	}
 
@@ -150,7 +148,7 @@ func parseKconfig() (map[string]bool, error) {
 	if raw == nil {
 		raw, err = readKconfigGzip("/proc/config.gz")
 		if err != nil {
-			logger.Printf("Failed to read /proc/config.gz: %s", err)
+			log.Printf("Failed to read /proc/config.gz: %s", err)
 		}
 	}
 
