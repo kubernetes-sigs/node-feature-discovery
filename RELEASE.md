@@ -7,7 +7,7 @@ is as follows:
    release. Copy the following checklist into the issue text:
 
 - [ ] All [OWNERS](OWNERS) must LGTM the release proposal.
-- [ ] Update the [job template](node-feature-discovery-job.json.template) to use the new tagged container image
+- [ ] Update the [daemonset template](node-feature-discovery-daemonset.yaml.template) and the [job template](node-feature-discovery-job.yaml.template) to use the new tagged container image
 - [ ] An OWNER runs `git tag -s $VERSION` and insert the changelog into the tag description.
 - [ ] [Build and push](https://github.com/kubernetes-sigs/node-feature-discovery#building-from-source) a container image with the same tag to [quay.io](https://quay.io/kubernetes_incubator).
 - [ ] Update the `:latest` virtual tag in quay.io to track the last stable (this) release.
