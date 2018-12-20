@@ -77,6 +77,13 @@ func (s Source) Discover() (source.Features, error) {
 		}
 	}
 
+	selinux, err := SelinuxEnabled()
+	if err != nil {
+		logger.Print(err)
+	} else if selinux {
+		features["selinux.enabled"] = true
+	}
+
 	return features, nil
 }
 

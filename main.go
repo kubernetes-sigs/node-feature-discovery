@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 	"sigs.k8s.io/node-feature-discovery/source/pstate"
 	"sigs.k8s.io/node-feature-discovery/source/rdt"
-	"sigs.k8s.io/node-feature-discovery/source/selinux"
 	"sigs.k8s.io/node-feature-discovery/source/storage"
 	"sigs.k8s.io/node-feature-discovery/source/system"
 )
@@ -184,7 +183,7 @@ func argsParse(argv []string) (args Args) {
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
+                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -271,7 +270,6 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		pci.Source{},
 		pstate.Source{},
 		rdt.Source{},
-		selinux.Source{},
 		storage.Source{},
 		system.Source{},
 		// local needs to be the last source so that it is able to override
