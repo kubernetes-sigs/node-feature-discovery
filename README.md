@@ -52,7 +52,7 @@ node-feature-discovery.
                               will override settings read from the config file.
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,selinux,storage,system]
+                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -84,7 +84,6 @@ The current set of feature sources are the following:
 - Network
 - Pstate ([Intel P-State driver][intel-pstate])
 - RDT ([Intel Resource Director Technology][intel-rdt])
-- Selinux
 - Storage
 - System
 
@@ -114,14 +113,12 @@ the only label value published for features is the string `"true"`._
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
   "feature.node.kubernetes.io/cpuid-<feature-name>": "true",
   "feature.node.kubernetes.io/iommu-<feature-name>": "true",
-  "feature.node.kubernetes.io/kernel-config.<option-name>": "true",
-  "feature.node.kubernetes.io/kernel-version.<version component>": "<version number>",
+  "feature.node.kubernetes.io/kernel-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/memory-<feature-name>": "true",
   "feature.node.kubernetes.io/network-<feature-name>": "true",
   "feature.node.kubernetes.io/pci-<device label>.present": "true",
   "feature.node.kubernetes.io/pstate-<feature-name>": "true",
   "feature.node.kubernetes.io/rdt-<feature-name>": "true",
-  "feature.node.kubernetes.io/selinux-<feature-name>": "true",
   "feature.node.kubernetes.io/storage-<feature-name>": "true",
   "feature.node.kubernetes.io/system-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/<hook name>-<feature name>": "<feature value>"
@@ -185,6 +182,7 @@ not enabled) as reported by the `cpuid` instruction.
 | Feature | Attribute           | Description                                  |
 | ------- | ------------------- | -------------------------------------------- |
 | config  | &lt;option name&gt; | Kernel config option is enabled (set 'y' or 'm').<br> Default options are `NO_HZ`, `NO_HZ_IDLE`, `NO_HZ_FULL` and `PREEMPT`
+| selinux | enabled             | Selinux is enabled on the node
 | version | full                | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde')
 | <br>    | major               | First component of the kernel version (e.g. '4')
 | <br>    | minor               | Second component of the kernel version (e.g. '5')
@@ -292,12 +290,6 @@ for more information on NFD config.
 | RDTL3CA        | Intel L3 Cache Allocation Technology
 | RDTL2CA        | Intel L2 Cache Allocation Technology
 | RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
-
-### Selinux Features
-
-| Feature name       | Description                                                                         |
-| :--------------:   | :---------------------------------------------------------------------------------: |
-| selinux            | selinux is enabled on the node
 
 ### Storage Features
 
