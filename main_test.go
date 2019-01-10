@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
+	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
 func TestDiscoveryWithMockSources(t *testing.T) {
@@ -26,7 +27,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		fakeFeatureNames := []string{"testfeature1", "testfeature2", "testfeature3"}
 		fakeFeatures := source.Features{}
 		fakeFeatureLabels := Labels{}
-		fakeAnnotations := Annotations{"version": version,
+		fakeAnnotations := Annotations{"version": version.Get(),
 			"feature-labels": "testSource-testfeature1,testSource-testfeature2,testSource-testfeature3"}
 		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureNames))
 		for _, f := range fakeFeatureNames {

@@ -10,7 +10,7 @@ ARG NFD_VERSION
 RUN go get github.com/golang/dep/cmd/dep
 RUN dep ensure
 RUN go install \
-  -ldflags "-s -w -X main.version=$NFD_VERSION" \
+  -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$NFD_VERSION" \
   sigs.k8s.io/node-feature-discovery
 RUN install -D -m644 node-feature-discovery.conf.example /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf
 
