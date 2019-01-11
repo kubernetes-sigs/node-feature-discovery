@@ -2,19 +2,18 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: node-feature-discovery
-  name: node-feature-discovery
+    app: nfd-worker
+  name: nfd-worker
 spec:
   selector:
     matchLabels:
-      app: node-feature-discovery
+      app: nfd-worker
   template:
     metadata:
       labels:
-        app: node-feature-discovery
+        app: nfd-worker
     spec:
       hostNetwork: true
-      serviceAccount: node-feature-discovery
       containers:
         - env:
           - name: NODE_NAME
@@ -22,9 +21,12 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           image: quay.io/kubernetes_incubator/node-feature-discovery:v0.3.0
-          name: node-feature-discovery
+          name: nfd-worker
+          command:
+            - "nfd-worker"
           args:
             - "--sleep-interval=60s"
+            - "--server=$(NFD_MASTER_SERVICE_HOST):$(NFD_MASTER_SERVICE_PORT)"
           volumeMounts:
             - name: host-boot
               mountPath: "/host-boot"
