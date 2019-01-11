@@ -3,7 +3,7 @@ kind: Job
 metadata:
   labels:
     app: node-feature-discovery
-  name: node-feature-discovery
+  name: nfd-worker
 spec:
   completions: COMPLETION_COUNT
   parallelism: PARALLELISM_COUNT
@@ -13,7 +13,6 @@ spec:
         app: node-feature-discovery
     spec:
       hostNetwork: true
-      serviceAccount: node-feature-discovery
       containers:
         - env:
           - name: NODE_NAME
@@ -21,9 +20,12 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           image: quay.io/kubernetes_incubator/node-feature-discovery:v0.3.0
-          name: node-feature-discovery
+          name: nfd-worker
+          command:
+            - "nfd-worker"
           args:
             - "--oneshot"
+            - "--server=$(NFD_MASTER_SERVICE_HOST):$(NFD_MASTER_SERVICE_PORT)"
           ports:
             - containerPort: 7156
               hostPort: 7156
