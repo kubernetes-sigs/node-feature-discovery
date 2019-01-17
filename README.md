@@ -299,10 +299,12 @@ for more information on NFD config.
 
 ### System Features
 
-| Feature     | Attribute  | Description                                       |
-| ----------- | ---------- | --------------------------------------------------|
-| os_release  | ID         | Operating system identifier
-| <br>        | VERSION_ID | Operating system version identifier
+| Feature     | Attribute        | Description                                 |
+| ----------- | ---------------- | --------------------------------------------|
+| os_release  | ID               | Operating system identifier
+| <br>        | VERSION_ID       | Operating system version identifier (e.g. '6.7')
+| <br>        | VERSION_ID.major | First component of the OS version id (e.g. '6')
+| <br>        | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
 
 ## Getting started
 ### System requirements

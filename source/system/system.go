@@ -45,7 +45,15 @@ func (s Source) Discover() (source.Features, error) {
 	} else {
 		for _, key := range osReleaseFields {
 			if value, exists := release[key]; exists {
-				features["os_release."+key] = value
+				feature := "os_release." + key
+				features[feature] = value
+
+				if key == "VERSION_ID" {
+					versionComponents := splitVersion(value)
+					for subKey, subValue := range versionComponents {
+						features[feature+"."+subKey] = subValue
+					}
+				}
 			}
 		}
 	}
@@ -73,4 +81,20 @@ func parseOSRelease() (map[string]string, error) {
 	}
 
 	return release, nil
+}
+
+// Split version number into sub-components. Verifies that they are numerical
+// so that they can be fully utilized in k8s nodeAffinity
+func splitVersion(version string) map[string]string {
+	components := map[string]string{}
+	// Currently, split out just major and minor version
+	re := regexp.MustCompile(`^(?P<major>\d+)(\.(?P<minor>\d+))?(\..*)?$`)
+	if m := re.FindStringSubmatch(version); m != nil {
+		for i, name := range re.SubexpNames() {
+			if i != 0 && name != "" {
+				components[name] = m[i]
+			}
+		}
+	}
+	return components
 }
