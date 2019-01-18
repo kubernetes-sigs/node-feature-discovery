@@ -241,6 +241,12 @@ feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
 feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
 ```
 
+NFD tries to run any regular files found from the hooks directory. Any
+additional data files your hook might need (e.g. a configuration file) should
+be placed in a separate directory in order to avoid NFD unnecessarily trying to
+execute these. You can use a subdirectory under the hooks directory, for
+example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
+
 **NOTE!** NFD will blindly run any executables placed/mounted in the hooks
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
