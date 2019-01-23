@@ -1,4 +1,4 @@
-.PHONY: all
+.PHONY: all test
 
 IMAGE_BUILD_CMD := docker build
 
@@ -18,4 +18,8 @@ image:
 
 mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
-	mockery --name=APIHelpers --inpkg --note="Re-generate by running 'make mock'"
+	mockery --name=APIHelpers --dir=pkg/apihelper --inpkg --note="Re-generate by running 'make mock'"
+	mockery --name=LabelerClient --dir=pkg/labeler --inpkg --note="Re-generate by running 'make mock'"
+
+test:
+	go test ./cmd/... ./pkg/...

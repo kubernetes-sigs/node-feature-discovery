@@ -2,7 +2,7 @@
 
 // Re-generate by running 'make mock'
 
-package main
+package apihelper
 
 import kubernetes "k8s.io/client-go/kubernetes"
 import mock "github.com/stretchr/testify/mock"
@@ -14,12 +14,12 @@ type MockAPIHelpers struct {
 }
 
 // AddAnnotations provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) AddAnnotations(_a0 *v1.Node, _a1 Annotations) {
+func (_m *MockAPIHelpers) AddAnnotations(_a0 *v1.Node, _a1 map[string]string) {
 	_m.Called(_a0, _a1)
 }
 
 // AddLabels provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) AddLabels(_a0 *v1.Node, _a1 Labels) {
+func (_m *MockAPIHelpers) AddLabels(_a0 *v1.Node, _a1 map[string]string) {
 	_m.Called(_a0, _a1)
 }
 
@@ -46,13 +46,13 @@ func (_m *MockAPIHelpers) GetClient() (*kubernetes.Clientset, error) {
 	return r0, r1
 }
 
-// GetNode provides a mock function with given fields: _a0
-func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset) (*v1.Node, error) {
-	ret := _m.Called(_a0)
+// GetNode provides a mock function with given fields: _a0, _a1
+func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset, _a1 string) (*v1.Node, error) {
+	ret := _m.Called(_a0, _a1)
 
 	var r0 *v1.Node
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset) *v1.Node); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string) *v1.Node); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Node)
@@ -60,8 +60,8 @@ func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset) (*v1.Node, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*kubernetes.Clientset) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(*kubernetes.Clientset, string) error); ok {
+		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}

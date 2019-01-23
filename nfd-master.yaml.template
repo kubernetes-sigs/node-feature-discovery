@@ -46,7 +46,7 @@ spec:
       labels:
         app: nfd-master
     spec:
-      serviceAccount: node-feature-discovery
+      serviceAccount: nfd-master
       nodeSelector:
         node-role.kubernetes.io/master: ""
       tolerations:
