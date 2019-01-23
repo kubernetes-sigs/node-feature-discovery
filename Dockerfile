@@ -14,7 +14,7 @@ RUN go install \
   ./cmd/*
 RUN install -D -m644 nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
 
-#RUN go test .
+RUN make test
 
 
 # Create production image for running node feature discovery
