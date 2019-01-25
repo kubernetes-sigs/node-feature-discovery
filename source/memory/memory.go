@@ -17,8 +17,8 @@ limitations under the License.
 package memory
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -34,20 +34,33 @@ func (s Source) Name() string { return "memory" }
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
 
+	// Detect NUMA
+	numa, err := isNuma()
+	if err != nil {
+		log.Printf("ERROR: failed to detect NUMA topology: %s", err)
+	} else if numa {
+		features["numa"] = true
+	}
+
+	return features, nil
+}
+
+// Detect if the platform has NUMA topology
+func isNuma() (bool, error) {
 	// Find out how many nodes are online
 	// Multiple nodes is a sign of NUMA
 	bytes, err := ioutil.ReadFile("/sys/devices/system/node/online")
 	if err != nil {
-		return nil, fmt.Errorf("can't read /sys/devices/system/node/online: %s", err.Error())
+		return false, err
 	}
+
 	// File content is expected to be:
 	//   "0\n" in one-node case
 	//   "0-K\n" in N-node case where K=N-1
 	// presence of newline requires TrimSpace
 	if strings.TrimSpace(string(bytes)) != "0" {
 		// more than one node means NUMA
-		features["numa"] = true
+		return true, nil
 	}
-
-	return features, nil
+	return false, nil
 }
