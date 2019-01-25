@@ -260,9 +260,10 @@ possible security implications.
 
 ### Memory Features
 
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| numa           | Multiple memory nodes i.e. NUMA architecture detected
+| Feature | Attribute | Description                                            |
+| ------- | --------- | ------------------------------------------------------ |
+| numa    | <br>      | Multiple memory nodes i.e. NUMA architecture detected
+| nv      | present   | NVDIMM device(s) are present
 
 ### Network Features
 

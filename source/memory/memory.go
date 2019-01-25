@@ -19,6 +19,7 @@ package memory
 import (
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -42,6 +43,14 @@ func (s Source) Discover() (source.Features, error) {
 		features["numa"] = true
 	}
 
+	// Detect NVDIMM
+	nv, err := hasNvdimm()
+	if err != nil {
+		log.Printf("ERROR: failed to detect presence of NVDIMM: %s", err)
+	} else if nv {
+		features["nv.present"] = true
+	}
+
 	return features, nil
 }
 
@@ -61,6 +70,19 @@ func isNuma() (bool, error) {
 	if strings.TrimSpace(string(bytes)) != "0" {
 		// more than one node means NUMA
 		return true, nil
+	}
+	return false, nil
+}
+
+// Detect presence of NVDIMM devices
+func hasNvdimm() (bool, error) {
+	devices, err := ioutil.ReadDir("/sys/class/nd/")
+	if err == nil {
+		if len(devices) > 0 {
+			return true, nil
+		}
+	} else if !os.IsNotExist(err) {
+		return false, err
 	}
 	return false, nil
 }
