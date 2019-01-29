@@ -223,10 +223,12 @@ func TestArgsParse(t *testing.T) {
 		})
 
 		Convey("When valid args are specified", func() {
-			args, err := argsParse([]string{"--label-whitelist=.*rdt.*", "--port=1234"})
+			args, err := argsParse([]string{"--label-whitelist=.*rdt.*", "--port=1234", "--cert-file=crt", "--key-file=key"})
 			Convey("Argument parsing should succeed and args set to correct values", func() {
 				So(args.noPublish, ShouldBeFalse)
 				So(args.port, ShouldEqual, 1234)
+				So(args.certFile, ShouldEqual, "crt")
+				So(args.keyFile, ShouldEqual, "key")
 				So(args.labelWhiteList.String(), ShouldResemble, ".*rdt.*")
 				So(err, ShouldBeNil)
 			})
@@ -235,6 +237,15 @@ func TestArgsParse(t *testing.T) {
 			_, err := argsParse([]string{"--port=123a"})
 			Convey("argsParse should fail", func() {
 				So(err, ShouldNotBeNil)
+			})
+		})
+
+		Convey("When --cert-file or --key-file is specified on its own", func() {
+			_, err := argsParse([]string{"--cert-file=crt"})
+			_, err2 := argsParse([]string{"--key-file=key"})
+			Convey("argsParse should fail", func() {
+				So(err, ShouldNotBeNil)
+				So(err2, ShouldNotBeNil)
 			})
 		})
 	})

@@ -13,6 +13,7 @@ spec:
         app: node-feature-discovery
     spec:
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - env:
           - name: NODE_NAME
@@ -25,7 +26,7 @@ spec:
             - "nfd-worker"
           args:
             - "--oneshot"
-            - "--server=$(NFD_MASTER_SERVICE_HOST):$(NFD_MASTER_SERVICE_PORT)"
+            - "--server=nfd-master:8080"
           ports:
             - containerPort: 7156
               hostPort: 7156

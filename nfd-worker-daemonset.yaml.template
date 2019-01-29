@@ -14,6 +14,7 @@ spec:
         app: nfd-worker
     spec:
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - env:
           - name: NODE_NAME
@@ -26,7 +27,7 @@ spec:
             - "nfd-worker"
           args:
             - "--sleep-interval=60s"
-            - "--server=$(NFD_MASTER_SERVICE_HOST):$(NFD_MASTER_SERVICE_PORT)"
+            - "--server=nfd-master:8080"
           volumeMounts:
             - name: host-boot
               mountPath: "/host-boot"
