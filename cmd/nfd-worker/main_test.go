@@ -116,11 +116,12 @@ func TestArgsParse(t *testing.T) {
 			})
 		})
 
-		Convey("When --no-publish and --sources flag are passed and --sources flag is set to some value", func() {
-			args, err := argsParse([]string{"--no-publish", "--sources=fake1,fake2,fake3"})
+		Convey("When valid args are specified", func() {
+			args, err := argsParse([]string{"--no-publish", "--sources=fake1,fake2,fake3", "--ca-file=ca"})
 
 			Convey("--no-publish is set and args.sources is set to appropriate values", func() {
 				So(args.noPublish, ShouldBeTrue)
+				So(args.caFile, ShouldEqual, "ca")
 				So(args.sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
 				So(len(args.labelWhiteList), ShouldEqual, 0)
 				So(err, ShouldBeNil)

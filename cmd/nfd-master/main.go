@@ -29,6 +29,7 @@ import (
 	"github.com/docopt/docopt-go"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -62,6 +63,8 @@ type Annotations map[string]string
 
 // Command line arguments
 type Args struct {
+	certFile       string
+	keyFile        string
 	labelWhiteList *regexp.Regexp
 	noPublish      bool
 	port           int
@@ -95,7 +98,17 @@ func main() {
 	if err != nil {
 		stderrLogger.Fatalf("failed to listen: %v", err)
 	}
-	grpcServer := grpc.NewServer()
+
+	serverOpts := []grpc.ServerOption{}
+	// Use TLS if --cert-file or --key-file is defined
+	if args.certFile != "" || args.keyFile != "" {
+		creds, err := credentials.NewServerTLSFromFile(args.certFile, args.keyFile)
+		if err != nil {
+			log.Fatalf("Failed to generate credentials %v", err)
+		}
+		serverOpts = append(serverOpts, grpc.Creds(creds))
+	}
+	grpcServer := grpc.NewServer(serverOpts...)
 	pb.RegisterLabelerServer(grpcServer, &labelerServer{args: args, apiHelper: helper})
 	stdoutLogger.Printf("gRPC server serving on port: %d", args.port)
 	grpcServer.Serve(lis)
@@ -109,6 +122,7 @@ func argsParse(argv []string) (Args, error) {
 
   Usage:
   %s [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
+     [--cert-file=<path>] [--key-file=<path>]
   %s -h | --help
   %s --version
 
@@ -117,6 +131,10 @@ func argsParse(argv []string) (Args, error) {
   --version                   Output version and exit.
   --port=<port>               Port on which to listen for connections.
                               [Default: 8080]
+  --cert-file=<path>          Certificate used for authenticating connections
+                              [Default: ]
+  --key-file=<path>           Private key matching --cert-file
+                              [Default: ]
   --no-publish                Do not publish feature labels
   --label-whitelist=<pattern> Regular expression to filter label names to
                               publish to the Kubernetes API server. [Default: ]`,
@@ -131,6 +149,8 @@ func argsParse(argv []string) (Args, error) {
 
 	// Parse argument values as usable types.
 	var err error
+	args.certFile = arguments["--cert-file"].(string)
+	args.keyFile = arguments["--key-file"].(string)
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.port, err = strconv.Atoi(arguments["--port"].(string))
 	if err != nil {
@@ -141,6 +161,15 @@ func argsParse(argv []string) (Args, error) {
 		return args, fmt.Errorf("error parsing whitelist regex (%s): %s", arguments["--label-whitelist"], err)
 	}
 
+	// Check TLS related args
+	if args.certFile != "" || args.keyFile != "" {
+		if args.certFile == "" {
+			return args, fmt.Errorf("--cert-file needs to be specified alongside --key-file")
+		}
+		if args.keyFile == "" {
+			return args, fmt.Errorf("--key-file needs to be specified alongside --cert-file")
+		}
+	}
 	return args, nil
 }
 

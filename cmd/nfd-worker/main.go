@@ -29,6 +29,7 @@ import (
 	"github.com/ghodss/yaml"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"k8s.io/apimachinery/pkg/util/validation"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -82,6 +83,7 @@ type Annotations map[string]string
 // Command line arguments
 type Args struct {
 	labelWhiteList string
+	caFile         string
 	configFile     string
 	noPublish      bool
 	options        string
@@ -117,8 +119,17 @@ func main() {
 	}
 
 	// Connect to NFD server
-	opts := []grpc.DialOption{grpc.WithInsecure()}
-	conn, err := grpc.Dial(args.server, opts...)
+	dialOpts := []grpc.DialOption{}
+	if args.caFile != "" {
+		creds, err := credentials.NewClientTLSFromFile(args.caFile, "")
+		if err != nil {
+			stderrLogger.Fatalf("failed to create credentials %v", err)
+		}
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(creds))
+	} else {
+		dialOpts = append(dialOpts, grpc.WithInsecure())
+	}
+	conn, err := grpc.Dial(args.server, dialOpts...)
 	if err != nil {
 		stderrLogger.Fatalf("failed to connect: %v", err)
 	}
@@ -160,7 +171,7 @@ func argsParse(argv []string) (Args, error) {
   Usage:
   %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
-     [--options=<config>] [--server=<server>]
+     [--options=<config>] [--ca-file=<path>] [--server=<server>]
   %s -h | --help
   %s --version
 
@@ -173,6 +184,8 @@ func argsParse(argv []string) (Args, error) {
                               options are specified in the same format as in the
                               config file (i.e. json or yaml). These options
                               will override settings read from the config file.
+                              [Default: ]
+  --ca-file=<path>            Root certificate for verifying connections
                               [Default: ]
   --server=<server>           NFD server address to connecto to.
                               [Default: localhost:8080]
@@ -197,6 +210,7 @@ func argsParse(argv []string) (Args, error) {
 
 	// Parse argument values as usable types.
 	var err error
+	args.caFile = arguments["--ca-file"].(string)
 	args.configFile = arguments["--config"].(string)
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.options = arguments["--options"].(string)
