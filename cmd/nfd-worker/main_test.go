@@ -117,14 +117,27 @@ func TestArgsParse(t *testing.T) {
 		})
 
 		Convey("When valid args are specified", func() {
-			args, err := argsParse([]string{"--no-publish", "--sources=fake1,fake2,fake3", "--ca-file=ca"})
+			args, err := argsParse([]string{"--no-publish", "--sources=fake1,fake2,fake3", "--ca-file=ca", "--cert-file=crt", "--key-file=key"})
 
 			Convey("--no-publish is set and args.sources is set to appropriate values", func() {
 				So(args.noPublish, ShouldBeTrue)
 				So(args.caFile, ShouldEqual, "ca")
+				So(args.certFile, ShouldEqual, "crt")
+				So(args.keyFile, ShouldEqual, "key")
 				So(args.sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
 				So(len(args.labelWhiteList), ShouldEqual, 0)
 				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When one of --cert-file, --key-file or --ca-file is missing", func() {
+			_, err := argsParse([]string{"--cert-file=crt", "--key-file=key"})
+			_, err2 := argsParse([]string{"--key-file=key", "--ca-file=ca"})
+			_, err3 := argsParse([]string{"--cert-file=crt", "--ca-file=ca"})
+			Convey("Argument parsing should fail", func() {
+				So(err, ShouldNotBeNil)
+				So(err2, ShouldNotBeNil)
+				So(err3, ShouldNotBeNil)
 			})
 		})
 	})

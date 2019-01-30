@@ -17,7 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -30,6 +33,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -63,6 +67,7 @@ type Annotations map[string]string
 
 // Command line arguments
 type Args struct {
+	caFile         string
 	certFile       string
 	keyFile        string
 	labelWhiteList *regexp.Regexp
@@ -101,12 +106,28 @@ func main() {
 
 	serverOpts := []grpc.ServerOption{}
 	// Use TLS if --cert-file or --key-file is defined
-	if args.certFile != "" || args.keyFile != "" {
-		creds, err := credentials.NewServerTLSFromFile(args.certFile, args.keyFile)
+	if args.caFile != "" || args.certFile != "" || args.keyFile != "" {
+		// Load cert for authenticating this server
+		cert, err := tls.LoadX509KeyPair(args.certFile, args.keyFile)
 		if err != nil {
-			log.Fatalf("Failed to generate credentials %v", err)
+			stderrLogger.Fatalf("failed to load server certificate: %v", err)
 		}
-		serverOpts = append(serverOpts, grpc.Creds(creds))
+		// Load CA cert for client cert verification
+		caCert, err := ioutil.ReadFile(args.caFile)
+		if err != nil {
+			stderrLogger.Fatalf("failed to read root certificate file: %v", err)
+		}
+		caPool := x509.NewCertPool()
+		if ok := caPool.AppendCertsFromPEM(caCert); !ok {
+			stderrLogger.Fatalf("failed to add certificate from '%s'", args.caFile)
+		}
+		// Create TLS config
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ClientCAs:    caPool,
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+		}
+		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 	grpcServer := grpc.NewServer(serverOpts...)
 	pb.RegisterLabelerServer(grpcServer, &labelerServer{args: args, apiHelper: helper})
@@ -122,7 +143,7 @@ func argsParse(argv []string) (Args, error) {
 
   Usage:
   %s [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
-     [--cert-file=<path>] [--key-file=<path>]
+     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
   %s -h | --help
   %s --version
 
@@ -131,6 +152,8 @@ func argsParse(argv []string) (Args, error) {
   --version                   Output version and exit.
   --port=<port>               Port on which to listen for connections.
                               [Default: 8080]
+  --ca-file=<path>            Root certificate for verifying connections
+                              [Default: ]
   --cert-file=<path>          Certificate used for authenticating connections
                               [Default: ]
   --key-file=<path>           Private key matching --cert-file
@@ -149,6 +172,7 @@ func argsParse(argv []string) (Args, error) {
 
 	// Parse argument values as usable types.
 	var err error
+	args.caFile = arguments["--ca-file"].(string)
 	args.certFile = arguments["--cert-file"].(string)
 	args.keyFile = arguments["--key-file"].(string)
 	args.noPublish = arguments["--no-publish"].(bool)
@@ -162,12 +186,15 @@ func argsParse(argv []string) (Args, error) {
 	}
 
 	// Check TLS related args
-	if args.certFile != "" || args.keyFile != "" {
+	if args.certFile != "" || args.keyFile != "" || args.caFile != "" {
 		if args.certFile == "" {
-			return args, fmt.Errorf("--cert-file needs to be specified alongside --key-file")
+			return args, fmt.Errorf("--cert-file needs to be specified alongside --key-file and --ca-file")
 		}
 		if args.keyFile == "" {
-			return args, fmt.Errorf("--key-file needs to be specified alongside --cert-file")
+			return args, fmt.Errorf("--key-file needs to be specified alongside --cert-file and --ca-file")
+		}
+		if args.caFile == "" {
+			return args, fmt.Errorf("--ca-file needs to be specified alongside --cert-file and --key-file")
 		}
 	}
 	return args, nil
@@ -214,7 +241,30 @@ type labelerServer struct {
 
 // Service SetLabels
 func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
+	// Client authorization.
+	// Check that the node name matches the CN from the TLS cert
+	client, ok := peer.FromContext(c)
+	if !ok {
+		stderrLogger.Printf("gRPC request error: failed to get peer (client)")
+		return &pb.SetLabelsReply{}, fmt.Errorf("failed to get peer (client)")
+	}
+	tlsAuth, ok := client.AuthInfo.(credentials.TLSInfo)
+	if !ok {
+		stderrLogger.Printf("gRPC request error: incorrect client credentials from '%v'", client.Addr)
+		return &pb.SetLabelsReply{}, fmt.Errorf("incorrect client credentials")
+	}
+	if len(tlsAuth.State.VerifiedChains) == 0 || len(tlsAuth.State.VerifiedChains[0]) == 0 {
+		stderrLogger.Printf("gRPC request error: client certificate verification for '%v' failed", client.Addr)
+		return &pb.SetLabelsReply{}, fmt.Errorf("client certificate verification failed")
+	}
+	cn := tlsAuth.State.VerifiedChains[0][0].Subject.CommonName
+	if cn != r.NodeName {
+		stderrLogger.Printf("gRPC request error: authorization for %v failed: cert valid for '%s', requested node name '%s'", client.Addr, cn, r.NodeName)
+		return &pb.SetLabelsReply{}, fmt.Errorf("request authorization failed: cert valid for '%s', requested node name '%s'", cn, r.NodeName)
+	}
+
 	stdoutLogger.Printf("REQUEST Node: %s NFD-version: %s Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
+
 	if !s.args.noPublish {
 		// Advertise NFD worker version and label names as annotations
 		keys := make([]string, 0, len(r.Labels))
