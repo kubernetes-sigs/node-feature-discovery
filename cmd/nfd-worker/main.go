@@ -84,17 +84,18 @@ type Annotations map[string]string
 
 // Command line arguments
 type Args struct {
-	labelWhiteList string
-	caFile         string
-	certFile       string
-	keyFile        string
-	configFile     string
-	noPublish      bool
-	options        string
-	oneshot        bool
-	server         string
-	sleepInterval  time.Duration
-	sources        []string
+	labelWhiteList     string
+	caFile             string
+	certFile           string
+	keyFile            string
+	configFile         string
+	noPublish          bool
+	options            string
+	oneshot            bool
+	server             string
+	serverNameOverride string
+	sleepInterval      time.Duration
+	sources            []string
 }
 
 func main() {
@@ -143,6 +144,7 @@ func main() {
 		tlsConfig := &tls.Config{
 			Certificates: []tls.Certificate{cert},
 			RootCAs:      caPool,
+			ServerName:   args.serverNameOverride,
 		}
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	} else {
@@ -190,7 +192,7 @@ func argsParse(argv []string) (Args, error) {
   Usage:
   %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
-     [--options=<config>] [--server=<server>]
+     [--options=<config>] [--server=<server>] [--server-name-override=<name>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
   %s -h | --help
   %s --version
@@ -213,6 +215,9 @@ func argsParse(argv []string) (Args, error) {
                               [Default: ]
   --server=<server>           NFD server address to connecto to.
                               [Default: localhost:8080]
+  --server-name-override=<name> Name (CN) expect from server certificate, useful
+                              in testing
+                              [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
   --no-publish                Do not publish discovered features to the
@@ -241,6 +246,7 @@ func argsParse(argv []string) (Args, error) {
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.options = arguments["--options"].(string)
 	args.server = arguments["--server"].(string)
+	args.serverNameOverride = arguments["--server-name-override"].(string)
 	args.sources = strings.Split(arguments["--sources"].(string), ",")
 	args.labelWhiteList = arguments["--label-whitelist"].(string)
 	args.oneshot = arguments["--oneshot"].(bool)
