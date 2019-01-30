@@ -105,8 +105,9 @@ func main() {
 	}
 
 	serverOpts := []grpc.ServerOption{}
-	// Use TLS if --cert-file or --key-file is defined
-	if args.caFile != "" || args.certFile != "" || args.keyFile != "" {
+	// Enable mutual TLS authentication if --cert-file, --key-file or --ca-file
+	// is defined
+	if args.certFile != "" || args.keyFile != "" || args.caFile != "" {
 		// Load cert for authenticating this server
 		cert, err := tls.LoadX509KeyPair(args.certFile, args.keyFile)
 		if err != nil {
