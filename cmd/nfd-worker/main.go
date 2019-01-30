@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -84,6 +86,8 @@ type Annotations map[string]string
 type Args struct {
 	labelWhiteList string
 	caFile         string
+	certFile       string
+	keyFile        string
 	configFile     string
 	noPublish      bool
 	options        string
@@ -120,12 +124,27 @@ func main() {
 
 	// Connect to NFD server
 	dialOpts := []grpc.DialOption{}
-	if args.caFile != "" {
-		creds, err := credentials.NewClientTLSFromFile(args.caFile, "")
+	if args.caFile != "" || args.certFile != "" || args.keyFile != "" {
+		// Load client cert for client authentication
+		cert, err := tls.LoadX509KeyPair(args.certFile, args.keyFile)
 		if err != nil {
-			stderrLogger.Fatalf("failed to create credentials %v", err)
+			stderrLogger.Fatalf("failed to load client certificate: %v", err)
 		}
-		dialOpts = append(dialOpts, grpc.WithTransportCredentials(creds))
+		// Load CA cert for server cert verification
+		caCert, err := ioutil.ReadFile(args.caFile)
+		if err != nil {
+			stderrLogger.Fatalf("failed to read root certificate file: %v", err)
+		}
+		caPool := x509.NewCertPool()
+		if ok := caPool.AppendCertsFromPEM(caCert); !ok {
+			stderrLogger.Fatalf("failed to add certificate from '%s'", args.caFile)
+		}
+		// Create TLS config
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caPool,
+		}
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	} else {
 		dialOpts = append(dialOpts, grpc.WithInsecure())
 	}
@@ -171,7 +190,8 @@ func argsParse(argv []string) (Args, error) {
   Usage:
   %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
-     [--options=<config>] [--ca-file=<path>] [--server=<server>]
+     [--options=<config>] [--server=<server>]
+     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
   %s -h | --help
   %s --version
 
@@ -186,6 +206,10 @@ func argsParse(argv []string) (Args, error) {
                               will override settings read from the config file.
                               [Default: ]
   --ca-file=<path>            Root certificate for verifying connections
+                              [Default: ]
+  --cert-file=<path>          Certificate used for authenticating connections
+                              [Default: ]
+  --key-file=<path>           Private key matching --cert-file
                               [Default: ]
   --server=<server>           NFD server address to connecto to.
                               [Default: localhost:8080]
@@ -211,7 +235,9 @@ func argsParse(argv []string) (Args, error) {
 	// Parse argument values as usable types.
 	var err error
 	args.caFile = arguments["--ca-file"].(string)
+	args.certFile = arguments["--cert-file"].(string)
 	args.configFile = arguments["--config"].(string)
+	args.keyFile = arguments["--key-file"].(string)
 	args.noPublish = arguments["--no-publish"].(bool)
 	args.options = arguments["--options"].(string)
 	args.server = arguments["--server"].(string)
@@ -229,6 +255,18 @@ func argsParse(argv []string) (Args, error) {
 		args.sleepInterval = time.Second
 	}
 
+	// Check TLS related args
+	if args.certFile != "" || args.keyFile != "" || args.caFile != "" {
+		if args.certFile == "" {
+			return args, fmt.Errorf("--cert-file needs to be specified alongside --key-file and --ca-file")
+		}
+		if args.keyFile == "" {
+			return args, fmt.Errorf("--key-file needs to be specified alongside --cert-file and --ca-file")
+		}
+		if args.caFile == "" {
+			return args, fmt.Errorf("--ca-file needs to be specified alongside --cert-file and --key-file")
+		}
+	}
 	return args, nil
 }
 
