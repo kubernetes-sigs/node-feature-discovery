@@ -23,33 +23,105 @@ This software enables node feature discovery for Kubernetes. It detects
 hardware features available on each node in a Kubernetes cluster, and advertises
 those features using node labels.
 
-This project uses GitHub [milestones](https://github.com/kubernetes-sigs/node-feature-discovery/milestones) for release planning.
+NFD consists of two software components:
+1. **nfd-master** is responsible for labeling Kubernetes node objects
+2. **nfd-worker** is detects features and communicates them to nfd-master.
+   One instance of nfd-worker is supposed to be run on each node of the cluster
 
 ## Command line interface
 
-To try out stand-alone, one can run a Docker container where node-feature-discovery is already set as entry point.
-Such run is useful for checking features-detection part, but labeling part is expected to fail.
-It is recommended to use --no-publish and --oneshot to achieve clean run in stand-alone case.
+You can run NFD in stand-alone Docker containers e.g. for testing
+purposes. This is useful for checking features-detection.
 
+### NFD-Master
+
+When running as a standalone container labeling is expected to fail because
+Kubernetes API is not available. Thus, it is recommended to use --no-publish
+command line flag. E.g.
 ```
-node-feature-discovery.
+$ docker run --rm --name=nfd-test <NFD_CONTAINER_IMAGE> nfd-master --no-publish
+2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
+2019/02/01 14:48:21 gRPC server serving on port: 8080
+```
+
+Command line flags of nfd-master:
+```
+$ docker run --rm <NFD_CONTAINER_IMAGE> nfd-master --help
+...
+nfd-master.
 
   Usage:
-  node-feature-discovery [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
+  nfd-master [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
+     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
+     [--verify-node-name]
+  nfd-master -h | --help
+  nfd-master --version
+
+  Options:
+  -h --help                   Show this screen.
+  --version                   Output version and exit.
+  --port=<port>               Port on which to listen for connections.
+                              [Default: 8080]
+  --ca-file=<path>            Root certificate for verifying connections
+                              [Default: ]
+  --cert-file=<path>          Certificate used for authenticating connections
+                              [Default: ]
+  --key-file=<path>           Private key matching --cert-file
+                              [Default: ]
+  --verify-node-name		  Verify worker node name against CN from the TLS
+                              certificate. Only has effect when TLS authentication
+                              has been enabled.
+  --no-publish                Do not publish feature labels
+  --label-whitelist=<pattern> Regular expression to filter label names to
+                              publish to the Kubernetes API server. [Default: ]
+```
+
+### NFD-Worker
+
+In order to run `nfd-worker` as a "stand-alone" container against your
+standalone nfd-master you need to run them in the same network namespace:
+```
+$ docker run --rm --network=container:nfd-test <NFD_CONTAINER_IMAGE> nfd-worker
+2019/02/01 14:48:56 Node Feature Discovery Worker <NFD_VERSION>
+...
+```
+If you just want to try out feature discovery without connecting to nfd-master,
+pass the `--no-publish` flag to nfd-worker.
+
+Command line flags of nfd-worker:
+```
+$ docker run --rm <CONTAINER_IMAGE_ID> nfd-worker --help
+...
+nfd-worker.
+
+  Usage:
+  nfd-worker [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
-     [--options=<config>]
-  node-feature-discovery -h | --help
-  node-feature-discovery --version
+     [--options=<config>] [--server=<server>] [--server-name-override=<name>]
+     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
+  nfd-worker -h | --help
+  nfd-worker --version
 
   Options:
   -h --help                   Show this screen.
   --version                   Output version and exit.
   --config=<path>             Config file to use.
-                              [Default: /etc/kubernetes/node-feature-discovery/node-feature-discovery.conf]
+                              [Default: /etc/kubernetes/node-feature-discovery/nfd-worker.conf]
   --options=<config>          Specify config options from command line. Config
                               options are specified in the same format as in the
                               config file (i.e. json or yaml). These options
                               will override settings read from the config file.
+                              [Default: ]
+  --ca-file=<path>            Root certificate for verifying connections
+                              [Default: ]
+  --cert-file=<path>          Certificate used for authenticating connections
+                              [Default: ]
+  --key-file=<path>           Private key matching --cert-file
+                              [Default: ]
+  --server=<server>           NFD server address to connecto to.
+                              [Default: localhost:8080]
+  --server-name-override=<name> Name (CN) expect from server certificate, useful
+                              in testing
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
                               [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
@@ -61,6 +133,7 @@ node-feature-discovery.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
                               sleep). [Default: 60s]
+
 ```
 **NOTE** Some feature sources need certain directories and/or files from the
 host mounted inside the NFD container. Thus, you need to provide Docker with the
@@ -329,21 +402,35 @@ for more information on NFD config.
 
 ### Usage
 
-Feature discovery is preferably run as a Kubernetes DaemonSet. There is an
+#### nfd-master
+
+Nfd-master runs as a DaemonSet, by default in the master node(s) only. You can
+use the template spec provided to deploy nfd-master:
+```
+kubectl create -f nfd-master.yaml.template
+```
+Nfd-master listens for connections from nfd-worker(s) and connects to the
+Kubernetes API server to adds node labels advertised by them.
+
+If you have RBAC authorization enabled (as is the default e.g. with clusters
+initialized with kubeadm) you need to configure the appropriate ClusterRoles,
+ClusterRoleBindings and a ServiceAccount in order for NFD to create node
+labels. The provided template will configure these for you.
+
+
+#### nfd-worker
+
+Nfd-worker is preferably run as a Kubernetes DaemonSet. There is an
 example spec that can be used as a template, or, as is when just trying out the
 service:
 ```
-kubectl create -f rbac.yaml
-kubectl create -f node-feature-discovery-daemonset.yaml.template
+kubectl create -f nfd-worker-daemonset.yaml.template
 ```
 
-When the NFD pods run, they contact the Kubernetes API server to add labels
-to the nodes to advertise hardware features.
-
-If you have RBAC authorization enabled (as is the default e.g. with clusters initialized with kubeadm) you need to configure the appropriate ClusterRoles, ClusterRoleBindings and a ServiceAccount in order for NFD to create node labels. The provided templates will configure these for you.
+Nfd-worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
-the `--sleep-interval` option. In the [template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template#L26) the default interval is set to 60s
+the `--sleep-interval` option. In the [template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L26) the default interval is set to 60s
 which is also the default when no `--sleep-interval` is specified.
 
 Feature discovery can alternatively be configured as a one-shot job. There is
@@ -357,21 +444,56 @@ The label-nodes.sh script tries to launch as many jobs as there are Ready nodes.
 Note that this approach does not guarantee running once on every node.
 For example, if some node is tainted NoSchedule or fails to start a job for some other reason, then some other node will run extra job instance(s) to satisfy the request and the tainted/failed node does not get labeled.
 
+#### nfd-master and nfd-worker in the same Pod
+
+You can also run nfd-master and nfd-worker inside a single pod:
+```
+kubectl apply -f nfd-daemonset-combined.yaml.template
+```
+Similar to the nfd-worker setup above, this creates a DaemonSet that schedules
+an NFD Pod an all worker nodes, with the difference that the Pod also also
+contains an nfd-master instance. In this case no nfd-master service is run on
+the master node(s), but, the worker nodes are able to label themselves.
+
+This may be desirable e.g. in single-node setups.
+
+#### TLS authentication
+
+NFD supports mutual TLS authentication between the nfd-master and nfd-worker
+instances.  That is, nfd-worker and nfd-master both verify that the other end
+presents a valid certificate.
+
+TLS authentication is enabled by specifying `--ca-file`, `--key-file` and
+`--cert-file` args, on both the nfd-master and nfd-worker instances.
+The template specs provided with NFD contain (commented out) example
+configuration for enabling TLS authentication.
+
+The Common Name (CN) of the nfd-master certificate must match the DNS name of
+the nfd-master Service of the cluster. By default, nfd-master only check that
+the nfd-worker has been signed by the specified root certificate (--ca-file).
+Additional hardening can be enabled by specifying --verify-node-name in
+nfd-master args, in which case nfd-master verifies that the NodeName presented
+by nfd-worker matches the Common Name (CN) of its certificate. This means that
+each nfd-worker requires a individual node-specific TLS certificate.
+
+
+#### Usage demo
+
 [![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.svg)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
 
 ### Configuration options
 
-NFD supports a configuration file. The default location is
-`/etc/kubernetes/node-feature-discovery/node-feature-discovery.conf`, but,
+Nfd-worker supports a configuration file. The default location is
+`/etc/kubernetes/node-feature-discovery/nfd-worker.conf`, but,
 this can be changed by specifying the`--config` command line flag. The file is
-read inside the Docker image, and thus, Volumes and VolumeMounts are needed to
+read inside the container, and thus, Volumes and VolumeMounts are needed to
 make your configuration available for NFD. The preferred method is to use a
 ConfigMap.
 For example, create a config map using the example config as a template:
 ```
-cp node-feature-discovery.conf.example node-feature-discovery.conf
-vim node-feature-discovery.conf  # edit the configuration
-kubectl create configmap node-feature-discovery-config --from-file=node-feature-discovery.conf
+cp nfd-worker.conf.example nfd-worker.conf
+vim nfd-worker.conf  # edit the configuration
+kubectl create configmap nfd-worker-config --from-file=nfd-worker.conf
 ```
 Then, configure Volumes and VolumeMounts in the Pod spec (just the relevant
 snippets shown below):
@@ -379,20 +501,20 @@ snippets shown below):
 ...
   containers:
       volumeMounts:
-        - name: node-feature-discovery-config
+        - name: nfd-worker-config
           mountPath: "/etc/kubernetes/node-feature-discovery/"
 ...
   volumes:
-    - name: node-feature-discovery-config
+    - name: nfd-worker-config
       configMap:
-        name: node-feature-discovery-config
+        name: nfd-worker-config
 ...
 ```
 You could also use other types of volumes, of course. That is, hostPath if
 different config for different nodes would be required, for example.
 
 The (empty-by-default)
-[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/node-feature-discovery.conf.example)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker.conf.example)
 is used as a config in the NFD Docker image. Thus, this can be used as a default
 configuration in custom-built images.
 
@@ -423,9 +545,9 @@ cd <project-root>
 make
 ```
 
-**NOTE: Our default docker image is hosted in quay.io. To override the 
-`QUAY_REGISTRY_USER` use the `-e` option as follows: 
-`QUAY_REGISTRY_USER=<my-username> make image -e`**
+**NOTE**: Our default docker image is hosted in quay.io. To override the
+`QUAY_REGISTRY_USER` use the `-e` option as follows:
+`QUAY_REGISTRY_USER=<my-username> make image -e`
 
 You can also specify a build tool different from Docker, for example:
 ```
@@ -441,9 +563,9 @@ docker push <quay-domain-name>/<registry-user>/<image-name>:<version>
 **Change the job spec to use your custom image (optional):**
 
 To use your published image from the step above instead of the
-`quay.io/kubernetes_incubator/node-feature-discovery` image, edit `image` attribute in the file
-[node-feature-discovery-job.yaml.template](node-feature-discovery-job.yaml.template#L23)
-to the new location (`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
+`quay.io/kubernetes_incubator/node-feature-discovery` image, edit `image`
+attribute in the spec template(s) to the new location
+(`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
 
 ## Targeting Nodes with Specific Features
 
