@@ -28,6 +28,13 @@ spec:
           args:
             - "--sleep-interval=60s"
             - "--server=nfd-master:8080"
+## Enable TLS authentication (1/3)
+## The example below assumes having the root certificate named ca.crt stored in
+## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
+## in a TLS Secret named nfd-worker-cert
+#            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
+#            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+#            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
           volumeMounts:
             - name: host-boot
               mountPath: "/host-boot"
@@ -37,6 +44,13 @@ spec:
               readOnly: true
             - name: host-sys
               mountPath: "/host-sys"
+## Enable TLS authentication (2/3)
+#            - name: nfd-ca-cert
+#              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
+#              readOnly: true
+#            - name: nfd-worker-cert
+#              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+#              readOnly: true
       volumes:
         - name: host-boot
           hostPath:
@@ -47,3 +61,10 @@ spec:
         - name: host-sys
           hostPath:
             path: "/sys"
+## Enable TLS authentication (3/3)
+#        - name: nfd-ca-cert
+#          configMap:
+#            name: nfd-ca-cert
+#        - name: nfd-worker-cert
+#          secret:
+#            secretName: nfd-worker-cert
