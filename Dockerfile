@@ -20,5 +20,8 @@ RUN make test
 # Create production image for running node feature discovery
 FROM debian:stretch-slim
 
+# Use more verbose logging of gRPC
+ENV GRPC_GO_LOG_SEVERITY_LEVEL="INFO"
+
 COPY --from=builder /etc/kubernetes/node-feature-discovery /etc/kubernetes/node-feature-discovery
 COPY --from=builder /go/bin/nfd-* /usr/bin/
