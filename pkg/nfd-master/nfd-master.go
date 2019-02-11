@@ -27,6 +27,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -72,16 +73,18 @@ type Args struct {
 type NfdMaster interface {
 	Run() error
 	Stop()
+	WaitForReady(time.Duration) bool
 }
 
 type nfdMaster struct {
 	args   Args
 	server *grpc.Server
+	ready  chan bool
 }
 
 // Create new NfdMaster server instance.
 func NewNfdMaster(args Args) (*nfdMaster, error) {
-	nfd := &nfdMaster{args: args}
+	nfd := &nfdMaster{args: args, ready: make(chan bool, 1)}
 
 	// Check TLS related args
 	if args.CertFile != "" || args.KeyFile != "" || args.CaFile != "" {
@@ -121,6 +124,9 @@ func (m *nfdMaster) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
+	// Notify that we're ready to accept connections
+	m.ready <- true
+	close(m.ready)
 
 	serverOpts := []grpc.ServerOption{}
 	// Enable mutual TLS authentication if --cert-file, --key-file or --ca-file
@@ -157,6 +163,21 @@ func (m *nfdMaster) Run() error {
 // Stop NfdMaster
 func (m *nfdMaster) Stop() {
 	m.server.Stop()
+}
+
+// Wait until NfdMaster is able able to accept connections.
+func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
+	select {
+	case ready, ok := <-m.ready:
+		// Ready if the flag is true or the channel has been closed
+		if ready == true || ok == false {
+			return true
+		}
+	case <-time.After(timeout):
+		return false
+	}
+	// We should never end-up here
+	return false
 }
 
 // Advertise NFD master information
