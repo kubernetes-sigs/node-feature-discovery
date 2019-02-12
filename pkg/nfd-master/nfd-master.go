@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
+	api "k8s.io/api/core/v1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -109,8 +110,7 @@ func (m *nfdMaster) Run() error {
 	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
 	// Initialize Kubernetes API helpers
-	helper := apihelper.APIHelpers(apihelper.K8sHelpers{AnnotationNs: annotationNs,
-		LabelNs: labelNs})
+	helper := apihelper.APIHelpers(apihelper.K8sHelpers{})
 
 	if !m.args.NoPublish {
 		err := updateMasterNode(helper)
@@ -192,7 +192,7 @@ func updateMasterNode(helper apihelper.APIHelpers) error {
 	}
 
 	// Advertise NFD version as an annotation
-	helper.AddAnnotations(node, Annotations{"master.version": version.Get()})
+	addAnnotations(node, Annotations{"master.version": version.Get()})
 	err = helper.UpdateNode(cli, node)
 	if err != nil {
 		stderrLogger.Printf("can't update node: %s", err.Error())
@@ -282,18 +282,18 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	// Remove old labels
 	if l, ok := node.Annotations[annotationNs+"feature-labels"]; ok {
 		oldLabels := strings.Split(l, ",")
-		helper.RemoveLabels(node, oldLabels)
+		removeLabels(node, oldLabels)
 	}
 
 	// Also, remove all labels with the old prefix, and the old version label
-	helper.RemoveLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/nfd")
-	helper.RemoveLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")
+	removeLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/nfd")
+	removeLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")
 
 	// Add labels to the node object.
-	helper.AddLabels(node, labels)
+	addLabels(node, labels)
 
 	// Add annotations
-	helper.AddAnnotations(node, annotations)
+	addAnnotations(node, annotations)
 
 	// Send the updated node to the apiserver.
 	err = helper.UpdateNode(cli, node)
@@ -303,4 +303,34 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	}
 
 	return nil
+}
+
+// Remove any labels having the given prefix
+func removeLabelsWithPrefix(n *api.Node, search string) {
+	for k := range n.Labels {
+		if strings.HasPrefix(k, search) {
+			delete(n.Labels, k)
+		}
+	}
+}
+
+// Removes NFD labels from a Node object
+func removeLabels(n *api.Node, labelNames []string) {
+	for _, l := range labelNames {
+		delete(n.Labels, labelNs+l)
+	}
+}
+
+// Add NFD labels to a Node object.
+func addLabels(n *api.Node, labels map[string]string) {
+	for k, v := range labels {
+		n.Labels[labelNs+k] = v
+	}
+}
+
+// Add Annotations to a Node object
+func addAnnotations(n *api.Node, annotations map[string]string) {
+	for k, v := range annotations {
+		n.Annotations[annotationNs+k] = v
+	}
 }
