@@ -17,8 +17,6 @@ limitations under the License.
 package apihelper
 
 import (
-	"strings"
-
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -52,36 +50,6 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 	}
 
 	return node, nil
-}
-
-// RemoveLabelsWithPrefix searches through all labels on Node n and removes
-// any where the key contain the search string.
-func (h K8sHelpers) RemoveLabelsWithPrefix(n *api.Node, search string) {
-	for k := range n.Labels {
-		if strings.Contains(k, search) {
-			delete(n.Labels, k)
-		}
-	}
-}
-
-// RemoveLabels removes given NFD labels
-func (h K8sHelpers) RemoveLabels(n *api.Node, labelNames []string) {
-	for _, l := range labelNames {
-		delete(n.Labels, h.LabelNs+l)
-	}
-}
-
-func (h K8sHelpers) AddLabels(n *api.Node, labels map[string]string) {
-	for k, v := range labels {
-		n.Labels[h.LabelNs+k] = v
-	}
-}
-
-// Add Annotations to the Node object
-func (h K8sHelpers) AddAnnotations(n *api.Node, annotations map[string]string) {
-	for k, v := range annotations {
-		n.Annotations[h.AnnotationNs+k] = v
-	}
 }
 
 func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {

@@ -13,16 +13,6 @@ type MockAPIHelpers struct {
 	mock.Mock
 }
 
-// AddAnnotations provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) AddAnnotations(_a0 *v1.Node, _a1 map[string]string) {
-	_m.Called(_a0, _a1)
-}
-
-// AddLabels provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) AddLabels(_a0 *v1.Node, _a1 map[string]string) {
-	_m.Called(_a0, _a1)
-}
-
 // GetClient provides a mock function with given fields:
 func (_m *MockAPIHelpers) GetClient() (*kubernetes.Clientset, error) {
 	ret := _m.Called()
@@ -67,16 +57,6 @@ func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset, _a1 string) (*v1.No
 	}
 
 	return r0, r1
-}
-
-// RemoveLabels provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) RemoveLabels(_a0 *v1.Node, _a1 []string) {
-	_m.Called(_a0, _a1)
-}
-
-// RemoveLabelsWithPrefix provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) RemoveLabelsWithPrefix(_a0 *v1.Node, _a1 string) {
-	_m.Called(_a0, _a1)
 }
 
 // UpdateNode provides a mock function with given fields: _a0, _a1
