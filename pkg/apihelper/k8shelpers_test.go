@@ -59,9 +59,9 @@ func TestRemoveLabelsWithPrefix(t *testing.T) {
 		n := &api.Node{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Labels: map[string]string{
-					"single":     "123",
-					"multiple_A": "a",
-					"multiple_B": "b",
+					"single-label": "123",
+					"multiple_A":   "a",
+					"multiple_B":   "b",
 				},
 			},
 		}
@@ -80,8 +80,8 @@ func TestRemoveLabelsWithPrefix(t *testing.T) {
 		})
 
 		Convey("a search string with no matches should not alter labels", func() {
-			helper.RemoveLabelsWithPrefix(n, "unique")
-			So(n.Labels, ShouldContainKey, "single")
+			helper.RemoveLabelsWithPrefix(n, "i")
+			So(n.Labels, ShouldContainKey, "single-label")
 			So(n.Labels, ShouldContainKey, "multiple_A")
 			So(n.Labels, ShouldContainKey, "multiple_B")
 			So(len(n.Labels), ShouldEqual, 3)

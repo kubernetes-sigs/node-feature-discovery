@@ -54,11 +54,10 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 	return node, nil
 }
 
-// RemoveLabelsWithPrefix searches through all labels on Node n and removes
-// any where the key contain the search string.
+// RemoveLabelsWithPrefix deletes all labels with given prefix
 func (h K8sHelpers) RemoveLabelsWithPrefix(n *api.Node, search string) {
 	for k := range n.Labels {
-		if strings.Contains(k, search) {
+		if strings.HasPrefix(k, search) {
 			delete(n.Labels, k)
 		}
 	}

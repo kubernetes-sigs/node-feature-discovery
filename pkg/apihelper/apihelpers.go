@@ -29,9 +29,9 @@ type APIHelpers interface {
 	// GetNode returns the Kubernetes node on which this container is running.
 	GetNode(*k8sclient.Clientset, string) (*api.Node, error)
 
-	// RemoveLabelsWithPrefix removes labels from the supplied node that contain the
-	// search string provided. In order to publish the changes, the node must
-	// subsequently be updated via the API server using the client library.
+	// RemoveLabelsWithPrefix deletes all labels with specified prefix from a
+	// Node object In order to publish the changes, the node must subsequently
+	// be updated via the API server using the client library.
 	RemoveLabelsWithPrefix(*api.Node, string)
 
 	// RemoveLabels removes NFD labels from a node object
