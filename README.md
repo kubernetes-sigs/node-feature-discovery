@@ -281,7 +281,7 @@ feature.node.kubernetes.io/pci-1200_8086.present=true
 
 Also  the set of PCI device classes that the feature source detects is
 configurable. By default, device classes (0x)03, (0x)0b40 and (0x)12, i.e.
-GPUs, co-processors and accelerator cards are deteted.
+GPUs, co-processors and accelerator cards are detected.
 
 See [configuration options](#configuration-options)
 for more information on NFD config.
