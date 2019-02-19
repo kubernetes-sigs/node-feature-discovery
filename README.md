@@ -152,7 +152,6 @@ The current set of feature sources are the following:
 - [CPUID][cpuid] for x86/Arm64 CPU details
 - IOMMU
 - Kernel
-- Local (user-specific features)
 - Memory
 - Network
 - PCI
@@ -160,6 +159,7 @@ The current set of feature sources are the following:
 - RDT ([Intel Resource Director Technology][intel-rdt])
 - Storage
 - System
+- Local (hooks for user-specific features)
 
 ### Feature labels
 
@@ -267,7 +267,75 @@ Kernel config file to use, and, the set of config options to be detected are
 configurable.
 See [configuration options](#configuration-options) for more information.
 
-### Local (User-specific Features)
+### P-State Features
+
+| Feature name | Description                                                   |
+| :----------: | ------------------------------------------------------------- |
+| turbo        | Turbo frequencies are enabled in Intel pstate driver
+
+### Memory Features
+
+| Feature | Attribute | Description                                            |
+| ------- | --------- | ------------------------------------------------------ |
+| numa    | <br>      | Multiple memory nodes i.e. NUMA architecture detected
+| nv      | present   | NVDIMM device(s) are present
+
+### Network Features
+
+| Feature | Attribute  | Description                                           |
+| ------- | ---------- | ----------------------------------------------------- |
+| sriov   | capable    | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
+| <br>    | configured | SR-IOV virtual functions have been configured
+
+### PCI Features
+
+| Feature              | Attribute | Description                               |
+| -------------------- | --------- | ----------------------------------------- |
+| &lt;device label&gt; | present   | PCI device is detected
+
+`<device label>` is composed of raw PCI IDs, separated by underscores.
+The set of fields used in `<device label>` is configurable, valid fields being
+`class`, `vendor`, `device`, `subsystem_vendor` and `subsystem_device`.
+Defaults are `class` and `vendor`. An example label using the default
+label fields:
+```
+feature.node.kubernetes.io/pci-1200_8086.present=true
+```
+
+Also  the set of PCI device classes that the feature source detects is
+configurable. By default, device classes (0x)03, (0x)0b40 and (0x)12, i.e.
+GPUs, co-processors and accelerator cards are detected.
+
+See [configuration options](#configuration-options)
+for more information on NFD config.
+
+### RDT (Intel Resource Director Technology) Features
+
+| Feature name   | Description                                                                         |
+| :------------: | :---------------------------------------------------------------------------------: |
+| RDTMON         | Intel RDT Monitoring Technology
+| RDTCMT         | Intel Cache Monitoring (CMT)
+| RDTMBM         | Intel Memory Bandwidth Monitoring (MBM)
+| RDTL3CA        | Intel L3 Cache Allocation Technology
+| RDTL2CA        | Intel L2 Cache Allocation Technology
+| RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
+
+### Storage Features
+
+| Feature name       | Description                                                                         |
+| :--------------:   | :---------------------------------------------------------------------------------: |
+| nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
+
+### System Features
+
+| Feature     | Attribute        | Description                                 |
+| ----------- | ---------------- | --------------------------------------------|
+| os_release  | ID               | Operating system identifier
+| <br>        | VERSION_ID       | Operating system version identifier (e.g. '6.7')
+| <br>        | VERSION_ID.major | First component of the OS version id (e.g. '6')
+| <br>        | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
+
+### Feature Detector Hooks (User-specific Features)
 
 NFD has a special feature source named *local* which is designed for getting the
 labels from user-specific feature detector. It provides a mechanism for users to
@@ -351,74 +419,6 @@ example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 **NOTE!** NFD will blindly run any executables placed/mounted in the hooks
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
-
-### P-State Features
-
-| Feature name | Description                                                   |
-| :----------: | ------------------------------------------------------------- |
-| turbo        | Turbo frequencies are enabled in Intel pstate driver
-
-### Memory Features
-
-| Feature | Attribute | Description                                            |
-| ------- | --------- | ------------------------------------------------------ |
-| numa    | <br>      | Multiple memory nodes i.e. NUMA architecture detected
-| nv      | present   | NVDIMM device(s) are present
-
-### Network Features
-
-| Feature | Attribute  | Description                                           |
-| ------- | ---------- | ----------------------------------------------------- |
-| sriov   | capable    | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
-| <br>    | configured | SR-IOV virtual functions have been configured
-
-### PCI Features
-
-| Feature              | Attribute | Description                               |
-| -------------------- | --------- | ----------------------------------------- |
-| &lt;device label&gt; | present   | PCI device is detected
-
-`<device label>` is composed of raw PCI IDs, separated by underscores.
-The set of fields used in `<device label>` is configurable, valid fields being
-`class`, `vendor`, `device`, `subsystem_vendor` and `subsystem_device`.
-Defaults are `class` and `vendor`. An example label using the default
-label fields:
-```
-feature.node.kubernetes.io/pci-1200_8086.present=true
-```
-
-Also  the set of PCI device classes that the feature source detects is
-configurable. By default, device classes (0x)03, (0x)0b40 and (0x)12, i.e.
-GPUs, co-processors and accelerator cards are detected.
-
-See [configuration options](#configuration-options)
-for more information on NFD config.
-
-### RDT (Intel Resource Director Technology) Features
-
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| RDTMON         | Intel RDT Monitoring Technology
-| RDTCMT         | Intel Cache Monitoring (CMT)
-| RDTMBM         | Intel Memory Bandwidth Monitoring (MBM)
-| RDTL3CA        | Intel L3 Cache Allocation Technology
-| RDTL2CA        | Intel L2 Cache Allocation Technology
-| RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
-
-### Storage Features
-
-| Feature name       | Description                                                                         |
-| :--------------:   | :---------------------------------------------------------------------------------: |
-| nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
-
-### System Features
-
-| Feature     | Attribute        | Description                                 |
-| ----------- | ---------------- | --------------------------------------------|
-| os_release  | ID               | Operating system identifier
-| <br>        | VERSION_ID       | Operating system version identifier (e.g. '6.7')
-| <br>        | VERSION_ID.major | First component of the OS version id (e.g. '6')
-| <br>        | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
 
 ## Getting started
 ### System requirements
