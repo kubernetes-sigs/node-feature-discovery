@@ -1,5 +1,7 @@
+// +build !amd64
+
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,10 +16,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cpuid
+package cpu
 
-// Source implements FeatureSource.
-type Source struct{}
-
-// Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "cpuid" }
+func discoverRDT() []string {
+	return []string{}
+}

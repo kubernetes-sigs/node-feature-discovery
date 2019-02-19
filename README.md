@@ -124,7 +124,7 @@ nfd-worker.
                               in testing
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
+                              [Default: cpu,iommu,kernel,local,memory,network,pci,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -149,14 +149,11 @@ for up-to-date information about the required volume mounts.
 The current set of feature sources are the following:
 
 - CPU
-- [CPUID][cpuid] for x86/Arm64 CPU details
 - IOMMU
 - Kernel
 - Memory
 - Network
 - PCI
-- Pstate ([Intel P-State driver][intel-pstate])
-- RDT ([Intel Resource Director Technology][intel-rdt])
 - Storage
 - System
 - Local (hooks for user-specific features)
@@ -166,9 +163,9 @@ The current set of feature sources are the following:
 The published node labels encode a few pieces of information:
 
 - Namespace, i.e. `feature.node.kubernetes.io`
-- The source for each label (e.g. `cpuid`).
+- The source for each label (e.g. `cpu`).
 - The name of the discovered feature as it appears in the underlying
-  source, (e.g. `AESNI` from cpuid).
+  source, (e.g. `cpuid.AESNI` from cpu).
 - The value of the discovered feature.
 
 Feature label names adhere to the following pattern:
@@ -185,14 +182,11 @@ the only label value published for features is the string `"true"`._
 ```json
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
-  "feature.node.kubernetes.io/cpuid-<feature-name>": "true",
   "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/memory-<feature-name>": "true",
   "feature.node.kubernetes.io/network-<feature-name>": "true",
   "feature.node.kubernetes.io/pci-<device label>.present": "true",
-  "feature.node.kubernetes.io/pstate-<feature-name>": "true",
-  "feature.node.kubernetes.io/rdt-<feature-name>": "true",
   "feature.node.kubernetes.io/storage-<feature-name>": "true",
   "feature.node.kubernetes.io/system-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/<file name>-<feature name>": "<feature value>"
@@ -208,43 +202,50 @@ such as restricting discovered features with the --label-whitelist option._
 
 ### CPU Features
 
-The CPU feature source differs from the CPUID feature source in that it
-discovers CPU related features that are actually enabled, whereas CPUID only
-reports *supported* CPU capabilities (i.e. a capability might be supported but
-not enabled) as reported by the `cpuid` instruction.
+| Feature name            | Attribute          | Description                   |
+| ----------------------- | ------------------ | ----------------------------- |
+| cpuid                   | &lt;cpuid flag&gt; | CPU capability is supported
+| hardware_multithreading | <br>               | Hardware multithreading, such as Intel HTT, enabled (number of locical CPUs is greater than physical CPUs)
+| power                   | sst_bf.enabled     | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled
+| [pstate][intel-pstate]  | turbo              | Turbo frequencies are enabled in Intel pstate driver
+| [rdt][intel-rdt]        | RDTMON             | Intel RDT Monitoring Technology
+| <br>                    | RDTCMT             | Intel Cache Monitoring (CMT)
+| <br>                    | RDTMBM             | Intel Memory Bandwidth Monitoring (MBM)
+| <br>                    | RDTL3CA            | Intel L3 Cache Allocation Technology
+| <br>                    | RDTL2CA            | Intel L2 Cache Allocation Technology
+| <br>                    | RDTMBA             | Intel Memory Bandwidth Allocation (MBA) Technology
 
-| Feature                 | Attribute      | Description                       |
-| ----------------------- | -------------- | ----------------------------------|
-| hardware_multithreading | <br>           | Hardware multithreading, such as Intel HTT, enabled (number of locical CPUs is greater than physical CPUs)
-| power                   | sst_bf.enabled | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled
+**NOTE** The cpuid features advertise *supported* CPU capabilities, that is, a
+capability might be supported but not enabled.
 
-### X86 CPUID Features (Partial List)
 
-| Feature name   | Description                                                  |
-| :------------: | :----------------------------------------------------------: |
-| ADX            | Multi-Precision Add-Carry Instruction Extensions (ADX)
-| AESNI          | Advanced Encryption Standard (AES) New Instructions (AES-NI)
-| AVX            | Advanced Vector Extensions (AVX)
-| AVX2           | Advanced Vector Extensions 2 (AVX2)
-| BMI1           | Bit Manipulation Instruction Set 1 (BMI)
-| BMI2           | Bit Manipulation Instruction Set 2 (BMI2)
-| SSE4.1         | Streaming SIMD Extensions 4.1 (SSE4.1)
-| SSE4.2         | Streaming SIMD Extensions 4.2 (SSE4.2)
-| SGX            | Software Guard Extensions (SGX)
+#### X86 CPUID Attributes (Partial List)
 
-### Arm64 CPUID Features (Partial List)
+| Attribute | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| ADX       | Multi-Precision Add-Carry Instruction Extensions (ADX)
+| AESNI     | Advanced Encryption Standard (AES) New Instructions (AES-NI)
+| AVX       | Advanced Vector Extensions (AVX)
+| AVX2      | Advanced Vector Extensions 2 (AVX2)
+| BMI1      | Bit Manipulation Instruction Set 1 (BMI)
+| BMI2      | Bit Manipulation Instruction Set 2 (BMI2)
+| SSE4.1    | Streaming SIMD Extensions 4.1 (SSE4.1)
+| SSE4.2    | Streaming SIMD Extensions 4.2 (SSE4.2)
+| SGX       | Software Guard Extensions (SGX)
 
-| Feature name   | Description                                                  |
-| :------------: | :----------------------------------------------------------: |
-| AES            | Announcing the Advanced Encryption Standard
-| EVSTRM         | Event Stream Frequency Features
-| FPHP           | Half Precision(16bit) Floating Point Data Processing Instructions
-| ASIMDHP        | Half Precision(16bit) Asimd Data Processing Instructions
-| ATOMICS        | Atomic Instructions to the A64
-| ASIMRDM        | Support for Rounding Double Multiply Add/Subtract
-| PMULL          | Optional Cryptographic and CRC32 Instructions
-| JSCVT          | Perform Conversion to Match Javascript
-| DCPOP          | Persistent Memory Support
+#### Arm64 CPUID Attribute (Partial List)
+
+| Attribute | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| AES       | Announcing the Advanced Encryption Standard
+| EVSTRM    | Event Stream Frequency Features
+| FPHP      | Half Precision(16bit) Floating Point Data Processing Instructions
+| ASIMDHP   | Half Precision(16bit) Asimd Data Processing Instructions
+| ATOMICS   | Atomic Instructions to the A64
+| ASIMRDM   | Support for Rounding Double Multiply Add/Subtract
+| PMULL     | Optional Cryptographic and CRC32 Instructions
+| JSCVT     | Perform Conversion to Match Javascript
+| DCPOP     | Persistent Memory Support
 
 ### IOMMU Features
 
@@ -266,12 +267,6 @@ not enabled) as reported by the `cpuid` instruction.
 Kernel config file to use, and, the set of config options to be detected are
 configurable.
 See [configuration options](#configuration-options) for more information.
-
-### P-State Features
-
-| Feature name | Description                                                   |
-| :----------: | ------------------------------------------------------------- |
-| turbo        | Turbo frequencies are enabled in Intel pstate driver
 
 ### Memory Features
 
@@ -308,17 +303,6 @@ GPUs, co-processors and accelerator cards are detected.
 
 See [configuration options](#configuration-options)
 for more information on NFD config.
-
-### RDT (Intel Resource Director Technology) Features
-
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
-| RDTMON         | Intel RDT Monitoring Technology
-| RDTCMT         | Intel Cache Monitoring (CMT)
-| RDTMBM         | Intel Memory Bandwidth Monitoring (MBM)
-| RDTL3CA        | Intel L3 Cache Allocation Technology
-| RDTL2CA        | Intel L2 Cache Allocation Technology
-| RDTMBA         | Intel Memory Bandwidth Allocation (MBA) Technology
 
 ### Storage Features
 
@@ -629,7 +613,7 @@ spec:
     - image: golang
       name: go1
   nodeSelector:
-    feature.node.kubernetes.io/pstate-turbo: 'true'
+    feature.node.kubernetes.io/cpu-pstate.turbo: 'true'
 ```
 
 For more details on targeting nodes, see [node selection][node-sel].

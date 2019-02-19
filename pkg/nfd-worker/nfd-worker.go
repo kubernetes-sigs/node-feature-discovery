@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
-	"sigs.k8s.io/node-feature-discovery/source/cpuid"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/iommu"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
@@ -45,8 +44,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/network"
 	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
 	"sigs.k8s.io/node-feature-discovery/source/pci"
-	"sigs.k8s.io/node-feature-discovery/source/pstate"
-	"sigs.k8s.io/node-feature-discovery/source/rdt"
 	"sigs.k8s.io/node-feature-discovery/source/storage"
 	"sigs.k8s.io/node-feature-discovery/source/system"
 )
@@ -235,7 +232,6 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 	// Configure feature sources.
 	allSources := []source.FeatureSource{
 		cpu.Source{},
-		cpuid.Source{},
 		fake.Source{},
 		iommu.Source{},
 		kernel.Source{},
@@ -243,8 +239,6 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		network.Source{},
 		panic_fake.Source{},
 		pci.Source{},
-		pstate.Source{},
-		rdt.Source{},
 		storage.Source{},
 		system.Source{},
 		// local needs to be the last source so that it is able to override

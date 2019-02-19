@@ -14,27 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rdt
+package cpu
 
 import (
-	"sigs.k8s.io/node-feature-discovery/source"
+	"github.com/klauspost/cpuid"
 )
 
-// Source implements FeatureSource.
-type Source struct{}
-
-// Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "rdt" }
-
-// Discover returns feature names for CMT and CAT if supported.
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
-
-	rdtFeatures := discoverRDT()
-
-	for _, f := range rdtFeatures {
-		features[f] = true
-	}
-
-	return features, nil
+// Discover returns feature names for all the supported CPU features.
+func getCpuidFlags() []string {
+	return cpuid.CPU.Features.Strings()
 }
