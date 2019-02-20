@@ -14,6 +14,7 @@ import (
 	"github.com/ghodss/yaml"
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -48,9 +49,7 @@ const (
 )
 
 var (
-	version            = "" // Must not be const, set using ldflags at build time
-	validFeatureNameRe = regexp.MustCompile(`^([-.\w]*)?[A-Za-z0-9]$`)
-	validFeatureValRe  = regexp.MustCompile(`^(([A-Za-z0-9][-.\w]*)?[A-Za-z0-9])?$`)
+	version = "" // Must not be const, set using ldflags at build time
 )
 
 // package loggers
@@ -362,22 +361,27 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 	}
 	for k, v := range features {
 		// Validate label name
-		if !validFeatureNameRe.MatchString(k) {
-			stderrLogger.Printf("Invalid feature name '%s', ignoring...", k)
-			continue
-		}
 		prefix := source.Name() + "-"
 		switch source.(type) {
 		case local.Source:
 			// Do not prefix labels from the hooks
 			prefix = ""
 		}
-		label := prefix + k
 
-		// Validate label value
+		label := prefix + k
+		// Validate label name. Use dummy namespace 'ns' because there is no
+		// function to validate just the name part
+		errs := validation.IsQualifiedName("ns/" + label)
+		if len(errs) > 0 {
+			stderrLogger.Printf("Ignoring invalid feature name '%s': %s", label, errs)
+			continue
+		}
+
 		value := fmt.Sprintf("%v", v)
-		if !validFeatureValRe.MatchString(value) {
-			stderrLogger.Printf("Invalid value '%s' for label '%s', ignoring...", value, label)
+		// Validate label value
+		errs = validation.IsValidLabelValue(value)
+		if len(errs) > 0 {
+			stderrLogger.Printf("Ignoring invalid feature value %s=%s: %s", label, value, errs)
 			continue
 		}
 
