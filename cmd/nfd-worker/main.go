@@ -433,12 +433,11 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		NfdVersion: version.Get(),
 		NodeName:   nodeName}
-	rsp, err := client.SetLabels(ctx, &labelReq)
+	_, err := client.SetLabels(ctx, &labelReq)
 	if err != nil {
 		stderrLogger.Printf("failed to set node labels: %v", err)
 		return err
 	}
-	log.Printf("RESPONSE: %s", rsp)
 
 	return nil
 }
