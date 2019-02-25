@@ -55,15 +55,13 @@ import (
 const (
 	// ProgramName is the canonical name of this program
 	ProgramName = "nfd-worker"
-
-	// NodeNameEnv is the environment variable that contains this node's name.
-	NodeNameEnv = "NODE_NAME"
 )
 
 // package loggers
 var (
 	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
 	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
+	nodeName     = os.Getenv("NODE_NAME")
 )
 
 // Global config
@@ -104,6 +102,7 @@ func main() {
 		stderrLogger.Fatalf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 	stdoutLogger.Printf("Node Feature Discovery Worker %s", version.Get())
+	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
 	// Parse command-line arguments.
 	args, err := argsParse(nil)
@@ -427,8 +426,7 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	nodeName := os.Getenv(NodeNameEnv)
-	stdoutLogger.Printf("%s: %s", NodeNameEnv, nodeName)
+	stdoutLogger.Printf("Sendng labeling request nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		NfdVersion: version.Get(),

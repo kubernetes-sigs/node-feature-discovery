@@ -43,9 +43,6 @@ const (
 	// ProgramName is the canonical name of this program
 	ProgramName = "nfd-master"
 
-	// NodeNameEnv is the environment variable that contains this node's name.
-	NodeNameEnv = "NODE_NAME"
-
 	// Namespace for feature labels
 	labelNs = "feature.node.kubernetes.io/"
 
@@ -57,6 +54,7 @@ const (
 var (
 	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
 	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
+	nodeName     = os.Getenv("NODE_NAME")
 )
 
 // Labels are a Kubernetes representation of discovered features.
@@ -82,6 +80,7 @@ func main() {
 		stderrLogger.Fatalf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 	stdoutLogger.Printf("Node Feature Discovery Master %s", version.Get())
+	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
 	// Parse command-line arguments.
 	args, err := argsParse(nil)
@@ -213,7 +212,7 @@ func updateMasterNode(helper apihelper.APIHelpers) error {
 	if err != nil {
 		return err
 	}
-	node, err := helper.GetNode(cli, os.Getenv(NodeNameEnv))
+	node, err := helper.GetNode(cli, nodeName)
 	if err != nil {
 		return err
 	}

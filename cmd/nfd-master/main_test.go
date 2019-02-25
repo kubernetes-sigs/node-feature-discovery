@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -37,7 +36,7 @@ const (
 )
 
 func init() {
-	os.Setenv(NodeNameEnv, mockNodeName)
+	nodeName = mockNodeName
 }
 
 func TestUpdateNodeFeatures(t *testing.T) {
