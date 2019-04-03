@@ -122,7 +122,7 @@ the only label value published for features is the string `"true"`._
   "feature.node.kubernetes.io/rdt-<feature-name>": "true",
   "feature.node.kubernetes.io/storage-<feature-name>": "true",
   "feature.node.kubernetes.io/system-<feature name>": "<feature value>",
-  "feature.node.kubernetes.io/<hook name>-<feature name>": "<feature value>"
+  "feature.node.kubernetes.io/<file name>-<feature name>": "<feature value>"
 }
 ```
 
@@ -195,39 +195,61 @@ See [configuration options](#configuration-options) for more information.
 
 ### Local (User-specific Features)
 
-NFD has a special feature source named *local* which is designed for running
-user-specific feature detector hooks. It provides a mechanism for users to
+NFD has a special feature source named *local* which is designed for getting the
+labels from user-specific feature detector. It provides a mechanism for users to
 implement custom feature sources in a pluggable way, without modifying nfd
 source code or Docker images. The local feature source can be used to advertise
 new user-specific features, and, for overriding labels created by the other
 feature sources.
 
-The *local* feature source tries to execute files found under
-`/etc/kubernetes/node-feature-discovery/source.d/` directory. The hooks must be
-available inside the Docker image so Volumes and VolumeMounts must be used if
-standard NFD images are used.
+The *local* feature source gets its labels by two different ways:
+* It tries to execute files found under `/etc/kubernetes/node-feature-discovery/source.d/`
+directory. The hook files must be executable. When executed, the hooks are
+supposed to print all discovered features in `stdout`, one per line.
+* It reads files found under `/etc/kubernetes/node-feature-discovery/features.d/`
+directory. The file content is expected to be similar to the hook output (described above).
 
-The hook files must be executable. When executed, the hooks are supposed to
-print all discovered features in `stdout`, one feature per line. Hooks can
-advertise both binary and non-binary labels, using either `<name>` or
-`<name>=<value>` output format.
+These directories must be available inside the Docker image so Volumes and
+VolumeMounts must be used if standard NFD images are used.
 
-Unlike the other feature sources, the name of the hook, instead of the name of
+In both cases, the labels can be binary or non binary, using either `<name>` or
+`<name>=<value>` format.
+
+Unlike the other feature sources, the name of the file, instead of the name of
 the feature source (that would be `local` in this case), is used as a prefix in
-the label name, normally. However, if the `<name>` printed by the hook starts
-with a slash (`/`) it is used as the label name as is, without any additional
-prefix. This makes it possible for the hooks to fully control the feature
-label names, e.g. for overriding labels created by other feature sources.
+the label name, normally. However, if the `<name>` of the label starts with a
+slash (`/`) it is used as the label name as is, without any additional prefix.
+This makes it possible for the user to fully control the feature label names,
+e.g. for overriding labels created by other feature sources.
 
 The value of the label is either `true` (for binary labels) or `<value>`
 (for non-binary labels).
+
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
 
-**An example:**<br/>
+**A hook example:**<br/>
 User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
 following `stdout` output:
+```
+MY_FEATURE_1
+MY_FEATURE_2=myvalue
+/override_source-OVERRIDE_BOOL
+/override_source-OVERRIDE_VALUE=123
+```
+which, in turn, will translate into the following node labels:
+```
+feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
+feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
+feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
+feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
+```
+
+**A file example:**<br/>
+User has a file
+`/etc/kubernetes/node-feature-discovery/features.d/my-source` which contains the
+following lines:
 ```
 MY_FEATURE_1
 MY_FEATURE_2=myvalue
