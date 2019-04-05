@@ -324,7 +324,12 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 		label := prefix + k
 		// Validate label name. Use dummy namespace 'ns' because there is no
 		// function to validate just the name part
-		errs := validation.IsQualifiedName("ns/" + label)
+		labelName := "ns/" + label
+		// Do not use dummy namespace if there is already a namespace
+		if strings.Contains(label, "/") {
+			labelName = label
+		}
+		errs := validation.IsQualifiedName(labelName)
 		if len(errs) > 0 {
 			stderrLogger.Printf("Ignoring invalid feature name '%s': %s", label, errs)
 			continue

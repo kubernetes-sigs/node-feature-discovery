@@ -53,27 +53,30 @@ nfd-master.
   Usage:
   nfd-master [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
-     [--verify-node-name]
+     [--verify-node-name] [--extra-label-ns=<list>]
   nfd-master -h | --help
   nfd-master --version
 
   Options:
-  -h --help                   Show this screen.
-  --version                   Output version and exit.
-  --port=<port>               Port on which to listen for connections.
-                              [Default: 8080]
-  --ca-file=<path>            Root certificate for verifying connections
-                              [Default: ]
-  --cert-file=<path>          Certificate used for authenticating connections
-                              [Default: ]
-  --key-file=<path>           Private key matching --cert-file
-                              [Default: ]
-  --verify-node-name		  Verify worker node name against CN from the TLS
-                              certificate. Only has effect when TLS authentication
-                              has been enabled.
-  --no-publish                Do not publish feature labels
-  --label-whitelist=<pattern> Regular expression to filter label names to
-                              publish to the Kubernetes API server. [Default: ]
+  -h --help                       Show this screen.
+  --version                       Output version and exit.
+  --port=<port>                   Port on which to listen for connections.
+                                  [Default: 8080]
+  --ca-file=<path>                Root certificate for verifying connections
+                                  [Default: ]
+  --cert-file=<path>              Certificate used for authenticating connections
+                                  [Default: ]
+  --key-file=<path>               Private key matching --cert-file
+                                  [Default: ]
+  --verify-node-name              Verify worker node name against CN from the TLS
+                                  certificate. Only has effect when TLS authentication
+                                  has been enabled.
+  --no-publish                    Do not publish feature labels
+  --label-whitelist=<pattern>     Regular expression to filter label names to
+                                  publish to the Kubernetes API server. [Default: ]
+  --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
+                                  [Default: ]
+
 ```
 
 ### NFD-Worker
@@ -368,8 +371,13 @@ slash (`/`) it is used as the label name as is, without any additional prefix.
 This makes it possible for the user to fully control the feature label names,
 e.g. for overriding labels created by other feature sources.
 
-The value of the label is either `true` (for binary labels) or `<value>`
-(for non-binary labels).
+You can also override the default namespace of your labels using this format:
+`<namespace>/<name>[=<value>]`. You must whitelist your namespace using the
+`--extra-label-ns` option on the master. In this case, the name of the
+file will not be added to the label name. For example, if you want to add the
+label `my.namespace.org/my-label=value`, your hook output or file must contains
+`my.namespace.org/my-label=value` and you must add
+`--extra-label-ns=my.namespace.org` on the master command line.
 
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
@@ -383,6 +391,7 @@ MY_FEATURE_1
 MY_FEATURE_2=myvalue
 /override_source-OVERRIDE_BOOL
 /override_source-OVERRIDE_VALUE=123
+override.namespace/value=456
 ```
 which, in turn, will translate into the following node labels:
 ```
@@ -390,6 +399,7 @@ feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
 feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
 feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
+override.namespace/value=456
 ```
 
 **A file example:**<br/>
@@ -401,6 +411,7 @@ MY_FEATURE_1
 MY_FEATURE_2=myvalue
 /override_source-OVERRIDE_BOOL
 /override_source-OVERRIDE_VALUE=123
+override.namespace/value=456
 ```
 which, in turn, will translate into the following node labels:
 ```
@@ -408,6 +419,7 @@ feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
 feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
 feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
+override.namespace/value=456
 ```
 
 NFD tries to run any regular files found from the hooks directory. Any
