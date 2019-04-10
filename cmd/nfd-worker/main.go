@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
+	"sigs.k8s.io/node-feature-discovery/source/cpu/cpu_power"
 	"sigs.k8s.io/node-feature-discovery/source/cpuid"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/iommu"
@@ -218,7 +219,7 @@ func argsParse(argv []string) (Args, error) {
                               in testing
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
+                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,cpu_power,pci,pstate,rdt,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -320,6 +321,7 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		network.Source{},
 		panic_fake.Source{},
 		pci.Source{},
+		cpu_power.Source{},
 		pstate.Source{},
 		rdt.Source{},
 		storage.Source{},
