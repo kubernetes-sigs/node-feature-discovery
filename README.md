@@ -124,7 +124,7 @@ nfd-worker.
                               in testing
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,cpuid,iommu,kernel,local,memory,network,pci,pstate,rdt,storage,system]
+                              [Default: cpu,cpuid,iommu,kernel,local,memory,network, cpu_power, pci,pstate,rdt,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -160,6 +160,7 @@ The current set of feature sources are the following:
 - RDT ([Intel Resource Director Technology][intel-rdt])
 - Storage
 - System
+- CPU Power([Intel Speed Select Technology][intel-sst])
 
 ### Feature labels
 
@@ -352,6 +353,12 @@ possible security implications.
 | Feature name | Description                                                   |
 | :----------: | ------------------------------------------------------------- |
 | turbo        | Turbo frequencies are enabled in Intel pstate driver
+
+### System Features
+
+| Feature     | Attribute        | Description                                 |
+| ----------- | ---------------- | --------------------------------------------|
+| cpu_power   | sst_bf.enabled   | Speed Select Technology - Base frequency is enabled in cpu           |
 
 ### Memory Features
 
@@ -649,3 +656,4 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [gcc-down]: https://gcc.gnu.org
 [kubectl-setup]: https://coreos.com/kubernetes/docs/latest/configure-kubectl.html
 [node-sel]: http://kubernetes.io/docs/user-guide/node-selection
+[intel-sst]:https://www.intel.co.uk/content/www/uk/en/architecture-and-technology/speed-select-technology-article.html
