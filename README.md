@@ -213,9 +213,10 @@ discovers CPU related features that are actually enabled, whereas CPUID only
 reports *supported* CPU capabilities (i.e. a capability might be supported but
 not enabled) as reported by the `cpuid` instruction.
 
-| Feature name            | Description                                        |
-| ----------------------- | -------------------------------------------------- |
-| hardware_multithreading | Hardware multithreading, such as Intel HTT, enabled (number of locical CPUs is greater than physical CPUs)
+| Feature                 | Attribute      | Description                       |
+| ----------------------- | -------------- | ----------------------------------|
+| hardware_multithreading | <br>           | Hardware multithreading, such as Intel HTT, enabled (number of locical CPUs is greater than physical CPUs)
+| power                   | sst_bf.enabled | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled
 
 ### X86 CPUID Features (Partial List)
 
@@ -643,6 +644,7 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
+[intel-sst]: https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
 [sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
 [docker-down]: https://docs.docker.com/engine/installation
 [golang-down]: https://golang.org/dl

@@ -17,11 +17,15 @@ limitations under the License.
 package cpu
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+)
+
+const (
+	cpuDevicesBaseDir = "/sys/bus/cpu/devices"
 )
 
 // Implement FeatureSource interface
@@ -35,24 +39,32 @@ func (s Source) Discover() (source.Features, error) {
 	// Check if hyper-threading seems to be enabled
 	found, err := haveThreadSiblings()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to detect hyper-threading: %v", err)
+		log.Printf("ERROR: failed to detect hyper-threading: %v", err)
 	} else if found {
 		features["hardware_multithreading"] = true
 	}
+
+	// Check SST-BF
+	found, err = discoverSSTBF()
+	if err != nil {
+		log.Printf("ERROR: failed to detect SST-BF: %v", err)
+	} else if found {
+		features["power.sst_bf.enabled"] = true
+	}
+
 	return features, nil
 }
 
 // Check if any (online) CPUs have thread siblings
 func haveThreadSiblings() (bool, error) {
-	const baseDir = "/sys/bus/cpu/devices"
-	files, err := ioutil.ReadDir(baseDir)
+	files, err := ioutil.ReadDir(cpuDevicesBaseDir)
 	if err != nil {
 		return false, err
 	}
 
 	for _, file := range files {
 		// Try to read siblings from topology
-		siblings, err := ioutil.ReadFile(path.Join(baseDir, file.Name(), "topology/thread_siblings_list"))
+		siblings, err := ioutil.ReadFile(path.Join(cpuDevicesBaseDir, file.Name(), "topology/thread_siblings_list"))
 		if err != nil {
 			return false, err
 		}
