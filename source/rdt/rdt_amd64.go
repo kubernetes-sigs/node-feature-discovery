@@ -18,9 +18,9 @@ limitations under the License.
 
 package rdt
 
-type CpuidRet struct {
-	EAX, EBX, ECX, EDX uint32
-}
+import (
+	"sigs.k8s.io/node-feature-discovery/pkg/cpuid"
+)
 
 const (
 	// CPUID EAX input values
@@ -47,10 +47,10 @@ func discoverRDT() []string {
 	features := []string{}
 
 	// Read cpuid information
-	extFeatures := cpuid(LEAF_EXT_FEATURE_FLAGS, 0)
-	rdtMonitoring := cpuid(LEAF_RDT_MONITORING, 0)
-	rdtL3Monitoring := cpuid(LEAF_RDT_MONITORING, RDT_MONITORING_SUBLEAF_L3)
-	rdtAllocation := cpuid(LEAF_RDT_ALLOCATION, 0)
+	extFeatures := cpuid.Cpuid(LEAF_EXT_FEATURE_FLAGS, 0)
+	rdtMonitoring := cpuid.Cpuid(LEAF_RDT_MONITORING, 0)
+	rdtL3Monitoring := cpuid.Cpuid(LEAF_RDT_MONITORING, RDT_MONITORING_SUBLEAF_L3)
+	rdtAllocation := cpuid.Cpuid(LEAF_RDT_ALLOCATION, 0)
 
 	// Detect RDT monitoring capabilities
 	if extFeatures.EBX&EXT_FEATURE_FLAGS_EBX_RDT_M != 0 {
@@ -88,11 +88,3 @@ func discoverRDT() []string {
 
 	return features
 }
-
-func cpuid(eax, ecx uint32) CpuidRet {
-	r := CpuidRet{}
-	r.EAX, r.EBX, r.ECX, r.EDX = cpuidAsm(eax, ecx)
-	return r
-}
-
-func cpuidAsm(eax_arg, ecx_arg uint32) (eax, ebx, ecx, edx uint32)
