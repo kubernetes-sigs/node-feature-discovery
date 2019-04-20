@@ -44,6 +44,10 @@ spec:
               readOnly: true
             - name: host-sys
               mountPath: "/host-sys"
+            - name: source-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/source.d/"
+            - name: features-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/features.d/"
 ## Enable TLS authentication (2/3)
 #            - name: nfd-ca-cert
 #              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
@@ -61,6 +65,12 @@ spec:
         - name: host-sys
           hostPath:
             path: "/sys"
+        - name: source-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/source.d/"
+        - name: features-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/features.d/"
 ## Enable TLS authentication (3/3)
 #        - name: nfd-ca-cert
 #          configMap:

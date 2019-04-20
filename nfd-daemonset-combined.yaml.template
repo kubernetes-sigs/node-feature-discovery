@@ -81,6 +81,10 @@ spec:
               readOnly: true
             - name: host-sys
               mountPath: "/host-sys"
+            - name: source-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/source.d/"
+            - name: features-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/features.d/"
       volumes:
         - name: host-boot
           hostPath:
@@ -91,3 +95,9 @@ spec:
         - name: host-sys
           hostPath:
             path: "/sys"
+        - name: source-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/source.d/"
+        - name: features-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/features.d/"
