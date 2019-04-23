@@ -284,7 +284,11 @@ supposed to print all discovered features in `stdout`, one per line.
 directory. The file content is expected to be similar to the hook output (described above).
 
 These directories must be available inside the Docker image so Volumes and
-VolumeMounts must be used if standard NFD images are used.
+VolumeMounts must be used if standard NFD images are used. The given template
+files mount by default the `source.d` and the `features.d` directories
+respectively from `/etc/kubernetes/node-feature-discovery/source.d/` and
+`/etc/kubernetes/node-feature-discovery/features.d/` from the host. You should
+update them to match your needs.
 
 In both cases, the labels can be binary or non binary, using either `<name>` or
 `<name>=<value>` format.
