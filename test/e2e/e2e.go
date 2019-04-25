@@ -18,7 +18,6 @@ package e2e
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -32,28 +31,11 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtimeutils "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apiserver/pkg/util/logs"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/version"
-	commontest "k8s.io/kubernetes/test/e2e/common"
 	"k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/ginkgowrapper"
-	"k8s.io/kubernetes/test/e2e/framework/metrics"
 	"k8s.io/kubernetes/test/e2e/manifest"
 	testutils "k8s.io/kubernetes/test/utils"
-
-	// ensure auth plugins are loaded
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	// ensure that cloud providers are loaded
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/aws"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/azure"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/gce"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/kubemark"
-)
-
-var (
-	cloudConfig = &framework.TestContext.CloudConfig
 )
 
 // There are certain operations we only want to run once per overall test invocation
@@ -66,11 +48,6 @@ var (
 // accepting the byte array.
 var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	// Run only on Ginkgo node 1
-
-	switch framework.TestContext.Provider {
-	case "gce", "gke":
-		framework.LogClusterImageSources()
-	}
 
 	c, err := framework.LoadClientset()
 	if err != nil {
@@ -120,9 +97,6 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		framework.Logf("WARNING: Waiting for all daemonsets to be ready failed: %v", err)
 	}
 
-	// Log the version of the server and this client.
-	framework.Logf("e2e test version: %s", version.Get().GitVersion)
-
 	dc := c.DiscoveryClient
 
 	serverVersion, serverErr := dc.ServerVersion()
@@ -132,9 +106,6 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	if serverVersion != nil {
 		framework.Logf("kube-apiserver version: %s", serverVersion.GitVersion)
 	}
-
-	// Reference common test to make the import valid.
-	commontest.CurrentSuite = commontest.E2E
 
 	return nil
 
@@ -155,44 +126,7 @@ var _ = ginkgo.SynchronizedAfterSuite(func() {
 	if framework.TestContext.ReportDir != "" {
 		framework.CoreDump(framework.TestContext.ReportDir)
 	}
-	if framework.TestContext.GatherSuiteMetricsAfterTest {
-		if err := gatherTestSuiteMetrics(); err != nil {
-			framework.Logf("Error gathering metrics: %v", err)
-		}
-	}
 })
-
-func gatherTestSuiteMetrics() error {
-	framework.Logf("Gathering metrics")
-	c, err := framework.LoadClientset()
-	if err != nil {
-		return fmt.Errorf("error loading client: %v", err)
-	}
-
-	// Grab metrics for apiserver, scheduler, controller-manager, kubelet (for non-kubemark case) and cluster autoscaler (optionally).
-	grabber, err := metrics.NewMetricsGrabber(c, nil, !framework.ProviderIs("kubemark"), true, true, true, framework.TestContext.IncludeClusterAutoscalerMetrics)
-	if err != nil {
-		return fmt.Errorf("failed to create MetricsGrabber: %v", err)
-	}
-
-	received, err := grabber.Grab()
-	if err != nil {
-		return fmt.Errorf("failed to grab metrics: %v", err)
-	}
-
-	metricsForE2E := (*framework.MetricsForE2E)(&received)
-	metricsJSON := metricsForE2E.PrintJSON()
-	if framework.TestContext.ReportDir != "" {
-		filePath := path.Join(framework.TestContext.ReportDir, "MetricsForE2ESuite_"+time.Now().Format(time.RFC3339)+".json")
-		if err := ioutil.WriteFile(filePath, []byte(metricsJSON), 0644); err != nil {
-			return fmt.Errorf("error writing to %q: %v", filePath, err)
-		}
-	} else {
-		framework.Logf("\n\nTest Suite Metrics:\n%s\n", metricsJSON)
-	}
-
-	return nil
-}
 
 // RunE2ETests checks configuration parameters (specified through flags) and then runs
 // E2E tests using the Ginkgo runner.
@@ -201,8 +135,6 @@ func gatherTestSuiteMetrics() error {
 // This function is called on each Ginkgo node in parallel mode.
 func RunE2ETests(t *testing.T) {
 	runtimeutils.ReallyCrash = true
-	logs.InitLogs()
-	defer logs.FlushLogs()
 
 	gomega.RegisterFailHandler(ginkgowrapper.Fail)
 	// Disable skipped tests unless they are explicitly requested.
