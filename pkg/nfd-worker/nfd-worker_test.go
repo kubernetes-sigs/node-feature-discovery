@@ -19,6 +19,7 @@ package nfdworker_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -37,6 +38,7 @@ func setupTest(args nfdmaster.Args) testContext {
 	// Fixed port and no-publish, for convenience
 	args.NoPublish = true
 	args.Port = 8192
+	args.LabelWhiteList = regexp.MustCompile("")
 	m, err := nfdmaster.NewNfdMaster(args)
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)
