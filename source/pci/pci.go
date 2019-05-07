@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"path"
 	"strings"
 
@@ -28,8 +27,6 @@ import (
 )
 
 type pciDeviceInfo map[string]string
-
-var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 type NFDConfig struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`

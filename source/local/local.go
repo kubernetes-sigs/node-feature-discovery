@@ -33,7 +33,6 @@ import (
 var (
 	featureFilesDir = "/etc/kubernetes/node-feature-discovery/features.d/"
 	hookDir         = "/etc/kubernetes/node-feature-discovery/source.d/"
-	logger          = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 // Implement FeatureSource interface
@@ -54,10 +53,10 @@ func (s Source) Discover() (source.Features, error) {
 
 	// Merge features from hooks and files
 	for k, v := range featuresFromHooks {
-			if old, ok := featuresFromFiles[k]; ok {
-				log.Printf("WARNING: overriding label '%s': value changed from '%s' to '%s'",
-					k, old, v)
-			}
+		if old, ok := featuresFromFiles[k]; ok {
+			log.Printf("WARNING: overriding label '%s': value changed from '%s' to '%s'",
+				k, old, v)
+		}
 		featuresFromFiles[k] = v
 	}
 
