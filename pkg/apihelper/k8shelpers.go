@@ -25,8 +25,6 @@ import (
 
 // Implements APIHelpers
 type K8sHelpers struct {
-	AnnotationNs string
-	LabelNs      string
 }
 
 func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
