@@ -56,6 +56,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		for k, _ := range fakeFeatureLabels {
 			fakeFeatureLabelNames = append(fakeFeatureLabelNames, k)
 		}
+		sort.Strings(fakeFeatureLabelNames)
 		fakeAnnotations["feature-labels"] = strings.Join(fakeFeatureLabelNames, ",")
 
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
@@ -80,8 +81,8 @@ func TestUpdateNodeFeatures(t *testing.T) {
 					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
 				}
 				So(len(mockNode.Annotations), ShouldEqual, len(fakeAnnotations))
-				for k, v := range fakeFeatureLabels {
-					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
+				for k, v := range fakeAnnotations {
+					So(mockNode.Annotations[annotationNs+k], ShouldEqual, v)
 				}
 			})
 		})
