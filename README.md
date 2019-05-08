@@ -424,9 +424,9 @@ possible security implications.
 ### System requirements
 
 1. Linux (x86_64/Arm64)
-1. [kubectl] [kubectl-setup] (properly set up and configured to work with your
+1. [kubectl][kubectl-setup] (properly set up and configured to work with your
    Kubernetes cluster)
-1. [Docker] [docker-down] (only required to build and push docker images)
+1. [Docker][docker-down] (only required to build and push docker images)
 
 ### Usage
 
@@ -667,8 +667,8 @@ A demo on the benefits of using node feature discovery can be found in [demo](de
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
 [intel-sst]: https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
 [sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
-[docker-down]: https://docs.docker.com/engine/installation
+[docker-down]: https://docs.docker.com/install
 [golang-down]: https://golang.org/dl
 [gcc-down]: https://gcc.gnu.org
-[kubectl-setup]: https://coreos.com/kubernetes/docs/latest/configure-kubectl.html
+[kubectl-setup]: https://kubernetes.io/docs/tasks/tools/install-kubectl
 [node-sel]: http://kubernetes.io/docs/user-guide/node-selection
