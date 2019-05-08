@@ -203,14 +203,15 @@ func updateMasterNode(helper apihelper.APIHelpers) error {
 }
 
 // Filter labels if whitelist has been defined
-func filterFeatureLabels(labels *Labels, labelWhiteList *regexp.Regexp) {
-	for name := range *labels {
+func filterFeatureLabels(labels Labels, labelWhiteList *regexp.Regexp) Labels {
+	for name := range labels {
 		// Skip if label doesn't match labelWhiteList
 		if !labelWhiteList.MatchString(name) {
 			stderrLogger.Printf("%s does not match the whitelist (%s) and will not be published.", name, labelWhiteList.String())
-			delete(*labels, name)
+			delete(labels, name)
 		}
 	}
+	return labels
 }
 
 // Implement LabelerServer
@@ -246,17 +247,19 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 	}
 	stdoutLogger.Printf("REQUEST Node: %s NFD-version: %s Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
 
+	labels := filterFeatureLabels(r.Labels, s.args.LabelWhiteList)
+
 	if !s.args.NoPublish {
 		// Advertise NFD worker version and label names as annotations
-		keys := make([]string, 0, len(r.Labels))
-		for k, _ := range r.Labels {
+		keys := make([]string, 0, len(labels))
+		for k, _ := range labels {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 		annotations := Annotations{"worker.version": r.NfdVersion,
 			"feature-labels": strings.Join(keys, ",")}
 
-		err := updateNodeFeatures(s.apiHelper, r.NodeName, r.Labels, annotations)
+		err := updateNodeFeatures(s.apiHelper, r.NodeName, labels, annotations)
 		if err != nil {
 			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
 			return &pb.SetLabelsReply{}, err

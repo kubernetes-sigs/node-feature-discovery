@@ -17,6 +17,8 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -54,6 +56,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		for k, _ := range fakeFeatureLabels {
 			fakeFeatureLabelNames = append(fakeFeatureLabelNames, k)
 		}
+		sort.Strings(fakeFeatureLabelNames)
 		fakeAnnotations["feature-labels"] = strings.Join(fakeFeatureLabelNames, ",")
 
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
@@ -78,8 +81,8 @@ func TestUpdateNodeFeatures(t *testing.T) {
 					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
 				}
 				So(len(mockNode.Annotations), ShouldEqual, len(fakeAnnotations))
-				for k, v := range fakeFeatureLabels {
-					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
+				for k, v := range fakeAnnotations {
+					So(mockNode.Annotations[annotationNs+k], ShouldEqual, v)
 				}
 			})
 		})
@@ -182,9 +185,18 @@ func TestSetLabels(t *testing.T) {
 		mockHelper := &apihelper.MockAPIHelpers{}
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
-		mockServer := labelerServer{args: Args{}, apiHelper: mockHelper}
+		mockServer := labelerServer{args: Args{LabelWhiteList: regexp.MustCompile("")}, apiHelper: mockHelper}
 		mockCtx := context.Background()
-		mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: map[string]string{"feature-1": "val-1"}}
+		mockLabels := map[string]string{"feature-1": "val-1", "feature-2": "val-2", "feature-3": "val-3"}
+		mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
+
+		mockLabelNames := make([]string, 0, len(mockLabels))
+		for k := range mockLabels {
+			mockLabelNames = append(mockLabelNames, k)
+		}
+		sort.Strings(mockLabelNames)
+		expectedAnnotations := map[string]string{"worker.version": workerVer}
+		expectedAnnotations["feature-labels"] = strings.Join(mockLabelNames, ",")
 
 		Convey("When node update succeeds", func() {
 			mockHelper.On("GetClient").Return(mockClient, nil)
@@ -193,6 +205,35 @@ func TestSetLabels(t *testing.T) {
 			_, err := mockServer.SetLabels(mockCtx, mockReq)
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
+			})
+			Convey("Node object should have updated with labels and annotations", func() {
+				So(len(mockNode.Labels), ShouldEqual, len(mockLabels))
+				for k, v := range mockLabels {
+					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
+				}
+				So(len(mockNode.Annotations), ShouldEqual, len(expectedAnnotations))
+				for k, v := range expectedAnnotations {
+					So(mockNode.Annotations[annotationNs+k], ShouldEqual, v)
+				}
+			})
+		})
+
+		Convey("When --label-whitelist is specified", func() {
+			mockServer.args.LabelWhiteList = regexp.MustCompile("^f.*2$")
+			mockHelper.On("GetClient").Return(mockClient, nil)
+			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
+			mockHelper.On("UpdateNode", mockClient, mockNode).Return(nil)
+			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			Convey("Error is nil", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Node object should only have whitelisted labels", func() {
+				So(len(mockNode.Labels), ShouldEqual, 1)
+				So(mockNode.Labels, ShouldResemble, map[string]string{labelNs + "feature-2": "val-2"})
+
+				a := map[string]string{annotationNs + "worker.version": workerVer, annotationNs + "feature-labels": "feature-2"}
+				So(len(mockNode.Annotations), ShouldEqual, len(a))
+				So(mockNode.Annotations, ShouldResemble, a)
 			})
 		})
 
