@@ -421,6 +421,13 @@ directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
 
 ## Getting started
+
+For a stable version with ready-built images see the
+[latest released version](https://github.com/kubernetes-sigs/node-feature-discovery/tree/v0.3.0) ([release notes](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest)).
+
+If you want to use the latest development version (master branch) you need to
+[build your own custom image](#building-from-source).
+
 ### System requirements
 
 1. Linux (x86_64/Arm64)
@@ -433,9 +440,11 @@ possible security implications.
 #### nfd-master
 
 Nfd-master runs as a DaemonSet, by default in the master node(s) only. You can
-use the template spec provided to deploy nfd-master:
+use the template spec provided to deploy nfd-master. You only need to update the
+template to use the correct image:
 ```
-kubectl create -f nfd-master.yaml.template
+sed -E s'/^(\s*)image:.+$/\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>/' nfd-master.yaml.template > nfd-master.yaml
+kubectl create -f nfd-master.yaml
 ```
 Nfd-master listens for connections from nfd-worker(s) and connects to the
 Kubernetes API server to adds node labels advertised by them.
@@ -450,9 +459,11 @@ labels. The provided template will configure these for you.
 
 Nfd-worker is preferably run as a Kubernetes DaemonSet. There is an
 example spec that can be used as a template, or, as is when just trying out the
-service:
+service. Similarly to nfd-master above, you need to update the
+template with the correct image:
 ```
-kubectl create -f nfd-worker-daemonset.yaml.template
+sed -E s'/^(\s*)image:.+$/\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>/' nfd-worker-daemonset.yaml.template > nfd-worker-daemonset.yaml
+kubectl create -f nfd-worker-daemonset.yaml
 ```
 
 Nfd-worker connects to the nfd-master service to advertise hardware features.
@@ -465,7 +476,7 @@ Feature discovery can alternatively be configured as a one-shot job. There is
 an example script in this repo that demonstrates how to deploy the job in the cluster.
 
 ```
-./label-nodes.sh
+./label-nodes.sh <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>
 ```
 
 The label-nodes.sh script tries to launch as many jobs as there are Ready nodes.
@@ -476,7 +487,8 @@ For example, if some node is tainted NoSchedule or fails to start a job for some
 
 You can also run nfd-master and nfd-worker inside a single pod:
 ```
-kubectl apply -f nfd-daemonset-combined.yaml.template
+sed -E s'/^(\s*)image:.+$/\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>/' nfd-daemonset-combined.yaml.template > nfd-daemonset-combined.yaml
+kubectl apply -f nfd-daemonset-combined.yaml
 ```
 Similar to the nfd-worker setup above, this creates a DaemonSet that schedules
 an NFD Pod an all worker nodes, with the difference that the Pod also also
