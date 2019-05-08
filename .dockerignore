@@ -1,4 +1,5 @@
-node-feature-discovery
-node-feature-discovery-job.json
-vendor/
 demo/
+.dockerignore
+.git*
+node-feature-discovery-job.yaml
+vendor/
