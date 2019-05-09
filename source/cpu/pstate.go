@@ -14,42 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pstate
+package cpu
 
 import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
-
-	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-// Source implements FeatureSource.
-type Source struct{}
-
-// Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "pstate" }
-
 // Discover returns feature names for p-state related features such as turbo boost.
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
-
+func turboEnabled() (bool, error) {
 	// On Arm platform, the frequency boost mechanism is software-based.
 	// So skip pstate detection on Arm.
 	switch runtime.GOARCH {
 	case "arm64":
-		return features, nil
+		return false, nil
 	}
 
 	// Only looking for turbo boost for now...
 	bytes, err := ioutil.ReadFile("/sys/devices/system/cpu/intel_pstate/no_turbo")
 	if err != nil {
-		return nil, fmt.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
+		return false, fmt.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
 	}
 	if bytes[0] == byte('0') {
-		// Turbo boost is enabled.
-		features["turbo"] = true
+		return true, nil
 	}
 
-	return features, nil
+	return false, nil
 }

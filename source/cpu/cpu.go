@@ -52,6 +52,26 @@ func (s Source) Discover() (source.Features, error) {
 		features["power.sst_bf.enabled"] = true
 	}
 
+	// Detect CPUID
+	cpuidFlags := getCpuidFlags()
+	for _, f := range cpuidFlags {
+		features["cpuid."+f] = true
+	}
+
+	// Detect turbo boost
+	turbo, err := turboEnabled()
+	if err != nil {
+		log.Printf("ERROR: %v", err)
+	} else if turbo {
+		features["pstate.turbo"] = true
+	}
+
+	// Detect RDT features
+	rdt := discoverRDT()
+	for _, f := range rdt {
+		features["rdt."+f] = true
+	}
+
 	return features, nil
 }
 

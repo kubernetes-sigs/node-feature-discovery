@@ -32,7 +32,7 @@ func TestArgsParse(t *testing.T) {
 				So(args.SleepInterval, ShouldEqual, 60*time.Second)
 				So(args.NoPublish, ShouldBeTrue)
 				So(args.Oneshot, ShouldBeTrue)
-				So(args.Sources, ShouldResemble, []string{"cpu", "cpuid", "iommu", "kernel", "local", "memory", "network", "pci", "pstate", "rdt", "storage", "system"})
+				So(args.Sources, ShouldResemble, []string{"cpu", "iommu", "kernel", "local", "memory", "network", "pci", "storage", "system"})
 				So(len(args.LabelWhiteList), ShouldEqual, 0)
 				So(err, ShouldBeNil)
 			})
@@ -56,7 +56,7 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("args.labelWhiteList is set to appropriate value and args.sources is set to default value", func() {
 				So(args.NoPublish, ShouldBeFalse)
-				So(args.Sources, ShouldResemble, []string{"cpu", "cpuid", "iommu", "kernel", "local", "memory", "network", "pci", "pstate", "rdt", "storage", "system"})
+				So(args.Sources, ShouldResemble, []string{"cpu", "iommu", "kernel", "local", "memory", "network", "pci", "storage", "system"})
 				So(args.LabelWhiteList, ShouldResemble, ".*rdt.*")
 				So(err, ShouldBeNil)
 			})

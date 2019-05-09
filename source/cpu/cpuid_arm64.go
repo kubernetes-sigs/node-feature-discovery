@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cpuid
+package cpu
 
 /*
 #include <sys/auxv.h>
@@ -84,7 +84,7 @@ var flagNames_arm64 = map[uint64]string{
 	CPU_ARM64_FEATURE_SVE:      "SVE",
 }
 
-func getFeaturesFromHWCAP() []string {
+func getCpuidFlags() []string {
 	r := make([]string, 0, 20)
 	hwcap := uint64(C.gethwcap())
 	for i := uint(0); i < 64; i++ {
@@ -95,16 +95,4 @@ func getFeaturesFromHWCAP() []string {
 		}
 	}
 	return r
-}
-
-// Discover returns feature names for all the supported CPU features.
-func (s Source) Discover() (source.Features, error) {
-	// Get the cpu features as strings
-	features := source.Features{}
-
-	for _, f := range getFeaturesFromHWCAP() {
-		features[f] = true
-	}
-
-	return features, nil
 }

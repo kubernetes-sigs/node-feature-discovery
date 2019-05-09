@@ -10,5 +10,5 @@ spec:
         - containerPort: 3351
           hostPort: 10001
   nodeSelector:
-    feature.node.kubernetes.io/pstate-turbo: 'true'
+    feature.node.kubernetes.io/cpu-pstate.turbo: 'true'
   restartPolicy: Never
