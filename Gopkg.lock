@@ -37,14 +37,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:1ba1d79f2810270045c328ae5d674321db34e3aae468eb4233883b473c5c0467"
-  name = "github.com/golang/glog"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
-
-[[projects]]
   digest = "1:4c0989ca0bcd10799064318923b9bc2db6b4d6338dd75f3f2d86c3511aaaf5cf"
   name = "github.com/golang/protobuf"
   packages = [
@@ -544,7 +536,6 @@
   input-imports = [
     "github.com/docopt/docopt-go",
     "github.com/ghodss/yaml",
-    "github.com/golang/glog",
     "github.com/golang/protobuf/proto",
     "github.com/klauspost/cpuid",
     "github.com/smartystreets/goconvey/convey",
@@ -552,8 +543,11 @@
     "github.com/vektra/errors",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/credentials",
+    "google.golang.org/grpc/peer",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/util/validation",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
   ]
