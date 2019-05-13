@@ -26,10 +26,6 @@ unsigned long gethwcap() {
 */
 import "C"
 
-import (
-	"sigs.k8s.io/node-feature-discovery/source"
-)
-
 /* all special features for arm64 should be defined here */
 const (
 	/* extension instructions */
