@@ -215,6 +215,16 @@ such as restricting discovered features with the --label-whitelist option._
 | <br>                    | RDTL2CA            | Intel L2 Cache Allocation Technology
 | <br>                    | RDTMBA             | Intel Memory Bandwidth Allocation (MBA) Technology
 
+The (sub-)set of CPUID attributes to publish is configurable via the
+`attributeBlacklist` and `attributeWhitelist` cpuid options of the cpu source.
+If whitelist is specified, only whitelisted attributes will be published. With
+blacklist, only blacklisted attributes are filtered out. `attributeWhitelist`
+has priority over `attributeBlacklist`.  For examples and more information
+about configurability, see [Configuration Options](#configuration-options).
+By default, the following CPUID flags have been blacklisted:
+BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT,
+RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
+
 **NOTE** The cpuid features advertise *supported* CPU capabilities, that is, a
 capability might be supported but not enabled.
 
@@ -227,11 +237,6 @@ capability might be supported but not enabled.
 | AESNI     | Advanced Encryption Standard (AES) New Instructions (AES-NI)
 | AVX       | Advanced Vector Extensions (AVX)
 | AVX2      | Advanced Vector Extensions 2 (AVX2)
-| BMI1      | Bit Manipulation Instruction Set 1 (BMI)
-| BMI2      | Bit Manipulation Instruction Set 2 (BMI2)
-| SSE4.1    | Streaming SIMD Extensions 4.1 (SSE4.1)
-| SSE4.2    | Streaming SIMD Extensions 4.2 (SSE4.2)
-| SGX       | Software Guard Extensions (SGX)
 
 #### Arm64 CPUID Attribute (Partial List)
 
@@ -552,7 +557,8 @@ Configuration options specified from the command line will override those read
 from the config file.
 
 Currently, the only available configuration options are related to the
-[PCI](#pci-features) and [Kernel](#kernel-features) feature sources.
+[CPU](#cpu-features), [PCI](#pci-features) and [Kernel](#kernel-features)
+feature sources.
 
 ## Building from source
 
