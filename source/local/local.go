@@ -71,9 +71,15 @@ func parseFeatures(lines [][]byte, prefix string) source.Features {
 			lineSplit := strings.SplitN(string(line), "=", 2)
 
 			// Check if we need to add prefix
-			key := prefix + "-" + lineSplit[0]
-			if lineSplit[0][0] == '/' {
-				key = lineSplit[0][1:]
+			var key string
+			if strings.Contains(lineSplit[0], "/") {
+				if lineSplit[0][0] == '/' {
+					key = lineSplit[0][1:]
+				} else {
+					key = lineSplit[0]
+				}
+			} else {
+				key = prefix + "-" + lineSplit[0]
 			}
 
 			// Check if it's a boolean value

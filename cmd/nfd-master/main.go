@@ -21,6 +21,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/docopt/docopt-go"
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
@@ -64,27 +65,29 @@ func argsParse(argv []string) (master.Args, error) {
   Usage:
   %s [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
-     [--verify-node-name]
+     [--verify-node-name] [--extra-label-ns=<list>]
   %s -h | --help
   %s --version
 
   Options:
-  -h --help                   Show this screen.
-  --version                   Output version and exit.
-  --port=<port>               Port on which to listen for connections.
-                              [Default: 8080]
-  --ca-file=<path>            Root certificate for verifying connections
-                              [Default: ]
-  --cert-file=<path>          Certificate used for authenticating connections
-                              [Default: ]
-  --key-file=<path>           Private key matching --cert-file
-                              [Default: ]
-  --verify-node-name		  Verify worker node name against CN from the TLS
-                              certificate. Only has effect when TLS authentication
-                              has been enabled.
-  --no-publish                Do not publish feature labels
-  --label-whitelist=<pattern> Regular expression to filter label names to
-                              publish to the Kubernetes API server. [Default: ]`,
+  -h --help                       Show this screen.
+  --version                       Output version and exit.
+  --port=<port>                   Port on which to listen for connections.
+                                  [Default: 8080]
+  --ca-file=<path>                Root certificate for verifying connections
+                                  [Default: ]
+  --cert-file=<path>              Certificate used for authenticating connections
+                                  [Default: ]
+  --key-file=<path>               Private key matching --cert-file
+                                  [Default: ]
+  --verify-node-name              Verify worker node name against CN from the TLS
+                                  certificate. Only has effect when TLS authentication
+                                  has been enabled.
+  --no-publish                    Do not publish feature labels
+  --label-whitelist=<pattern>     Regular expression to filter label names to
+                                  publish to the Kubernetes API server. [Default: ]
+  --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
+                                  [Default: ]`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -109,6 +112,7 @@ func argsParse(argv []string) (master.Args, error) {
 		return args, fmt.Errorf("error parsing whitelist regex (%s): %s", arguments["--label-whitelist"], err)
 	}
 	args.VerifyNodeName = arguments["--verify-node-name"].(bool)
+	args.ExtraLabelNs = strings.Split(arguments["--extra-label-ns"].(string), ",")
 
 	return args, nil
 }

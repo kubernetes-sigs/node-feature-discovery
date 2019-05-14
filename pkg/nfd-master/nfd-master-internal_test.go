@@ -237,6 +237,29 @@ func TestSetLabels(t *testing.T) {
 			})
 		})
 
+		Convey("When --extra-label-ns is specified", func() {
+			mockServer.args.ExtraLabelNs = []string{"valid.ns"}
+			mockHelper.On("GetClient").Return(mockClient, nil)
+			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
+			mockHelper.On("UpdateNode", mockClient, mockNode).Return(nil)
+			mockLabels := map[string]string{"feature-1": "val-1",
+				"valid.ns/feature-2":   "val-2",
+				"invalid.ns/feature-3": "val-3"}
+			mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
+			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			Convey("Error is nil", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Node object should only have allowed label namespaces", func() {
+				So(len(mockNode.Labels), ShouldEqual, 2)
+				So(mockNode.Labels, ShouldResemble, map[string]string{labelNs + "feature-1": "val-1", "valid.ns/feature-2": "val-2"})
+
+				a := map[string]string{annotationNs + "worker.version": workerVer, annotationNs + "feature-labels": "feature-1,valid.ns/feature-2"}
+				So(len(mockNode.Annotations), ShouldEqual, len(a))
+				So(mockNode.Annotations, ShouldResemble, a)
+			})
+		})
+
 		mockErr := errors.New("mock-error")
 		Convey("When node update fails", func() {
 			mockHelper.On("GetClient").Return(mockClient, mockErr)
