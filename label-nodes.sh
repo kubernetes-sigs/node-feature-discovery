@@ -14,6 +14,6 @@ NumNodes=$(kubectl get nodes | grep -i ' ready ' | wc -l)
 # We set the NODE_NAME environemnt variable to get the Kubernetes node object.
 sed -E -e "s/COMPLETION_COUNT/$NumNodes/" \
     -e "s/PARALLELISM_COUNT/$NumNodes/" \
-    -e "s/^(\s*)image:.+$/\1image: $1/" \
+    -e "s,^(\s*)image:.+$,\1image: $1," \
     nfd-worker-job.yaml.template > nfd-worker-job.yaml
 kubectl create -f nfd-worker-job.yaml

@@ -444,7 +444,7 @@ Nfd-master runs as a DaemonSet, by default in the master node(s) only. You can
 use the template spec provided to deploy nfd-master. You only need to update the
 template to use the correct image:
 ```
-sed -E s'/^(\s*)image:.+$/\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>/' nfd-master.yaml.template > nfd-master.yaml
+sed -E s',^(\s*)image:.+$,\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>,' nfd-master.yaml.template > nfd-master.yaml
 kubectl create -f nfd-master.yaml
 ```
 Nfd-master listens for connections from nfd-worker(s) and connects to the
@@ -463,7 +463,7 @@ example spec that can be used as a template, or, as is when just trying out the
 service. Similarly to nfd-master above, you need to update the
 template with the correct image:
 ```
-sed -E s'/^(\s*)image:.+$/\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>/' nfd-worker-daemonset.yaml.template > nfd-worker-daemonset.yaml
+sed -E s',^(\s*)image:.+$,\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>,' nfd-worker-daemonset.yaml.template > nfd-worker-daemonset.yaml
 kubectl create -f nfd-worker-daemonset.yaml
 ```
 
@@ -488,7 +488,7 @@ For example, if some node is tainted NoSchedule or fails to start a job for some
 
 You can also run nfd-master and nfd-worker inside a single pod:
 ```
-sed -E s'/^(\s*)image:.+$/\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>/' nfd-daemonset-combined.yaml.template > nfd-daemonset-combined.yaml
+sed -E s',^(\s*)image:.+$,\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>,' nfd-daemonset-combined.yaml.template > nfd-daemonset-combined.yaml
 kubectl apply -f nfd-daemonset-combined.yaml
 ```
 Similar to the nfd-worker setup above, this creates a DaemonSet that schedules
