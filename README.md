@@ -420,7 +420,7 @@ possible security implications.
 ## Getting started
 
 For a stable version with ready-built images see the
-[latest released version](https://github.com/kubernetes-sigs/node-feature-discovery/tree/v0.3.0) ([release notes](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest)).
+[latest released version](https://github.com/kubernetes-sigs/node-feature-discovery/tree/v0.4.0) ([release notes](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest)).
 
 If you want to use the latest development version (master branch) you need to
 [build your own custom image](#building-from-source).
@@ -437,8 +437,9 @@ If you want to use the latest development version (master branch) you need to
 #### nfd-master
 
 Nfd-master runs as a DaemonSet, by default in the master node(s) only. You can
-use the template spec provided to deploy nfd-master. You only need to update the
-template to use the correct image:
+use the template spec provided to deploy nfd-master. If deploying a custom
+image, you need to update the template to use the correct image (for the latest
+released version, omit the `sed` part):
 ```
 sed -E s',^(\s*)image:.+$,\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>,' nfd-master.yaml.template > nfd-master.yaml
 kubectl create -f nfd-master.yaml
@@ -456,8 +457,9 @@ labels. The provided template will configure these for you.
 
 Nfd-worker is preferably run as a Kubernetes DaemonSet. There is an
 example spec that can be used as a template, or, as is when just trying out the
-service. Similarly to nfd-master above, you need to update the
-template with the correct image:
+service. Similarly to nfd-master above, if using a custom-built image you need
+to update the template with the correct image (for the latest release, omit the
+`sed` part):
 ```
 sed -E s',^(\s*)image:.+$,\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>,' nfd-worker-daemonset.yaml.template > nfd-worker-daemonset.yaml
 kubectl create -f nfd-worker-daemonset.yaml
@@ -473,7 +475,7 @@ Feature discovery can alternatively be configured as a one-shot job. There is
 an example script in this repo that demonstrates how to deploy the job in the cluster.
 
 ```
-./label-nodes.sh <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>
+./label-nodes.sh [<YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>]
 ```
 
 The label-nodes.sh script tries to launch as many jobs as there are Ready nodes.
@@ -482,7 +484,8 @@ For example, if some node is tainted NoSchedule or fails to start a job for some
 
 #### nfd-master and nfd-worker in the same Pod
 
-You can also run nfd-master and nfd-worker inside a single pod:
+You can also run nfd-master and nfd-worker inside a single pod (skip the `sed`
+part if running the latest released version):
 ```
 sed -E s',^(\s*)image:.+$,\1image: <YOUR_IMAGE_REPO>:<YOUR_IMAGE_TAG>,' nfd-daemonset-combined.yaml.template > nfd-daemonset-combined.yaml
 kubectl apply -f nfd-daemonset-combined.yaml
