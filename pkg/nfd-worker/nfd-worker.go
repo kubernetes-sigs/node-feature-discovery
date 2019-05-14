@@ -58,6 +58,7 @@ var (
 // Global config
 type NFDConfig struct {
 	Sources struct {
+		Cpu    *cpu.NFDConfig    `json:"cpu,omitempty"`
 		Kernel *kernel.NFDConfig `json:"kernel,omitempty"`
 		Pci    *pci.NFDConfig    `json:"pci,omitempty"`
 	} `json:"sources,omitempty"`
@@ -197,6 +198,7 @@ func (w *nfdWorker) Run() error {
 
 // Parse configuration options
 func configParse(filepath string, overrides string) error {
+	config.Sources.Cpu = &cpu.Config
 	config.Sources.Kernel = &kernel.Config
 	config.Sources.Pci = &pci.Config
 
