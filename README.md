@@ -1,6 +1,6 @@
 # Node feature discovery for [Kubernetes](https://kubernetes.io)
 
-[![Build Status](https://api.travis-ci.org/kubernetes-sigs/node-feature-discovery.svg?branch=master)](https://travis-ci.com/kubernetes-sigs/node-feature-discovery)
+[![Build Status](https://api.travis-ci.org/kubernetes-sigs/node-feature-discovery.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/node-feature-discovery)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/node-feature-discovery)](https://goreportcard.com/report/github.com/kubernetes-sigs/node-feature-discovery)
 
 - [Overview](#overview)
@@ -36,7 +36,7 @@ purposes. This is useful for checking features-detection.
 ### NFD-Master
 
 When running as a standalone container labeling is expected to fail because
-Kubernetes API is not available. Thus, it is recommended to use --no-publish
+Kubernetes API is not available. Thus, it is recommended to use `--no-publish`
 command line flag. E.g.
 ```
 $ docker run --rm --name=nfd-test <NFD_CONTAINER_IMAGE> nfd-master --no-publish
@@ -76,12 +76,11 @@ nfd-master.
                                   publish to the Kubernetes API server. [Default: ]
   --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
                                   [Default: ]
-
 ```
 
 ### NFD-Worker
 
-In order to run `nfd-worker` as a "stand-alone" container against your
+In order to run nfd-worker as a "stand-alone" container against your
 standalone nfd-master you need to run them in the same network namespace:
 ```
 $ docker run --rm --network=container:nfd-test <NFD_CONTAINER_IMAGE> nfd-worker
@@ -136,13 +135,12 @@ nfd-worker.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
                               sleep). [Default: 60s]
-
 ```
 **NOTE** Some feature sources need certain directories and/or files from the
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/node-feature-discovery-daemonset.yaml.template)
+[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
 
 ## Feature discovery
@@ -179,8 +177,6 @@ The last component (i.e. `attribute-name`) is optional, and only used if a
 feature logically has sub-hierarchy, e.g. `sriov.capable` and
 `sriov.configure` from the `network` source.
 
-_Note: only features that are available on a given node are labeled, so
-the only label value published for features is the string `"true"`._
 
 ```json
 {
@@ -198,7 +194,7 @@ the only label value published for features is the string `"true"`._
 
 The `--sources` flag controls which sources to use for discovery.
 
-_Note: Consecutive runs of node-feature-discovery will update the labels on a
+_Note: Consecutive runs of nfd-worker will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
 such as restricting discovered features with the --label-whitelist option._
