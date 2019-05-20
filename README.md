@@ -516,7 +516,7 @@ each nfd-worker requires a individual node-specific TLS certificate.
 
 #### Usage demo
 
-[![asciicast](https://asciinema.org/a/11wir751y89617oemwnsgli4a.svg)](https://asciinema.org/a/11wir751y89617oemwnsgli4a)
+[![asciicast](https://asciinema.org/a/247316.svg)](https://asciinema.org/a/247316)
 
 ### Configuration options
 
