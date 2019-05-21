@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
@@ -81,6 +82,11 @@ func (s Source) Discover() (source.Features, error) {
 				}
 			}
 		}
+
+		if bridgeDir, _ := os.Stat("/sys/class/net/" + netInterface.Name + "/bridge"); bridgeDir != nil {
+			features["bridge."+netInterface.Name] = true
+		}
+
 	}
 	return features, nil
 }

@@ -281,10 +281,11 @@ See [configuration options](#configuration-options) for more information.
 
 ### Network Features
 
-| Feature | Attribute  | Description                                           |
-| ------- | ---------- | ----------------------------------------------------- |
-| sriov   | capable    | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
-| <br>    | configured | SR-IOV virtual functions have been configured
+| Feature | Attribute    | Description                                           |
+| ------- | ------------ | ----------------------------------------------------- |
+| sriov   | capable      | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
+| <br>    | configured   | SR-IOV virtual functions have been configured
+| bridge  | &lt;name&gt; | Network bridge with given &lt;name&gt; is present on node
 
 ### PCI Features
 
