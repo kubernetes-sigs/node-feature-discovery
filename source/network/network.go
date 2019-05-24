@@ -22,10 +22,16 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+)
+
+const (
+	// Linux bridge interface capacity (as in linux BR_MAX_PORTS)
+	BR_MAX_PORTS = 1024
 )
 
 // Source implements FeatureSource.
@@ -83,4 +89,27 @@ func (s Source) Discover() (source.Features, error) {
 		}
 	}
 	return features, nil
+}
+
+// returns a all capacity resources of the node
+func (s Source) DiscoverCapacity() (source.FeatureCapacities, error) {
+	return s.discoverBridgeResources()
+}
+
+// returns linux bridge resources of the node
+func (s Source) discoverBridgeResources() (source.FeatureCapacities, error) {
+	capacities := source.FeatureCapacities{}
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		return nil, fmt.Errorf("can't obtain the network interfaces details: %s", err.Error())
+	}
+	for _, netInterface := range netInterfaces {
+		if strings.Contains(netInterface.Flags.String(), "up") && !strings.Contains(netInterface.Flags.String(), "loopback") {
+
+			if bridgeDir, _ := os.Stat("/sys/class/net/" + netInterface.Name + "/bridge"); bridgeDir != nil {
+				capacities["bridge."+netInterface.Name] = BR_MAX_PORTS
+			}
+		}
+	}
+	return capacities, nil
 }

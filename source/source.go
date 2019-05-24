@@ -32,6 +32,8 @@ func (b BoolFeatureValue) String() string {
 
 type Features map[string]FeatureValue
 
+type FeatureCapacities map[string]int32
+
 // FeatureSource represents a source of a discovered node feature.
 type FeatureSource interface {
 	// Name returns a friendly name for this source of node feature.
@@ -39,4 +41,13 @@ type FeatureSource interface {
 
 	// Discover returns discovered features for this node.
 	Discover() (Features, error)
+}
+
+// FeatureSource represents a source of a discovered node feature.
+type FeatureCapacitySource interface {
+	// Name returns a friendly name for this source of node feature.
+	Name() string
+
+	// Discover returns discovered features for this node.
+	DiscoverCapacity() (FeatureCapacities, error)
 }

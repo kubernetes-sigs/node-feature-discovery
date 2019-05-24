@@ -16,6 +16,7 @@ rules:
   - ""
   resources:
   - nodes
+  - nodes/status
   verbs:
   - get
   - patch

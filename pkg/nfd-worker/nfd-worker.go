@@ -69,6 +69,9 @@ var config = NFDConfig{}
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
+// Capacities are Kubernetes representation of disovered node capacity
+type Capacities map[string]int32
+
 // Command line arguments
 type Args struct {
 	LabelWhiteList     string
@@ -83,6 +86,7 @@ type Args struct {
 	ServerNameOverride string
 	SleepInterval      time.Duration
 	Sources            []string
+	CapacityReport     bool
 }
 
 type NfdWorker interface {
@@ -130,7 +134,7 @@ func (w *nfdWorker) Run() error {
 	}
 
 	// Configure the parameters for feature discovery.
-	enabledSources, labelWhiteList, err := configureParameters(w.args.Sources, w.args.LabelWhiteList)
+	enabledSources, capacitySources, labelWhiteList, err := configureParameters(w.args.Sources, w.args.LabelWhiteList)
 	if err != nil {
 		return fmt.Errorf("error occurred while configuring parameters: %s", err.Error())
 	}
@@ -172,10 +176,11 @@ func (w *nfdWorker) Run() error {
 	for {
 		// Get the set of feature labels.
 		labels := createFeatureLabels(enabledSources, labelWhiteList)
+		capacities := createFeatureCapacities(capacitySources, w.args.CapacityReport)
 
 		// Update the node with the feature labels.
 		if !w.args.NoPublish {
-			err := advertiseFeatureLabels(client, labels)
+			err := advertiseFeatureLabels(client, labels, capacities)
 			if err != nil {
 				return fmt.Errorf("failed to advertise labels: %s", err.Error())
 			}
@@ -224,7 +229,7 @@ func configParse(filepath string, overrides string) error {
 
 // configureParameters returns all the variables required to perform feature
 // discovery based on command line arguments.
-func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (enabledSources []source.FeatureSource, labelWhiteList *regexp.Regexp, err error) {
+func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (enabledSources []source.FeatureSource, capacitySources []source.FeatureCapacitySource, labelWhiteList *regexp.Regexp, err error) {
 	// A map for lookup
 	sourcesWhiteListMap := map[string]struct{}{}
 	for _, s := range sourcesWhiteList {
@@ -248,6 +253,10 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		local.Source{},
 	}
 
+	capacitySources = []source.FeatureCapacitySource{
+		network.Source{},
+	}
+
 	enabledSources = []source.FeatureSource{}
 	for _, s := range allSources {
 		if _, enabled := sourcesWhiteListMap[s.Name()]; enabled {
@@ -259,10 +268,27 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 	labelWhiteList, err = regexp.Compile(labelWhiteListStr)
 	if err != nil {
 		stderrLogger.Printf("error parsing whitelist regex (%s): %s", labelWhiteListStr, err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return enabledSources, labelWhiteList, nil
+	return enabledSources, capacitySources, labelWhiteList, nil
+}
+
+func createFeatureCapacities(sources []source.FeatureCapacitySource, enabled bool) Capacities {
+	capacities := Capacities{}
+	if !enabled {
+		return capacities
+	}
+	for _, source := range sources {
+		featureCapacities, err := source.DiscoverCapacity()
+		if err != nil {
+			stderrLogger.Printf("error discovering capacities for source %s: %s", source.Name(), err)
+		}
+		for k, v := range featureCapacities {
+			capacities[fmt.Sprintf("%s-%s", source.Name(), k)] = v
+		}
+	}
+	return capacities
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
@@ -346,13 +372,14 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 
 // advertiseFeatureLabels advertises the feature labels to a Kubernetes node
 // via the NFD server.
-func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
+func advertiseFeatureLabels(client pb.LabelerClient, labels Labels, capacities Capacities) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	stdoutLogger.Printf("Sendng labeling request nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
+		Capacities: capacities,
 		NfdVersion: version.Get(),
 		NodeName:   nodeName}
 	_, err := client.SetLabels(ctx, &labelReq)

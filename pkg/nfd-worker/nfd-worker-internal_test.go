@@ -117,7 +117,7 @@ func TestConfigureParameters(t *testing.T) {
 			sourcesWhiteList := []string{}
 			labelWhiteListStr := ""
 			emptyRegexp, _ := regexp.Compile("")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+			enabledSources, _, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error should not be produced", func() {
 				So(err, ShouldBeNil)
@@ -132,7 +132,7 @@ func TestConfigureParameters(t *testing.T) {
 			sourcesWhiteList := []string{"fake"}
 			labelWhiteListStr := ""
 			emptyRegexp, _ := regexp.Compile("")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+			enabledSources, _, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error should not be produced", func() {
 				So(err, ShouldBeNil)
@@ -147,7 +147,7 @@ func TestConfigureParameters(t *testing.T) {
 		Convey("When invalid labelWhiteListStr is passed", func() {
 			sourcesWhiteList := []string{""}
 			labelWhiteListStr := "*"
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+			enabledSources, _, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error is produced", func() {
 				So(enabledSources, ShouldBeNil)
@@ -160,7 +160,7 @@ func TestConfigureParameters(t *testing.T) {
 			sourcesWhiteList := []string{""}
 			labelWhiteListStr := ".*rdt.*"
 			expectRegexp, err := regexp.Compile(".*rdt.*")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+			enabledSources, _, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
 			Convey("Error should not be produced", func() {
 				So(err, ShouldBeNil)
@@ -228,7 +228,7 @@ func TestAdvertiseFeatureLabels(t *testing.T) {
 
 		Convey("Correct labeling request is sent", func() {
 			mockClient.On("SetLabels", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*labeler.SetLabelsRequest")).Return(&labeler.SetLabelsReply{}, nil)
-			err := advertiseFeatureLabels(mockClient, labels)
+			err := advertiseFeatureLabels(mockClient, labels, nil)
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
 			})
@@ -236,9 +236,54 @@ func TestAdvertiseFeatureLabels(t *testing.T) {
 		Convey("Labeling request fails", func() {
 			mockErr := errors.New("mock-error")
 			mockClient.On("SetLabels", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*labeler.SetLabelsRequest")).Return(&labeler.SetLabelsReply{}, mockErr)
-			err := advertiseFeatureLabels(mockClient, labels)
+			err := advertiseFeatureLabels(mockClient, labels, nil)
 			Convey("An error should be returned", func() {
 				So(err, ShouldEqual, mockErr)
+			})
+		})
+	})
+}
+
+func TestCapacityDiscoveryWithMockSources(t *testing.T) {
+	Convey("When I discover feature capacity from fake source and update the node using fake client", t, func() {
+		mockFeatureCapacitySource := new(source.MockFeatureSource)
+		fakeFeatureCapacitySourceName := "testCapacitySource"
+		fakeFeatureCapacityNames := []string{"testfeaturecapacity1", "testfeaturecapacity2", "testfeaturecapacity3"}
+		fakeFeatureCapacityValues := []int32{1, 2, 3}
+		fakeFeatureCapacities := source.FeatureCapacities{}
+		expectedCapacities := Capacities{}
+
+		for i, f := range fakeFeatureCapacityNames {
+			fakeFeatureCapacities[f] = fakeFeatureCapacityValues[i]
+			expectedCapacities[fakeFeatureCapacitySourceName+"-"+f] = fakeFeatureCapacityValues[i]
+		}
+		fakeFeatureCapacitySource := source.FeatureCapacitySource(mockFeatureCapacitySource)
+		capacitySources := []source.FeatureCapacitySource{fakeFeatureCapacitySource}
+
+		Convey("When get capacity from the mock source is successful", func() {
+			mockFeatureCapacitySource.On("Name").Return(fakeFeatureCapacitySourceName)
+			mockFeatureCapacitySource.On("DiscoverCapacity").Return(fakeFeatureCapacities, nil)
+			returnedCapacities := createFeatureCapacities(capacitySources, true)
+			Convey("Proper capacity is returned", func() {
+				So(returnedCapacities, ShouldResemble, expectedCapacities)
+			})
+		})
+
+		Convey("When get capacity from the mock source is not successful", func() {
+			expectedError := errors.New("fake error")
+			mockFeatureCapacitySource.On("Name").Return(fakeFeatureCapacitySourceName)
+			mockFeatureCapacitySource.On("DiscoverCapacity").Return(source.FeatureCapacities{}, expectedError)
+			returnedCapacities := createFeatureCapacities(capacitySources, true)
+			Convey("No capacity is returned", func() {
+				So(len(returnedCapacities), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When get capacity from the mock source is disabled", func() {
+			mockFeatureCapacitySource.On("DiscoverCapacity").Return(source.FeatureCapacities{}, nil)
+			returnedCapacities := createFeatureCapacities(capacitySources, false)
+			Convey("No capacity is returned", func() {
+				So(len(returnedCapacities), ShouldEqual, 0)
 			})
 		})
 	})

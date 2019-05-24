@@ -65,7 +65,7 @@ func argsParse(argv []string) (worker.Args, error) {
   %s [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
      [--options=<config>] [--server=<server>] [--server-name-override=<name>]
-     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
+     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>] [--enable-capacity-reporting]
   %s -h | --help
   %s --version
 
@@ -99,7 +99,8 @@ func argsParse(argv []string) (worker.Args, error) {
   --oneshot                   Label once and exit.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
-                              sleep). [Default: 60s]`,
+			      sleep). [Default: 60s]
+  --enable-capacity-reporting  Enable reporting of chosen resources as node capacity [Default: false]`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -126,5 +127,6 @@ func argsParse(argv []string) (worker.Args, error) {
 	if err != nil {
 		return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())
 	}
+	args.CapacityReport = arguments["--enable-capacity-reporting"].(bool)
 	return args, nil
 }

@@ -19,6 +19,7 @@ package nfdmaster
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -34,6 +35,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	api "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -45,6 +48,8 @@ const (
 
 	// Namespace for all NFD-related annotations
 	annotationNs = "nfd.node.kubernetes.io/"
+
+	capacityNs = "resource.node.kubernetes.io"
 )
 
 // package loggers
@@ -70,6 +75,7 @@ type Args struct {
 	NoPublish      bool
 	Port           int
 	VerifyNodeName bool
+	CapacityReport bool
 }
 
 type NfdMaster interface {
@@ -266,6 +272,7 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 	stdoutLogger.Printf("REQUEST Node: %s NFD-version: %s Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
 
 	labels := filterFeatureLabels(r.Labels, s.args.ExtraLabelNs, s.args.LabelWhiteList)
+	capacities := r.Capacities
 
 	if !s.args.NoPublish {
 		// Advertise NFD worker version and label names as annotations
@@ -281,6 +288,14 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 		if err != nil {
 			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
 			return &pb.SetLabelsReply{}, err
+		}
+
+		if s.args.CapacityReport && len(capacities) > 0 {
+			err := updateNodeCapacity(s.apiHelper, r.NodeName, capacities)
+			if err != nil {
+				stderrLogger.Printf("failed to update node capacity: %s", err.Error())
+				return &pb.SetLabelsReply{}, err
+			}
 		}
 	}
 	return &pb.SetLabelsReply{}, nil
@@ -362,4 +377,72 @@ func addAnnotations(n *api.Node, annotations map[string]string) {
 	for k, v := range annotations {
 		n.Annotations[annotationNs+k] = v
 	}
+}
+
+type patchOperation struct {
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value,omitempty"`
+}
+
+func updateNodeCapacity(helper apihelper.APIHelpers, nodeName string, capacities map[string]int32) error {
+	patchOperations := make([]patchOperation, 0)
+	reportedCapacities, err := getReportedCapacity(helper, nodeName)
+	if err != nil {
+		stderrLogger.Printf("Failed to retrieve existing node %s capacity: %s", nodeName, err.Error())
+		return err
+	}
+
+	// Remove all keys not received in request
+	for reportedCapacity, _ := range reportedCapacities {
+		if _, contains := capacities[reportedCapacity]; contains {
+			continue
+		}
+		patchOperations = append(patchOperations, patchOperation{
+			Op:   "remove",
+			Path: fmt.Sprintf("/status/capacity/%s~1%s", capacityNs, reportedCapacity),
+		})
+	}
+
+	for key, value := range capacities {
+		patchOperations = append(patchOperations, patchOperation{
+			Op:    "replace",
+			Path:  fmt.Sprintf("/status/capacity/%s~1%s", capacityNs, key),
+			Value: value,
+		})
+	}
+
+	if len(patchOperations) == 0 {
+		return nil
+	}
+	patchJson, err := json.Marshal(patchOperations)
+	cli, err := helper.GetClient()
+	_, err = cli.Core().Nodes().Patch(nodeName, types.JSONPatchType, patchJson, "status")
+	if err != nil {
+		stderrLogger.Printf("Failed to update node %s capacity: %s", nodeName, err.Error())
+		return err
+	}
+	return nil
+
+}
+
+func getReportedCapacity(helper apihelper.APIHelpers, nodeName string) (map[string]bool, error) {
+	reportedResources := make(map[string]bool)
+	clientset, _ := helper.GetClient()
+	node, err := clientset.
+		CoreV1().
+		Nodes().
+		Get(nodeName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node: %v", err)
+	}
+
+	for nodeResourceName, _ := range node.Status.Capacity {
+		splitNodeResourceName := strings.Split(nodeResourceName.String(), "/")
+		if len(splitNodeResourceName) == 2 && splitNodeResourceName[0] == capacityNs {
+			reportedResources[splitNodeResourceName[1]] = true
+		}
+	}
+
+	return reportedResources, nil
 }
