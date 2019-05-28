@@ -20,7 +20,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: <IMAGE_REPO>:<IMAGE_TAG>
+          image: quay.io/kubernetes_incubator/node-feature-discovery:v0.4.0
           name: nfd-worker
           command:
             - "nfd-worker"
