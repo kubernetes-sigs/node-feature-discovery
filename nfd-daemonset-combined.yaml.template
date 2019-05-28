@@ -5,7 +5,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: nfd-master
-  namespace: default
+  namespace: node-feature-discovery
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -32,7 +32,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: nfd-master
-  namespace: default
+  namespace: node-feature-discovery
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -40,6 +40,7 @@ metadata:
   labels:
     app: nfd
   name: nfd
+  namespace: node-feature-discovery
 spec:
   selector:
     matchLabels:

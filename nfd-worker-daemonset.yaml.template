@@ -4,6 +4,7 @@ metadata:
   labels:
     app: nfd-worker
   name: nfd-worker
+  namespace: node-feature-discovery
 spec:
   selector:
     matchLabels:
