@@ -1,4 +1,5 @@
-.PHONY: all test
+.PHONY: all test yamls
+.FORCE:
 
 IMAGE_BUILD_CMD := docker build
 
@@ -9,13 +10,27 @@ IMAGE_NAME := node-feature-discovery
 IMAGE_TAG_NAME := $(VERSION)
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
+K8S_NAMESPACE := kube-system
 
+yaml_templates := $(wildcard *.yaml.template)
+yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
 all: image
 
-image:
+image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
 		-t $(IMAGE_TAG) ./
+
+yamls: $(yaml_instances)
+
+%.yaml: %.yaml.template .FORCE
+	@echo "$@: namespace: ${K8S_NAMESPACE}"
+	@echo "$@: image: ${IMAGE_TAG}"
+	@sed -E \
+	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
+	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
+	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
+	     $< > $@
 
 mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"

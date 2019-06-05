@@ -4,6 +4,7 @@ metadata:
   labels:
     app: node-feature-discovery
   name: nfd-worker
+  namespace: node-feature-discovery
 spec:
   completions: COMPLETION_COUNT
   parallelism: PARALLELISM_COUNT
