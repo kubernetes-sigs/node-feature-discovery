@@ -25,6 +25,7 @@ import (
 	"regexp"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -70,8 +71,8 @@ func (s Source) Discover() (source.Features, error) {
 
 	// Check flags
 	for _, opt := range Config.ConfigOpts {
-		if _, ok := kconfig[opt]; ok {
-			features["config."+opt] = true
+		if val, ok := kconfig[opt]; ok {
+			features["config."+opt] = val
 		}
 	}
 
@@ -131,8 +132,8 @@ func readKconfigGzip(filename string) ([]byte, error) {
 }
 
 // Read kconfig into a map
-func parseKconfig() (map[string]bool, error) {
-	kconfig := map[string]bool{}
+func parseKconfig() (map[string]string, error) {
+	kconfig := map[string]string{}
 	raw := []byte(nil)
 	err := error(nil)
 
@@ -175,7 +176,14 @@ func parseKconfig() (map[string]bool, error) {
 	for _, line := range lines {
 		if m := re.FindStringSubmatch(string(line)); m != nil {
 			if m[2] == "y" || m[2] == "m" {
-				kconfig[m[1]] = true
+				kconfig[m[1]] = "true"
+			} else {
+				value := strings.Trim(m[2], `"`)
+				if len(value) > validation.LabelValueMaxLength {
+					logger.Printf("WARNING: ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
+					continue
+				}
+				kconfig[m[1]] = value
 			}
 		}
 	}
