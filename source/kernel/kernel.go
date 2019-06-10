@@ -180,7 +180,7 @@ func parseKconfig() (map[string]string, error) {
 			} else {
 				value := strings.Trim(m[2], `"`)
 				if len(value) > validation.LabelValueMaxLength {
-					logger.Printf("WARNING: ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
+					log.Printf("WARNING: ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
 					continue
 				}
 				kconfig[m[1]] = value
