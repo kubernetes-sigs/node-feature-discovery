@@ -44,11 +44,13 @@ func (s Source) Discover() (source.Features, error) {
 	}
 
 	// Detect NVDIMM
-	nv, err := hasNvdimm()
+	nv, err := detectNvdimm()
 	if err != nil {
-		log.Printf("ERROR: failed to detect presence of NVDIMM: %s", err)
-	} else if nv {
-		features["nv.present"] = true
+		log.Printf("ERROR: NVDIMM detection failed: %s", err)
+	} else {
+		for k, v := range nv {
+			features["nv."+k] = v
+		}
 	}
 
 	return features, nil
@@ -74,15 +76,33 @@ func isNuma() (bool, error) {
 	return false, nil
 }
 
-// Detect presence of NVDIMM devices
-func hasNvdimm() (bool, error) {
+// Detect NVDIMM devices and configuration
+func detectNvdimm() (map[string]bool, error) {
+	features := make(map[string]bool)
+
+	// Check presence of physical devices
 	devices, err := ioutil.ReadDir("/sys/class/nd/")
 	if err == nil {
 		if len(devices) > 0 {
-			return true, nil
+			features["present"] = true
 		}
-	} else if !os.IsNotExist(err) {
-		return false, err
+	} else if os.IsNotExist(err) {
+		return nil, nil
+	} else {
+		return nil, err
 	}
-	return false, nil
+
+	// Check presence of DAX-configured regions
+	devices, err = ioutil.ReadDir("/sys/bus/nd/devices/")
+	if err == nil {
+		for _, d := range devices {
+			if strings.HasPrefix(d.Name(), "dax") {
+				features["dax"] = true
+			}
+		}
+	} else {
+		log.Printf("WARNING: failed to detect NVDIMM configuration: %s", err)
+	}
+
+	return features, nil
 }

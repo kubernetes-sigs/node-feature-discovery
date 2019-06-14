@@ -278,6 +278,7 @@ See [configuration options](#configuration-options) for more information.
 | ------- | --------- | ------------------------------------------------------ |
 | numa    | <br>      | Multiple memory nodes i.e. NUMA architecture detected
 | nv      | present   | NVDIMM device(s) are present
+| nv      | dax       | NVDIMM region(s) configured in DAX mode are present
 
 ### Network Features
 
