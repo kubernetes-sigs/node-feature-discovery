@@ -12,8 +12,13 @@ script:
     - make image -e
 
 deploy:
-    on:
+  - on:
         branch: master
         condition: -n "$IMAGE_REPO_USER"
+    provider: script
+    script: echo "$IMAGE_REPO_PASSWORD" | docker login -u "$IMAGE_REPO_USER" --password-stdin quay.io && make push -e
+  - on:
+      tags: true
+      condition: -n "$IMAGE_REPO_USER"
     provider: script
     script: echo "$IMAGE_REPO_PASSWORD" | docker login -u "$IMAGE_REPO_USER" --password-stdin quay.io && make push -e
