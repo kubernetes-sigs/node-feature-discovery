@@ -1,19 +1,24 @@
 language: minimal
 
 env:
-    global:
-        # Sanitize git branch name into a valid docker tag name
-        - IMAGE_TAG_NAME=$(echo -n $TRAVIS_BRANCH | tr -c "[a-zA-Z0-9._'" "_")
+  global:
+    # Sanitize git branch name into a valid docker tag name
+    - IMAGE_TAG_NAME=$(echo -n $TRAVIS_BRANCH | tr -c "[a-zA-Z0-9._'" "_")
 
 services:
-    - docker
+  - docker
 
 script:
-    - make image -e
+  - make image -e
 
 deploy:
-    on:
-        branch: master
-        condition: -n "$IMAGE_REPO_USER"
+  - on:
+      branch: master
+      condition: -n "$IMAGE_REPO_USER"
+    provider: script
+    script: echo "$IMAGE_REPO_PASSWORD" | docker login -u "$IMAGE_REPO_USER" --password-stdin quay.io && make push -e
+  - on:
+      tags: true
+      condition: -n "$IMAGE_REPO_USER"
     provider: script
     script: echo "$IMAGE_REPO_PASSWORD" | docker login -u "$IMAGE_REPO_USER" --password-stdin quay.io && make push -e
