@@ -24,6 +24,10 @@
 #   go-tests = true
 #   unused-packages = true
 
+[prune]
+  go-tests = true
+  unused-packages = true
+
 [[constraint]]
   name = "github.com/docopt/docopt-go"
   version = "0.6.2"
@@ -45,20 +49,40 @@
   branch = "master"
 
 [[constraint]]
+  name = "k8s.io/kubernetes"
+  version = "~1.13.0"
+
+# The k8s "sub-"packages do not have versions that would be correctly
+# interpreted by dep (or the semver library). Thus, we need to use tag names,
+# directly.
+[[override]]
   name = "k8s.io/api"
-  version = "kubernetes-1.13.1"
-
-[[constraint]]
+  version = "kubernetes-1.13.5"
+[[override]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.13.0"
-
-[[constraint]]
+  version = "kubernetes-1.13.5"
+[[override]]
+  name = "k8s.io/apiserver"
+  version = "kubernetes-1.13.5"
+[[override]]
+  name = "k8s.io/apiextensions-apiserver"
+  version = "kubernetes-1.13.5"
+[[override]]
+  name = "k8s.io/kube-aggregator"
+  version = "kubernetes-1.13.5"
+[[override]]
   name = "k8s.io/client-go"
-  version = "10.0.0"
+  version = "kubernetes-1.13.5"
 
-[prune]
-  go-tests = true
-  unused-packages = true
+# k8s.io/apiserver requires the latest master
+[[override]]
+  name = "github.com/evanphx/json-patch"
+  revision = "5858425f75500d40c52783dce87d085a483ce135"
+
+# Use revision because no proper versions exist
+[[override]]
+  name = "k8s.io/kube-openapi"
+  revision = "d7c86cdc46e3a4fcf892b32dd7bc3aa775e0870e"
 
 [[constraint]]
   name = "github.com/golang/protobuf"
@@ -67,3 +91,12 @@
 [[constraint]]
   name = "google.golang.org/grpc"
   version = "1.17.0"
+
+# Workaround https://github.com/golang/dep/issues/1799
+[[override]]
+  name = "gopkg.in/fsnotify.v1"
+  source = "github.com/fsnotify/fsnotify"
+
+[[override]]
+  name = "github.com/docker/distribution"
+  version = "v2.7.0-rc.0"

@@ -622,6 +622,7 @@ name of the resulting container image.
 | IMAGE_REPO             | Container image repository to use            | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
 | IMAGE_TAG              | Full image:tag to tag the image with         | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
 | K8S_NAMESPACE          | nfd-master and nfd-worker namespace          | kube-system
+| KUBECONFIG             | Kubeconfig for running e2e-tests             | *empty*
 
 For example, to use a custom registry:
 ```
@@ -631,6 +632,21 @@ make IMAGE_REGISTRY=<my custom registry uri>
 Or to specify a build tool different from Docker:
 ```
 make IMAGE_BUILD_CMD="buildah bud"
+```
+
+### Testing
+
+Unit tests are automatically run as part of the container image build. You can
+also run them manually in the source code tree by simply running:
+```
+make test
+```
+
+End-to-end tests are built on top of the e2e test framework of Kubernetes, and,
+they required a cluster to run them on. For running the tests on your test
+cluster you need to specify the kubeconfig to be used:
+```
+make e2e-test KUBECONFIG=$HOME/.kube/config
 ```
 
 ## Targeting Nodes with Specific Features
