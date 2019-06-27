@@ -634,6 +634,21 @@ Or to specify a build tool different from Docker:
 make IMAGE_BUILD_CMD="buildah bud"
 ```
 
+### Testing
+
+Unit tests are automatically run as part of the container image build. You can
+also run them manually in the source code tree by simply running:
+```
+make test
+```
+
+End-to-end tests are built on top of the e2e test framework of Kubernetes, and,
+they required a cluster to run them on. For running the tests on your test
+cluster you need to specify the kubeconfig to be used:
+```
+make e2e-test KUBECONFIG=$HOME/.kube/config
+```
+
 ## Targeting Nodes with Specific Features
 
 Nodes with specific features can be targeted using the `nodeSelector` field. The
