@@ -40,6 +40,10 @@ var Config = NFDConfig{
 
 var devLabelAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
 
+var rdmaCapablePCIVendorIds = []string{"15b3"}
+
+const rdmaFeatureCapable = "rdma.capable"
+
 // Implement FeatureSource interface
 type Source struct{}
 
@@ -99,6 +103,10 @@ func (s Source) Discover() (source.Features, error) {
 		}
 	}
 
+	if hasRdmaCapableDevice(devs) {
+		features[rdmaFeatureCapable] = true
+	}
+
 	return features, nil
 }
 
@@ -145,4 +153,26 @@ func detectPci() (map[string][]pciDeviceInfo, error) {
 	}
 
 	return devInfo, nil
+}
+
+// Check if the system has a remote DMA capable device.
+// Use PCI vendor ID for now.
+func hasRdmaCapableDevice(devs map[string][]pciDeviceInfo) bool {
+	for _, classDevs := range devs {
+		for _, dev := range classDevs {
+			if contains(rdmaCapablePCIVendorIds, dev["vendor"]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func contains(slice []string, elem string) bool {
+	for _, e := range slice {
+		if e == elem {
+			return true
+		}
+	}
+	return false
 }

@@ -292,6 +292,7 @@ See [configuration options](#configuration-options) for more information.
 | Feature              | Attribute | Description                               |
 | -------------------- | --------- | ----------------------------------------- |
 | &lt;device label&gt; | present   | PCI device is detected
+| rdma                 | capable   | RDMA capable PCI device(s) detected
 
 `<device label>` is composed of raw PCI IDs, separated by underscores.
 The set of fields used in `<device label>` is configurable, valid fields being
