@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path"
+	"regexp"
 	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -31,16 +32,30 @@ type pciDeviceInfo map[string]string
 type NFDConfig struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
 	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
+	RdmaCapableDevices   []string `json:"rdmaCapableDevices,omitempty"`
 }
 
 var Config = NFDConfig{
 	DeviceClassWhitelist: []string{"03", "0b40", "12"},
 	DeviceLabelFields:    []string{"class", "vendor"},
+	RdmaCapableDevices:   []string{"15b3:.*"},
 }
 
 var devLabelAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
 
-var rdmaCapablePCIVendorIds = []string{"15b3"}
+type rdmaCapableDev struct {
+	vendorID      string
+	deviceIDRegex string
+}
+
+func (r rdmaCapableDev) match(vendor, device string) bool {
+	match, err := regexp.MatchString(r.deviceIDRegex, device)
+	if err != nil {
+		log.Printf("WARNING: Failed to match on deviceIDRegex: %s", err.Error())
+		return false
+	}
+	return vendor == r.vendorID && match
+}
 
 const rdmaFeatureCapable = "rdma.capable"
 
@@ -155,23 +170,30 @@ func detectPci() (map[string][]pciDeviceInfo, error) {
 	return devInfo, nil
 }
 
-// Check if the system has a remote DMA capable device.
-// Use PCI vendor ID for now.
+// Check if the system has a remote DMA capable PCI device.
 func hasRdmaCapableDevice(devs map[string][]pciDeviceInfo) bool {
+
+	var rdmaCapableDevs []rdmaCapableDev
+
+	// Parse configurations and create a list of RDMA capable devices
+	for _, identifier := range Config.RdmaCapableDevices {
+		// Identifier is in <vendorID:deviceIDRegex> format.
+		out := strings.Split(identifier, ":")
+		if len(out) != 2 {
+			log.Printf("WARRNING: invalid RDMA Capable device identifier: %s", identifier)
+			continue
+		}
+		rdmaCapableDevs = append(rdmaCapableDevs, rdmaCapableDev{out[0], out[1]})
+	}
+
+	// Search for a match on the system's PCI devices
 	for _, classDevs := range devs {
 		for _, dev := range classDevs {
-			if contains(rdmaCapablePCIVendorIds, dev["vendor"]) {
-				return true
+			for _, rdma := range rdmaCapableDevs {
+				if rdma.match(dev["vendor"], dev["device"]) {
+					return true
+				}
 			}
-		}
-	}
-	return false
-}
-
-func contains(slice []string, elem string) bool {
-	for _, e := range slice {
-		if e == elem {
-			return true
 		}
 	}
 	return false

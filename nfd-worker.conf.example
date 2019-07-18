@@ -44,3 +44,5 @@
 #      - "device"
 #      - "subsystem_vendor"
 #      - "subsystem_device"
+#    rdmaCapableDevices:
+#      - "15b3:.*"
