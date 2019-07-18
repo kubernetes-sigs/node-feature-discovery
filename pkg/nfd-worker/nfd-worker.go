@@ -136,7 +136,7 @@ func (w *nfdWorker) Run() error {
 	}
 
 	// Connect to NFD server
-	dialOpts := []grpc.DialOption{}
+	dialOpts := []grpc.DialOption{grpc.WithBlock(), grpc.WithTimeout(60 * time.Second)}
 	if w.args.CaFile != "" || w.args.CertFile != "" || w.args.KeyFile != "" {
 		// Load client cert for client authentication
 		cert, err := tls.LoadX509KeyPair(w.args.CertFile, w.args.KeyFile)
