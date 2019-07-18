@@ -26,8 +26,7 @@ import (
 func turboEnabled() (bool, error) {
 	// On Arm platform, the frequency boost mechanism is software-based.
 	// So skip pstate detection on Arm.
-	switch runtime.GOARCH {
-	case "arm64":
+	if runtime.GOARCH != "amd64" {
 		return false, nil
 	}
 

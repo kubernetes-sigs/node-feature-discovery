@@ -593,6 +593,19 @@ cd <project-root>
 make
 ```
 
+**Build non-amd64 image on amd64:**<br>
+Optional, for example.
+```
+cd <project-root>
+docker run --rm --privileged multiarch/qemu-user-static:register --reset
+make image ARCH=arm64
+```
+Or, you can build all supported amd64/non-amd64 images together.
+```
+cd <project-root>
+make images-all
+```
+
 **Push the container image:**<br>
 Optional, this example with Docker.
 

@@ -18,12 +18,52 @@ KUBECONFIG :=
 yaml_templates := $(wildcard *.yaml.template)
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
+ARCH    ?= amd64
+ALL_ARCH = amd64 arm64
+
+IMAGEARCH ?=
+QEMUARCH  ?=
+
+ifneq ($(ARCH),amd64)
+    IMAGE_TAG = $(IMAGE_REPO)-$(ARCH):$(IMAGE_TAG_NAME)
+endif
+
+ifeq ($(ARCH),amd64)
+    IMAGEARCH =
+    QEMUARCH  = x86_64
+else ifeq ($(ARCH),arm)
+    IMAGEARCH = arm32v7/
+    QEMUARCH  = arm
+else ifeq ($(ARCH),arm64)
+    IMAGEARCH = arm64v8/
+    QEMUARCH  = aarch64
+else ifeq ($(ARCH),ppc64le)
+    IMAGEARCH = ppc64le/
+    QEMUARCH  = ppc64le
+else ifeq ($(ARCH),s390x)
+    IMAGEARCH = s390x/
+    QEMUARCH  = s390x
+else
+    $(error unknown arch "$(ARCH)")
+endif
+
 all: image
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
+		--build-arg IMAGEARCH=$(IMAGEARCH) \
+		--build-arg QEMUARCH=$(QEMUARCH) \
 		-t $(IMAGE_TAG) \
 		$(IMAGE_BUILD_EXTRA_OPTS) ./
+
+pre-cross:
+	docker run --rm --privileged multiarch/qemu-user-static:register --reset
+
+# Building multi-arch docker images
+images-all: pre-cross
+	for arch in $(ALL_ARCH); do \
+		$(MAKE) image ARCH=$$arch; \
+	done
 
 yamls: $(yaml_instances)
 
