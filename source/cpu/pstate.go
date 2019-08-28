@@ -24,10 +24,9 @@ import (
 
 // Discover returns feature names for p-state related features such as turbo boost.
 func turboEnabled() (bool, error) {
-	// On Arm platform, the frequency boost mechanism is software-based.
-	// So skip pstate detection on Arm.
-	switch runtime.GOARCH {
-	case "arm64":
+	// On other platforms, the frequency boost mechanism is software-based.
+	// So skip pstate detection on other architectures.
+	if runtime.GOARCH != "amd64" && runtime.GOARCH != "386" {
 		return false, nil
 	}
 
