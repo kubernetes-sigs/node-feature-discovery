@@ -48,5 +48,19 @@ e2e-test:
 	dep ensure -v
 	go test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) -kubeconfig=$(KUBECONFIG)
 
+verify:	verify-gofmt
+
+verify-gofmt:
+ifeq (, $(GOFMT_CHECK))
+	@echo "verify-gofmt: OK"
+else
+	@echo "verify-gofmt: ERROR: gofmt failed on the following files:"
+	@echo "$(GOFMT_CHECK)"
+	@echo ""
+	@echo "For details, run: gofmt -d -s $(GOFMT_CHECK)"
+	@echo ""
+	@exit 1
+endif
+
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
