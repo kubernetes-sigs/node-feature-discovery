@@ -15,6 +15,8 @@ IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 K8S_NAMESPACE := kube-system
 KUBECONFIG :=
 
+GOFMT_CHECK=$(shell find . -not \( \( -wholename './.*' -o -wholename '*/vendor/*' \) -prune \) -name '*.go' | sort -u | xargs gofmt -s -l)
+
 yaml_templates := $(wildcard *.yaml.template)
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
