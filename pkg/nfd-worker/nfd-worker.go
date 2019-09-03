@@ -90,7 +90,9 @@ type NfdWorker interface {
 }
 
 type nfdWorker struct {
-	args Args
+	args       Args
+	clientConn *grpc.ClientConn
+	client     pb.LabelerClient
 }
 
 // Create new NfdWorker instance.
@@ -135,7 +137,53 @@ func (w *nfdWorker) Run() error {
 		return fmt.Errorf("error occurred while configuring parameters: %s", err.Error())
 	}
 
-	// Connect to NFD server
+	// Connect to NFD master
+	err = w.connect()
+	if err != nil {
+		return fmt.Errorf("failed to connect: %v", err)
+	}
+	defer w.disconnect()
+
+	for {
+		// Get the set of feature labels.
+		labels := createFeatureLabels(enabledSources, labelWhiteList)
+
+		// Update the node with the feature labels.
+		if w.client != nil {
+			err := advertiseFeatureLabels(w.client, labels)
+			if err != nil {
+				return fmt.Errorf("failed to advertise labels: %s", err.Error())
+			}
+		}
+
+		if w.args.Oneshot {
+			break
+		}
+
+		if w.args.SleepInterval > 0 {
+			time.Sleep(w.args.SleepInterval)
+		} else {
+			w.disconnect()
+			// Sleep forever
+			select {}
+		}
+	}
+	return nil
+}
+
+// connect creates a client connection to the NFD master
+func (w *nfdWorker) connect() error {
+	// Return a dummy connection in case of dry-run
+	if w.args.NoPublish {
+		return nil
+	}
+
+	// Check that if a connection already exists
+	if w.clientConn != nil {
+		return fmt.Errorf("client connection already exists")
+	}
+
+	// Dial and create a client
 	dialOpts := []grpc.DialOption{grpc.WithBlock(), grpc.WithTimeout(60 * time.Second)}
 	if w.args.CaFile != "" || w.args.CertFile != "" || w.args.KeyFile != "" {
 		// Load client cert for client authentication
@@ -164,36 +212,21 @@ func (w *nfdWorker) Run() error {
 	}
 	conn, err := grpc.Dial(w.args.Server, dialOpts...)
 	if err != nil {
-		return fmt.Errorf("failed to connect: %v", err)
+		return err
 	}
-	defer conn.Close()
-	client := pb.NewLabelerClient(conn)
+	w.clientConn = conn
+	w.client = pb.NewLabelerClient(conn)
 
-	for {
-		// Get the set of feature labels.
-		labels := createFeatureLabels(enabledSources, labelWhiteList)
-
-		// Update the node with the feature labels.
-		if !w.args.NoPublish {
-			err := advertiseFeatureLabels(client, labels)
-			if err != nil {
-				return fmt.Errorf("failed to advertise labels: %s", err.Error())
-			}
-		}
-
-		if w.args.Oneshot {
-			break
-		}
-
-		if w.args.SleepInterval > 0 {
-			time.Sleep(w.args.SleepInterval)
-		} else {
-			conn.Close()
-			// Sleep forever
-			select {}
-		}
-	}
 	return nil
+}
+
+// disconnect closes the connection to NFD master
+func (w *nfdWorker) disconnect() {
+	if w.clientConn != nil {
+		w.clientConn.Close()
+	}
+	w.clientConn = nil
+	w.client = nil
 }
 
 // Parse configuration options
