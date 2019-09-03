@@ -350,7 +350,7 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	stdoutLogger.Printf("Sendng labeling request nfd-master")
+	stdoutLogger.Printf("Sending labeling request to nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		NfdVersion: version.Get(),
