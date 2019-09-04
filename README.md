@@ -206,7 +206,7 @@ such as restricting discovered features with the --label-whitelist option._
 | cpuid                   | &lt;cpuid flag&gt; | CPU capability is supported
 | hardware_multithreading | <br>               | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs)
 | power                   | sst_bf.enabled     | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled
-| [pstate][intel-pstate]  | turbo              | Turbo frequencies are enabled in Intel pstate driver
+| [pstate][intel-pstate]  | turbo              | Set to 'true' if turbo frequencies are enabled in Intel pstate driver, set to 'false' if they have been disabled.
 | [rdt][intel-rdt]        | RDTMON             | Intel RDT Monitoring Technology
 | <br>                    | RDTCMT             | Intel Cache Monitoring (CMT)
 | <br>                    | RDTMBM             | Intel Memory Bandwidth Monitoring (MBM)

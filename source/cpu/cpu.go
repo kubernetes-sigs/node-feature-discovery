@@ -116,12 +116,14 @@ func (s Source) Discover() (source.Features, error) {
 		}
 	}
 
-	// Detect turbo boost
-	turbo, err := turboEnabled()
+	// Detect pstate features
+	pstate, err := detectPstate()
 	if err != nil {
 		log.Printf("ERROR: %v", err)
-	} else if turbo {
-		features["pstate.turbo"] = true
+	} else {
+		for k, v := range pstate {
+			features["pstate."+k] = v
+		}
 	}
 
 	// Detect RDT features
