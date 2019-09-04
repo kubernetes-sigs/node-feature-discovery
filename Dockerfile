@@ -1,9 +1,15 @@
 # Build node feature discovery
 FROM golang:1.12 as builder
 
-ADD . /go/node-feature-discovery
+# Get (cache) deps in a separate layer
+COPY go.mod go.sum /go/node-feature-discovery/
 
 WORKDIR /go/node-feature-discovery
+
+RUN go mod download
+
+# Do actual build
+COPY . /go/node-feature-discovery
 
 ARG NFD_VERSION
 
