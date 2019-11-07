@@ -442,12 +442,11 @@
   version = "v4.20"
 
 [[projects]]
-  digest = "1:2d643962fac133904694fffa959bc3c5dcfdcee38c6f5ffdd99a3c93eb9c835c"
+  digest = "1:e59e697b2b272065b99b2dcb7ab9cb1657bcc2110d8c7ab71f997dbda1f75982"
   name = "github.com/klauspost/cpuid"
   packages = ["."]
   pruneopts = "UT"
-  revision = "e7e905edc00ea8827e58662220139109efea09db"
-  version = "v1.2.0"
+  revision = "5a626f7029c910cc8329dae5405ee4f65034bce5"
 
 [[projects]]
   digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
