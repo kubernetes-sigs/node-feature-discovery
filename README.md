@@ -421,7 +421,7 @@ possible security implications.
 ## Getting started
 
 For a stable version with ready-built images see the
-[latest released version](https://github.com/kubernetes-sigs/node-feature-discovery/tree/v0.4.0) ([release notes](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest)).
+[latest released version](https://github.com/kubernetes-sigs/node-feature-discovery/tree/v0.5.0) ([release notes](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest)).
 
 If you want to use the latest development version (master branch) you need to
 [build your own custom image](#building-from-source).
