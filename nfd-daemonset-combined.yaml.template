@@ -2,6 +2,11 @@
 # same pod.
 #
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-feature-discovery # NFD namespace
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: nfd-master
