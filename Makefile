@@ -1,6 +1,8 @@
 .PHONY: all test yamls
 .FORCE:
 
+GO_CMD := go
+
 IMAGE_BUILD_CMD := docker build
 IMAGE_BUILD_EXTRA_OPTS :=
 IMAGE_PUSH_CMD := docker push
@@ -42,10 +44,10 @@ mock:
 	mockery --name=LabelerClient --dir=pkg/labeler --inpkg --note="Re-generate by running 'make mock'"
 
 test:
-	go test ./cmd/... ./pkg/...
+	$(GO_CMD) test ./cmd/... ./pkg/...
 
 e2e-test:
-	go test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) -kubeconfig=$(KUBECONFIG)
+	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) -kubeconfig=$(KUBECONFIG)
 
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
