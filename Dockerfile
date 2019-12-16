@@ -1,14 +1,18 @@
 # Build node feature discovery
-FROM golang:1.10 as builder
+FROM golang:1.12 as builder
 
-ADD . /go/src/sigs.k8s.io/node-feature-discovery
+# Get (cache) deps in a separate layer
+COPY go.mod go.sum /go/node-feature-discovery/
 
-WORKDIR /go/src/sigs.k8s.io/node-feature-discovery
+WORKDIR /go/node-feature-discovery
+
+RUN go mod download
+
+# Do actual build
+COPY . /go/node-feature-discovery
 
 ARG NFD_VERSION
 
-RUN go get github.com/golang/dep/cmd/dep
-RUN dep ensure -v
 RUN go install \
   -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$NFD_VERSION" \
   ./cmd/*

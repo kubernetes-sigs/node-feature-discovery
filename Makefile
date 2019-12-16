@@ -45,7 +45,6 @@ test:
 	go test ./cmd/... ./pkg/...
 
 e2e-test:
-	dep ensure -v
 	go test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) -kubeconfig=$(KUBECONFIG)
 
 push:
