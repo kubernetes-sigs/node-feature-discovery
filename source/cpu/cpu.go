@@ -60,6 +60,7 @@ var Config = NFDConfig{
 			"RDSEED",
 			"RDTSCP",
 			"SGX",
+			"SGXLC",
 			"SSE",
 			"SSE2",
 			"SSE3",
