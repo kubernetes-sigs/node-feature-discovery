@@ -37,7 +37,7 @@ require (
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/json-iterator/go v1.1.7 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
-	github.com/klauspost/cpuid v1.2.2-0.20191106130511-5a626f7029c9
+	github.com/klauspost/cpuid v1.2.3
 	github.com/munnerz/goautoneg v0.0.0-20190414153302-2ae31c8b6b30 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/onsi/ginkgo v1.10.1
