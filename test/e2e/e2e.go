@@ -36,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/component-base/logs"
 	"k8s.io/component-base/version"
-	commontest "k8s.io/kubernetes/test/e2e/common"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 	e2enode "k8s.io/kubernetes/test/e2e/framework/node"
@@ -47,21 +46,9 @@ import (
 	utilnet "k8s.io/utils/net"
 
 	clientset "k8s.io/client-go/kubernetes"
-	// ensure auth plugins are loaded
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	// ensure that cloud providers are loaded
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/aws"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/azure"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/gce"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/kubemark"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/openstack"
-	_ "k8s.io/kubernetes/test/e2e/framework/providers/vsphere"
 )
 
 var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
-	// Reference common test to make the import valid.
-	commontest.CurrentSuite = commontest.E2E
 	setupSuite()
 	return nil
 }, func(data []byte) {

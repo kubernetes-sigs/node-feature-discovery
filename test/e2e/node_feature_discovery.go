@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -255,7 +256,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for the nfd-master pod to be running")
-			Expect(framework.WaitForPodRunningInNamespace(f.ClientSet, masterPod)).NotTo(HaveOccurred())
+			Expect(e2epod.WaitForPodRunningInNamespace(f.ClientSet, masterPod)).NotTo(HaveOccurred())
 
 			By("Waiting for the nfd-master service to be up")
 			Expect(framework.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
@@ -266,7 +267,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for the nfd-worker pod to succeed")
-			Expect(framework.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, ns)).NotTo(HaveOccurred())
+			Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, ns)).NotTo(HaveOccurred())
 			workerPod, err = f.ClientSet.CoreV1().Pods(ns).Get(workerPod.ObjectMeta.Name, metav1.GetOptions{})
 
 			By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
