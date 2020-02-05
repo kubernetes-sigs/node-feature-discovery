@@ -17,15 +17,29 @@ limitations under the License.
 package e2e
 
 import (
+	"flag"
+	"math/rand"
+	"os"
 	"testing"
+	"time"
 
 	"k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/kubernetes/test/e2e/framework/config"
 	"k8s.io/kubernetes/test/e2e/framework/testfiles"
 )
 
-func init() {
-	// Register framework flags, then handle flags and Viper config.
-	framework.HandleFlags()
+// handleFlags sets up all flags and parses the command line.
+func handleFlags() {
+	config.CopyFlags(config.Flags, flag.CommandLine)
+	framework.RegisterCommonFlags(flag.CommandLine)
+	framework.RegisterClusterFlags(flag.CommandLine)
+	flag.Parse()
+}
+
+func TestMain(m *testing.M) {
+	// Register test flags, then parse flags.
+	handleFlags()
+
 	framework.AfterReadingAllFlags(&framework.TestContext)
 
 	// TODO: Deprecating repo-root over time... instead just use gobindata_util.go , see #23987.
@@ -36,6 +50,9 @@ func init() {
 	if framework.TestContext.RepoRoot != "" {
 		testfiles.AddFileSource(testfiles.RootFileSource{Root: framework.TestContext.RepoRoot})
 	}
+
+	rand.Seed(time.Now().UnixNano())
+	os.Exit(m.Run())
 }
 
 func TestE2E(t *testing.T) {
