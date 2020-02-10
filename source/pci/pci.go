@@ -29,19 +29,41 @@ import (
 type pciDeviceInfo map[string]string
 
 type NFDConfig struct {
-	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
-	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
+	DeviceClassWhitelist      []string            `json:"deviceClassWhitelist,omitempty"`
+	DeviceLabelFieldsForClass map[string][]string `json:"deviceLabelFieldsForClass"`
+	DeviceLabelFields         []string            `json:"deviceLabelFields,omitempty"`
 }
 
 var Config = NFDConfig{
 	DeviceClassWhitelist: []string{"03", "0b40", "12"},
-	DeviceLabelFields:    []string{"class", "vendor"},
+	// Custom fields for selected classes
+	DeviceLabelFieldsForClass: map[string][]string{
+		"0b40": {"device", "class", "vendor"}, // Class 0b40: Co-processor
+	},
+	// Default fields for the rest of the classes
+	DeviceLabelFields: []string{"class", "vendor"},
 }
 
-var devLabelAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
+var devLabelAttrs = []string{} // All device fields mentioned in NFDConfig
 
 // Implement FeatureSource interface
 type Source struct{}
+
+func init() {
+	// Initialize devLabelAttrs to include all fields in NFDConfig
+	seenFields := map[string]bool{}
+	for _, fieldList := range Config.DeviceLabelFieldsForClass {
+		for _, field := range fieldList {
+			seenFields[field] = true
+		}
+	}
+	for _, field := range Config.DeviceLabelFields {
+		seenFields[field] = true
+	}
+	for field, _ := range seenFields {
+		devLabelAttrs = append(devLabelAttrs, field)
+	}
+}
 
 // Return name of the feature source
 func (s Source) Name() string { return "pci" }
@@ -55,40 +77,21 @@ func (s Source) Discover() (source.Features, error) {
 		return nil, fmt.Errorf("Failed to detect PCI devices: %s", err.Error())
 	}
 
-	// Construct a device label format, a sorted list of valid attributes
-	deviceLabelFields := []string{}
-	configLabelFields := map[string]bool{}
-	for _, field := range Config.DeviceLabelFields {
-		configLabelFields[field] = true
-	}
-
-	for _, attr := range devLabelAttrs {
-		if _, ok := configLabelFields[attr]; ok {
-			deviceLabelFields = append(deviceLabelFields, attr)
-			delete(configLabelFields, attr)
-		}
-	}
-	if len(configLabelFields) > 0 {
-		keys := []string{}
-		for key := range configLabelFields {
-			keys = append(keys, key)
-		}
-		log.Printf("WARNING: invalid fields '%v' in deviceLabelFields, ignoring...", keys)
-	}
-	if len(deviceLabelFields) == 0 {
-		log.Printf("WARNING: no valid fields in deviceLabelFields defined, using the defaults")
-		deviceLabelFields = []string{"class", "vendor"}
-	}
-
-	// Iterate over all device classes
+	// Construct a device label format
 	for class, classDevs := range devs {
 		for _, white := range Config.DeviceClassWhitelist {
 			if strings.HasPrefix(class, strings.ToLower(white)) {
 				for _, dev := range classDevs {
 					devLabel := ""
-					for i, attr := range deviceLabelFields {
+					var devFields []string
+					if _, ok := Config.DeviceLabelFieldsForClass[class]; ok {
+						devFields = Config.DeviceLabelFieldsForClass[class]
+					} else {
+						devFields = Config.DeviceLabelFields
+					}
+					for i, attr := range devFields {
 						devLabel += dev[attr]
-						if i < len(deviceLabelFields)-1 {
+						if i < len(devFields)-1 {
 							devLabel += "_"
 						}
 					}
