@@ -418,6 +418,12 @@ example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
 
+**NOTE!** Be careful when creating and/or updating hook or feature files while
+NFD is running. In order to avoid race conditions you should write into a
+temporary file (outside the `source.d` and `features.d` directories), and,
+atomically create/update the original file by doing a filesystem move
+operation.
+
 ## Getting started
 
 For a stable version with ready-built images see the
