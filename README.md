@@ -289,9 +289,10 @@ See [configuration options](#configuration-options) for more information.
 
 ### PCI Features
 
-| Feature              | Attribute | Description                               |
-| -------------------- | --------- | ----------------------------------------- |
-| &lt;device label&gt; | present   | PCI device is detected
+| Feature              | Attribute     | Description                               |
+| -------------------- | ------------- | ----------------------------------------- |
+| &lt;device label&gt; | present       | PCI device is detected
+| &lt;device label&gt; | sriov.capable | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled PCI device present
 
 `<device label>` is composed of raw PCI IDs, separated by underscores.
 The set of fields used in `<device label>` is configurable, valid fields being

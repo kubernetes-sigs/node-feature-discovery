@@ -39,6 +39,7 @@ var Config = NFDConfig{
 }
 
 var devLabelAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
+var extraDevAttrs = []string{"sriov_totalvfs"}
 
 // Implement FeatureSource interface
 type Source struct{}
@@ -49,11 +50,6 @@ func (s Source) Name() string { return "pci" }
 // Discover features
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
-
-	devs, err := detectPci()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to detect PCI devices: %s", err.Error())
-	}
 
 	// Construct a device label format, a sorted list of valid attributes
 	deviceLabelFields := []string{}
@@ -80,6 +76,21 @@ func (s Source) Discover() (source.Features, error) {
 		deviceLabelFields = []string{"class", "vendor"}
 	}
 
+	// Read extraDevAttrs + configured or default labels. Attributes
+	// set to 'true' are considered must-have.
+	deviceAttrs := map[string]bool{}
+	for _, label := range extraDevAttrs {
+		deviceAttrs[label] = false
+	}
+	for _, label := range deviceLabelFields {
+		deviceAttrs[label] = true
+	}
+
+	devs, err := detectPci(deviceAttrs)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to detect PCI devices: %s", err.Error())
+	}
+
 	// Iterate over all device classes
 	for class, classDevs := range devs {
 		for _, white := range Config.DeviceClassWhitelist {
@@ -92,8 +103,11 @@ func (s Source) Discover() (source.Features, error) {
 							devLabel += "_"
 						}
 					}
-					devLabel += ".present"
-					features[devLabel] = true
+					features[devLabel+".present"] = true
+
+					if _, ok := dev["sriov_totalvfs"]; ok {
+						features[devLabel+".sriov.capable"] = true
+					}
 				}
 			}
 		}
@@ -103,13 +117,16 @@ func (s Source) Discover() (source.Features, error) {
 }
 
 // Read information of one PCI device
-func readDevInfo(devPath string) (pciDeviceInfo, error) {
+func readDevInfo(devPath string, devAttrs map[string]bool) (pciDeviceInfo, error) {
 	info := pciDeviceInfo{}
-
-	for _, attr := range devLabelAttrs {
+	for attr, must := range devAttrs {
 		data, err := ioutil.ReadFile(path.Join(devPath, attr))
 		if err != nil {
-			return info, fmt.Errorf("Failed to read device %s: %s", attr, err)
+			if must {
+				return info, fmt.Errorf("Failed to read device %s: %s", attr, err)
+			} else {
+				continue
+			}
 		}
 		// Strip whitespace and '0x' prefix
 		info[attr] = strings.TrimSpace(strings.TrimPrefix(string(data), "0x"))
@@ -124,7 +141,7 @@ func readDevInfo(devPath string) (pciDeviceInfo, error) {
 }
 
 // List available PCI devices
-func detectPci() (map[string][]pciDeviceInfo, error) {
+func detectPci(devAttrs map[string]bool) (map[string][]pciDeviceInfo, error) {
 	const basePath = "/sys/bus/pci/devices/"
 	devInfo := make(map[string][]pciDeviceInfo)
 
@@ -135,7 +152,7 @@ func detectPci() (map[string][]pciDeviceInfo, error) {
 
 	// Iterate over devices
 	for _, device := range devices {
-		info, err := readDevInfo(path.Join(basePath, device.Name()))
+		info, err := readDevInfo(path.Join(basePath, device.Name()), devAttrs)
 		if err != nil {
 			log.Print(err)
 			continue
