@@ -335,8 +335,11 @@ feature sources.
 
 The *local* feature source gets its labels by two different ways:
 * It tries to execute files found under `/etc/kubernetes/node-feature-discovery/source.d/`
-directory. The hook files must be executable. When executed, the hooks are
-supposed to print all discovered features in `stdout`, one per line.
+directory. The hook files must be executable and they are supposed to print all
+discovered features in `stdout`, one per line. With ELF binaries static
+linking is recommended as the selection of system libraries available in the
+NFD release image is very limited. Other runtimes currently supported by the
+NFD stock image are bash and perl.
 * It reads files found under `/etc/kubernetes/node-feature-discovery/features.d/`
 directory. The file content is expected to be similar to the hook output (described above).
 
@@ -368,7 +371,20 @@ label `my.namespace.org/my-label=value`, your hook output or file must contains
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
 
-**A hook example:**<br/>
+#### Injecting Labels from Other Pods
+
+One use case for the hooks and/or feature files is detecting features in other
+Pods outside NFD, e.g. in Kubernetes device plugins. It is possible to mount
+the `source.d` and/or `features.d` directories common with the NFD Pod and
+deploy the custom hooks/features there. NFD will periodically scan the
+directories and run any hooks and read any feature files it finds. The
+[example nfd-worker deployment template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L69)
+contains `hostPath` mounts for `sources.d` and `features.d` directories. By
+using the same mounts in the secondary Pod (e.g. device plugin) you have
+created a shared area for delivering hooks and feature files to NFD.
+
+
+#### A Hook Example
 User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
 following `stdout` output:
@@ -388,7 +404,7 @@ feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
 override.namespace/value=456
 ```
 
-**A file example:**<br/>
+#### A File Example
 User has a file
 `/etc/kubernetes/node-feature-discovery/features.d/my-source` which contains the
 following lines:
