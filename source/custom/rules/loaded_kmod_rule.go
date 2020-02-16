@@ -27,6 +27,7 @@ type LoadedKModRule []string
 
 const kmodProcfsPath = "/proc/modules"
 
+// Match loaded kernel modules on provided list of kernel modules
 func (kmods *LoadedKModRule) Match() (bool, error) {
 	loadedModules, err := kmods.getLoadedModules()
 	if err != nil {

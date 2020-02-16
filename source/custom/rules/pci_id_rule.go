@@ -35,7 +35,7 @@ type PciIdRule struct {
 	PciIdRuleInput
 }
 
-// Match PCI devices on the provided list of PCI regular expressions
+// Match PCI devices on provided PCI device attributes
 func (r *PciIdRule) Match() (bool, error) {
 	devAttr := map[string]bool{}
 	for _, attr := range []string{"class", "vendor", "device"} {

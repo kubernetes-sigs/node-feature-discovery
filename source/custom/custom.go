@@ -17,11 +17,17 @@ limitations under the License.
 package custom
 
 import (
+	"fmt"
+	"log"
+
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
 // Custom Features Configurations
 type MatchRule struct {
+	PciId *rules.PciIdRule `json:"pciId,omitempty""`
+	LoadedKMod *rules.LoadedKModRule `json:"loadedKMod,omitempty""`
 }
 
 type CustomFeature struct {
@@ -42,5 +48,46 @@ func (s Source) Name() string { return "custom" }
 // Discover features
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
+	allFeatureConfig := append(getStaticFeatureConfig(), Config...)
+	log.Printf("INFO: Custom features: %+v", allFeatureConfig)
+	// Iterate over features
+	for _, customFeature := range allFeatureConfig {
+		featureExist, err := s.discoverFeature(customFeature)
+		if err != nil {
+			return features, fmt.Errorf("failed to discover feature: %s. %s", customFeature.Name, err.Error())
+		}
+		if featureExist {
+			features[customFeature.Name] = true
+		}
+	}
 	return features, nil
+}
+
+// Process a single feature by Matching on the defined rules.
+// A feature is present if all defined Rules in a MatchRule return a match.
+func (s Source) discoverFeature(feature CustomFeature) (bool, error) {
+	for _, rule := range feature.MatchOn {
+		// PCI ID rule
+		if rule.PciId != nil {
+			match, err := rule.PciId.Match()
+			if err != nil {
+				return false, err
+			}
+			if !match {
+				continue
+			}
+		}
+		// Loaded kernel module rule
+		if rule.LoadedKMod != nil {
+			match, err := rule.LoadedKMod.Match()
+			if err != nil {
+				return false, err
+			}
+			if !match {
+				continue
+			}
+		}
+		return true, nil
+	}
+	return false, nil
 }
