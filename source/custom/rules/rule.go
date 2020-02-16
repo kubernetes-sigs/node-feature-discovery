@@ -14,33 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package custom
+package rules
 
-import (
-	"sigs.k8s.io/node-feature-discovery/source"
-)
-
-// Custom Features Configurations
-type MatchRule struct {
-}
-
-type CustomFeature struct {
-	Name    string      `json:"name"`
-	MatchOn []MatchRule `json:"matchOn"`
-}
-
-type NFDConfig []CustomFeature
-
-var Config = NFDConfig{}
-
-// Implements FeatureSource Interface
-type Source struct{}
-
-// Return name of the feature source
-func (s Source) Name() string { return "custom" }
-
-// Discover features
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
-	return features, nil
+type Rule interface {
+	// Match on rule
+	Match() (bool, error)
 }
