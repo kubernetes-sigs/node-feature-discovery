@@ -44,3 +44,22 @@
 #      - "device"
 #      - "subsystem_vendor"
 #      - "subsystem_device"
+#  custom:
+#    - name: "my.kernel.feature"
+#      matchOn:
+#        - loadedKMod: ["example_kmod1", "example_kmod2"]
+#    - name: "my.pci.feature"
+#      matchOn:
+#        - pciId:
+#            class: ["0200"]
+#            vendor: ["15b3"]
+#            device: ["1014", "1017"]
+#        - pciId :
+#            vendor: ["8086"]
+#            device: ["1000", "1100"]
+#    - name: "my.combined.feature"
+#      matchOn:
+#        - pciId:
+#            vendor: ["15b3"]
+#            device: ["1014", "1017"]
+#          loadedKMod : ["vendor_kmod1", "vendor_kmod2"]

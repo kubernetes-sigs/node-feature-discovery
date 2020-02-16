@@ -150,6 +150,7 @@ for up-to-date information about the required volume mounts.
 The current set of feature sources are the following:
 
 - CPU
+- Custom
 - IOMMU
 - Kernel
 - Memory
@@ -181,6 +182,7 @@ feature logically has sub-hierarchy, e.g. `sriov.capable` and
 ```json
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
+  "feature.node.kubernetes.io/custom-<feature-name>": "true",
   "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/memory-<feature-name>": "true",
@@ -250,6 +252,87 @@ capability might be supported but not enabled.
 | PMULL     | Optional Cryptographic and CRC32 Instructions
 | JSCVT     | Perform Conversion to Match Javascript
 | DCPOP     | Persistent Memory Support
+
+### Custom Features
+The Custom feature source allows the user to define features based on a mix of predefined rules.
+
+#### Rule Types
+
+##### PciId Rule
+The PciId rule allows matching the PCI devices in the system on the following PCI attributes: `class`,`vendor` and
+`device` identifiers.
+
+```yaml
+pciId :
+  class: [<class id>, ...]
+  vendor: [<vendor id>,  ...]
+  device: [<device id>, ...]
+```
+Matching is done by performing a logical OR for elements of an attribute and logical AND between specified attributes for
+each PCI device in the system.
+At least one attribute must be specificed, missing attributes will not partake in the matching process.
+
+##### LoadedKMod Rule
+The LoadedKMod rule allows matching the loaded kernel modules in the system against a provided list of kernel modules.
+
+```yaml
+loadedKMod : [<kernel module>, ...]
+```
+ Matching is done by performing a logical AND for each provided kernel module, i.e the rule will match if all provided kernel modules are loaded
+ in the system.
+
+#### Multiple Rules Matching process
+Specifying Rules to match on a feature is done by a list of rule elements.
+Each rule element contains one or more rule types.
+
+Logical OR is performed between rule elements and logical AND is performed between rule types
+of a given rule element.
+
+##### Example
+```yaml
+custom:
+  - name: "my.kernel.feature"
+    matchOn:
+      - loadedKMod: ["kmod1", "kmod2"]
+  - name: "my.pci.feature"
+    matchOn:
+      - pciId:
+          vendor: ["15b3"]
+          device: ["1014", "1017"]
+  - name: "my.combined.feature"
+    matchOn:
+      - loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
+        pciId:
+          vendor: ["15b3"]
+          device: ["1014", "1017"] 
+  - name: "my.accumulated.feature"
+    matchOn:
+      - loadedKMod : ["some_kmod1", "some_kmod2"]
+      - pciId:
+          vendor: ["15b3"]
+          device: ["1014", "1017"]
+```
+
+__In the example above:__
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.kernel.feature=true`
+if the node has `kmod1` _AND_ `kmod2` kernel modules loaded. 
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.pci.feature=true`
+if the node contains a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.combined.feature=true`
+if `vendor_kmod1` _AND_ `vendor_kmod2` kernel modules are loaded __AND__ the node contains a PCI device
+with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _or_ `1017`.
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.accumulated.feature=true`
+if `some_kmod1` _AND_ `some_kmod2` kernel modules are loaded __OR__ the node contains a PCI device
+with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+
+#### Statically defined features
+Some feature labels which are common and generic are defined statically in the `custom` feature source.
+A user may add additional rules to these feature labels by defining them in the `nfd-worker` configuration file
+
+| Feature | Attribute | Description |
+| ------- | --------- | -----------|
+| rdma  | capable | The node has an RDMA capable Network adapter |
+| rdma | enabled | The node has the needed RDMA modules loaded to run RDMA traffic |
 
 ### IOMMU Features
 
