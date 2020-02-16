@@ -91,7 +91,7 @@ func argsParse(argv []string) (worker.Args, error) {
                               in testing
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,iommu,kernel,local,memory,network,pci,storage,system]
+                              [Default: cpu,custom,iommu,kernel,local,memory,network,pci,storage,system]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
