@@ -74,3 +74,57 @@ func discoverSSTBF() (bool, error) {
 
 	return false, nil
 }
+
+func discoverSSTCP() (bool, error) {
+	/*
+	/ There are two requirements for SST-CP being enabled on a machine:
+	/ 1) Turbo is enabled
+	/ 2) There is at least two different values for EPP (Energy Performance Preference) among the cores of the system
+	*/
+
+	epp_file := "cpufreq/energy_performance_preference"
+	epp_values := []string{}
+
+	// 1) Check Turbo is enabled
+	features, _ := detectPstate()
+	if features["turbo"] == "false" {
+		return false, nil
+	}
+
+	// Function to check if an EPP value has already been seen
+	value_seen := func(value string) bool {
+		for _, existing_value := range epp_values {
+			if existing_value == value {
+				return true
+			}
+		}
+		return false
+	}
+
+	// 2) Loop over all CPUs in the system to check for multiple EPP values
+	files, err := ioutil.ReadDir(cpuDevicesBaseDir)
+	if err != nil {
+		return false, err
+	}
+
+	// If the first logical CPU doesn't have EPP file, neither do the others, so no need to continue
+	if _, err = os.Stat(path.Join(cpuDevicesBaseDir, files[0].Name(), epp_file)); os.IsNotExist(err) {
+		return false, nil
+	}
+
+	for _, file := range files {
+		cpu_epp_value, err := ioutil.ReadFile(path.Join(cpuDevicesBaseDir, file.Name(), epp_file))
+		if err != nil {
+			return false, err
+		}
+		epp_value_str := strings.TrimSuffix(string(cpu_epp_value), "\n")
+		if !value_seen(epp_value_str) {
+			epp_values = append(epp_values, epp_value_str)
+			if len(epp_values) > 1 {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}

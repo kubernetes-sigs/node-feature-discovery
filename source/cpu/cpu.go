@@ -109,6 +109,14 @@ func (s Source) Discover() (source.Features, error) {
 		features["power.sst_bf.enabled"] = true
 	}
 
+	// Check SST-CP
+	found, err = discoverSSTCP()
+	if err != nil {
+		log.Printf("ERROR: failed to detect SST-CP: %v", err)
+	} else if found {
+		features["power.sst_cp.enabled"] = true
+	}
+
 	// Detect CPUID
 	cpuidFlags := getCpuidFlags()
 	for _, f := range cpuidFlags {

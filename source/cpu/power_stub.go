@@ -21,3 +21,7 @@ package cpu
 func discoverSSTBF() (bool, error) {
 	return false, nil
 }
+
+func discoverSSTCP() (bool, error) {
+	return false, nil
+}
