@@ -31,12 +31,13 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 )
 
 var (
-	dockerRepo  = flag.String("nfd.repo", "quay.io/kubernetes_incubator/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag   = flag.String("nfd.tag", "e2e-test", "Docker tag to use")
-	labelPrefix = "feature.node.kubernetes.io/"
+	dockerRepo = flag.String("nfd.repo", "quay.io/kubernetes_incubator/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag  = flag.String("nfd.tag", "e2e-test", "Docker tag to use")
 )
 
 // Create required RBAC configuration
@@ -239,9 +240,9 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 			ns := f.Namespace.Name
 			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 			fakeFeatureLabels := map[string]string{
-				labelPrefix + "fake-fakefeature1": "true",
-				labelPrefix + "fake-fakefeature2": "true",
-				labelPrefix + "fake-fakefeature3": "true",
+				master.LabelNs + "fake-fakefeature1": "true",
+				master.LabelNs + "fake-fakefeature2": "true",
+				master.LabelNs + "fake-fakefeature3": "true",
 			}
 
 			defer deconfigureRBAC(f.ClientSet, f.Namespace.Name)
