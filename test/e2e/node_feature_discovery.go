@@ -19,25 +19,82 @@ package e2e
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"strings"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 
+	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 )
 
 var (
-	dockerRepo  = flag.String("nfd.repo", "quay.io/kubernetes_incubator/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag   = flag.String("nfd.tag", "e2e-test", "Docker tag to use")
-	labelPrefix = "feature.node.kubernetes.io/"
+	dockerRepo    = flag.String("nfd.repo", "quay.io/kubernetes_incubator/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag     = flag.String("nfd.tag", "e2e-test", "Docker tag to use")
+	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
+	labelPrefix   = "feature.node.kubernetes.io/"
+
+	conf *e2eConfig
 )
+
+type e2eConfig struct {
+	DefaultFeatures *struct {
+		LabelWhitelist      lookupMap
+		AnnotationWhitelist lookupMap
+		Nodes               map[string]nodeConfig
+	}
+}
+
+type nodeConfig struct {
+	ExpectedLabelValues      map[string]string
+	ExpectedLabelKeys        lookupMap
+	ExpectedAnnotationValues map[string]string
+	ExpectedAnnotationKeys   lookupMap
+}
+
+type lookupMap map[string]struct{}
+
+func (l *lookupMap) UnmarshalJSON(data []byte) error {
+	*l = lookupMap{}
+	slice := []string{}
+
+	err := yaml.Unmarshal(data, &slice)
+	if err != nil {
+		return err
+	}
+
+	for _, k := range slice {
+		(*l)[k] = struct{}{}
+	}
+	return nil
+}
+
+func readConfig() {
+	// Read and parse only once
+	if conf != nil || *e2eConfigFile == "" {
+		return
+	}
+
+	By("Reading end-to-end test configuration file")
+	data, err := ioutil.ReadFile(*e2eConfigFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Parsing end-to-end test configuration data")
+	err = yaml.Unmarshal(data, &conf)
+	Expect(err).NotTo(HaveOccurred())
+}
 
 // Create required RBAC configuration
 func configureRBAC(cs clientset.Interface, ns string) error {
@@ -134,7 +191,7 @@ func createService(cs clientset.Interface, ns string) (*v1.Service, error) {
 			Name: "nfd-master-e2e",
 		},
 		Spec: v1.ServiceSpec{
-			Selector: map[string]string{"app": "nfd-master-e2e"},
+			Selector: map[string]string{"name": "nfd-master-e2e"},
 			Ports: []v1.ServicePort{
 				{
 					Protocol: v1.ProtocolTCP,
@@ -147,11 +204,11 @@ func createService(cs clientset.Interface, ns string) (*v1.Service, error) {
 	return cs.CoreV1().Services(ns).Create(svc)
 }
 
-func nfdMasterPod(ns string, image string, onMasterNode bool) *v1.Pod {
+func nfdMasterPod(image string, onMasterNode bool) *v1.Pod {
 	p := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "nfd-master-" + string(uuid.NewUUID()),
-			Labels: map[string]string{"app": "nfd-master-e2e"},
+			Labels: map[string]string{"name": "nfd-master-e2e"},
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -190,36 +247,163 @@ func nfdMasterPod(ns string, image string, onMasterNode bool) *v1.Pod {
 	return p
 }
 
-func nfdWorkerPod(ns string, image string) *v1.Pod {
-	return &v1.Pod{
+func nfdWorkerPod(image string, extraArgs []string) *v1.Pod {
+	p := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "nfd-worker-" + string(uuid.NewUUID()),
 		},
-		Spec: v1.PodSpec{
-			// NOTE: We omit Volumes/VolumeMounts, at the moment as we only test the fake source
-			Containers: []v1.Container{
-				{
-					Name:            "node-feature-discovery",
-					Image:           image,
-					ImagePullPolicy: v1.PullAlways,
-					Command:         []string{"nfd-worker"},
-					Args:            []string{"--oneshot", "--sources=fake", "--server=nfd-master-e2e:8080"},
-					Env: []v1.EnvVar{
-						{
-							Name: "NODE_NAME",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
-									FieldPath: "spec.nodeName",
-								},
+		Spec: nfdWorkerPodSpec(image, extraArgs),
+	}
+
+	p.Spec.RestartPolicy = v1.RestartPolicyNever
+
+	return p
+}
+
+func nfdWorkerDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "nfd-worker-" + string(uuid.NewUUID()),
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"name": "nfd-worker"},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"name": "nfd-worker"},
+				},
+				Spec: nfdWorkerPodSpec(image, extraArgs),
+			},
+			MinReadySeconds: 5,
+		},
+	}
+}
+
+func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
+	return v1.PodSpec{
+		Containers: []v1.Container{
+			{
+				Name:            "node-feature-discovery",
+				Image:           image,
+				ImagePullPolicy: v1.PullAlways,
+				Command:         []string{"nfd-worker"},
+				Args:            append([]string{"--server=nfd-master-e2e:8080"}, extraArgs...),
+				Env: []v1.EnvVar{
+					{
+						Name: "NODE_NAME",
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								FieldPath: "spec.nodeName",
 							},
 						},
 					},
 				},
+				VolumeMounts: []v1.VolumeMount{
+					{
+						Name:      "host-boot",
+						MountPath: "/host-boot",
+						ReadOnly:  true,
+					},
+					{
+						Name:      "host-os-release",
+						MountPath: "/host-etc/os-release",
+						ReadOnly:  true,
+					},
+					{
+						Name:      "host-sys",
+						MountPath: "/host-sys",
+						ReadOnly:  true,
+					},
+				},
 			},
-			ServiceAccountName: "nfd-master-e2e",
-			// NOTE: We do not set HostNetwork/DNSPolicy because we only test the fake source
-			RestartPolicy: v1.RestartPolicyNever,
 		},
+		ServiceAccountName: "nfd-master-e2e",
+		HostNetwork:        true,
+		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
+		Volumes: []v1.Volume{
+			{
+				Name: "host-boot",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/boot",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
+			{
+				Name: "host-os-release",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/etc/os-release",
+						Type: newHostPathType(v1.HostPathFile),
+					},
+				},
+			},
+			{
+				Name: "host-sys",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/sys",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
+		},
+	}
+
+}
+
+func newHostPathType(typ v1.HostPathType) *v1.HostPathType {
+	hostPathType := new(v1.HostPathType)
+	*hostPathType = v1.HostPathType(typ)
+	return hostPathType
+}
+
+// cleanupNode deletes all NFD-related metadata from the Node object, i.e.
+// labels and annotations
+func cleanupNode(cs clientset.Interface) {
+	nodeList, err := cs.CoreV1().Nodes().List(metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	for _, n := range nodeList.Items {
+		var err error
+		var node *v1.Node
+		for retry := 0; retry < 5; retry++ {
+			node, err = cs.CoreV1().Nodes().Get(n.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+
+			update := false
+			// Remove labels
+			for key := range node.Labels {
+				if strings.HasPrefix(key, master.LabelNs) {
+					delete(node.Labels, key)
+					update = true
+				}
+			}
+
+			// Remove annotations
+			for key := range node.Annotations {
+				if strings.HasPrefix(key, master.AnnotationNs) {
+					delete(node.Annotations, key)
+					update = true
+				}
+			}
+
+			if update == false {
+				break
+			}
+
+			By("Deleting NFD labels and annotations from node " + node.Name)
+			_, err = cs.CoreV1().Nodes().Update(node)
+			if err != nil {
+				time.Sleep(100 * time.Millisecond)
+			} else {
+				break
+			}
+
+		}
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
@@ -227,28 +411,18 @@ func nfdWorkerPod(ns string, image string) *v1.Pod {
 var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
-	BeforeEach(func() {
-		err := configureRBAC(f.ClientSet, f.Namespace.Name)
-		Expect(err).NotTo(HaveOccurred())
+	Context("when deploying a single nfd-master pod", func() {
+		var masterPod *v1.Pod
 
-	})
-
-	Context("when deployed with fake source enabled", func() {
-		It("should decorate the node with the fake feature labels", func() {
-			By("Creating a nfd master and worker pods and the nfd-master service on the selected node")
-			ns := f.Namespace.Name
-			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
-			fakeFeatureLabels := map[string]string{
-				labelPrefix + "fake-fakefeature1": "true",
-				labelPrefix + "fake-fakefeature2": "true",
-				labelPrefix + "fake-fakefeature3": "true",
-			}
-
-			defer deconfigureRBAC(f.ClientSet, f.Namespace.Name)
+		BeforeEach(func() {
+			err := configureRBAC(f.ClientSet, f.Namespace.Name)
+			Expect(err).NotTo(HaveOccurred())
 
 			// Launch nfd-master
-			masterPod := nfdMasterPod(ns, image, false)
-			masterPod, err := f.ClientSet.CoreV1().Pods(ns).Create(masterPod)
+			By("Creating nfd master pod and nfd-master service")
+			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
+			masterPod = nfdMasterPod(image, false)
+			masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(masterPod)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Create nfd-master service
@@ -260,27 +434,150 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 
 			By("Waiting for the nfd-master service to be up")
 			Expect(framework.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
+		})
 
-			// Launch nfd-worker
-			workerPod := nfdWorkerPod(ns, image)
-			workerPod, err = f.ClientSet.CoreV1().Pods(ns).Create(workerPod)
+		AfterEach(func() {
+			err := deconfigureRBAC(f.ClientSet, f.Namespace.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Waiting for the nfd-worker pod to succeed")
-			Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, ns)).NotTo(HaveOccurred())
-			workerPod, err = f.ClientSet.CoreV1().Pods(ns).Get(workerPod.ObjectMeta.Name, metav1.GetOptions{})
+		})
 
-			By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
-			node, err := f.ClientSet.CoreV1().Nodes().Get(workerPod.Spec.NodeName, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			for k, v := range fakeFeatureLabels {
-				Expect(node.Labels[k]).To(Equal(v))
-			}
+		//
+		// Simple test with only the fake source enabled
+		//
+		Context("and a single worker pod with fake source enabled", func() {
+			It("it should decorate the node with the fake feature labels", func() {
 
-			By("Removing the fake feature labels advertised by the node-feature-discovery pod")
-			for key := range fakeFeatureLabels {
-				framework.RemoveLabelOffNode(f.ClientSet, workerPod.Spec.NodeName, key)
-			}
+				fakeFeatureLabels := map[string]string{
+					master.LabelNs + "fake-fakefeature1": "true",
+					master.LabelNs + "fake-fakefeature2": "true",
+					master.LabelNs + "fake-fakefeature3": "true",
+				}
+
+				// Remove pre-existing stale annotations and labels
+				cleanupNode(f.ClientSet)
+
+				// Launch nfd-worker
+				By("Creating a nfd worker pod")
+				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
+				workerPod := nfdWorkerPod(image, []string{"--oneshot", "--sources=fake"})
+				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(workerPod)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for the nfd-worker pod to succeed")
+				Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, f.Namespace.Name)).NotTo(HaveOccurred())
+				workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(workerPod.ObjectMeta.Name, metav1.GetOptions{})
+
+				By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
+				node, err := f.ClientSet.CoreV1().Nodes().Get(workerPod.Spec.NodeName, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				for k, v := range fakeFeatureLabels {
+					Expect(node.Labels[k]).To(Equal(v))
+				}
+
+				// Check that there are no unexpected NFD labels
+				for k := range node.Labels {
+					if strings.HasPrefix(k, master.LabelNs) {
+						Expect(fakeFeatureLabels).Should(HaveKey(k))
+					}
+				}
+
+				By("Deleting the node-feature-discovery worker pod")
+				err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(workerPod.ObjectMeta.Name, &metav1.DeleteOptions{})
+
+				cleanupNode(f.ClientSet)
+			})
+		})
+
+		//
+		// More comprehensive test when --e2e-node-config is enabled
+		//
+		Context("and nfd-workers as a daemonset with default sources enabled", func() {
+			It("the node labels listed in the e2e config should be present", func() {
+				readConfig()
+				if conf == nil {
+					Skip("no e2e-config was specified")
+				}
+				if conf.DefaultFeatures == nil {
+					Skip("no 'defaultFeatures' specified in e2e-config")
+				}
+				fConf := conf.DefaultFeatures
+
+				// Remove pre-existing stale annotations and labels
+				cleanupNode(f.ClientSet)
+
+				By("Creating nfd-worker daemonset")
+				workerDS := nfdWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(workerDS)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for daemonset pods to be ready")
+				Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+
+				By("Getting node objects")
+				nodeList, err := f.ClientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				for _, node := range nodeList.Items {
+					if _, ok := fConf.Nodes[node.Name]; !ok {
+						e2elog.Logf("node %q missing from e2e-config, skipping...", node.Name)
+						continue
+					}
+					e2elog.Logf("verifying node %q...", node.Name)
+					nodeConf := fConf.Nodes[node.Name]
+
+					// Check labels
+					for k, v := range nodeConf.ExpectedLabelValues {
+						Expect(node.Labels).To(HaveKeyWithValue(k, v))
+					}
+					for k := range nodeConf.ExpectedLabelKeys {
+						Expect(node.Labels).To(HaveKey(k))
+					}
+					for k := range node.Labels {
+						if strings.HasPrefix(k, master.LabelNs) {
+							if _, ok := nodeConf.ExpectedLabelValues[k]; ok {
+								continue
+							}
+							if _, ok := nodeConf.ExpectedLabelKeys[k]; ok {
+								continue
+							}
+							// Ignore if the label key was not whitelisted
+							Expect(fConf.LabelWhitelist).NotTo(HaveKey(k))
+						}
+					}
+
+					// Check annotations
+					for k, v := range nodeConf.ExpectedAnnotationValues {
+						Expect(node.Annotations).To(HaveKeyWithValue(k, v))
+					}
+					for k := range nodeConf.ExpectedAnnotationKeys {
+						Expect(node.Annotations).To(HaveKey(k))
+					}
+					for k := range node.Annotations {
+						if strings.HasPrefix(k, master.AnnotationNs) {
+							if _, ok := nodeConf.ExpectedAnnotationValues[k]; ok {
+								continue
+							}
+							if _, ok := nodeConf.ExpectedAnnotationKeys[k]; ok {
+								continue
+							}
+							// Ignore if the annotation was not whitelisted
+							Expect(fConf.AnnotationWhitelist).NotTo(HaveKey(k))
+						}
+					}
+
+					// Node running nfd-master should have master version annotation
+					if node.Name == masterPod.Spec.NodeName {
+						Expect(node.Annotations).To(HaveKey(master.AnnotationNs + "master.version"))
+					}
+				}
+
+				By("Deleting nfd-worker daemonset")
+				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(workerDS.ObjectMeta.Name, &metav1.DeleteOptions{})
+
+				cleanupNode(f.ClientSet)
+			})
 		})
 	})
+
 })

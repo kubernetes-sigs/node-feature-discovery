@@ -63,8 +63,8 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		mockClient := &k8sclient.Clientset{}
 		// Mock node with old features
 		mockNode := newMockNode()
-		mockNode.Labels[labelNs+"old-feature"] = "old-value"
-		mockNode.Annotations[annotationNs+"feature-labels"] = "old-feature"
+		mockNode.Labels[LabelNs+"old-feature"] = "old-value"
+		mockNode.Annotations[AnnotationNs+"feature-labels"] = "old-feature"
 
 		Convey("When I successfully update the node with feature labels", func() {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
@@ -78,11 +78,11 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			Convey("Node object should have updated with labels and annotations", func() {
 				So(len(mockNode.Labels), ShouldEqual, len(fakeFeatureLabels))
 				for k, v := range fakeFeatureLabels {
-					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
+					So(mockNode.Labels[LabelNs+k], ShouldEqual, v)
 				}
 				So(len(mockNode.Annotations), ShouldEqual, len(fakeAnnotations))
 				for k, v := range fakeAnnotations {
-					So(mockNode.Annotations[annotationNs+k], ShouldEqual, v)
+					So(mockNode.Annotations[AnnotationNs+k], ShouldEqual, v)
 				}
 			})
 		})
@@ -209,11 +209,11 @@ func TestSetLabels(t *testing.T) {
 			Convey("Node object should have updated with labels and annotations", func() {
 				So(len(mockNode.Labels), ShouldEqual, len(mockLabels))
 				for k, v := range mockLabels {
-					So(mockNode.Labels[labelNs+k], ShouldEqual, v)
+					So(mockNode.Labels[LabelNs+k], ShouldEqual, v)
 				}
 				So(len(mockNode.Annotations), ShouldEqual, len(expectedAnnotations))
 				for k, v := range expectedAnnotations {
-					So(mockNode.Annotations[annotationNs+k], ShouldEqual, v)
+					So(mockNode.Annotations[AnnotationNs+k], ShouldEqual, v)
 				}
 			})
 		})
@@ -229,9 +229,9 @@ func TestSetLabels(t *testing.T) {
 			})
 			Convey("Node object should only have whitelisted labels", func() {
 				So(len(mockNode.Labels), ShouldEqual, 1)
-				So(mockNode.Labels, ShouldResemble, map[string]string{labelNs + "feature-2": "val-2"})
+				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "feature-2": "val-2"})
 
-				a := map[string]string{annotationNs + "worker.version": workerVer, annotationNs + "feature-labels": "feature-2"}
+				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-2"}
 				So(len(mockNode.Annotations), ShouldEqual, len(a))
 				So(mockNode.Annotations, ShouldResemble, a)
 			})
@@ -252,9 +252,9 @@ func TestSetLabels(t *testing.T) {
 			})
 			Convey("Node object should only have allowed label namespaces", func() {
 				So(len(mockNode.Labels), ShouldEqual, 2)
-				So(mockNode.Labels, ShouldResemble, map[string]string{labelNs + "feature-1": "val-1", "valid.ns/feature-2": "val-2"})
+				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "feature-1": "val-1", "valid.ns/feature-2": "val-2"})
 
-				a := map[string]string{annotationNs + "worker.version": workerVer, annotationNs + "feature-labels": "feature-1,valid.ns/feature-2"}
+				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-1,valid.ns/feature-2"}
 				So(len(mockNode.Annotations), ShouldEqual, len(a))
 				So(mockNode.Annotations, ShouldResemble, a)
 			})
@@ -300,7 +300,7 @@ func TestAddLabels(t *testing.T) {
 			test1 := "test1"
 			labels[test1] = "true"
 			addLabels(n, labels)
-			So(n.Labels, ShouldContainKey, labelNs+test1)
+			So(n.Labels, ShouldContainKey, LabelNs+test1)
 		})
 	})
 }

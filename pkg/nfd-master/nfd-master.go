@@ -41,10 +41,10 @@ import (
 
 const (
 	// Namespace for feature labels
-	labelNs = "feature.node.kubernetes.io/"
+	LabelNs = "feature.node.kubernetes.io/"
 
 	// Namespace for all NFD-related annotations
-	annotationNs = "nfd.node.kubernetes.io/"
+	AnnotationNs = "nfd.node.kubernetes.io/"
 )
 
 // package loggers
@@ -301,7 +301,7 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	}
 
 	// Remove old labels
-	if l, ok := node.Annotations[annotationNs+"feature-labels"]; ok {
+	if l, ok := node.Annotations[AnnotationNs+"feature-labels"]; ok {
 		oldLabels := strings.Split(l, ",")
 		removeLabels(node, oldLabels)
 	}
@@ -341,7 +341,7 @@ func removeLabels(n *api.Node, labelNames []string) {
 		if strings.Contains(l, "/") {
 			delete(n.Labels, l)
 		} else {
-			delete(n.Labels, labelNs+l)
+			delete(n.Labels, LabelNs+l)
 		}
 	}
 }
@@ -352,7 +352,7 @@ func addLabels(n *api.Node, labels map[string]string) {
 		if strings.Contains(k, "/") {
 			n.Labels[k] = v
 		} else {
-			n.Labels[labelNs+k] = v
+			n.Labels[LabelNs+k] = v
 		}
 	}
 }
@@ -360,6 +360,6 @@ func addLabels(n *api.Node, labels map[string]string) {
 // Add Annotations to a Node object
 func addAnnotations(n *api.Node, annotations map[string]string) {
 	for k, v := range annotations {
-		n.Annotations[annotationNs+k] = v
+		n.Annotations[AnnotationNs+k] = v
 	}
 }
