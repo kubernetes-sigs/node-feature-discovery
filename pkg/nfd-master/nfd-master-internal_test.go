@@ -23,9 +23,11 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
 	"golang.org/x/net/context"
 	api "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
@@ -43,15 +45,18 @@ func init() {
 
 func newMockNode() *api.Node {
 	n := api.Node{}
+	n.Name = mockNodeName
 	n.Labels = map[string]string{}
 	n.Annotations = map[string]string{}
+	n.Status.Capacity = api.ResourceList{}
 	return &n
 }
 
 func TestUpdateNodeFeatures(t *testing.T) {
 	Convey("When I update the node using fake client", t, func() {
-		fakeFeatureLabels := map[string]string{"source-feature.1": "val1", "source-feature.2": "val2", "source-feature.3": "val3"}
+		fakeFeatureLabels := map[string]string{"source-feature.1": "1", "source-feature.2": "2", "source-feature.3": "val3"}
 		fakeAnnotations := map[string]string{"version": version.Get()}
+		fakeExtResources := ExtendedResources{"source-feature.1": "", "source-feature.2": ""}
 		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureLabels))
 		for k, _ := range fakeFeatureLabels {
 			fakeFeatureLabelNames = append(fakeFeatureLabelNames, k)
@@ -70,7 +75,8 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(nil).Once()
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations)
+			mockAPIHelper.On("PatchStatus", mockClient, mockNodeName, mock.Anything).Return(nil).Twice()
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
@@ -90,7 +96,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		Convey("When I fail to update the node with feature labels", func() {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -100,7 +106,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		Convey("When I fail to get a mock client while updating feature labels", func() {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -111,7 +117,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(nil, expectedError).Once()
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -123,7 +129,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Once()
 			mockAPIHelper.On("UpdateNode", mockClient, mockNode).Return(expectedError).Once()
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -178,6 +184,72 @@ func TestUpdateMasterNode(t *testing.T) {
 	})
 }
 
+func TestAddingExtResources(t *testing.T) {
+	Convey("When adding extended resources", t, func() {
+		Convey("When there are no matching labels", func() {
+			mockNode := newMockNode()
+			mockResourceLabels := ExtendedResources{}
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldEqual, 0)
+		})
+
+		Convey("When there are matching labels", func() {
+			mockNode := newMockNode()
+			mockResourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldBeGreaterThan, 0)
+		})
+
+		Convey("When the resource already exists", func() {
+			mockNode := newMockNode()
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{"feature-1": "1"}
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldEqual, 0)
+		})
+
+		Convey("When the resource already exists but its capacity has changed", func() {
+			mockNode := newMockNode()
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{"feature-1": "1"}
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldBeGreaterThan, 0)
+		})
+	})
+}
+
+func TestRemovingExtResources(t *testing.T) {
+	Convey("When removing extended resources", t, func() {
+		Convey("When none are removed", func() {
+			mockNode := newMockNode()
+			mockResourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
+			mockNode.Annotations[AnnotationNs+"extended-resources"] = "feature-1,feature-2"
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldEqual, 0)
+		})
+		Convey("When the related label is gone", func() {
+			mockNode := newMockNode()
+			mockResourceLabels := ExtendedResources{"feature-4": "", "feature-2": "2"}
+			mockNode.Annotations[AnnotationNs+"extended-resources"] = "feature-4,feature-2"
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldBeGreaterThan, 0)
+		})
+		Convey("When the extended resource is no longer wanted", func() {
+			mockNode := newMockNode()
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{"feature-2": "2"}
+			mockNode.Annotations[AnnotationNs+"extended-resources"] = "feature-1,feature-2"
+			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			So(len(resourceOps), ShouldBeGreaterThan, 0)
+		})
+	})
+}
+
 func TestSetLabels(t *testing.T) {
 	Convey("When servicing SetLabels request", t, func() {
 		const workerName = "mock-worker"
@@ -197,6 +269,7 @@ func TestSetLabels(t *testing.T) {
 		sort.Strings(mockLabelNames)
 		expectedAnnotations := map[string]string{"worker.version": workerVer}
 		expectedAnnotations["feature-labels"] = strings.Join(mockLabelNames, ",")
+		expectedAnnotations["extended-resources"] = ""
 
 		Convey("When node update succeeds", func() {
 			mockHelper.On("GetClient").Return(mockClient, nil)
@@ -231,7 +304,7 @@ func TestSetLabels(t *testing.T) {
 				So(len(mockNode.Labels), ShouldEqual, 1)
 				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "feature-2": "val-2"})
 
-				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-2"}
+				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-2", AnnotationNs + "extended-resources": ""}
 				So(len(mockNode.Annotations), ShouldEqual, len(a))
 				So(mockNode.Annotations, ShouldResemble, a)
 			})
@@ -254,7 +327,7 @@ func TestSetLabels(t *testing.T) {
 				So(len(mockNode.Labels), ShouldEqual, 2)
 				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "feature-1": "val-1", "valid.ns/feature-2": "val-2"})
 
-				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-1,valid.ns/feature-2"}
+				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-1,valid.ns/feature-2", AnnotationNs + "extended-resources": ""}
 				So(len(mockNode.Annotations), ShouldEqual, len(a))
 				So(mockNode.Annotations, ShouldResemble, a)
 			})

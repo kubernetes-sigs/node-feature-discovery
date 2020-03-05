@@ -17,8 +17,11 @@ limitations under the License.
 package apihelper
 
 import (
+	"encoding/json"
+
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 )
@@ -58,4 +61,14 @@ func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	}
 
 	return nil
+}
+
+func (h K8sHelpers) PatchStatus(c *k8sclient.Clientset, nodeName string, marshalable interface{}) error {
+	// Send the updated node to the apiserver.
+	patch, err := json.Marshal(marshalable)
+	if err == nil {
+		_, err = c.CoreV1().Nodes().Patch(nodeName, types.JSONPatchType, patch, "status")
+	}
+
+	return err
 }

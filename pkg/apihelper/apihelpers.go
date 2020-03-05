@@ -31,4 +31,7 @@ type APIHelpers interface {
 
 	// UpdateNode updates the node via the API server using a client.
 	UpdateNode(*k8sclient.Clientset, *api.Node) error
+
+	// PatchStatus updates the node status via the API server using a client.
+	PatchStatus(*k8sclient.Clientset, string, interface{}) error
 }
