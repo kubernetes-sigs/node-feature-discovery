@@ -51,7 +51,9 @@ func (s Source) Discover() (source.Features, error) {
 				if key == "VERSION_ID" {
 					versionComponents := splitVersion(value)
 					for subKey, subValue := range versionComponents {
-						features[feature+"."+subKey] = subValue
+						if subValue != "" {
+							features[feature+"."+subKey] = subValue
+						}
 					}
 				}
 			}
