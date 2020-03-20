@@ -65,7 +65,7 @@ func argsParse(argv []string) (master.Args, error) {
   Usage:
   %s [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
-     [--verify-node-name] [--extra-label-ns=<list>]
+     [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
   %s -h | --help
   %s --version
 
@@ -87,6 +87,8 @@ func argsParse(argv []string) (master.Args, error) {
   --label-whitelist=<pattern>     Regular expression to filter label names to
                                   publish to the Kubernetes API server. [Default: ]
   --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
+                                  [Default: ]
+  --resource-labels=<list>        Comma separated list of labels to be exposed as extended resources.
                                   [Default: ]`,
 		ProgramName,
 		ProgramName,
@@ -113,6 +115,7 @@ func argsParse(argv []string) (master.Args, error) {
 	}
 	args.VerifyNodeName = arguments["--verify-node-name"].(bool)
 	args.ExtraLabelNs = strings.Split(arguments["--extra-label-ns"].(string), ",")
+	args.ResourceLabels = strings.Split(arguments["--resource-labels"].(string), ",")
 
 	return args, nil
 }

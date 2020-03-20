@@ -8,6 +8,7 @@
 - [Feature discovery](#feature-discovery)
   - [Feature sources](#feature-sources)
   - [Feature labels](#feature-labels)
+- [Extended resources (experimental)](#extended-resources-experimental)
 - [Getting started](#getting-started)
   - [System requirements](#system-requirements)
   - [Usage](#usage)
@@ -53,7 +54,7 @@ nfd-master.
   Usage:
   nfd-master [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
-     [--verify-node-name] [--extra-label-ns=<list>]
+     [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
   nfd-master -h | --help
   nfd-master --version
 
@@ -75,6 +76,8 @@ nfd-master.
   --label-whitelist=<pattern>     Regular expression to filter label names to
                                   publish to the Kubernetes API server. [Default: ]
   --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
+                                  [Default: ]
+  --resource-labels=<list>        Comma separated list of labels to be exposed as extended resources.
                                   [Default: ]
 ```
 
@@ -440,6 +443,37 @@ NFD is running. In order to avoid race conditions you should write into a
 temporary file (outside the `source.d` and `features.d` directories), and,
 atomically create/update the original file by doing a filesystem move
 operation.
+
+## Extended resources (experimental)
+
+This feature is experimental and by no means a replacement for the usage of
+device plugins.
+
+Labels which have integer values, can be promoted to Kubernetes extended
+resources by listing them to the master `--resource-labels` command line flag.
+These labels won't then show in the node label section, they will appear only
+as extended resources.
+
+An example use-case for the extended resources could be based on a hook which
+creates a label for the node SGX EPC memory section size. By giving the name of
+that label in the `--resource-labels` flag, that value will then turn into an
+extended resource of the node, allowing PODs to request that resource and the
+Kubernetes scheduler to schedule such PODs to only those nodes which have a
+sufficient capacity of said resource left.
+
+Similar to labels, the default namespace `feature.node.kubernetes.io` is
+automatically prefixed to the extended resource, if the promoted label doesn't
+have a namespace.
+
+Example usage of the command line arguments, using a new namespace:
+`nfd-master --resource-labels=my_source-my.feature,sgx.some.ns/epc --extra-label-ns=sgx.some.ns`
+
+The above would result in following extended resources provided that related
+labels exist:
+```
+  sgx.some.ns/epc: <label value>
+  feature.node.kubernetes.io/my_source-my.feature: <label value>
+```
 
 ## Getting started
 
