@@ -255,40 +255,80 @@ capability might be supported but not enabled.
 
 ### Custom Features
 The Custom feature source allows the user to define features based on a mix of predefined rules.
+A rule is provided input witch affects its process of matching for a defined feature.
 
-#### Rule Types
+To aid in making Custom Features clearer, we define a general and a per rule nomenclature, keeping things as
+consistent as possible.
 
+#### General Nomenclature & Definitions
+```
+Rule        :Represents a matching logic that is used to match on a feature.
+Rule Input  :The input a Rule is provided. This determines how a Rule performs the match operation.
+Matcher     :A composition of Rules, each Matcher may be composed of at most one instance of each Rule.
+```
+
+#### Custom Features Format (using the Nomenclature defined above)
+```yaml
+- name: <feature name>
+  matchOn:
+  - <Rule-1>: <Rule-1 Input>
+    [<Rule-2>: <Rule-2 Input>]
+  - <Matcher-2>
+  - ...
+  - ...
+  - <Matcher-N>
+- <custom feature 2>
+- ...
+- ...
+- <custom feature M>
+```
+
+#### Matching process
+Specifying Rules to match on a feature is done by providing a list of Matchers.
+Each Matcher contains one or more Rules.
+
+Logical _OR_ is performed between Matchers and logical _AND_ is performed between Rules
+of a given Matcher.
+
+#### Rules
 ##### PciId Rule
-The PciId rule allows matching the PCI devices in the system on the following PCI attributes: `class`,`vendor` and
-`device` identifiers.
+###### Nomenclature
+```
+Attribute   :A PCI attribute.
+Element     :An identifier of the PCI attribute.
+```
 
+The PciId Rule allows matching the PCI devices in the system on the following Attributes: `class`,`vendor` and
+`device`. A list of Elements is provided for each Attribute.
+
+###### Format
 ```yaml
 pciId :
   class: [<class id>, ...]
   vendor: [<vendor id>,  ...]
   device: [<device id>, ...]
 ```
-Matching is done by performing a logical OR for elements of an attribute and logical AND between specified attributes for
+
+Matching is done by performing a logical _OR_ between Elements of an Attribute and logical _AND_ between the specified Attributes for
 each PCI device in the system.
-At least one attribute must be specificed, missing attributes will not partake in the matching process.
+At least one Attribute must be specified. Missing attributes will not partake in the matching process.
 
 ##### LoadedKMod Rule
-The LoadedKMod rule allows matching the loaded kernel modules in the system against a provided list of kernel modules.
+###### Nomenclature
+```
+Element     :A kernel module
+```
 
+The LoadedKMod Rule allows matching the loaded kernel modules in the system against a provided list of Elements.
+
+###### Format
 ```yaml
 loadedKMod : [<kernel module>, ...]
 ```
- Matching is done by performing a logical AND for each provided kernel module, i.e the rule will match if all provided kernel modules are loaded
+ Matching is done by performing logical _AND_ for each provided Element, i.e the Rule will match if all provided Elements (kernel modules) are loaded
  in the system.
 
-#### Multiple Rules Matching process
-Specifying Rules to match on a feature is done by a list of rule elements.
-Each rule element contains one or more rule types.
-
-Logical OR is performed between rule elements and logical AND is performed between rule types
-of a given rule element.
-
-##### Example
+#### Example
 ```yaml
 custom:
   - name: "my.kernel.feature"
@@ -327,7 +367,7 @@ with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
 
 #### Statically defined features
 Some feature labels which are common and generic are defined statically in the `custom` feature source.
-A user may add additional rules to these feature labels by defining them in the `nfd-worker` configuration file
+A user may add additional Matchers to these feature labels by defining them in the `nfd-worker` configuration file.
 
 | Feature | Attribute | Description |
 | ------- | --------- | -----------|
