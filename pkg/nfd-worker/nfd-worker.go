@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
+	"sigs.k8s.io/node-feature-discovery/source/custom"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/iommu"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
@@ -61,6 +62,7 @@ type NFDConfig struct {
 		Cpu    *cpu.NFDConfig    `json:"cpu,omitempty"`
 		Kernel *kernel.NFDConfig `json:"kernel,omitempty"`
 		Pci    *pci.NFDConfig    `json:"pci,omitempty"`
+		Custom *custom.NFDConfig `json:"custom,omitempty"`
 	} `json:"sources,omitempty"`
 }
 
@@ -234,6 +236,7 @@ func configParse(filepath string, overrides string) error {
 	config.Sources.Cpu = &cpu.Config
 	config.Sources.Kernel = &kernel.Config
 	config.Sources.Pci = &pci.Config
+	config.Sources.Custom = &custom.Config
 
 	data, err := ioutil.ReadFile(filepath)
 	if err != nil {
@@ -276,6 +279,7 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		pci.Source{},
 		storage.Source{},
 		system.Source{},
+		custom.Source{},
 		// local needs to be the last source so that it is able to override
 		// labels from other sources
 		local.Source{},

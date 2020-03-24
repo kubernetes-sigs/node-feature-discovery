@@ -153,6 +153,7 @@ for up-to-date information about the required volume mounts.
 The current set of feature sources are the following:
 
 - CPU
+- Custom
 - IOMMU
 - Kernel
 - Memory
@@ -184,6 +185,7 @@ feature logically has sub-hierarchy, e.g. `sriov.capable` and
 ```json
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
+  "feature.node.kubernetes.io/custom-<feature-name>": "true",
   "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/memory-<feature-name>": "true",
@@ -253,6 +255,127 @@ capability might be supported but not enabled.
 | PMULL     | Optional Cryptographic and CRC32 Instructions
 | JSCVT     | Perform Conversion to Match Javascript
 | DCPOP     | Persistent Memory Support
+
+### Custom Features
+The Custom feature source allows the user to define features based on a mix of predefined rules.
+A rule is provided input witch affects its process of matching for a defined feature.
+
+To aid in making Custom Features clearer, we define a general and a per rule nomenclature, keeping things as
+consistent as possible.
+
+#### General Nomenclature & Definitions
+```
+Rule        :Represents a matching logic that is used to match on a feature.
+Rule Input  :The input a Rule is provided. This determines how a Rule performs the match operation.
+Matcher     :A composition of Rules, each Matcher may be composed of at most one instance of each Rule.
+```
+
+#### Custom Features Format (using the Nomenclature defined above)
+```yaml
+- name: <feature name>
+  matchOn:
+  - <Rule-1>: <Rule-1 Input>
+    [<Rule-2>: <Rule-2 Input>]
+  - <Matcher-2>
+  - ...
+  - ...
+  - <Matcher-N>
+- <custom feature 2>
+- ...
+- ...
+- <custom feature M>
+```
+
+#### Matching process
+Specifying Rules to match on a feature is done by providing a list of Matchers.
+Each Matcher contains one or more Rules.
+
+Logical _OR_ is performed between Matchers and logical _AND_ is performed between Rules
+of a given Matcher.
+
+#### Rules
+##### PciId Rule
+###### Nomenclature
+```
+Attribute   :A PCI attribute.
+Element     :An identifier of the PCI attribute.
+```
+
+The PciId Rule allows matching the PCI devices in the system on the following Attributes: `class`,`vendor` and
+`device`. A list of Elements is provided for each Attribute.
+
+###### Format
+```yaml
+pciId :
+  class: [<class id>, ...]
+  vendor: [<vendor id>,  ...]
+  device: [<device id>, ...]
+```
+
+Matching is done by performing a logical _OR_ between Elements of an Attribute and logical _AND_ between the specified Attributes for
+each PCI device in the system.
+At least one Attribute must be specified. Missing attributes will not partake in the matching process.
+
+##### LoadedKMod Rule
+###### Nomenclature
+```
+Element     :A kernel module
+```
+
+The LoadedKMod Rule allows matching the loaded kernel modules in the system against a provided list of Elements.
+
+###### Format
+```yaml
+loadedKMod : [<kernel module>, ...]
+```
+ Matching is done by performing logical _AND_ for each provided Element, i.e the Rule will match if all provided Elements (kernel modules) are loaded
+ in the system.
+
+#### Example
+```yaml
+custom:
+  - name: "my.kernel.feature"
+    matchOn:
+      - loadedKMod: ["kmod1", "kmod2"]
+  - name: "my.pci.feature"
+    matchOn:
+      - pciId:
+          vendor: ["15b3"]
+          device: ["1014", "1017"]
+  - name: "my.combined.feature"
+    matchOn:
+      - loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
+        pciId:
+          vendor: ["15b3"]
+          device: ["1014", "1017"] 
+  - name: "my.accumulated.feature"
+    matchOn:
+      - loadedKMod : ["some_kmod1", "some_kmod2"]
+      - pciId:
+          vendor: ["15b3"]
+          device: ["1014", "1017"]
+```
+
+__In the example above:__
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.kernel.feature=true`
+if the node has `kmod1` _AND_ `kmod2` kernel modules loaded. 
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.pci.feature=true`
+if the node contains a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.combined.feature=true`
+if `vendor_kmod1` _AND_ `vendor_kmod2` kernel modules are loaded __AND__ the node contains a PCI device
+with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _or_ `1017`.
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.accumulated.feature=true`
+if `some_kmod1` _AND_ `some_kmod2` kernel modules are loaded __OR__ the node contains a PCI device
+with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+
+#### Statically defined features
+Some feature labels which are common and generic are defined statically in the `custom` feature source.
+A user may add additional Matchers to these feature labels by defining them in the `nfd-worker` configuration file.
+
+| Feature | Attribute | Description |
+| ------- | --------- | -----------|
+| rdma  | capable | The node has an RDMA capable Network adapter |
+| rdma | enabled | The node has the needed RDMA modules loaded to run RDMA traffic |
 
 ### IOMMU Features
 
