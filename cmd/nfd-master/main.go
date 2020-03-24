@@ -35,8 +35,8 @@ const (
 
 func main() {
 	// Assert that the version is known
-	if version.Get() == "undefined" {
-		log.Fatalf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
+	if version.Undefined() {
+		log.Print("WARNING: version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	// Parse command-line arguments.
