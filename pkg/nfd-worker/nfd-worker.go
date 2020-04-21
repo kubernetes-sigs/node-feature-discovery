@@ -94,14 +94,20 @@ type NfdWorker interface {
 }
 
 type nfdWorker struct {
-	args       Args
-	clientConn *grpc.ClientConn
-	client     pb.LabelerClient
+	args           Args
+	clientConn     *grpc.ClientConn
+	client         pb.LabelerClient
+	sources        []source.FeatureSource
+	labelWhiteList *regexp.Regexp
 }
 
 // Create new NfdWorker instance.
 func NewNfdWorker(args Args) (NfdWorker, error) {
-	nfd := &nfdWorker{args: args}
+	nfd := &nfdWorker{
+		args:    args,
+		sources: []source.FeatureSource{},
+	}
+
 	if args.SleepInterval > 0 && args.SleepInterval < time.Second {
 		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s", args.SleepInterval.String())
 		args.SleepInterval = time.Second
@@ -120,6 +126,44 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 		}
 	}
 
+	// Figure out active sources
+	allSources := []source.FeatureSource{
+		cpu.Source{},
+		fake.Source{},
+		iommu.Source{},
+		kernel.Source{},
+		memory.Source{},
+		network.Source{},
+		panicfake.Source{},
+		pci.Source{},
+		storage.Source{},
+		system.Source{},
+		usb.Source{},
+		custom.Source{},
+		// local needs to be the last source so that it is able to override
+		// labels from other sources
+		local.Source{},
+	}
+
+	sourceWhiteList := map[string]struct{}{}
+	for _, s := range args.Sources {
+		sourceWhiteList[strings.TrimSpace(s)] = struct{}{}
+	}
+
+	nfd.sources = []source.FeatureSource{}
+	for _, s := range allSources {
+		if _, enabled := sourceWhiteList[s.Name()]; enabled {
+			nfd.sources = append(nfd.sources, s)
+		}
+	}
+
+	// Compile labelWhiteList regex
+	var err error
+	nfd.labelWhiteList, err = regexp.Compile(args.LabelWhiteList)
+	if err != nil {
+		return nfd, fmt.Errorf("error parsing label whitelist regex (%s): %s", args.LabelWhiteList, err)
+	}
+
 	return nfd, nil
 }
 
@@ -135,12 +179,6 @@ func (w *nfdWorker) Run() error {
 		stderrLogger.Print(err)
 	}
 
-	// Configure the parameters for feature discovery.
-	enabledSources, labelWhiteList, err := configureParameters(w.args.Sources, w.args.LabelWhiteList)
-	if err != nil {
-		return fmt.Errorf("error occurred while configuring parameters: %s", err.Error())
-	}
-
 	// Connect to NFD master
 	err = w.connect()
 	if err != nil {
@@ -150,7 +188,7 @@ func (w *nfdWorker) Run() error {
 
 	for {
 		// Get the set of feature labels.
-		labels := createFeatureLabels(enabledSources, labelWhiteList)
+		labels := createFeatureLabels(w.sources, w.labelWhiteList)
 
 		// Update the node with the feature labels.
 		if w.client != nil {
@@ -261,51 +299,6 @@ func configParse(filepath string, overrides string) error {
 	}
 
 	return nil
-}
-
-// configureParameters returns all the variables required to perform feature
-// discovery based on command line arguments.
-func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (enabledSources []source.FeatureSource, labelWhiteList *regexp.Regexp, err error) {
-	// A map for lookup
-	sourcesWhiteListMap := map[string]struct{}{}
-	for _, s := range sourcesWhiteList {
-		sourcesWhiteListMap[strings.TrimSpace(s)] = struct{}{}
-	}
-
-	// Configure feature sources.
-	allSources := []source.FeatureSource{
-		cpu.Source{},
-		fake.Source{},
-		iommu.Source{},
-		kernel.Source{},
-		memory.Source{},
-		network.Source{},
-		panicfake.Source{},
-		pci.Source{},
-		storage.Source{},
-		system.Source{},
-		usb.Source{},
-		custom.Source{},
-		// local needs to be the last source so that it is able to override
-		// labels from other sources
-		local.Source{},
-	}
-
-	enabledSources = []source.FeatureSource{}
-	for _, s := range allSources {
-		if _, enabled := sourcesWhiteListMap[s.Name()]; enabled {
-			enabledSources = append(enabledSources, s)
-		}
-	}
-
-	// Compile labelWhiteList regex
-	labelWhiteList, err = regexp.Compile(labelWhiteListStr)
-	if err != nil {
-		stderrLogger.Printf("error parsing whitelist regex (%s): %s", labelWhiteListStr, err)
-		return nil, nil, err
-	}
-
-	return enabledSources, labelWhiteList, nil
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled

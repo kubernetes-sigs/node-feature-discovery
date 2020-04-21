@@ -126,64 +126,60 @@ func TestConfigParse(t *testing.T) {
 	})
 }
 
-func TestConfigureParameters(t *testing.T) {
-	Convey("When configuring parameters for node feature discovery", t, func() {
+func TestNewNfdWorker(t *testing.T) {
+	Convey("When creating new NfdWorker instance", t, func() {
 
-		Convey("When no sourcesWhiteList and labelWhiteListStr are passed", func() {
-			sourcesWhiteList := []string{}
-			labelWhiteListStr := ""
+		Convey("without any args specified", func() {
+			args := Args{}
 			emptyRegexp, _ := regexp.Compile("")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+			worker, err := NewNfdWorker(args)
 
-			Convey("Error should not be produced", func() {
+			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("No sourcesWhiteList or labelWhiteList are returned", func() {
-				So(len(enabledSources), ShouldEqual, 0)
-				So(labelWhiteList, ShouldResemble, emptyRegexp)
+			Convey("no sources should be enabled and the whitelist regexp should be empty", func() {
+				So(len(worker.sources), ShouldEqual, 0)
+				So(worker.labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("When sourcesWhiteList is passed", func() {
-			sourcesWhiteList := []string{"fake"}
-			labelWhiteListStr := ""
+		Convey("with non-empty Sources arg specified", func() {
+			args := Args{Sources: []string{"fake"}}
 			emptyRegexp, _ := regexp.Compile("")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+			worker, err := NewNfdWorker(args)
 
-			Convey("Error should not be produced", func() {
+			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("Proper sourcesWhiteList are returned", func() {
-				So(len(enabledSources), ShouldEqual, 1)
-				So(enabledSources[0], ShouldHaveSameTypeAs, fake.Source{})
-				So(labelWhiteList, ShouldResemble, emptyRegexp)
+			Convey("proper sources should be enabled", func() {
+				So(len(worker.sources), ShouldEqual, 1)
+				So(worker.sources[0], ShouldHaveSameTypeAs, fake.Source{})
+				So(worker.labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("When invalid labelWhiteListStr is passed", func() {
-			sourcesWhiteList := []string{""}
-			labelWhiteListStr := "*"
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
+		Convey("with invalid LabelWhiteList arg specified", func() {
+			args := Args{LabelWhiteList: "*"}
+			worker, err := NewNfdWorker(args)
 
-			Convey("Error is produced", func() {
-				So(enabledSources, ShouldBeNil)
-				So(labelWhiteList, ShouldBeNil)
+			Convey("an error should be returned", func() {
+				So(len(worker.sources), ShouldEqual, 0)
+				So(worker.labelWhiteList, ShouldBeNil)
 				So(err, ShouldNotBeNil)
 			})
 		})
 
-		Convey("When valid labelWhiteListStr is passed", func() {
-			sourcesWhiteList := []string{""}
-			labelWhiteListStr := ".*rdt.*"
+		Convey("with valid LabelWhiteListStr arg specified", func() {
+			args := Args{LabelWhiteList: ".*rdt.*"}
+			worker, err := NewNfdWorker(args)
 			expectRegexp, err := regexp.Compile(".*rdt.*")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
 
-			Convey("Error should not be produced", func() {
+			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("Proper labelWhiteList is returned", func() {
-				So(len(enabledSources), ShouldEqual, 0)
-				So(labelWhiteList, ShouldResemble, expectRegexp)
+			Convey("proper labelWhiteList regexp should be produced", func() {
+				So(len(worker.sources), ShouldEqual, 0)
+				So(worker.labelWhiteList, ShouldResemble, expectRegexp)
 			})
 		})
 	})
