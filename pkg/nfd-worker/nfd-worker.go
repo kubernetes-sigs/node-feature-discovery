@@ -19,6 +19,7 @@ package nfdworker
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -50,7 +51,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// package loggers
 var (
 	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
 	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
@@ -59,16 +59,10 @@ var (
 
 // Global config
 type NFDConfig struct {
-	Sources struct {
-		CPU    *cpu.NFDConfig    `json:"cpu,omitempty"`
-		Kernel *kernel.NFDConfig `json:"kernel,omitempty"`
-		Pci    *pci.NFDConfig    `json:"pci,omitempty"`
-		Usb    *usb.NFDConfig    `json:"usb,omitempty"`
-		Custom *custom.NFDConfig `json:"custom,omitempty"`
-	} `json:"sources,omitempty"`
+	Sources sourcesConfig
 }
 
-var config = NFDConfig{}
+type sourcesConfig map[string]source.Config
 
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
@@ -97,6 +91,7 @@ type nfdWorker struct {
 	args           Args
 	clientConn     *grpc.ClientConn
 	client         pb.LabelerClient
+	config         NFDConfig
 	sources        []source.FeatureSource
 	labelWhiteList *regexp.Regexp
 }
@@ -128,21 +123,21 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 
 	// Figure out active sources
 	allSources := []source.FeatureSource{
-		cpu.Source{},
-		fake.Source{},
-		iommu.Source{},
-		kernel.Source{},
-		memory.Source{},
-		network.Source{},
-		panicfake.Source{},
-		pci.Source{},
-		storage.Source{},
-		system.Source{},
-		usb.Source{},
-		custom.Source{},
+		&cpu.Source{},
+		&fake.Source{},
+		&iommu.Source{},
+		&kernel.Source{},
+		&memory.Source{},
+		&network.Source{},
+		&panicfake.Source{},
+		&pci.Source{},
+		&storage.Source{},
+		&system.Source{},
+		&usb.Source{},
+		&custom.Source{},
 		// local needs to be the last source so that it is able to override
 		// labels from other sources
-		local.Source{},
+		&local.Source{},
 	}
 
 	sourceWhiteList := map[string]struct{}{}
@@ -173,14 +168,11 @@ func (w *nfdWorker) Run() error {
 	stdoutLogger.Printf("Node Feature Discovery Worker %s", version.Get())
 	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
-	// Parse config
-	err := configParse(w.args.ConfigFile, w.args.Options)
-	if err != nil {
-		stderrLogger.Print(err)
-	}
+	// Parse and apply configuration
+	w.configure(w.args.ConfigFile, w.args.Options)
 
 	// Connect to NFD master
-	err = w.connect()
+	err := w.connect()
 	if err != nil {
 		return fmt.Errorf("failed to connect: %v", err)
 	}
@@ -274,31 +266,38 @@ func (w *nfdWorker) disconnect() {
 }
 
 // Parse configuration options
-func configParse(filepath string, overrides string) error {
-	config.Sources.CPU = &cpu.Config
-	config.Sources.Kernel = &kernel.Config
-	config.Sources.Pci = &pci.Config
-	config.Sources.Usb = &usb.Config
-	config.Sources.Custom = &custom.Config
-
-	data, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		return fmt.Errorf("Failed to read config file: %s", err)
+func (w *nfdWorker) configure(filepath string, overrides string) {
+	// Create a new default config
+	c := NFDConfig{Sources: make(map[string]source.Config, len(w.sources))}
+	for _, s := range w.sources {
+		c.Sources[s.Name()] = s.NewConfig()
 	}
 
-	// Read config file
-	err = yaml.Unmarshal(data, &config)
+	// Try to read and parse config file
+	data, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		return fmt.Errorf("Failed to parse config file: %s", err)
+		stderrLogger.Printf("Failed to read config file: %s", err)
+	} else {
+		err = yaml.Unmarshal(data, &c)
+		if err != nil {
+			stderrLogger.Printf("Failed to parse config file: %s", err)
+		} else {
+			stdoutLogger.Printf("Configuration successfully loaded from %q", filepath)
+		}
 	}
 
 	// Parse config overrides
-	err = yaml.Unmarshal([]byte(overrides), &config)
+	err = yaml.Unmarshal([]byte(overrides), &c)
 	if err != nil {
-		return fmt.Errorf("Failed to parse --options: %s", err)
+		stderrLogger.Printf("Failed to parse --options: %s", err)
 	}
 
-	return nil
+	w.config = c
+
+	// (Re-)configure all sources
+	for _, s := range w.sources {
+		s.SetConfig(c.Sources[s.Name()])
+	}
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
@@ -343,7 +342,7 @@ func getFeatureLabels(source source.FeatureSource, labelWhiteList *regexp.Regexp
 	// Prefix for labels in the default namespace
 	prefix := source.Name() + "-"
 	switch source.(type) {
-	case local.Source:
+	case *local.Source:
 		// Do not prefix labels from the hooks
 		prefix = ""
 	}
@@ -405,6 +404,30 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	if err != nil {
 		stderrLogger.Printf("failed to set node labels: %v", err)
 		return err
+	}
+
+	return nil
+}
+
+// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
+func (c *sourcesConfig) UnmarshalJSON(data []byte) error {
+	// First do a raw parse to get the per-source data
+	raw := map[string]json.RawMessage{}
+	err := yaml.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+
+	// Then parse each source-specific data structure
+	// NOTE: we expect 'c' to be pre-populated with correct per-source data
+	//       types. Non-pre-populated keys are ignored.
+	for k, rawv := range raw {
+		if v, ok := (*c)[k]; ok {
+			err := yaml.Unmarshal(rawv, &v)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q source config: %v", k, err)
+			}
+		}
 	}
 
 	return nil

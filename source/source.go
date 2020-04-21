@@ -39,4 +39,16 @@ type FeatureSource interface {
 
 	// Discover returns discovered features for this node.
 	Discover() (Features, error)
+
+	// NewConfig returns a new default config of the source
+	NewConfig() Config
+
+	// GetConfig returns the effective configuration of the source
+	GetConfig() Config
+
+	// SetConfig changes the effective configuration of the source
+	SetConfig(Config)
+}
+
+type Config interface {
 }

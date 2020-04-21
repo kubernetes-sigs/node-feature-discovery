@@ -24,6 +24,18 @@ type Source struct{}
 // Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "fake" }
 
+// NewConfig method of the FeatureSource interface
+func (s *Source) NewConfig() source.Config { return nil }
+
+// GetConfig method of the FeatureSource interface
+func (s *Source) GetConfig() source.Config { return nil }
+
+// SetConfig method of the FeatureSource interface
+func (s *Source) SetConfig(source.Config) {}
+
+// Configure method of the FeatureSource interface
+func (s Source) Configure([]byte) error { return nil }
+
 // Discover returns feature names for some fake features.
 func (s Source) Discover() (source.Features, error) {
 	// Adding three fake features.

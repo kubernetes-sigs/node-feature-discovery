@@ -31,6 +31,15 @@ type Source struct{}
 // Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "memory" }
 
+// NewConfig method of the FeatureSource interface
+func (s *Source) NewConfig() source.Config { return nil }
+
+// GetConfig method of the FeatureSource interface
+func (s *Source) GetConfig() source.Config { return nil }
+
+// SetConfig method of the FeatureSource interface
+func (s *Source) SetConfig(source.Config) {}
+
 // Discover returns feature names for memory: numa if more than one memory node is present.
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}

@@ -36,6 +36,15 @@ type Source struct{}
 
 func (s Source) Name() string { return "system" }
 
+// NewConfig method of the FeatureSource interface
+func (s *Source) NewConfig() source.Config { return nil }
+
+// GetConfig method of the FeatureSource interface
+func (s *Source) GetConfig() source.Config { return nil }
+
+// SetConfig method of the FeatureSource interface
+func (s *Source) SetConfig(source.Config) {}
+
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
 
