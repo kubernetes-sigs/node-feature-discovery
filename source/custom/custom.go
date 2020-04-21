@@ -26,7 +26,7 @@ import (
 
 // Custom Features Configurations
 type MatchRule struct {
-	PciId *rules.PciIdRule `json:"pciId,omitempty""`
+	PciId      *rules.PciIdRule      `json:"pciId,omitempty""`
 	LoadedKMod *rules.LoadedKModRule `json:"loadedKMod,omitempty""`
 }
 
