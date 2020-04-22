@@ -91,7 +91,6 @@ func (s Source) Discover() (source.Features, error) {
 	if cpuidFilter == nil {
 		initCpuidFilter()
 	}
-	log.Printf("CONF: %s", Config)
 
 	// Check if hyper-threading seems to be enabled
 	found, err := haveThreadSiblings()
