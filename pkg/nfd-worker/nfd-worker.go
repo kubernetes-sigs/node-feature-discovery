@@ -168,9 +168,6 @@ func (w *nfdWorker) Run() error {
 	stdoutLogger.Printf("Node Feature Discovery Worker %s", version.Get())
 	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
-	// Parse and apply configuration
-	w.configure(w.args.ConfigFile, w.args.Options)
-
 	// Connect to NFD master
 	err := w.connect()
 	if err != nil {
@@ -179,6 +176,9 @@ func (w *nfdWorker) Run() error {
 	defer w.disconnect()
 
 	for {
+		// Parse and apply configuration
+		w.configure(w.args.ConfigFile, w.args.Options)
+
 		// Get the set of feature labels.
 		labels := createFeatureLabels(w.sources, w.labelWhiteList)
 
