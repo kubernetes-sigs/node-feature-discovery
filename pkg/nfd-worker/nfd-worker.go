@@ -27,7 +27,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -47,6 +46,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 	"sigs.k8s.io/node-feature-discovery/source/storage"
 	"sigs.k8s.io/node-feature-discovery/source/system"
+	"sigs.k8s.io/yaml"
 )
 
 // package loggers

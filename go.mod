@@ -6,7 +6,6 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/evanphx/json-patch v4.2.0+incompatible
-	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/golang/protobuf v1.3.2
 	github.com/klauspost/cpuid v1.2.3
@@ -28,6 +27,7 @@ require (
 	k8s.io/kube-aggregator v0.0.0
 	k8s.io/kubernetes v1.17.2
 	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f
+	sigs.k8s.io/yaml v1.1.0
 )
 
 // The k8s "sub-"packages do not have 'semver' compatible versions. Thus, we
