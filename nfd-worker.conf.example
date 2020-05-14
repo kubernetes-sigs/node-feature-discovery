@@ -44,6 +44,16 @@
 #      - "device"
 #      - "subsystem_vendor"
 #      - "subsystem_device"
+#  usb:
+#    deviceClassWhitelist:
+#      - "0e"
+#      - "ef"
+#      - "fe"
+#      - "ff"
+#    deviceLabelFields:
+#      - "class"
+#      - "vendor"
+#      - "device"
 #  custom:
 #    - name: "my.kernel.feature"
 #      matchOn:
@@ -57,6 +67,16 @@
 #        - pciId :
 #            vendor: ["8086"]
 #            device: ["1000", "1100"]
+#    - name: "my.usb.feature"
+#      matchOn:
+#        - usbId:
+#          class: ["ff"]
+#          vendor: ["03e7"]
+#          device: ["2485"]
+#        - usbId:
+#          class: ["fe"]
+#          vendor: ["1a6e"]
+#          device: ["089a"]
 #    - name: "my.combined.feature"
 #      matchOn:
 #        - pciId:

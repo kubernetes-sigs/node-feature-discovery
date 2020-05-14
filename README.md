@@ -129,7 +129,7 @@ nfd-worker.
                               in testing
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,iommu,kernel,local,memory,network,pci,storage,system]
+                              [Default: cpu,iommu,kernel,local,memory,network,pci,storage,system,usb]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -161,6 +161,7 @@ The current set of feature sources are the following:
 - PCI
 - Storage
 - System
+- USB
 - Local (hooks for user-specific features)
 
 ### Feature labels
@@ -193,6 +194,7 @@ feature logically has sub-hierarchy, e.g. `sriov.capable` and
   "feature.node.kubernetes.io/pci-<device label>.present": "true",
   "feature.node.kubernetes.io/storage-<feature-name>": "true",
   "feature.node.kubernetes.io/system-<feature name>": "<feature value>",
+  "feature.node.kubernetes.io/usb-<device label>.present": "<feature value>",
   "feature.node.kubernetes.io/<file name>-<feature name>": "<feature value>"
 }
 ```
@@ -316,6 +318,28 @@ Matching is done by performing a logical _OR_ between Elements of an Attribute a
 each PCI device in the system.
 At least one Attribute must be specified. Missing attributes will not partake in the matching process.
 
+##### UsbId Rule
+###### Nomenclature
+```
+Attribute   :A USB attribute.
+Element     :An identifier of the USB attribute.
+```
+
+The UsbId Rule allows matching the USB devices in the system on the following Attributes: `class`,`vendor` and
+`device`. A list of Elements is provided for each Attribute.
+
+###### Format
+```yaml
+usbId :
+  class: [<class id>, ...]
+  vendor: [<vendor id>,  ...]
+  device: [<device id>, ...]
+```
+
+Matching is done by performing a logical _OR_ between Elements of an Attribute and logical _AND_ between the specified Attributes for
+each USB device in the system.
+At least one Attribute must be specified. Missing attributes will not partake in the matching process.
+
 ##### LoadedKMod Rule
 ###### Nomenclature
 ```
@@ -342,6 +366,11 @@ custom:
       - pciId:
           vendor: ["15b3"]
           device: ["1014", "1017"]
+  - name: "my.usb.feature"
+    matchOn:
+      - usbId:
+          vendor: ["1d6b"]
+          device: ["0003"]
   - name: "my.combined.feature"
     matchOn:
       - loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
@@ -361,6 +390,8 @@ __In the example above:__
 if the node has `kmod1` _AND_ `kmod2` kernel modules loaded. 
 - A node would contain the label: `feature.node.kubernetes.io/custom-my.pci.feature=true`
 if the node contains a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.usb.feature=true`
+if the node contains a USB device with a USB vendor ID of `1d6b` _AND_ USB device ID of `0003`.
 - A node would contain the label: `feature.node.kubernetes.io/custom-my.combined.feature=true`
 if `vendor_kmod1` _AND_ `vendor_kmod2` kernel modules are loaded __AND__ the node contains a PCI device
 with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _or_ `1017`.
@@ -432,6 +463,21 @@ feature.node.kubernetes.io/pci-1200_8086.present=true
 Also  the set of PCI device classes that the feature source detects is
 configurable. By default, device classes (0x)03, (0x)0b40 and (0x)12, i.e.
 GPUs, co-processors and accelerator cards are detected.
+
+### USB Features
+
+| Feature              | Attribute     | Description                               |
+| -------------------- | ------------- | ----------------------------------------- |
+| &lt;device label&gt; | present       | USB device is detected
+
+`<device label>` is composed of raw USB IDs, separated by underscores.
+The set of fields used in `<device label>` is configurable, valid fields being
+`class`, `vendor`, and `device`.
+Defaults are `class`, `vendor` and `device`. An example label using the default
+label fields:
+```
+feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
+```
 
 See [configuration options](#configuration-options)
 for more information on NFD config.
