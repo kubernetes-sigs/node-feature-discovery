@@ -97,6 +97,11 @@ func parseVersion() (map[string]string, error) {
 	}
 
 	full := strings.TrimSpace(string(raw))
+
+	// Replace forbidden symbols
+	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]")
+	full = fullRegex.ReplaceAllString(full, "_")
+
 	version["full"] = full
 
 	// Regexp for parsing version components
