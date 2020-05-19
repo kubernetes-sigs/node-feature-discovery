@@ -31,6 +31,9 @@ build:
 	@mkdir -p bin
 	$(GO_CMD) build -v -o bin $(LDFLAGS) ./cmd/...
 
+install:
+	$(GO_CMD) install -v $(LDFLAGS) ./cmd/...
+
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
 		--build-arg HOSTMOUNT_PREFIX=$(HOSTMOUNT_PREFIX) \
