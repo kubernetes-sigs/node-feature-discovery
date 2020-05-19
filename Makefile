@@ -20,10 +20,16 @@ HOSTMOUNT_PREFIX := /host-
 KUBECONFIG :=
 E2E_TEST_CONFIG :=
 
+LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION)"
+
 yaml_templates := $(wildcard *.yaml.template)
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
 all: image
+
+build:
+	@mkdir -p bin
+	$(GO_CMD) build -v -o bin $(LDFLAGS) ./cmd/...
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
