@@ -188,7 +188,9 @@ func (w *nfdWorker) connect() error {
 	}
 
 	// Dial and create a client
-	dialOpts := []grpc.DialOption{grpc.WithBlock(), grpc.WithTimeout(60 * time.Second)}
+	dialCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	dialOpts := []grpc.DialOption{grpc.WithBlock()}
 	if w.args.CaFile != "" || w.args.CertFile != "" || w.args.KeyFile != "" {
 		// Load client cert for client authentication
 		cert, err := tls.LoadX509KeyPair(w.args.CertFile, w.args.KeyFile)
@@ -214,7 +216,7 @@ func (w *nfdWorker) connect() error {
 	} else {
 		dialOpts = append(dialOpts, grpc.WithInsecure())
 	}
-	conn, err := grpc.Dial(w.args.Server, dialOpts...)
+	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...)
 	if err != nil {
 		return err
 	}
