@@ -56,9 +56,8 @@ func readPciDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceIn
 		if err != nil {
 			if must {
 				return info, fmt.Errorf("Failed to read device %s: %s", attr, err)
-			} else {
-				continue
 			}
+			continue
 
 		}
 		info[attr] = attrVal

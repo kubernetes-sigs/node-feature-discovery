@@ -140,7 +140,7 @@ func readKconfigGzip(filename string) ([]byte, error) {
 func parseKconfig() (map[string]string, error) {
 	kconfig := map[string]string{}
 	raw := []byte(nil)
-	err := error(nil)
+	var err error
 
 	// First, try kconfig specified in the config file
 	if len(Config.KconfigFile) > 0 {
