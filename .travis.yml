@@ -11,8 +11,12 @@ env:
 services:
   - docker
 
+before_script:
+  - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.27.0
+
 script:
   - make gofmt-verify
+  - make ci-lint
   - make image -e
   - if [ "$TRAVIS_BRANCH" == master -a -n "$IMAGE_REPO_USER" ]; then
       set -e;
