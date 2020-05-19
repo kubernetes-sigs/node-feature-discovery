@@ -105,7 +105,7 @@ func createStatusOp(verb string, resource string, path string, value string) sta
 }
 
 // Create new NfdMaster server instance.
-func NewNfdMaster(args Args) (*nfdMaster, error) {
+func NewNfdMaster(args Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: args, ready: make(chan bool, 1)}
 
 	// Check TLS related args
@@ -191,7 +191,7 @@ func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
 	select {
 	case ready, ok := <-m.ready:
 		// Ready if the flag is true or the channel has been closed
-		if ready == true || ok == false {
+		if ready || !ok {
 			return true
 		}
 	case <-time.After(timeout):
