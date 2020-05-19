@@ -16,11 +16,20 @@ IMAGE_TAG_NAME := $(VERSION)
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 K8S_NAMESPACE := kube-system
-HOSTMOUNT_PREFIX := /host-
+
+# We use different mount prefix for local and container builds.
+# Take CONTAINER_HOSTMOUNT_PREFIX from HOSTMOUNT_PREFIX if only the latter is specified
+ifdef HOSTMOUNT_PREFIX
+    CONTAINER_HOSTMOUNT_PREFIX := $(HOSTMOUNT_PREFIX)
+else
+    CONTAINER_HOSTMOUNT_PREFIX := /host-
+endif
+HOSTMOUNT_PREFIX := /
+
 KUBECONFIG :=
 E2E_TEST_CONFIG :=
 
-LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION)"
+LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
 yaml_templates := $(wildcard *.yaml.template)
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
@@ -36,7 +45,7 @@ install:
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
-		--build-arg HOSTMOUNT_PREFIX=$(HOSTMOUNT_PREFIX) \
+		--build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
 		-t $(IMAGE_TAG) \
 		$(IMAGE_BUILD_EXTRA_OPTS) ./
 
@@ -49,7 +58,7 @@ yamls: $(yaml_instances)
 	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
 	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
 	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
-	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${HOSTMOUNT_PREFIX},' \
+	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${CONTAINER_HOSTMOUNT_PREFIX},' \
 	     $< > $@
 
 mock:
