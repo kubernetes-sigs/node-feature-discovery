@@ -13,7 +13,6 @@ spec:
       labels:
         app: node-feature-discovery
     spec:
-      hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       affinity:
         podAntiAffinity:
