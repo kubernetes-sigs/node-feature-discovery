@@ -44,7 +44,7 @@ install:
 	$(GO_CMD) install -v $(LDFLAGS) ./cmd/...
 
 image: yamls
-	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
+	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 		--build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
 		-t $(IMAGE_TAG) \
 		$(IMAGE_BUILD_EXTRA_OPTS) ./
