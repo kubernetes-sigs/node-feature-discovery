@@ -280,7 +280,7 @@ func configureParameters(sourcesWhiteList []string, labelWhiteListStr string) (e
 		kernel.Source{},
 		memory.Source{},
 		network.Source{},
-		panic_fake.Source{},
+		panicfake.Source{},
 		pci.Source{},
 		storage.Source{},
 		system.Source{},

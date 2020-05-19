@@ -207,7 +207,7 @@ func TestCreateFeatureLabels(t *testing.T) {
 
 func TestGetFeatureLabels(t *testing.T) {
 	Convey("When I get feature labels and panic occurs during discovery of a feature source", t, func() {
-		fakePanicFeatureSource := source.FeatureSource(new(panic_fake.Source))
+		fakePanicFeatureSource := source.FeatureSource(new(panicfake.Source))
 
 		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource)
 		Convey("No label is returned", func() {

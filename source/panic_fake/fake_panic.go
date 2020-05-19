@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package panic_fake
+package panicfake
 
 import "sigs.k8s.io/node-feature-discovery/source"
 
