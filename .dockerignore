@@ -1,5 +1,7 @@
 demo/
 .dockerignore
 .git*
-node-feature-discovery-job.yaml
-vendor/
+nfd-daemonset-combined.yaml
+nfd-master.yaml
+nfd-worker-daemonset.yaml
+nfd-worker-job.yaml
