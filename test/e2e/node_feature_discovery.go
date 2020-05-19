@@ -44,7 +44,6 @@ var (
 	dockerRepo    = flag.String("nfd.repo", "quay.io/kubernetes_incubator/node-feature-discovery", "Docker repository to fetch image from")
 	dockerTag     = flag.String("nfd.tag", "e2e-test", "Docker tag to use")
 	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
-	labelPrefix   = "feature.node.kubernetes.io/"
 
 	conf *e2eConfig
 )
@@ -390,7 +389,7 @@ func cleanupNode(cs clientset.Interface) {
 				}
 			}
 
-			if update == false {
+			if !update {
 				break
 			}
 
@@ -467,6 +466,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 				By("Waiting for the nfd-worker pod to succeed")
 				Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, f.Namespace.Name)).NotTo(HaveOccurred())
 				workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(workerPod.ObjectMeta.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
 
 				By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
 				node, err := f.ClientSet.CoreV1().Nodes().Get(workerPod.Spec.NodeName, metav1.GetOptions{})
@@ -484,6 +484,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 
 				By("Deleting the node-feature-discovery worker pod")
 				err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(workerPod.ObjectMeta.Name, &metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
 
 				cleanupNode(f.ClientSet)
 			})
@@ -574,6 +575,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 
 				By("Deleting nfd-worker daemonset")
 				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(workerDS.ObjectMeta.Name, &metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
 
 				cleanupNode(f.ClientSet)
 			})
