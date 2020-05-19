@@ -16,14 +16,14 @@ limitations under the License.
 
 package cpuid
 
-type CpuidRet struct {
+type ReturnValue struct {
 	EAX, EBX, ECX, EDX uint32
 }
 
-func Cpuid(eax, ecx uint32) *CpuidRet {
-	r := &CpuidRet{}
+func Cpuid(eax, ecx uint32) *ReturnValue {
+	r := &ReturnValue{}
 	r.EAX, r.EBX, r.ECX, r.EDX = cpuidAsm(eax, ecx)
 	return r
 }
 
-func cpuidAsm(eax_arg, ecx_arg uint32) (eax, ebx, ecx, edx uint32)
+func cpuidAsm(eaxArg, ecxArg uint32) (eax, ebx, ecx, edx uint32)
