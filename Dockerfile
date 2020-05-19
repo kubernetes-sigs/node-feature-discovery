@@ -14,10 +14,7 @@ COPY . /go/node-feature-discovery
 ARG NFD_VERSION
 ARG HOSTMOUNT_PREFIX
 
-RUN go install \
-  -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$NFD_VERSION -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$HOSTMOUNT_PREFIX" \
-  ./cmd/*
-RUN install -D -m644 nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
+RUN make install VERSION=$NFD_VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
 
 RUN make test
 
@@ -28,5 +25,5 @@ FROM debian:stretch-slim
 # Use more verbose logging of gRPC
 ENV GRPC_GO_LOG_SEVERITY_LEVEL="INFO"
 
-COPY --from=builder /etc/kubernetes/node-feature-discovery /etc/kubernetes/node-feature-discovery
-COPY --from=builder /go/bin/nfd-* /usr/bin/
+COPY --from=builder /go/node-feature-discovery/nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
+COPY --from=builder /go/bin/* /usr/bin/
