@@ -60,7 +60,7 @@ var (
 // Global config
 type NFDConfig struct {
 	Sources struct {
-		Cpu    *cpu.NFDConfig    `json:"cpu,omitempty"`
+		CPU    *cpu.NFDConfig    `json:"cpu,omitempty"`
 		Kernel *kernel.NFDConfig `json:"kernel,omitempty"`
 		Pci    *pci.NFDConfig    `json:"pci,omitempty"`
 		Usb    *usb.NFDConfig    `json:"usb,omitempty"`
@@ -100,7 +100,7 @@ type nfdWorker struct {
 }
 
 // Create new NfdWorker instance.
-func NewNfdWorker(args Args) (*nfdWorker, error) {
+func NewNfdWorker(args Args) (NfdWorker, error) {
 	nfd := &nfdWorker{args: args}
 	if args.SleepInterval > 0 && args.SleepInterval < time.Second {
 		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s", args.SleepInterval.String())
@@ -235,7 +235,7 @@ func (w *nfdWorker) disconnect() {
 
 // Parse configuration options
 func configParse(filepath string, overrides string) error {
-	config.Sources.Cpu = &cpu.Config
+	config.Sources.CPU = &cpu.Config
 	config.Sources.Kernel = &kernel.Config
 	config.Sources.Pci = &pci.Config
 	config.Sources.Usb = &usb.Config

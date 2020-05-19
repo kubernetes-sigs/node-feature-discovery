@@ -39,12 +39,10 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 		fakeFeatureNames := []string{"testfeature1", "testfeature2", "testfeature3"}
 		fakeFeatures := source.Features{}
 		fakeFeatureLabels := Labels{}
-		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureNames))
 		for _, f := range fakeFeatureNames {
 			fakeFeatures[f] = true
 			labelName := fakeFeatureSourceName + "-" + f
 			fakeFeatureLabels[labelName] = "true"
-			fakeFeatureLabelNames = append(fakeFeatureLabelNames, labelName)
 		}
 		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
 
@@ -89,7 +87,7 @@ func TestConfigParse(t *testing.T) {
 		f, err := ioutil.TempFile("", "nfd-test-")
 		defer os.Remove(f.Name())
 		So(err, ShouldBeNil)
-		f.WriteString(`sources:
+		_, err = f.WriteString(`sources:
   kernel:
     configOpts:
       - "DMI"
@@ -97,6 +95,7 @@ func TestConfigParse(t *testing.T) {
     deviceClassWhitelist:
       - "ff"`)
 		f.Close()
+		So(err, ShouldBeNil)
 
 		Convey("When proper config file is given", func() {
 			err := configParse(f.Name(), "")
