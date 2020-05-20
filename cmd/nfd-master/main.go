@@ -85,7 +85,10 @@ func argsParse(argv []string) (master.Args, error) {
                                   has been enabled.
   --no-publish                    Do not publish feature labels
   --label-whitelist=<pattern>     Regular expression to filter label names to
-                                  publish to the Kubernetes API server. [Default: ]
+                                  publish to the Kubernetes API server.
+                                  NB: the label namespace is omitted i.e. the filter
+                                  is only applied to the name part after '/'.
+                                  [Default: ]
   --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
                                   [Default: ]
   --resource-labels=<list>        Comma separated list of labels to be exposed as extended resources.
