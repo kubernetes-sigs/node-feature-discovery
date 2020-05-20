@@ -22,6 +22,8 @@ import (
 	"log"
 	"path"
 	"strings"
+
+	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 type PciDeviceInfo map[string]string
@@ -72,10 +74,10 @@ func readPciDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceIn
 // "class" attribute is considered mandatory.
 // DetectPci() will fail if the retrieval of a mandatory attribute fails.
 func DetectPci(deviceAttrSpec map[string]bool) (map[string][]PciDeviceInfo, error) {
-	const basePath = "/sys/bus/pci/devices/"
+	sysfsBasePath := source.SysfsDir.Path("bus/pci/devices")
 	devInfo := make(map[string][]PciDeviceInfo)
 
-	devices, err := ioutil.ReadDir(basePath)
+	devices, err := ioutil.ReadDir(sysfsBasePath)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +86,7 @@ func DetectPci(deviceAttrSpec map[string]bool) (map[string][]PciDeviceInfo, erro
 
 	// Iterate over devices
 	for _, device := range devices {
-		info, err := readPciDevInfo(path.Join(basePath, device.Name()), deviceAttrSpec)
+		info, err := readPciDevInfo(path.Join(sysfsBasePath, device.Name()), deviceAttrSpec)
 		if err != nil {
 			log.Print(err)
 			continue

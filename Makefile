@@ -16,6 +16,7 @@ IMAGE_TAG_NAME := $(VERSION)
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 K8S_NAMESPACE := kube-system
+HOSTMOUNT_PREFIX := /host-
 KUBECONFIG :=
 E2E_TEST_CONFIG :=
 
@@ -26,6 +27,7 @@ all: image
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
+		--build-arg HOSTMOUNT_PREFIX=$(HOSTMOUNT_PREFIX) \
 		-t $(IMAGE_TAG) \
 		$(IMAGE_BUILD_EXTRA_OPTS) ./
 
@@ -38,6 +40,7 @@ yamls: $(yaml_instances)
 	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
 	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
 	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
+	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${HOSTMOUNT_PREFIX},' \
 	     $< > $@
 
 mock:

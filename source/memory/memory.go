@@ -60,7 +60,7 @@ func (s Source) Discover() (source.Features, error) {
 func isNuma() (bool, error) {
 	// Find out how many nodes are online
 	// Multiple nodes is a sign of NUMA
-	bytes, err := ioutil.ReadFile("/sys/devices/system/node/online")
+	bytes, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/node/online"))
 	if err != nil {
 		return false, err
 	}
@@ -81,7 +81,7 @@ func detectNvdimm() (map[string]bool, error) {
 	features := make(map[string]bool)
 
 	// Check presence of physical devices
-	devices, err := ioutil.ReadDir("/sys/class/nd/")
+	devices, err := ioutil.ReadDir(source.SysfsDir.Path("class/nd"))
 	if err == nil {
 		if len(devices) > 0 {
 			features["present"] = true
@@ -93,7 +93,7 @@ func detectNvdimm() (map[string]bool, error) {
 	}
 
 	// Check presence of DAX-configured regions
-	devices, err = ioutil.ReadDir("/sys/bus/nd/devices/")
+	devices, err = ioutil.ReadDir(source.SysfsDir.Path("bus/nd/devices"))
 	if err == nil {
 		for _, d := range devices {
 			if strings.HasPrefix(d.Name(), "dax") {

@@ -44,8 +44,7 @@ func (s Source) Discover() (source.Features, error) {
 	// iterating through network interfaces to obtain their respective number of virtual functions
 	for _, netInterface := range netInterfaces {
 		if strings.Contains(netInterface.Flags.String(), "up") && !strings.Contains(netInterface.Flags.String(), "loopback") {
-			totalVfsPath := "/sys/class/net/" + netInterface.Name + "/device/sriov_totalvfs"
-			totalBytes, err := ioutil.ReadFile(totalVfsPath)
+			totalBytes, err := ioutil.ReadFile(source.SysfsDir.Path("class/net", netInterface.Name, "device/sriov_totalvfs"))
 			if err != nil {
 				log.Printf("SR-IOV not supported for network interface: %s: %v", netInterface.Name, err)
 				continue
@@ -60,8 +59,7 @@ func (s Source) Discover() (source.Features, error) {
 				log.Printf("SR-IOV capability is detected on the network interface: %s", netInterface.Name)
 				log.Printf("%d maximum supported number of virtual functions on network interface: %s", t, netInterface.Name)
 				features["sriov.capable"] = true
-				numVfsPath := "/sys/class/net/" + netInterface.Name + "/device/sriov_numvfs"
-				numBytes, err := ioutil.ReadFile(numVfsPath)
+				numBytes, err := ioutil.ReadFile(source.SysfsDir.Path("class/net", netInterface.Name, "device/sriov_numvfs"))
 				if err != nil {
 					log.Printf("SR-IOV not configured for network interface: %s: %s", netInterface.Name, err)
 					continue

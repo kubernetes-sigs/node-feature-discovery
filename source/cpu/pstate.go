@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
+
+	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 // Discover p-state related features such as turbo boost.
@@ -31,7 +33,7 @@ func detectPstate() (map[string]string, error) {
 	}
 
 	// Only looking for turbo boost for now...
-	bytes, err := ioutil.ReadFile("/sys/devices/system/cpu/intel_pstate/no_turbo")
+	bytes, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/cpu/intel_pstate/no_turbo"))
 	if err != nil {
 		return nil, fmt.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
 	}
