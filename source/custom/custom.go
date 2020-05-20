@@ -27,6 +27,7 @@ import (
 // Custom Features Configurations
 type MatchRule struct {
 	PciId      *rules.PciIdRule      `json:"pciId,omitempty""`
+	UsbId      *rules.UsbIdRule      `json:"usbId,omitempty""`
 	LoadedKMod *rules.LoadedKModRule `json:"loadedKMod,omitempty""`
 }
 
@@ -70,6 +71,16 @@ func (s Source) discoverFeature(feature CustomFeature) (bool, error) {
 		// PCI ID rule
 		if rule.PciId != nil {
 			match, err := rule.PciId.Match()
+			if err != nil {
+				return false, err
+			}
+			if !match {
+				continue
+			}
+		}
+		// USB ID rule
+		if rule.UsbId != nil {
+			match, err := rule.UsbId.Match()
 			if err != nil {
 				return false, err
 			}

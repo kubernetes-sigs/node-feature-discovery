@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pciutils
+package busutils
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ var ExtraPciDevAttrs = []string{"sriov_totalvfs"}
 
 // Read a single PCI device attribute
 // A PCI attribute in this context, maps to the corresponding sysfs file
-func readSingleAttribute(devPath string, attrName string) (string, error) {
+func readSinglePciAttribute(devPath string, attrName string) (string, error) {
 	data, err := ioutil.ReadFile(path.Join(devPath, attrName))
 	if err != nil {
 		return "", fmt.Errorf("failed to read device attribute %s: %v", attrName, err)
@@ -48,11 +48,11 @@ func readSingleAttribute(devPath string, attrName string) (string, error) {
 }
 
 // Read information of one PCI device
-func readDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceInfo, error) {
+func readPciDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceInfo, error) {
 	info := PciDeviceInfo{}
 
 	for attr, must := range deviceAttrSpec {
-		attrVal, err := readSingleAttribute(devPath, attr)
+		attrVal, err := readSinglePciAttribute(devPath, attr)
 		if err != nil {
 			if must {
 				return info, fmt.Errorf("Failed to read device %s: %s", attr, err)
@@ -85,7 +85,7 @@ func DetectPci(deviceAttrSpec map[string]bool) (map[string][]PciDeviceInfo, erro
 
 	// Iterate over devices
 	for _, device := range devices {
-		info, err := readDevInfo(path.Join(basePath, device.Name()), deviceAttrSpec)
+		info, err := readPciDevInfo(path.Join(basePath, device.Name()), deviceAttrSpec)
 		if err != nil {
 			log.Print(err)
 			continue
