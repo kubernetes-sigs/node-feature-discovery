@@ -167,7 +167,7 @@ func parseKconfig() (map[string]string, error) {
 			return nil, err
 		}
 		// Read kconfig
-		raw, err = ioutil.ReadFile("/host-boot/config-" + uname)
+		raw, err = ioutil.ReadFile(source.BootDir.Path("config-" + uname))
 		if err != nil {
 			return nil, err
 		}

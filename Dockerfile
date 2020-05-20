@@ -14,7 +14,7 @@ COPY . /go/node-feature-discovery
 ARG NFD_VERSION
 
 RUN go install \
-  -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$NFD_VERSION" \
+  -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$NFD_VERSION -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=/host-" \
   ./cmd/*
 RUN install -D -m644 nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
 

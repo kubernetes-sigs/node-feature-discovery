@@ -66,7 +66,7 @@ func (s Source) Discover() (source.Features, error) {
 func parseOSRelease() (map[string]string, error) {
 	release := map[string]string{}
 
-	f, err := os.Open("/host-etc/os-release")
+	f, err := os.Open(source.EtcDir.Path("os-release"))
 	if err != nil {
 		return nil, err
 	}
