@@ -24,7 +24,7 @@ type FeatureValue interface {
 type BoolFeatureValue bool
 
 func (b BoolFeatureValue) String() string {
-	if b == true {
+	if b {
 		return "true"
 	}
 	return "false"

@@ -60,7 +60,7 @@ func readUsbDevInfo(devPath string, deviceAttrSpec map[string]bool) (UsbClassMap
 	classmap := UsbClassMap{}
 	info := UsbDeviceInfo{}
 
-	for attr, _ := range deviceAttrSpec {
+	for attr := range deviceAttrSpec {
 		attrVal, _ := readSingleUsbAttribute(devPath, attr)
 		if len(attrVal) > 0 {
 			info[attr] = attrVal

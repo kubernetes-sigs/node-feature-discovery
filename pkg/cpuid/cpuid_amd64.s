@@ -16,9 +16,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-TEXT ·cpuidAsm(SB), 4, $0   // 4 = NOSPLIT
-    MOVL    eax_arg+0(FP), AX
-    MOVL    ecx_arg+4(FP), CX
+#include "textflag.h"
+
+TEXT ·cpuidAsm(SB), NOSPLIT, $0
+    MOVL    eaxArg+0(FP), AX
+    MOVL    ecxArg+4(FP), CX
     CPUID
     MOVL    AX, eax+8(FP)
     MOVL    BX, ebx+12(FP)

@@ -22,19 +22,19 @@ import (
 
 // getStaticFeatures returns statically configured custom features to discover
 // e.g RMDA related features. NFD configuration file may extend these custom features by adding rules.
-func getStaticFeatureConfig() []CustomFeature {
-	return []CustomFeature{
-		CustomFeature{
+func getStaticFeatureConfig() []FeatureSpec {
+	return []FeatureSpec{
+		FeatureSpec{
 			Name: "rdma.capable",
 			MatchOn: []MatchRule{
 				MatchRule{
-					PciId: &rules.PciIdRule{
-						rules.PciIdRuleInput{Vendor: []string{"15b3"}},
+					PciID: &rules.PciIDRule{
+						PciIDRuleInput: rules.PciIDRuleInput{Vendor: []string{"15b3"}},
 					},
 				},
 			},
 		},
-		CustomFeature{
+		FeatureSpec{
 			Name: "rdma.available",
 			MatchOn: []MatchRule{
 				MatchRule{

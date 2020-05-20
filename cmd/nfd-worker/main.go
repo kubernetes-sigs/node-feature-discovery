@@ -106,8 +106,8 @@ func argsParse(argv []string) (worker.Args, error) {
 		ProgramName,
 	)
 
-	arguments, _ := docopt.Parse(usage, argv, true,
-		fmt.Sprintf("%s %s", ProgramName, version.Get()), false)
+	arguments, _ := docopt.ParseArgs(usage, argv,
+		fmt.Sprintf("%s %s", ProgramName, version.Get()))
 
 	// Parse argument values as usable types.
 	var err error

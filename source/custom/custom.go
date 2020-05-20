@@ -26,17 +26,17 @@ import (
 
 // Custom Features Configurations
 type MatchRule struct {
-	PciId      *rules.PciIdRule      `json:"pciId,omitempty""`
-	UsbId      *rules.UsbIdRule      `json:"usbId,omitempty""`
-	LoadedKMod *rules.LoadedKModRule `json:"loadedKMod,omitempty""`
+	PciID      *rules.PciIDRule      `json:"pciId,omitempty"`
+	UsbID      *rules.UsbIDRule      `json:"usbId,omitempty"`
+	LoadedKMod *rules.LoadedKModRule `json:"loadedKMod,omitempty"`
 }
 
-type CustomFeature struct {
+type FeatureSpec struct {
 	Name    string      `json:"name"`
 	MatchOn []MatchRule `json:"matchOn"`
 }
 
-type NFDConfig []CustomFeature
+type NFDConfig []FeatureSpec
 
 var Config = NFDConfig{}
 
@@ -66,11 +66,11 @@ func (s Source) Discover() (source.Features, error) {
 
 // Process a single feature by Matching on the defined rules.
 // A feature is present if all defined Rules in a MatchRule return a match.
-func (s Source) discoverFeature(feature CustomFeature) (bool, error) {
+func (s Source) discoverFeature(feature FeatureSpec) (bool, error) {
 	for _, rule := range feature.MatchOn {
 		// PCI ID rule
-		if rule.PciId != nil {
-			match, err := rule.PciId.Match()
+		if rule.PciID != nil {
+			match, err := rule.PciID.Match()
 			if err != nil {
 				return false, err
 			}
@@ -79,8 +79,8 @@ func (s Source) discoverFeature(feature CustomFeature) (bool, error) {
 			}
 		}
 		// USB ID rule
-		if rule.UsbId != nil {
-			match, err := rule.UsbId.Match()
+		if rule.UsbID != nil {
+			match, err := rule.UsbID.Match()
 			if err != nil {
 				return false, err
 			}

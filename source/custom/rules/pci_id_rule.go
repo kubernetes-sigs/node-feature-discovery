@@ -25,18 +25,18 @@ import (
 // each device attribute will be a list elements(strings).
 // Match operation: OR will be performed per element and AND will be performed per attribute.
 // An empty attribute will not be included in the matching process.
-type PciIdRuleInput struct {
+type PciIDRuleInput struct {
 	Class  []string `json:"class,omitempty"`
 	Vendor []string `json:"vendor,omitempty"`
 	Device []string `json:"device,omitempty"`
 }
 
-type PciIdRule struct {
-	PciIdRuleInput
+type PciIDRule struct {
+	PciIDRuleInput
 }
 
 // Match PCI devices on provided PCI device attributes
-func (r *PciIdRule) Match() (bool, error) {
+func (r *PciIDRule) Match() (bool, error) {
 	devAttr := map[string]bool{}
 	for _, attr := range []string{"class", "vendor", "device"} {
 		devAttr[attr] = true
@@ -57,7 +57,7 @@ func (r *PciIdRule) Match() (bool, error) {
 	return false, nil
 }
 
-func (r *PciIdRule) matchDevOnRule(dev pciutils.PciDeviceInfo) bool {
+func (r *PciIDRule) matchDevOnRule(dev pciutils.PciDeviceInfo) bool {
 	if len(r.Class) == 0 && len(r.Vendor) == 0 && len(r.Device) == 0 {
 		return false
 	}

@@ -43,12 +43,12 @@ func (s Source) Name() string { return "local" }
 func (s Source) Discover() (source.Features, error) {
 	featuresFromHooks, err := getFeaturesFromHooks()
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("%v", err)
 	}
 
 	featuresFromFiles, err := getFeaturesFromFiles()
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("%v", err)
 	}
 
 	// Merge features from hooks and files

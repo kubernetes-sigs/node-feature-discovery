@@ -25,18 +25,18 @@ import (
 // each device attribute will be a list elements(strings).
 // Match operation: OR will be performed per element and AND will be performed per attribute.
 // An empty attribute will not be included in the matching process.
-type UsbIdRuleInput struct {
+type UsbIDRuleInput struct {
 	Class  []string `json:"class,omitempty"`
 	Vendor []string `json:"vendor,omitempty"`
 	Device []string `json:"device,omitempty"`
 }
 
-type UsbIdRule struct {
-	UsbIdRuleInput
+type UsbIDRule struct {
+	UsbIDRuleInput
 }
 
 // Match USB devices on provided USB device attributes
-func (r *UsbIdRule) Match() (bool, error) {
+func (r *UsbIDRule) Match() (bool, error) {
 	devAttr := map[string]bool{}
 	for _, attr := range []string{"class", "vendor", "device"} {
 		devAttr[attr] = true
@@ -57,7 +57,7 @@ func (r *UsbIdRule) Match() (bool, error) {
 	return false, nil
 }
 
-func (r *UsbIdRule) matchDevOnRule(dev usbutils.UsbDeviceInfo) bool {
+func (r *UsbIDRule) matchDevOnRule(dev usbutils.UsbDeviceInfo) bool {
 	if len(r.Class) == 0 && len(r.Vendor) == 0 && len(r.Device) == 0 {
 		return false
 	}

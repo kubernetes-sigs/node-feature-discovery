@@ -55,6 +55,8 @@ gofmt-verify:
 	    exit 1; \
 	fi
 
+ci-lint:
+	golangci-lint run --timeout 5m0s
 
 test:
 	$(GO_CMD) test ./cmd/... ./pkg/...
