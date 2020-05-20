@@ -906,6 +906,19 @@ spec:
 
 For more details on targeting nodes, see [node selection][node-sel].
 
+## Node Annotations
+
+NFD annotates nodes it is running on:
+
+| Annotation                                | Description
+| ----------------------------------------- | -----------
+| nfd.node.kubernetes.io/master.version     | Version of the nfd-master instance running on the node. Informative use only.
+| nfd.node.kubernetes.io/worker.version     | Version of the nfd-worker instance running on the node. Informative use only.
+| nfd.node.kubernetes.io/feature-labels     | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users.
+| nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users.
+
+Unapplicable annotations are not created, i.e. for example master.version is only created on nodes running nfd-master.
+
 ## References
 
 Github issues
