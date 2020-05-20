@@ -34,10 +34,10 @@ func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
 
 	// Check if there is any non-rotational block devices attached to the node
-	blockdevices, err := ioutil.ReadDir("/sys/block/")
+	blockdevices, err := ioutil.ReadDir(source.SysfsDir.Path("block"))
 	if err == nil {
 		for _, bdev := range blockdevices {
-			fname := "/sys/block/" + bdev.Name() + "/queue/rotational"
+			fname := source.SysfsDir.Path("block", bdev.Name(), "queue/rotational")
 			bytes, err := ioutil.ReadFile(fname)
 			if err != nil {
 				return nil, fmt.Errorf("can't read rotational status: %s", err.Error())

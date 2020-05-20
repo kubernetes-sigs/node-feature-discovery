@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/cpuid"
+	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 const (
@@ -38,13 +38,14 @@ func discoverSSTBF() (bool, error) {
 	nominalBaseFrequency := int(freqInfo.EAX)
 
 	// Loop over all CPUs in the system
-	files, err := ioutil.ReadDir(cpuDevicesBaseDir)
+	files, err := ioutil.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
+
 	if err != nil {
 		return false, err
 	}
 	for _, file := range files {
 		// Try to read effective base frequency of each cpu in the system
-		filePath := path.Join(cpuDevicesBaseDir, file.Name(), "cpufreq/base_frequency")
+		filePath := source.SysfsDir.Path("bus/cpu/devices", file.Name(), "cpufreq/base_frequency")
 		data, err := ioutil.ReadFile(filePath)
 		if os.IsNotExist(err) {
 			// Ignore missing file and continue to check other CPUs

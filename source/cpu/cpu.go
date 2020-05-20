@@ -19,13 +19,8 @@ package cpu
 import (
 	"io/ioutil"
 	"log"
-	"path"
 
 	"sigs.k8s.io/node-feature-discovery/source"
-)
-
-const (
-	cpuDevicesBaseDir = "/sys/bus/cpu/devices"
 )
 
 // Configuration file options
@@ -137,14 +132,15 @@ func (s Source) Discover() (source.Features, error) {
 
 // Check if any (online) CPUs have thread siblings
 func haveThreadSiblings() (bool, error) {
-	files, err := ioutil.ReadDir(cpuDevicesBaseDir)
+
+	files, err := ioutil.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
 	if err != nil {
 		return false, err
 	}
 
 	for _, file := range files {
 		// Try to read siblings from topology
-		siblings, err := ioutil.ReadFile(path.Join(cpuDevicesBaseDir, file.Name(), "topology/thread_siblings_list"))
+		siblings, err := ioutil.ReadFile(source.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
 		if err != nil {
 			return false, err
 		}
