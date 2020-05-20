@@ -3,10 +3,7 @@ module sigs.k8s.io/node-feature-discovery
 go 1.13
 
 require (
-	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
-	github.com/evanphx/json-patch v4.2.0+incompatible
-	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/golang/protobuf v1.3.2
 	github.com/klauspost/cpuid v1.2.3
 	github.com/onsi/ginkgo v1.10.1
@@ -16,15 +13,11 @@ require (
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
 	golang.org/x/net v0.0.0-20191004110552-13f9640d40b9
 	google.golang.org/grpc v1.23.1
-	gopkg.in/fsnotify.v1 v1.4.7
 	k8s.io/api v0.17.2
-	k8s.io/apiextensions-apiserver v0.0.0
 	k8s.io/apimachinery v0.17.2
-	k8s.io/apiserver v0.17.2
 	k8s.io/client-go v0.17.2
 	k8s.io/component-base v0.17.2
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.0.0
 	k8s.io/kubernetes v1.17.2
 	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f
 	sigs.k8s.io/yaml v1.1.0
