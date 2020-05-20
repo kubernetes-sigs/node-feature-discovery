@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -32,25 +33,26 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
 )
 
+const fakeFeatureSourceName string = "testSource"
+
 func TestDiscoveryWithMockSources(t *testing.T) {
 	Convey("When I discover features from fake source and update the node using fake client", t, func() {
 		mockFeatureSource := new(source.MockFeatureSource)
-		fakeFeatureSourceName := string("testSource")
-		fakeFeatureNames := []string{"testfeature1", "testfeature2", "testfeature3"}
-		fakeFeatures := source.Features{}
-		fakeFeatureLabels := Labels{}
-		for _, f := range fakeFeatureNames {
-			fakeFeatures[f] = true
-			labelName := fakeFeatureSourceName + "-" + f
-			fakeFeatureLabels[labelName] = "true"
-		}
+		allFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test", "test.ns/foo", "/no-ns-label", "invalid/test/feature"}
+		whiteListFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test"}
+
+		fakeFeatures, _ := makeFakeFeatures(allFeatureNames)
+		_, fakeFeatureLabels := makeFakeFeatures(whiteListFeatureNames)
+
 		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
+
+		labelWhiteList := regexp.MustCompile("^test")
 
 		Convey("When I successfully get the labels from the mock source", func() {
 			mockFeatureSource.On("Name").Return(fakeFeatureSourceName)
 			mockFeatureSource.On("Discover").Return(fakeFeatures, nil)
 
-			returnedLabels, err := getFeatureLabels(fakeFeatureSource)
+			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList)
 			Convey("Proper label is returned", func() {
 				So(returnedLabels, ShouldResemble, fakeFeatureLabels)
 			})
@@ -63,7 +65,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockFeatureSource.On("Discover").Return(nil, expectedError)
 
-			returnedLabels, err := getFeatureLabels(fakeFeatureSource)
+			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList)
 			Convey("No label is returned", func() {
 				So(returnedLabels, ShouldBeNil)
 			})
@@ -72,6 +74,21 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			})
 		})
 	})
+}
+
+func makeFakeFeatures(names []string) (source.Features, Labels) {
+	features := source.Features{}
+	labels := Labels{}
+	for _, f := range names {
+		features[f] = true
+		labelName := fakeFeatureSourceName + "-" + f
+		if strings.IndexByte(f, '/') >= 0 {
+			labelName = f
+		}
+		labels[labelName] = "true"
+	}
+
+	return features, labels
 }
 
 func TestConfigParse(t *testing.T) {
@@ -209,7 +226,7 @@ func TestGetFeatureLabels(t *testing.T) {
 	Convey("When I get feature labels and panic occurs during discovery of a feature source", t, func() {
 		fakePanicFeatureSource := source.FeatureSource(new(panicfake.Source))
 
-		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource)
+		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource, regexp.MustCompile(""))
 		Convey("No label is returned", func() {
 			So(len(returnedLabels), ShouldEqual, 0)
 		})

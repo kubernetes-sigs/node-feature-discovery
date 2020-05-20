@@ -315,7 +315,7 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.
 
 	// Do feature discovery from all configured sources.
 	for _, source := range sources {
-		labelsFromSource, err := getFeatureLabels(source)
+		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
 		if err != nil {
 			stderrLogger.Printf("discovery failed for source [%s]: %s", source.Name(), err.Error())
 			stderrLogger.Printf("continuing ...")
@@ -325,11 +325,6 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.
 		for name, value := range labelsFromSource {
 			// Log discovered feature.
 			stdoutLogger.Printf("%s = %s", name, value)
-			// Skip if label doesn't match labelWhiteList
-			if !labelWhiteList.Match([]byte(name)) {
-				stderrLogger.Printf("%s does not match the whitelist (%s) and will not be published.", name, labelWhiteList.String())
-				continue
-			}
 			labels[name] = value
 		}
 	}
@@ -338,7 +333,7 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
+func getFeatureLabels(source source.FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stderrLogger.Printf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
@@ -351,24 +346,33 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Prefix for labels in the default namespace
+	prefix := source.Name() + "-"
+	switch source.(type) {
+	case local.Source:
+		// Do not prefix labels from the hooks
+		prefix = ""
+	}
+
 	for k, v := range features {
-		// Validate label name
-		prefix := source.Name() + "-"
-		switch source.(type) {
-		case local.Source:
-			// Do not prefix labels from the hooks
-			prefix = ""
+		// Split label name into namespace and name compoents. Use dummy 'ns'
+		// default namespace because there is no function to validate just
+		// the name part
+		split := strings.SplitN(k, "/", 2)
+
+		label := prefix + split[0]
+		nameForValidation := "ns/" + label
+		nameForWhiteListing := label
+
+		if len(split) == 2 {
+			label = k
+			nameForValidation = label
+			nameForWhiteListing = split[1]
 		}
 
-		label := prefix + k
-		// Validate label name. Use dummy namespace 'ns' because there is no
-		// function to validate just the name part
-		labelName := "ns/" + label
-		// Do not use dummy namespace if there is already a namespace
-		if strings.Contains(label, "/") {
-			labelName = label
-		}
-		errs := validation.IsQualifiedName(labelName)
+		// Validate label name.
+		errs := validation.IsQualifiedName(nameForValidation)
 		if len(errs) > 0 {
 			stderrLogger.Printf("Ignoring invalid feature name '%s': %s", label, errs)
 			continue
@@ -379,6 +383,12 @@ func getFeatureLabels(source source.FeatureSource) (labels Labels, err error) {
 		errs = validation.IsValidLabelValue(value)
 		if len(errs) > 0 {
 			stderrLogger.Printf("Ignoring invalid feature value %s=%s: %s", label, value, errs)
+			continue
+		}
+
+		// Skip if label doesn't match labelWhiteList
+		if !labelWhiteList.MatchString(nameForWhiteListing) {
+			stderrLogger.Printf("%q does not match the whitelist (%s) and will not be published.", nameForWhiteListing, labelWhiteList.String())
 			continue
 		}
 
