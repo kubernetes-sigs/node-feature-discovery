@@ -76,4 +76,3 @@ func (r *UsbIdRule) matchDevOnRule(dev usbutils.UsbDeviceInfo) bool {
 
 	return true
 }
-
