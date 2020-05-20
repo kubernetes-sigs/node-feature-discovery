@@ -12,6 +12,7 @@ services:
   - docker
 
 script:
+  - make gofmt-verify
   - make image -e
   - if [ "$TRAVIS_BRANCH" == master -a -n "$IMAGE_REPO_USER" ]; then
       set -e;

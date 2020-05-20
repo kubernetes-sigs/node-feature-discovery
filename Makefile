@@ -2,6 +2,7 @@
 .FORCE:
 
 GO_CMD := go
+GO_FMT := gofmt
 
 IMAGE_BUILD_CMD := docker build
 IMAGE_BUILD_EXTRA_OPTS :=
@@ -43,6 +44,17 @@ mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
 	mockery --name=APIHelpers --dir=pkg/apihelper --inpkg --note="Re-generate by running 'make mock'"
 	mockery --name=LabelerClient --dir=pkg/labeler --inpkg --note="Re-generate by running 'make mock'"
+
+gofmt:
+	@$(GO_FMT) -w -l $$(find . -name '*.go')
+
+gofmt-verify:
+	@out=`$(GO_FMT) -l -d $$(find . -name '*.go')`; \
+	if [ -n "$$out" ]; then \
+	    echo "$$out"; \
+	    exit 1; \
+	fi
+
 
 test:
 	$(GO_CMD) test ./cmd/... ./pkg/...
