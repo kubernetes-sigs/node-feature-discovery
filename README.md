@@ -250,6 +250,23 @@ capability might be supported but not enabled.
 | AVX       | Advanced Vector Extensions (AVX)
 | AVX2      | Advanced Vector Extensions 2 (AVX2)
 
+#### Arm CPUID Attribute (Partial List)
+
+| Attribute | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| IDIVA     | Integer divide instructions available in ARM mode
+| IDIVT     | Integer divide instructions available in Thumb mode
+| THUMB     | Thumb instructions
+| FASTMUL   | Fast multiplication
+| VFP       | Vector floating point instruction extension (VFP)
+| VFPv3     | Vector floating point extension v3
+| VFPv4     | Vector floating point extension v4
+| VFPD32    | VFP with 32 D-registers
+| HALF      | Half-word loads and stores
+| EDSP      | DSP extensions
+| NEON      | NEON SIMD instructions
+| LPAE      | Large Physical Address Extensions
+
 #### Arm64 CPUID Attribute (Partial List)
 
 | Attribute | Description                                                      |
@@ -660,7 +677,7 @@ If you want to use the latest development version (master branch) you need to
 
 ### System requirements
 
-1. Linux (x86_64/Arm64)
+1. Linux (x86_64/Arm64/Arm)
 1. [kubectl][kubectl-setup] (properly set up and configured to work with your
    Kubernetes cluster)
 1. [Docker][docker-down] (only required to build and push docker images)
