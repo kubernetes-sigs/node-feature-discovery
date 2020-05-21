@@ -56,7 +56,6 @@ spec:
         app: nfd
     spec:
       serviceAccount: nfd-master
-      hostNetwork: true
       containers:
         - env:
           - name: NODE_NAME

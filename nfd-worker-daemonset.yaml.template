@@ -14,7 +14,6 @@ spec:
       labels:
         app: nfd-worker
     spec:
-      hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - env:

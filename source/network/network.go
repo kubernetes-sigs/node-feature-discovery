@@ -21,12 +21,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"strconv"
 	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
+
+// Linux net iface flags (we only specify the first few)
+const (
+	flagUp = 1 << iota
+	_      // flagBroadcast
+	_      // flagDebug
+	flagLoopback
+)
+
+const sysfsBaseDir = "class/net"
 
 // Source implements FeatureSource.
 type Source struct{}
@@ -46,48 +55,70 @@ func (s *Source) SetConfig(source.Config) {}
 // Discover returns feature names sriov-configured and sriov if SR-IOV capable NICs are present and/or SR-IOV virtual functions are configured on the node
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
-	netInterfaces, err := net.Interfaces()
+
+	netInterfaces, err := ioutil.ReadDir(source.SysfsDir.Path(sysfsBaseDir))
 	if err != nil {
-		return nil, fmt.Errorf("can't obtain the network interfaces details: %s", err.Error())
+		return nil, fmt.Errorf("failed to list network interfaces: %s", err.Error())
 	}
+
 	// iterating through network interfaces to obtain their respective number of virtual functions
 	for _, netInterface := range netInterfaces {
-		if strings.Contains(netInterface.Flags.String(), "up") && !strings.Contains(netInterface.Flags.String(), "loopback") {
-			totalBytes, err := ioutil.ReadFile(source.SysfsDir.Path("class/net", netInterface.Name, "device/sriov_totalvfs"))
+		name := netInterface.Name()
+		flags, err := readIfFlags(name)
+		if err != nil {
+			log.Printf("%v", err)
+			continue
+		}
+
+		if flags&flagUp != 0 && flags&flagLoopback == 0 {
+			totalBytes, err := ioutil.ReadFile(source.SysfsDir.Path(sysfsBaseDir, name, "device/sriov_totalvfs"))
 			if err != nil {
-				log.Printf("SR-IOV not supported for network interface: %s: %v", netInterface.Name, err)
+				log.Printf("SR-IOV not supported for network interface: %s: %v", name, err)
 				continue
 			}
 			total := bytes.TrimSpace(totalBytes)
 			t, err := strconv.Atoi(string(total))
 			if err != nil {
-				log.Printf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", netInterface.Name, err)
+				log.Printf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", name, err)
 				continue
 			}
 			if t > 0 {
-				log.Printf("SR-IOV capability is detected on the network interface: %s", netInterface.Name)
-				log.Printf("%d maximum supported number of virtual functions on network interface: %s", t, netInterface.Name)
+				log.Printf("SR-IOV capability is detected on the network interface: %s", name)
+				log.Printf("%d maximum supported number of virtual functions on network interface: %s", t, name)
 				features["sriov.capable"] = true
-				numBytes, err := ioutil.ReadFile(source.SysfsDir.Path("class/net", netInterface.Name, "device/sriov_numvfs"))
+				numBytes, err := ioutil.ReadFile(source.SysfsDir.Path(sysfsBaseDir, name, "device/sriov_numvfs"))
 				if err != nil {
-					log.Printf("SR-IOV not configured for network interface: %s: %s", netInterface.Name, err)
+					log.Printf("SR-IOV not configured for network interface: %s: %s", name, err)
 					continue
 				}
 				num := bytes.TrimSpace(numBytes)
 				n, err := strconv.Atoi(string(num))
 				if err != nil {
-					log.Printf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", netInterface.Name, err)
+					log.Printf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", name, err)
 					continue
 				}
 				if n > 0 {
-					log.Printf("%d virtual functions configured on network interface: %s", n, netInterface.Name)
+					log.Printf("%d virtual functions configured on network interface: %s", n, name)
 					features["sriov.configured"] = true
 					break
 				} else if n == 0 {
-					log.Printf("SR-IOV not configured on network interface: %s", netInterface.Name)
+					log.Printf("SR-IOV not configured on network interface: %s", name)
 				}
 			}
 		}
 	}
 	return features, nil
+}
+
+func readIfFlags(name string) (uint64, error) {
+	raw, err := ioutil.ReadFile(source.SysfsDir.Path(sysfsBaseDir, name, "flags"))
+	if err != nil {
+		return 0, fmt.Errorf("failed to read flags for interface %q: %v", name, err)
+	}
+	flags, err := strconv.ParseUint(strings.TrimSpace(string(raw)), 0, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse flags for interface %q: %v", name, err)
+	}
+
+	return flags, nil
 }
