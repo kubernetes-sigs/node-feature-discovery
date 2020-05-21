@@ -29,8 +29,11 @@ import (
 	"github.com/vektra/errors"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/cpu"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
+	"sigs.k8s.io/node-feature-discovery/source/kernel"
 	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
+	"sigs.k8s.io/node-feature-discovery/source/pci"
 )
 
 const fakeFeatureSourceName string = "testSource"
@@ -91,13 +94,27 @@ func makeFakeFeatures(names []string) (source.Features, Labels) {
 	return features, labels
 }
 
-func TestConfigParse(t *testing.T) {
-	Convey("When parsing configuration file", t, func() {
-		Convey("When non-accessible file is given", func() {
-			err := configParse("non-existing-file", "")
+func (w *nfdWorker) getSource(name string) source.FeatureSource {
+	for _, s := range w.sources {
+		if s.Name() == name {
+			return s
+		}
+	}
+	return nil
+}
 
-			Convey("Should return error", func() {
-				So(err, ShouldNotBeNil)
+func TestConfigParse(t *testing.T) {
+	Convey("When parsing configuration", t, func() {
+		w, err := NewNfdWorker(Args{Sources: []string{"cpu", "kernel", "pci"}})
+		So(err, ShouldBeNil)
+		worker := w.(*nfdWorker)
+		Convey("and a non-accessible file and some overrides are specified", func() {
+			overrides := `{"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
+			worker.configure("non-existing-file", overrides)
+
+			Convey("overrides should take effect", func() {
+				c := worker.getSource("cpu").GetConfig().(*cpu.Config)
+				So(c.Cpuid.AttributeBlacklist, ShouldResemble, []string{"foo", "bar"})
 			})
 		})
 		// Create a temporary config file
@@ -114,76 +131,87 @@ func TestConfigParse(t *testing.T) {
 		f.Close()
 		So(err, ShouldBeNil)
 
-		Convey("When proper config file is given", func() {
-			err := configParse(f.Name(), "")
+		Convey("and a proper config file is specified", func() {
+			worker.configure(f.Name(), "")
 
-			Convey("Should return error", func() {
+			Convey("specified configuration should take effect", func() {
 				So(err, ShouldBeNil)
-				So(config.Sources.Kernel.ConfigOpts, ShouldResemble, []string{"DMI"})
-				So(config.Sources.Pci.DeviceClassWhitelist, ShouldResemble, []string{"ff"})
+				c := worker.getSource("kernel").GetConfig()
+				So(c.(*kernel.Config).ConfigOpts, ShouldResemble, []string{"DMI"})
+				c = worker.getSource("pci").GetConfig()
+				So(c.(*pci.Config).DeviceClassWhitelist, ShouldResemble, []string{"ff"})
+			})
+		})
+
+		Convey("and a proper config file and overrides are given", func() {
+			overrides := `{"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
+			worker.configure(f.Name(), overrides)
+
+			Convey("overrides should take precedence over the config file", func() {
+				So(err, ShouldBeNil)
+				c := worker.getSource("kernel").GetConfig()
+				So(c.(*kernel.Config).ConfigOpts, ShouldResemble, []string{"DMI"})
+				c = worker.getSource("pci").GetConfig()
+				So(c.(*pci.Config).DeviceClassWhitelist, ShouldResemble, []string{"03"})
 			})
 		})
 	})
 }
 
-func TestConfigureParameters(t *testing.T) {
-	Convey("When configuring parameters for node feature discovery", t, func() {
+func TestNewNfdWorker(t *testing.T) {
+	Convey("When creating new NfdWorker instance", t, func() {
 
-		Convey("When no sourcesWhiteList and labelWhiteListStr are passed", func() {
-			sourcesWhiteList := []string{}
-			labelWhiteListStr := ""
+		Convey("without any args specified", func() {
+			args := Args{}
 			emptyRegexp, _ := regexp.Compile("")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
-
-			Convey("Error should not be produced", func() {
+			w, err := NewNfdWorker(args)
+			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("No sourcesWhiteList or labelWhiteList are returned", func() {
-				So(len(enabledSources), ShouldEqual, 0)
-				So(labelWhiteList, ShouldResemble, emptyRegexp)
+			worker := w.(*nfdWorker)
+			Convey("no sources should be enabled and the whitelist regexp should be empty", func() {
+				So(len(worker.sources), ShouldEqual, 0)
+				So(worker.labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("When sourcesWhiteList is passed", func() {
-			sourcesWhiteList := []string{"fake"}
-			labelWhiteListStr := ""
+		Convey("with non-empty Sources arg specified", func() {
+			args := Args{Sources: []string{"fake"}}
 			emptyRegexp, _ := regexp.Compile("")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
-
-			Convey("Error should not be produced", func() {
+			w, err := NewNfdWorker(args)
+			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("Proper sourcesWhiteList are returned", func() {
-				So(len(enabledSources), ShouldEqual, 1)
-				So(enabledSources[0], ShouldHaveSameTypeAs, fake.Source{})
-				So(labelWhiteList, ShouldResemble, emptyRegexp)
+			worker := w.(*nfdWorker)
+			Convey("proper sources should be enabled", func() {
+				So(len(worker.sources), ShouldEqual, 1)
+				So(worker.sources[0], ShouldHaveSameTypeAs, &fake.Source{})
+				So(worker.labelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("When invalid labelWhiteListStr is passed", func() {
-			sourcesWhiteList := []string{""}
-			labelWhiteListStr := "*"
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
-
-			Convey("Error is produced", func() {
-				So(enabledSources, ShouldBeNil)
-				So(labelWhiteList, ShouldBeNil)
+		Convey("with invalid LabelWhiteList arg specified", func() {
+			args := Args{LabelWhiteList: "*"}
+			w, err := NewNfdWorker(args)
+			worker := w.(*nfdWorker)
+			Convey("an error should be returned", func() {
+				So(len(worker.sources), ShouldEqual, 0)
+				So(worker.labelWhiteList, ShouldBeNil)
 				So(err, ShouldNotBeNil)
 			})
 		})
 
-		Convey("When valid labelWhiteListStr is passed", func() {
-			sourcesWhiteList := []string{""}
-			labelWhiteListStr := ".*rdt.*"
-			expectRegexp, err := regexp.Compile(".*rdt.*")
-			enabledSources, labelWhiteList, err := configureParameters(sourcesWhiteList, labelWhiteListStr)
-
-			Convey("Error should not be produced", func() {
+		Convey("with valid LabelWhiteListStr arg specified", func() {
+			args := Args{LabelWhiteList: ".*rdt.*"}
+			w, err := NewNfdWorker(args)
+			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("Proper labelWhiteList is returned", func() {
-				So(len(enabledSources), ShouldEqual, 0)
-				So(labelWhiteList, ShouldResemble, expectRegexp)
+			worker := w.(*nfdWorker)
+			expectRegexp := regexp.MustCompile(".*rdt.*")
+			Convey("proper labelWhiteList regexp should be produced", func() {
+				So(len(worker.sources), ShouldEqual, 0)
+				So(worker.labelWhiteList, ShouldResemble, expectRegexp)
 			})
 		})
 	})

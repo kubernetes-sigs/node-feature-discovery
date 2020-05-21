@@ -714,8 +714,11 @@ kubectl create -f nfd-worker-daemonset.yaml
 Nfd-worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
-the `--sleep-interval` option. In the [template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L26) the default interval is set to 60s
-which is also the default when no `--sleep-interval` is specified.
+the `--sleep-interval` option. In the
+[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L26)
+the default interval is set to 60s which is also the default when no
+`--sleep-interval` is specified. Also, the configuration file is re-read on
+each iteration providing a simple mechanism of run-time reconfiguration.
 
 Feature discovery can alternatively be configured as a one-shot job. There is
 an example script in this repo that demonstrates how to deploy the job in the cluster.
@@ -771,11 +774,16 @@ each nfd-worker requires a individual node-specific TLS certificate.
 
 Nfd-worker supports a configuration file. The default location is
 `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`, but,
-this can be changed by specifying the`--config` command line flag. The file is
-read inside the container, and thus, Volumes and VolumeMounts are needed to
-make your configuration available for NFD. The preferred method is to use a
-ConfigMap.
-For example, create a config map using the example config as a template:
+this can be changed by specifying the`--config` command line flag.
+Configuration file is re-read on each labeling pass (determined by
+`--sleep-interval`) which makes run-time re-configuration of nfd-worker
+possible.
+
+Worker configuration file is read inside the container, and thus, Volumes and
+VolumeMounts are needed to make your configuration available for NFD. The
+preferred method is to use a ConfigMap which provides easy deployment and
+re-configurability.  For example, create a config map using the example config
+as a template:
 ```
 cp nfd-worker.conf.example nfd-worker.conf
 vim nfd-worker.conf  # edit the configuration

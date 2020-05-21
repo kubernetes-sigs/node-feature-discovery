@@ -36,20 +36,41 @@ type FeatureSpec struct {
 	MatchOn []MatchRule `json:"matchOn"`
 }
 
-type NFDConfig []FeatureSpec
+type config []FeatureSpec
 
-var Config = NFDConfig{}
+// newDefaultConfig returns a new config with pre-populated defaults
+func newDefaultConfig() *config {
+	return &config{}
+}
 
 // Implements FeatureSource Interface
-type Source struct{}
+type Source struct {
+	config *config
+}
 
 // Return name of the feature source
 func (s Source) Name() string { return "custom" }
 
+// NewConfig method of the FeatureSource interface
+func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+
+// GetConfig method of the FeatureSource interface
+func (s *Source) GetConfig() source.Config { return s.config }
+
+// SetConfig method of the FeatureSource interface
+func (s *Source) SetConfig(conf source.Config) {
+	switch v := conf.(type) {
+	case *config:
+		s.config = v
+	default:
+		log.Printf("PANIC: invalid config type: %T", conf)
+	}
+}
+
 // Discover features
 func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
-	allFeatureConfig := append(getStaticFeatureConfig(), Config...)
+	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
 	log.Printf("INFO: Custom features: %+v", allFeatureConfig)
 	// Iterate over features
 	for _, customFeature := range allFeatureConfig {

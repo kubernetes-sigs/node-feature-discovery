@@ -30,27 +30,48 @@ import (
 )
 
 // Configuration file options
-type NFDConfig struct {
+type Config struct {
 	KconfigFile string
 	ConfigOpts  []string `json:"configOpts,omitempty"`
 }
 
-var Config = NFDConfig{
-	KconfigFile: "",
-	ConfigOpts: []string{
-		"NO_HZ",
-		"NO_HZ_IDLE",
-		"NO_HZ_FULL",
-		"PREEMPT",
-	},
+// newDefaultConfig returns a new config with pre-populated defaults
+func newDefaultConfig() *Config {
+	return &Config{
+		KconfigFile: "",
+		ConfigOpts: []string{
+			"NO_HZ",
+			"NO_HZ_IDLE",
+			"NO_HZ_FULL",
+			"PREEMPT",
+		},
+	}
 }
 
 // Implement FeatureSource interface
-type Source struct{}
+type Source struct {
+	config *Config
+}
 
-func (s Source) Name() string { return "kernel" }
+func (s *Source) Name() string { return "kernel" }
 
-func (s Source) Discover() (source.Features, error) {
+// NewConfig method of the FeatureSource interface
+func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+
+// GetConfig method of the FeatureSource interface
+func (s *Source) GetConfig() source.Config { return s.config }
+
+// SetConfig method of the FeatureSource interface
+func (s *Source) SetConfig(conf source.Config) {
+	switch v := conf.(type) {
+	case *Config:
+		s.config = v
+	default:
+		log.Printf("PANIC: invalid config type: %T", conf)
+	}
+}
+
+func (s *Source) Discover() (source.Features, error) {
 	features := source.Features{}
 
 	// Read kernel version
@@ -64,13 +85,13 @@ func (s Source) Discover() (source.Features, error) {
 	}
 
 	// Read kconfig
-	kconfig, err := parseKconfig()
+	kconfig, err := s.parseKconfig()
 	if err != nil {
 		log.Printf("ERROR: Failed to read kconfig: %s", err)
 	}
 
 	// Check flags
-	for _, opt := range Config.ConfigOpts {
+	for _, opt := range s.config.ConfigOpts {
 		if val, ok := kconfig[opt]; ok {
 			features["config."+opt] = val
 		}
@@ -137,16 +158,16 @@ func readKconfigGzip(filename string) ([]byte, error) {
 }
 
 // Read kconfig into a map
-func parseKconfig() (map[string]string, error) {
+func (s *Source) parseKconfig() (map[string]string, error) {
 	kconfig := map[string]string{}
 	raw := []byte(nil)
 	var err error
 
 	// First, try kconfig specified in the config file
-	if len(Config.KconfigFile) > 0 {
-		raw, err = ioutil.ReadFile(Config.KconfigFile)
+	if len(s.config.KconfigFile) > 0 {
+		raw, err = ioutil.ReadFile(s.config.KconfigFile)
 		if err != nil {
-			log.Printf("ERROR: Failed to read kernel config from %s: %s", Config.KconfigFile, err)
+			log.Printf("ERROR: Failed to read kernel config from %s: %s", s.config.KconfigFile, err)
 		}
 	}
 

@@ -25,21 +25,42 @@ import (
 	pciutils "sigs.k8s.io/node-feature-discovery/source/internal"
 )
 
-type NFDConfig struct {
+type Config struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
 	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
 }
 
-var Config = NFDConfig{
-	DeviceClassWhitelist: []string{"03", "0b40", "12"},
-	DeviceLabelFields:    []string{"class", "vendor"},
+// newDefaultConfig returns a new config with pre-populated defaults
+func newDefaultConfig() *Config {
+	return &Config{
+		DeviceClassWhitelist: []string{"03", "0b40", "12"},
+		DeviceLabelFields:    []string{"class", "vendor"},
+	}
 }
 
 // Implement FeatureSource interface
-type Source struct{}
+type Source struct {
+	config *Config
+}
 
 // Return name of the feature source
 func (s Source) Name() string { return "pci" }
+
+// NewConfig method of the FeatureSource interface
+func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+
+// GetConfig method of the FeatureSource interface
+func (s *Source) GetConfig() source.Config { return s.config }
+
+// SetConfig method of the FeatureSource interface
+func (s *Source) SetConfig(conf source.Config) {
+	switch v := conf.(type) {
+	case *Config:
+		s.config = v
+	default:
+		log.Printf("PANIC: invalid config type: %T", conf)
+	}
+}
 
 // Discover features
 func (s Source) Discover() (source.Features, error) {
@@ -48,7 +69,7 @@ func (s Source) Discover() (source.Features, error) {
 	// Construct a device label format, a sorted list of valid attributes
 	deviceLabelFields := []string{}
 	configLabelFields := map[string]bool{}
-	for _, field := range Config.DeviceLabelFields {
+	for _, field := range s.config.DeviceLabelFields {
 		configLabelFields[field] = true
 	}
 
@@ -87,7 +108,7 @@ func (s Source) Discover() (source.Features, error) {
 
 	// Iterate over all device classes
 	for class, classDevs := range devs {
-		for _, white := range Config.DeviceClassWhitelist {
+		for _, white := range s.config.DeviceClassWhitelist {
 			if strings.HasPrefix(class, strings.ToLower(white)) {
 				for _, dev := range classDevs {
 					devLabel := ""
