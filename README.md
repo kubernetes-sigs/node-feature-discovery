@@ -876,19 +876,21 @@ attribute in the spec template(s) to the new location
 There are several Makefile variables that control the build process and the
 name of the resulting container image.
 
-| Variable               | Description                                  | Default value
-| ---------------------- | -------------------------------------------- | ----------- |
-| IMAGE_BUILD_CMD        | Command to build the image                   | docker build
-| IMAGE_BUILD_EXTRA_OPTS | Extra options to pass to build command       | *empty*
-| IMAGE_PUSH_CMD         | Command to push the image to remote registry | docker push
-| IMAGE_REGISTRY         | Container image registry to use              | k8s.gcr.io/nfd
-| IMAGE_NAME             | Container image name                         | node-feature-discovery
-| IMAGE_TAG_NAME         | Container image tag name                     | &lt;nfd version&gt;
-| IMAGE_REPO             | Container image repository to use            | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
-| IMAGE_TAG              | Full image:tag to tag the image with         | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
-| K8S_NAMESPACE          | nfd-master and nfd-worker namespace          | kube-system
-| KUBECONFIG             | Kubeconfig for running e2e-tests             | *empty*
-| E2E_TEST_CONFIG        | Parameterization file of e2e-tests (see [example](test/e2e/e2e-test-config.exapmle.yaml)) | *empty*
+| Variable                   | Description                                                       | Default value
+| -------------------------- | ----------------------------------------------------------------- | ----------- |
+| HOSTMOUNT_PREFIX           | Prefix of system directories for feature discovery (local builds) | /
+| CONTAINER_HOSTMOUNT_PREFIX | Prefix of system directories for feature discovery (container builds) | &lt;HOSTMOUNT_PREFIX&gt; (*if specified*) /host- (*otherwise*)
+| IMAGE_BUILD_CMD            | Command to build the image                                        | docker build
+| IMAGE_BUILD_EXTRA_OPTS     | Extra options to pass to build command                            | *empty*
+| IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push
+| IMAGE_REGISTRY             | Container image registry to use                                   | k8s.gcr.io/nfd
+| IMAGE_NAME                 | Container image name                                              | node-feature-discovery
+| IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
+| IMAGE_REPO                 | Container image repository to use                                 | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
+| IMAGE_TAG                  | Full image:tag to tag the image with                              | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
+| K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | kube-system
+| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty*
+| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example](test/e2e/e2e-test-config.exapmle.yaml)) | *empty*
 
 For example, to use a custom registry:
 ```
