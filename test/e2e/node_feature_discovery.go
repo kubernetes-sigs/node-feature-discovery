@@ -318,7 +318,6 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 			},
 		},
 		ServiceAccountName: "nfd-master-e2e",
-		HostNetwork:        true,
 		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
 		Volumes: []v1.Volume{
 			{
