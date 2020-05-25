@@ -889,6 +889,7 @@ name of the resulting container image.
 | IMAGE_TAG              | Full image:tag to tag the image with         | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
 | K8S_NAMESPACE          | nfd-master and nfd-worker namespace          | kube-system
 | KUBECONFIG             | Kubeconfig for running e2e-tests             | *empty*
+| E2E_TEST_CONFIG        | Parameterization file of e2e-tests (see [example](test/e2e/e2e-test-config.exapmle.yaml)) | *empty*
 
 For example, to use a custom registry:
 ```
