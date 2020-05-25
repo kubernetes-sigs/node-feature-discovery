@@ -429,7 +429,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			ginkgo.By("Waiting for the nfd-master pod to be running")
-			gomega.Expect(e2epod.WaitForPodRunningInNamespace(f.ClientSet, masterPod)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(e2epod.WaitTimeoutForPodRunningInNamespace(f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(gomega.HaveOccurred())
 
 			ginkgo.By("Waiting for the nfd-master service to be up")
 			gomega.Expect(framework.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(gomega.HaveOccurred())
