@@ -494,7 +494,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 		// More comprehensive test when --e2e-node-config is enabled
 		//
 		ginkgo.Context("and nfd-workers as a daemonset with default sources enabled", func() {
-			ginkgo.It("the node labels listed in the e2e config should be present", func() {
+			ginkgo.It("the node labels and annotations listed in the e2e config should be present", func() {
 				readConfig()
 				if conf == nil {
 					ginkgo.Skip("no e2e-config was specified")
@@ -524,10 +524,10 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 						e2elog.Logf("node %q missing from e2e-config, skipping...", node.Name)
 						continue
 					}
-					e2elog.Logf("verifying node %q...", node.Name)
 					nodeConf := fConf.Nodes[node.Name]
 
 					// Check labels
+					e2elog.Logf("verifying labels of node %q...", node.Name)
 					for k, v := range nodeConf.ExpectedLabelValues {
 						gomega.Expect(node.Labels).To(gomega.HaveKeyWithValue(k, v))
 					}
@@ -548,6 +548,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 					}
 
 					// Check annotations
+					e2elog.Logf("verifying annotations of node %q...", node.Name)
 					for k, v := range nodeConf.ExpectedAnnotationValues {
 						gomega.Expect(node.Annotations).To(gomega.HaveKeyWithValue(k, v))
 					}
