@@ -53,7 +53,7 @@ HOSTMOUNT_PREFIX ?= /
 KUBECONFIG ?=
 E2E_TEST_CONFIG ?=
 
-LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
+LDFLAGS = -ldflags "-s -w -extldflags -static -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
 yaml_templates := $(wildcard *.yaml.template)
 # Let's treat values.yaml as template to sync configmap
@@ -65,10 +65,10 @@ all: image
 
 build:
 	@mkdir -p bin
-	$(GO_CMD) build -v -o bin $(LDFLAGS) ./cmd/...
+	CGO_ENABLED=0 $(GO_CMD) build -v -o bin $(LDFLAGS) ./cmd/...
 
 install:
-	$(GO_CMD) install -v $(LDFLAGS) ./cmd/...
+	CGO_ENABLED=0 $(GO_CMD) install -v $(LDFLAGS) ./cmd/...
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
