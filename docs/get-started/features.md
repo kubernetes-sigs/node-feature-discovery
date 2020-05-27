@@ -534,10 +534,10 @@ The *local* feature source gets its labels by two different ways:
 - It tries to execute files found under
   `/etc/kubernetes/node-feature-discovery/source.d/` directory. The hook files
   must be executable and they are supposed to print all discovered features in
-  `stdout`, one per line. With ELF binaries static linking is recommended as
-  the selection of system libraries available in the NFD release image is very
-  limited. Other runtimes currently supported by the NFD stock image are bash
-  and perl.
+  `stdout`, one per line. Only statically linked ELF binaries and shell scripts
+  (busybox sh) are supported. If other runtimes are required the detection must
+  be run outside the NFD container and made available to NFD via `features.d`
+  directory.
 - It reads files found under
   `/etc/kubernetes/node-feature-discovery/features.d/` directory. The file
   content is expected to be similar to the hook output (described above).
