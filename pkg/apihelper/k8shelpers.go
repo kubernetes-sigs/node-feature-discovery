@@ -53,6 +53,10 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 	return node, nil
 }
 
+func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*api.NodeList, error) {
+	return cli.CoreV1().Nodes().List(meta_v1.ListOptions{})
+}
+
 func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	// Send the updated node to the apiserver.
 	_, err := c.CoreV1().Nodes().Update(n)

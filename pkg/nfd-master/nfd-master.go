@@ -73,6 +73,7 @@ type Args struct {
 	LabelWhiteList *regexp.Regexp
 	NoPublish      bool
 	Port           int
+	Prune          bool
 	VerifyNodeName bool
 	ResourceLabels []string
 }
@@ -84,9 +85,10 @@ type NfdMaster interface {
 }
 
 type nfdMaster struct {
-	args   Args
-	server *grpc.Server
-	ready  chan bool
+	args      Args
+	server    *grpc.Server
+	ready     chan bool
+	apihelper apihelper.APIHelpers
 }
 
 // statusOp is a json marshaling helper used for patching node status
@@ -121,6 +123,9 @@ func NewNfdMaster(args Args) (NfdMaster, error) {
 		}
 	}
 
+	// Initialize Kubernetes API helpers
+	nfd.apihelper = apihelper.K8sHelpers{}
+
 	return nfd, nil
 }
 
@@ -130,11 +135,12 @@ func (m *nfdMaster) Run() error {
 	stdoutLogger.Printf("Node Feature Discovery Master %s", version.Get())
 	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
-	// Initialize Kubernetes API helpers
-	helper := apihelper.APIHelpers(apihelper.K8sHelpers{})
+	if m.args.Prune {
+		return m.prune()
+	}
 
 	if !m.args.NoPublish {
-		err := updateMasterNode(helper)
+		err := updateMasterNode(m.apihelper)
 		if err != nil {
 			return fmt.Errorf("failed to update master node: %v", err)
 		}
@@ -176,7 +182,7 @@ func (m *nfdMaster) Run() error {
 		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 	m.server = grpc.NewServer(serverOpts...)
-	pb.RegisterLabelerServer(m.server, &labelerServer{args: m.args, apiHelper: helper})
+	pb.RegisterLabelerServer(m.server, &labelerServer{args: m.args, apiHelper: m.apihelper})
 	stdoutLogger.Printf("gRPC server serving on port: %d", m.args.Port)
 	return m.server.Serve(lis)
 }
@@ -199,6 +205,46 @@ func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
 	}
 	// We should never end-up here
 	return false
+}
+
+// Prune erases all NFD related properties from the node objects of the cluster.
+func (m *nfdMaster) prune() error {
+	cli, err := m.apihelper.GetClient()
+	if err != nil {
+		return err
+	}
+
+	nodes, err := m.apihelper.GetNodes(cli)
+	if err != nil {
+		return err
+	}
+
+	for _, node := range nodes.Items {
+		stdoutLogger.Printf("pruning node %q...", node.Name)
+
+		// Prune labels and extended resources
+		err := updateNodeFeatures(m.apihelper, node.Name, Labels{}, Annotations{}, ExtendedResources{})
+		if err != nil {
+			return fmt.Errorf("failed to prune labels from node %q: %v", node.Name, err)
+		}
+
+		// Prune annotations
+		node, err := m.apihelper.GetNode(cli, node.Name)
+		if err != nil {
+			return err
+		}
+		for a := range node.Annotations {
+			if strings.HasPrefix(a, AnnotationNs) {
+				delete(node.Annotations, a)
+			}
+		}
+		err = m.apihelper.UpdateNode(cli, node)
+		if err != nil {
+			return fmt.Errorf("failed to prune annotations from node %q: %v", node.Name, err)
+		}
+
+	}
+	return nil
 }
 
 // Advertise NFD master information
