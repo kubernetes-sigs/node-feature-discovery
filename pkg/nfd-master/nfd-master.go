@@ -70,6 +70,7 @@ type Args struct {
 	CertFile       string
 	ExtraLabelNs   []string
 	KeyFile        string
+	Kubeconfig     string
 	LabelWhiteList *regexp.Regexp
 	NoPublish      bool
 	Port           int
@@ -124,7 +125,7 @@ func NewNfdMaster(args Args) (NfdMaster, error) {
 	}
 
 	// Initialize Kubernetes API helpers
-	nfd.apihelper = apihelper.K8sHelpers{}
+	nfd.apihelper = apihelper.K8sHelpers{Kubeconfig: args.Kubeconfig}
 
 	return nfd, nil
 }
