@@ -332,8 +332,9 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 	return &pb.SetLabelsReply{}, nil
 }
 
-// advertiseFeatureLabels advertises the feature labels to a Kubernetes node
-// via the API server.
+// updateNodeFeatures ensures the Kubernetes node object is up to date,
+// creating new labels and extended resources where necessary and removing
+// outdated ones. Also updates the corresponding annotations.
 func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
 	cli, err := helper.GetClient()
 	if err != nil {
