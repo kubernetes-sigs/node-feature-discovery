@@ -20,6 +20,9 @@ HOSTMOUNT_PREFIX := /host-
 KUBECONFIG :=
 E2E_TEST_CONFIG :=
 
+MULTIARCH_IMAGE_ARCHITECTURES := linux/amd64,linux/arm64,linux/arm/v7
+MULTIARCH_IMAGE_BUILD_CMD := docker buildx build
+
 yaml_templates := $(wildcard *.yaml.template)
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
@@ -27,6 +30,14 @@ all: image
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg NFD_VERSION=$(VERSION) \
+		--build-arg HOSTMOUNT_PREFIX=$(HOSTMOUNT_PREFIX) \
+		-t $(IMAGE_TAG) \
+		$(IMAGE_BUILD_EXTRA_OPTS) ./
+
+push-multiarch: yamls
+	$(MULTIARCH_IMAGE_BUILD_CMD) --push \
+	    --platform $(MULTIARCH_IMAGE_ARCHITECTURES) \
+	    --build-arg NFD_VERSION=$(VERSION) \
 		--build-arg HOSTMOUNT_PREFIX=$(HOSTMOUNT_PREFIX) \
 		-t $(IMAGE_TAG) \
 		$(IMAGE_BUILD_EXTRA_OPTS) ./
