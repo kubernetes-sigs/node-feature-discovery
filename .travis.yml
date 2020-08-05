@@ -1,6 +1,6 @@
 language: go
 go:
-  - "1.13.5"
+  - "1.13.12"
 
 env:
   global:
