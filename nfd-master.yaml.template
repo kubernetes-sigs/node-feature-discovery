@@ -77,7 +77,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: quay.io/kubernetes_incubator/node-feature-discovery:v0.6.0
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.6.0
           name: nfd-master
           command:
             - "nfd-master"
