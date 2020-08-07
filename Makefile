@@ -10,7 +10,7 @@ IMAGE_PUSH_CMD := docker push
 
 VERSION := $(shell git describe --tags --dirty --always)
 
-IMAGE_REGISTRY := quay.io/kubernetes_incubator
+IMAGE_REGISTRY := k8s.gcr.io/nfd
 IMAGE_NAME := node-feature-discovery
 IMAGE_TAG_NAME := $(VERSION)
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
