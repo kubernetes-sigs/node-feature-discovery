@@ -21,6 +21,7 @@ import (
 	"log"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/internal/cpuidutils"
 )
 
 // Configuration file options
@@ -119,7 +120,7 @@ func (s *Source) Discover() (source.Features, error) {
 	}
 
 	// Detect CPUID
-	cpuidFlags := getCpuidFlags()
+	cpuidFlags := cpuidutils.GetCpuidFlags()
 	for _, f := range cpuidFlags {
 		if s.cpuidFilter.unmask(f) {
 			features["cpuid."+f] = true

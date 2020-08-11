@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cpu
+package cpuidutils
 
 /*
 #include <sys/auxv.h>
@@ -90,7 +90,7 @@ var flagNames_arm = map[uint64]string{
 	CPU_ARM_FEATURE_CRC32:    "CRC32",
 }
 
-func getCpuidFlags() []string {
+func GetCpuidFlags() []string {
 	r := make([]string, 0, 20)
 	hwcap := uint64(C.gethwcap())
 	for i := uint(0); i < 64; i++ {
