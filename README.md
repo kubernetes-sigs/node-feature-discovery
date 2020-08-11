@@ -390,6 +390,36 @@ loadedKMod : [<kernel module>, ...]
  Matching is done by performing logical _AND_ for each provided Element, i.e the Rule will match if all provided Elements (kernel modules) are loaded
  in the system.
 
+##### CpuId Rule
+###### Nomenclature
+```
+Element     :A CPUID flag
+```
+
+The Rule allows matching the available CPUID flags in the system against a provided list of Elements.
+
+###### Format
+```yaml
+cpuId : [<CPUID flag string>, ...]
+```
+ Matching is done by performing logical _AND_ for each provided Element, i.e the Rule will match if all provided Elements (CPUID flag strings) are available
+ in the system.
+
+##### Kconfig Rule
+###### Nomenclature
+```
+Element     :A Kconfig option
+```
+
+The Rule allows matching the kconfig options in the system against a provided list of Elements.
+
+###### Format
+```yaml
+kConfig: [<kernel config option ('y' or 'm') or '=<value>'>, ...]
+```
+ Matching is done by performing logical _AND_ for each provided Element, i.e the Rule will match if all provided Elements (kernel config options) are enabled ('y' or 'm') or matching '=<value>'.
+ in the kernel.
+
 #### Example
 
 ```yaml
@@ -419,6 +449,14 @@ custom:
       - pciId:
           vendor: ["15b3"]
           device: ["1014", "1017"]
+  - name: "my.kernel.featureneedscpu"
+    matchOn:
+      - kConfig: ["KVM_INTEL"]
+      - cpuId: ["VMX"]
+  - name: "my.kernel.modulecompiler"
+    matchOn:
+      - kConfig: ["GCC_VERSION=100101"]
+        loadedKMod: ["kmod1"]
 ```
 
 __In the example above:__
@@ -434,6 +472,9 @@ with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _or_ `1017`.
 - A node would contain the label: `feature.node.kubernetes.io/custom-my.accumulated.feature=true`
 if `some_kmod1` _AND_ `some_kmod2` kernel modules are loaded __OR__ the node contains a PCI device
 with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.kernel.featureneedscpu=true`
+if `KVM_INTEL` kernel config is enabled __AND__ the node CPU supports `VMX` virtual machine extensions
+- A node would contain the label: `feature.node.kubernetes.io/custom-my.kernel.modulecompiler=true` if the in-tree `kmod1` kernel module is loaded __AND__ it's built with `GCC_VERSION=100101`.
 
 #### Statically defined features
 
