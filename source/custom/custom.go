@@ -17,7 +17,6 @@ limitations under the License.
 package custom
 
 import (
-	"fmt"
 	"log"
 
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -76,7 +75,8 @@ func (s Source) Discover() (source.Features, error) {
 	for _, customFeature := range allFeatureConfig {
 		featureExist, err := s.discoverFeature(customFeature)
 		if err != nil {
-			return features, fmt.Errorf("failed to discover feature: %s. %s", customFeature.Name, err.Error())
+			log.Printf("ERROR: failed to discover feature: %q: %s", customFeature.Name, err.Error())
+			continue
 		}
 		if featureExist {
 			features[customFeature.Name] = true
