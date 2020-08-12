@@ -122,7 +122,10 @@ func argsParse(argv []string) (master.Args, error) {
 		return args, fmt.Errorf("error parsing whitelist regex (%s): %s", arguments["--label-whitelist"], err)
 	}
 	args.VerifyNodeName = arguments["--verify-node-name"].(bool)
-	args.ExtraLabelNs = strings.Split(arguments["--extra-label-ns"].(string), ",")
+	args.ExtraLabelNs = map[string]struct{}{}
+	for _, n := range strings.Split(arguments["--extra-label-ns"].(string), ",") {
+		args.ExtraLabelNs[n] = struct{}{}
+	}
 	args.ResourceLabels = strings.Split(arguments["--resource-labels"].(string), ",")
 	args.Prune = arguments["--prune"].(bool)
 	args.Kubeconfig = arguments["--kubeconfig"].(string)

@@ -54,22 +54,22 @@ func newMockNode() *api.Node {
 
 func TestUpdateNodeFeatures(t *testing.T) {
 	Convey("When I update the node using fake client", t, func() {
-		fakeFeatureLabels := map[string]string{"source-feature.1": "1", "source-feature.2": "2", "source-feature.3": "val3"}
-		fakeAnnotations := map[string]string{"version": version.Get()}
-		fakeExtResources := ExtendedResources{"source-feature.1": "", "source-feature.2": ""}
+		fakeFeatureLabels := map[string]string{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2", LabelNs + "/source-feature.3": "val3"}
+		fakeAnnotations := map[string]string{AnnotationNs + "/version": version.Get()}
+		fakeExtResources := ExtendedResources{LabelNs + "/source-feature.1": "", LabelNs + "/source-feature.2": ""}
 		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureLabels))
 		for k := range fakeFeatureLabels {
 			fakeFeatureLabelNames = append(fakeFeatureLabelNames, k)
 		}
 		sort.Strings(fakeFeatureLabelNames)
-		fakeAnnotations["feature-labels"] = strings.Join(fakeFeatureLabelNames, ",")
+		fakeAnnotations[AnnotationNs+"/feature-labels"] = strings.Join(fakeFeatureLabelNames, ",")
 
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
 		mockClient := &k8sclient.Clientset{}
 		// Mock node with old features
 		mockNode := newMockNode()
-		mockNode.Labels[LabelNs+"old-feature"] = "old-value"
-		mockNode.Annotations[AnnotationNs+"feature-labels"] = "old-feature"
+		mockNode.Labels[LabelNs+"/old-feature"] = "old-value"
+		mockNode.Annotations[AnnotationNs+"/feature-labels"] = "old-feature"
 
 		Convey("When I successfully update the node with feature labels", func() {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
@@ -84,11 +84,11 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			Convey("Node object should have updated with labels and annotations", func() {
 				So(len(mockNode.Labels), ShouldEqual, len(fakeFeatureLabels))
 				for k, v := range fakeFeatureLabels {
-					So(mockNode.Labels[LabelNs+k], ShouldEqual, v)
+					So(mockNode.Labels[k], ShouldEqual, v)
 				}
 				So(len(mockNode.Annotations), ShouldEqual, len(fakeAnnotations))
 				for k, v := range fakeAnnotations {
-					So(mockNode.Annotations[AnnotationNs+k], ShouldEqual, v)
+					So(mockNode.Annotations[k], ShouldEqual, v)
 				}
 			})
 		})
@@ -195,23 +195,23 @@ func TestAddingExtResources(t *testing.T) {
 
 		Convey("When there are matching labels", func() {
 			mockNode := newMockNode()
-			mockResourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
+			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1", LabelNs + "feature-2": "2"}
 			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
 
 		Convey("When the resource already exists", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockResourceLabels := ExtendedResources{"feature-1": "1"}
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1"}
 			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldEqual, 0)
 		})
 
 		Convey("When the resource already exists but its capacity has changed", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
-			mockResourceLabels := ExtendedResources{"feature-1": "1"}
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1"}
 			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
@@ -222,28 +222,28 @@ func TestRemovingExtResources(t *testing.T) {
 	Convey("When removing extended resources", t, func() {
 		Convey("When none are removed", func() {
 			mockNode := newMockNode()
-			mockResourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
-			mockNode.Annotations[AnnotationNs+"extended-resources"] = "feature-1,feature-2"
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1", LabelNs + "/feature-2": "2"}
+			mockNode.Annotations[AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldEqual, 0)
 		})
 		Convey("When the related label is gone", func() {
 			mockNode := newMockNode()
-			mockResourceLabels := ExtendedResources{"feature-4": "", "feature-2": "2"}
-			mockNode.Annotations[AnnotationNs+"extended-resources"] = "feature-4,feature-2"
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{LabelNs + "/feature-4": "", LabelNs + "/feature-2": "2"}
+			mockNode.Annotations[AnnotationNs+"/extended-resources"] = "feature-4,feature-2"
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			mockResourceLabels := ExtendedResources{"feature-2": "2"}
-			mockNode.Annotations[AnnotationNs+"extended-resources"] = "feature-1,feature-2"
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{LabelNs + "/feature-2": "2"}
+			mockNode.Annotations[AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
@@ -259,6 +259,7 @@ func TestSetLabels(t *testing.T) {
 		mockNode := newMockNode()
 		mockServer := labelerServer{args: Args{LabelWhiteList: regexp.MustCompile("")}, apiHelper: mockHelper}
 		mockCtx := context.Background()
+		// In the gRPC request the label names may omit the default ns
 		mockLabels := map[string]string{"feature-1": "val-1", "feature-2": "val-2", "feature-3": "val-3"}
 		mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
 
@@ -282,11 +283,11 @@ func TestSetLabels(t *testing.T) {
 			Convey("Node object should have updated with labels and annotations", func() {
 				So(len(mockNode.Labels), ShouldEqual, len(mockLabels))
 				for k, v := range mockLabels {
-					So(mockNode.Labels[LabelNs+k], ShouldEqual, v)
+					So(mockNode.Labels[LabelNs+"/"+k], ShouldEqual, v)
 				}
 				So(len(mockNode.Annotations), ShouldEqual, len(expectedAnnotations))
 				for k, v := range expectedAnnotations {
-					So(mockNode.Annotations[AnnotationNs+k], ShouldEqual, v)
+					So(mockNode.Annotations[AnnotationNs+"/"+k], ShouldEqual, v)
 				}
 			})
 		})
@@ -302,19 +303,22 @@ func TestSetLabels(t *testing.T) {
 			})
 			Convey("Node object should only have whitelisted labels", func() {
 				So(len(mockNode.Labels), ShouldEqual, 1)
-				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "feature-2": "val-2"})
+				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "/feature-2": "val-2"})
 
-				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-2", AnnotationNs + "extended-resources": ""}
+				a := map[string]string{AnnotationNs + "/worker.version": workerVer,
+					AnnotationNs + "/feature-labels":     "feature-2",
+					AnnotationNs + "/extended-resources": ""}
 				So(len(mockNode.Annotations), ShouldEqual, len(a))
 				So(mockNode.Annotations, ShouldResemble, a)
 			})
 		})
 
 		Convey("When --extra-label-ns is specified", func() {
-			mockServer.args.ExtraLabelNs = []string{"valid.ns"}
+			mockServer.args.ExtraLabelNs = map[string]struct{}{"valid.ns": struct{}{}}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("UpdateNode", mockClient, mockNode).Return(nil)
+			// In the gRPC request the label names may omit the default ns
 			mockLabels := map[string]string{"feature-1": "val-1",
 				"valid.ns/feature-2":   "val-2",
 				"invalid.ns/feature-3": "val-3"}
@@ -325,9 +329,11 @@ func TestSetLabels(t *testing.T) {
 			})
 			Convey("Node object should only have allowed label namespaces", func() {
 				So(len(mockNode.Labels), ShouldEqual, 2)
-				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "feature-1": "val-1", "valid.ns/feature-2": "val-2"})
+				So(mockNode.Labels, ShouldResemble, map[string]string{LabelNs + "/feature-1": "val-1", "valid.ns/feature-2": "val-2"})
 
-				a := map[string]string{AnnotationNs + "worker.version": workerVer, AnnotationNs + "feature-labels": "feature-1,valid.ns/feature-2", AnnotationNs + "extended-resources": ""}
+				a := map[string]string{AnnotationNs + "/worker.version": workerVer,
+					AnnotationNs + "/feature-labels":     "feature-1,valid.ns/feature-2",
+					AnnotationNs + "/extended-resources": ""}
 				So(len(mockNode.Annotations), ShouldEqual, len(a))
 				So(mockNode.Annotations, ShouldResemble, a)
 			})
@@ -371,9 +377,9 @@ func TestAddLabels(t *testing.T) {
 
 		Convey("They should be added to the node.Labels", func() {
 			test1 := "test1"
-			labels[test1] = "true"
+			labels[LabelNs+"/"+test1] = "true"
 			addLabels(n, labels)
-			So(n.Labels, ShouldContainKey, LabelNs+test1)
+			So(n.Labels, ShouldContainKey, LabelNs+"/"+test1)
 		})
 	})
 }

@@ -24,6 +24,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -42,10 +43,10 @@ import (
 
 const (
 	// Namespace for feature labels
-	LabelNs = "feature.node.kubernetes.io/"
+	LabelNs = "feature.node.kubernetes.io"
 
 	// Namespace for all NFD-related annotations
-	AnnotationNs = "nfd.node.kubernetes.io/"
+	AnnotationNs = "nfd.node.kubernetes.io"
 )
 
 // package loggers
@@ -68,7 +69,7 @@ type Annotations map[string]string
 type Args struct {
 	CaFile         string
 	CertFile       string
-	ExtraLabelNs   []string
+	ExtraLabelNs   map[string]struct{}
 	KeyFile        string
 	Kubeconfig     string
 	LabelWhiteList *regexp.Regexp
@@ -100,9 +101,6 @@ type statusOp struct {
 }
 
 func createStatusOp(verb string, resource string, path string, value string) statusOp {
-	if !strings.Contains(resource, "/") {
-		resource = LabelNs + resource
-	}
 	res := strings.ReplaceAll(resource, "/", "~1")
 	return statusOp{verb, "/status/" + path + "/" + res, value}
 }
@@ -260,7 +258,7 @@ func updateMasterNode(helper apihelper.APIHelpers) error {
 	}
 
 	// Advertise NFD version as an annotation
-	addAnnotations(node, Annotations{"master.version": version.Get()})
+	addAnnotations(node, Annotations{AnnotationNs + "/master.version": version.Get()})
 	err = helper.UpdateNode(cli, node)
 	if err != nil {
 		stderrLogger.Printf("can't update node: %s", err.Error())
@@ -270,50 +268,52 @@ func updateMasterNode(helper apihelper.APIHelpers) error {
 	return nil
 }
 
-// Filter labels by namespace and name whitelist
-func filterFeatureLabels(labels Labels, extraLabelNs []string, labelWhiteList *regexp.Regexp, extendedResourceNames []string) (Labels, ExtendedResources) {
-	for label := range labels {
-		split := strings.SplitN(label, "/", 2)
-		name := split[0]
+// Filter labels by namespace and name whitelist, and, turn selected labels
+// into extended resources. This function also handles proper namespacing of
+// labels and ERs, i.e. adds the possibly missing default namespace for labels
+// arriving through the gRPC API.
+func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelWhiteList *regexp.Regexp, extendedResourceNames []string) (Labels, ExtendedResources) {
+	outLabels := Labels{}
 
-		// Check namespaced labels, filter out if ns is not whitelisted
-		if len(split) == 2 {
-			ns := split[0]
-			name = split[1]
-			for i, extraNs := range extraLabelNs {
-				if ns == extraNs {
-					break
-				} else if i == len(extraLabelNs)-1 {
-					stderrLogger.Printf("Namespace '%s' is not allowed. Ignoring label '%s'\n", ns, label)
-					delete(labels, label)
-				}
+	for label, value := range labels {
+		// Add possibly missing default ns
+		label := addNs(label, LabelNs)
+
+		ns, name := splitNs(label)
+
+		// Check label namespace, filter out if ns is not whitelisted
+		if ns != LabelNs {
+			if _, ok := extraLabelNs[ns]; !ok {
+				stderrLogger.Printf("Namespace '%s' is not allowed. Ignoring label '%s'\n", ns, label)
+				continue
 			}
 		}
 
 		// Skip if label doesn't match labelWhiteList
 		if !labelWhiteList.MatchString(name) {
-			stderrLogger.Printf("%s does not match the whitelist (%s) and will not be published.", name, labelWhiteList.String())
-			delete(labels, label)
+			stderrLogger.Printf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, labelWhiteList.String())
+			continue
 		}
+		outLabels[label] = value
 	}
 
 	// Remove labels which are intended to be extended resources
 	extendedResources := ExtendedResources{}
 	for _, extendedResourceName := range extendedResourceNames {
-		// remove possibly given default LabelNs to keep annotations shorter
-		extendedResourceName = strings.TrimPrefix(extendedResourceName, LabelNs)
-		if _, ok := labels[extendedResourceName]; ok {
-			if _, err := strconv.Atoi(labels[extendedResourceName]); err != nil {
-				stderrLogger.Printf("bad label value encountered for extended resource: %s", err.Error())
+		// Add possibly missing default ns
+		extendedResourceName = addNs(extendedResourceName, LabelNs)
+		if value, ok := outLabels[extendedResourceName]; ok {
+			if _, err := strconv.Atoi(value); err != nil {
+				stderrLogger.Printf("bad label value (%s: %s) encountered for extended resource: %s", extendedResourceName, value, err.Error())
 				continue // non-numeric label can't be used
 			}
 
-			extendedResources[extendedResourceName] = labels[extendedResourceName]
-			delete(labels, extendedResourceName)
+			extendedResources[extendedResourceName] = value
+			delete(outLabels, extendedResourceName)
 		}
 	}
 
-	return labels, extendedResources
+	return outLabels, extendedResources
 }
 
 // Implement LabelerServer
@@ -355,19 +355,21 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 		// Advertise NFD worker version, label names and extended resources as annotations
 		labelKeys := make([]string, 0, len(labels))
 		for k := range labels {
-			labelKeys = append(labelKeys, k)
+			// Drop the ns part for labels in the default ns
+			labelKeys = append(labelKeys, strings.TrimPrefix(k, LabelNs+"/"))
 		}
 		sort.Strings(labelKeys)
 
 		extendedResourceKeys := make([]string, 0, len(extendedResources))
 		for key := range extendedResources {
-			extendedResourceKeys = append(extendedResourceKeys, key)
+			// Drop the ns part if in the default ns
+			extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, LabelNs+"/"))
 		}
 		sort.Strings(extendedResourceKeys)
 
-		annotations := Annotations{"worker.version": r.NfdVersion,
-			"feature-labels":     strings.Join(labelKeys, ","),
-			"extended-resources": strings.Join(extendedResourceKeys, ","),
+		annotations := Annotations{AnnotationNs + "/worker.version": r.NfdVersion,
+			AnnotationNs + "/feature-labels":     strings.Join(labelKeys, ","),
+			AnnotationNs + "/extended-resources": strings.Join(extendedResourceKeys, ","),
 		}
 
 		err := updateNodeFeatures(s.apiHelper, r.NodeName, labels, annotations, extendedResources)
@@ -398,8 +400,12 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	statusOps := getExtendedResourceOps(node, extendedResources)
 
 	// Remove old labels
-	if l, ok := node.Annotations[AnnotationNs+"feature-labels"]; ok {
+	if l, ok := node.Annotations[AnnotationNs+"/feature-labels"]; ok {
 		oldLabels := strings.Split(l, ",")
+		for i, name := range oldLabels {
+			// Names in the annotation may omit the default ns
+			oldLabels[i] = addNs(name, LabelNs)
+		}
 		removeLabels(node, oldLabels)
 	}
 
@@ -444,11 +450,7 @@ func removeLabelsWithPrefix(n *api.Node, search string) {
 // Removes NFD labels from a Node object
 func removeLabels(n *api.Node, labelNames []string) {
 	for _, l := range labelNames {
-		if strings.Contains(l, "/") {
-			delete(n.Labels, l)
-		} else {
-			delete(n.Labels, LabelNs+l)
-		}
+		delete(n.Labels, l)
 	}
 }
 
@@ -456,16 +458,22 @@ func removeLabels(n *api.Node, labelNames []string) {
 func getExtendedResourceOps(n *api.Node, extendedResources ExtendedResources) []statusOp {
 	var statusOps []statusOp
 
-	oldResources := strings.Split(n.Annotations[AnnotationNs+"extended-resources"], ",")
+	// Form a list of namespaced resource names managed by us
+	if old, ok := n.Annotations[AnnotationNs+"/extended-resources"]; ok {
+		oldResources := strings.Split(old, ",")
+		for i, name := range oldResources {
+			// Names in the annotation may omit the default ns
+			oldResources[i] = addNs(name, LabelNs)
+		}
 
-	// figure out which resources to remove
-	for _, resource := range oldResources {
-		if _, ok := n.Status.Capacity[api.ResourceName(addNs(resource, LabelNs))]; ok {
-			// check if the ext resource is still needed
-			_, extResNeeded := extendedResources[resource]
-			if !extResNeeded {
-				statusOps = append(statusOps, createStatusOp("remove", resource, "capacity", ""))
-				statusOps = append(statusOps, createStatusOp("remove", resource, "allocatable", ""))
+		// figure out which resources to remove
+		for _, resource := range oldResources {
+			if _, ok := n.Status.Capacity[api.ResourceName(resource)]; ok {
+				// check if the ext resource is still needed
+				if _, extResNeeded := extendedResources[resource]; !extResNeeded {
+					statusOps = append(statusOps, createStatusOp("remove", resource, "capacity", ""))
+					statusOps = append(statusOps, createStatusOp("remove", resource, "allocatable", ""))
+				}
 			}
 		}
 	}
@@ -473,7 +481,7 @@ func getExtendedResourceOps(n *api.Node, extendedResources ExtendedResources) []
 	// figure out which resources to replace and which to add
 	for resource, value := range extendedResources {
 		// check if the extended resource already exists with the same capacity in the node
-		if quantity, ok := n.Status.Capacity[api.ResourceName(addNs(resource, LabelNs))]; ok {
+		if quantity, ok := n.Status.Capacity[api.ResourceName(resource)]; ok {
 			val, _ := quantity.AsInt64()
 			if strconv.FormatInt(val, 10) != value {
 				statusOps = append(statusOps, createStatusOp("replace", resource, "capacity", value))
@@ -489,20 +497,16 @@ func getExtendedResourceOps(n *api.Node, extendedResources ExtendedResources) []
 }
 
 // Add NFD labels to a Node object.
-func addLabels(n *api.Node, labels map[string]string) {
+func addLabels(n *api.Node, labels Labels) {
 	for k, v := range labels {
-		if strings.Contains(k, "/") {
-			n.Labels[k] = v
-		} else {
-			n.Labels[LabelNs+k] = v
-		}
+		n.Labels[k] = v
 	}
 }
 
 // Add Annotations to a Node object
-func addAnnotations(n *api.Node, annotations map[string]string) {
+func addAnnotations(n *api.Node, annotations Annotations) {
 	for k, v := range annotations {
-		n.Annotations[AnnotationNs+k] = v
+		n.Annotations[k] = v
 	}
 }
 
@@ -511,5 +515,14 @@ func addNs(src string, nsToAdd string) string {
 	if strings.Contains(src, "/") {
 		return src
 	}
-	return nsToAdd + src
+	return filepath.Join(nsToAdd, src)
+}
+
+// splitNs splits a name into its namespace and name parts
+func splitNs(fullname string) (string, string) {
+	split := strings.SplitN(fullname, "/", 2)
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+	return "", fullname
 }
