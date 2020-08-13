@@ -78,12 +78,25 @@ func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	return nil
 }
 
-func (h K8sHelpers) PatchStatus(c *k8sclient.Clientset, nodeName string, marshalable interface{}) error {
-	// Send the updated node to the apiserver.
-	patch, err := json.Marshal(marshalable)
-	if err == nil {
-		_, err = c.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, patch, meta_v1.PatchOptions{}, "status")
+func (h K8sHelpers) PatchNode(c *k8sclient.Clientset, nodeName string, patches []JsonPatch) error {
+	if len(patches) > 0 {
+		data, err := json.Marshal(patches)
+		if err == nil {
+			_, err = c.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, data, meta_v1.PatchOptions{})
+		}
+		return err
 	}
+	return nil
+}
 
-	return err
+func (h K8sHelpers) PatchNodeStatus(c *k8sclient.Clientset, nodeName string, patches []JsonPatch) error {
+	if len(patches) > 0 {
+		data, err := json.Marshal(patches)
+		if err == nil {
+			_, err = c.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, data, meta_v1.PatchOptions{}, "status")
+		}
+		return err
+	}
+	return nil
+
 }
