@@ -189,14 +189,14 @@ func TestAddingExtResources(t *testing.T) {
 		Convey("When there are no matching labels", func() {
 			mockNode := newMockNode()
 			mockResourceLabels := ExtendedResources{}
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldEqual, 0)
 		})
 
 		Convey("When there are matching labels", func() {
 			mockNode := newMockNode()
 			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1", LabelNs + "feature-2": "2"}
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
 
@@ -204,7 +204,7 @@ func TestAddingExtResources(t *testing.T) {
 			mockNode := newMockNode()
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1"}
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldEqual, 0)
 		})
 
@@ -212,7 +212,7 @@ func TestAddingExtResources(t *testing.T) {
 			mockNode := newMockNode()
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1"}
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
 	})
@@ -226,7 +226,7 @@ func TestRemovingExtResources(t *testing.T) {
 			mockNode.Annotations[AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldEqual, 0)
 		})
 		Convey("When the related label is gone", func() {
@@ -235,7 +235,7 @@ func TestRemovingExtResources(t *testing.T) {
 			mockNode.Annotations[AnnotationNs+"/extended-resources"] = "feature-4,feature-2"
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
@@ -244,7 +244,7 @@ func TestRemovingExtResources(t *testing.T) {
 			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{LabelNs + "/feature-2": "2"}
 			mockNode.Annotations[AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
-			resourceOps := getExtendedResourceOps(mockNode, mockResourceLabels)
+			resourceOps := createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(resourceOps), ShouldBeGreaterThan, 0)
 		})
 	})

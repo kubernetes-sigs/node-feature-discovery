@@ -93,18 +93,6 @@ type nfdMaster struct {
 	apihelper apihelper.APIHelpers
 }
 
-// statusOp is a json marshaling helper used for patching node status
-type statusOp struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value string `json:"value,omitempty"`
-}
-
-func createStatusOp(verb string, resource string, path string, value string) statusOp {
-	res := strings.ReplaceAll(resource, "/", "~1")
-	return statusOp{verb, "/status/" + path + "/" + res, value}
-}
-
 // Create new NfdMaster server instance.
 func NewNfdMaster(args Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: args, ready: make(chan bool, 1)}
@@ -397,7 +385,7 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	}
 
 	// Resolve publishable extended resources before node is modified
-	statusOps := getExtendedResourceOps(node, extendedResources)
+	patches := createExtendedResourcePatches(node, extendedResources)
 
 	// Remove old labels
 	if l, ok := node.Annotations[AnnotationNs+"/feature-labels"]; ok {
@@ -427,8 +415,8 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	}
 
 	// patch node status with extended resource changes
-	if len(statusOps) > 0 {
-		err = helper.PatchStatus(cli, node.Name, statusOps)
+	if len(patches) > 0 {
+		err = helper.PatchStatus(cli, node.Name, patches)
 		if err != nil {
 			stderrLogger.Printf("error while patching extended resources: %s", err.Error())
 			return err
@@ -454,9 +442,10 @@ func removeLabels(n *api.Node, labelNames []string) {
 	}
 }
 
-// getExtendedResourceOps returns a slice of operations to perform on the node status
-func getExtendedResourceOps(n *api.Node, extendedResources ExtendedResources) []statusOp {
-	var statusOps []statusOp
+// createExtendedResourcePatches returns a slice of operations to perform on
+// the node status
+func createExtendedResourcePatches(n *api.Node, extendedResources ExtendedResources) []apihelper.JsonPatch {
+	var patches []apihelper.JsonPatch
 
 	// Form a list of namespaced resource names managed by us
 	if old, ok := n.Annotations[AnnotationNs+"/extended-resources"]; ok {
@@ -471,8 +460,8 @@ func getExtendedResourceOps(n *api.Node, extendedResources ExtendedResources) []
 			if _, ok := n.Status.Capacity[api.ResourceName(resource)]; ok {
 				// check if the ext resource is still needed
 				if _, extResNeeded := extendedResources[resource]; !extResNeeded {
-					statusOps = append(statusOps, createStatusOp("remove", resource, "capacity", ""))
-					statusOps = append(statusOps, createStatusOp("remove", resource, "allocatable", ""))
+					patches = append(patches, apihelper.NewJsonPatch("remove", "/status/capacity", resource, ""))
+					patches = append(patches, apihelper.NewJsonPatch("remove", "/status/allocatable", resource, ""))
 				}
 			}
 		}
@@ -484,16 +473,16 @@ func getExtendedResourceOps(n *api.Node, extendedResources ExtendedResources) []
 		if quantity, ok := n.Status.Capacity[api.ResourceName(resource)]; ok {
 			val, _ := quantity.AsInt64()
 			if strconv.FormatInt(val, 10) != value {
-				statusOps = append(statusOps, createStatusOp("replace", resource, "capacity", value))
-				statusOps = append(statusOps, createStatusOp("replace", resource, "allocatable", value))
+				patches = append(patches, apihelper.NewJsonPatch("replace", "/status/capacity", resource, value))
+				patches = append(patches, apihelper.NewJsonPatch("replace", "/status/allocatable", resource, value))
 			}
 		} else {
-			statusOps = append(statusOps, createStatusOp("add", resource, "capacity", value))
+			patches = append(patches, apihelper.NewJsonPatch("add", "/status/capacity", resource, value))
 			// "allocatable" gets added implicitly after adding to capacity
 		}
 	}
 
-	return statusOps
+	return patches
 }
 
 // Add NFD labels to a Node object.
