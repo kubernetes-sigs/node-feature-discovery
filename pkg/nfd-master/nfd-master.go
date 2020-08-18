@@ -346,25 +346,8 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 	labels, extendedResources := filterFeatureLabels(r.Labels, s.args.ExtraLabelNs, s.args.LabelWhiteList, s.args.ResourceLabels)
 
 	if !s.args.NoPublish {
-		// Advertise NFD worker version, label names and extended resources as annotations
-		labelKeys := make([]string, 0, len(labels))
-		for key := range labels {
-			// Drop the ns part for labels in the default ns
-			labelKeys = append(labelKeys, strings.TrimPrefix(key, LabelNs+"/"))
-		}
-		sort.Strings(labelKeys)
-
-		extendedResourceKeys := make([]string, 0, len(extendedResources))
-		for key := range extendedResources {
-			// Drop the ns part if in the default ns
-			extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, LabelNs+"/"))
-		}
-		sort.Strings(extendedResourceKeys)
-
-		annotations := Annotations{workerVersionAnnotation: r.NfdVersion,
-			featureLabelAnnotation:     strings.Join(labelKeys, ","),
-			extendedResourceAnnotation: strings.Join(extendedResourceKeys, ","),
-		}
+		// Advertise NFD worker version as an annotation
+		annotations := Annotations{workerVersionAnnotation: r.NfdVersion}
 
 		err := updateNodeFeatures(s.apiHelper, r.NodeName, labels, annotations, extendedResources)
 		if err != nil {
@@ -389,6 +372,24 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	if err != nil {
 		return err
 	}
+
+	// Store names of labels in an annotation
+	labelKeys := make([]string, 0, len(labels))
+	for key := range labels {
+		// Drop the ns part for labels in the default ns
+		labelKeys = append(labelKeys, strings.TrimPrefix(key, LabelNs+"/"))
+	}
+	sort.Strings(labelKeys)
+	annotations[featureLabelAnnotation] = strings.Join(labelKeys, ",")
+
+	// Store names of extended resources in an annotation
+	extendedResourceKeys := make([]string, 0, len(extendedResources))
+	for key := range extendedResources {
+		// Drop the ns part if in the default ns
+		extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, LabelNs+"/"))
+	}
+	sort.Strings(extendedResourceKeys)
+	annotations[extendedResourceAnnotation] = strings.Join(extendedResourceKeys, ",")
 
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[featureLabelAnnotation], LabelNs)

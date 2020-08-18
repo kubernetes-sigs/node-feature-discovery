@@ -72,8 +72,6 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		}
 		sort.Strings(fakeExtResourceNames)
 
-		fakeAnnotations[AnnotationNs+"/feature-labels"] = strings.Join(fakeFeatureLabelNames, ",")
-
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
 		mockClient := &k8sclient.Clientset{}
 		// Mock node with old features
@@ -84,11 +82,14 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		Convey("When I successfully update the node with feature labels", func() {
 			metadataPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/metadata/annotations", AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", "my-annotation", "my-val"),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
 				apihelper.NewJsonPatch("remove", "/metadata/labels", LabelNs+"/old-feature", ""),
 			}
 			for k, v := range fakeFeatureLabels {
 				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))
+			}
+			for k, v := range fakeAnnotations {
+				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/annotations", k, v))
 			}
 
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
