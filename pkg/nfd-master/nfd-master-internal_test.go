@@ -58,7 +58,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 	Convey("When I update the node using fake client", t, func() {
 		fakeFeatureLabels := map[string]string{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2", LabelNs + "/source-feature.3": "val3"}
 		fakeAnnotations := map[string]string{"my-annotation": "my-val"}
-		fakeExtResources := ExtendedResources{LabelNs + "/source-feature.1": "", LabelNs + "/source-feature.2": ""}
+		fakeExtResources := ExtendedResources{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2"}
 
 		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureLabels))
 		for k := range fakeFeatureLabels {
@@ -80,6 +80,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		mockNode.Annotations[AnnotationNs+"/feature-labels"] = "old-feature"
 
 		Convey("When I successfully update the node with feature labels", func() {
+			// Create a list of expected node metadata patches
 			metadataPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/metadata/annotations", AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
@@ -89,13 +90,19 @@ func TestUpdateNodeFeatures(t *testing.T) {
 				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))
 			}
 			for k, v := range fakeAnnotations {
-				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/annotations", k, v))
+				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/annotations", k, v))
+			}
+
+			// Create a list of expected node status patches
+			statusPatches := []apihelper.JsonPatch{}
+			for k, v := range fakeExtResources {
+				statusPatches = append(statusPatches, apihelper.NewJsonPatch("add", "/status/capacity", k, v))
 			}
 
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Once()
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(metadataPatches))).Return(nil)
-			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.Anything).Return(nil).Twice()
+			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
 			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is nil", func() {
@@ -207,9 +214,13 @@ func TestAddingExtResources(t *testing.T) {
 
 		Convey("When there are matching labels", func() {
 			mockNode := newMockNode()
-			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1", LabelNs + "feature-2": "2"}
+			mockResourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
+			expectedPatches := []apihelper.JsonPatch{
+				apihelper.NewJsonPatch("add", "/status/capacity", "feature-1", "1"),
+				apihelper.NewJsonPatch("add", "/status/capacity", "feature-2", "2"),
+			}
 			patches := createExtendedResourcePatches(mockNode, mockResourceLabels)
-			So(len(patches), ShouldBeGreaterThan, 0)
+			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 
 		Convey("When the resource already exists", func() {
@@ -222,10 +233,14 @@ func TestAddingExtResources(t *testing.T) {
 
 		Convey("When the resource already exists but its capacity has changed", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
-			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1"}
+			mockNode.Status.Capacity[api.ResourceName("feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{"feature-1": "1"}
+			expectedPatches := []apihelper.JsonPatch{
+				apihelper.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
+				apihelper.NewJsonPatch("replace", "/status/allocatable", "feature-1", "1"),
+			}
 			patches := createExtendedResourcePatches(mockNode, mockResourceLabels)
-			So(len(patches), ShouldBeGreaterThan, 0)
+			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 	})
 }
@@ -272,7 +287,7 @@ func TestSetLabels(t *testing.T) {
 		mockServer := labelerServer{args: Args{LabelWhiteList: regexp.MustCompile("")}, apiHelper: mockHelper}
 		mockCtx := context.Background()
 		// In the gRPC request the label names may omit the default ns
-		mockLabels := map[string]string{"feature-1": "val-1", "feature-2": "val-2", "feature-3": "val-3"}
+		mockLabels := map[string]string{"feature-1": "1", "feature-2": "val-2", "feature-3": "3"}
 		mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
 
 		mockLabelNames := make([]string, 0, len(mockLabels))
@@ -280,6 +295,8 @@ func TestSetLabels(t *testing.T) {
 			mockLabelNames = append(mockLabelNames, k)
 		}
 		sort.Strings(mockLabelNames)
+
+		expectedStatusPatches := []apihelper.JsonPatch{}
 
 		Convey("When node update succeeds", func() {
 			expectedPatches := []apihelper.JsonPatch{
@@ -294,7 +311,7 @@ func TestSetLabels(t *testing.T) {
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
-			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.Anything).Return(nil)
+			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
 			_, err := mockServer.SetLabels(mockCtx, mockReq)
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -313,7 +330,7 @@ func TestSetLabels(t *testing.T) {
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
-			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.Anything).Return(nil)
+			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
 			_, err := mockServer.SetLabels(mockCtx, mockReq)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
@@ -337,8 +354,32 @@ func TestSetLabels(t *testing.T) {
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
-			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.Anything).Return(nil)
+			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
 			mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
+			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			Convey("Error is nil", func() {
+				So(err, ShouldBeNil)
+			})
+
+		})
+
+		Convey("When --resource-labels is specified", func() {
+			expectedPatches := []apihelper.JsonPatch{
+				apihelper.NewJsonPatch("add", "/metadata/annotations", workerVersionAnnotation, workerVer),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", featureLabelAnnotation, "feature-2"),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", extendedResourceAnnotation, "feature-1,feature-3"),
+				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-2", mockLabels["feature-2"]),
+			}
+			expectedStatusPatches := []apihelper.JsonPatch{
+				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-1", mockLabels["feature-1"]),
+				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-3", mockLabels["feature-3"]),
+			}
+
+			mockServer.args.ResourceLabels = []string{"feature-3", "feature-1"}
+			mockHelper.On("GetClient").Return(mockClient, nil)
+			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
+			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
+			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
 			_, err := mockServer.SetLabels(mockCtx, mockReq)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
