@@ -25,6 +25,9 @@ RUN make test
 # Create production image for running node feature discovery
 FROM debian:stretch-slim
 
+# Run as unprivileged user
+USER 65534:65534
+
 # Use more verbose logging of gRPC
 ENV GRPC_GO_LOG_SEVERITY_LEVEL="INFO"
 

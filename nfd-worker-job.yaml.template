@@ -32,6 +32,12 @@ spec:
                 fieldPath: spec.nodeName
           image: k8s.gcr.io/nfd/node-feature-discovery:v0.6.0
           name: nfd-worker
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           command:
             - "nfd-worker"
           args:
