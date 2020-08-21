@@ -869,9 +869,9 @@ docker push <IMAGE_TAG>
 **Change the job spec to use your custom image (optional):**
 
 To use your published image from the step above instead of the
-`quay.io/kubernetes_incubator/node-feature-discovery` image, edit `image`
+`k8s.gcr.io/nfd/node-feature-discovery` image, edit `image`
 attribute in the spec template(s) to the new location
-(`<quay-domain-name>/<registry-user>/<image-name>[:<version>]`).
+(`<registry-name>/<image-name>[:<version>]`).
 
 ### Customizing the Build
 There are several Makefile variables that control the build process and the
@@ -882,7 +882,7 @@ name of the resulting container image.
 | IMAGE_BUILD_CMD        | Command to build the image                   | docker build
 | IMAGE_BUILD_EXTRA_OPTS | Extra options to pass to build command       | *empty*
 | IMAGE_PUSH_CMD         | Command to push the image to remote registry | docker push
-| IMAGE_REGISTRY         | Container image registry to use              | quay.io/kubernetes_incubator
+| IMAGE_REGISTRY         | Container image registry to use              | k8s.gcr.io/nfd
 | IMAGE_NAME             | Container image name                         | node-feature-discovery
 | IMAGE_TAG_NAME         | Container image tag name                     | &lt;nfd version&gt;
 | IMAGE_REPO             | Container image repository to use            | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
