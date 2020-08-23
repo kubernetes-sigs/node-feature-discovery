@@ -4,8 +4,8 @@ steps:
     - 'build'
     - '--build-arg NFD_VERSION=$_GIT_TAG'
     - '--build-arg HOSTMOUNT_PREFIX=/host-'
-    - '-t k8s.gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
-    - '-t k8s.gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
+    - '-t gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
+    - '-t gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
     - '.'
 substitutions:
   _GIT_TAG: '0.0.0'
@@ -14,5 +14,5 @@ options:
   substitution_option: ALLOW_LOOSE
 # Pust images
 images:
-  - 'k8s.gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
-  - 'k8s.gcr.io/$PROJECT_ID/snode-feature-discovery:master'
+  - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
+  - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
