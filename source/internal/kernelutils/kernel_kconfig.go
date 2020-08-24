@@ -57,8 +57,7 @@ func ParseKconfig(configPath string) (map[string]string, error) {
 	var err error
 	var searchPaths []string
 
-	unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
-	kVer := strings.TrimSpace(string(unameRaw))
+	kVer, err := GetKernelVersion()
 	if err != nil {
 		searchPaths = []string{
 			"/proc/config.gz",

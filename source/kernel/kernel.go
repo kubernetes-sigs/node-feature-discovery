@@ -17,10 +17,8 @@ limitations under the License.
 package kernel
 
 import (
-	"io/ioutil"
 	"log"
 	"regexp"
-	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
@@ -108,13 +106,10 @@ func (s *Source) Discover() (source.Features, error) {
 func parseVersion() (map[string]string, error) {
 	version := map[string]string{}
 
-	// Open file for reading
-	raw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
+	full, err := kernelutils.GetKernelVersion()
 	if err != nil {
 		return nil, err
 	}
-
-	full := strings.TrimSpace(string(raw))
 
 	// Replace forbidden symbols
 	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]")
