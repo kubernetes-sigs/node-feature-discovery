@@ -2,10 +2,10 @@ steps:
   - name: gcr.io/cloud-builders/docker
     args:
     - 'build'
-    - '--build-arg NFD_VERSION=$_GIT_TAG'
-    - '--build-arg HOSTMOUNT_PREFIX=/host-'
-    - '-t gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
-    - '-t gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
+    - '--build-arg=VERSION=$_GIT_TAG'
+    - '--build-arg=HOSTMOUNT_PREFIX=/host-'
+    - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
+    - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
     - '.'
 substitutions:
   _GIT_TAG: '0.0.0'
