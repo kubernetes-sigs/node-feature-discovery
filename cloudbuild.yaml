@@ -6,6 +6,7 @@ steps:
     - '--build-arg=HOSTMOUNT_PREFIX=/host-'
     - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
     - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
+    - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF-g$COMMIT_SHA'
     - '.'
 substitutions:
   _GIT_TAG: '0.0.0'
@@ -16,3 +17,4 @@ options:
 images:
   - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
   - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
+  - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF-g$COMMIT_SHA'
