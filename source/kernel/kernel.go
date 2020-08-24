@@ -17,18 +17,13 @@ limitations under the License.
 package kernel
 
 import (
-	"bytes"
-	"compress/gzip"
-	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
 )
 
 // Configuration file options
@@ -87,7 +82,7 @@ func (s *Source) Discover() (source.Features, error) {
 	}
 
 	// Read kconfig
-	kconfig, err := parseKconfig(s.config.KconfigFile)
+	kconfig, err := kernelutils.ParseKconfig(s.config.KconfigFile)
 	if err != nil {
 		log.Printf("ERROR: Failed to read kconfig: %s", err)
 	}
@@ -138,94 +133,4 @@ func parseVersion() (map[string]string, error) {
 	}
 
 	return version, nil
-}
-
-// Read gzipped kernel config
-func readKconfigGzip(filename string) ([]byte, error) {
-	// Open file for reading
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	// Uncompress data
-	r, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-
-	return ioutil.ReadAll(r)
-}
-
-// Read kconfig into a map
-func parseKconfig(configPath string) (map[string]string, error) {
-	kconfig := map[string]string{}
-	raw := []byte(nil)
-	var err error
-	var searchPaths []string
-
-	unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
-	kVer := strings.TrimSpace(string(unameRaw))
-	if err != nil {
-		searchPaths = []string{
-			"/proc/config.gz",
-			"/usr/src/linux/.config",
-		}
-	} else {
-		// from k8s.io/system-validator used by kubeadm
-		// preflight checks
-		searchPaths = []string{
-			"/proc/config.gz",
-			"/usr/src/linux-" + kVer + "/.config",
-			"/usr/src/linux/.config",
-			"/usr/lib/modules/" + kVer + "/config",
-			"/usr/lib/ostree-boot/config-" + kVer,
-			"/usr/lib/kernel/config-" + kVer,
-			"/usr/src/linux-headers-" + kVer + "/.config",
-			"/lib/modules/" + kVer + "/build/.config",
-			source.BootDir.Path("config-" + kVer),
-		}
-	}
-
-	for _, path := range append([]string{configPath}, searchPaths...) {
-		if len(path) > 0 {
-			if ".gz" == filepath.Ext(path) {
-				if raw, err = readKconfigGzip(path); err == nil {
-					break
-				}
-			} else {
-				if raw, err = ioutil.ReadFile(path); err == nil {
-					break
-				}
-			}
-		}
-	}
-
-	if raw == nil {
-		return nil, fmt.Errorf("Failed to read kernel config from %+v:", append([]string{configPath}, searchPaths...))
-	}
-
-	// Regexp for matching kconfig flags
-	re := regexp.MustCompile(`^CONFIG_(?P<flag>\w+)=(?P<value>.+)`)
-
-	// Process data, line-by-line
-	lines := bytes.Split(raw, []byte("\n"))
-	for _, line := range lines {
-		if m := re.FindStringSubmatch(string(line)); m != nil {
-			if m[2] == "y" || m[2] == "m" {
-				kconfig[m[1]] = "true"
-			} else {
-				value := strings.Trim(m[2], `"`)
-				if len(value) > validation.LabelValueMaxLength {
-					log.Printf("WARNING: ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
-					continue
-				}
-				kconfig[m[1]] = value
-			}
-		}
-	}
-
-	return kconfig, nil
 }
