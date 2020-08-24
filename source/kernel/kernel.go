@@ -19,9 +19,11 @@ package kernel
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -85,7 +87,7 @@ func (s *Source) Discover() (source.Features, error) {
 	}
 
 	// Read kconfig
-	kconfig, err := s.parseKconfig()
+	kconfig, err := parseKconfig(s.config.KconfigFile)
 	if err != nil {
 		log.Printf("ERROR: Failed to read kconfig: %s", err)
 	}
@@ -158,40 +160,51 @@ func readKconfigGzip(filename string) ([]byte, error) {
 }
 
 // Read kconfig into a map
-func (s *Source) parseKconfig() (map[string]string, error) {
+func parseKconfig(configPath string) (map[string]string, error) {
 	kconfig := map[string]string{}
 	raw := []byte(nil)
 	var err error
+	var searchPaths []string
 
-	// First, try kconfig specified in the config file
-	if len(s.config.KconfigFile) > 0 {
-		raw, err = ioutil.ReadFile(s.config.KconfigFile)
-		if err != nil {
-			log.Printf("ERROR: Failed to read kernel config from %s: %s", s.config.KconfigFile, err)
+	unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
+	kVer := strings.TrimSpace(string(unameRaw))
+	if err != nil {
+		searchPaths = []string{
+			"/proc/config.gz",
+			"/usr/src/linux/.config",
+		}
+	} else {
+		// from k8s.io/system-validator used by kubeadm
+		// preflight checks
+		searchPaths = []string{
+			"/proc/config.gz",
+			"/usr/src/linux-" + kVer + "/.config",
+			"/usr/src/linux/.config",
+			"/usr/lib/modules/" + kVer + "/config",
+			"/usr/lib/ostree-boot/config-" + kVer,
+			"/usr/lib/kernel/config-" + kVer,
+			"/usr/src/linux-headers-" + kVer + "/.config",
+			"/lib/modules/" + kVer + "/build/.config",
+			source.BootDir.Path("config-" + kVer),
 		}
 	}
 
-	// Then, try to read from /proc
-	if raw == nil {
-		raw, err = readKconfigGzip("/proc/config.gz")
-		if err != nil {
-			log.Printf("Failed to read /proc/config.gz: %s", err)
+	for _, path := range append([]string{configPath}, searchPaths...) {
+		if len(path) > 0 {
+			if ".gz" == filepath.Ext(path) {
+				if raw, err = readKconfigGzip(path); err == nil {
+					break
+				}
+			} else {
+				if raw, err = ioutil.ReadFile(path); err == nil {
+					break
+				}
+			}
 		}
 	}
 
-	// Last, try to read from /boot/
 	if raw == nil {
-		// Get kernel version
-		unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
-		uname := strings.TrimSpace(string(unameRaw))
-		if err != nil {
-			return nil, err
-		}
-		// Read kconfig
-		raw, err = ioutil.ReadFile(source.BootDir.Path("config-" + uname))
-		if err != nil {
-			return nil, err
-		}
+		return nil, fmt.Errorf("Failed to read kernel config from %+v:", append([]string{configPath}, searchPaths...))
 	}
 
 	// Regexp for matching kconfig flags
