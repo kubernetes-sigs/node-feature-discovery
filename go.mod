@@ -26,6 +26,8 @@ require (
 // The k8s "sub-"packages do not have 'semver' compatible versions. Thus, we
 // need to override with commits (corresponding their kubernetes-* tags)
 replace (
+	// force version of x/text due CVE-2020-14040
+	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/api => k8s.io/api v0.0.0-20200121193204-7ea599edc7fd
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20200121201129-111e9ba415da
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191121175448-79c2a76c473a
