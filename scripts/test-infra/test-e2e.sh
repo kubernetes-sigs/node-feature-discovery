@@ -7,9 +7,6 @@ export PATH=$PATH:$HOME/bin
 
 
 # Configure environment
-if [ -z "$IMAGE_TAG_NAME" ]; then
-    export IMAGE_TAG_NAME="$_PULL_BASE_REF-g$COMMIT_SHA"
-fi
 export KUBECONFIG=`pwd`/kubeconfig
 export E2E_TEST_CONFIG=`pwd`/e2e-test-config
 

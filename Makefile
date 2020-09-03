@@ -13,8 +13,10 @@ VERSION := $(shell git describe --tags --dirty --always)
 IMAGE_REGISTRY := k8s.gcr.io/nfd
 IMAGE_NAME := node-feature-discovery
 IMAGE_TAG_NAME := $(VERSION)
+IMAGE_EXTRA_TAG_NAMES :=
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
+IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
 K8S_NAMESPACE := kube-system
 
 # We use different mount prefix for local and container builds.
@@ -47,6 +49,7 @@ image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 		--build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
 		-t $(IMAGE_TAG) \
+		$(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
 		$(IMAGE_BUILD_EXTRA_OPTS) ./
 
 yamls: $(yaml_instances)
@@ -87,6 +90,7 @@ e2e-test:
 
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
+	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; done
 
 poll-image:
 	set -e; \
