@@ -886,6 +886,7 @@ name of the resulting container image.
 | IMAGE_REGISTRY             | Container image registry to use                                   | k8s.gcr.io/nfd
 | IMAGE_NAME                 | Container image name                                              | node-feature-discovery
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
+| IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty*
 | IMAGE_REPO                 | Container image repository to use                                 | &lt;IMAGE_REGISTRY&gt;/&lt;IMAGE_NAME&gt;
 | IMAGE_TAG                  | Full image:tag to tag the image with                              | &lt;IMAGE_REPO&gt;/&lt;IMAGE_NAME&gt;
 | K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | kube-system
