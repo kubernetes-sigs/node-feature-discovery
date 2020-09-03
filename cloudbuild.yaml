@@ -1,20 +1,10 @@
 steps:
-  - name: gcr.io/cloud-builders/docker
-    args:
-    - 'build'
-    - '--build-arg=VERSION=$_GIT_TAG'
-    - '--build-arg=HOSTMOUNT_PREFIX=/host-'
-    - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
-    - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
-    - '--tag=gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF-g$COMMIT_SHA'
-    - '.'
+  - name: gcr.io/k8s-testimages/gcb-docker-gcloud:v20200824-5d057db
+    entrypoint: scripts/test-infra/push-image.sh
+    env:
+    - IMAGE_EXTRA_TAG_NAMES=$_PULL_BASE_REF
 substitutions:
   _GIT_TAG: '0.0.0'
   _PULL_BASE_REF: 'master'
 options:
   substitution_option: ALLOW_LOOSE
-# Pust images
-images:
-  - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_GIT_TAG'
-  - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF'
-  - 'gcr.io/$PROJECT_ID/node-feature-discovery:$_PULL_BASE_REF-g$COMMIT_SHA'
