@@ -1,23 +1,23 @@
 .PHONY: all test yamls
 .FORCE:
 
-GO_CMD := go
-GO_FMT := gofmt
+GO_CMD ?= go
+GO_FMT ?= gofmt
 
-IMAGE_BUILD_CMD := docker build
-IMAGE_BUILD_EXTRA_OPTS :=
-IMAGE_PUSH_CMD := docker push
+IMAGE_BUILD_CMD ?= docker build
+IMAGE_BUILD_EXTRA_OPTS ?=
+IMAGE_PUSH_CMD ?= docker push
 
 VERSION := $(shell git describe --tags --dirty --always)
 
-IMAGE_REGISTRY := k8s.gcr.io/nfd
-IMAGE_NAME := node-feature-discovery
-IMAGE_TAG_NAME := $(VERSION)
-IMAGE_EXTRA_TAG_NAMES :=
+IMAGE_REGISTRY ?= k8s.gcr.io/nfd
+IMAGE_NAME ?= node-feature-discovery
+IMAGE_TAG_NAME ?= $(VERSION)
+IMAGE_EXTRA_TAG_NAMES ?=
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
-K8S_NAMESPACE := kube-system
+K8S_NAMESPACE ?= kube-system
 
 # We use different mount prefix for local and container builds.
 # Take CONTAINER_HOSTMOUNT_PREFIX from HOSTMOUNT_PREFIX if only the latter is specified
@@ -26,7 +26,7 @@ ifdef HOSTMOUNT_PREFIX
 else
     CONTAINER_HOSTMOUNT_PREFIX := /host-
 endif
-HOSTMOUNT_PREFIX := /
+HOSTMOUNT_PREFIX ?= /
 
 KUBECONFIG :=
 E2E_TEST_CONFIG :=
