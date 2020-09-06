@@ -282,6 +282,7 @@ capability might be supported but not enabled.
 | DCPOP     | Persistent Memory Support
 
 ### Custom Features
+
 The Custom feature source allows the user to define features based on a mix of predefined rules.
 A rule is provided input witch affects its process of matching for a defined feature.
 
@@ -289,6 +290,7 @@ To aid in making Custom Features clearer, we define a general and a per rule nom
 consistent as possible.
 
 #### General Nomenclature & Definitions
+
 ```
 Rule        :Represents a matching logic that is used to match on a feature.
 Rule Input  :The input a Rule is provided. This determines how a Rule performs the match operation.
@@ -296,6 +298,7 @@ Matcher     :A composition of Rules, each Matcher may be composed of at most one
 ```
 
 #### Custom Features Format (using the Nomenclature defined above)
+
 ```yaml
 - name: <feature name>
   matchOn:
@@ -312,6 +315,7 @@ Matcher     :A composition of Rules, each Matcher may be composed of at most one
 ```
 
 #### Matching process
+
 Specifying Rules to match on a feature is done by providing a list of Matchers.
 Each Matcher contains one or more Rules.
 
@@ -321,6 +325,7 @@ of a given Matcher.
 #### Rules
 ##### PciId Rule
 ###### Nomenclature
+
 ```
 Attribute   :A PCI attribute.
 Element     :An identifier of the PCI attribute.
@@ -330,6 +335,7 @@ The PciId Rule allows matching the PCI devices in the system on the following At
 `device`. A list of Elements is provided for each Attribute.
 
 ###### Format
+
 ```yaml
 pciId :
   class: [<class id>, ...]
@@ -343,6 +349,7 @@ At least one Attribute must be specified. Missing attributes will not partake in
 
 ##### UsbId Rule
 ###### Nomenclature
+
 ```
 Attribute   :A USB attribute.
 Element     :An identifier of the USB attribute.
@@ -352,6 +359,7 @@ The UsbId Rule allows matching the USB devices in the system on the following At
 `device`. A list of Elements is provided for each Attribute.
 
 ###### Format
+
 ```yaml
 usbId :
   class: [<class id>, ...]
@@ -365,6 +373,7 @@ At least one Attribute must be specified. Missing attributes will not partake in
 
 ##### LoadedKMod Rule
 ###### Nomenclature
+
 ```
 Element     :A kernel module
 ```
@@ -372,6 +381,7 @@ Element     :A kernel module
 The LoadedKMod Rule allows matching the loaded kernel modules in the system against a provided list of Elements.
 
 ###### Format
+
 ```yaml
 loadedKMod : [<kernel module>, ...]
 ```
@@ -379,6 +389,7 @@ loadedKMod : [<kernel module>, ...]
  in the system.
 
 #### Example
+
 ```yaml
 custom:
   - name: "my.kernel.feature"
@@ -423,6 +434,7 @@ if `some_kmod1` _AND_ `some_kmod2` kernel modules are loaded __OR__ the node con
 with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
 
 #### Statically defined features
+
 Some feature labels which are common and generic are defined statically in the `custom` feature source.
 A user may add additional Matchers to these feature labels by defining them in the `nfd-worker` configuration file.
 
@@ -581,6 +593,7 @@ created a shared area for delivering hooks and feature files to NFD.
 
 
 #### A Hook Example
+
 User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
 following `stdout` output:
@@ -601,6 +614,7 @@ override.namespace/value=456
 ```
 
 #### A File Example
+
 User has a file
 `/etc/kubernetes/node-feature-discovery/features.d/my-source` which contains the
 following lines:
@@ -874,6 +888,7 @@ attribute in the spec template(s) to the new location
 (`<registry-name>/<image-name>[:<version>]`).
 
 ### Customizing the Build
+
 There are several Makefile variables that control the build process and the
 name of the resulting container image.
 
@@ -895,13 +910,24 @@ name of the resulting container image.
 | E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example](test/e2e/e2e-test-config.exapmle.yaml)) | *empty*
 
 For example, to use a custom registry:
+
 ```
 make IMAGE_REGISTRY=<my custom registry uri>
 
 ```
+
 Or to specify a build tool different from Docker:
+
+It can be done in 2 ways, by pre-defining the variable 
+
 ```
-make IMAGE_BUILD_CMD="buildah bud"
+IMAGE_BUILD_CMD="buildah bud" make
+```
+
+Or By overriding the variable value
+
+```
+make  IMAGE_BUILD_CMD="buildah bud"
 ```
 
 ### Testing
