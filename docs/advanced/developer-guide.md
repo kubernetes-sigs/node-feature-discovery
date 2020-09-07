@@ -28,7 +28,7 @@ cd node-feature-discovery
 
 ### Docker Build
 
-#### Build the container image
+#### Build the container images
 
 See [customizing the build](#customizing-the-build) below for altering the
 container image registry, for example.
@@ -37,12 +37,12 @@ container image registry, for example.
 make
 ```
 
-#### Push the container image
+#### Push the container images
 
 Optional, this example with Docker.
 
 ```bash
-docker push <IMAGE_TAG>
+make push
 ```
 
 #### Change the job spec to use your custom image (optional)

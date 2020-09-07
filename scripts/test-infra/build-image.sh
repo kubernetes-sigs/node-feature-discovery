@@ -1,3 +1,3 @@
 #!/bin/bash -e
 
-make image
+make images

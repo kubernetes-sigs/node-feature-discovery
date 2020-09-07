@@ -67,7 +67,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery-master:master
           imagePullPolicy: Always
           name: nfd-master
           securityContext:
@@ -76,14 +76,12 @@ spec:
               drop: ["ALL"]
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-          command:
-            - "nfd-master"
         - env:
           - name: NODE_NAME
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery-worker:master
           imagePullPolicy: Always
           name: nfd-worker
           securityContext:
@@ -92,8 +90,6 @@ spec:
               drop: ["ALL"]
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-          command:
-            - "nfd-worker"
           args:
             - "--sleep-interval=60s"
           volumeMounts:

@@ -5,5 +5,5 @@
 # container image tag
 VERSION_OVERRIDE=${_GIT_TAG+VERSION=${_GIT_TAG:10}}
 
-make image $VERSION_OVERRIDE
+make images $VERSION_OVERRIDE
 make push $VERSION_OVERRIDE

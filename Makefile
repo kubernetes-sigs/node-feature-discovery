@@ -32,10 +32,7 @@ IMAGE_REGISTRY ?= k8s.gcr.io/nfd
 IMAGE_TAG_NAME ?= $(VERSION)
 IMAGE_EXTRA_TAG_NAMES ?=
 
-IMAGE_NAME := node-feature-discovery
-IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
-IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
-IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
+_IMAGE_REPO_BASE := $(IMAGE_REGISTRY)/node-feature-discovery
 
 K8S_NAMESPACE ?= node-feature-discovery
 
@@ -61,7 +58,7 @@ yaml_templates := $(wildcard *.yaml.template)
 yaml_templates := $(yaml_templates) deployment/node-feature-discovery/values.yaml
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
-all: image
+all: images
 
 build:
 	@mkdir -p bin
@@ -70,21 +67,26 @@ build:
 install:
 	CGO_ENABLED=0 $(GO_CMD) install -v $(LDFLAGS) ./cmd/...
 
-image: yamls
+images: image-master image-worker yamls
+
+image-%:
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 		--build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
-		-t $(IMAGE_TAG) \
-		$(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
-		$(IMAGE_BUILD_EXTRA_OPTS) ./
+		$(foreach tag,$(IMAGE_TAG_NAME) $(IMAGE_EXTRA_TAG_NAMES),-t $(_IMAGE_REPO_BASE)-$*:$(tag)) \
+		$(IMAGE_BUILD_EXTRA_OPTS) -f ./cmd/nfd-$*/Dockerfile .
 
 yamls: $(yaml_instances)
 
 %.yaml: %.yaml.template .FORCE
 	@echo "$@: namespace: ${K8S_NAMESPACE}"
-	@echo "$@: image: ${IMAGE_TAG}"
-	@sed -E \
+	@image_tag_master=$(_IMAGE_REPO_BASE)-master:$(IMAGE_TAG_NAME); \
+	image_tag_worker=$(_IMAGE_REPO_BASE)-worker:$(IMAGE_TAG_NAME); \
+	echo "$@: master image: $$image_tag_master"; \
+	echo "$@: worker image: $$image_tag_worker"; \
+	sed -E \
 	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
-	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
+	     -e s",^(\s*)image:.+master.+$$,\1image: $$image_tag_master," \
+	     -e s",^(\s*)image:.+worker.+$$,\1image: $$image_tag_worker," \
 	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
 	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${CONTAINER_HOSTMOUNT_PREFIX},' \
 	     -e '/nfd-worker.conf:/r nfd-worker.conf.tmp' \
@@ -132,25 +134,29 @@ test:
 
 e2e-test:
 	@if [ -z ${KUBECONFIG} ]; then echo "[ERR] KUBECONFIG missing, must be defined"; exit 1; fi
-	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) \
+	$(GO_CMD) test -v ./test/e2e/ -args -nfd.registry=$(IMAGE_REGISTRY) -nfd.tag=$(IMAGE_TAG_NAME) \
 	    -kubeconfig=$(KUBECONFIG) -nfd.e2e-config=$(E2E_TEST_CONFIG) -ginkgo.focus="\[NFD\]" \
 	    $(if $(OPENSHIFT),-nfd.openshift,)
 
 push:
-	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
-	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; done
+	@for tag in $(IMAGE_TAG_NAME) $(IMAGE_EXTRA_TAG_NAMES); do \
+	    $(IMAGE_PUSH_CMD) $(_IMAGE_REPO_BASE)-master:$$tag; \
+	    $(IMAGE_PUSH_CMD) $(_IMAGE_REPO_BASE)-worker:$$tag; \
+	done
 
-poll-image:
+poll-images:
 	set -e; \
-	image=$(IMAGE_REPO):$(IMAGE_TAG_NAME); \
-	base_url=`echo $(IMAGE_REPO) | sed -e s'!\([^/]*\)!\1/v2!'`; \
-	errors=`curl -fsS -X GET https://$$base_url/manifests/$(IMAGE_TAG_NAME)|jq .errors`;  \
-	if [ "$$errors" = "null" ]; then \
-	  echo Image $$image found; \
-	else \
-	  echo Image $$image not found; \
-	  exit 1; \
-	fi;
+	base_url=`echo $(_IMAGE_REPO_BASE) | sed -e s'!\([^/]*\)!\1/v2!'`; \
+	for variant in master worker; do \
+	    image=$(_IMAGE_REPO_BASE)-$$variant:$(IMAGE_TAG_NAME); \
+	    errors=`curl -fsS -X GET https://$$base_url-$$variant/manifests/$(IMAGE_TAG_NAME)|jq .errors`;  \
+	    if [ "$$errors" = "null" ]; then \
+	        echo Image $$image found; \
+	    else \
+	        echo Image $$image not found; \
+	        exit 1; \
+	   fi; \
+	done
 
 site-build:
 	@mkdir -p docs/vendor/bundle

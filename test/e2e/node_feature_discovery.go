@@ -45,11 +45,16 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	masterImageName = "node-feature-discovery-master"
+	workerImageName = "node-feature-discovery-worker"
+)
+
 var (
-	dockerRepo    = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag     = flag.String("nfd.tag", "master", "Docker tag to use")
-	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
-	openShift     = flag.Bool("nfd.openshift", false, "Enable OpenShift specific bits")
+	dockerRegistry = flag.String("nfd.registry", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker registry to fetch image from")
+	dockerTag      = flag.String("nfd.tag", "master", "Docker tag to use")
+	e2eConfigFile  = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
+	openShift      = flag.Bool("nfd.openshift", false, "Enable OpenShift specific bits")
 
 	conf *e2eConfig
 )
@@ -442,7 +447,7 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
-			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
+			image := fmt.Sprintf("%s/%s:%s", *dockerRegistry, masterImageName, *dockerTag)
 			masterPod = nfdMasterPod(image, false)
 			masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), masterPod, metav1.CreateOptions{})
 			Expect(err).NotTo(HaveOccurred())
@@ -481,7 +486,7 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
-				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
+				image := fmt.Sprintf("%s/%s:%s", *dockerRegistry, workerImageName, *dockerTag)
 				workerPod := nfdWorkerPod(image, []string{"--oneshot", "--sources=fake"})
 				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
@@ -531,7 +536,7 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 				cleanupNode(f.ClientSet)
 
 				By("Creating nfd-worker daemonset")
-				workerDS := nfdWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+				workerDS := nfdWorkerDaemonSet(fmt.Sprintf("%s/%s:%s", *dockerRegistry, workerImageName, *dockerTag), []string{})
 				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 

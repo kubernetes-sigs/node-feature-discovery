@@ -81,7 +81,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery-master:master
           imagePullPolicy: Always
           name: nfd-master
           securityContext:
@@ -90,8 +90,6 @@ spec:
               drop: ["ALL"]
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-          command:
-            - "nfd-master"
 ## Enable TLS authentication
 ## The example below assumes having the root certificate named ca.crt stored in
 ## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
