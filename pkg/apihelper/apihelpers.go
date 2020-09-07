@@ -29,6 +29,9 @@ type APIHelpers interface {
 	// GetNode returns the Kubernetes node on which this container is running.
 	GetNode(*k8sclient.Clientset, string) (*api.Node, error)
 
+	// GetNodes returns all the nodes in the cluster
+	GetNodes(*k8sclient.Clientset) (*api.NodeList, error)
+
 	// UpdateNode updates the node via the API server using a client.
 	UpdateNode(*k8sclient.Clientset, *api.Node) error
 

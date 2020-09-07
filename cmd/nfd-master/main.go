@@ -63,15 +63,20 @@ func argsParse(argv []string) (master.Args, error) {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
-  %s [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
+  %s [--prune] [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
      [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
+     [--kubeconfig=<path>]
   %s -h | --help
   %s --version
 
   Options:
   -h --help                       Show this screen.
   --version                       Output version and exit.
+  --prune                         Prune all NFD related attributes from all nodes
+                                  of the cluster and exit.
+  --kubeconfig=<path>             Kubeconfig to use [Default: ]
+                                  of the cluster and exit.
   --port=<port>                   Port on which to listen for connections.
                                   [Default: 8080]
   --ca-file=<path>                Root certificate for verifying connections
@@ -119,6 +124,8 @@ func argsParse(argv []string) (master.Args, error) {
 	args.VerifyNodeName = arguments["--verify-node-name"].(bool)
 	args.ExtraLabelNs = strings.Split(arguments["--extra-label-ns"].(string), ",")
 	args.ResourceLabels = strings.Split(arguments["--resource-labels"].(string), ",")
+	args.Prune = arguments["--prune"].(bool)
+	args.Kubeconfig = arguments["--kubeconfig"].(string)
 
 	return args, nil
 }

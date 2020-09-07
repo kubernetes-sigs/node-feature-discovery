@@ -50,18 +50,20 @@ Command line flags of nfd-master:
 ```
 $ docker run --rm <NFD_CONTAINER_IMAGE> nfd-master --help
 ...
-nfd-master.
-
-  Usage:
-  nfd-master [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
+Usage:
+  nfd-master [--prune] [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
      [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
+     [--kubeconfig=<path>]
   nfd-master -h | --help
   nfd-master --version
 
   Options:
   -h --help                       Show this screen.
   --version                       Output version and exit.
+  --prune                         Prune all NFD related attributes from all nodes
+                                  of the cluster and exit.
+  --kubeconfig=<path>             Kubeconfig to use [Default: ]
   --port=<port>                   Port on which to listen for connections.
                                   [Default: 8080]
   --ca-file=<path>                Root certificate for verifying connections

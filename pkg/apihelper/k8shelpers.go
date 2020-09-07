@@ -24,18 +24,28 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // Implements APIHelpers
 type K8sHelpers struct {
+	Kubeconfig string
 }
 
 func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
 	// Set up an in-cluster K8S client.
-	config, err := restclient.InClusterConfig()
+	var config *restclient.Config
+	var err error
+
+	if h.Kubeconfig == "" {
+		config, err = restclient.InClusterConfig()
+	} else {
+		config, err = clientcmd.BuildConfigFromFlags("", h.Kubeconfig)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	clientset, err := k8sclient.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -51,6 +61,10 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 	}
 
 	return node, nil
+}
+
+func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*api.NodeList, error) {
+	return cli.CoreV1().Nodes().List(meta_v1.ListOptions{})
 }
 
 func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
