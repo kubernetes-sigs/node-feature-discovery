@@ -11,12 +11,14 @@ IMAGE_PUSH_CMD ?= docker push
 VERSION := $(shell git describe --tags --dirty --always)
 
 IMAGE_REGISTRY ?= k8s.gcr.io/nfd
-IMAGE_NAME ?= node-feature-discovery
 IMAGE_TAG_NAME ?= $(VERSION)
 IMAGE_EXTRA_TAG_NAMES ?=
+
+IMAGE_NAME := node-feature-discovery
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
+
 K8S_NAMESPACE ?= kube-system
 
 # We use different mount prefix for local and container builds.
@@ -28,8 +30,8 @@ else
 endif
 HOSTMOUNT_PREFIX ?= /
 
-KUBECONFIG :=
-E2E_TEST_CONFIG :=
+KUBECONFIG ?=
+E2E_TEST_CONFIG ?=
 
 LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
