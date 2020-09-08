@@ -13,6 +13,7 @@
   - [Usage](#usage)
 - [Building from source](#building-from-source)
 - [Targeting nodes with specific features](#targeting-nodes-with-specific-features)
+- [Community](#community)
 - [References](#references)
 - [License](#license)
 - [Demo](#demo)
@@ -974,6 +975,16 @@ NFD annotates nodes it is running on:
 | nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users.
 
 Unapplicable annotations are not created, i.e. for example master.version is only created on nodes running nfd-master.
+
+## Community
+
+You can reach us via the following channels:
+
+- [#node-feature-discovery](https://kubernetes.slack.com/messages/node-feature-discovery) channel in
+  [Kubernetes Slack](slack.k8s.io)
+- [SIG-Node](https://groups.google.com/g/kubernetes-sig-node) mailing list
+- File an [issue](https://github.com/kubernetes-sigs/node-feature-discovery/issues/new) in this repository
+
 
 ## References
 
