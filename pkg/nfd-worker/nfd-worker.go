@@ -124,12 +124,10 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 	// Figure out active sources
 	allSources := []source.FeatureSource{
 		&cpu.Source{},
-		&fake.Source{},
 		&iommu.Source{},
 		&kernel.Source{},
 		&memory.Source{},
 		&network.Source{},
-		&panicfake.Source{},
 		&pci.Source{},
 		&storage.Source{},
 		&system.Source{},
@@ -140,15 +138,33 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 		&local.Source{},
 	}
 
-	sourceWhiteList := map[string]struct{}{}
-	for _, s := range args.Sources {
-		sourceWhiteList[strings.TrimSpace(s)] = struct{}{}
-	}
+	// Determine enabled feature
+	if len(args.Sources) == 1 && args.Sources[0] == "all" {
+		nfd.sources = allSources
+	} else {
+		// Add fake source which is only meant for testing. It will be enabled
+		// only if listed explicitly.
+		allSources = append(allSources, &fake.Source{})
+		allSources = append(allSources, &panicfake.Source{})
 
-	nfd.sources = []source.FeatureSource{}
-	for _, s := range allSources {
-		if _, enabled := sourceWhiteList[s.Name()]; enabled {
-			nfd.sources = append(nfd.sources, s)
+		sourceWhiteList := map[string]struct{}{}
+		for _, s := range args.Sources {
+			sourceWhiteList[strings.TrimSpace(s)] = struct{}{}
+		}
+
+		nfd.sources = []source.FeatureSource{}
+		for _, s := range allSources {
+			if _, enabled := sourceWhiteList[s.Name()]; enabled {
+				nfd.sources = append(nfd.sources, s)
+				delete(sourceWhiteList, s.Name())
+			}
+		}
+		if len(sourceWhiteList) > 0 {
+			names := make([]string, 0, len(sourceWhiteList))
+			for n := range sourceWhiteList {
+				names = append(names, n)
+			}
+			stderrLogger.Printf("WARNING: skipping unknown source(s) %q specified in --sources", strings.Join(names, ", "))
 		}
 	}
 

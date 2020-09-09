@@ -90,8 +90,9 @@ func argsParse(argv []string) (worker.Args, error) {
   --server-name-override=<name> Name (CN) expect from server certificate, useful
                               in testing
                               [Default: ]
-  --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,custom,iommu,kernel,local,memory,network,pci,storage,system,usb]
+  --sources=<sources>         Comma separated list of feature sources. Special
+                              value 'all' enables all feature sources.
+                              [Default: all]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to

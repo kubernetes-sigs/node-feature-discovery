@@ -139,9 +139,9 @@ nfd-worker --server-name-override=localhost
 ### --sources
 
 The `--sources` flag specifies a comma-separated list of enabled feature
-sources.
+sources. A special value `all` enables all feature sources.
 
-Default: cpu,custom,iommu,kernel,local,memory,network,pci,storage,system,usb
+Default: all
 
 Example:
 

@@ -222,8 +222,6 @@ Command line flags of nfd-worker:
 ```bash
 $ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-worker --help
 ...
-nfd-worker.
-
   Usage:
   nfd-worker [--no-publish] [--sources=<sources>] [--label-whitelist=<pattern>]
      [--oneshot | --sleep-interval=<seconds>] [--config=<path>]
@@ -253,8 +251,9 @@ nfd-worker.
   --server-name-override=<name> Name (CN) expect from server certificate, useful
                               in testing
                               [Default: ]
-  --sources=<sources>         Comma separated list of feature sources.
-                              [Default: cpu,custom,iommu,kernel,local,memory,network,pci,storage,system,usb]
+  --sources=<sources>         Comma separated list of feature sources. Special
+                              value 'all' enables all feature sources.
+                              [Default: all]
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -266,6 +265,7 @@ nfd-worker.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
                               sleep). [Default: 60s]
+
 ```
 
 **NOTE** Some feature sources need certain directories and/or files from the
