@@ -14,7 +14,6 @@
 - [Building from source](#building-from-source)
 - [Targeting nodes with specific features](#targeting-nodes-with-specific-features)
 - [Community](#community)
-- [References](#references)
 - [License](#license)
 - [Demo](#demo)
 
@@ -986,16 +985,6 @@ You can reach us via the following channels:
 - File an [issue](https://github.com/kubernetes-sigs/node-feature-discovery/issues/new) in this repository
 
 
-## References
-
-Github issues
-
-- [#28310](https://github.com/kubernetes/kubernetes/issues/28310)
-- [#28311](https://github.com/kubernetes/kubernetes/issues/28311)
-- [#28312](https://github.com/kubernetes/kubernetes/issues/28312)
-
-[Design proposal](https://docs.google.com/document/d/1uulT2AjqXjc_pLtDu0Kw9WyvvXm-WAZZaSiUziKsr68/edit)
-
 ## Governance
 
 This is a [SIG-node](https://github.com/kubernetes/community/blob/master/sig-node/README.md)
@@ -1014,13 +1003,10 @@ This is open source software released under the [Apache 2.0 License](LICENSE).
 A demo on the benefits of using node feature discovery can be found in [demo](demo/).
 
 <!-- Links -->
-[cpuid]: http://man7.org/linux/man-pages/man4/cpuid.4.html
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
 [intel-sst]: https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
 [sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
 [docker-down]: https://docs.docker.com/install
-[golang-down]: https://golang.org/dl
-[gcc-down]: https://gcc.gnu.org
 [kubectl-setup]: https://kubernetes.io/docs/tasks/tools/install-kubectl
 [node-sel]: http://kubernetes.io/docs/user-guide/node-selection
