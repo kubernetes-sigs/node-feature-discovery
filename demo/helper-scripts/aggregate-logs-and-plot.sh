@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-show_help() { 
+
+set -eo pipefail
+
+this=`basename $0`
+this_dir=`dirname $0`
+
+show_help() {
 cat << EOF
-    Usage: ${0##*/} [-a APPLICATION_NAME]
+    Usage: $this [-a APPLICATION_NAME]
     Aggregate the results from the specified application and plot the result.
 
     -a APPLICATION_NAME     run the pods with APPLICATION_NAME application.
@@ -21,7 +27,7 @@ OPTIND=1
 options="ha:"
 while getopts $options option
 do
-    case $option in 
+    case $option in
         a)
             if [ "$OPTARG" == "parsec" ] || [ "$OPTARG" == "cloverleaf" ]
             then
@@ -32,11 +38,11 @@ do
                 exit 0
             fi
             ;;
-        h) 
+        h)
             show_help
             exit 0
             ;;
-        '?') 
+        '?')
             show_help
             exit 1
             ;;
@@ -59,7 +65,7 @@ rm -f temp.log labels-with-discovery-$app.log
 
 minimum=$(awk 'min=="" || $2 < min {min=$2} END {print min}' performance.log)
 awk -v min=$minimum '{print $1,((($2/min)*100))-100}' performance.log > performance-norm.log
-./box-plot.R performance.log performance-comparison-$app.pdf
-./box-plot-norm.R performance-norm.log performance-comparison-$app-norm.pdf
+"$this_dir/box-plot.R" performance.log performance-comparison-$app.pdf
+"$this_dir/box-plot-norm.R" performance-norm.log performance-comparison-$app-norm.pdf
 
-./clean-up.sh -a $app
+"$this_dir/clean-up.sh" -a $app

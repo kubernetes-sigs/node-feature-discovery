@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-show_help() { 
+
+set -eo pipefail
+
+this=`basename $0`
+this_dir=`dirname $0`
+
+show_help() {
 cat << EOF
-    Usage: ${0##*/} [-a APPLICATION_NAME]
+    Usage: $this [-a APPLICATION_NAME]
     Runs ten pods without discovery enabled with the specified application.
 
     -a APPLICATION_NAME     run the pods with APPLICATION_NAME application.
@@ -21,7 +27,7 @@ OPTIND=1
 options="ha:"
 while getopts $options option
 do
-    case $option in 
+    case $option in
         a)
             if [ "$OPTARG" == "parsec" ] || [ "$OPTARG" == "cloverleaf" ]
             then
@@ -32,11 +38,11 @@ do
                 exit 0
             fi
             ;;
-        h) 
+        h)
             show_help
             exit 0
             ;;
-        '?') 
+        '?')
             show_help
             exit 1
             ;;
@@ -49,13 +55,12 @@ for i in {1..10}
 do
     if [ "$app" == "parsec" ]
     then
-        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-1/" -e "s/APP/$app/" demo-pod-without-discovery.yaml.template > demo-pod-without-discovery.yaml
+        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-1/" -e "s/APP/$app/" \
+            "$this_dir/demo-pod-without-discovery.yaml.template" | kubectl create -f -
     else
-        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-2/" -e "s/APP/$app/" demo-pod-without-discovery.yaml.template > demo-pod-without-discovery.yaml
+        sed -e "s/NUM/$i-wo-discovery/" -e "s/IMG/demo-2/" -e "s/APP/$app/" \
+            "$this_dir/demo-pod-without-discovery.yaml.template" | kubectl create -f -
     fi
-    kubectl create -f demo-pod-without-discovery.yaml
     echo "WithoutDiscovery" >> labels-without-discovery-$app.log
-done 
+done
 echo "Ten pods without node feature discovery started."
-
-rm -f demo-pod-without-discovery.yaml

@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-show_help() { 
+
+set -eo pipefail
+
+this=`basename $0`
+this_dir=`dirname $0`
+
+show_help() {
 cat << EOF
-    Usage: ${0##*/} [-a APPLICATION_NAME]
+    Usage: $this [-a APPLICATION_NAME]
     Runs pods ten times with discovery enabled.
 
     -a APPLICATION_NAME     run the pods with APPLICATION_NAME application.
@@ -21,7 +27,7 @@ OPTIND=1
 options="ha:"
 while getopts $options option
 do
-    case $option in 
+    case $option in
         a)
             if [ "$OPTARG" == "parsec" ] || [ "$OPTARG" == "cloverleaf" ]
             then
@@ -32,11 +38,11 @@ do
                 exit 0
             fi
             ;;
-        h) 
+        h)
             show_help
             exit 0
             ;;
-        '?') 
+        '?')
             show_help
             exit 1
             ;;
@@ -49,14 +55,12 @@ for i in {1..10}
 do
     if [ "$app" == "parsec" ]
     then
-        sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-1/" demo-pod-with-discovery.yaml.parsec.template > demo-pod-with-discovery.yaml
-        kubectl create -f demo-pod-with-discovery.yaml
+        sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-1/" \
+            "$this_dir/demo-pod-with-discovery.yaml.parsec.template" | kubectl create -f -
     else
-        sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-2/" demo-pod-with-discovery.yaml.cloverleaf.template > demo-pod-with-discovery.yaml
-        kubectl create -f demo-pod-with-discovery.yaml
+        sed -e "s/NUM/$i-with-discovery/" -e "s/APP/demo-2/" \
+            "$this_dir/demo-pod-with-discovery.yaml.cloverleaf.template" | kubectl create -f -
     fi
     echo "WithDiscovery" >> labels-with-discovery-$app.log
-done 
+done
 echo "Ten pods with node feature discovery enabled started."
-
-rm -f demo-pod-with-discovery.yaml
