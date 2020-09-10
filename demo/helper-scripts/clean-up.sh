@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-show_help() { 
+
+set -eo pipefail
+
+this=`basename $0`
+
+show_help() {
 cat << EOF
-    Usage: ${0##*/} [-a APPLICATION_NAME]
-    Clean-up pods with and without discovery enabled for the specified application. 
+    Usage: $this [-a APPLICATION_NAME]
+    Clean-up pods with and without discovery enabled for the specified application.
 
     -a APPLICATION_NAME     clean-up the pods with APPLICATION_NAME application.
                             APPLICATION_NAME can be one of parsec or cloverleaf.
@@ -21,7 +26,7 @@ OPTIND=1
 options="ha:"
 while getopts $options option
 do
-    case $option in 
+    case $option in
         a)
             if [ "$OPTARG" == "parsec" ] || [ "$OPTARG" == "cloverleaf" ]
             then
@@ -32,11 +37,11 @@ do
                 exit 0
             fi
             ;;
-        h) 
+        h)
             show_help
             exit 0
             ;;
-        '?') 
+        '?')
             show_help
             exit 1
             ;;
@@ -45,11 +50,11 @@ done
 
 echo "Using application name = $app."
 for i in {1..10}
-do 
+do
     kubectl delete po demo-$app-$i-wo-discovery
 done
 
 for i in {1..10}
-do 
+do
     kubectl delete po demo-$app-$i-with-discovery
 done

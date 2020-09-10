@@ -30,7 +30,7 @@ While our example illustrates the benefits of using node feature discovery with 
 
 Scripts to reproduce our demo results can be found in [helper-scripts](helper-scripts/).  
 ### Prerequisites
-1. `Kubectl` should be configured properly to work with your Kubernetes cluster.
+1. `kubectl` should be configured properly to work with your Kubernetes cluster.
 2. Node feature discovery should have been already deployed on your Kubernetes cluster. 
  
 ### Instructions 
@@ -41,8 +41,8 @@ Follow these easy steps to reproduce the demo.
 3. `./run-with-discovery.sh -a cloverleaf`
 4. `./run-without-discovery.sh -a parsec`
 5. `./run-without-discovery.sh -a cloverleaf`
-6. `/aggregate-logs-and-plot.sh -a parsec`
-7. `/aggregate-logs-and-plot.sh -a cloverleaf`
+6. `./aggregate-logs-and-plot.sh -a parsec`
+7. `./aggregate-logs-and-plot.sh -a cloverleaf`
 
 Following the above steps will produce the performance and normalized performance logs and their corresponding plots for each application. 
 
