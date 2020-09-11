@@ -1,6 +1,5 @@
 # Node feature discovery for [Kubernetes](https://kubernetes.io)
 
-[![Build Status](https://api.travis-ci.org/kubernetes-sigs/node-feature-discovery.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/node-feature-discovery)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/node-feature-discovery)](https://goreportcard.com/report/github.com/kubernetes-sigs/node-feature-discovery)
 
 - [Overview](#overview)
