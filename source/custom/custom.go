@@ -17,7 +17,6 @@ limitations under the License.
 package custom
 
 import (
-	"fmt"
 	"log"
 
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -29,6 +28,8 @@ type MatchRule struct {
 	PciID      *rules.PciIDRule      `json:"pciId,omitempty"`
 	UsbID      *rules.UsbIDRule      `json:"usbId,omitempty"`
 	LoadedKMod *rules.LoadedKModRule `json:"loadedKMod,omitempty"`
+	CpuID      *rules.CpuIDRule      `json:"cpuId,omitempty"`
+	Kconfig    *rules.KconfigRule    `json:"kConfig,omitempty"`
 }
 
 type FeatureSpec struct {
@@ -76,7 +77,8 @@ func (s Source) Discover() (source.Features, error) {
 	for _, customFeature := range allFeatureConfig {
 		featureExist, err := s.discoverFeature(customFeature)
 		if err != nil {
-			return features, fmt.Errorf("failed to discover feature: %s. %s", customFeature.Name, err.Error())
+			log.Printf("ERROR: failed to discover feature: %q: %s", customFeature.Name, err.Error())
+			continue
 		}
 		if featureExist {
 			features[customFeature.Name] = true
@@ -112,6 +114,26 @@ func (s Source) discoverFeature(feature FeatureSpec) (bool, error) {
 		// Loaded kernel module rule
 		if rule.LoadedKMod != nil {
 			match, err := rule.LoadedKMod.Match()
+			if err != nil {
+				return false, err
+			}
+			if !match {
+				continue
+			}
+		}
+		// cpuid rule
+		if rule.CpuID != nil {
+			match, err := rule.CpuID.Match()
+			if err != nil {
+				return false, err
+			}
+			if !match {
+				continue
+			}
+		}
+		// kconfig rule
+		if rule.Kconfig != nil {
+			match, err := rule.Kconfig.Match()
 			if err != nil {
 				return false, err
 			}

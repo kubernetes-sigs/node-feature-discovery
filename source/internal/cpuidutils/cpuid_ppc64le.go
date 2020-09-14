@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cpu
+package cpuidutils
 
 /*
 #include <sys/auxv.h>
@@ -126,7 +126,7 @@ var flag2Names_ppc64le = map[uint64]string{
 	PPC_FEATURE2_HTM_NO_SUSPEND: "HTM-NO-SUSPEND",
 }
 
-func getCpuidFlags() []string {
+func GetCpuidFlags() []string {
 	r := make([]string, 0, 30)
 	hwcap := uint64(C.gethwcap())
 	hwcap2 := uint64(C.gethwcap2())

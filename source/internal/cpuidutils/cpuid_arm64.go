@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cpu
+package cpuidutils
 
 /*
 #include <sys/auxv.h>
@@ -80,7 +80,7 @@ var flagNames_arm64 = map[uint64]string{
 	CPU_ARM64_FEATURE_SVE:      "SVE",
 }
 
-func getCpuidFlags() []string {
+func GetCpuidFlags() []string {
 	r := make([]string, 0, 20)
 	hwcap := uint64(C.gethwcap())
 	for i := uint(0); i < 64; i++ {
