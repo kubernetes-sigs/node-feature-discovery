@@ -5,5 +5,5 @@ curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/instal
 export PATH=$PATH:$(go env GOPATH)/bin
 
 # Run verify steps
-make gofmt-verify -e
-make ci-lint -e
+make gofmt-verify
+make ci-lint

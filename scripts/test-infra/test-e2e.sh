@@ -30,5 +30,5 @@ done
 
 
 # Configure environment and run tests
-make e2e-test -e
+make e2e-test
 
