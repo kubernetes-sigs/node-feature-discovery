@@ -1,10 +1,9 @@
 #!/bin/bash -e
 
-# Strip 'vYYYYMMDD-' from the variable in order to get a reproducible
-# version and container image tag
-if [ -n "$_GIT_TAG" ]; then
-    export VERSION=${_GIT_TAG:10}
-fi
+# Override VERSION if _GIT_TAG is specified. Strip 10 first characters
+# ('vYYYYMMDD-') from _GIT_TAG in order to get a reproducible version and
+# container image tag
+VERSION_OVERRIDE=${_GIT_TAG+VERSION=${_GIT_TAG:10}}
 
-make image -e
-make push -e
+make image $VERSION_OVERRIDE
+make push $VERSION_OVERRIDE
