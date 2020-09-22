@@ -17,7 +17,7 @@ echo "$E2E_TEST_CONFIG_DATA" > "$E2E_TEST_CONFIG"
 # Wait for the image to be built and published
 i=1
 while true; do
-    if make poll-image -e; then
+    if make poll-image; then
         break
     elif [ $i -ge 10 ]; then
         "ERROR: too many tries when polling for image"
