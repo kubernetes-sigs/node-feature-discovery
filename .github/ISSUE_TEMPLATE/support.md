@@ -1,6 +1,6 @@
 ---
 name: Support Request
-about: Support request or question relating to Node-Feature-Discovery
+about: Support request or question relating to Node Feature Discovery
 labels: triage/support
 
 ---
