@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nfd-prune
+  namespace: node-feature-discovery
+  labels:
+    app: nfe-prune
+spec:
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app: nfd-prune
+    spec:
+      serviceAccount: nfd-master
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: "node-role.kubernetes.io/master"
+                    operator: In
+                    values: [""]
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          value: ""
+          effect: "NoSchedule"
+      containers:
+        - image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          name: nfd-master
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          command:
+            - "nfd-master"
+          args:
+            - "--prune"
+      restartPolicy: Never

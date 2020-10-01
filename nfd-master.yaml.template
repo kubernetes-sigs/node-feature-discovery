@@ -25,6 +25,8 @@ rules:
   - get
   - patch
   - update
+  # List only needed for --prune
+  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -25,7 +25,35 @@ sort: 3
 
 ### Operator
 
-*WORK IN PROGRESS...*
+Deployment using the
+[Node Feature Discovery Operator][nfd-operator]
+is recommended to be done via
+[operatorhub.io](https://operatorhub.io/operator/nfd-operator).
+
+1. You need to have
+   [OLM][OLM]
+   installed. If you don't, take a look at the
+   [latest release](https://github.com/operator-framework/operator-lifecycle-manager/releases/latest)
+   for detailed instructions.
+1. Install the operator:
+```bash
+kubectl create -f https://operatorhub.io/install/nfd-operator.yaml
+```
+1. Create NodeFeatureDiscovery resource (in `nfd` namespace here):
+```bash
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfd
+---
+apiVersion: nfd.kubernetes.io/v1alpha1
+kind: NodeFeatureDiscovery
+metadata:
+  name: my-nfd-deployment
+  namespace: nfd
+EOF
+```
 
 ### Deployment Templates
 
@@ -220,4 +248,50 @@ For more details on targeting nodes, see
 
 ## Uninstallation
 
-*WORK IN PROGRESS...*
+### Operator Was Used for Deployment
+
+If you followed the deployment instructions above you can simply do:
+
+```bash
+kubectl -n nfd delete NodeFeatureDiscovery my-nfd-deployment
+```
+
+Optionally, you can also remove the namespace:
+
+```bash
+kubectl delete ns nfd
+```
+
+See the [node-feature-discovery-operator][nfd-operator] and [OLM][OLM] project
+documentation for instructions for uninstalling the operator and operator
+lifecycle manager, respectively.
+
+### Manual
+
+```bash
+NFD_NS=node-feature-discovery
+kubectl -n $NFD_NS delete ds nfd-worker
+kubectl -n $NFD_NS delete deploy nfd-master
+kubectl -n $NFD_NS delete svc nfd-master
+kubectl -n $NFD_NS delete sa nfd-master
+kubectl delete clusterrole nfd-master
+kubectl delete clusterrolebinding nfd-master
+```
+
+### Removing Feature Labels
+
+NFD-Master has a special `--prune` command line flag for removing all
+nfd-related node labels, annotations and extended resources from the cluster.
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-prune.yaml.template
+kubectl -n node-feature-discovery wait job.batch/nfd-prune --for=condition=complete && \
+    kubectl -n node-feature-discovery delete job/nfd-prune
+```
+
+**NOTE:** You must run prune before removing the RBAC rules (serviceaccount,
+clusterrole and clusterrolebinding).
+
+<!-- Links -->
+[nfd-operator]: https://github.com/kubernetes-sigs/node-feature-discovery-operator
+[OLM]: https://github.com/operator-framework/operator-lifecycle-manager
