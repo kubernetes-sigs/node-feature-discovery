@@ -6,8 +6,8 @@ metadata:
   name: nfd-worker
   namespace: node-feature-discovery
 spec:
-  completions: COMPLETION_COUNT
-  parallelism: PARALLELISM_COUNT
+  completions: NUM_NODES
+  parallelism: NUM_NODES
   template:
     metadata:
       labels:

@@ -49,6 +49,35 @@ To use your published image from the step above instead of the
 attribute in the spec template(s) to the new location
 (`<registry-name>/<image-name>[:<version>]`).
 
+### Deployment
+
+The `yamls` makefile generates deployment specs matching your locally built
+image. See [build customization](#customizing-the-build) below for
+configurability, e.g. changing the deployment namespace.
+
+```bash
+K8S_NAMESPACE=my-ns make yamls
+kubectl apply -f nfd-master.yaml
+kubectl apply -f nfd-worker-daemonset.yaml
+```
+
+Alternatively, deploying worker and master in the same pod:
+
+```bash
+K8S_NAMESPACE=my-ns make yamls
+kubectl apply -f nfd-master.yaml
+kubectl apply -f nfd-daemonset-combined.yaml
+```
+
+Or worker as a one-shot job:
+
+```bash
+K8S_NAMESPACE=my-ns make yamls
+kubectl apply -f nfd-master.yaml
+NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
+sed s"/NUM_NODES/$NUM_NODES/" nfd-worker-job.yaml | kubectl apply -f -
+```
+
 ### Building Locally
 
 You can also build the binaries locally
