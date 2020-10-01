@@ -248,4 +248,28 @@ for up-to-date information about the required volume mounts.
 
 ## Documentation
 
-*WORK IN PROGRESS...*
+All documentation resides under the [docs](/docs) directory in the source tree.
+It is designed to be served as a html site by [GitHub
+Pages](https://pages.github.com/).
+
+Building the documentation is containerized in order to fix the build
+environment. The recommended way for developing documentation is to run:
+
+```bash
+make site-serve
+```
+
+This will build the documentation in a container and serve it under
+[localhost:4000/](http://localhost:4000/) making it easy to verify the results.
+Any changes made to the `docs/` will automatically re-trigger a rebuild and are
+reflected in the served content and can be inspected with a simple browser
+refresh.
+
+In order to just build the html documentation run:
+
+```bash
+make site-build
+```
+
+This will generate html documentation under `docs/_site/`.
+
