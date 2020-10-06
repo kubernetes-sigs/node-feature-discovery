@@ -39,3 +39,10 @@ remote_theme: rundocs/jekyll-rtd-theme
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
+# Document versioning. Current 'version' should be listed under
+# 'versions' as we use it in constructing the baseurl for other
+# versions.
+version: master
+versions:
+  - master
