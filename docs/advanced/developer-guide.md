@@ -272,13 +272,13 @@ nfd-worker.
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template)
+[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
 
 ## Documentation
 
 All documentation resides under the
-[docs](https://github.com/kubernetes-sigs/node-feature-discovery/tree/master/docs)
+[docs](https://github.com/kubernetes-sigs/node-feature-discovery/tree/{{ site.release }}/docs)
 directory in the source tree. It is designed to be served as a html site by
 [GitHub Pages](https://pages.github.com/).
 
@@ -304,4 +304,4 @@ make site-build
 This will generate html documentation under `docs/_site/`.
 
 <!-- Links -->
-[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/test/e2e/e2e-test-config.exapmle.yaml
+[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/test/e2e/e2e-test-config.exapmle.yaml
