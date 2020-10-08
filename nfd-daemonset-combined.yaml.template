@@ -62,7 +62,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: k8s.gcr.io/nfd/node-feature-discovery:v0.6.0
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           name: nfd-master
           securityContext:
             allowPrivilegeEscalation: false
@@ -77,7 +77,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: k8s.gcr.io/nfd/node-feature-discovery:v0.6.0
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           name: nfd-worker
           securityContext:
             allowPrivilegeEscalation: false
