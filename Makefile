@@ -7,6 +7,16 @@ GO_FMT ?= gofmt
 IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
+CONTAINER_RUN_CMD ?= docker run
+
+# Docker base command for working with html documentation.
+# Use host networking because 'jekyll serve' is stupid enough to use the
+# same site url than the "host" it binds to. Thus, all the links will be
+# broken if we'd bind to 0.0.0.0
+JEKYLL_VERSION := 3.8
+SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" --volume="$$PWD/docs:/srv/jekyll" --volume="$$PWD/docs/vendor/bundle:/usr/local/bundle" --network=host jekyll/jekyll:$(JEKYLL_VERSION)
+SITE_SUBDIR ?=
+JEKYLL_OPTS := -d _site/$(SITE_SUBDIR) -b /node-feature-discovery/$(SITE_SUBDIR)
 
 VERSION := $(shell git describe --tags --dirty --always)
 
@@ -105,3 +115,11 @@ poll-image:
 	  echo Image $$image not found; \
 	  exit 1; \
 	fi;
+
+site-build:
+	@mkdir -p docs/vendor/bundle
+	$(SITE_BUILD_CMD) sh -c "bundle install && jekyll build $(JEKYLL_OPTS)"
+
+site-serve:
+	@mkdir -p docs/vendor/bundle
+	$(SITE_BUILD_CMD) sh -c "bundle install && jekyll serve $(JEKYLL_OPTS) -H 127.0.0.1 -b ''"

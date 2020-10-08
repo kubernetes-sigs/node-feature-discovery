@@ -1,0 +1,51 @@
+<div class="addons-wrap d-flex flex-column overflow-y-auto">
+    <div class="branch">
+        <dl>
+            <dt>Versions:</dt>
+
+            {% comment %}
+            The following ugly construction is solely for the
+            purpose of dropping the "version" suffix from the
+            baseurl. The reason for doing this is that github-pages
+            gem forces us on --safe mode (i.e. disables custom
+            plugins) so we're not able to write a simple ruby
+            plugin doing delete_suffix()
+            {% endcomment %}
+            {% assign version_len = site.version | size %}
+            {% assign baseurl_len = site.baseurl | size %}
+            {% assign idx = baseurl_len | minus: version_len %}
+            {% assign suffix = site.baseurl | slice: idx, version_len %}
+            {% if suffix == site.version %}
+                {% assign idx = idx | minus: 1 %}
+                {% assign baseurl = site.baseurl | slice: 0, idx %}
+            {% else %}
+                {% assign baseurl = site.baseurl %}
+            {% endif %}
+
+            {% for version in site.versions %}
+                <dd><a href="{{ baseurl }}/{{ version }}/">{{ version }}</a></dd>
+            {% endfor %}
+        </dl>
+    </div>
+    <div class="status d-flex flex-justify-between p-2">
+        <div class="title p-1">
+            <i class="fa fa-book"></i> {{ site.title }}
+        </div>
+        <div class="branch p-1">
+            <i class="fa fa-caret-down"></i>
+        </div>
+    </div>
+    <div class="addons d-flex flex-column height-full p-2 d-none">
+        {%- assign items = "github, analytics" | split: ", " -%}
+        {% for item in items -%}
+            {% include addons/{{ item }}.liquid %}
+        {% endfor -%}
+        <hr>
+        <div class="generator f6 pb-2">
+            Built with
+            <a href="https://github.com/rundocs/jekyll-rtd-theme" target="_blank" title="{% if site.remote_theme %}remote{% endif %} theme v{{ version }}">jekyll-rtd-theme</a>
+            provided by
+            <a href="https://rundocs.io" target="_blank">RunDocs</a>
+        </div>
+    </div>
+</div>
