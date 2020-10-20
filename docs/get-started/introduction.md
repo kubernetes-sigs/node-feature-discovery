@@ -20,27 +20,26 @@ hardware features available on each node in a Kubernetes cluster, and
 advertises those features using node labels.
 
 NFD consists of two software components:
-1. nfd-master
-2. nfd-worker
 
+1. nfd-master
+1. nfd-worker
 
 ## NFD-Master
 
-Nfd-master is the daemon responsible for communication towards the Kubernetes
+NFD-Master is the daemon responsible for communication towards the Kubernetes
 API. That is, it receives labeling requests from the worker and modifies node
 objects accordingly.
 
-
 ## NFD-Worker
 
-Nfd-worker is a daemon responsible for feature detection. It then communicates
+NFD-Worker is a daemon responsible for feature detection. It then communicates
 the information to nfd-master which does the actual node labeling.  One
 instance of nfd-worker is supposed to be running on each node of the cluster,
-
 
 ## Feature Discovery
 
 Feature discovery is divided into domain-specific feature sources:
+
 - CPU
 - IOMMU
 - Kernel
@@ -60,6 +59,7 @@ Non-standard user-specific feature labels can be created with the local and
 custom feature sources.
 
 An overview of the default feature labels:
+
 ```json
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
@@ -75,7 +75,6 @@ An overview of the default feature labels:
   "feature.node.kubernetes.io/<file name>-<feature name>": "<feature value>"
 }
 ```
-
 
 ## Node Annotations
 

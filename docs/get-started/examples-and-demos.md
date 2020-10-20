@@ -23,7 +23,6 @@ This page contains usage examples and demos.
 
 [![asciicast](https://asciinema.org/a/247316.svg)](https://asciinema.org/a/247316)
 
-
 ### Demo Use Case
 
 A demo on the benefits of using node feature discovery can be found in the

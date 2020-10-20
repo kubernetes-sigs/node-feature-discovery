@@ -24,9 +24,9 @@ sort: 3
 
 ## Usage
 
-### nfd-master
+### NFD-Master
 
-Nfd-master runs as a deployment (with a replica count of 1), by default
+NFD-Master runs as a deployment (with a replica count of 1), by default
 it prefers running on the cluster's master nodes but will run on worker
 nodes if no master nodes are found.
 
@@ -45,7 +45,7 @@ make IMAGE_TAG=<IMAGE_TAG>
 docker push <IMAGE_TAG>
 kubectl create -f nfd-master.yaml
 ```
-Nfd-master listens for connections from nfd-worker(s) and connects to the
+NFD-Master listens for connections from nfd-worker(s) and connects to the
 Kubernetes API server to add node labels advertised by them.
 
 If you have RBAC authorization enabled (as is the default e.g. with clusters
@@ -54,9 +54,9 @@ ClusterRoleBindings and a ServiceAccount in order for NFD to create node
 labels. The provided template will configure these for you.
 
 
-### nfd-worker
+### NFD-Worker
 
-Nfd-worker is preferably run as a Kubernetes DaemonSet. There is an
+NFD-Worker is preferably run as a Kubernetes DaemonSet. There is an
 example spec (`nfd-worker-daemonset.yaml.template`) that can be used
 as a template, or, as is when just trying out the service. Similarly
 to nfd-master above, the `Makefile` also generates
@@ -68,7 +68,7 @@ docker push <IMAGE_TAG>
 kubectl create -f nfd-worker-daemonset.yaml
 ```
 
-Nfd-worker connects to the nfd-master service to advertise hardware features.
+NFD-Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
 the `--sleep-interval` option. In the
@@ -88,7 +88,7 @@ The label-nodes.sh script tries to launch as many jobs as there are Ready nodes.
 Note that this approach does not guarantee running once on every node.
 For example, if some node is tainted NoSchedule or fails to start a job for some other reason, then some other node will run extra job instance(s) to satisfy the request and the tainted/failed node does not get labeled.
 
-### nfd-master and nfd-worker in the same Pod
+### NFD-Master and NFD-Worker in the same Pod
 
 You can also run nfd-master and nfd-worker inside a single pod (skip the `sed`
 part if running the latest released version):
@@ -148,7 +148,7 @@ build images and deploy them on your cluster.
 
 ## Configuration
 
-Nfd-worker supports a configuration file. The default location is
+NFD-Worker supports a configuration file. The default location is
 `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`, but,
 this can be changed by specifying the`--config` command line flag.
 Configuration file is re-read on each labeling pass (determined by
