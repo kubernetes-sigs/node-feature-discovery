@@ -103,6 +103,9 @@ fi
 # Switch to work in the gh-pages worktree
 cd "$build_dir"
 
+_stable=`(ls -d1 v*/ || :) | sort -n | tail -n1`
+[ -n "$_stable" ] && ln -sfT "$_stable" stable
+
 if [ -z "`git status --short`" ]; then
     echo "No new content, gh-pages branch already up-to-date"
     exit 0
