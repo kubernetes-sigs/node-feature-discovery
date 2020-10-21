@@ -1,0 +1,12 @@
+steps:
+  - name: gcr.io/k8s-testimages/gcb-docker-gcloud:v20200824-5d057db
+    entrypoint: scripts/test-infra/push-image.sh
+    env:
+    - IMAGE_REGISTRY=gcr.io/$PROJECT_ID
+    - _GIT_TAG=$_GIT_TAG
+    - IMAGE_EXTRA_TAG_NAMES=$_PULL_BASE_REF
+substitutions:
+  _GIT_TAG: '0.0.0'
+  _PULL_BASE_REF: 'master'
+options:
+  substitution_option: ALLOW_LOOSE

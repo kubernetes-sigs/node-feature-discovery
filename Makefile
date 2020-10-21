@@ -104,6 +104,18 @@ push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
 	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; done
 
+poll-image:
+	set -e; \
+	image=$(IMAGE_REPO):$(IMAGE_TAG_NAME); \
+	base_url=`echo $(IMAGE_REPO) | sed -e s'!\([^/]*\)!\1/v2!'`; \
+	errors=`curl -fsS -X GET https://$$base_url/manifests/$(IMAGE_TAG_NAME)|jq .errors`;  \
+	if [ "$$errors" = "null" ]; then \
+	  echo Image $$image found; \
+	else \
+	  echo Image $$image not found; \
+	  exit 1; \
+	fi;
+
 site-build:
 	@mkdir -p docs/vendor/bundle
 	$(SITE_BUILD_CMD) sh -c "bundle install && jekyll build $(JEKYLL_OPTS)"
