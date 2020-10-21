@@ -1,0 +1,48 @@
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely edit after that. If you find
+# yourself editing this file very often, consider using Jekyll's data files
+# feature for the data you need to update frequently.
+#
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'bundle exec jekyll serve'. If you change this file, please restart the server process.
+
+# Site settings
+# These are used to personalize your new site. If you look in the HTML files,
+# you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
+# You can create any custom variable you would like, and they will be accessible
+# in the templates via {{ site.myvariable }}.
+title: Node Feature Discovery
+description: >- # this means to ignore newlines until "baseurl:"
+  Documentation of Node Feature Discovery - a Kubernetes add-on for discovering
+  and advertising hardware features and system configuration in the cluster.
+url: "https://kubernetes-sigs.github.com" # the base hostname & protocol for your site, e.g. http://example.com
+
+repository: kubernetes-sigs/node-feature-discovery
+
+# Build settings
+markdown: kramdown
+kramdown:
+  toc_levels: 1..3
+
+remote_theme: rundocs/jekyll-rtd-theme@v2.0.9
+
+# Exclude from processing.
+# The following items will not be processed, by default. Create a custom list
+# to override the default setting.
+# exclude:
+#   - Gemfile
+#   - Gemfile.lock
+#   - node_modules
+#   - vendor/bundle/
+#   - vendor/cache/
+#   - vendor/gems/
+#   - vendor/ruby/
+
+# Document versioning. Current 'version' should be listed under
+# 'versions' as we use it in constructing the baseurl for other
+# versions.
+version: master
+versions:
+  - master
