@@ -36,7 +36,7 @@
         </div>
     </div>
     <div class="addons d-flex flex-column height-full p-2 d-none">
-        {%- assign items = "github, analytics" | split: ", " -%}
+        {%- assign items = "github" | split: ", " -%}
         {% for item in items -%}
             {% include addons/{{ item }}.liquid %}
         {% endfor -%}
