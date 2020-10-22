@@ -41,11 +41,11 @@
             {% include addons/{{ item }}.liquid %}
         {% endfor -%}
         <hr>
-        <div class="generator f6 pb-2">
-            Built with
-            <a href="https://github.com/rundocs/jekyll-rtd-theme" target="_blank" title="{% if site.remote_theme %}remote{% endif %} theme v{{ version }}">jekyll-rtd-theme</a>
-            provided by
-            <a href="https://rundocs.io" target="_blank">RunDocs</a>
+        <div class="license f6 pb-2">
+            The
+            <a href="{{ site.baseurl }}/">software</a>
+            is under the terms of
+            <a href="{{ docs.repository_url }}">{{ docs.license.name | default: "The Unlicense" }}</a>.
         </div>
     </div>
 </div>
