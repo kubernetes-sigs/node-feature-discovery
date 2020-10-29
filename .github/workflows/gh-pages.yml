@@ -1,0 +1,28 @@
+name: gh-pages
+on:
+  push:
+    branches:
+      - master
+      - release-*
+    tags:
+      - v*
+jobs:
+  build:
+    name: Update gh-pages
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out repo
+      uses: actions/checkout@v2
+
+    - name: Fetch gh-pages branch
+      run: git fetch --no-tags --prune --depth=1 origin refs/heads/gh-pages:refs/heads/gh-pages
+
+    - name: Build site
+      run: |
+        git config user.name "Github Actions"
+        git config user.email "no-reply@github.com"
+        ./scripts/github/update-gh-pages.sh
+
+    - name: Deploy site
+      run: git push -f https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} gh-pages
