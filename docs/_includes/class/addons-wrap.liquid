@@ -1,51 +1,54 @@
 <div class="addons-wrap d-flex flex-column overflow-y-auto">
-    <div class="branch">
-        <dl>
-            {% if site.display_version_list %}
-                <dt id="versions">Versions:</dt>
-
-                {% comment %}
-                Drop the last component from site.baseurl which is supposed to
-                be pointing to a subdirectory of the true site baseurl.
-                {% endcomment %}
-                {% assign spliturl = site.baseurl | split: "/" %}
-                {% assign last = spliturl.size | minus: 1 %}
-                {% assign baseurl = spliturl | slice: 0, last | join: "/" %}
-
-                <script src="{{ baseurl }}/versions.js"></script>
-                <script>
-                    var dt = document.getElementById('versions');
-                    var items = getVersionListItems();
-                    for (var i=0; i < items.length; i++) {
-                      var dd = document.createElement('dd');
-                      var a = dd.appendChild(document.createElement('a'));
-                      a.appendChild(document.createTextNode(items[i].name));
-                      a.href = items[i].url;
-                      dt.appendChild(dd);
-                    }
-                </script>
-            {% endif %}
-        </dl>
-    </div>
     <div class="status d-flex flex-justify-between p-2">
         <div class="title p-1">
             <i class="fa fa-book"></i> {{ site.title }}
         </div>
         <div class="branch p-1">
+            <span class="name">
+                {{ site.version }}
+            </span>
             <i class="fa fa-caret-down"></i>
         </div>
     </div>
     <div class="addons d-flex flex-column height-full p-2 d-none">
+        {% if site.display_version_list %}
+            <div>
+                <dl>
+                    <dt id="versions">Versions:</dt>
+
+                    {% comment %}
+                    Drop the last component from site.baseurl which is supposed to
+                    be pointing to a subdirectory of the true site baseurl.
+                    {% endcomment %}
+                    {% assign spliturl = site.baseurl | split: "/" %}
+                    {% assign last = spliturl.size | minus: 1 %}
+                    {% assign baseurl = spliturl | slice: 0, last | join: "/" %}
+
+                    <script src="{{ baseurl }}/versions.js"></script>
+                    <script>
+                        var dt = document.getElementById('versions');
+                        var items = getVersionListItems();
+                        for (var i=0; i < items.length; i++) {
+                          var dd = document.createElement('dd');
+                          var a = dd.appendChild(document.createElement('a'));
+                          a.appendChild(document.createTextNode(items[i].name));
+                          a.href = items[i].url;
+                          dt.appendChild(dd);
+                        }
+                    </script>
+                </dl>
+            </div>
+        {% endif %}
         {%- assign items = "github" | split: ", " -%}
         {% for item in items -%}
             {% include addons/{{ item }}.liquid %}
         {% endfor -%}
         <hr>
-        <div class="generator f6 pb-2">
-            Built with
-            <a href="https://github.com/rundocs/jekyll-rtd-theme" target="_blank" title="{% if site.remote_theme %}remote{% endif %} theme v{{ version }}">jekyll-rtd-theme</a>
-            provided by
-            <a href="https://rundocs.io" target="_blank">RunDocs</a>
+        <div class="license f6 pb-2">
+            The
+            <a href="{{ site.baseurl }}/">software</a>
+            is under the terms of
+            <a href="{{ docs.repository_url }}">{{ docs.license.name | default: "The Unlicense" }}</a>.
         </div>
     </div>
 </div>
