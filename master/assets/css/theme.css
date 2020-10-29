@@ -2104,6 +2104,12 @@ p.explain .minibutton { top: -4px; float: right; }
   .content-wrap { margin-left: 300px; }
   .content-wrap.shift { position: relative; left: 0; min-width: 0; } }
 @media (min-width: 1280px) { .content-wrap { max-width: 980px; } }
+.font-body { font-family: "Lato", BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif; font-weight: 400; }
+
+.font-head { font-family: "Roboto-Slab", sans-serif; font-weight: 600; }
+
+.font-mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+
 .fa { display: inline-block; font: normal normal normal 14px/1 "FontAwesome"; }
 
 .breadcrumb-item { margin: 0; }
@@ -2244,8 +2250,12 @@ html[dir="rtl"] .toc.level-10.current > a { padding-left: unset; padding-right: 
 html[dir="rtl"] .toc.level-10.current .level-11 > a { padding-left: unset; padding-right: 252px; }
 html[dir="rtl"] .toc.level-11.current > a { padding-left: unset; padding-right: 252px; }
 html[dir="rtl"] .toc.level-11.current .level-12 > a { padding-left: unset; padding-right: 276px; }
-html[dir="rtl"] .markdown-body .d-lang:after, html[dir="rtl"] .markdown-body div.highlighter-rouge:after, html[dir="rtl"] .markdown-body .mermaid-wrap:after { right: unset; left: 0; }
+html[dir="rtl"] .markdown-body .highlight { direction: ltr; }
+html[dir="rtl"] .markdown-body blockquote { border-left: none; border-right: 0.25em solid #dfe2e5; }
+html[dir="rtl"] .markdown-body ul, html[dir="rtl"] .markdown-body ol { padding-left: 0; padding-right: 2em; }
 html[dir="rtl"] .markdown-body .task-list-item-checkbox { margin-right: unset; margin-left: 3px; }
+html[dir="rtl"] .fa-arrow-circle-left:before { content: ""; }
+html[dir="rtl"] .fa-arrow-circle-right:before { content: ""; }
 
 /* Fade in an element */
 .anim-fade-in { animation-name: fade-in; animation-duration: 1s; animation-timing-function: ease-in-out; }

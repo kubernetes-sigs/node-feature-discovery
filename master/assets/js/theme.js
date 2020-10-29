@@ -285,8 +285,3 @@ if ("serviceWorker" in navigator) {
 } else {
   debug("Service Worker not supported!");
 }
-
-ui.collect.searchParams.append("host", location.host);
-ui.collect.searchParams.append("user_lang", navigator.language);
-ui.collect.searchParams.append("platform", navigator.platform);
-$.getJSON(ui.collect.toString(), (data) => $("#counter").html(data.count));
