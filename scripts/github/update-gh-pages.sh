@@ -102,6 +102,7 @@ fi
 export SITE_SUBDIR=${site_subdir:-master}
 echo "Updating site subdir: '$SITE_SUBDIR'"
 
+export JEKYLL_ENV=production
 make site-build
 
 #

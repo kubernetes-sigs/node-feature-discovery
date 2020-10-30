@@ -12,10 +12,14 @@
     </div>
     <div class="addons d-flex flex-column height-full p-2 d-none">
         {% if site.display_version_list %}
-            <div>
-                <dl>
-                    <dt id="versions">Versions:</dt>
+            <dl id="versions">
+                <dt>Versions</dt>
 
+                {% if jekyll.environment == "development" %}
+                    <dd>
+                    <a href="{{ site.baseurl }}/">{{ site.version }}</a>
+                    </dd>
+                {% else %}
                     {% comment %}
                     Drop the last component from site.baseurl which is supposed to
                     be pointing to a subdirectory of the true site baseurl.
@@ -36,8 +40,8 @@
                           dt.appendChild(dd);
                         }
                     </script>
-                </dl>
-            </div>
+                {% endif %}
+            </dl>
         {% endif %}
         {%- assign items = "github" | split: ", " -%}
         {% for item in items -%}
