@@ -8,4 +8,4 @@ mkdir -p "$_outdir"
 chmod a+rwx "$_outdir"
 
 # Build docs
-make site-build
+JEKYLL_ENV=production make site-build
