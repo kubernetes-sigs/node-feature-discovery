@@ -14,6 +14,19 @@ Options:
 EOF
 }
 
+# Helper function for detecting available versions from the current directory
+create_versions_js() {
+    local _baseurl="/node-feature-discovery"
+
+    echo -e "function getVersionListItems() {\n  return ["
+    # 'stable' is a symlink pointing to the latest version
+    [ -f stable ] && echo "    { name: 'stable', url: '$_baseurl/stable' },"
+    for f in `ls -d */  | tr -d /` ; do
+        echo "    { name: '$f', url: '$_baseurl/$f' },"
+    done
+    echo -e "  ];\n}"
+}
+
 #
 # Argument parsing
 #
@@ -89,6 +102,7 @@ fi
 export SITE_SUBDIR=${site_subdir:-master}
 echo "Updating site subdir: '$SITE_SUBDIR'"
 
+export JEKYLL_ENV=production
 make site-build
 
 #
@@ -102,6 +116,12 @@ fi
 
 # Switch to work in the gh-pages worktree
 cd "$build_dir"
+
+_stable=`(ls -d1 v*/ || :) | sort -n | tail -n1`
+[ -n "$_stable" ] && ln -sfT "$_stable" stable
+
+# Detect existing versions from the gh-pages branch
+create_versions_js > versions.js
 
 if [ -z "`git status --short`" ]; then
     echo "No new content, gh-pages branch already up-to-date"
