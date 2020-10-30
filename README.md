@@ -6,7 +6,7 @@
 Welcome to Node Feature Discovery – a Kubernetes add-on for detecting hardware
 features and system configuration!
 
-### See our [Documentation](documentation) for detailed instructions and reference
+### See our [Documentation][documentation] for detailed instructions and reference
 
 #### Quick-start – the short-short version
 
