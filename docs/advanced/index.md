@@ -17,29 +17,33 @@ sort: 2
 
 ## Building from source
 
-**Download the source code:**
+### Download the source code
 
-```
+```bash
 git clone https://github.com/kubernetes-sigs/node-feature-discovery
 ```
 
-**Build the container image:**<br>
+### Docker Build
+
+#### Build the container image
+
 See [customizing the build](#customizing-the-build) below for altering the
 container image registry, for example.
 
-```
+```bash
 cd <project-root>
 make
 ```
 
-**Push the container image:**<br>
+#### Push the container image
+
 Optional, this example with Docker.
 
-```
+```bash
 docker push <IMAGE_TAG>
 ```
 
-**Change the job spec to use your custom image (optional):**
+#### Change the job spec to use your custom image (optional)
 
 To use your published image from the step above instead of the
 `k8s.gcr.io/nfd/node-feature-discovery` image, edit `image`
@@ -66,22 +70,22 @@ name of the resulting container image.
 
 For example, to use a custom registry:
 
-```
+```bash
 make IMAGE_REGISTRY=<my custom registry uri>
 
 ```
 
 Or to specify a build tool different from Docker:
 
-It can be done in 2 ways, by pre-defining the variable 
+It can be done in 2 ways, by pre-defining the variable
 
-```
+```bash
 IMAGE_BUILD_CMD="buildah bud" make
 ```
 
 Or By overriding the variable value
 
-```
+```bash
 make  IMAGE_BUILD_CMD="buildah bud"
 ```
 
@@ -89,17 +93,18 @@ make  IMAGE_BUILD_CMD="buildah bud"
 
 Unit tests are automatically run as part of the container image build. You can
 also run them manually in the source code tree by simply running:
-```
+
+```bash
 make test
 ```
 
 End-to-end tests are built on top of the e2e test framework of Kubernetes, and,
 they required a cluster to run them on. For running the tests on your test
 cluster you need to specify the kubeconfig to be used:
-```
+
+```bash
 make e2e-test KUBECONFIG=$HOME/.kube/config
 ```
-
 
 ## Running Locally
 
@@ -112,15 +117,18 @@ features-detection.
 When running as a standalone container labeling is expected to fail because
 Kubernetes API is not available. Thus, it is recommended to use `--no-publish`
 command line flag. E.g.
-```
-$ docker run --rm --name=nfd-test <NFD_CONTAINER_IMAGE> nfd-master --no-publish
+
+```bash
+$ NFD_CONTAINER_IMAGE=k8s.gcr.io/nfd/node-feature-discovery:v0.6.0
+$ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master --no-publish
 2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
 2019/02/01 14:48:21 gRPC server serving on port: 8080
 ```
 
 Command line flags of nfd-master:
-```
-$ docker run --rm <NFD_CONTAINER_IMAGE> nfd-master --help
+
+```bash
+$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-master --help
 ...
 nfd-master.
 
@@ -161,17 +169,20 @@ nfd-master.
 
 In order to run nfd-worker as a "stand-alone" container against your
 standalone nfd-master you need to run them in the same network namespace:
-```
+
+```bash
 $ docker run --rm --network=container:nfd-test <NFD_CONTAINER_IMAGE> nfd-worker
 2019/02/01 14:48:56 Node Feature Discovery Worker <NFD_VERSION>
 ...
 ```
+
 If you just want to try out feature discovery without connecting to nfd-master,
 pass the `--no-publish` flag to nfd-worker.
 
 Command line flags of nfd-worker:
-```
-$ docker run --rm <CONTAINER_IMAGE_ID> nfd-worker --help
+
+```bash
+$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-worker --help
 ...
 nfd-worker.
 
@@ -218,13 +229,13 @@ nfd-worker.
                               value implies no re-labeling (i.e. infinite
                               sleep). [Default: 60s]
 ```
+
 **NOTE** Some feature sources need certain directories and/or files from the
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
 [template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
-
 
 ## Documentation
 

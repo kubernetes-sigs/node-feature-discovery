@@ -31,9 +31,11 @@ The published node labels encode a few pieces of information:
 - The value of the discovered feature.
 
 Feature label names adhere to the following pattern:
+
 ```
 <namespace>/<source name>-<feature name>[.<attribute name>]
 ```
+
 The last component (i.e. `attribute-name`) is optional, and only used if a
 feature logically has sub-hierarchy, e.g. `sriov.capable` and
 `sriov.configure` from the `network` source.
@@ -50,15 +52,15 @@ such as restricting discovered features with the --label-whitelist option._
 | Feature name            | Attribute          | Description                   |
 | ----------------------- | ------------------ | ----------------------------- |
 | cpuid                   | &lt;cpuid flag&gt; | CPU capability is supported
-| hardware_multithreading | <br>               | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs)
+| hardware_multithreading |                    | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs)
 | power                   | sst_bf.enabled     | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled
 | [pstate][intel-pstate]  | turbo              | Set to 'true' if turbo frequencies are enabled in Intel pstate driver, set to 'false' if they have been disabled.
 | [rdt][intel-rdt]        | RDTMON             | Intel RDT Monitoring Technology
-| <br>                    | RDTCMT             | Intel Cache Monitoring (CMT)
-| <br>                    | RDTMBM             | Intel Memory Bandwidth Monitoring (MBM)
-| <br>                    | RDTL3CA            | Intel L3 Cache Allocation Technology
-| <br>                    | RDTL2CA            | Intel L2 Cache Allocation Technology
-| <br>                    | RDTMBA             | Intel Memory Bandwidth Allocation (MBA) Technology
+|                         | RDTCMT             | Intel Cache Monitoring (CMT)
+|                         | RDTMBM             | Intel Memory Bandwidth Monitoring (MBM)
+|                         | RDTL3CA            | Intel L3 Cache Allocation Technology
+|                         | RDTL2CA            | Intel L2 Cache Allocation Technology
+|                         | RDTMBA             | Intel Memory Bandwidth Allocation (MBA) Technology
 
 The (sub-)set of CPUID attributes to publish is configurable via the
 `attributeBlacklist` and `attributeWhitelist` cpuid options of the cpu source.
@@ -72,7 +74,6 @@ RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
 
 **NOTE** The cpuid features advertise *supported* CPU capabilities, that is, a
 capability might be supported but not enabled.
-
 
 #### X86 CPUID Attributes (Partial List)
 
@@ -116,11 +117,12 @@ capability might be supported but not enabled.
 
 ### Custom Features
 
-The Custom feature source allows the user to define features based on a mix of predefined rules.
-A rule is provided input witch affects its process of matching for a defined feature.
+The Custom feature source allows the user to define features based on a mix of
+predefined rules.  A rule is provided input witch affects its process of
+matching for a defined feature.
 
-To aid in making Custom Features clearer, we define a general and a per rule nomenclature, keeping things as
-consistent as possible.
+To aid in making Custom Features clearer, we define a general and a per rule
+nomenclature, keeping things as consistent as possible.
 
 #### General Nomenclature & Definitions
 
@@ -152,11 +154,13 @@ Matcher     :A composition of Rules, each Matcher may be composed of at most one
 Specifying Rules to match on a feature is done by providing a list of Matchers.
 Each Matcher contains one or more Rules.
 
-Logical _OR_ is performed between Matchers and logical _AND_ is performed between Rules
-of a given Matcher.
+Logical _OR_ is performed between Matchers and logical _AND_ is performed
+between Rules of a given Matcher.
 
 #### Rules
+
 ##### PciId Rule
+
 ###### Nomenclature
 
 ```
@@ -164,8 +168,9 @@ Attribute   :A PCI attribute.
 Element     :An identifier of the PCI attribute.
 ```
 
-The PciId Rule allows matching the PCI devices in the system on the following Attributes: `class`,`vendor` and
-`device`. A list of Elements is provided for each Attribute.
+The PciId Rule allows matching the PCI devices in the system on the following
+Attributes: `class`,`vendor` and `device`. A list of Elements is provided for
+each Attribute.
 
 ###### Format
 
@@ -176,11 +181,13 @@ pciId :
   device: [<device id>, ...]
 ```
 
-Matching is done by performing a logical _OR_ between Elements of an Attribute and logical _AND_ between the specified Attributes for
-each PCI device in the system.
-At least one Attribute must be specified. Missing attributes will not partake in the matching process.
+Matching is done by performing a logical _OR_ between Elements of an Attribute
+and logical _AND_ between the specified Attributes for each PCI device in the
+system.  At least one Attribute must be specified. Missing attributes will not
+partake in the matching process.
 
 ##### UsbId Rule
+
 ###### Nomenclature
 
 ```
@@ -200,11 +207,13 @@ usbId :
   device: [<device id>, ...]
 ```
 
-Matching is done by performing a logical _OR_ between Elements of an Attribute and logical _AND_ between the specified Attributes for
-each USB device in the system.
-At least one Attribute must be specified. Missing attributes will not partake in the matching process.
+Matching is done by performing a logical _OR_ between Elements of an Attribute
+and logical _AND_ between the specified Attributes for each USB device in the
+system.  At least one Attribute must be specified. Missing attributes will not
+partake in the matching process.
 
 ##### LoadedKMod Rule
+
 ###### Nomenclature
 
 ```
@@ -218,7 +227,9 @@ The LoadedKMod Rule allows matching the loaded kernel modules in the system agai
 ```yaml
 loadedKMod : [<kernel module>, ...]
 ```
- Matching is done by performing logical _AND_ for each provided Element, i.e the Rule will match if all provided Elements (kernel modules) are loaded
+
+Matching is done by performing logical _AND_ for each provided Element, i.e the
+Rule will match if all provided Elements (kernel modules) are loaded
  in the system.
 
 #### Example
@@ -243,7 +254,7 @@ custom:
       - loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
         pciId:
           vendor: ["15b3"]
-          device: ["1014", "1017"] 
+          device: ["1014", "1017"]
   - name: "my.accumulated.feature"
     matchOn:
       - loadedKMod : ["some_kmod1", "some_kmod2"]
@@ -253,23 +264,33 @@ custom:
 ```
 
 __In the example above:__
-- A node would contain the label: `feature.node.kubernetes.io/custom-my.kernel.feature=true`
-if the node has `kmod1` _AND_ `kmod2` kernel modules loaded. 
-- A node would contain the label: `feature.node.kubernetes.io/custom-my.pci.feature=true`
-if the node contains a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
-- A node would contain the label: `feature.node.kubernetes.io/custom-my.usb.feature=true`
-if the node contains a USB device with a USB vendor ID of `1d6b` _AND_ USB device ID of `0003`.
-- A node would contain the label: `feature.node.kubernetes.io/custom-my.combined.feature=true`
-if `vendor_kmod1` _AND_ `vendor_kmod2` kernel modules are loaded __AND__ the node contains a PCI device
-with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _or_ `1017`.
-- A node would contain the label: `feature.node.kubernetes.io/custom-my.accumulated.feature=true`
-if `some_kmod1` _AND_ `some_kmod2` kernel modules are loaded __OR__ the node contains a PCI device
-with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014` _OR_ `1017`.
+
+- A node would contain the label:
+  `feature.node.kubernetes.io/custom-my.kernel.feature=true` if the node has
+  `kmod1` _AND_ `kmod2` kernel modules loaded.
+- A node would contain the label:
+  `feature.node.kubernetes.io/custom-my.pci.feature=true` if the node contains
+  a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID of `1014`
+  _OR_ `1017`.
+- A node would contain the label:
+  `feature.node.kubernetes.io/custom-my.usb.feature=true` if the node contains
+  a USB device with a USB vendor ID of `1d6b` _AND_ USB device ID of `0003`.
+- A node would contain the label:
+  `feature.node.kubernetes.io/custom-my.combined.feature=true` if
+  `vendor_kmod1` _AND_ `vendor_kmod2` kernel modules are loaded __AND__ the
+  node contains a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID
+  of `1014` _or_ `1017`.
+- A node would contain the label:
+  `feature.node.kubernetes.io/custom-my.accumulated.feature=true` if
+  `some_kmod1` _AND_ `some_kmod2` kernel modules are loaded __OR__ the node
+  contains a PCI device with a PCI vendor ID of `15b3` _AND_ PCI device ID of
+  `1014` _OR_ `1017`.
 
 #### Statically defined features
 
-Some feature labels which are common and generic are defined statically in the `custom` feature source.
-A user may add additional Matchers to these feature labels by defining them in the `nfd-worker` configuration file.
+Some feature labels which are common and generic are defined statically in the
+`custom` feature source.  A user may add additional Matchers to these feature
+labels by defining them in the `nfd-worker` configuration file.
 
 | Feature | Attribute | Description |
 | ------- | --------- | -----------|
@@ -278,8 +299,8 @@ A user may add additional Matchers to these feature labels by defining them in t
 
 ### IOMMU Features
 
-| Feature name   | Description                                                                         |
-| :------------: | :---------------------------------------------------------------------------------: |
+| Feature name   | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
 | enabled        | IOMMU is present and enabled in the kernel
 
 ### Kernel Features
@@ -289,9 +310,9 @@ A user may add additional Matchers to these feature labels by defining them in t
 | config  | &lt;option name&gt; | Kernel config option is enabled (set 'y' or 'm').<br> Default options are `NO_HZ`, `NO_HZ_IDLE`, `NO_HZ_FULL` and `PREEMPT`
 | selinux | enabled             | Selinux is enabled on the node
 | version | full                | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde')
-| <br>    | major               | First component of the kernel version (e.g. '4')
-| <br>    | minor               | Second component of the kernel version (e.g. '5')
-| <br>    | revision            | Third component of the kernel version (e.g. '6')
+|         | major               | First component of the kernel version (e.g. '4')
+|         | minor               | Second component of the kernel version (e.g. '5')
+|         | revision            | Third component of the kernel version (e.g. '6')
 
 Kernel config file to use, and, the set of config options to be detected are
 configurable.
@@ -301,7 +322,7 @@ See [configuration options](#configuration-options) for more information.
 
 | Feature | Attribute | Description                                            |
 | ------- | --------- | ------------------------------------------------------ |
-| numa    | <br>      | Multiple memory nodes i.e. NUMA architecture detected
+| numa    |           | Multiple memory nodes i.e. NUMA architecture detected
 | nv      | present   | NVDIMM device(s) are present
 | nv      | dax       | NVDIMM region(s) configured in DAX mode are present
 
@@ -310,12 +331,12 @@ See [configuration options](#configuration-options) for more information.
 | Feature | Attribute  | Description                                           |
 | ------- | ---------- | ----------------------------------------------------- |
 | sriov   | capable    | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present
-| <br>    | configured | SR-IOV virtual functions have been configured
+|         | configured | SR-IOV virtual functions have been configured
 
 ### PCI Features
 
-| Feature              | Attribute     | Description                               |
-| -------------------- | ------------- | ----------------------------------------- |
+| Feature              | Attribute     | Description                           |
+| -------------------- | ------------- | ------------------------------------- |
 | &lt;device label&gt; | present       | PCI device is detected
 | &lt;device label&gt; | sriov.capable | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled PCI device present
 
@@ -324,6 +345,7 @@ The set of fields used in `<device label>` is configurable, valid fields being
 `class`, `vendor`, `device`, `subsystem_vendor` and `subsystem_device`.
 Defaults are `class` and `vendor`. An example label using the default
 label fields:
+
 ```
 feature.node.kubernetes.io/pci-1200_8086.present=true
 ```
@@ -334,8 +356,8 @@ GPUs, co-processors and accelerator cards are detected.
 
 ### USB Features
 
-| Feature              | Attribute     | Description                               |
-| -------------------- | ------------- | ----------------------------------------- |
+| Feature              | Attribute     | Description                           |
+| -------------------- | ------------- | ------------------------------------- |
 | &lt;device label&gt; | present       | USB device is detected
 
 `<device label>` is composed of raw USB IDs, separated by underscores.
@@ -343,6 +365,7 @@ The set of fields used in `<device label>` is configurable, valid fields being
 `class`, `vendor`, and `device`.
 Defaults are `class`, `vendor` and `device`. An example label using the default
 label fields:
+
 ```
 feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
 ```
@@ -352,8 +375,8 @@ for more information on NFD config.
 
 ### Storage Features
 
-| Feature name       | Description                                                                         |
-| :--------------:   | :---------------------------------------------------------------------------------: |
+| Feature name       | Description                                             |
+| ------------------ | ------------------------------------------------------- |
 | nonrotationaldisk  | Non-rotational disk, like SSD, is present in the node
 
 ### System Features
@@ -361,9 +384,9 @@ for more information on NFD config.
 | Feature     | Attribute        | Description                                 |
 | ----------- | ---------------- | --------------------------------------------|
 | os_release  | ID               | Operating system identifier
-| <br>        | VERSION_ID       | Operating system version identifier (e.g. '6.7')
-| <br>        | VERSION_ID.major | First component of the OS version id (e.g. '6')
-| <br>        | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
+|             | VERSION_ID       | Operating system version identifier (e.g. '6.7')
+|             | VERSION_ID.major | First component of the OS version id (e.g. '6')
+|             | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
 
 ### Feature Detector Hooks (User-specific Features)
 
@@ -375,14 +398,17 @@ new user-specific features, and, for overriding labels created by the other
 feature sources.
 
 The *local* feature source gets its labels by two different ways:
-* It tries to execute files found under `/etc/kubernetes/node-feature-discovery/source.d/`
-directory. The hook files must be executable and they are supposed to print all
-discovered features in `stdout`, one per line. With ELF binaries static
-linking is recommended as the selection of system libraries available in the
-NFD release image is very limited. Other runtimes currently supported by the
-NFD stock image are bash and perl.
-* It reads files found under `/etc/kubernetes/node-feature-discovery/features.d/`
-directory. The file content is expected to be similar to the hook output (described above).
+
+* It tries to execute files found under
+  `/etc/kubernetes/node-feature-discovery/source.d/` directory. The hook files
+  must be executable and they are supposed to print all discovered features in
+  `stdout`, one per line. With ELF binaries static linking is recommended as
+  the selection of system libraries available in the NFD release image is very
+  limited. Other runtimes currently supported by the NFD stock image are bash
+  and perl.
+* It reads files found under
+  `/etc/kubernetes/node-feature-discovery/features.d/` directory. The file
+  content is expected to be similar to the hook output (described above).
 
 These directories must be available inside the Docker image so Volumes and
 VolumeMounts must be used if standard NFD images are used. The given template
@@ -424,12 +450,12 @@ contains `hostPath` mounts for `sources.d` and `features.d` directories. By
 using the same mounts in the secondary Pod (e.g. device plugin) you have
 created a shared area for delivering hooks and feature files to NFD.
 
-
 #### A Hook Example
 
 User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
 following `stdout` output:
+
 ```
 MY_FEATURE_1
 MY_FEATURE_2=myvalue
@@ -437,7 +463,9 @@ MY_FEATURE_2=myvalue
 /override_source-OVERRIDE_VALUE=123
 override.namespace/value=456
 ```
+
 which, in turn, will translate into the following node labels:
+
 ```
 feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
@@ -451,6 +479,7 @@ override.namespace/value=456
 User has a file
 `/etc/kubernetes/node-feature-discovery/features.d/my-source` which contains the
 following lines:
+
 ```
 MY_FEATURE_1
 MY_FEATURE_2=myvalue
@@ -458,7 +487,9 @@ MY_FEATURE_2=myvalue
 /override_source-OVERRIDE_VALUE=123
 override.namespace/value=456
 ```
+
 which, in turn, will translate into the following node labels:
+
 ```
 feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
@@ -509,6 +540,7 @@ Example usage of the command line arguments, using a new namespace:
 
 The above would result in following extended resources provided that related
 labels exist:
+
 ```
   sgx.some.ns/epc: <label value>
   feature.node.kubernetes.io/my_source-my.feature: <label value>

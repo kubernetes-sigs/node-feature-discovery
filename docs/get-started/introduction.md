@@ -20,9 +20,9 @@ hardware features available on each node in a Kubernetes cluster, and
 advertises those features using node labels.
 
 NFD consists of two software components:
-1. nfd-master
-2. nfd-worker
 
+1. nfd-master
+1. nfd-worker
 
 ## NFD-Master
 
@@ -30,17 +30,16 @@ Nfd-master is the daemon responsible for communication towards the Kubernetes
 API. That is, it receives labeling requests from the worker and modifies node
 objects accordingly.
 
-
 ## NFD-Worker
 
 Nfd-worker is a daemon responsible for feature detection. It then communicates
 the information to nfd-master which does the actual node labeling.  One
 instance of nfd-worker is supposed to be running on each node of the cluster,
 
-
 ## Feature Discovery
 
 Feature discovery is divided into domain-specific feature sources:
+
 - CPU
 - IOMMU
 - Kernel
@@ -60,6 +59,7 @@ Non-standard user-specific feature labels can be created with the local and
 custom feature sources.
 
 An overview of the default feature labels:
+
 ```json
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
@@ -76,7 +76,6 @@ An overview of the default feature labels:
 }
 ```
 
-
 ## Node Annotations
 
 NFD also annotates nodes it is running on:
@@ -88,5 +87,5 @@ NFD also annotates nodes it is running on:
 | nfd.node.kubernetes.io/feature-labels     | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users.
 | nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users.
 
-Unapplicable annotations are not created, i.e. for example master.version is only created on nodes running nfd-master.
-
+Unapplicable annotations are not created, i.e. for example master.version is
+only created on nodes running nfd-master.
