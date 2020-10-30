@@ -14,7 +14,12 @@ CONTAINER_RUN_CMD ?= docker run
 # same site url than the "host" it binds to. Thus, all the links will be
 # broken if we'd bind to 0.0.0.0
 JEKYLL_VERSION := 3.8
-SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" --volume="$$PWD/docs:/srv/jekyll" --volume="$$PWD/docs/vendor/bundle:/usr/local/bundle" --network=host jekyll/jekyll:$(JEKYLL_VERSION)
+JEKYLL_ENV ?= development
+SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" \
+	-e JEKYLL_ENV=$(JEKYLL_ENV) \
+	--volume="$$PWD/docs:/srv/jekyll" \
+	--volume="$$PWD/docs/vendor/bundle:/usr/local/bundle" \
+	--network=host jekyll/jekyll:$(JEKYLL_VERSION)
 SITE_SUBDIR ?=
 JEKYLL_OPTS := -d _site/$(SITE_SUBDIR) -b /node-feature-discovery/$(SITE_SUBDIR)
 
