@@ -66,7 +66,7 @@ name of the resulting container image.
 | IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty*
 | K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | kube-system
 | KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty*
-| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example](test/e2e/e2e-test-config.exapmle.yaml)) | *empty*
+| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty*
 
 For example, to use a custom registry:
 
@@ -239,9 +239,10 @@ for up-to-date information about the required volume mounts.
 
 ## Documentation
 
-All documentation resides under the [docs](/docs) directory in the source tree.
-It is designed to be served as a html site by [GitHub
-Pages](https://pages.github.com/).
+All documentation resides under the
+[docs](https://github.com/kubernetes-sigs/node-feature-discovery/tree/release-0.6/docs)
+directory in the source tree. It is designed to be served as a html site by
+[GitHub Pages](https://pages.github.com/).
 
 Building the documentation is containerized in order to fix the build
 environment. The recommended way for developing documentation is to run:
@@ -264,3 +265,5 @@ make site-build
 
 This will generate html documentation under `docs/_site/`.
 
+<!-- Links -->
+[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/release-0.6/test/e2e/e2e-test-config.exapmle.yaml
