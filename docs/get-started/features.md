@@ -72,7 +72,7 @@ The (sub-)set of CPUID attributes to publish is configurable via the
 If whitelist is specified, only whitelisted attributes will be published. With
 blacklist, only blacklisted attributes are filtered out. `attributeWhitelist`
 has priority over `attributeBlacklist`.  For examples and more information
-about configurability, see [Configuration Options](#configuration-options).
+about configurability, see [configuration](deployment-and-usage#configuration).
 By default, the following CPUID flags have been blacklisted:
 BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT,
 RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
@@ -385,7 +385,8 @@ The **kernel** feature source supports the following labels:
 
 Kernel config file to use, and, the set of config options to be detected are
 configurable.
-See [configuration options](#configuration-options) for more information.
+See [configuration](deployment-and-usage#configuration) for
+more information.
 
 ### Memory
 
@@ -445,7 +446,7 @@ example label using the default label fields:
 feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
 ```
 
-See [configuration options](#configuration-options) for more information on NFD
+See [configuration](deployment-and-usage#configuration) for more information on NFD
 config.
 
 ### Storage

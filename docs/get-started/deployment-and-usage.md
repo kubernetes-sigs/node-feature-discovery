@@ -103,7 +103,7 @@ node(s) will run extra job instance(s) to satisfy the request.
 
 If you want to use the latest development version (master branch) you need to
 build your own custom image.
-See the [Developer Guide](/advanced/developer-guide) for instructions how to
+See the [Developer Guide](../advanced/developer-guide) for instructions how to
 build images and deploy them on your cluster.
 
 ## Usage
@@ -219,10 +219,6 @@ file must be used, i.e. JSON (or YAML). For example:
 Configuration options specified from the command line will override those read
 from the config file.
 
-Currently, the only available configuration options are related to the
-[CPU](#cpu-features), [PCI](#pci-features) and [Kernel](#kernel-features)
-feature sources.
-
 ## Using Node Labels
 
 Nodes with specific features can be targeted using the `nodeSelector` field. The
@@ -244,7 +240,7 @@ spec:
 ```
 
 For more details on targeting nodes, see
-[node selection](https://kubernetes.io/docs/tasks/tools/install-kubectl).
+[node selection](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/).
 
 ## Uninstallation
 
