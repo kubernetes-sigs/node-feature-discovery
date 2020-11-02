@@ -99,9 +99,11 @@ fi
 
 # Default to 'master' if no subdir was given and we couldn't parse
 # it
-export SITE_SUBDIR=${site_subdir:-master}
-echo "Updating site subdir: '$SITE_SUBDIR'"
+site_subdir=${site_subdir:-master}
+echo "Updating site subdir: '$site_subdir'"
 
+export SITE_DESTDIR="_site/$site_subdir"
+export SITE_BASEURL="/node-feature-discovery/$site_subdir"
 export JEKYLL_ENV=production
 make site-build
 

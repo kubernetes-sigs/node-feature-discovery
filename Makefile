@@ -20,8 +20,9 @@ SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" \
 	--volume="$$PWD/docs:/srv/jekyll" \
 	--volume="$$PWD/docs/vendor/bundle:/usr/local/bundle" \
 	--network=host jekyll/jekyll:$(JEKYLL_VERSION)
-SITE_SUBDIR ?=
-JEKYLL_OPTS := -d _site/$(SITE_SUBDIR) -b /node-feature-discovery/$(SITE_SUBDIR)
+SITE_BASEURL ?=
+SITE_DESTDIR ?= _site
+JEKYLL_OPTS := -d '$(SITE_DESTDIR)' $(if $(SITE_BASEURL),-b '$(SITE_BASEURL)',)
 
 VERSION := $(shell git describe --tags --dirty --always)
 
@@ -127,4 +128,4 @@ site-build:
 
 site-serve:
 	@mkdir -p docs/vendor/bundle
-	$(SITE_BUILD_CMD) sh -c "bundle install && jekyll serve $(JEKYLL_OPTS) -H 127.0.0.1 -b ''"
+	$(SITE_BUILD_CMD) sh -c "bundle install && jekyll serve $(JEKYLL_OPTS) -H 127.0.0.1"
