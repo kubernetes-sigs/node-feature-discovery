@@ -234,7 +234,7 @@ nfd-worker.
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template)
+[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/release-0.6/nfd-worker-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
 
 ## Documentation

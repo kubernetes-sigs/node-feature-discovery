@@ -75,7 +75,7 @@ NFD-Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
 the `--sleep-interval` option. In the
-[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L26)
+[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/release-0.6/nfd-worker-daemonset.yaml.template#L26)
 the default interval is set to 60s which is also the default when no
 `--sleep-interval` is specified. Also, the configuration file is re-read on
 each iteration providing a simple mechanism of run-time reconfiguration.
@@ -135,7 +135,7 @@ each nfd-worker requires a individual node-specific TLS certificate.
 ### Deployment Templates
 
 For a stable version with ready-built images see the
-[latest released version](https://github.com/kubernetes-sigs/node-feature-discovery/tree/v0.6.0) ([release notes](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest)).
+[latest release](https://github.com/kubernetes-sigs/node-feature-discovery/releases/latest).
 
 ### Build Your Own
 
@@ -184,7 +184,7 @@ You could also use other types of volumes, of course. That is, hostPath if
 different config for different nodes would be required, for example.
 
 The (empty-by-default)
-[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker.conf.example)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/release-0.6/nfd-worker.conf.example)
 is used as a config in the NFD Docker image. Thus, this can be used as a default
 configuration in custom-built images.
 
