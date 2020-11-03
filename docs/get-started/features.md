@@ -67,7 +67,7 @@ The (sub-)set of CPUID attributes to publish is configurable via the
 If whitelist is specified, only whitelisted attributes will be published. With
 blacklist, only blacklisted attributes are filtered out. `attributeWhitelist`
 has priority over `attributeBlacklist`.  For examples and more information
-about configurability, see [Configuration Options](#configuration-options).
+about configurability, see [configuration](deployment-and-usage#configuration).
 By default, the following CPUID flags have been blacklisted:
 BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT,
 RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
@@ -316,7 +316,8 @@ labels by defining them in the `nfd-worker` configuration file.
 
 Kernel config file to use, and, the set of config options to be detected are
 configurable.
-See [configuration options](#configuration-options) for more information.
+See [configuration](deployment-and-usage#configuration) for
+more information.
 
 ### Memory Features
 
@@ -370,8 +371,8 @@ label fields:
 feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
 ```
 
-See [configuration options](#configuration-options)
-for more information on NFD config.
+See [configuration](deployment-and-usage#configuration) for more
+information on NFD config.
 
 ### Storage Features
 
@@ -445,7 +446,7 @@ Pods outside NFD, e.g. in Kubernetes device plugins. It is possible to mount
 the `source.d` and/or `features.d` directories common with the NFD Pod and
 deploy the custom hooks/features there. NFD will periodically scan the
 directories and run any hooks and read any feature files it finds. The
-[example nfd-worker deployment template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L69)
+[example nfd-worker deployment template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/release-0.6/nfd-worker-daemonset.yaml.template#L69)
 contains `hostPath` mounts for `sources.d` and `features.d` directories. By
 using the same mounts in the secondary Pod (e.g. device plugin) you have
 created a shared area for delivering hooks and feature files to NFD.
