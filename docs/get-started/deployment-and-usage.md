@@ -60,8 +60,8 @@ EOF
 The template specs provided in the repo can be used directly:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-master.yaml.template
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-worker-daemonset.yaml.template
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-master.yaml.template
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-daemonset.yaml.template
 ```
 
 This will required RBAC rules and deploy nfd-master (as a deployment) and
@@ -75,7 +75,7 @@ manually.
 You can also run nfd-master and nfd-worker inside the same pod
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-daemonset-combined.yaml.template
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-daemonset-combined.yaml.template
 ```
 
 This creates a DaemonSet runs both nfd-worker and nfd-master in the same Pod.
@@ -89,7 +89,7 @@ The Job template may be used to achieve this:
 
 ```bash
 NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
-curl -fs https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-worker-job.yaml.template | \
+curl -fs https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-job.yaml.template | \
     sed s"/NUM_NODES/$NUM_NODES/" | \
     kubectl apply -f -
 ```
@@ -138,7 +138,7 @@ Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
 the `--sleep-interval` option. In the
-[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker-daemonset.yaml.template#L26)
+[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker-daemonset.yaml.template#L26)
 the default interval is set to 60s which is also the default when no
 `--sleep-interval` is specified. Also, the configuration file is re-read on
 each iteration providing a simple mechanism of run-time reconfiguration.
@@ -204,7 +204,7 @@ You could also use other types of volumes, of course. That is, hostPath if
 different config for different nodes would be required, for example.
 
 The (empty-by-default)
-[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/nfd-worker.conf.example)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker.conf.example)
 is used as a config in the NFD Docker image. Thus, this can be used as a default
 configuration in custom-built images.
 
@@ -280,7 +280,7 @@ NFD-Master has a special `--prune` command line flag for removing all
 nfd-related node labels, annotations and extended resources from the cluster.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/nfd-prune.yaml.template
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-prune.yaml.template
 kubectl -n node-feature-discovery wait job.batch/nfd-prune --for=condition=complete && \
     kubectl -n node-feature-discovery delete job/nfd-prune
 ```

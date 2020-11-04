@@ -25,9 +25,7 @@ This is a
 [SIG-node](https://github.com/kubernetes/community/blob/master/sig-node/README.md)
 subproject, hosted under the
 [Kubernetes SIGs](https://github.com/kubernetes-sigs) organization in Github.
-The project was established in 2016 as a
-[Kubernetes Incubator](https://github.com/kubernetes/community/blob/master/incubator.md)
-project and migrated to Kubernetes SIGs in 2018.
+The project was established in 2016 and was migrated to Kubernetes SIGs in 2018.
 
 ## License
 

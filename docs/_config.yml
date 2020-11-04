@@ -44,3 +44,6 @@ remote_theme: rundocs/jekyll-rtd-theme@v2.0.9
 version: master
 display_version_list: true
 
+# Release is used to make external links to point to the correct blobs in the
+# Github repo
+release: master
