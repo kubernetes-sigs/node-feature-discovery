@@ -125,6 +125,10 @@ _stable=`(ls -d1 v*/ || :) | sort -n | tail -n1`
 # Detect existing versions from the gh-pages branch
 create_versions_js > versions.js
 
+cat > index.html << EOF
+<meta http-equiv="refresh" content="0; URL='stable/'"/>
+EOF
+
 if [ -z "`git status --short`" ]; then
     echo "No new content, gh-pages branch already up-to-date"
     exit 0
