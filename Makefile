@@ -93,6 +93,7 @@ yamls: $(yaml_instances)
 	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
 	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
 	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
+	     -e s',^(\s*- |\s*- nfd-master.|\s*- nfd-worker.)node-feature-discovery,\1${K8S_NAMESPACE},' \
 	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${CONTAINER_HOSTMOUNT_PREFIX},' \
 	     -e '/nfd-worker.conf:/r nfd-worker.conf.tmp' \
 	     $< > $@
