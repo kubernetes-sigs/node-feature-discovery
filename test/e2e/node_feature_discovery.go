@@ -17,27 +17,29 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"strings"
 	"time"
 
+	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
+
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
+	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
-	"sigs.k8s.io/yaml"
-
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
 
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -117,15 +119,15 @@ func configureRBAC(cs clientset.Interface, ns string) error {
 
 // Remove RBAC configuration
 func deconfigureRBAC(cs clientset.Interface, ns string) error {
-	err := cs.RbacV1().ClusterRoleBindings().Delete("nfd-master-e2e", &metav1.DeleteOptions{})
+	err := cs.RbacV1().ClusterRoleBindings().Delete(context.TODO(), "nfd-master-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
-	err = cs.RbacV1().ClusterRoles().Delete("nfd-master-e2e", &metav1.DeleteOptions{})
+	err = cs.RbacV1().ClusterRoles().Delete(context.TODO(), "nfd-master-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
-	err = cs.CoreV1().ServiceAccounts(ns).Delete("nfd-master-e2e", &metav1.DeleteOptions{})
+	err = cs.CoreV1().ServiceAccounts(ns).Delete(context.TODO(), "nfd-master-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -140,7 +142,7 @@ func createServiceAccount(cs clientset.Interface, ns string) (*v1.ServiceAccount
 			Namespace: ns,
 		},
 	}
-	return cs.CoreV1().ServiceAccounts(ns).Create(sa)
+	return cs.CoreV1().ServiceAccounts(ns).Create(context.TODO(), sa, metav1.CreateOptions{})
 }
 
 // Configure cluster role required by NFD
@@ -157,7 +159,7 @@ func createClusterRole(cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 			},
 		},
 	}
-	return cs.RbacV1().ClusterRoles().Update(cr)
+	return cs.RbacV1().ClusterRoles().Update(context.TODO(), cr, metav1.UpdateOptions{})
 }
 
 // Configure cluster role binding required by NFD
@@ -180,7 +182,7 @@ func createClusterRoleBinding(cs clientset.Interface, ns string) (*rbacv1.Cluste
 		},
 	}
 
-	return cs.RbacV1().ClusterRoleBindings().Update(crb)
+	return cs.RbacV1().ClusterRoleBindings().Update(context.TODO(), crb, metav1.UpdateOptions{})
 }
 
 // createService creates nfd-master Service
@@ -200,7 +202,7 @@ func createService(cs clientset.Interface, ns string) (*v1.Service, error) {
 			Type: v1.ServiceTypeClusterIP,
 		},
 	}
-	return cs.CoreV1().Services(ns).Create(svc)
+	return cs.CoreV1().Services(ns).Create(context.TODO(), svc, metav1.CreateOptions{})
 }
 
 func nfdMasterPod(image string, onMasterNode bool) *v1.Pod {
@@ -361,14 +363,14 @@ func newHostPathType(typ v1.HostPathType) *v1.HostPathType {
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
 // labels and annotations
 func cleanupNode(cs clientset.Interface) {
-	nodeList, err := cs.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodeList, err := cs.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	for _, n := range nodeList.Items {
 		var err error
 		var node *v1.Node
 		for retry := 0; retry < 5; retry++ {
-			node, err = cs.CoreV1().Nodes().Get(n.Name, metav1.GetOptions{})
+			node, err = cs.CoreV1().Nodes().Get(context.TODO(), n.Name, metav1.GetOptions{})
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			update := false
@@ -393,7 +395,7 @@ func cleanupNode(cs clientset.Interface) {
 			}
 
 			ginkgo.By("Deleting NFD labels and annotations from node " + node.Name)
-			_, err = cs.CoreV1().Nodes().Update(node)
+			_, err = cs.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
 			if err != nil {
 				time.Sleep(100 * time.Millisecond)
 			} else {
@@ -406,7 +408,7 @@ func cleanupNode(cs clientset.Interface) {
 }
 
 // Actual test suite
-var _ = framework.KubeDescribe("Node Feature Discovery", func() {
+var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	ginkgo.Context("when deploying a single nfd-master pod", func() {
@@ -420,7 +422,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 			ginkgo.By("Creating nfd master pod and nfd-master service")
 			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 			masterPod = nfdMasterPod(image, false)
-			masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(masterPod)
+			masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), masterPod, metav1.CreateOptions{})
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			// Create nfd-master service
@@ -431,7 +433,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 			gomega.Expect(e2epod.WaitTimeoutForPodRunningInNamespace(f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(gomega.HaveOccurred())
 
 			ginkgo.By("Waiting for the nfd-master service to be up")
-			gomega.Expect(framework.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.AfterEach(func() {
@@ -459,16 +461,16 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 				ginkgo.By("Creating a nfd worker pod")
 				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 				workerPod := nfdWorkerPod(image, []string{"--oneshot", "--sources=fake"})
-				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(workerPod)
+				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				ginkgo.By("Waiting for the nfd-worker pod to succeed")
 				gomega.Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, f.Namespace.Name)).NotTo(gomega.HaveOccurred())
-				workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(workerPod.ObjectMeta.Name, metav1.GetOptions{})
+				workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), workerPod.ObjectMeta.Name, metav1.GetOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				ginkgo.By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
-				node, err := f.ClientSet.CoreV1().Nodes().Get(workerPod.Spec.NodeName, metav1.GetOptions{})
+				node, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), workerPod.Spec.NodeName, metav1.GetOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				for k, v := range fakeFeatureLabels {
 					gomega.Expect(node.Labels[k]).To(gomega.Equal(v))
@@ -482,7 +484,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 				}
 
 				ginkgo.By("Deleting the node-feature-discovery worker pod")
-				err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(workerPod.ObjectMeta.Name, &metav1.DeleteOptions{})
+				err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.ObjectMeta.Name, metav1.DeleteOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				cleanupNode(f.ClientSet)
@@ -508,14 +510,14 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 
 				ginkgo.By("Creating nfd-worker daemonset")
 				workerDS := nfdWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
-				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(workerDS)
+				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				ginkgo.By("Waiting for daemonset pods to be ready")
 				gomega.Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(gomega.HaveOccurred())
 
 				ginkgo.By("Getting node objects")
-				nodeList, err := f.ClientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+				nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				for _, node := range nodeList.Items {
@@ -574,7 +576,7 @@ var _ = framework.KubeDescribe("Node Feature Discovery", func() {
 				}
 
 				ginkgo.By("Deleting nfd-worker daemonset")
-				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(workerDS.ObjectMeta.Name, &metav1.DeleteOptions{})
+				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				cleanupNode(f.ClientSet)
