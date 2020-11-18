@@ -1,5 +1,5 @@
 # Build node feature discovery
-FROM golang:1.14.7 as builder
+FROM golang:1.15.4 as builder
 
 # Get (cache) deps in a separate layer
 COPY go.mod go.sum /go/node-feature-discovery/
