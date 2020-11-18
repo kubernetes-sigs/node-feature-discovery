@@ -17,6 +17,7 @@ limitations under the License.
 package apihelper
 
 import (
+	"context"
 	"encoding/json"
 
 	api "k8s.io/api/core/v1"
@@ -55,7 +56,7 @@ func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
 
 func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Node, error) {
 	// Get the node object using node name
-	node, err := cli.CoreV1().Nodes().Get(nodeName, meta_v1.GetOptions{})
+	node, err := cli.CoreV1().Nodes().Get(context.TODO(), nodeName, meta_v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +65,12 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 }
 
 func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*api.NodeList, error) {
-	return cli.CoreV1().Nodes().List(meta_v1.ListOptions{})
+	return cli.CoreV1().Nodes().List(context.TODO(), meta_v1.ListOptions{})
 }
 
 func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	// Send the updated node to the apiserver.
-	_, err := c.CoreV1().Nodes().Update(n)
+	_, err := c.CoreV1().Nodes().Update(context.TODO(), n, meta_v1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (h K8sHelpers) PatchStatus(c *k8sclient.Clientset, nodeName string, marshal
 	// Send the updated node to the apiserver.
 	patch, err := json.Marshal(marshalable)
 	if err == nil {
-		_, err = c.CoreV1().Nodes().Patch(nodeName, types.JSONPatchType, patch, "status")
+		_, err = c.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, patch, meta_v1.PatchOptions{}, "status")
 	}
 
 	return err
