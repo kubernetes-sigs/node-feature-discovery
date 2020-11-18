@@ -174,39 +174,19 @@ possible.
 Worker configuration file is read inside the container, and thus, Volumes and
 VolumeMounts are needed to make your configuration available for NFD. The
 preferred method is to use a ConfigMap which provides easy deployment and
-re-configurability.  For example, create a config map using the example config
-as a template:
+re-configurability.
 
-```bash
-cp nfd-worker.conf.example nfd-worker.conf
-vim nfd-worker.conf  # edit the configuration
-kubectl create configmap nfd-worker-config --from-file=nfd-worker.conf
+The provided nfd-worker deployment templates create an empty configmap and
+mount it inside the nfd-worker containers. Configuration can be edited with:
+
 ```
-
-Then, configure Volumes and VolumeMounts in the Pod spec (just the relevant
-snippets shown below):
-
-```yaml
-...
-  containers:
-      volumeMounts:
-        - name: nfd-worker-config
-          mountPath: "/etc/kubernetes/node-feature-discovery/"
-...
-  volumes:
-    - name: nfd-worker-config
-      configMap:
-        name: nfd-worker-config
-...
+kubectl -n ${NFD_NS} edit configmap nfd-worker-conf
 ```
-
-You could also use other types of volumes, of course. That is, hostPath if
-different config for different nodes would be required, for example.
 
 The (empty-by-default)
 [example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker.conf.example)
-is used as a config in the NFD Docker image. Thus, this can be used as a default
-configuration in custom-built images.
+contains all available configuration options and can be used as a reference
+for creating creating a configuration.
 
 Configuration options can also be specified via the `--options` command line
 flag, in which case no mounts need to be used. The same format as in the config

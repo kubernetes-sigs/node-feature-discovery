@@ -1,4 +1,4 @@
-.PHONY: all test yamls
+.PHONY: all test templates yamls
 .FORCE:
 
 GO_CMD ?= go
@@ -80,7 +80,16 @@ yamls: $(yaml_instances)
 	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
 	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
 	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${CONTAINER_HOSTMOUNT_PREFIX},' \
+	     -e '/nfd-worker.conf:/r nfd-worker.conf.tmp' \
 	     $< > $@
+
+templates: $(yaml_templates)
+	@# Need to prepend each line in the sample config with spaces in order to
+	@# fit correctly in the configmap spec.
+	@sed s'/^/    /' nfd-worker.conf.example > nfd-worker.conf.tmp
+	@# The quick-n-dirty sed below expects the configmap data to be at the very end of the file
+	@for f in $+; do sed -e '/nfd-worker\.conf/r nfd-worker.conf.tmp' -e '/nfd-worker\.conf/q' -i $$f; done
+	@rm nfd-worker.conf.tmp
 
 mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
