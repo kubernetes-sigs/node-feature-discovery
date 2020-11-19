@@ -44,8 +44,8 @@ import (
 )
 
 var (
-	dockerRepo    = flag.String("nfd.repo", "quay.io/kubernetes_incubator/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag     = flag.String("nfd.tag", "e2e-test", "Docker tag to use")
+	dockerRepo    = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag     = flag.String("nfd.tag", "master", "Docker tag to use")
 	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
 
 	conf *e2eConfig
