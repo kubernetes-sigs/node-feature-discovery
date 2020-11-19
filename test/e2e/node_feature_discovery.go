@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strings"
 	"time"
 
@@ -59,6 +60,7 @@ type e2eConfig struct {
 }
 
 type nodeConfig struct {
+	nameRe                   *regexp.Regexp
 	ExpectedLabelValues      map[string]string
 	ExpectedLabelKeys        lookupMap
 	ExpectedAnnotationValues map[string]string
@@ -95,6 +97,13 @@ func readConfig() {
 	ginkgo.By("Parsing end-to-end test configuration data")
 	err = yaml.Unmarshal(data, &conf)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	// Pre-compile node name matching regexps
+	for name, nodeConf := range conf.DefaultFeatures.Nodes {
+		nodeConf.nameRe, err = regexp.Compile(name)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		conf.DefaultFeatures.Nodes[name] = nodeConf
+	}
 }
 
 // Create required RBAC configuration
@@ -521,11 +530,17 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 				for _, node := range nodeList.Items {
-					if _, ok := fConf.Nodes[node.Name]; !ok {
-						e2elog.Logf("node %q missing from e2e-config, skipping...", node.Name)
+					var nodeConf *nodeConfig
+					for _, conf := range fConf.Nodes {
+						if conf.nameRe.MatchString(node.Name) {
+							e2elog.Logf("node %q matches rule %q", node.Name, conf.nameRe)
+							nodeConf = &conf
+						}
+					}
+					if nodeConf == nil {
+						e2elog.Logf("node %q has no matching rule in e2e-config, skipping...", node.Name)
 						continue
 					}
-					nodeConf := fConf.Nodes[node.Name]
 
 					// Check labels
 					e2elog.Logf("verifying labels of node %q...", node.Name)

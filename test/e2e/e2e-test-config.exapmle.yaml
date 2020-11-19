@@ -60,7 +60,8 @@ defaultFeatures:
     - "nfd.node.kubernetes.io/worker.version"
     - "nfd.node.kubernetes.io/feature-labels"
   nodes:
-    my-node-1:
+    # NOTE: keys here are interpreted as regexps
+    my-node-regexp-1:
       expectedLabelValues:
         "feature.node.kubernetes.io/cpu-cpuid.ADX": "true"
         "feature.node.kubernetes.io/cpu-cpuid.AESNI": "true"
