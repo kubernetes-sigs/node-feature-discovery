@@ -47,3 +47,6 @@ display_version_list: true
 # Release is used to make external links to point to the correct blobs in the
 # Github repo
 release: master
+
+# Container image which to point to in the documentation
+container_image: gcr.io/k8s-staging-nfd/node-feature-discovery:master

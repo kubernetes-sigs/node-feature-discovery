@@ -155,7 +155,7 @@ Kubernetes API is not available. Thus, it is recommended to use `--no-publish`
 command line flag. E.g.
 
 ```bash
-$ export NFD_CONTAINER_IMAGE=gcr.io/k8s-staging-nfd/node-feature-discovery:master
+$ export NFD_CONTAINER_IMAGE={{ site.container_image }}
 $ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master --no-publish
 2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
 2019/02/01 14:48:21 gRPC server serving on port: 8080
