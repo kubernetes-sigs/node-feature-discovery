@@ -21,10 +21,15 @@ rules:
   - ""
   resources:
   - nodes
+# when using command line flag --resource-labels to create extended resources
+# you will need to uncomment "- nodes/status"
+# - nodes/status
   verbs:
   - get
   - patch
   - update
+  # List only needed for --prune
+  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
