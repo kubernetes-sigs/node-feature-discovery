@@ -57,13 +57,8 @@ fi
 echo Patching docs/_config.yml
 sed -e s"/release:.*/release: $release/"  \
     -e s"/version:.*/version: $docs_version/" \
+    -e s"!container_image:.*!container_image: k8s.gcr.io/nfd/node-feature-discovery:$release!" \
     -i docs/_config.yml
-
-# Patch container image repo
-echo Patching '*.md' files to refer to $container_image
-find . -path ./docs/vendor -prune -o -name '*.md' -print | xargs \
-    sed -i -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery:[[:alnum:]][[:alnum:].-]*!$container_image!" \
-           -e s"!k8s.gcr.io/nfd/node-feature-discovery:[[:alnum:]][[:alnum:].-]*!$container_image!"
 
 # Patch README
 echo Patching README.md to refer to $release

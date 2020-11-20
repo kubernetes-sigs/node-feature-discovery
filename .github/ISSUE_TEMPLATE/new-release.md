@@ -16,7 +16,7 @@ Please do not remove items from the checklist
       `git branch release-0.$MAJ master`
 - [ ] Prepare `release-0.$MAJ` release branch
   - [ ] Run `scripts/prepare-release.sh $VERSION` to turn references to point to the upcoming release
-        (README, deployment templates, docs .md files, docs configuration, test/e2e flags)
+        (README, deployment templates, docs configuration, test/e2e flags)
   - [ ] An OWNER runs
        `git tag -s $VERSION`
         and inserts the changelog into the tag description.

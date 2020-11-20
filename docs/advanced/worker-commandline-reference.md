@@ -19,7 +19,7 @@ To quickly view available command line flags execute `nfd-worker --help`.
 In a docker container:
 
 ```bash
-docker run gcr.io/k8s-staging-nfd/node-feature-discovery:master nfd-worker --help
+docker run {{ site.container_image }} nfd-worker --help
 ```
 
 ### -h, --help
