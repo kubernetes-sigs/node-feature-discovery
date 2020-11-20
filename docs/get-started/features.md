@@ -124,7 +124,10 @@ capability might be supported but not enabled.
 
 The Custom feature source allows the user to define features based on a mix of
 predefined rules.  A rule is provided input witch affects its process of
-matching for a defined feature.
+matching for a defined feature. The rules are specified in the
+nfd-worker configuration file. See
+[configuration](deployment-and-usage.md#configuration) for instructions and
+examples how to set-up and manage the worker configuration.
 
 To aid in making Custom Features clearer, we define a general and a per rule
 nomenclature, keeping things as consistent as possible.
@@ -139,19 +142,24 @@ Matcher     :A composition of Rules, each Matcher may be composed of at most one
 
 #### Custom Features Format (using the Nomenclature defined above)
 
+Rules are specified under `sources.custom` in the nfd-worker configuration
+file.
+
 ```yaml
-- name: <feature name>
-  matchOn:
-  - <Rule-1>: <Rule-1 Input>
-    [<Rule-2>: <Rule-2 Input>]
-  - <Matcher-2>
+sources:
+  custom:
+  - name: <feature name>
+    matchOn:
+    - <Rule-1>: <Rule-1 Input>
+      [<Rule-2>: <Rule-2 Input>]
+    - <Matcher-2>
+    - ...
+    - ...
+    - <Matcher-N>
+  - <custom feature 2>
   - ...
   - ...
-  - <Matcher-N>
-- <custom feature 2>
-- ...
-- ...
-- <custom feature M>
+  - <custom feature M>
 ```
 
 #### Matching process
