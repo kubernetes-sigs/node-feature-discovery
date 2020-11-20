@@ -15,12 +15,8 @@ Please do not remove items from the checklist
 - [ ] For major releases (v0.$MAJ.0), an OWNER creates a release branch with
       `git branch release-0.$MAJ master`
 - [ ] Prepare `release-0.$MAJ` release branch
-  - [ ] Update the deployment templates to use the new tagged container image:
-        `sed s"|image: .*|image: k8s.gcr.io/nfd/node-feature-discovery:$VERSION|" -i *yaml.template`
-  - [ ] Update quick start instructions in README.md to use $VERSION
-  - [ ] Update version configuration in `docs/_config.yml`:
-        - set `version: $VERSION`
-        - add $VERSION to `versions:` list
+  - [ ] Run `scripts/prepare-release.sh $VERSION` to turn references to point to the upcoming release
+        (README, deployment templates, docs .md files, docs configuration, test/e2e flags)
   - [ ] An OWNER runs
        `git tag -s $VERSION`
         and inserts the changelog into the tag description.
