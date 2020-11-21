@@ -1,5 +1,5 @@
 # Build node feature discovery
-FROM golang:1.15.4 as builder
+FROM golang:1.15.5-buster as builder
 
 # Get (cache) deps in a separate layer
 COPY go.mod go.sum /go/node-feature-discovery/
@@ -20,7 +20,7 @@ RUN make test
 
 
 # Create production image for running node feature discovery
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 # Run as unprivileged user
 USER 65534:65534
