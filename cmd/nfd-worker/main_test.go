@@ -23,7 +23,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var allSources = []string{"cpu", "custom", "iommu", "kernel", "local", "memory", "network", "pci", "storage", "system", "usb"}
+var allSources = []string{"all"}
 
 func TestArgsParse(t *testing.T) {
 	Convey("When parsing command line arguments", t, func() {
