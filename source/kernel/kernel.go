@@ -19,6 +19,7 @@ package kernel
 import (
 	"log"
 	"regexp"
+	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
@@ -114,6 +115,8 @@ func parseVersion() (map[string]string, error) {
 	// Replace forbidden symbols
 	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]")
 	full = fullRegex.ReplaceAllString(full, "_")
+	// Label values must start and end with an alphanumeric
+	full = strings.Trim(full, "-_.")
 
 	version["full"] = full
 
