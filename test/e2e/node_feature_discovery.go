@@ -535,6 +535,7 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 						if conf.nameRe.MatchString(node.Name) {
 							e2elog.Logf("node %q matches rule %q", node.Name, conf.nameRe)
 							nodeConf = &conf
+							break
 						}
 					}
 					if nodeConf == nil {
