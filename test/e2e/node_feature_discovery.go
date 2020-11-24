@@ -458,9 +458,9 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 			ginkgo.It("it should decorate the node with the fake feature labels", func() {
 
 				fakeFeatureLabels := map[string]string{
-					master.LabelNs + "fake-fakefeature1": "true",
-					master.LabelNs + "fake-fakefeature2": "true",
-					master.LabelNs + "fake-fakefeature3": "true",
+					master.LabelNs + "/fake-fakefeature1": "true",
+					master.LabelNs + "/fake-fakefeature2": "true",
+					master.LabelNs + "/fake-fakefeature3": "true",
 				}
 
 				// Remove pre-existing stale annotations and labels

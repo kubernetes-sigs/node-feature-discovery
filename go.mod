@@ -8,6 +8,7 @@ require (
 	github.com/klauspost/cpuid v1.2.3
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.0
+	github.com/smartystreets/assertions v1.2.0
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.4.0
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a

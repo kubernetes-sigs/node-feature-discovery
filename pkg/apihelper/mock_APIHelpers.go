@@ -85,12 +85,26 @@ func (_m *MockAPIHelpers) GetNodes(_a0 *kubernetes.Clientset) (*v1.NodeList, err
 	return r0, r1
 }
 
-// PatchStatus provides a mock function with given fields: _a0, _a1, _a2
-func (_m *MockAPIHelpers) PatchStatus(_a0 *kubernetes.Clientset, _a1 string, _a2 interface{}) error {
+// PatchNode provides a mock function with given fields: _a0, _a1, _a2
+func (_m *MockAPIHelpers) PatchNode(_a0 *kubernetes.Clientset, _a1 string, _a2 []JsonPatch) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, []JsonPatch) error); ok {
+		r0 = rf(_a0, _a1, _a2)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// PatchNodeStatus provides a mock function with given fields: _a0, _a1, _a2
+func (_m *MockAPIHelpers) PatchNodeStatus(_a0 *kubernetes.Clientset, _a1 string, _a2 []JsonPatch) error {
+	ret := _m.Called(_a0, _a1, _a2)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, []JsonPatch) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
