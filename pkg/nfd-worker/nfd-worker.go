@@ -191,31 +191,31 @@ func (w *nfdWorker) Run() error {
 	}
 	defer w.disconnect()
 
+	trigger := time.After(0)
 	for {
-		// Parse and apply configuration
-		w.configure(w.args.ConfigFile, w.args.Options)
+		select {
+		case <-trigger:
+			// Parse and apply configuration
+			w.configure(w.args.ConfigFile, w.args.Options)
 
-		// Get the set of feature labels.
-		labels := createFeatureLabels(w.sources, w.labelWhiteList)
+			// Get the set of feature labels.
+			labels := createFeatureLabels(w.sources, w.labelWhiteList)
 
-		// Update the node with the feature labels.
-		if w.client != nil {
-			err := advertiseFeatureLabels(w.client, labels)
-			if err != nil {
-				return fmt.Errorf("failed to advertise labels: %s", err.Error())
+			// Update the node with the feature labels.
+			if w.client != nil {
+				err := advertiseFeatureLabels(w.client, labels)
+				if err != nil {
+					return fmt.Errorf("failed to advertise labels: %s", err.Error())
+				}
 			}
-		}
 
-		if w.args.Oneshot {
-			break
-		}
+			if w.args.Oneshot {
+				return nil
+			}
 
-		if w.args.SleepInterval > 0 {
-			time.Sleep(w.args.SleepInterval)
-		} else {
-			w.disconnect()
-			// Sleep forever
-			select {}
+			if w.args.SleepInterval > 0 {
+				trigger = time.After(w.args.SleepInterval)
+			}
 		}
 	}
 	return nil
