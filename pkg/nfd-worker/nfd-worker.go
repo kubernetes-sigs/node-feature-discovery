@@ -24,10 +24,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -178,6 +180,40 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 	return nfd, nil
 }
 
+func addConfigWatch(path string) (*fsnotify.Watcher, map[string]struct{}, error) {
+	paths := make(map[string]struct{})
+
+	// Create watcher
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return w, paths, fmt.Errorf("failed to create fsnotify watcher: %v", err)
+	}
+
+	// Add watches for all directory components so that we catch e.g. renames
+	// upper in the tree
+	added := false
+	for p := path; ; p = filepath.Dir(p) {
+
+		if err := w.Add(p); err != nil {
+			stdoutLogger.Printf("failed to add fsnotify watch for %q: %v", p, err)
+		} else {
+			stdoutLogger.Printf("added fsnotify watch %q", p)
+			added = true
+		}
+
+		paths[p] = struct{}{}
+		if filepath.Dir(p) == p {
+			break
+		}
+	}
+
+	if !added {
+		// Want to be sure that we watch something
+		return w, paths, fmt.Errorf("failed to add any watch")
+	}
+	return w, paths, nil
+}
+
 // Run NfdWorker client. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
@@ -191,13 +227,19 @@ func (w *nfdWorker) Run() error {
 	}
 	defer w.disconnect()
 
-	trigger := time.After(0)
+	// Create watcher for config file and read initial configuration
+	configFilePath := filepath.Clean(w.args.ConfigFile)
+	configWatch, paths, err := addConfigWatch(configFilePath)
+	if err != nil {
+		return (err)
+	}
+	w.configure(configFilePath, w.args.Options)
+
+	labelTrigger := time.After(0)
+	var configTrigger <-chan time.Time
 	for {
 		select {
-		case <-trigger:
-			// Parse and apply configuration
-			w.configure(w.args.ConfigFile, w.args.Options)
-
+		case <-labelTrigger:
 			// Get the set of feature labels.
 			labels := createFeatureLabels(w.sources, w.labelWhiteList)
 
@@ -214,11 +256,38 @@ func (w *nfdWorker) Run() error {
 			}
 
 			if w.args.SleepInterval > 0 {
-				trigger = time.After(w.args.SleepInterval)
+				labelTrigger = time.After(w.args.SleepInterval)
 			}
+
+		case e := <-configWatch.Events:
+			name := filepath.Clean(e.Name)
+
+			// If any of our paths (directories or the file itself) change
+			if _, ok := paths[name]; ok {
+				stdoutLogger.Printf("fsnotify event in %q detected, reconfiguring fsnotify and reloading configuration", name)
+
+				// Blindly remove existing watch and add a new one
+				if err := configWatch.Close(); err != nil {
+					stderrLogger.Printf("WARNING: failed to close fsnotify watcher: %v", err)
+				}
+				configWatch, paths, err = addConfigWatch(configFilePath)
+				if err != nil {
+					return err
+				}
+
+				// Rate limiter. In certain filesystem operations we get
+				// numerous events in quick succession and we only want one
+				// config re-load
+				configTrigger = time.After(time.Second)
+			}
+
+		case e := <-configWatch.Errors:
+			stderrLogger.Printf("ERROR: config file watcher error: %v", e)
+
+		case <-configTrigger:
+			w.configure(configFilePath, w.args.Options)
 		}
 	}
-	return nil
 }
 
 // connect creates a client connection to the NFD master
