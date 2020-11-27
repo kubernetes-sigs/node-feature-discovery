@@ -286,6 +286,10 @@ func (w *nfdWorker) Run() error {
 
 		case <-configTrigger:
 			w.configure(configFilePath, w.args.Options)
+
+			// Always re-label after a re-config event. This way the new config
+			// comes into effect even if the sleep interval is long (or infinite)
+			labelTrigger = time.After(0)
 		}
 	}
 }
