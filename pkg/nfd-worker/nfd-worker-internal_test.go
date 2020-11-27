@@ -169,6 +169,7 @@ func TestNewNfdWorker(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
+			worker.configure("", "")
 			Convey("no sources should be enabled and the whitelist regexp should be empty", func() {
 				So(len(worker.sources), ShouldEqual, 0)
 				So(worker.labelWhiteList, ShouldResemble, emptyRegexp)
@@ -183,6 +184,7 @@ func TestNewNfdWorker(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
+			worker.configure("", "")
 			Convey("proper sources should be enabled", func() {
 				So(len(worker.sources), ShouldEqual, 1)
 				So(worker.sources[0], ShouldHaveSameTypeAs, &fake.Source{})
@@ -194,6 +196,7 @@ func TestNewNfdWorker(t *testing.T) {
 			args := Args{LabelWhiteList: "*"}
 			w, err := NewNfdWorker(args)
 			worker := w.(*nfdWorker)
+			worker.configure("", "")
 			Convey("an error should be returned", func() {
 				So(len(worker.sources), ShouldEqual, 0)
 				So(worker.labelWhiteList, ShouldBeNil)
@@ -208,6 +211,7 @@ func TestNewNfdWorker(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
+			worker.configure("", "")
 			expectRegexp := regexp.MustCompile(".*rdt.*")
 			Convey("proper labelWhiteList regexp should be produced", func() {
 				So(len(worker.sources), ShouldEqual, 0)

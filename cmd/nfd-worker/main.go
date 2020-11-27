@@ -119,7 +119,6 @@ func argsParse(argv []string) (worker.Args, error) {
 	args.CertFile = arguments["--cert-file"].(string)
 	args.ConfigFile = arguments["--config"].(string)
 	args.KeyFile = arguments["--key-file"].(string)
-	args.NoPublish = arguments["--no-publish"].(bool)
 	args.Options = arguments["--options"].(string)
 	args.Server = arguments["--server"].(string)
 	args.ServerNameOverride = arguments["--server-name-override"].(string)
@@ -130,5 +129,12 @@ func argsParse(argv []string) (worker.Args, error) {
 	if err != nil {
 		return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())
 	}
+
+	// Parse deprecated/override args
+	if arguments["--no-publish"].(bool) {
+		b := true
+		args.NoPublish = &b
+	}
+
 	return args, nil
 }

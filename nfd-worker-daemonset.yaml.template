@@ -102,6 +102,8 @@ metadata:
   namespace: node-feature-discovery
 data:
   nfd-worker.conf: | ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
+    #core:
+    #  noPublish: false
     #sources:
     #  cpu:
     #    cpuid:

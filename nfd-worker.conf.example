@@ -1,3 +1,5 @@
+#core:
+#  noPublish: false
 #sources:
 #  cpu:
 #    cpuid:

@@ -61,7 +61,12 @@ var (
 
 // Global config
 type NFDConfig struct {
+	Core    coreConfig
 	Sources sourcesConfig
+}
+
+type coreConfig struct {
+	NoPublish bool
 }
 
 type sourcesConfig map[string]source.Config
@@ -76,13 +81,14 @@ type Args struct {
 	CertFile           string
 	KeyFile            string
 	ConfigFile         string
-	NoPublish          bool
 	Options            string
 	Oneshot            bool
 	Server             string
 	ServerNameOverride string
 	SleepInterval      time.Duration
 	Sources            []string
+	// Deprecated options that should be set via the config file
+	NoPublish *bool
 }
 
 type NfdWorker interface {
@@ -93,7 +99,8 @@ type nfdWorker struct {
 	args           Args
 	clientConn     *grpc.ClientConn
 	client         pb.LabelerClient
-	config         NFDConfig
+	configFilePath string
+	config         *NFDConfig
 	sources        []source.FeatureSource
 	labelWhiteList *regexp.Regexp
 }
@@ -102,7 +109,12 @@ type nfdWorker struct {
 func NewNfdWorker(args Args) (NfdWorker, error) {
 	nfd := &nfdWorker{
 		args:    args,
+		config:  &NFDConfig{},
 		sources: []source.FeatureSource{},
+	}
+
+	if args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
 
 	if args.SleepInterval > 0 && args.SleepInterval < time.Second {
@@ -214,26 +226,31 @@ func addConfigWatch(path string) (*fsnotify.Watcher, map[string]struct{}, error)
 	return w, paths, nil
 }
 
+func newDefaultConfig() *NFDConfig {
+	return &NFDConfig{
+		Core: coreConfig{},
+	}
+}
+
 // Run NfdWorker client. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
 	stdoutLogger.Printf("Node Feature Discovery Worker %s", version.Get())
 	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
+	// Create watcher for config file and read initial configuration
+	configWatch, paths, err := addConfigWatch(w.configFilePath)
+	if err != nil {
+		return err
+	}
+	w.configure(w.configFilePath, w.args.Options)
+
 	// Connect to NFD master
-	err := w.connect()
+	err = w.connect()
 	if err != nil {
 		return fmt.Errorf("failed to connect: %v", err)
 	}
 	defer w.disconnect()
-
-	// Create watcher for config file and read initial configuration
-	configFilePath := filepath.Clean(w.args.ConfigFile)
-	configWatch, paths, err := addConfigWatch(configFilePath)
-	if err != nil {
-		return (err)
-	}
-	w.configure(configFilePath, w.args.Options)
 
 	labelTrigger := time.After(0)
 	var configTrigger <-chan time.Time
@@ -270,7 +287,7 @@ func (w *nfdWorker) Run() error {
 				if err := configWatch.Close(); err != nil {
 					stderrLogger.Printf("WARNING: failed to close fsnotify watcher: %v", err)
 				}
-				configWatch, paths, err = addConfigWatch(configFilePath)
+				configWatch, paths, err = addConfigWatch(w.configFilePath)
 				if err != nil {
 					return err
 				}
@@ -285,8 +302,15 @@ func (w *nfdWorker) Run() error {
 			stderrLogger.Printf("ERROR: config file watcher error: %v", e)
 
 		case <-configTrigger:
-			w.configure(configFilePath, w.args.Options)
-
+			w.configure(w.configFilePath, w.args.Options)
+			// Manage connection to master
+			if w.config.Core.NoPublish {
+				w.disconnect()
+			} else if w.clientConn == nil {
+				if err := w.connect(); err != nil {
+					return err
+				}
+			}
 			// Always re-label after a re-config event. This way the new config
 			// comes into effect even if the sleep interval is long (or infinite)
 			labelTrigger = time.After(0)
@@ -297,7 +321,7 @@ func (w *nfdWorker) Run() error {
 // connect creates a client connection to the NFD master
 func (w *nfdWorker) connect() error {
 	// Return a dummy connection in case of dry-run
-	if w.args.NoPublish {
+	if w.config.Core.NoPublish {
 		return nil
 	}
 
@@ -357,7 +381,8 @@ func (w *nfdWorker) disconnect() {
 // Parse configuration options
 func (w *nfdWorker) configure(filepath string, overrides string) {
 	// Create a new default config
-	c := NFDConfig{Sources: make(map[string]source.Config, len(w.sources))}
+	c := newDefaultConfig()
+	c.Sources = make(map[string]source.Config, len(w.sources))
 	for _, s := range w.sources {
 		c.Sources[s.Name()] = s.NewConfig()
 	}
@@ -367,7 +392,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) {
 	if err != nil {
 		stderrLogger.Printf("Failed to read config file: %s", err)
 	} else {
-		err = yaml.Unmarshal(data, &c)
+		err = yaml.Unmarshal(data, c)
 		if err != nil {
 			stderrLogger.Printf("Failed to parse config file: %s", err)
 		} else {
@@ -376,9 +401,13 @@ func (w *nfdWorker) configure(filepath string, overrides string) {
 	}
 
 	// Parse config overrides
-	err = yaml.Unmarshal([]byte(overrides), &c)
+	err = yaml.Unmarshal([]byte(overrides), c)
 	if err != nil {
 		stderrLogger.Printf("Failed to parse --options: %s", err)
+	}
+
+	if w.args.NoPublish != nil {
+		c.Core.NoPublish = *w.args.NoPublish
 	}
 
 	w.config = c
