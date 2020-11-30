@@ -110,7 +110,7 @@ func TestConfigParse(t *testing.T) {
 		worker := w.(*nfdWorker)
 		Convey("and a non-accessible file and some overrides are specified", func() {
 			overrides := `{"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
-			worker.configure("non-existing-file", overrides)
+			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
 
 			Convey("overrides should take effect", func() {
 				c := worker.getSource("cpu").GetConfig().(*cpu.Config)
@@ -132,7 +132,7 @@ func TestConfigParse(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey("and a proper config file is specified", func() {
-			worker.configure(f.Name(), "")
+			So(worker.configure(f.Name(), ""), ShouldBeNil)
 
 			Convey("specified configuration should take effect", func() {
 				So(err, ShouldBeNil)
@@ -145,7 +145,7 @@ func TestConfigParse(t *testing.T) {
 
 		Convey("and a proper config file and overrides are given", func() {
 			overrides := `{"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
-			worker.configure(f.Name(), overrides)
+			So(worker.configure(f.Name(), overrides), ShouldBeNil)
 
 			Convey("overrides should take precedence over the config file", func() {
 				So(err, ShouldBeNil)
@@ -170,7 +170,7 @@ func TestNewNfdWorker(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
-			worker.configure("", "")
+			So(worker.configure("", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
 				So(len(worker.enabledSources), ShouldEqual, len(worker.realSources))
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
@@ -184,7 +184,7 @@ func TestNewNfdWorker(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
-			worker.configure("", "")
+			So(worker.configure("", ""), ShouldBeNil)
 			Convey("proper sources should be enabled", func() {
 				So(len(worker.enabledSources), ShouldEqual, 1)
 				So(worker.enabledSources[0], ShouldHaveSameTypeAs, &fake.Source{})
@@ -199,7 +199,7 @@ func TestNewNfdWorker(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
-			worker.configure("", "")
+			So(worker.configure("", ""), ShouldBeNil)
 			expectRegexp := regex{*regexp.MustCompile(".*rdt.*")}
 			Convey("proper labelWhiteList regexp should be produced", func() {
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, expectRegexp)

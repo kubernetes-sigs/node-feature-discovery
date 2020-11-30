@@ -218,7 +218,9 @@ func (w *nfdWorker) Run() error {
 	if err != nil {
 		return err
 	}
-	w.configure(w.configFilePath, w.args.Options)
+	if err := w.configure(w.configFilePath, w.args.Options); err != nil {
+		return err
+	}
 
 	// Connect to NFD master
 	err = w.connect()
@@ -277,7 +279,9 @@ func (w *nfdWorker) Run() error {
 			stderrLogger.Printf("ERROR: config file watcher error: %v", e)
 
 		case <-configTrigger:
-			w.configure(w.configFilePath, w.args.Options)
+			if err := w.configure(w.configFilePath, w.args.Options); err != nil {
+				return err
+			}
 			// Manage connection to master
 			if w.config.Core.NoPublish {
 				w.disconnect()
@@ -396,7 +400,7 @@ func (w *nfdWorker) configureCore(c coreConfig) {
 }
 
 // Parse configuration options
-func (w *nfdWorker) configure(filepath string, overrides string) {
+func (w *nfdWorker) configure(filepath string, overrides string) error {
 	// Create a new default config
 	c := newDefaultConfig()
 	allSources := append(w.realSources, w.testSources...)
@@ -406,22 +410,26 @@ func (w *nfdWorker) configure(filepath string, overrides string) {
 	}
 
 	// Try to read and parse config file
-	data, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		stderrLogger.Printf("Failed to read config file: %s", err)
-	} else {
-		err = yaml.Unmarshal(data, c)
+	if filepath != "" {
+		data, err := ioutil.ReadFile(filepath)
 		if err != nil {
-			stderrLogger.Printf("Failed to parse config file: %s", err)
+			if os.IsNotExist(err) {
+				stderrLogger.Printf("config file %q not found, using defaults", filepath)
+			} else {
+				return fmt.Errorf("error reading config file: %s", err)
+			}
 		} else {
+			err = yaml.Unmarshal(data, c)
+			if err != nil {
+				return fmt.Errorf("Failed to parse config file: %s", err)
+			}
 			stdoutLogger.Printf("Configuration successfully loaded from %q", filepath)
 		}
 	}
 
 	// Parse config overrides
-	err = yaml.Unmarshal([]byte(overrides), c)
-	if err != nil {
-		stderrLogger.Printf("Failed to parse --options: %s", err)
+	if err := yaml.Unmarshal([]byte(overrides), c); err != nil {
+		return fmt.Errorf("Failed to parse --options: %s", err)
 	}
 
 	if w.args.LabelWhiteList != nil {
@@ -447,6 +455,8 @@ func (w *nfdWorker) configure(filepath string, overrides string) {
 	for _, s := range allSources {
 		s.SetConfig(c.Sources[s.Name()])
 	}
+
+	return nil
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
