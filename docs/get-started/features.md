@@ -89,6 +89,8 @@ capability might be supported but not enabled.
 | AVX       | Advanced Vector Extensions (AVX)
 | AVX2      | Advanced Vector Extensions 2 (AVX2)
 
+See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
+
 #### Arm CPUID Attribute (Partial List)
 
 | Attribute | Description                                                      |
@@ -634,6 +636,7 @@ labels exist:
 ```
 
 <!-- Links -->
+[klauspost-cpuid]: https://github.com/klauspost/cpuid#x86-cpu-instructions
 [intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
 [intel-sst]: https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
