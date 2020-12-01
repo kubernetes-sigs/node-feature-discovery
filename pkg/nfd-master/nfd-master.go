@@ -146,8 +146,6 @@ func (m *nfdMaster) Run() error {
 	}
 	// Notify that we're ready to accept connections
 	m.ready <- true
-	close(m.ready)
-
 	serverOpts := []grpc.ServerOption{}
 	// Enable mutual TLS authentication if --cert-file, --key-file or --ca-file
 	// is defined
