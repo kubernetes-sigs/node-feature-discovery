@@ -18,6 +18,7 @@ package utils
 
 import (
 	"context"
+	"flag"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,6 +30,8 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubectl/pkg/util/podutils"
 )
+
+var pullIfNotPresent = flag.Bool("nfd.pull-if-not-present", false, "Pull Images if not present - not always")
 
 // NFDMasterPod provide NFD master pod definition
 func NFDMasterPod(image string, onMasterNode bool) *v1.Pod {
@@ -42,7 +45,7 @@ func NFDMasterPod(image string, onMasterNode bool) *v1.Pod {
 				{
 					Name:            "node-feature-discovery",
 					Image:           image,
-					ImagePullPolicy: v1.PullAlways,
+					ImagePullPolicy: pullPolicy(),
 					Command:         []string{"nfd-master"},
 					Env: []v1.EnvVar{
 						{
@@ -121,7 +124,7 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *v1.PodSpec {
 			{
 				Name:            "node-feature-discovery",
 				Image:           image,
-				ImagePullPolicy: v1.PullAlways,
+				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-worker"},
 				Args:            append([]string{"-server=nfd-master-e2e:8080"}, extraArgs...),
 				Env: []v1.EnvVar{
@@ -241,4 +244,11 @@ func WaitForPodsReady(c clientset.Interface, ns, name string, minReadySeconds in
 		}
 		return true, nil
 	})
+}
+
+func pullPolicy() v1.PullPolicy {
+	if *pullIfNotPresent {
+		return v1.PullIfNotPresent
+	}
+	return v1.PullAlways
 }
