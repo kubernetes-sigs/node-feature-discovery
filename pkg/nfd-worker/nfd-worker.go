@@ -68,6 +68,7 @@ type NFDConfig struct {
 type coreConfig struct {
 	LabelWhiteList regex
 	NoPublish      bool
+	Sources        []string
 	SleepInterval  duration
 }
 
@@ -86,11 +87,11 @@ type Args struct {
 	Oneshot            bool
 	Server             string
 	ServerNameOverride string
-	Sources            []string
 	// Deprecated options that should be set via the config file
 	LabelWhiteList *regexp.Regexp
 	NoPublish      *bool
 	SleepInterval  *time.Duration
+	Sources        *[]string
 }
 
 type NfdWorker interface {
@@ -103,7 +104,9 @@ type nfdWorker struct {
 	client         pb.LabelerClient
 	configFilePath string
 	config         *NFDConfig
-	sources        []source.FeatureSource
+	realSources    []source.FeatureSource
+	testSources    []source.FeatureSource
+	enabledSources []source.FeatureSource
 }
 
 type regex struct {
@@ -117,9 +120,27 @@ type duration struct {
 // Create new NfdWorker instance.
 func NewNfdWorker(args Args) (NfdWorker, error) {
 	nfd := &nfdWorker{
-		args:    args,
-		config:  &NFDConfig{},
-		sources: []source.FeatureSource{},
+		args:   args,
+		config: &NFDConfig{},
+		realSources: []source.FeatureSource{
+			&cpu.Source{},
+			&iommu.Source{},
+			&kernel.Source{},
+			&memory.Source{},
+			&network.Source{},
+			&pci.Source{},
+			&storage.Source{},
+			&system.Source{},
+			&usb.Source{},
+			&custom.Source{},
+			// local needs to be the last source so that it is able to override
+			// labels from other sources
+			&local.Source{},
+		},
+		testSources: []source.FeatureSource{
+			&fake.Source{},
+			&panicfake.Source{},
+		},
 	}
 
 	if args.ConfigFile != "" {
@@ -136,53 +157,6 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 		}
 		if args.CaFile == "" {
 			return nfd, fmt.Errorf("--ca-file needs to be specified alongside --cert-file and --key-file")
-		}
-	}
-
-	// Figure out active sources
-	allSources := []source.FeatureSource{
-		&cpu.Source{},
-		&iommu.Source{},
-		&kernel.Source{},
-		&memory.Source{},
-		&network.Source{},
-		&pci.Source{},
-		&storage.Source{},
-		&system.Source{},
-		&usb.Source{},
-		&custom.Source{},
-		// local needs to be the last source so that it is able to override
-		// labels from other sources
-		&local.Source{},
-	}
-
-	// Determine enabled feature
-	if len(args.Sources) == 1 && args.Sources[0] == "all" {
-		nfd.sources = allSources
-	} else {
-		// Add fake source which is only meant for testing. It will be enabled
-		// only if listed explicitly.
-		allSources = append(allSources, &fake.Source{})
-		allSources = append(allSources, &panicfake.Source{})
-
-		sourceWhiteList := map[string]struct{}{}
-		for _, s := range args.Sources {
-			sourceWhiteList[strings.TrimSpace(s)] = struct{}{}
-		}
-
-		nfd.sources = []source.FeatureSource{}
-		for _, s := range allSources {
-			if _, enabled := sourceWhiteList[s.Name()]; enabled {
-				nfd.sources = append(nfd.sources, s)
-				delete(sourceWhiteList, s.Name())
-			}
-		}
-		if len(sourceWhiteList) > 0 {
-			names := make([]string, 0, len(sourceWhiteList))
-			for n := range sourceWhiteList {
-				names = append(names, n)
-			}
-			stderrLogger.Printf("WARNING: skipping unknown source(s) %q specified in --sources", strings.Join(names, ", "))
 		}
 	}
 
@@ -228,6 +202,7 @@ func newDefaultConfig() *NFDConfig {
 		Core: coreConfig{
 			LabelWhiteList: regex{*regexp.MustCompile("")},
 			SleepInterval:  duration{60 * time.Second},
+			Sources:        []string{"all"},
 		},
 	}
 }
@@ -258,7 +233,7 @@ func (w *nfdWorker) Run() error {
 		select {
 		case <-labelTrigger:
 			// Get the set of feature labels.
-			labels := createFeatureLabels(w.sources, w.config.Core.LabelWhiteList)
+			labels := createFeatureLabels(w.enabledSources, w.config.Core.LabelWhiteList)
 
 			// Update the node with the feature labels.
 			if w.client != nil {
@@ -386,12 +361,47 @@ func (c *coreConfig) sanitize() {
 	}
 }
 
+func (w *nfdWorker) configureCore(c coreConfig) {
+	// Determine enabled feature sourcds
+	sourceList := map[string]struct{}{}
+	all := false
+	for _, s := range c.Sources {
+		if s == "all" {
+			all = true
+			continue
+		}
+		sourceList[strings.TrimSpace(s)] = struct{}{}
+	}
+
+	w.enabledSources = []source.FeatureSource{}
+	for _, s := range w.realSources {
+		if _, enabled := sourceList[s.Name()]; all || enabled {
+			w.enabledSources = append(w.enabledSources, s)
+			delete(sourceList, s.Name())
+		}
+	}
+	for _, s := range w.testSources {
+		if _, enabled := sourceList[s.Name()]; enabled {
+			w.enabledSources = append(w.enabledSources, s)
+			delete(sourceList, s.Name())
+		}
+	}
+	if len(sourceList) > 0 {
+		names := make([]string, 0, len(sourceList))
+		for n := range sourceList {
+			names = append(names, n)
+		}
+		stderrLogger.Printf("WARNING: skipping unknown source(s) %q specified in core.sources (or --sources)", strings.Join(names, ", "))
+	}
+}
+
 // Parse configuration options
 func (w *nfdWorker) configure(filepath string, overrides string) {
 	// Create a new default config
 	c := newDefaultConfig()
-	c.Sources = make(map[string]source.Config, len(w.sources))
-	for _, s := range w.sources {
+	allSources := append(w.realSources, w.testSources...)
+	c.Sources = make(map[string]source.Config, len(allSources))
+	for _, s := range allSources {
 		c.Sources[s.Name()] = s.NewConfig()
 	}
 
@@ -423,13 +433,18 @@ func (w *nfdWorker) configure(filepath string, overrides string) {
 	if w.args.SleepInterval != nil {
 		c.Core.SleepInterval = duration{*w.args.SleepInterval}
 	}
+	if w.args.Sources != nil {
+		c.Core.Sources = *w.args.Sources
+	}
 
 	c.Core.sanitize()
 
 	w.config = c
 
-	// (Re-)configure all sources
-	for _, s := range w.sources {
+	w.configureCore(c.Core)
+
+	// (Re-)configure all "real" sources, test sources are not configurable
+	for _, s := range allSources {
 		s.SetConfig(c.Sources[s.Name()])
 	}
 }

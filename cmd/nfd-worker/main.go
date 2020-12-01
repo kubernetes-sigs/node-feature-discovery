@@ -93,7 +93,8 @@ func argsParse(argv []string) (worker.Args, error) {
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources. Special
                               value 'all' enables all feature sources.
-                              [Default: all]
+                              (DEPRECATED: This parameter should be set via the
+                              config file)
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
@@ -125,7 +126,6 @@ func argsParse(argv []string) (worker.Args, error) {
 	args.Options = arguments["--options"].(string)
 	args.Server = arguments["--server"].(string)
 	args.ServerNameOverride = arguments["--server-name-override"].(string)
-	args.Sources = strings.Split(arguments["--sources"].(string), ",")
 	args.Oneshot = arguments["--oneshot"].(bool)
 
 	// Parse deprecated/override args
@@ -149,6 +149,11 @@ func argsParse(argv []string) (worker.Args, error) {
 		} else {
 			args.SleepInterval = &s
 		}
+	}
+	if v := arguments["--sources"]; v != nil {
+		fmt.Println(v)
+		s := strings.Split(v.(string), ",")
+		args.Sources = &s
 	}
 	return args, nil
 }

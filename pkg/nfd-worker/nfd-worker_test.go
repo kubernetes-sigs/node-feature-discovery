@@ -90,7 +90,7 @@ func TestRun(t *testing.T) {
 	defer teardownTest(ctx)
 	Convey("When running nfd-worker against nfd-master", t, func() {
 		Convey("When publishing features from fake source", func() {
-			worker, _ := w.NewNfdWorker(w.Args{Oneshot: true, Sources: []string{"fake"}, Server: "localhost:8192"})
+			worker, _ := w.NewNfdWorker(w.Args{Oneshot: true, Sources: &[]string{"fake"}, Server: "localhost:8192"})
 			err := worker.Run()
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -115,7 +115,7 @@ func TestRunTls(t *testing.T) {
 				CertFile:           data.FilePath("nfd-test-worker.crt"),
 				KeyFile:            data.FilePath("nfd-test-worker.key"),
 				Oneshot:            true,
-				Sources:            []string{"fake"},
+				Sources:            &[]string{"fake"},
 				Server:             "localhost:8192",
 				ServerNameOverride: "nfd-test-master"}
 			worker, _ := w.NewNfdWorker(workerArgs)

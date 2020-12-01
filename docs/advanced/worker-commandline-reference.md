@@ -141,6 +141,9 @@ nfd-worker --server-name-override=localhost
 The `--sources` flag specifies a comma-separated list of enabled feature
 sources. A special value `all` enables all feature sources.
 
+Note: This flag takes precedence over the `core.sources` configuration
+file option.
+
 Default: all
 
 Example:
@@ -148,6 +151,9 @@ Example:
 ```bash
 nfd-worker --sources=kernel,system,local
 ```
+
+**DEPRECATED**: you should use the `core.sources` option in the
+configuration file, instead.
 
 ### --no-publish
 

@@ -95,7 +95,7 @@ func makeFakeFeatures(names []string) (source.Features, Labels) {
 }
 
 func (w *nfdWorker) getSource(name string) source.FeatureSource {
-	for _, s := range w.sources {
+	for _, s := range w.realSources {
 		if s.Name() == name {
 			return s
 		}
@@ -105,7 +105,7 @@ func (w *nfdWorker) getSource(name string) source.FeatureSource {
 
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration", t, func() {
-		w, err := NewNfdWorker(Args{Sources: []string{"cpu", "kernel", "pci"}})
+		w, err := NewNfdWorker(Args{Sources: &[]string{"cpu", "kernel", "pci"}})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
 		Convey("and a non-accessible file and some overrides are specified", func() {
@@ -171,14 +171,14 @@ func TestNewNfdWorker(t *testing.T) {
 			})
 			worker := w.(*nfdWorker)
 			worker.configure("", "")
-			Convey("no sources should be enabled and the whitelist regexp should be empty", func() {
-				So(len(worker.sources), ShouldEqual, 0)
+			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
+				So(len(worker.enabledSources), ShouldEqual, len(worker.realSources))
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
 		Convey("with non-empty Sources arg specified", func() {
-			args := Args{Sources: []string{"fake"}}
+			args := Args{Sources: &[]string{"fake"}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -186,8 +186,8 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			worker.configure("", "")
 			Convey("proper sources should be enabled", func() {
-				So(len(worker.sources), ShouldEqual, 1)
-				So(worker.sources[0], ShouldHaveSameTypeAs, &fake.Source{})
+				So(len(worker.enabledSources), ShouldEqual, 1)
+				So(worker.enabledSources[0], ShouldHaveSameTypeAs, &fake.Source{})
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
@@ -202,7 +202,6 @@ func TestNewNfdWorker(t *testing.T) {
 			worker.configure("", "")
 			expectRegexp := regex{*regexp.MustCompile(".*rdt.*")}
 			Convey("proper labelWhiteList regexp should be produced", func() {
-				So(len(worker.sources), ShouldEqual, 0)
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, expectRegexp)
 			})
 		})

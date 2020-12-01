@@ -23,8 +23,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var allSources = []string{"all"}
-
 func TestArgsParse(t *testing.T) {
 	Convey("When parsing command line arguments", t, func() {
 		Convey("When --no-publish and --oneshot flags are passed", func() {
@@ -34,7 +32,7 @@ func TestArgsParse(t *testing.T) {
 				So(args.SleepInterval, ShouldEqual, nil)
 				So(*args.NoPublish, ShouldBeTrue)
 				So(args.Oneshot, ShouldBeTrue)
-				So(args.Sources, ShouldResemble, allSources)
+				So(args.Sources, ShouldBeNil)
 				So(args.LabelWhiteList, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
@@ -47,7 +45,7 @@ func TestArgsParse(t *testing.T) {
 				So(*args.SleepInterval, ShouldEqual, 30*time.Second)
 				So(args.NoPublish, ShouldBeNil)
 				So(args.Oneshot, ShouldBeFalse)
-				So(args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
+				So(*args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
 				So(args.LabelWhiteList, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
@@ -58,7 +56,7 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("args.labelWhiteList is set to appropriate value and args.sources is set to default value", func() {
 				So(args.NoPublish, ShouldBeNil)
-				So(args.Sources, ShouldResemble, allSources)
+				So(args.Sources, ShouldBeNil)
 				So(args.LabelWhiteList.String(), ShouldResemble, ".*rdt.*")
 				So(err, ShouldBeNil)
 			})
@@ -72,7 +70,7 @@ func TestArgsParse(t *testing.T) {
 				So(args.CaFile, ShouldEqual, "ca")
 				So(args.CertFile, ShouldEqual, "crt")
 				So(args.KeyFile, ShouldEqual, "key")
-				So(args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
+				So(*args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
 				So(args.LabelWhiteList, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
