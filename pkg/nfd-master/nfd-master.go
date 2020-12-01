@@ -186,11 +186,9 @@ func (m *nfdMaster) Stop() {
 // Wait until NfdMaster is able able to accept connections.
 func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
 	select {
-	case ready, ok := <-m.ready:
-		// Ready if the flag is true or the channel has been closed
-		if ready || !ok {
-			return true
-		}
+	case <-m.ready:
+		// Ready if the flag is true 
+		return true
 	case <-time.After(timeout):
 		return false
 	}
