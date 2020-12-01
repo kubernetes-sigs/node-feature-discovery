@@ -103,7 +103,9 @@ func argsParse(argv []string) (worker.Args, error) {
   --oneshot                   Label once and exit.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
-                              sleep). [Default: 60s]`,
+                              sleep).
+                              (DEPRECATED: This parameter should be set via the
+                              config file)`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -114,7 +116,6 @@ func argsParse(argv []string) (worker.Args, error) {
 		fmt.Sprintf("%s %s", ProgramName, version.Get()))
 
 	// Parse argument values as usable types.
-	var err error
 	args.CaFile = arguments["--ca-file"].(string)
 	args.CertFile = arguments["--cert-file"].(string)
 	args.ConfigFile = arguments["--config"].(string)
@@ -125,16 +126,19 @@ func argsParse(argv []string) (worker.Args, error) {
 	args.Sources = strings.Split(arguments["--sources"].(string), ",")
 	args.LabelWhiteList = arguments["--label-whitelist"].(string)
 	args.Oneshot = arguments["--oneshot"].(bool)
-	args.SleepInterval, err = time.ParseDuration(arguments["--sleep-interval"].(string))
-	if err != nil {
-		return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())
-	}
 
 	// Parse deprecated/override args
 	if arguments["--no-publish"].(bool) {
 		b := true
 		args.NoPublish = &b
 	}
-
+	if v := arguments["--sleep-interval"]; v != nil {
+		log.Printf("WARNING: --sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
+		if s, err := time.ParseDuration(v.(string)); err != nil {
+			return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())
+		} else {
+			args.SleepInterval = &s
+		}
+	}
 	return args, nil
 }

@@ -104,6 +104,7 @@ data:
   nfd-worker.conf: | ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  noPublish: false
+    #  sleepInterval: 60s
     #sources:
     #  cpu:
     #    cpuid:

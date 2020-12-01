@@ -66,7 +66,8 @@ type NFDConfig struct {
 }
 
 type coreConfig struct {
-	NoPublish bool
+	NoPublish     bool
+	SleepInterval duration
 }
 
 type sourcesConfig map[string]source.Config
@@ -85,10 +86,10 @@ type Args struct {
 	Oneshot            bool
 	Server             string
 	ServerNameOverride string
-	SleepInterval      time.Duration
 	Sources            []string
 	// Deprecated options that should be set via the config file
-	NoPublish *bool
+	NoPublish     *bool
+	SleepInterval *time.Duration
 }
 
 type NfdWorker interface {
@@ -105,6 +106,10 @@ type nfdWorker struct {
 	labelWhiteList *regexp.Regexp
 }
 
+type duration struct {
+	time.Duration
+}
+
 // Create new NfdWorker instance.
 func NewNfdWorker(args Args) (NfdWorker, error) {
 	nfd := &nfdWorker{
@@ -115,11 +120,6 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
-	}
-
-	if args.SleepInterval > 0 && args.SleepInterval < time.Second {
-		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s", args.SleepInterval.String())
-		args.SleepInterval = time.Second
 	}
 
 	// Check TLS related args
@@ -228,7 +228,9 @@ func addConfigWatch(path string) (*fsnotify.Watcher, map[string]struct{}, error)
 
 func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
-		Core: coreConfig{},
+		Core: coreConfig{
+			SleepInterval: duration{60 * time.Second},
+		},
 	}
 }
 
@@ -272,8 +274,8 @@ func (w *nfdWorker) Run() error {
 				return nil
 			}
 
-			if w.args.SleepInterval > 0 {
-				labelTrigger = time.After(w.args.SleepInterval)
+			if w.config.Core.SleepInterval.Duration > 0 {
+				labelTrigger = time.After(w.config.Core.SleepInterval.Duration)
 			}
 
 		case e := <-configWatch.Events:
@@ -378,6 +380,14 @@ func (w *nfdWorker) disconnect() {
 	w.client = nil
 }
 
+func (c *coreConfig) sanitize() {
+	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
+		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s",
+			c.SleepInterval.Duration.String())
+		c.SleepInterval = duration{time.Second}
+	}
+}
+
 // Parse configuration options
 func (w *nfdWorker) configure(filepath string, overrides string) {
 	// Create a new default config
@@ -409,6 +419,11 @@ func (w *nfdWorker) configure(filepath string, overrides string) {
 	if w.args.NoPublish != nil {
 		c.Core.NoPublish = *w.args.NoPublish
 	}
+	if w.args.SleepInterval != nil {
+		c.Core.SleepInterval = duration{*w.args.SleepInterval}
+	}
+
+	c.Core.sanitize()
 
 	w.config = c
 
@@ -524,6 +539,27 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 		return err
 	}
 
+	return nil
+}
+
+// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
+func (d *duration) UnmarshalJSON(data []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch val := v.(type) {
+	case float64:
+		d.Duration = time.Duration(val)
+	case string:
+		var err error
+		d.Duration, err = time.ParseDuration(val)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid duration %s", data)
+	}
 	return nil
 }
 

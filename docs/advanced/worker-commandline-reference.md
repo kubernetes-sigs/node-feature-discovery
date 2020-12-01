@@ -199,6 +199,9 @@ The `--sleep-interval` specifies the interval between feature re-detection (and
 node re-labeling). A non-positive value implies infinite sleep interval, i.e.
 no re-detection or re-labeling is done.
 
+Note: This flag takes precedence over the `core.sleepInterval` configuration
+file option.
+
 Default: 60s
 
 Example:
@@ -206,3 +209,7 @@ Example:
 ```bash
 nfd-worker --sleep-interval=1h
 ```
+
+**DEPRECATED**: you should use the `core.sleepInterval` option in the
+configuration file, instead.
+

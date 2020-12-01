@@ -31,7 +31,7 @@ func TestArgsParse(t *testing.T) {
 			args, err := argsParse([]string{"--no-publish", "--oneshot"})
 
 			Convey("noPublish is set and args.sources is set to the default value", func() {
-				So(args.SleepInterval, ShouldEqual, 60*time.Second)
+				So(args.SleepInterval, ShouldEqual, nil)
 				So(*args.NoPublish, ShouldBeTrue)
 				So(args.Oneshot, ShouldBeTrue)
 				So(args.Sources, ShouldResemble, allSources)
@@ -44,7 +44,7 @@ func TestArgsParse(t *testing.T) {
 			args, err := argsParse([]string{"--sources=fake1,fake2,fake3", "--sleep-interval=30s"})
 
 			Convey("args.sources is set to appropriate values", func() {
-				So(args.SleepInterval, ShouldEqual, 30*time.Second)
+				So(*args.SleepInterval, ShouldEqual, 30*time.Second)
 				So(args.NoPublish, ShouldBeNil)
 				So(args.Oneshot, ShouldBeFalse)
 				So(args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
