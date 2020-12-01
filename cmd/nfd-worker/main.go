@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -99,7 +100,8 @@ func argsParse(argv []string) (worker.Args, error) {
                               publish to the Kubernetes API server.
                               NB: the label namespace is omitted i.e. the filter
                               is only applied to the name part after '/'.
-                              [Default: ]
+                              (DEPRECATED: This parameter should be set via the
+                              config file)
   --oneshot                   Label once and exit.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
@@ -124,10 +126,18 @@ func argsParse(argv []string) (worker.Args, error) {
 	args.Server = arguments["--server"].(string)
 	args.ServerNameOverride = arguments["--server-name-override"].(string)
 	args.Sources = strings.Split(arguments["--sources"].(string), ",")
-	args.LabelWhiteList = arguments["--label-whitelist"].(string)
 	args.Oneshot = arguments["--oneshot"].(bool)
 
 	// Parse deprecated/override args
+	if v := arguments["--label-whitelist"]; v != nil {
+		s := v.(string)
+		// Compile labelWhiteList regex
+		if r, err := regexp.Compile(s); err != nil {
+			return args, fmt.Errorf("error parsing --label-whitelist regex (%s): %v", s, err)
+		} else {
+			args.LabelWhiteList = r
+		}
+	}
 	if arguments["--no-publish"].(bool) {
 		b := true
 		args.NoPublish = &b

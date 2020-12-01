@@ -172,6 +172,9 @@ expression in order to be published.
 Note: The regular expression is only matches against the "basename" part of the
 label, i.e. to the part of the name after '/'. The label namespace is omitted.
 
+Note: This flag takes precedence over the `core.labelWhiteList` configuration
+file option.
+
 Default: *empty*
 
 Example:
@@ -179,6 +182,9 @@ Example:
 ```bash
 nfd-worker --label-whitelist='.*cpuid\.'
 ```
+
+**DEPRECATED**: you should use the `core.labelWhiteList` option in the
+configuration file, instead.
 
 ### --oneshot
 

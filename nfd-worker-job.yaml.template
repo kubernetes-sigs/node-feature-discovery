@@ -113,6 +113,7 @@ metadata:
 data:
   nfd-worker.conf: | ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
+    #  labelWhiteList:
     #  noPublish: false
     #  sleepInterval: 60s
     #sources:
