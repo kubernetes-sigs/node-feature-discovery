@@ -46,10 +46,11 @@ import (
 )
 
 var (
-	dockerRepo    = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag     = flag.String("nfd.tag", "master", "Docker tag to use")
-	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
-	openShift     = flag.Bool("nfd.openshift", false, "Enable OpenShift specific bits")
+	dockerRepo       = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag        = flag.String("nfd.tag", "master", "Docker tag to use")
+	e2eConfigFile    = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
+	openShift        = flag.Bool("nfd.openshift", false, "Enable OpenShift specific bits")
+	pullIfNotPresent = flag.Bool("nfd.pull-if-not-present", false, "Pull Images if not present - not always")
 
 	conf *e2eConfig
 )
@@ -238,7 +239,7 @@ func nfdMasterPod(image string, onMasterNode bool) *v1.Pod {
 				{
 					Name:            "node-feature-discovery",
 					Image:           image,
-					ImagePullPolicy: v1.PullAlways,
+					ImagePullPolicy: pullPolicy(),
 					Command:         []string{"nfd-master"},
 					Env: []v1.EnvVar{
 						{
@@ -309,7 +310,7 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 			{
 				Name:            "node-feature-discovery",
 				Image:           image,
-				ImagePullPolicy: v1.PullAlways,
+				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-worker"},
 				Args:            append([]string{"--server=nfd-master-e2e:8080"}, extraArgs...),
 				Env: []v1.EnvVar{
@@ -800,3 +801,10 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 	})
 
 })
+
+func pullPolicy() v1.PullPolicy {
+	if *pullIfNotPresent {
+		return v1.PullIfNotPresent
+	}
+	return v1.PullAlways
+}
