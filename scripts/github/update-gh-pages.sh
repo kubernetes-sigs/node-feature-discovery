@@ -135,7 +135,7 @@ if [ -z "`git status --short`" ]; then
 fi
 
 # Create a new commit
-commit_msg=`echo -e "Update documentation for $SITE_SUBDIR\n\nAuto-generated from $commit_hash by '$this'"`
+commit_msg=`echo -e "Update documentation for $site_subdir\n\nAuto-generated from $commit_hash by '$this'"`
 
 echo "Committing changes..."
 git add .
