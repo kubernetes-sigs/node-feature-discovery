@@ -262,7 +262,7 @@ nfd-related node labels, annotations and extended resources from the cluster.
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-prune.yaml.template
 kubectl -n node-feature-discovery wait job.batch/nfd-prune --for=condition=complete && \
-    kubectl -n node-feature-discovery delete job/nfd-prune
+    kubectl delete -f kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-prune.yaml.template
 ```
 
 **NOTE:** You must run prune before removing the RBAC rules (serviceaccount,
