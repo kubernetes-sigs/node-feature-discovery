@@ -244,6 +244,18 @@ lifecycle manager, respectively.
 
 ### Manual
 
+Simplest way is to invoke `kubectl delete` on the deployment files you used.
+Beware that this will also delete the namespace that NFD is running in. For
+example:
+
+```bash
+kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-daemonset.yaml.template
+kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-master.yaml.template
+```
+
+Alternatively you can delete create objects one-by-one, depending on the type
+of deployment, for example:
+
 ```bash
 NFD_NS=node-feature-discovery
 kubectl -n $NFD_NS delete ds nfd-worker
