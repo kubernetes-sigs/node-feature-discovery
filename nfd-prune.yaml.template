@@ -28,8 +28,8 @@ spec:
           value: ""
           effect: "NoSchedule"
       containers:
-        - image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-          name: nfd-master
+        - name: nfd-master
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
