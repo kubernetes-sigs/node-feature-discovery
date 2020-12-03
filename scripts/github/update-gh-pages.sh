@@ -100,6 +100,20 @@ fi
 # Default to 'master' if no subdir was given and we couldn't parse
 # it
 site_subdir=${site_subdir:-master}
+
+# Check if this ref is for a released version
+if [ "$site_subdir" != "master" ]; then
+    _base_tag=`git describe --abbrev=0 || :`
+    case "$_base_tag" in
+        $site_subdir*)
+            ;;
+        *)
+            echo "Not a released version. Parsed release branch is $site_subdir but based on tag $_base_tag. Stopping here."
+            exit 0
+            ;;
+    esac
+fi
+
 echo "Updating site subdir: '$site_subdir'"
 
 export SITE_DESTDIR="_site/$site_subdir"
