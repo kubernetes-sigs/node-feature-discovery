@@ -109,6 +109,7 @@ if [ "$site_subdir" != "master" ]; then
             ;;
         *)
             echo "Not a released version. Parsed release branch is $site_subdir but based on tag $_base_tag. Stopping here."
+            echo "SHA `git describe` (`git rev-parse HEAD`)"
             exit 0
             ;;
     esac
