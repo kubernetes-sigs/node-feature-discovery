@@ -15,18 +15,20 @@ Please do not remove items from the checklist
 - [ ] For major releases (v0.$MAJ.0), an OWNER creates a release branch with
       `git branch release-0.$MAJ master`
 - [ ] Prepare `release-0.$MAJ` release branch
+  - [ ] An OWNER creates a vanilla release branch from master and pushes it with
+        `git push release-0.$MAJ`
   - [ ] Run `scripts/prepare-release.sh $VERSION` to turn references to point to the upcoming release
-        (README, deployment templates, docs configuration, test/e2e flags)
+        (README, deployment templates, docs configuration, test/e2e flags), submit a PR agains the release branch
   - [ ] An OWNER runs
        `git tag -s $VERSION`
         and inserts the changelog into the tag description.
-  - [ ] An OWNER pushes the release branch with
-        `git push release-0.$MAJ`
-        This will trigger build of the documentation and publish it at https://kubernetes-sigs.github.io/node-feature-discovery/0.$MAJ/
+discovery/0.$MAJ/
 - [ ] An OWNER pushes the tag with
       `git push $VERSION`
-      This will trigger prow to build and publish a staging container image
+  - Triggers prow to build and publish a staging container image
       `gcr.io/k8s-staging-nfd/node-feature-discovery:$VERSION`
+  - Triggers build of the documentation and publish it at
+        https://kubernetes-sigs.github.io/node-feature
 - [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), updating `k8s.gcr.io/images/k8s-staging-nfd/images.yaml` to promote the container image to production
 - [ ] Wait for the PR to be merged and verify that the image (`k8s.gcr.io/nfd/node-feature-discovery:$VERSION`) is available.
 - [ ] Write the change log into the [Github release info](https://github.com/kubernetes-sigs/node-feature-discovery/releases).
