@@ -22,5 +22,5 @@ import (
 
 // Discover returns feature names for all the supported CPU features.
 func GetCpuidFlags() []string {
-	return cpuid.CPU.Features.Strings()
+	return cpuid.CPU.FeatureSet()
 }
