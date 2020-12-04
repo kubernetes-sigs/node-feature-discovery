@@ -79,7 +79,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.7.0
           name: nfd-master
           securityContext:
             allowPrivilegeEscalation: false
