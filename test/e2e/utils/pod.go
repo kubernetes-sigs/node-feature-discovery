@@ -18,14 +18,92 @@ package utils
 
 import (
 	"flag"
+	"sync"
+
+	"github.com/onsi/ginkgo"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/utils/pointer"
 )
 
 var pullIfNotPresent = flag.Bool("nfd.pull-if-not-present", false, "Pull Images if not present - not always")
+
+const (
+	CentosImage = "quay.io/centos/centos:8"
+)
+
+func GuaranteedSleeperPod(cpuLimit string) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "sleeper-gu-pod",
+		},
+		Spec: v1.PodSpec{
+			RestartPolicy: v1.RestartPolicyNever,
+			Containers: []v1.Container{
+				v1.Container{
+					Name:  "sleeper-gu-cnt",
+					Image: CentosImage,
+					// 1 hour (or >= 1h in general) is "forever" for our purposes
+					Command: []string{"/bin/sleep", "1h"},
+					Resources: v1.ResourceRequirements{
+						Limits: v1.ResourceList{
+							// we use 1 core because that's the minimal meaningful quantity
+							v1.ResourceName(v1.ResourceCPU): resource.MustParse(cpuLimit),
+							// any random reasonable amount is fine
+							v1.ResourceName(v1.ResourceMemory): resource.MustParse("100Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func BestEffortSleeperPod() *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "sleeper-be-pod",
+		},
+		Spec: v1.PodSpec{
+			RestartPolicy: v1.RestartPolicyNever,
+			Containers: []v1.Container{
+				v1.Container{
+					Name:  "sleeper-be-cnt",
+					Image: CentosImage,
+					// 1 hour (or >= 1h in general) is "forever" for our purposes
+					Command: []string{"/bin/sleep", "1h"},
+				},
+			},
+		},
+	}
+}
+
+func DeletePodsAsync(f *framework.Framework, podMap map[string]*v1.Pod) {
+	var wg sync.WaitGroup
+	for _, pod := range podMap {
+		wg.Add(1)
+		go func(podNS, podName string) {
+			defer ginkgo.GinkgoRecover()
+			defer wg.Done()
+
+			DeletePodSyncByName(f, podName)
+		}(pod.Namespace, pod.Name)
+	}
+	wg.Wait()
+}
+
+func DeletePodSyncByName(f *framework.Framework, podName string) {
+	gp := int64(0)
+	delOpts := metav1.DeleteOptions{
+		GracePeriodSeconds: &gp,
+	}
+	f.PodClient().DeleteSync(podName, delOpts, framework.DefaultPodDeletionTimeout)
+}
 
 // NFDMasterPod provide NFD master pod definition
 func NFDMasterPod(image string, onMasterNode bool) *v1.Pod {
@@ -89,6 +167,12 @@ func NFDWorkerPod(image string, extraArgs []string) *v1.Pod {
 func NFDWorkerDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
 	podSpec := nfdWorkerPodSpec(image, extraArgs)
 	return newDaemonSet("nfd-worker", podSpec)
+}
+
+// NFDTopologyUpdaterDaemonSet provides the NFD daemon set topology updater
+func NFDTopologyUpdaterDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
+	podSpec := nfdTopologyUpdaterPodSpec(image, extraArgs)
+	return newDaemonSet("nfd-topology-updater", podSpec)
 }
 
 // newDaemonSet provide the new daemon set
@@ -182,7 +266,89 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *v1.PodSpec {
 			},
 		},
 	}
+}
 
+func nfdTopologyUpdaterPodSpec(image string, extraArgs []string) *v1.PodSpec {
+	return &v1.PodSpec{
+		Containers: []v1.Container{
+			{
+				Name:            "node-topology-updater",
+				Image:           image,
+				ImagePullPolicy: pullPolicy(),
+				Command:         []string{"nfd-topology-updater"},
+				Args: append([]string{
+					"--kubelet-config-file=/podresources/config.yaml",
+					"--podresources-socket=unix:///podresources/kubelet.sock",
+					"--sleep-interval=3s",
+					"--watch-namespace=rte",
+					"--server=nfd-master-e2e:8080",
+				}, extraArgs...),
+				Env: []v1.EnvVar{
+					{
+						Name: "NODE_NAME",
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								FieldPath: "spec.nodeName",
+							},
+						},
+					},
+				},
+				SecurityContext: &v1.SecurityContext{
+					Capabilities: &v1.Capabilities{
+						Drop: []v1.Capability{"ALL"},
+					},
+					RunAsUser:                pointer.Int64Ptr(0),
+					ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
+					AllowPrivilegeEscalation: pointer.BoolPtr(false),
+				},
+				VolumeMounts: []v1.VolumeMount{
+					{
+						Name:      "kubelet-podresources-conf",
+						MountPath: "/podresources/config.yaml",
+					},
+					{
+						Name:      "kubelet-podresources-sock",
+						MountPath: "/podresources/kubelet.sock",
+					},
+					{
+						Name:      "host-sys",
+						MountPath: "/host/sys",
+					},
+				},
+			},
+		},
+		ServiceAccountName: "nfd-master-e2e",
+		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
+		Volumes: []v1.Volume{
+			{
+				Name: "kubelet-podresources-conf",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet/config.yaml",
+						Type: newHostPathType(v1.HostPathFile),
+					},
+				},
+			},
+			{
+				Name: "kubelet-podresources-sock",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet/pod-resources/kubelet.sock",
+						Type: newHostPathType(v1.HostPathSocket),
+					},
+				},
+			},
+			{
+				Name: "host-sys",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/sys",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
+		},
+	}
 }
 
 func newHostPathType(typ v1.HostPathType) *v1.HostPathType {
