@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/utils/pointer"
 )
 
 var pullIfNotPresent = flag.Bool("nfd.pull-if-not-present", false, "Pull Images if not present - not always")
@@ -89,6 +90,12 @@ func NFDWorkerPod(image string, extraArgs []string) *v1.Pod {
 func NFDWorkerDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
 	podSpec := nfdWorkerPodSpec(image, extraArgs)
 	return newDaemonSet("nfd-worker", podSpec)
+}
+
+// NFDTopologyUpdaterDaemonSet provides the NFD daemon set topology updater
+func NFDTopologyUpdaterDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
+	podSpec := nfdTopologyUpdaterPodSpec(image, extraArgs)
+	return newDaemonSet("nfd-topology-updater", podSpec)
 }
 
 // newDaemonSet provide the new daemon set
@@ -182,7 +189,89 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *v1.PodSpec {
 			},
 		},
 	}
+}
 
+func nfdTopologyUpdaterPodSpec(image string, extraArgs []string) *v1.PodSpec {
+	return &v1.PodSpec{
+		Containers: []v1.Container{
+			{
+				Name:            "node-topology-updater",
+				Image:           image,
+				ImagePullPolicy: pullPolicy(),
+				Command:         []string{"nfd-topology-updater"},
+				Args: append([]string{
+					"--kubelet-config-file=/podresources/config.yaml",
+					"--podresources-socket=/podresources/kubelet.sock",
+					"--sleep-interval=3s",
+					"--watch-namespace=rte",
+					"--server=nfd-master-e2e:8080",
+				}, extraArgs...),
+				Env: []v1.EnvVar{
+					{
+						Name: "NODE_NAME",
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								FieldPath: "spec.nodeName",
+							},
+						},
+					},
+				},
+				SecurityContext: &v1.SecurityContext{
+					Capabilities: &v1.Capabilities{
+						Drop: []v1.Capability{"ALL"},
+					},
+					RunAsUser:                pointer.Int64Ptr(0),
+					ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
+					AllowPrivilegeEscalation: pointer.BoolPtr(false),
+				},
+				VolumeMounts: []v1.VolumeMount{
+					{
+						Name:      "kubelet-podresources-conf",
+						MountPath: "/podresources/config.yaml",
+					},
+					{
+						Name:      "kubelet-podresources-sock",
+						MountPath: "/podresources/kubelet.sock",
+					},
+					{
+						Name:      "host-sys",
+						MountPath: "/host-sys",
+					},
+				},
+			},
+		},
+		ServiceAccountName: "nfd-master-e2e",
+		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
+		Volumes: []v1.Volume{
+			{
+				Name: "kubelet-podresources-conf",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet/config.yaml",
+						Type: newHostPathType(v1.HostPathFile),
+					},
+				},
+			},
+			{
+				Name: "kubelet-podresources-sock",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet/pod-resources/kubelet.sock",
+						Type: newHostPathType(v1.HostPathSocket),
+					},
+				},
+			},
+			{
+				Name: "host-sys",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/sys",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
+		},
+	}
 }
 
 func newHostPathType(typ v1.HostPathType) *v1.HostPathType {

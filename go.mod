@@ -24,10 +24,11 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.0
+	k8s.io/apiextensions-apiserver v0.21.0
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
 	k8s.io/klog/v2 v2.8.0
-	k8s.io/kubelet v0.0.0
+	k8s.io/kubelet v0.21.0
 	k8s.io/kubernetes v1.21.0
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 	sigs.k8s.io/yaml v1.2.0
