@@ -11,14 +11,14 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.6.0/nfd-master.yaml.template
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.7.0/nfd-master.yaml.template
   namespace/node-feature-discovery created
 ...
 
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.6.0/nfd-worker-daemonset.yaml.template
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.7.0/nfd-worker-daemonset.yaml.template
   daemonset.apps/nfd-worker created
 
-kubectl -n node-feature-discovery get all
+$ kubectl -n node-feature-discovery get all
   NAME                              READY   STATUS    RESTARTS   AGE
   pod/nfd-master-555458dbbc-sxg6w   1/1     Running   0          56s
   pod/nfd-worker-mjg9f              1/1     Running   0          17s
