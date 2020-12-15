@@ -4,9 +4,8 @@ go 1.15
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
-	github.com/fsnotify/fsnotify v1.4.9
 	github.com/golang/protobuf v1.4.3
-	github.com/klauspost/cpuid v1.3.2-0.20201127150341-242d0b0aa207
+	github.com/klauspost/cpuid/v2 v2.0.2
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.0
 	github.com/smartystreets/assertions v1.2.0

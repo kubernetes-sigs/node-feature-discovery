@@ -17,7 +17,7 @@ limitations under the License.
 package cpuidutils
 
 import (
-	"github.com/klauspost/cpuid"
+	"github.com/klauspost/cpuid/v2"
 )
 
 // Discover returns feature names for all the supported CPU features.
