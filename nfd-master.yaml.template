@@ -1,3 +1,5 @@
+# All changes in this template should be applied to Helm chart too.
+#
 apiVersion: v1
 kind: Namespace
 metadata:

@@ -99,6 +99,101 @@ this approach does not guarantee running once on every node. For example,
 tainted, non-ready nodes or some other reasons in Job scheduling may cause some
 node(s) will run extra job instance(s) to satisfy the request.
 
+### Deployment with Helm
+
+Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
+
+#### Prerequisites
+
+[Helm package manager](https://helm.sh/) should be installed.
+
+#### Deployment with Helm
+
+To install the chart with the release name node-feature-discovery:
+
+```bash
+git clone https://github.com/kubernetes-sigs/node-feature-discovery/
+cd node-feature-discovery/deployment
+export NFD_NS=node-feature-discovery
+helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_NS --create-namespace
+```
+
+The command deploys Node Feature Discovery on the Kubernetes cluster in the default configuration.
+The Configuration section describes how it can be configured during installation.
+
+#### Configuration
+
+You can override values from `values.yaml` and provide a file with custom values:
+
+```bash
+export NFD_NS=node-feature-discovery
+helm install node-feature-discovery ./node-feature-discovery/ -f <path/to/custom/values.yaml> --namespace $NFD_NS --create-namespace
+```
+
+To specify each parameter separately you can provide them to helm install command:
+
+```bash
+export NFD_NS=node-feature-discovery
+helm install node-feature-discovery ./node-feature-discovery/ --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace $NFD_NS --create-namespace
+```
+
+#### Uninstalling the Chart
+
+To uninstall the `node-feature-discovery` deployment:
+
+```bash
+export NFD_NS=node-feature-discovery
+helm uninstall node-feature-discovery --namespace $NFD_NS
+```
+
+The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+#### Chart Parameters
+
+In order to tailor the deployment of the Node Feature Discovery to your cluster needs
+We have introduced the following Chart parameters.
+
+##### General parameters
+
+| Name | Type | Default | description |
+| ---- | ---- | ------- | ----------- |
+| `image.repository` | string | `gcr.io/k8s-staging-nfd/node-feature-discovery` | NFD image repository |
+| `image.pullPolicy` | string | `Always` | Image pull policy |
+| `imagePullSecrets` | list | [] | ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. [https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod](More info) |
+| `serviceAccount.create` | bool | true | Specifies whether a service account should be created |
+| `serviceAccount.annotations` | dict | {} | Annotations to add to the service account |
+| `serviceAccount.name` | string |  | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
+| `rbac` | dict |  | RBAC [parameteres](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) |
+| `nameOverride` | string |  | Override the name of the chart |
+| `fullnameOverride` | string |  | Override a default fully qualified app name |
+
+
+##### Master pod parameters
+
+| `master.*` | dict |  | NFD master deployment configuration |
+| `master.replicaCount` | integer | 1 | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified |
+| `master.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
+| `master.service.type` | string | ClusterIP | NFD master service type |
+| `master.service.port` | integer | port | NFD master service port |
+| `master.resources` | dict | {} | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
+| `master.nodeSelector` | dict | {} | NFD master pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
+| `master.tolerations` | dict | _Scheduling to master node is disabled_ | NFD master pod [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
+| `master.annotations` | dict | {} | NFD master pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
+| `master.affinity` | dict |  | NFD master pod required [node affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/) |
+
+##### Worker pod parameters
+
+| `worker.*` | dict |  | NFD master daemonset configuration |
+| `worker.configmapName` | string | `nfd-worker-conf` | NFD worker pod ConfigMap name |
+| `worker.config` | string | `` | NFD worker service configuration |
+| `worker.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
+| `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
+| `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
+| `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
+| `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
+| `worker.annotations` | dict | {} | NFD worker pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
+
+
 ### Build Your Own
 
 If you want to use the latest development version (master branch) you need to
