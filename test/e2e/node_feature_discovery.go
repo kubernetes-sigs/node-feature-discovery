@@ -21,12 +21,13 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -40,6 +41,7 @@ import (
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
+	"sigs.k8s.io/node-feature-discovery/source/custom"
 	"sigs.k8s.io/yaml"
 )
 
@@ -90,18 +92,18 @@ func readConfig() {
 		return
 	}
 
-	ginkgo.By("Reading end-to-end test configuration file")
+	By("Reading end-to-end test configuration file")
 	data, err := ioutil.ReadFile(*e2eConfigFile)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
-	ginkgo.By("Parsing end-to-end test configuration data")
+	By("Parsing end-to-end test configuration data")
 	err = yaml.Unmarshal(data, &conf)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	// Pre-compile node name matching regexps
 	for name, nodeConf := range conf.DefaultFeatures.Nodes {
 		nodeConf.nameRe, err = regexp.Compile(name)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		conf.DefaultFeatures.Nodes[name] = nodeConf
 	}
 }
@@ -165,6 +167,13 @@ func createClusterRole(cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
 				Verbs:     []string{"get", "patch", "update"},
+			},
+			{
+				// needed on OpenShift clusters
+				APIGroups:     []string{"security.openshift.io"},
+				Resources:     []string{"securitycontextconstraints"},
+				ResourceNames: []string{"hostaccess"},
+				Verbs:         []string{"use"},
 			},
 		},
 	}
@@ -373,14 +382,14 @@ func newHostPathType(typ v1.HostPathType) *v1.HostPathType {
 // labels and annotations
 func cleanupNode(cs clientset.Interface) {
 	nodeList, err := cs.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	for _, n := range nodeList.Items {
 		var err error
 		var node *v1.Node
 		for retry := 0; retry < 5; retry++ {
 			node, err = cs.CoreV1().Nodes().Get(context.TODO(), n.Name, metav1.GetOptions{})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			update := false
 			// Remove labels
@@ -403,7 +412,7 @@ func cleanupNode(cs clientset.Interface) {
 				break
 			}
 
-			ginkgo.By("Deleting NFD labels and annotations from node " + node.Name)
+			By("Deleting NFD labels and annotations from node " + node.Name)
 			_, err = cs.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
 			if err != nil {
 				time.Sleep(100 * time.Millisecond)
@@ -412,7 +421,7 @@ func cleanupNode(cs clientset.Interface) {
 			}
 
 		}
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
@@ -420,42 +429,42 @@ func cleanupNode(cs clientset.Interface) {
 var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
-	ginkgo.Context("when deploying a single nfd-master pod", func() {
+	Context("when deploying a single nfd-master pod", func() {
 		var masterPod *v1.Pod
 
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func() {
 			err := configureRBAC(f.ClientSet, f.Namespace.Name)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			// Launch nfd-master
-			ginkgo.By("Creating nfd master pod and nfd-master service")
+			By("Creating nfd master pod and nfd-master service")
 			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 			masterPod = nfdMasterPod(image, false)
 			masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), masterPod, metav1.CreateOptions{})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			// Create nfd-master service
 			nfdSvc, err := createService(f.ClientSet, f.Namespace.Name)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
-			ginkgo.By("Waiting for the nfd-master pod to be running")
-			gomega.Expect(e2epod.WaitTimeoutForPodRunningInNamespace(f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(gomega.HaveOccurred())
+			By("Waiting for the nfd-master pod to be running")
+			Expect(e2epod.WaitTimeoutForPodRunningInNamespace(f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(HaveOccurred())
 
-			ginkgo.By("Waiting for the nfd-master service to be up")
-			gomega.Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(gomega.HaveOccurred())
+			By("Waiting for the nfd-master service to be up")
+			Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 		})
 
-		ginkgo.AfterEach(func() {
+		AfterEach(func() {
 			err := deconfigureRBAC(f.ClientSet, f.Namespace.Name)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 		})
 
 		//
 		// Simple test with only the fake source enabled
 		//
-		ginkgo.Context("and a single worker pod with fake source enabled", func() {
-			ginkgo.It("it should decorate the node with the fake feature labels", func() {
+		Context("and a single worker pod with fake source enabled", func() {
+			It("it should decorate the node with the fake feature labels", func() {
 
 				fakeFeatureLabels := map[string]string{
 					master.LabelNs + "/fake-fakefeature1": "true",
@@ -467,34 +476,34 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 				cleanupNode(f.ClientSet)
 
 				// Launch nfd-worker
-				ginkgo.By("Creating a nfd worker pod")
+				By("Creating a nfd worker pod")
 				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 				workerPod := nfdWorkerPod(image, []string{"--oneshot", "--sources=fake"})
 				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				ginkgo.By("Waiting for the nfd-worker pod to succeed")
-				gomega.Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, f.Namespace.Name)).NotTo(gomega.HaveOccurred())
+				By("Waiting for the nfd-worker pod to succeed")
+				Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, f.Namespace.Name)).NotTo(HaveOccurred())
 				workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), workerPod.ObjectMeta.Name, metav1.GetOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				ginkgo.By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
+				By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
 				node, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), workerPod.Spec.NodeName, metav1.GetOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				for k, v := range fakeFeatureLabels {
-					gomega.Expect(node.Labels[k]).To(gomega.Equal(v))
+					Expect(node.Labels[k]).To(Equal(v))
 				}
 
 				// Check that there are no unexpected NFD labels
 				for k := range node.Labels {
 					if strings.HasPrefix(k, master.LabelNs) {
-						gomega.Expect(fakeFeatureLabels).Should(gomega.HaveKey(k))
+						Expect(fakeFeatureLabels).Should(HaveKey(k))
 					}
 				}
 
-				ginkgo.By("Deleting the node-feature-discovery worker pod")
+				By("Deleting the node-feature-discovery worker pod")
 				err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.ObjectMeta.Name, metav1.DeleteOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				cleanupNode(f.ClientSet)
 			})
@@ -503,31 +512,31 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 		//
 		// More comprehensive test when --e2e-node-config is enabled
 		//
-		ginkgo.Context("and nfd-workers as a daemonset with default sources enabled", func() {
-			ginkgo.It("the node labels and annotations listed in the e2e config should be present", func() {
+		Context("and nfd-workers as a daemonset with default sources enabled", func() {
+			It("the node labels and annotations listed in the e2e config should be present", func() {
 				readConfig()
 				if conf == nil {
-					ginkgo.Skip("no e2e-config was specified")
+					Skip("no e2e-config was specified")
 				}
 				if conf.DefaultFeatures == nil {
-					ginkgo.Skip("no 'defaultFeatures' specified in e2e-config")
+					Skip("no 'defaultFeatures' specified in e2e-config")
 				}
 				fConf := conf.DefaultFeatures
 
 				// Remove pre-existing stale annotations and labels
 				cleanupNode(f.ClientSet)
 
-				ginkgo.By("Creating nfd-worker daemonset")
+				By("Creating nfd-worker daemonset")
 				workerDS := nfdWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
 				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				ginkgo.By("Waiting for daemonset pods to be ready")
-				gomega.Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(gomega.HaveOccurred())
+				By("Waiting for daemonset pods to be ready")
+				Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
-				ginkgo.By("Getting node objects")
+				By("Getting node objects")
 				nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				for _, node := range nodeList.Items {
 					var nodeConf *nodeConfig
@@ -546,10 +555,10 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 					// Check labels
 					e2elog.Logf("verifying labels of node %q...", node.Name)
 					for k, v := range nodeConf.ExpectedLabelValues {
-						gomega.Expect(node.Labels).To(gomega.HaveKeyWithValue(k, v))
+						Expect(node.Labels).To(HaveKeyWithValue(k, v))
 					}
 					for k := range nodeConf.ExpectedLabelKeys {
-						gomega.Expect(node.Labels).To(gomega.HaveKey(k))
+						Expect(node.Labels).To(HaveKey(k))
 					}
 					for k := range node.Labels {
 						if strings.HasPrefix(k, master.LabelNs) {
@@ -560,17 +569,17 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 								continue
 							}
 							// Ignore if the label key was not whitelisted
-							gomega.Expect(fConf.LabelWhitelist).NotTo(gomega.HaveKey(k))
+							Expect(fConf.LabelWhitelist).NotTo(HaveKey(k))
 						}
 					}
 
 					// Check annotations
 					e2elog.Logf("verifying annotations of node %q...", node.Name)
 					for k, v := range nodeConf.ExpectedAnnotationValues {
-						gomega.Expect(node.Annotations).To(gomega.HaveKeyWithValue(k, v))
+						Expect(node.Annotations).To(HaveKeyWithValue(k, v))
 					}
 					for k := range nodeConf.ExpectedAnnotationKeys {
-						gomega.Expect(node.Annotations).To(gomega.HaveKey(k))
+						Expect(node.Annotations).To(HaveKey(k))
 					}
 					for k := range node.Annotations {
 						if strings.HasPrefix(k, master.AnnotationNsBase) {
@@ -581,23 +590,181 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 								continue
 							}
 							// Ignore if the annotation was not whitelisted
-							gomega.Expect(fConf.AnnotationWhitelist).NotTo(gomega.HaveKey(k))
+							Expect(fConf.AnnotationWhitelist).NotTo(HaveKey(k))
 						}
 					}
 
 					// Node running nfd-master should have master version annotation
 					if node.Name == masterPod.Spec.NodeName {
-						gomega.Expect(node.Annotations).To(gomega.HaveKey(master.AnnotationNsBase + "master.version"))
+						Expect(node.Annotations).To(HaveKey(master.AnnotationNsBase + "master.version"))
 					}
 				}
 
-				ginkgo.By("Deleting nfd-worker daemonset")
+				By("Deleting nfd-worker daemonset")
 				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				cleanupNode(f.ClientSet)
 			})
 		})
+
+		//
+		// Test custom nodename source configured in 2 additional ConfigMaps
+		//
+		Context("and nfd-workers as a daemonset with 2 additional configmaps for the custom source configured", func() {
+			It("the nodename matching features listed in the configmaps should be present", func() {
+				// Remove pre-existing stale annotations and labels
+				cleanupNode(f.ClientSet)
+
+				By("Getting a worker node")
+
+				// We need a valid nodename for the configmap
+				nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(nodeList.Items)).ToNot(BeZero())
+
+				targetNodeName := ""
+				for _, node := range nodeList.Items {
+					if _, ok := node.Labels["node-role.kubernetes.io/master"]; !ok {
+						targetNodeName = node.Name
+						break
+					}
+				}
+				Expect(targetNodeName).ToNot(BeEmpty(), "No worker node found")
+
+				// create a wildcard name as well for this node
+				targetNodeNameWildcard := fmt.Sprintf("%s.*%s", targetNodeName[:2], targetNodeName[4:])
+
+				By("Creating the configmaps")
+				targetLabelName := "nodename-test"
+				targetLabelValue := "true"
+
+				targetLabelNameWildcard := "nodename-test-wildcard"
+				targetLabelValueWildcard := "customValue"
+
+				targetLabelNameNegative := "nodename-test-negative"
+
+				// create 2 configmaps
+				data1 := make(map[string]string)
+				data1["custom1.conf"] = `
+- name: ` + targetLabelName + `
+  matchOn:
+  # default value is true
+  - nodename:
+    - ` + targetNodeName
+
+				cm1 := &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom-config-extra-" + string(uuid.NewUUID()),
+					},
+					Data: data1,
+				}
+				cm1, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm1, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				data2 := make(map[string]string)
+				data2["custom1.conf"] = `
+- name: ` + targetLabelNameWildcard + `
+  value: ` + targetLabelValueWildcard + `
+  matchOn:
+  - nodename:
+    - ` + targetNodeNameWildcard + `
+- name: ` + targetLabelNameNegative + `
+  matchOn:
+  - nodename:
+    - "thisNameShouldNeverMatch"`
+
+				cm2 := &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom-config-extra-" + string(uuid.NewUUID()),
+					},
+					Data: data2,
+				}
+				cm2, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm2, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating nfd-worker daemonset with configmap mounted")
+				workerDS := nfdWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+
+				// add configmap mount config
+				volumeName1 := "custom-configs-extra1"
+				volumeName2 := "custom-configs-extra2"
+				workerDS.Spec.Template.Spec.Volumes = append(workerDS.Spec.Template.Spec.Volumes,
+					v1.Volume{
+						Name: volumeName1,
+						VolumeSource: v1.VolumeSource{
+							ConfigMap: &v1.ConfigMapVolumeSource{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: cm1.Name,
+								},
+							},
+						},
+					},
+					v1.Volume{
+						Name: volumeName2,
+						VolumeSource: v1.VolumeSource{
+							ConfigMap: &v1.ConfigMapVolumeSource{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: cm2.Name,
+								},
+							},
+						},
+					},
+				)
+				workerDS.Spec.Template.Spec.Containers[0].VolumeMounts = append(workerDS.Spec.Template.Spec.Containers[0].VolumeMounts,
+					v1.VolumeMount{
+						Name:      volumeName1,
+						ReadOnly:  true,
+						MountPath: filepath.Join(custom.Directory, "cm1"),
+					},
+					v1.VolumeMount{
+						Name:      volumeName2,
+						ReadOnly:  true,
+						MountPath: filepath.Join(custom.Directory, "cm2"),
+					},
+				)
+
+				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for daemonset pods to be ready")
+				Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+
+				By("Getting target node and checking labels")
+				targetNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), targetNodeName, metav1.GetOptions{})
+				Expect(err).ToNot(HaveOccurred())
+
+				labelFound := false
+				labelWildcardFound := false
+				labelNegativeFound := false
+				for k := range targetNode.Labels {
+					if strings.Contains(k, targetLabelName) {
+						if targetNode.Labels[k] == targetLabelValue {
+							labelFound = true
+						}
+					}
+					if strings.Contains(k, targetLabelNameWildcard) {
+						if targetNode.Labels[k] == targetLabelValueWildcard {
+							labelWildcardFound = true
+						}
+					}
+					if strings.Contains(k, targetLabelNameNegative) {
+						labelNegativeFound = true
+					}
+				}
+
+				Expect(labelFound).To(BeTrue(), "label not found!")
+				Expect(labelWildcardFound).To(BeTrue(), "label for wildcard nodename not found!")
+				Expect(labelNegativeFound).To(BeFalse(), "label for not existing nodename found!")
+
+				By("Deleting nfd-worker daemonset")
+				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				cleanupNode(f.ClientSet)
+			})
+		})
+
 	})
 
 })
