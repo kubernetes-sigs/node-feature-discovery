@@ -63,7 +63,7 @@ func argsParse(argv []string) (master.Args, error) {
 	usage := fmt.Sprintf(`%s.
 
   Usage:
-  %s [--prune] [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
+  %s [--prune] [--no-publish] [--label-whitelist=<pattern>] [--label-ignorelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
      [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
      [--kubeconfig=<path>]
@@ -94,6 +94,8 @@ func argsParse(argv []string) (master.Args, error) {
                                   NB: the label namespace is omitted i.e. the filter
                                   is only applied to the name part after '/'.
                                   [Default: ]
+  --label-ignorelist=<pattern>     Regular expression to filter label names to
+                                  [Default: ]
   --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
                                   [Default: ]
   --resource-labels=<list>        Comma separated list of labels to be exposed as extended resources.
@@ -120,6 +122,10 @@ func argsParse(argv []string) (master.Args, error) {
 	args.LabelWhiteList, err = regexp.Compile(arguments["--label-whitelist"].(string))
 	if err != nil {
 		return args, fmt.Errorf("error parsing whitelist regex (%s): %s", arguments["--label-whitelist"], err)
+	}
+	args.LabelIgnoreList, err = regexp.Compile(arguments["--label-ignorelist"].(string))
+	if err != nil {
+		return args, fmt.Errorf("error parsing whitelist regex (%s): %s", arguments["--label-ignorelist"], err)
 	}
 	args.VerifyNodeName = arguments["--verify-node-name"].(bool)
 	args.ExtraLabelNs = map[string]struct{}{}

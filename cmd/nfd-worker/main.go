@@ -125,7 +125,7 @@ func argsParse(argv []string) (worker.Args, error) {
 	args.ServerNameOverride = arguments["--server-name-override"].(string)
 	args.Sources = strings.Split(arguments["--sources"].(string), ",")
 	args.LabelWhiteList = arguments["--label-whitelist"].(string)
-	args.Oneshot = arguments["--oneshot"].(bool)
+    args.Oneshot = arguments["--oneshot"].(bool)
 	args.SleepInterval, err = time.ParseDuration(arguments["--sleep-interval"].(string))
 	if err != nil {
 		return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())

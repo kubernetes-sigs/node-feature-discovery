@@ -59,6 +59,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		fakeFeatureLabels := map[string]string{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2", LabelNs + "/source-feature.3": "val3"}
 		fakeAnnotations := map[string]string{"my-annotation": "my-val"}
 		fakeExtResources := ExtendedResources{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2"}
+        fakeIgnoreLabelList := regexp.MustCompile("")
 
 		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureLabels))
 		for k := range fakeFeatureLabels {
@@ -103,7 +104,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Once()
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(metadataPatches))).Return(nil)
 			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeIgnoreLabelList, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
@@ -113,7 +114,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		Convey("When I fail to update the node with feature labels", func() {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeIgnoreLabelList, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -123,7 +124,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		Convey("When I fail to get a mock client while updating feature labels", func() {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeIgnoreLabelList, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -134,7 +135,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(nil, expectedError).Once()
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeIgnoreLabelList, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -146,7 +147,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Once()
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.Anything).Return(expectedError).Once()
-			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
+			err := updateNodeFeatures(mockAPIHelper, mockNodeName, fakeFeatureLabels, fakeIgnoreLabelList, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -284,7 +285,7 @@ func TestSetLabels(t *testing.T) {
 		mockHelper := &apihelper.MockAPIHelpers{}
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
-		mockServer := labelerServer{args: Args{LabelWhiteList: regexp.MustCompile("")}, apiHelper: mockHelper}
+		mockServer := labelerServer{args: Args{LabelWhiteList: regexp.MustCompile(""), LabelIgnoreList: regexp.MustCompile("")}, apiHelper: mockHelper}
 		mockCtx := context.Background()
 		// In the gRPC request the label names may omit the default ns
 		mockLabels := map[string]string{"feature-1": "1", "feature-2": "val-2", "feature-3": "3"}
@@ -327,6 +328,7 @@ func TestSetLabels(t *testing.T) {
 			}
 
 			mockServer.args.LabelWhiteList = regexp.MustCompile("^f.*2$")
+			//mockServer.args.LabelIgnoreList = regexp.MustCompile("")
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)

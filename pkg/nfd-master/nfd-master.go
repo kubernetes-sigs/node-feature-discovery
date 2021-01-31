@@ -79,6 +79,7 @@ type Args struct {
 	KeyFile        string
 	Kubeconfig     string
 	LabelWhiteList *regexp.Regexp
+	LabelIgnoreList *regexp.Regexp
 	NoPublish      bool
 	Port           int
 	Prune          bool
@@ -216,7 +217,7 @@ func (m *nfdMaster) prune() error {
 		stdoutLogger.Printf("pruning node %q...", node.Name)
 
 		// Prune labels and extended resources
-		err := updateNodeFeatures(m.apihelper, node.Name, Labels{}, Annotations{}, ExtendedResources{})
+        err := updateNodeFeatures(m.apihelper, node.Name, Labels{}, m.args.LabelIgnoreList, Annotations{}, ExtendedResources{})
 		if err != nil {
 			return fmt.Errorf("failed to prune labels from node %q: %v", node.Name, err)
 		}
@@ -349,7 +350,7 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 		// Advertise NFD worker version as an annotation
 		annotations := Annotations{workerVersionAnnotation: r.NfdVersion}
 
-		err := updateNodeFeatures(s.apiHelper, r.NodeName, labels, annotations, extendedResources)
+		err := updateNodeFeatures(s.apiHelper, r.NodeName, labels, s.args.LabelIgnoreList, annotations, extendedResources)
 		if err != nil {
 			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
 			return &pb.SetLabelsReply{}, err
@@ -361,7 +362,7 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 // updateNodeFeatures ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
+func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Labels, labelIgnoreList *regexp.Regexp, annotations Annotations, extendedResources ExtendedResources) error {
 	cli, err := helper.GetClient()
 	if err != nil {
 		return err
@@ -393,7 +394,17 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[featureLabelAnnotation], LabelNs)
-	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
+    stderrLogger.Printf("$$$$$$$0 %s", oldLabels)
+
+    var filteredLabels []string
+	for _, name := range oldLabels {
+		if len(labelIgnoreList.String()) > 0 && labelIgnoreList.MatchString(name) {
+            continue
+		}
+        filteredLabels = append(filteredLabels, name)
+	}
+
+	patches := createPatches(filteredLabels, node.Labels, labels, "/metadata/labels")
 	patches = append(patches, createPatches(nil, node.Annotations, annotations, "/metadata/annotations")...)
 
 	// Also, remove all labels with the old prefix, and the old version label

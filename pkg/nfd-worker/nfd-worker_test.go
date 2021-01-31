@@ -39,6 +39,7 @@ func setupTest(args nfdmaster.Args) testContext {
 	args.NoPublish = true
 	args.Port = 8192
 	args.LabelWhiteList = regexp.MustCompile("")
+    args.LabelIgnoreList = regexp.MustCompile("")
 	m, err := nfdmaster.NewNfdMaster(args)
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)
