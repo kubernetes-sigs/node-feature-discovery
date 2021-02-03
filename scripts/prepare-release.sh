@@ -66,7 +66,9 @@ sed s"!node-feature-discovery/v.*/!node-feature-discovery/$release/!" -i README.
 
 # Patch deployment templates
 echo Patching '*.yaml.template' to use $container_image
-sed -E s",^([[:space:]]+)image:.+$,\1image: $container_image," -i *yaml.template
+sed -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
+       -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
+       -i *yaml.template
 
 # Patch e2e test
 echo Patching test/e2e/node_feature_discovery.go flag defaults to k8s.gcr.io/nfd/node-feature-discovery and $release
