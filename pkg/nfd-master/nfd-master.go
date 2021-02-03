@@ -218,7 +218,7 @@ func (m *nfdMaster) prune() error {
 		stdoutLogger.Printf("pruning node %q...", node.Name)
 
 		// Prune labels and extended resources
-		err := updateNodeFeatures(m.apihelper, node.Name, Labels{}, Annotations{}, ExtendedResources{})
+		err := m.updateNodeFeatures(node.Name, Labels{}, Annotations{}, ExtendedResources{})
 		if err != nil {
 			return fmt.Errorf("failed to prune labels from node %q: %v", node.Name, err)
 		}
@@ -345,7 +345,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		// Advertise NFD worker version as an annotation
 		annotations := Annotations{workerVersionAnnotation: r.NfdVersion}
 
-		err := updateNodeFeatures(m.apihelper, r.NodeName, labels, annotations, extendedResources)
+		err := m.updateNodeFeatures(r.NodeName, labels, annotations, extendedResources)
 		if err != nil {
 			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
 			return &pb.SetLabelsReply{}, err
@@ -357,14 +357,14 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 // updateNodeFeatures ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
-	cli, err := helper.GetClient()
+func (m *nfdMaster) updateNodeFeatures(nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
+	cli, err := m.apihelper.GetClient()
 	if err != nil {
 		return err
 	}
 
 	// Get the worker node object
-	node, err := helper.GetNode(cli, nodeName)
+	node, err := m.apihelper.GetNode(cli, nodeName)
 	if err != nil {
 		return err
 	}
@@ -397,7 +397,7 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 	patches = append(patches, removeLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")...)
 
 	// Patch the node object in the apiserver
-	err = helper.PatchNode(cli, node.Name, patches)
+	err = m.apihelper.PatchNode(cli, node.Name, patches)
 	if err != nil {
 		stderrLogger.Printf("error while patching node object: %s", err.Error())
 		return err
@@ -405,7 +405,7 @@ func updateNodeFeatures(helper apihelper.APIHelpers, nodeName string, labels Lab
 
 	// patch node status with extended resource changes
 	patches = createExtendedResourcePatches(node, extendedResources)
-	err = helper.PatchNodeStatus(cli, node.Name, patches)
+	err = m.apihelper.PatchNodeStatus(cli, node.Name, patches)
 	if err != nil {
 		stderrLogger.Printf("error while patching extended resources: %s", err.Error())
 		return err
