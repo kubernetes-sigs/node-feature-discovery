@@ -284,7 +284,7 @@ func TestSetLabels(t *testing.T) {
 		mockHelper := &apihelper.MockAPIHelpers{}
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
-		mockServer := labelerServer{args: Args{LabelWhiteList: regexp.MustCompile("")}, apiHelper: mockHelper}
+		mockMaster := nfdMaster{args: Args{LabelWhiteList: regexp.MustCompile("")}, apihelper: mockHelper}
 		mockCtx := context.Background()
 		// In the gRPC request the label names may omit the default ns
 		mockLabels := map[string]string{"feature-1": "1", "feature-2": "val-2", "feature-3": "3"}
@@ -312,7 +312,7 @@ func TestSetLabels(t *testing.T) {
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
 			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
-			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
@@ -326,12 +326,12 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
 
-			mockServer.args.LabelWhiteList = regexp.MustCompile("^f.*2$")
+			mockMaster.args.LabelWhiteList = regexp.MustCompile("^f.*2$")
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
 			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
-			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -350,13 +350,13 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
 			}
 
-			mockServer.args.ExtraLabelNs = map[string]struct{}{"valid.ns": struct{}{}}
+			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": struct{}{}}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
 			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
 			mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
-			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -375,12 +375,12 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-3", mockLabels["feature-3"]),
 			}
 
-			mockServer.args.ResourceLabels = []string{"feature-3", "feature-1"}
+			mockMaster.args.ResourceLabels = []string{"feature-3", "feature-1"}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
 			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
-			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -389,15 +389,15 @@ func TestSetLabels(t *testing.T) {
 		mockErr := errors.New("mock-error")
 		Convey("When node update fails", func() {
 			mockHelper.On("GetClient").Return(mockClient, mockErr)
-			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("An error should be returned", func() {
 				So(err, ShouldEqual, mockErr)
 			})
 		})
 
-		mockServer.args.NoPublish = true
+		mockMaster.args.NoPublish = true
 		Convey("With '--no-publish'", func() {
-			_, err := mockServer.SetLabels(mockCtx, mockReq)
+			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("Operation should succeed", func() {
 				So(err, ShouldBeNil)
 			})

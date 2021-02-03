@@ -175,7 +175,7 @@ func (m *nfdMaster) Run() error {
 		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 	m.server = grpc.NewServer(serverOpts...)
-	pb.RegisterLabelerServer(m.server, &labelerServer{args: m.args, apiHelper: m.apihelper})
+	pb.RegisterLabelerServer(m.server, m)
 	stdoutLogger.Printf("gRPC server serving on port: %d", m.args.Port)
 	return m.server.Serve(lis)
 }
@@ -310,15 +310,9 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 	return outLabels, extendedResources
 }
 
-// Implement LabelerServer
-type labelerServer struct {
-	args      Args
-	apiHelper apihelper.APIHelpers
-}
-
-// Service SetLabels
-func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
-	if s.args.VerifyNodeName {
+// SetLabels implements LabelerServer
+func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
+	if m.args.VerifyNodeName {
 		// Client authorization.
 		// Check that the node name matches the CN from the TLS cert
 		client, ok := peer.FromContext(c)
@@ -343,13 +337,13 @@ func (s *labelerServer) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*p
 	}
 	stdoutLogger.Printf("REQUEST Node: %s NFD-version: %s Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
 
-	labels, extendedResources := filterFeatureLabels(r.Labels, s.args.ExtraLabelNs, s.args.LabelWhiteList, s.args.ResourceLabels)
+	labels, extendedResources := filterFeatureLabels(r.Labels, m.args.ExtraLabelNs, m.args.LabelWhiteList, m.args.ResourceLabels)
 
-	if !s.args.NoPublish {
+	if !m.args.NoPublish {
 		// Advertise NFD worker version as an annotation
 		annotations := Annotations{workerVersionAnnotation: r.NfdVersion}
 
-		err := updateNodeFeatures(s.apiHelper, r.NodeName, labels, annotations, extendedResources)
+		err := updateNodeFeatures(m.apihelper, r.NodeName, labels, annotations, extendedResources)
 		if err != nil {
 			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
 			return &pb.SetLabelsReply{}, err
