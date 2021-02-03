@@ -48,6 +48,22 @@ Example:
 nfd-master --port=443
 ```
 
+### --instance
+
+The `--instance` flag makes it possible to run multiple NFD deployments in
+parallel. In practice, it separates the node annotations between deployments so
+that each of them can store metadata independently. The instance name must
+start and end with an alphanumeric character and may only contain alphanumeric
+characters, `-`, `_` or `.`.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-master --instance=network
+```
+
 ### --ca-file
 
 The `--ca-file` is one of the three flags (together with `--cert-file` and

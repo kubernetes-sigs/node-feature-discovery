@@ -393,7 +393,7 @@ func cleanupNode(cs clientset.Interface) {
 
 			// Remove annotations
 			for key := range node.Annotations {
-				if strings.HasPrefix(key, master.AnnotationNs) {
+				if strings.HasPrefix(key, master.AnnotationNsBase) {
 					delete(node.Annotations, key)
 					update = true
 				}
@@ -573,7 +573,7 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 						gomega.Expect(node.Annotations).To(gomega.HaveKey(k))
 					}
 					for k := range node.Annotations {
-						if strings.HasPrefix(k, master.AnnotationNs) {
+						if strings.HasPrefix(k, master.AnnotationNsBase) {
 							if _, ok := nodeConf.ExpectedAnnotationValues[k]; ok {
 								continue
 							}
@@ -587,7 +587,7 @@ var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
 
 					// Node running nfd-master should have master version annotation
 					if node.Name == masterPod.Spec.NodeName {
-						gomega.Expect(node.Annotations).To(gomega.HaveKey(master.AnnotationNs + "master.version"))
+						gomega.Expect(node.Annotations).To(gomega.HaveKey(master.AnnotationNsBase + "master.version"))
 					}
 				}
 
