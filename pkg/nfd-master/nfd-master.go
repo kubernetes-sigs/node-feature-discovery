@@ -59,7 +59,6 @@ const (
 var (
 	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
 	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
-	nodeName     = os.Getenv("NODE_NAME")
 )
 
 // Labels are a Kubernetes representation of discovered features.
@@ -94,6 +93,7 @@ type NfdMaster interface {
 
 type nfdMaster struct {
 	args      Args
+	nodeName  string
 	server    *grpc.Server
 	ready     chan bool
 	apihelper apihelper.APIHelpers
@@ -101,7 +101,9 @@ type nfdMaster struct {
 
 // Create new NfdMaster server instance.
 func NewNfdMaster(args Args) (NfdMaster, error) {
-	nfd := &nfdMaster{args: args, ready: make(chan bool, 1)}
+	nfd := &nfdMaster{args: args,
+		nodeName: os.Getenv("NODE_NAME"),
+		ready:    make(chan bool, 1)}
 
 	// Check TLS related args
 	if args.CertFile != "" || args.KeyFile != "" || args.CaFile != "" {
@@ -126,14 +128,14 @@ func NewNfdMaster(args Args) (NfdMaster, error) {
 // is called.
 func (m *nfdMaster) Run() error {
 	stdoutLogger.Printf("Node Feature Discovery Master %s", version.Get())
-	stdoutLogger.Printf("NodeName: '%s'", nodeName)
+	stdoutLogger.Printf("NodeName: '%s'", m.nodeName)
 
 	if m.args.Prune {
 		return m.prune()
 	}
 
 	if !m.args.NoPublish {
-		err := updateMasterNode(m.apihelper)
+		err := m.updateMasterNode()
 		if err != nil {
 			return fmt.Errorf("failed to update master node: %v", err)
 		}
@@ -241,19 +243,19 @@ func (m *nfdMaster) prune() error {
 }
 
 // Advertise NFD master information
-func updateMasterNode(helper apihelper.APIHelpers) error {
-	cli, err := helper.GetClient()
+func (m *nfdMaster) updateMasterNode() error {
+	cli, err := m.apihelper.GetClient()
 	if err != nil {
 		return err
 	}
-	node, err := helper.GetNode(cli, nodeName)
+	node, err := m.apihelper.GetNode(cli, m.nodeName)
 	if err != nil {
 		return err
 	}
 
 	// Advertise NFD version as an annotation
 	p := createPatches(nil, node.Annotations, Annotations{masterVersionAnnotation: version.Get()}, "/metadata/annotations")
-	err = helper.PatchNode(cli, node.Name, p)
+	err = m.apihelper.PatchNode(cli, node.Name, p)
 	if err != nil {
 		stderrLogger.Printf("failed to patch node annotations: %v", err)
 		return err

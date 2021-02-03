@@ -41,10 +41,6 @@ const (
 	mockNodeName = "mock-node"
 )
 
-func init() {
-	nodeName = mockNodeName
-}
-
 func newMockNode() *api.Node {
 	n := api.Node{}
 	n.Name = mockNodeName
@@ -52,6 +48,14 @@ func newMockNode() *api.Node {
 	n.Annotations = map[string]string{}
 	n.Status.Capacity = api.ResourceList{}
 	return &n
+}
+
+func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
+	return &nfdMaster{
+		nodeName:  mockNodeName,
+		args:      Args{LabelWhiteList: regexp.MustCompile("")},
+		apihelper: apihelper,
+	}
 }
 
 func TestUpdateNodeFeatures(t *testing.T) {
@@ -159,6 +163,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 func TestUpdateMasterNode(t *testing.T) {
 	Convey("When updating the nfd-master node", t, func() {
 		mockHelper := &apihelper.MockAPIHelpers{}
+		mockMaster := newMockMaster(mockHelper)
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
 		Convey("When update operation succeeds", func() {
@@ -167,7 +172,7 @@ func TestUpdateMasterNode(t *testing.T) {
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
-			err := updateMasterNode(mockHelper)
+			err := mockMaster.updateMasterNode()
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
@@ -176,7 +181,7 @@ func TestUpdateMasterNode(t *testing.T) {
 		mockErr := errors.New("mock-error")
 		Convey("When getting API client fails", func() {
 			mockHelper.On("GetClient").Return(mockClient, mockErr)
-			err := updateMasterNode(mockHelper)
+			err := mockMaster.updateMasterNode()
 			Convey("An error should be returned", func() {
 				So(err, ShouldEqual, mockErr)
 			})
@@ -185,7 +190,7 @@ func TestUpdateMasterNode(t *testing.T) {
 		Convey("When getting API node object fails", func() {
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, mockErr)
-			err := updateMasterNode(mockHelper)
+			err := mockMaster.updateMasterNode()
 			Convey("An error should be returned", func() {
 				So(err, ShouldEqual, mockErr)
 			})
@@ -195,7 +200,7 @@ func TestUpdateMasterNode(t *testing.T) {
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.Anything).Return(mockErr)
-			err := updateMasterNode(mockHelper)
+			err := mockMaster.updateMasterNode()
 			Convey("An error should be returned", func() {
 				So(err, ShouldEqual, mockErr)
 			})
@@ -282,9 +287,9 @@ func TestSetLabels(t *testing.T) {
 		const workerName = "mock-worker"
 		const workerVer = "0.1-test"
 		mockHelper := &apihelper.MockAPIHelpers{}
+		mockMaster := newMockMaster(mockHelper)
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
-		mockMaster := nfdMaster{args: Args{LabelWhiteList: regexp.MustCompile("")}, apihelper: mockHelper}
 		mockCtx := context.Background()
 		// In the gRPC request the label names may omit the default ns
 		mockLabels := map[string]string{"feature-1": "1", "feature-2": "val-2", "feature-3": "3"}
