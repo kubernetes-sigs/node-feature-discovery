@@ -87,8 +87,13 @@ templates: $(yaml_templates)
 	@# Need to prepend each line in the sample config with spaces in order to
 	@# fit correctly in the configmap spec.
 	@sed s'/^/    /' nfd-worker.conf.example > nfd-worker.conf.tmp
-	@# The quick-n-dirty sed below expects the configmap data to be at the very end of the file
-	@for f in $+; do sed -e '/nfd-worker\.conf/r nfd-worker.conf.tmp' -e '/nfd-worker\.conf/q' -i $$f; done
+	@# The sed magic below replaces the block of text between the lines with start and end markers
+	@for f in $+; do \
+	    start=NFD-WORKER-CONF-START-DO-NOT-REMOVE; \
+	    end=NFD-WORKER-CONF-END-DO-NOT-REMOVE; \
+	    sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-worker.conf.tmp" \
+	        -e "}; /$$end/p; d }" -i $$f; \
+	done
 	@rm nfd-worker.conf.tmp
 
 mock:

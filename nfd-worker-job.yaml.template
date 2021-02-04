@@ -111,7 +111,7 @@ metadata:
   name: nfd-worker-conf
   namespace: node-feature-discovery
 data:
-  nfd-worker.conf: |
+  nfd-worker.conf: | ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #sources:
     #  cpu:
     #    cpuid:
@@ -197,3 +197,4 @@ data:
     #            vendor: ["15b3"]
     #            device: ["1014", "1017"]
     #          loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
+### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
