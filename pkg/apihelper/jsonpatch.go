@@ -17,7 +17,7 @@ limitations under the License.
 package apihelper
 
 import (
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -29,6 +29,6 @@ type JsonPatch struct {
 }
 
 // NewJsonPatch returns a new JsonPatch object
-func NewJsonPatch(verb string, path string, key string, value string) JsonPatch {
-	return JsonPatch{verb, filepath.Join(path, strings.ReplaceAll(key, "/", "~1")), value}
+func NewJsonPatch(verb string, jsonpath string, key string, value string) JsonPatch {
+	return JsonPatch{verb, path.Join(jsonpath, strings.ReplaceAll(key, "/", "~1")), value}
 }
