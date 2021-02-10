@@ -24,7 +24,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -500,7 +500,7 @@ func addNs(src string, nsToAdd string) string {
 	if strings.Contains(src, "/") {
 		return src
 	}
-	return filepath.Join(nsToAdd, src)
+	return path.Join(nsToAdd, src)
 }
 
 // splitNs splits a name into its namespace and name parts
