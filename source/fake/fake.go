@@ -16,22 +16,51 @@ limitations under the License.
 
 package fake
 
-import "sigs.k8s.io/node-feature-discovery/source"
+import (
+	"fmt"
+
+	"sigs.k8s.io/node-feature-discovery/source"
+)
+
+// Configuration file options
+type Config struct {
+	Labels map[string]string `json:"labels"`
+}
+
+// newDefaultConfig returns a new config with defaults values
+func newDefaultConfig() *Config {
+	return &Config{
+		Labels: map[string]string{
+			"fakefeature1": "true",
+			"fakefeature2": "true",
+			"fakefeature3": "true",
+		},
+	}
+}
 
 // Source implements FeatureSource.
-type Source struct{}
+type Source struct {
+	config *Config
+}
 
 // Name returns an identifier string for this feature source.
 func (s Source) Name() string { return "fake" }
 
 // NewConfig method of the FeatureSource interface
-func (s *Source) NewConfig() source.Config { return nil }
+func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
 
 // GetConfig method of the FeatureSource interface
-func (s *Source) GetConfig() source.Config { return nil }
+func (s *Source) GetConfig() source.Config { return s.config }
 
 // SetConfig method of the FeatureSource interface
-func (s *Source) SetConfig(source.Config) {}
+func (s *Source) SetConfig(conf source.Config) {
+	switch v := conf.(type) {
+	case *Config:
+		s.config = v
+	default:
+		panic(fmt.Sprintf("invalid config type: %T", conf))
+	}
+}
 
 // Configure method of the FeatureSource interface
 func (s Source) Configure([]byte) error { return nil }
@@ -39,10 +68,9 @@ func (s Source) Configure([]byte) error { return nil }
 // Discover returns feature names for some fake features.
 func (s Source) Discover() (source.Features, error) {
 	// Adding three fake features.
-	features := source.Features{
-		"fakefeature1": true,
-		"fakefeature2": true,
-		"fakefeature3": true,
+	features := make(source.Features, len(s.config.Labels))
+	for k, v := range s.config.Labels {
+		features[k] = v
 	}
 
 	return features, nil
