@@ -96,6 +96,7 @@ type Args struct {
 
 type NfdWorker interface {
 	Run() error
+	Stop()
 }
 
 type nfdWorker struct {
@@ -105,6 +106,7 @@ type nfdWorker struct {
 	configFilePath string
 	config         *NFDConfig
 	realSources    []source.FeatureSource
+	stop           chan struct{} // channel for signaling stop
 	testSources    []source.FeatureSource
 	enabledSources []source.FeatureSource
 }
@@ -141,6 +143,7 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 			&fake.Source{},
 			&panicfake.Source{},
 		},
+		stop: make(chan struct{}, 1),
 	}
 
 	if args.ConfigFile != "" {
@@ -293,7 +296,20 @@ func (w *nfdWorker) Run() error {
 			// Always re-label after a re-config event. This way the new config
 			// comes into effect even if the sleep interval is long (or infinite)
 			labelTrigger = time.After(0)
+
+		case <-w.stop:
+			stdoutLogger.Printf("shutting down nfd-worker")
+			configWatch.Close()
+			return nil
 		}
+	}
+}
+
+// Stop NfdWorker
+func (w *nfdWorker) Stop() {
+	select {
+	case w.stop <- struct{}{}:
+	default:
 	}
 }
 
