@@ -66,7 +66,7 @@ func argsParse(argv []string) (master.Args, error) {
   %s [--prune] [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
      [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
      [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
-     [--kubeconfig=<path>]
+     [--kubeconfig=<path>] [--instance=<name>]
   %s -h | --help
   %s --version
 
@@ -75,6 +75,9 @@ func argsParse(argv []string) (master.Args, error) {
   --version                       Output version and exit.
   --prune                         Prune all NFD related attributes from all nodes
                                   of the cluster and exit.
+  --instance=<name>               Instance name. Used to separate annotation
+                                  namespaces for multiple parallel deployments.
+                                  [Default: ]
   --kubeconfig=<path>             Kubeconfig to use [Default: ]
                                   of the cluster and exit.
   --port=<port>                   Port on which to listen for connections.
@@ -109,6 +112,12 @@ func argsParse(argv []string) (master.Args, error) {
 
 	// Parse argument values as usable types.
 	var err error
+	args.Instance = arguments["--instance"].(string)
+	if ok, _ := regexp.MatchString(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`, args.Instance); args.Instance != "" && !ok {
+		return args, fmt.Errorf("invalid --instance %q: instance name "+
+			"must start and end with an alphanumeric character and may only contain "+
+			"alphanumerics, `-`, `_` or `.`", args.Instance)
+	}
 	args.CaFile = arguments["--ca-file"].(string)
 	args.CertFile = arguments["--cert-file"].(string)
 	args.KeyFile = arguments["--key-file"].(string)
