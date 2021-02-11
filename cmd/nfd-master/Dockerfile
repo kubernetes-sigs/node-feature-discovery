@@ -22,7 +22,6 @@ RUN make install VERSION=$VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
 
 RUN make test
 
-
 # Create production image for nfd-master
 FROM gcr.io/distroless/static
 
