@@ -142,6 +142,11 @@ metadata:
   namespace: node-feature-discovery
 data:
   nfd-worker.conf: | ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
+    #core:
+    #  labelWhiteList:
+    #  noPublish: false
+    #  sleepInterval: 60s
+    #  sources: [all]
     #sources:
     #  cpu:
     #    cpuid:

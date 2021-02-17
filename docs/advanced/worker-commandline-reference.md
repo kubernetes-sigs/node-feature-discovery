@@ -141,6 +141,9 @@ nfd-worker --server-name-override=localhost
 The `--sources` flag specifies a comma-separated list of enabled feature
 sources. A special value `all` enables all feature sources.
 
+Note: This flag takes precedence over the `core.sources` configuration
+file option.
+
 Default: all
 
 Example:
@@ -148,6 +151,9 @@ Example:
 ```bash
 nfd-worker --sources=kernel,system,local
 ```
+
+**DEPRECATED**: you should use the `core.sources` option in the
+configuration file, instead.
 
 ### --no-publish
 
@@ -172,6 +178,9 @@ expression in order to be published.
 Note: The regular expression is only matches against the "basename" part of the
 label, i.e. to the part of the name after '/'. The label namespace is omitted.
 
+Note: This flag takes precedence over the `core.labelWhiteList` configuration
+file option.
+
 Default: *empty*
 
 Example:
@@ -179,6 +188,9 @@ Example:
 ```bash
 nfd-worker --label-whitelist='.*cpuid\.'
 ```
+
+**DEPRECATED**: you should use the `core.labelWhiteList` option in the
+configuration file, instead.
 
 ### --oneshot
 
@@ -199,6 +211,9 @@ The `--sleep-interval` specifies the interval between feature re-detection (and
 node re-labeling). A non-positive value implies infinite sleep interval, i.e.
 no re-detection or re-labeling is done.
 
+Note: This flag takes precedence over the `core.sleepInterval` configuration
+file option.
+
 Default: 60s
 
 Example:
@@ -206,3 +221,7 @@ Example:
 ```bash
 nfd-worker --sleep-interval=1h
 ```
+
+**DEPRECATED**: you should use the `core.sleepInterval` option in the
+configuration file, instead.
+

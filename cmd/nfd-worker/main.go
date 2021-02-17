@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -92,18 +93,22 @@ func argsParse(argv []string) (worker.Args, error) {
                               [Default: ]
   --sources=<sources>         Comma separated list of feature sources. Special
                               value 'all' enables all feature sources.
-                              [Default: all]
+                              (DEPRECATED: This parameter should be set via the
+                              config file)
   --no-publish                Do not publish discovered features to the
                               cluster-local Kubernetes API server.
   --label-whitelist=<pattern> Regular expression to filter label names to
                               publish to the Kubernetes API server.
                               NB: the label namespace is omitted i.e. the filter
                               is only applied to the name part after '/'.
-                              [Default: ]
+                              (DEPRECATED: This parameter should be set via the
+                              config file)
   --oneshot                   Label once and exit.
   --sleep-interval=<seconds>  Time to sleep between re-labeling. Non-positive
                               value implies no re-labeling (i.e. infinite
-                              sleep). [Default: 60s]`,
+                              sleep).
+                              (DEPRECATED: This parameter should be set via the
+                              config file)`,
 		ProgramName,
 		ProgramName,
 		ProgramName,
@@ -114,21 +119,41 @@ func argsParse(argv []string) (worker.Args, error) {
 		fmt.Sprintf("%s %s", ProgramName, version.Get()))
 
 	// Parse argument values as usable types.
-	var err error
 	args.CaFile = arguments["--ca-file"].(string)
 	args.CertFile = arguments["--cert-file"].(string)
 	args.ConfigFile = arguments["--config"].(string)
 	args.KeyFile = arguments["--key-file"].(string)
-	args.NoPublish = arguments["--no-publish"].(bool)
 	args.Options = arguments["--options"].(string)
 	args.Server = arguments["--server"].(string)
 	args.ServerNameOverride = arguments["--server-name-override"].(string)
-	args.Sources = strings.Split(arguments["--sources"].(string), ",")
-	args.LabelWhiteList = arguments["--label-whitelist"].(string)
 	args.Oneshot = arguments["--oneshot"].(bool)
-	args.SleepInterval, err = time.ParseDuration(arguments["--sleep-interval"].(string))
-	if err != nil {
-		return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())
+
+	// Parse deprecated/override args
+	if v := arguments["--label-whitelist"]; v != nil {
+		s := v.(string)
+		// Compile labelWhiteList regex
+		if r, err := regexp.Compile(s); err != nil {
+			return args, fmt.Errorf("error parsing --label-whitelist regex (%s): %v", s, err)
+		} else {
+			args.LabelWhiteList = r
+		}
+	}
+	if arguments["--no-publish"].(bool) {
+		b := true
+		args.NoPublish = &b
+	}
+	if v := arguments["--sleep-interval"]; v != nil {
+		log.Printf("WARNING: --sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
+		if s, err := time.ParseDuration(v.(string)); err != nil {
+			return args, fmt.Errorf("invalid --sleep-interval specified: %s", err.Error())
+		} else {
+			args.SleepInterval = &s
+		}
+	}
+	if v := arguments["--sources"]; v != nil {
+		fmt.Println(v)
+		s := strings.Split(v.(string), ",")
+		args.Sources = &s
 	}
 	return args, nil
 }

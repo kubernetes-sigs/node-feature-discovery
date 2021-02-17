@@ -61,7 +61,15 @@ var (
 
 // Global config
 type NFDConfig struct {
+	Core    coreConfig
 	Sources sourcesConfig
+}
+
+type coreConfig struct {
+	LabelWhiteList regex
+	NoPublish      bool
+	Sources        []string
+	SleepInterval  duration
 }
 
 type sourcesConfig map[string]source.Config
@@ -71,43 +79,75 @@ type Labels map[string]string
 
 // Command line arguments
 type Args struct {
-	LabelWhiteList     string
 	CaFile             string
 	CertFile           string
 	KeyFile            string
 	ConfigFile         string
-	NoPublish          bool
 	Options            string
 	Oneshot            bool
 	Server             string
 	ServerNameOverride string
-	SleepInterval      time.Duration
-	Sources            []string
+	// Deprecated options that should be set via the config file
+	LabelWhiteList *regexp.Regexp
+	NoPublish      *bool
+	SleepInterval  *time.Duration
+	Sources        *[]string
 }
 
 type NfdWorker interface {
 	Run() error
+	Stop()
 }
 
 type nfdWorker struct {
 	args           Args
 	clientConn     *grpc.ClientConn
 	client         pb.LabelerClient
-	config         NFDConfig
-	sources        []source.FeatureSource
-	labelWhiteList *regexp.Regexp
+	configFilePath string
+	config         *NFDConfig
+	realSources    []source.FeatureSource
+	stop           chan struct{} // channel for signaling stop
+	testSources    []source.FeatureSource
+	enabledSources []source.FeatureSource
+}
+
+type regex struct {
+	regexp.Regexp
+}
+
+type duration struct {
+	time.Duration
 }
 
 // Create new NfdWorker instance.
 func NewNfdWorker(args Args) (NfdWorker, error) {
 	nfd := &nfdWorker{
-		args:    args,
-		sources: []source.FeatureSource{},
+		args:   args,
+		config: &NFDConfig{},
+		realSources: []source.FeatureSource{
+			&cpu.Source{},
+			&iommu.Source{},
+			&kernel.Source{},
+			&memory.Source{},
+			&network.Source{},
+			&pci.Source{},
+			&storage.Source{},
+			&system.Source{},
+			&usb.Source{},
+			&custom.Source{},
+			// local needs to be the last source so that it is able to override
+			// labels from other sources
+			&local.Source{},
+		},
+		testSources: []source.FeatureSource{
+			&fake.Source{},
+			&panicfake.Source{},
+		},
+		stop: make(chan struct{}, 1),
 	}
 
-	if args.SleepInterval > 0 && args.SleepInterval < time.Second {
-		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s", args.SleepInterval.String())
-		args.SleepInterval = time.Second
+	if args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
 
 	// Check TLS related args
@@ -121,60 +161,6 @@ func NewNfdWorker(args Args) (NfdWorker, error) {
 		if args.CaFile == "" {
 			return nfd, fmt.Errorf("--ca-file needs to be specified alongside --cert-file and --key-file")
 		}
-	}
-
-	// Figure out active sources
-	allSources := []source.FeatureSource{
-		&cpu.Source{},
-		&iommu.Source{},
-		&kernel.Source{},
-		&memory.Source{},
-		&network.Source{},
-		&pci.Source{},
-		&storage.Source{},
-		&system.Source{},
-		&usb.Source{},
-		&custom.Source{},
-		// local needs to be the last source so that it is able to override
-		// labels from other sources
-		&local.Source{},
-	}
-
-	// Determine enabled feature
-	if len(args.Sources) == 1 && args.Sources[0] == "all" {
-		nfd.sources = allSources
-	} else {
-		// Add fake source which is only meant for testing. It will be enabled
-		// only if listed explicitly.
-		allSources = append(allSources, &fake.Source{})
-		allSources = append(allSources, &panicfake.Source{})
-
-		sourceWhiteList := map[string]struct{}{}
-		for _, s := range args.Sources {
-			sourceWhiteList[strings.TrimSpace(s)] = struct{}{}
-		}
-
-		nfd.sources = []source.FeatureSource{}
-		for _, s := range allSources {
-			if _, enabled := sourceWhiteList[s.Name()]; enabled {
-				nfd.sources = append(nfd.sources, s)
-				delete(sourceWhiteList, s.Name())
-			}
-		}
-		if len(sourceWhiteList) > 0 {
-			names := make([]string, 0, len(sourceWhiteList))
-			for n := range sourceWhiteList {
-				names = append(names, n)
-			}
-			stderrLogger.Printf("WARNING: skipping unknown source(s) %q specified in --sources", strings.Join(names, ", "))
-		}
-	}
-
-	// Compile labelWhiteList regex
-	var err error
-	nfd.labelWhiteList, err = regexp.Compile(args.LabelWhiteList)
-	if err != nil {
-		return nfd, fmt.Errorf("error parsing label whitelist regex (%s): %s", args.LabelWhiteList, err)
 	}
 
 	return nfd, nil
@@ -214,26 +200,37 @@ func addConfigWatch(path string) (*fsnotify.Watcher, map[string]struct{}, error)
 	return w, paths, nil
 }
 
+func newDefaultConfig() *NFDConfig {
+	return &NFDConfig{
+		Core: coreConfig{
+			LabelWhiteList: regex{*regexp.MustCompile("")},
+			SleepInterval:  duration{60 * time.Second},
+			Sources:        []string{"all"},
+		},
+	}
+}
+
 // Run NfdWorker client. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
 	stdoutLogger.Printf("Node Feature Discovery Worker %s", version.Get())
 	stdoutLogger.Printf("NodeName: '%s'", nodeName)
 
+	// Create watcher for config file and read initial configuration
+	configWatch, paths, err := addConfigWatch(w.configFilePath)
+	if err != nil {
+		return err
+	}
+	if err := w.configure(w.configFilePath, w.args.Options); err != nil {
+		return err
+	}
+
 	// Connect to NFD master
-	err := w.connect()
+	err = w.connect()
 	if err != nil {
 		return fmt.Errorf("failed to connect: %v", err)
 	}
 	defer w.disconnect()
-
-	// Create watcher for config file and read initial configuration
-	configFilePath := filepath.Clean(w.args.ConfigFile)
-	configWatch, paths, err := addConfigWatch(configFilePath)
-	if err != nil {
-		return (err)
-	}
-	w.configure(configFilePath, w.args.Options)
 
 	labelTrigger := time.After(0)
 	var configTrigger <-chan time.Time
@@ -241,7 +238,7 @@ func (w *nfdWorker) Run() error {
 		select {
 		case <-labelTrigger:
 			// Get the set of feature labels.
-			labels := createFeatureLabels(w.sources, w.labelWhiteList)
+			labels := createFeatureLabels(w.enabledSources, w.config.Core.LabelWhiteList)
 
 			// Update the node with the feature labels.
 			if w.client != nil {
@@ -255,8 +252,8 @@ func (w *nfdWorker) Run() error {
 				return nil
 			}
 
-			if w.args.SleepInterval > 0 {
-				labelTrigger = time.After(w.args.SleepInterval)
+			if w.config.Core.SleepInterval.Duration > 0 {
+				labelTrigger = time.After(w.config.Core.SleepInterval.Duration)
 			}
 
 		case e := <-configWatch.Events:
@@ -270,7 +267,7 @@ func (w *nfdWorker) Run() error {
 				if err := configWatch.Close(); err != nil {
 					stderrLogger.Printf("WARNING: failed to close fsnotify watcher: %v", err)
 				}
-				configWatch, paths, err = addConfigWatch(configFilePath)
+				configWatch, paths, err = addConfigWatch(w.configFilePath)
 				if err != nil {
 					return err
 				}
@@ -285,19 +282,41 @@ func (w *nfdWorker) Run() error {
 			stderrLogger.Printf("ERROR: config file watcher error: %v", e)
 
 		case <-configTrigger:
-			w.configure(configFilePath, w.args.Options)
-
+			if err := w.configure(w.configFilePath, w.args.Options); err != nil {
+				return err
+			}
+			// Manage connection to master
+			if w.config.Core.NoPublish {
+				w.disconnect()
+			} else if w.clientConn == nil {
+				if err := w.connect(); err != nil {
+					return err
+				}
+			}
 			// Always re-label after a re-config event. This way the new config
 			// comes into effect even if the sleep interval is long (or infinite)
 			labelTrigger = time.After(0)
+
+		case <-w.stop:
+			stdoutLogger.Printf("shutting down nfd-worker")
+			configWatch.Close()
+			return nil
 		}
+	}
+}
+
+// Stop NfdWorker
+func (w *nfdWorker) Stop() {
+	select {
+	case w.stop <- struct{}{}:
+	default:
 	}
 }
 
 // connect creates a client connection to the NFD master
 func (w *nfdWorker) connect() error {
 	// Return a dummy connection in case of dry-run
-	if w.args.NoPublish {
+	if w.config.Core.NoPublish {
 		return nil
 	}
 
@@ -354,44 +373,111 @@ func (w *nfdWorker) disconnect() {
 	w.client = nil
 }
 
+func (c *coreConfig) sanitize() {
+	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
+		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s",
+			c.SleepInterval.Duration.String())
+		c.SleepInterval = duration{time.Second}
+	}
+}
+
+func (w *nfdWorker) configureCore(c coreConfig) {
+	// Determine enabled feature sourcds
+	sourceList := map[string]struct{}{}
+	all := false
+	for _, s := range c.Sources {
+		if s == "all" {
+			all = true
+			continue
+		}
+		sourceList[strings.TrimSpace(s)] = struct{}{}
+	}
+
+	w.enabledSources = []source.FeatureSource{}
+	for _, s := range w.realSources {
+		if _, enabled := sourceList[s.Name()]; all || enabled {
+			w.enabledSources = append(w.enabledSources, s)
+			delete(sourceList, s.Name())
+		}
+	}
+	for _, s := range w.testSources {
+		if _, enabled := sourceList[s.Name()]; enabled {
+			w.enabledSources = append(w.enabledSources, s)
+			delete(sourceList, s.Name())
+		}
+	}
+	if len(sourceList) > 0 {
+		names := make([]string, 0, len(sourceList))
+		for n := range sourceList {
+			names = append(names, n)
+		}
+		stderrLogger.Printf("WARNING: skipping unknown source(s) %q specified in core.sources (or --sources)", strings.Join(names, ", "))
+	}
+}
+
 // Parse configuration options
-func (w *nfdWorker) configure(filepath string, overrides string) {
+func (w *nfdWorker) configure(filepath string, overrides string) error {
 	// Create a new default config
-	c := NFDConfig{Sources: make(map[string]source.Config, len(w.sources))}
-	for _, s := range w.sources {
+	c := newDefaultConfig()
+	allSources := append(w.realSources, w.testSources...)
+	c.Sources = make(map[string]source.Config, len(allSources))
+	for _, s := range allSources {
 		c.Sources[s.Name()] = s.NewConfig()
 	}
 
 	// Try to read and parse config file
-	data, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		stderrLogger.Printf("Failed to read config file: %s", err)
-	} else {
-		err = yaml.Unmarshal(data, &c)
+	if filepath != "" {
+		data, err := ioutil.ReadFile(filepath)
 		if err != nil {
-			stderrLogger.Printf("Failed to parse config file: %s", err)
+			if os.IsNotExist(err) {
+				stderrLogger.Printf("config file %q not found, using defaults", filepath)
+			} else {
+				return fmt.Errorf("error reading config file: %s", err)
+			}
 		} else {
+			err = yaml.Unmarshal(data, c)
+			if err != nil {
+				return fmt.Errorf("Failed to parse config file: %s", err)
+			}
 			stdoutLogger.Printf("Configuration successfully loaded from %q", filepath)
 		}
 	}
 
 	// Parse config overrides
-	err = yaml.Unmarshal([]byte(overrides), &c)
-	if err != nil {
-		stderrLogger.Printf("Failed to parse --options: %s", err)
+	if err := yaml.Unmarshal([]byte(overrides), c); err != nil {
+		return fmt.Errorf("Failed to parse --options: %s", err)
 	}
+
+	if w.args.LabelWhiteList != nil {
+		c.Core.LabelWhiteList = regex{*w.args.LabelWhiteList}
+	}
+	if w.args.NoPublish != nil {
+		c.Core.NoPublish = *w.args.NoPublish
+	}
+	if w.args.SleepInterval != nil {
+		c.Core.SleepInterval = duration{*w.args.SleepInterval}
+	}
+	if w.args.Sources != nil {
+		c.Core.Sources = *w.args.Sources
+	}
+
+	c.Core.sanitize()
 
 	w.config = c
 
-	// (Re-)configure all sources
-	for _, s := range w.sources {
+	w.configureCore(c.Core)
+
+	// (Re-)configure all "real" sources, test sources are not configurable
+	for _, s := range allSources {
 		s.SetConfig(c.Sources[s.Name()])
 	}
+
+	return nil
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
 // sources and the whitelist argument.
-func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels) {
+func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regex) (labels Labels) {
 	labels = Labels{}
 
 	// Do feature discovery from all configured sources.
@@ -414,7 +500,7 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList *regexp.
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source source.FeatureSource, labelWhiteList *regexp.Regexp) (labels Labels, err error) {
+func getFeatureLabels(source source.FeatureSource, labelWhiteList regex) (labels Labels, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stderrLogger.Printf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
@@ -495,6 +581,46 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 		return err
 	}
 
+	return nil
+}
+
+// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
+func (r *regex) UnmarshalJSON(data []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch val := v.(type) {
+	case string:
+		if rr, err := regexp.Compile(string(val)); err != nil {
+			return err
+		} else {
+			*r = regex{*rr}
+		}
+	default:
+		return fmt.Errorf("invalid regexp %s", data)
+	}
+	return nil
+}
+
+// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
+func (d *duration) UnmarshalJSON(data []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch val := v.(type) {
+	case float64:
+		d.Duration = time.Duration(val)
+	case string:
+		var err error
+		d.Duration, err = time.ParseDuration(val)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid duration %s", data)
+	}
 	return nil
 }
 
