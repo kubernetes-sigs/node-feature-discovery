@@ -1,5 +1,5 @@
 # This template contains an example of running nfd-master and nfd-worker in the
-# same pod.
+# same pod. All changes in this template should be applied to Helm chart too.
 #
 apiVersion: v1
 kind: Namespace

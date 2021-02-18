@@ -52,6 +52,9 @@ E2E_TEST_CONFIG ?=
 LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
 yaml_templates := $(wildcard *.yaml.template)
+# Let's treat values.yaml as template to sync configmap
+# and allow users to install without modifications
+yaml_templates := $(yaml_templates) deployment/node-feature-discovery/values.yaml
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
 all: image

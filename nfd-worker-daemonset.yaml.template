@@ -1,3 +1,5 @@
+# All changes in this template should be applied to Helm chart too.
+#
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -30,6 +32,11 @@ spec:
               drop: ["ALL"]
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+          tolerations:
+              - key: "node-role.kubernetes.io/master"
+                operator: "Equal"
+                value: ""
+                effect: "NoSchedule"
           command:
             - "nfd-worker"
           args:
