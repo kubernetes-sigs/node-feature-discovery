@@ -18,9 +18,7 @@ package nfdmaster
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -93,6 +91,7 @@ type nfdMaster struct {
 	nodeName     string
 	annotationNs string
 	server       *grpc.Server
+	stop         chan struct{}
 	ready        chan bool
 	apihelper    apihelper.APIHelpers
 }
@@ -102,6 +101,7 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: *args,
 		nodeName: os.Getenv("NODE_NAME"),
 		ready:    make(chan bool, 1),
+		stop:     make(chan struct{}, 1),
 	}
 
 	if args.Instance == "" {
@@ -164,40 +164,61 @@ func (m *nfdMaster) Run() error {
 	close(m.ready)
 
 	serverOpts := []grpc.ServerOption{}
+	tlsConfig := utils.TlsConfig{}
+	// Create watcher for TLS cert files
+	certWatch, err := utils.CreateFsWatcher(time.Second, m.args.CertFile, m.args.KeyFile, m.args.CaFile)
+	if err != nil {
+		return err
+	}
 	// Enable mutual TLS authentication if --cert-file, --key-file or --ca-file
 	// is defined
 	if m.args.CertFile != "" || m.args.KeyFile != "" || m.args.CaFile != "" {
-		// Load cert for authenticating this server
-		cert, err := tls.LoadX509KeyPair(m.args.CertFile, m.args.KeyFile)
-		if err != nil {
-			return fmt.Errorf("failed to load server certificate: %v", err)
+		if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {
+			return err
 		}
-		// Load CA cert for client cert verification
-		caCert, err := ioutil.ReadFile(m.args.CaFile)
-		if err != nil {
-			return fmt.Errorf("failed to read root certificate file: %v", err)
-		}
-		caPool := x509.NewCertPool()
-		if ok := caPool.AppendCertsFromPEM(caCert); !ok {
-			return fmt.Errorf("failed to add certificate from %q", m.args.CaFile)
-		}
-		// Create TLS config
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			ClientCAs:    caPool,
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-		}
+
+		tlsConfig := &tls.Config{GetConfigForClient: tlsConfig.GetConfig}
 		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 	m.server = grpc.NewServer(serverOpts...)
 	pb.RegisterLabelerServer(m.server, m)
 	klog.Infof("gRPC server serving on port: %d", m.args.Port)
-	return m.server.Serve(lis)
+
+	// Run gRPC server
+	grpcErr := make(chan error, 1)
+	go func() {
+		defer lis.Close()
+		grpcErr <- m.server.Serve(lis)
+	}()
+
+	// NFD-Master main event loop
+	for {
+		select {
+		case <-certWatch.Events:
+			klog.Infof("reloading TLS certificates")
+			if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {
+				return err
+			}
+
+		case <-grpcErr:
+			return fmt.Errorf("gRPC server exited with an error: %v", err)
+
+		case <-m.stop:
+			klog.Infof("shutting down nfd-master")
+			certWatch.Close()
+			return nil
+		}
+	}
 }
 
 // Stop NfdMaster
 func (m *nfdMaster) Stop() {
 	m.server.Stop()
+
+	select {
+	case m.stop <- struct{}{}:
+	default:
+	}
 }
 
 // Wait until NfdMaster is able able to accept connections.
