@@ -34,11 +34,11 @@ type testContext struct {
 	errs   chan error
 }
 
-func setupTest(args nfdmaster.Args) testContext {
+func setupTest(args *nfdmaster.Args) testContext {
 	// Fixed port and no-publish, for convenience
 	args.NoPublish = true
 	args.Port = 8192
-	args.LabelWhiteList = regexp.MustCompile("")
+	args.LabelWhiteList.Regexp = *regexp.MustCompile("")
 	m, err := nfdmaster.NewNfdMaster(args)
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)
@@ -86,7 +86,7 @@ func TestNewNfdWorker(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	ctx := setupTest(nfdmaster.Args{})
+	ctx := setupTest(&nfdmaster.Args{})
 	defer teardownTest(ctx)
 	Convey("When running nfd-worker against nfd-master", t, func() {
 		Convey("When publishing features from fake source", func() {
@@ -100,7 +100,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunTls(t *testing.T) {
-	masterArgs := nfdmaster.Args{
+	masterArgs := &nfdmaster.Args{
 		CaFile:         data.FilePath("ca.crt"),
 		CertFile:       data.FilePath("nfd-test-master.crt"),
 		KeyFile:        data.FilePath("nfd-test-master.key"),

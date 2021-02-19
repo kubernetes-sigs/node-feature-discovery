@@ -164,43 +164,34 @@ $ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master --no-publish
 Command line flags of nfd-master:
 
 ```bash
-$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-master --help
-...
-Usage:
-  nfd-master [--prune] [--no-publish] [--label-whitelist=<pattern>] [--port=<port>]
-     [--ca-file=<path>] [--cert-file=<path>] [--key-file=<path>]
-     [--verify-node-name] [--extra-label-ns=<list>] [--resource-labels=<list>]
-     [--kubeconfig=<path>]
-  nfd-master -h | --help
-  nfd-master --version
-
-  Options:
-  -h --help                       Show this screen.
-  --version                       Output version and exit.
-  --prune                         Prune all NFD related attributes from all nodes
-                                  of the cluster and exit.
-  --kubeconfig=<path>             Kubeconfig to use [Default: ]
-  --port=<port>                   Port on which to listen for connections.
-                                  [Default: 8080]
-  --ca-file=<path>                Root certificate for verifying connections
-                                  [Default: ]
-  --cert-file=<path>              Certificate used for authenticating connections
-                                  [Default: ]
-  --key-file=<path>               Private key matching --cert-file
-                                  [Default: ]
-  --verify-node-name              Verify worker node name against CN from the TLS
-                                  certificate. Only has effect when TLS authentication
-                                  has been enabled.
-  --no-publish                    Do not publish feature labels
-  --label-whitelist=<pattern>     Regular expression to filter label names to
-                                  publish to the Kubernetes API server.
-                                  NB: the label namespace is omitted i.e. the filter
-                                  is only applied to the name part after '/'.
-                                  [Default: ]
-  --extra-label-ns=<list>         Comma separated list of allowed extra label namespaces
-                                  [Default: ]
-  --resource-labels=<list>        Comma separated list of labels to be exposed as extended resources.
-                                  [Default: ]
+$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-master -help
+Usage of nfd-master:
+  -ca-file string
+    	Root certificate for verifying connections
+  -cert-file string
+    	Certificate used for authenticating connections
+  -extra-label-ns value
+    	Comma separated list of allowed extra label namespaces
+  -instance string
+    	Instance name. Used to separate annotation namespaces for multiple parallel deployments.
+  -key-file string
+    	Private key matching -cert-file
+  -kubeconfig string
+    	Kubeconfig to use
+  -label-whitelist value
+    	Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.
+  -no-publish
+    	Do not publish feature labels
+  -port int
+    	Port on which to listen for connections. (default 8080)
+  -prune
+    	Prune all NFD related attributes from all nodes of the cluaster and exit.
+  -resource-labels value
+    	Comma separated list of labels to be exposed as extended resources.
+  -verify-node-name
+    	Verify worker node name against CN from the TLS certificate. Only takes effect when TLS authentication has been enabled.
+  -version
+    	Print version and exit.
 ```
 
 ### NFD-Worker
