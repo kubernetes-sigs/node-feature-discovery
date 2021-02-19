@@ -171,6 +171,7 @@ We have introduced the following Chart parameters.
 ##### Master pod parameters
 
 | `master.*` | dict |  | NFD master deployment configuration |
+| `master.instance` | string |  |  Instance name. Used to separate annotation namespaces for multiple parallel deployments |
 | `master.replicaCount` | integer | 1 | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified |
 | `master.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
 | `master.service.type` | string | ClusterIP | NFD master service type |
