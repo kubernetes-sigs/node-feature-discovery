@@ -17,6 +17,8 @@ limitations under the License.
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
 	"regexp"
 	"sort"
 	"strings"
@@ -32,6 +34,25 @@ func (a *RegexpVal) Set(val string) error {
 	r, err := regexp.Compile(val)
 	a.Regexp = *r
 	return err
+}
+
+// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
+func (a *RegexpVal) UnmarshalJSON(data []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch val := v.(type) {
+	case string:
+		if r, err := regexp.Compile(string(val)); err != nil {
+			return err
+		} else {
+			*a = RegexpVal{*r}
+		}
+	default:
+		return fmt.Errorf("invalid regexp %s", data)
+	}
+	return nil
 }
 
 // StringSetVal is a Value encapsulating a set of comma-separated strings
@@ -59,4 +80,21 @@ func (a *StringSetVal) String() string {
 	}
 	sort.Strings(vals)
 	return strings.Join(vals, ",")
+}
+
+// StringSliceVal is a Value encapsulating a slice of comma-separated strings
+type StringSliceVal []string
+
+// Set implements the regexp.Value interface
+func (a *StringSliceVal) Set(val string) error {
+	*a = strings.Split(val, ",")
+	return nil
+}
+
+// String implements the regexp.Value interface
+func (a *StringSliceVal) String() string {
+	if *a == nil {
+		return ""
+	}
+	return strings.Join(*a, ",")
 }

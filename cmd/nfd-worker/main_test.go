@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2019-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,62 +17,44 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
-func TestArgsParse(t *testing.T) {
+func TestParseArgs(t *testing.T) {
 	Convey("When parsing command line arguments", t, func() {
-		Convey("When --no-publish and --oneshot flags are passed", func() {
-			args, err := argsParse([]string{"--no-publish", "--oneshot"})
+		flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
 
-			Convey("noPublish is set and args.sources is set to the default value", func() {
-				So(args.SleepInterval, ShouldEqual, nil)
-				So(*args.NoPublish, ShouldBeTrue)
+		Convey("When no override args are specified", func() {
+			args := parseArgs(flags, "--oneshot")
+
+			Convey("overrides should be nil", func() {
 				So(args.Oneshot, ShouldBeTrue)
-				So(args.Sources, ShouldBeNil)
-				So(args.LabelWhiteList, ShouldBeNil)
-				So(err, ShouldBeNil)
+				So(args.Overrides.NoPublish, ShouldBeNil)
+				So(args.Overrides.LabelWhiteList, ShouldBeNil)
+				So(args.Overrides.SleepInterval, ShouldBeNil)
+				So(args.Overrides.Sources, ShouldBeNil)
 			})
 		})
 
-		Convey("When --sources flag is passed and set to some values, --sleep-inteval is specified", func() {
-			args, err := argsParse([]string{"--sources=fake1,fake2,fake3", "--sleep-interval=30s"})
+		Convey("When all override args are specified", func() {
+			args := parseArgs(flags,
+				"--no-publish",
+				"-label-whitelist=.*rdt.*",
+				"-sources=fake1,fake2,fake3",
+				"-sleep-interval=30s")
 
 			Convey("args.sources is set to appropriate values", func() {
-				So(*args.SleepInterval, ShouldEqual, 30*time.Second)
-				So(args.NoPublish, ShouldBeNil)
 				So(args.Oneshot, ShouldBeFalse)
-				So(*args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
-				So(args.LabelWhiteList, ShouldBeNil)
-				So(err, ShouldBeNil)
-			})
-		})
-
-		Convey("When --label-whitelist flag is passed and set to some value", func() {
-			args, err := argsParse([]string{"--label-whitelist=.*rdt.*"})
-
-			Convey("args.labelWhiteList is set to appropriate value and args.sources is set to default value", func() {
-				So(args.NoPublish, ShouldBeNil)
-				So(args.Sources, ShouldBeNil)
-				So(args.LabelWhiteList.String(), ShouldResemble, ".*rdt.*")
-				So(err, ShouldBeNil)
-			})
-		})
-
-		Convey("When valid args are specified", func() {
-			args, err := argsParse([]string{"--no-publish", "--sources=fake1,fake2,fake3", "--ca-file=ca", "--cert-file=crt", "--key-file=key"})
-
-			Convey("--no-publish is set and args.sources is set to appropriate values", func() {
-				So(*args.NoPublish, ShouldBeTrue)
-				So(args.CaFile, ShouldEqual, "ca")
-				So(args.CertFile, ShouldEqual, "crt")
-				So(args.KeyFile, ShouldEqual, "key")
-				So(*args.Sources, ShouldResemble, []string{"fake1", "fake2", "fake3"})
-				So(args.LabelWhiteList, ShouldBeNil)
-				So(err, ShouldBeNil)
+				So(*args.Overrides.NoPublish, ShouldBeTrue)
+				So(*args.Overrides.SleepInterval, ShouldEqual, 30*time.Second)
+				So(*args.Overrides.Sources, ShouldResemble, utils.StringSliceVal{"fake1", "fake2", "fake3"})
+				So(args.Overrides.LabelWhiteList.Regexp.String(), ShouldResemble, ".*rdt.*")
 			})
 		})
 	})

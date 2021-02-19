@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2019-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import (
 	"testing"
 	"time"
 
-	//"github.com/onsi/gomega"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
@@ -53,13 +53,13 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 
 		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
 
-		labelWhiteList := regex{*regexp.MustCompile("^test")}
+		labelWhiteList := utils.RegexpVal{Regexp: *regexp.MustCompile("^test")}
 
 		Convey("When I successfully get the labels from the mock source", func() {
 			mockFeatureSource.On("Name").Return(fakeFeatureSourceName)
 			mockFeatureSource.On("Discover").Return(fakeFeatures, nil)
 
-			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList)
+			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList.Regexp)
 			Convey("Proper label is returned", func() {
 				So(returnedLabels, ShouldResemble, fakeFeatureLabels)
 			})
@@ -72,7 +72,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockFeatureSource.On("Discover").Return(nil, expectedError)
 
-			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList)
+			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList.Regexp)
 			Convey("No label is returned", func() {
 				So(returnedLabels, ShouldBeNil)
 			})
@@ -109,7 +109,7 @@ func (w *nfdWorker) getSource(name string) source.FeatureSource {
 
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration", t, func() {
-		w, err := NewNfdWorker(Args{})
+		w, err := NewNfdWorker(&Args{})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
 		overrides := `{"core": {"sources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
@@ -123,7 +123,7 @@ func TestConfigParse(t *testing.T) {
 			})
 		})
 		Convey("and a non-accessible file, but core cmdline flags and some overrides are specified", func() {
-			worker.args = Args{Sources: &[]string{"cpu", "kernel", "pci"}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{Sources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
 			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core cmdline flags should be in effect instead overrides", func() {
@@ -157,7 +157,7 @@ sources:
 		So(err, ShouldBeNil)
 
 		Convey("and a proper config file is specified", func() {
-			worker.args = Args{Sources: &[]string{"cpu", "kernel", "pci"}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{Sources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
 			So(worker.configure(f.Name(), ""), ShouldBeNil)
 
 			Convey("specified configuration should take effect", func() {
@@ -178,7 +178,7 @@ sources:
 
 		Convey("and a proper config file and overrides are given", func() {
 			sleepIntervalArg := 15 * time.Second
-			worker.args = Args{SleepInterval: &sleepIntervalArg}
+			worker.args = Args{Overrides: ConfigOverrideArgs{SleepInterval: &sleepIntervalArg}}
 			overrides := `{"core": {"sources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
 			So(worker.configure(f.Name(), overrides), ShouldBeNil)
 
@@ -229,11 +229,11 @@ core:
 `)
 
 		noPublish := true
-		w, err := NewNfdWorker(Args{
-			ConfigFile:    configFile,
-			Sources:       &[]string{"fake"},
-			NoPublish:     &noPublish,
-			SleepInterval: new(time.Duration),
+		w, err := NewNfdWorker(&Args{
+			ConfigFile: configFile,
+			Overrides: ConfigOverrideArgs{
+				Sources:   &utils.StringSliceVal{"fake"},
+				NoPublish: &noPublish},
 		})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
@@ -309,10 +309,10 @@ func withTimeout(actual interface{}, expected ...interface{}) string {
 func TestNewNfdWorker(t *testing.T) {
 	Convey("When creating new NfdWorker instance", t, func() {
 
-		emptyRegexp := regex{*regexp.MustCompile("")}
+		emptyRegexp := utils.RegexpVal{Regexp: *regexp.MustCompile("")}
 
 		Convey("without any args specified", func() {
-			args := Args{}
+			args := &Args{}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -326,7 +326,7 @@ func TestNewNfdWorker(t *testing.T) {
 		})
 
 		Convey("with non-empty Sources arg specified", func() {
-			args := Args{Sources: &[]string{"fake"}}
+			args := &Args{Overrides: ConfigOverrideArgs{Sources: &utils.StringSliceVal{"fake"}}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -341,14 +341,14 @@ func TestNewNfdWorker(t *testing.T) {
 		})
 
 		Convey("with valid LabelWhiteListStr arg specified", func() {
-			args := Args{LabelWhiteList: regexp.MustCompile(".*rdt.*")}
+			args := &Args{Overrides: ConfigOverrideArgs{LabelWhiteList: &utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
-			expectRegexp := regex{*regexp.MustCompile(".*rdt.*")}
+			expectRegexp := utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}
 			Convey("proper labelWhiteList regexp should be produced", func() {
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, expectRegexp)
 			})
@@ -359,12 +359,12 @@ func TestNewNfdWorker(t *testing.T) {
 func TestCreateFeatureLabels(t *testing.T) {
 	Convey("When creating feature labels from the configured sources", t, func() {
 		Convey("When fake feature source is configured", func() {
-			emptyLabelWL := regex{*regexp.MustCompile("")}
+			emptyLabelWL := regexp.MustCompile("")
 			fakeFeatureSource := source.FeatureSource(new(fake.Source))
 			fakeFeatureSource.SetConfig(fakeFeatureSource.NewConfig())
 			sources := []source.FeatureSource{}
 			sources = append(sources, fakeFeatureSource)
-			labels := createFeatureLabels(sources, emptyLabelWL)
+			labels := createFeatureLabels(sources, *emptyLabelWL)
 
 			Convey("Proper fake labels are returned", func() {
 				So(len(labels), ShouldEqual, 3)
@@ -374,11 +374,10 @@ func TestCreateFeatureLabels(t *testing.T) {
 			})
 		})
 		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
-			labelWL := regex{*regexp.MustCompile(".*rdt.*")}
 			fakeFeatureSource := source.FeatureSource(new(fake.Source))
 			sources := []source.FeatureSource{}
 			sources = append(sources, fakeFeatureSource)
-			labels := createFeatureLabels(sources, labelWL)
+			labels := createFeatureLabels(sources, *regexp.MustCompile(".*rdt.*"))
 
 			Convey("fake labels are not returned", func() {
 				So(len(labels), ShouldEqual, 0)
@@ -394,7 +393,7 @@ func TestGetFeatureLabels(t *testing.T) {
 	Convey("When I get feature labels and panic occurs during discovery of a feature source", t, func() {
 		fakePanicFeatureSource := source.FeatureSource(new(panicfake.Source))
 
-		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource, regex{*regexp.MustCompile("")})
+		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource, *regexp.MustCompile(""))
 		Convey("No label is returned", func() {
 			So(len(returnedLabels), ShouldEqual, 0)
 		})
