@@ -44,6 +44,10 @@ spec:
             - "nfd-master"
           resources:
             {{- toYaml .Values.master.resources | nindent 12 }}
+          args:
+            { { - if .Values.master.instance | empty | not } }
+            - "--instance={{ .Values.master.instance }}"
+            { { - end } }
 ## Enable TLS authentication
 ## The example below assumes having the root certificate named ca.crt stored in
 ## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
@@ -51,7 +55,6 @@ spec:
 ## Additional hardening can be enabled by specifying --verify-node-name in
 ## args, in which case every nfd-worker requires a individual node-specific
 ## TLS certificate.
-#          args:
 #            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
 #            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
 #            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"

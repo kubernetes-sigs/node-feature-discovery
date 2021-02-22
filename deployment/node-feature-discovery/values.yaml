@@ -19,6 +19,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 master:
+  instance:
   replicaCount: 1
 
   podSecurityContext: {}
