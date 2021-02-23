@@ -232,6 +232,10 @@ configuration file, instead.
 The following logging-related flags are inherited from the
 [klog](https://pkg.go.dev/k8s.io/klog/v2) package.
 
+Note: The logger setup can also be specified via the `core.klog` configuration
+file options. However, the command line flags take precedence over any
+corresponding config file options specified.
+
 #### -add_dir_header
 
 If true, adds the file directory to the header of the log messages.

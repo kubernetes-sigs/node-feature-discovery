@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"k8s.io/klog/v2"
 
@@ -112,6 +113,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
 		"Hostname expected from server certificate, useful in testing")
 
+	initKlogFlags(flagset, args)
+
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},
@@ -131,4 +134,25 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 			"DEPRECATED: This parameter should be set via the config file")
 
 	return args, overrides
+}
+
+func initKlogFlags(flagset *flag.FlagSet, args *worker.Args) {
+	args.Klog = make(map[string]*utils.KlogFlagVal)
+
+	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
+	//flags.SetOutput(ioutil.Discard)
+	klog.InitFlags(flags)
+	flags.VisitAll(func(f *flag.Flag) {
+		name := klogConfigOptName(f.Name)
+		args.Klog[name] = utils.NewKlogFlagVal(f)
+		flagset.Var(args.Klog[name], f.Name, f.Usage)
+	})
+}
+
+func klogConfigOptName(flagName string) string {
+	split := strings.Split(flagName, "_")
+	for i, v := range split[1:] {
+		split[i+1] = strings.Title(v)
+	}
+	return strings.Join(split, "")
 }

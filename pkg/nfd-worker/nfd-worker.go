@@ -66,6 +66,7 @@ type NFDConfig struct {
 }
 
 type coreConfig struct {
+	Klog           map[string]string
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
 	Sources        []string
@@ -88,6 +89,7 @@ type Args struct {
 	Server             string
 	ServerNameOverride string
 
+	Klog      map[string]*utils.KlogFlagVal
 	Overrides ConfigOverrideArgs
 }
 
@@ -209,6 +211,7 @@ func newDefaultConfig() *NFDConfig {
 			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 			SleepInterval:  duration{60 * time.Second},
 			Sources:        []string{"all"},
+			Klog:           make(map[string]string),
 		},
 	}
 }
@@ -384,8 +387,26 @@ func (c *coreConfig) sanitize() {
 	}
 }
 
-func (w *nfdWorker) configureCore(c coreConfig) {
-	// Determine enabled feature sourcds
+func (w *nfdWorker) configureCore(c coreConfig) error {
+	// Handle klog
+	for k, a := range w.args.Klog {
+		if !a.IsSetFromCmdline() {
+			v, ok := c.Klog[k]
+			if !ok {
+				v = a.DefValue()
+			}
+			if err := a.SetFromConfig(v); err != nil {
+				return err
+			}
+		}
+	}
+	for k := range c.Klog {
+		if _, ok := w.args.Klog[k]; !ok {
+			klog.Warningf("unknown logger option in config: %q", k)
+		}
+	}
+
+	// Determine enabled feature sources
 	sourceList := map[string]struct{}{}
 	all := false
 	for _, s := range c.Sources {
@@ -416,6 +437,7 @@ func (w *nfdWorker) configureCore(c coreConfig) {
 		}
 		klog.Warningf("skipping unknown source(s) %q specified in core.sources (or --sources)", strings.Join(names, ", "))
 	}
+	return nil
 }
 
 // Parse configuration options
@@ -468,7 +490,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 	w.config = c
 
-	w.configureCore(c.Core)
+	if err := w.configureCore(c.Core); err != nil {
+		return err
+	}
 
 	// (Re-)configure all "real" sources, test sources are not configurable
 	for _, s := range allSources {
