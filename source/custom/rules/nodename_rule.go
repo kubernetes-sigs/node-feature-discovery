@@ -16,9 +16,10 @@ limitations under the License.
 package rules
 
 import (
-	"log"
 	"os"
 	"regexp"
+
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -33,17 +34,17 @@ var _ Rule = NodenameRule{}
 
 func (n NodenameRule) Match() (bool, error) {
 	for _, nodenamePattern := range n {
-		log.Printf("DEBUG: matchNodename %s", nodenamePattern)
+		klog.V(1).Infof("matchNodename %s", nodenamePattern)
 		match, err := regexp.MatchString(nodenamePattern, nodeName)
 		if err != nil {
-			log.Printf("ERROR: nodename rule: invalid nodename regexp %q: %v", nodenamePattern, err)
+			klog.Errorf("nodename rule: invalid nodename regexp %q: %v", nodenamePattern, err)
 			continue
 		}
 		if !match {
-			//log.Printf("DEBUG: nodename rule: No match for pattern %q with node %q", nodenamePattern, nodeName)
+			klog.V(2).Infof("nodename rule: No match for pattern %q with node %q", nodenamePattern, nodeName)
 			continue
 		}
-		//log.Printf("DEBUG: nodename rule: Match for pattern %q with node %q", nodenamePattern, nodeName)
+		klog.V(2).Infof("nodename rule: Match for pattern %q with node %q", nodenamePattern, nodeName)
 		return true, nil
 	}
 	return false, nil

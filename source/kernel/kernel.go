@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@ limitations under the License.
 package kernel
 
 import (
-	"log"
 	"regexp"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
@@ -63,7 +64,7 @@ func (s *Source) SetConfig(conf source.Config) {
 	case *Config:
 		s.config = v
 	default:
-		log.Printf("PANIC: invalid config type: %T", conf)
+		klog.Fatalf("invalid config type: %T", conf)
 	}
 }
 
@@ -73,7 +74,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Read kernel version
 	version, err := parseVersion()
 	if err != nil {
-		log.Printf("ERROR: Failed to get kernel version: %s", err)
+		klog.Errorf("Failed to get kernel version: %s", err)
 	} else {
 		for key := range version {
 			features["version."+key] = version[key]
@@ -83,7 +84,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Read kconfig
 	kconfig, err := kernelutils.ParseKconfig(s.config.KconfigFile)
 	if err != nil {
-		log.Printf("ERROR: Failed to read kconfig: %s", err)
+		klog.Errorf("Failed to read kconfig: %s", err)
 	}
 
 	// Check flags
@@ -95,7 +96,7 @@ func (s *Source) Discover() (source.Features, error) {
 
 	selinux, err := SelinuxEnabled()
 	if err != nil {
-		log.Print(err)
+		klog.Warning(err)
 	} else if selinux {
 		features["selinux.enabled"] = true
 	}

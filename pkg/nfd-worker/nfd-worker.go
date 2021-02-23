@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -34,6 +33,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
@@ -56,9 +56,7 @@ import (
 )
 
 var (
-	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
-	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
-	nodeName     = os.Getenv("NODE_NAME")
+	nodeName = os.Getenv("NODE_NAME")
 )
 
 // Global config
@@ -186,9 +184,9 @@ func addConfigWatch(path string) (*fsnotify.Watcher, map[string]struct{}, error)
 	for p := path; ; p = filepath.Dir(p) {
 
 		if err := w.Add(p); err != nil {
-			stdoutLogger.Printf("failed to add fsnotify watch for %q: %v", p, err)
+			klog.V(1).Infof("failed to add fsnotify watch for %q: %v", p, err)
 		} else {
-			stdoutLogger.Printf("added fsnotify watch %q", p)
+			klog.V(1).Infof("added fsnotify watch %q", p)
 			added = true
 		}
 
@@ -218,8 +216,8 @@ func newDefaultConfig() *NFDConfig {
 // Run NfdWorker client. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
-	stdoutLogger.Printf("Node Feature Discovery Worker %s", version.Get())
-	stdoutLogger.Printf("NodeName: '%s'", nodeName)
+	klog.Infof("Node Feature Discovery Worker %s", version.Get())
+	klog.Infof("NodeName: '%s'", nodeName)
 
 	// Create watcher for config file and read initial configuration
 	configWatch, paths, err := addConfigWatch(w.configFilePath)
@@ -266,11 +264,11 @@ func (w *nfdWorker) Run() error {
 
 			// If any of our paths (directories or the file itself) change
 			if _, ok := paths[name]; ok {
-				stdoutLogger.Printf("fsnotify event in %q detected, reconfiguring fsnotify and reloading configuration", name)
+				klog.Infof("fsnotify event in %q detected, reconfiguring fsnotify and reloading configuration", name)
 
 				// Blindly remove existing watch and add a new one
 				if err := configWatch.Close(); err != nil {
-					stderrLogger.Printf("WARNING: failed to close fsnotify watcher: %v", err)
+					klog.Warningf("failed to close fsnotify watcher: %v", err)
 				}
 				configWatch, paths, err = addConfigWatch(w.configFilePath)
 				if err != nil {
@@ -284,7 +282,7 @@ func (w *nfdWorker) Run() error {
 			}
 
 		case e := <-configWatch.Errors:
-			stderrLogger.Printf("ERROR: config file watcher error: %v", e)
+			klog.Errorf("config file watcher error: %v", e)
 
 		case <-configTrigger:
 			if err := w.configure(w.configFilePath, w.args.Options); err != nil {
@@ -303,7 +301,7 @@ func (w *nfdWorker) Run() error {
 			labelTrigger = time.After(0)
 
 		case <-w.stop:
-			stdoutLogger.Printf("shutting down nfd-worker")
+			klog.Infof("shutting down nfd-worker")
 			configWatch.Close()
 			return nil
 		}
@@ -380,7 +378,7 @@ func (w *nfdWorker) disconnect() {
 
 func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
-		stderrLogger.Printf("WARNING: too short sleep-intervall specified (%s), forcing to 1s",
+		klog.Warningf("too short sleep-intervall specified (%s), forcing to 1s",
 			c.SleepInterval.Duration.String())
 		c.SleepInterval = duration{time.Second}
 	}
@@ -416,7 +414,7 @@ func (w *nfdWorker) configureCore(c coreConfig) {
 		for n := range sourceList {
 			names = append(names, n)
 		}
-		stderrLogger.Printf("WARNING: skipping unknown source(s) %q specified in core.sources (or --sources)", strings.Join(names, ", "))
+		klog.Warningf("skipping unknown source(s) %q specified in core.sources (or --sources)", strings.Join(names, ", "))
 	}
 }
 
@@ -435,7 +433,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		data, err := ioutil.ReadFile(filepath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				stderrLogger.Printf("config file %q not found, using defaults", filepath)
+				klog.Infof("config file %q not found, using defaults", filepath)
 			} else {
 				return fmt.Errorf("error reading config file: %s", err)
 			}
@@ -444,7 +442,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 			if err != nil {
 				return fmt.Errorf("Failed to parse config file: %s", err)
 			}
-			stdoutLogger.Printf("Configuration successfully loaded from %q", filepath)
+			klog.Infof("Configuration successfully loaded from %q", filepath)
 		}
 	}
 
@@ -489,14 +487,13 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regexp.R
 	for _, source := range sources {
 		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
 		if err != nil {
-			stderrLogger.Printf("discovery failed for source [%s]: %s", source.Name(), err.Error())
-			stderrLogger.Printf("continuing ...")
+			klog.Errorf("discovery failed for source %q: %v", source.Name(), err)
 			continue
 		}
 
 		for name, value := range labelsFromSource {
 			// Log discovered feature.
-			stdoutLogger.Printf("%s = %s", name, value)
+			klog.Infof("%s = %s", name, value)
 			labels[name] = value
 		}
 	}
@@ -508,7 +505,7 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regexp.R
 func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			stderrLogger.Printf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
+			klog.Errorf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
 			err = fmt.Errorf("%v", r)
 		}
 	}()
@@ -546,7 +543,7 @@ func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp)
 		// Validate label name.
 		errs := validation.IsQualifiedName(nameForValidation)
 		if len(errs) > 0 {
-			stderrLogger.Printf("Ignoring invalid feature name '%s': %s", label, errs)
+			klog.Warningf("Ignoring invalid feature name '%s': %s", label, errs)
 			continue
 		}
 
@@ -554,13 +551,13 @@ func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp)
 		// Validate label value
 		errs = validation.IsValidLabelValue(value)
 		if len(errs) > 0 {
-			stderrLogger.Printf("Ignoring invalid feature value %s=%s: %s", label, value, errs)
+			klog.Warningf("Ignoring invalid feature value %s=%s: %s", label, value, errs)
 			continue
 		}
 
 		// Skip if label doesn't match labelWhiteList
 		if !labelWhiteList.MatchString(nameForWhiteListing) {
-			stderrLogger.Printf("%q does not match the whitelist (%s) and will not be published.", nameForWhiteListing, labelWhiteList.String())
+			klog.Infof("%q does not match the whitelist (%s) and will not be published.", nameForWhiteListing, labelWhiteList.String())
 			continue
 		}
 
@@ -575,14 +572,14 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	stdoutLogger.Printf("Sending labeling request to nfd-master")
+	klog.Infof("Sending labeling request to nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		NfdVersion: version.Get(),
 		NodeName:   nodeName}
 	_, err := client.SetLabels(ctx, &labelReq)
 	if err != nil {
-		stderrLogger.Printf("failed to set node labels: %v", err)
+		klog.Errorf("failed to set node labels: %v", err)
 		return err
 	}
 

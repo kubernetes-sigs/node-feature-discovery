@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2017-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -66,43 +67,43 @@ func (s Source) Discover() (source.Features, error) {
 		name := netInterface.Name()
 		flags, err := readIfFlags(name)
 		if err != nil {
-			log.Printf("%v", err)
+			klog.Error(err)
 			continue
 		}
 
 		if flags&flagUp != 0 && flags&flagLoopback == 0 {
 			totalBytes, err := ioutil.ReadFile(source.SysfsDir.Path(sysfsBaseDir, name, "device/sriov_totalvfs"))
 			if err != nil {
-				log.Printf("SR-IOV not supported for network interface: %s: %v", name, err)
+				klog.V(1).Infof("SR-IOV not supported for network interface: %s: %v", name, err)
 				continue
 			}
 			total := bytes.TrimSpace(totalBytes)
 			t, err := strconv.Atoi(string(total))
 			if err != nil {
-				log.Printf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", name, err)
+				klog.Errorf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", name, err)
 				continue
 			}
 			if t > 0 {
-				log.Printf("SR-IOV capability is detected on the network interface: %s", name)
-				log.Printf("%d maximum supported number of virtual functions on network interface: %s", t, name)
+				klog.V(1).Infof("SR-IOV capability is detected on the network interface: %s", name)
+				klog.V(1).Infof("%d maximum supported number of virtual functions on network interface: %s", t, name)
 				features["sriov.capable"] = true
 				numBytes, err := ioutil.ReadFile(source.SysfsDir.Path(sysfsBaseDir, name, "device/sriov_numvfs"))
 				if err != nil {
-					log.Printf("SR-IOV not configured for network interface: %s: %s", name, err)
+					klog.V(1).Infof("SR-IOV not configured for network interface: %s: %s", name, err)
 					continue
 				}
 				num := bytes.TrimSpace(numBytes)
 				n, err := strconv.Atoi(string(num))
 				if err != nil {
-					log.Printf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", name, err)
+					klog.Errorf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", name, err)
 					continue
 				}
 				if n > 0 {
-					log.Printf("%d virtual functions configured on network interface: %s", n, name)
+					klog.V(1).Infof("%d virtual functions configured on network interface: %s", n, name)
 					features["sriov.configured"] = true
 					break
 				} else if n == 0 {
-					log.Printf("SR-IOV not configured on network interface: %s", name)
+					klog.V(1).Infof("SR-IOV not configured on network interface: %s", name)
 				}
 			}
 		}

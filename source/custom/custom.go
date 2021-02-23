@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2020-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@ limitations under the License.
 package custom
 
 import (
-	"log"
 	"reflect"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
@@ -67,7 +68,7 @@ func (s *Source) SetConfig(conf source.Config) {
 	case *config:
 		s.config = v
 	default:
-		log.Printf("PANIC: invalid config type: %T", conf)
+		klog.Fatalf("invalid config type: %T", conf)
 	}
 }
 
@@ -76,12 +77,12 @@ func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
 	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
 	allFeatureConfig = append(allFeatureConfig, getDirectoryFeatureConfig()...)
-	log.Printf("INFO: Custom features: %+v", allFeatureConfig)
+	klog.V(1).Infof("Custom features: %+v", allFeatureConfig)
 	// Iterate over features
 	for _, customFeature := range allFeatureConfig {
 		featureExist, err := s.discoverFeature(customFeature)
 		if err != nil {
-			log.Printf("ERROR: failed to discover feature: %q: %s", customFeature.Name, err.Error())
+			klog.Errorf("failed to discover feature: %q: %s", customFeature.Name, err.Error())
 			continue
 		}
 		if featureExist {

@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2020-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ package usb
 
 import (
 	"fmt"
-	"log"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 	usbutils "sigs.k8s.io/node-feature-discovery/source/internal"
@@ -61,7 +62,7 @@ func (s *Source) SetConfig(conf source.Config) {
 	case *Config:
 		s.config = v
 	default:
-		log.Printf("PANIC: invalid config type: %T", conf)
+		klog.Fatalf("invalid config type: %T", conf)
 	}
 }
 
@@ -87,10 +88,10 @@ func (s Source) Discover() (source.Features, error) {
 		for key := range configLabelFields {
 			keys = append(keys, key)
 		}
-		log.Printf("WARNING: invalid fields '%v' in deviceLabelFields, ignoring...", keys)
+		klog.Warningf("invalid fields '%v' in deviceLabelFields, ignoring...", keys)
 	}
 	if len(deviceLabelFields) == 0 {
-		log.Printf("WARNING: no valid fields in deviceLabelFields defined, using the defaults")
+		klog.Warningf("no valid fields in deviceLabelFields defined, using the defaults")
 		deviceLabelFields = []string{"vendor", "device"}
 	}
 

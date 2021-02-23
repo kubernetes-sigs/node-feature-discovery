@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ package system
 
 import (
 	"bufio"
-	"log"
 	"os"
 	"regexp"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -50,7 +51,7 @@ func (s Source) Discover() (source.Features, error) {
 
 	release, err := parseOSRelease()
 	if err != nil {
-		log.Printf("ERROR: failed to get os-release: %s", err)
+		klog.Errorf("failed to get os-release: %s", err)
 	} else {
 		for _, key := range osReleaseFields {
 			if value, exists := release[key]; exists {
