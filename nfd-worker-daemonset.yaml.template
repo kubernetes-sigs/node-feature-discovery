@@ -32,11 +32,6 @@ spec:
               drop: ["ALL"]
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-          tolerations:
-              - key: "node-role.kubernetes.io/master"
-                operator: "Equal"
-                value: ""
-                effect: "NoSchedule"
           command:
             - "nfd-worker"
           args:
