@@ -134,6 +134,17 @@ examples how to set-up and manage the worker configuration.
 To aid in making Custom Features clearer, we define a general and a per rule
 nomenclature, keeping things as consistent as possible.
 
+#### Additional configuration directory
+
+Additionally to the rules defined in the nfd-worker configuration file, the
+Custom feature can read more configuration files located in the
+`/etc/kubernetes/node-feature-discovery/custom.d/` directory. This makes more
+dynamic and flexible configuration easier. This directory must be available
+inside the NFD worker container, so Volumes and VolumeMounts must be used for
+mounting e.g. ConfigMap(s). The example deployment manifests provide an example
+(commented out) for providing Custom configuration with an additional
+ConfigMap, mounted into the `custom.d` directory.
+
 #### General Nomenclature & Definitions
 
 ```
@@ -151,6 +162,7 @@ file.
 sources:
   custom:
   - name: <feature name>
+    value: <optional feature value, defaults to "true">
     matchOn:
     - <Rule-1>: <Rule-1 Input>
       [<Rule-2>: <Rule-2 Input>]
@@ -291,6 +303,26 @@ Matching is done by performing logical _AND_ for each provided Element, i.e the
 Rule will match if all provided Elements (kernel config options) are enabled
 (`y` or `m`) or matching `=<value>` in the kernel.
 
+##### Nodename Rule
+
+###### Nomenclature
+
+```
+Element     :A nodename regexp pattern
+```
+
+The Rule allows matching the node's name against a provided list of Elements.
+
+###### Format
+
+```yaml
+nodename: [ <nodename regexp pattern>, ... ]
+```
+
+Matching is done by performing logical _OR_ for each provided Element, i.e the
+Rule will match if one of the provided Elements (nodename regexp pattern)
+matches the node's name.
+
 #### Example
 
 ```yaml
@@ -328,6 +360,10 @@ custom:
     matchOn:
       - kConfig: ["GCC_VERSION=100101"]
         loadedKMod: ["kmod1"]
+  - name: "my.datacenter"
+    value: "datacenter-1"
+    matchOn:
+      - nodename: [ "node-datacenter1-rack.*-server.*" ]
 ```
 
 __In the example above:__
@@ -360,6 +396,10 @@ __In the example above:__
   `feature.node.kubernetes.io/custom-my.kernel.modulecompiler=true` if the
   in-tree `kmod1` kernel module is loaded __AND__ it's built with
   `GCC_VERSION=100101`.
+- A node would contain the label:
+  `feature.node.kubernetes.io/my.datacenter=datacenter-1` if the node's name
+  matches the `node-datacenter1-rack.*-server.*` pattern, e.g.
+  `node-datacenter1-rack2-server42`
 
 #### Statically defined features
 
