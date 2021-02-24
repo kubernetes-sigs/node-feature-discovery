@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2019-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
 )
@@ -55,7 +56,7 @@ func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
 	return &nfdMaster{
 		nodeName:     mockNodeName,
 		annotationNs: AnnotationNsBase,
-		args:         Args{LabelWhiteList: regexp.MustCompile("")},
+		args:         Args{LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")}},
 		apihelper:    apihelper,
 	}
 }
@@ -339,7 +340,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
 
-			mockMaster.args.LabelWhiteList = regexp.MustCompile("^f.*2$")
+			mockMaster.args.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
@@ -390,7 +391,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-3", mockLabels["feature-3"]),
 			}
 
-			mockMaster.args.ResourceLabels = []string{"feature-3", "feature-1"}
+			mockMaster.args.ResourceLabels = map[string]struct{}{"feature-3": struct{}{}, "feature-1": struct{}{}}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)

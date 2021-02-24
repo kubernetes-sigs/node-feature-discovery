@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2019-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,22 +24,24 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	nfdmaster "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
-	w "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
+
+	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
+	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/test/data"
 )
 
 type testContext struct {
-	master nfdmaster.NfdMaster
+	master master.NfdMaster
 	errs   chan error
 }
 
-func setupTest(args nfdmaster.Args) testContext {
+func setupTest(args *master.Args) testContext {
 	// Fixed port and no-publish, for convenience
 	args.NoPublish = true
 	args.Port = 8192
-	args.LabelWhiteList = regexp.MustCompile("")
-	m, err := nfdmaster.NewNfdMaster(args)
+	args.LabelWhiteList.Regexp = *regexp.MustCompile("")
+	m, err := master.NewNfdMaster(args)
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)
 		os.Exit(1)
@@ -73,9 +75,9 @@ func teardownTest(ctx testContext) {
 func TestNewNfdWorker(t *testing.T) {
 	Convey("When initializing new NfdWorker instance", t, func() {
 		Convey("When one of --cert-file, --key-file or --ca-file is missing", func() {
-			_, err := w.NewNfdWorker(w.Args{CertFile: "crt", KeyFile: "key"})
-			_, err2 := w.NewNfdWorker(w.Args{KeyFile: "key", CaFile: "ca"})
-			_, err3 := w.NewNfdWorker(w.Args{CertFile: "crt", CaFile: "ca"})
+			_, err := worker.NewNfdWorker(&worker.Args{CertFile: "crt", KeyFile: "key"})
+			_, err2 := worker.NewNfdWorker(&worker.Args{KeyFile: "key", CaFile: "ca"})
+			_, err3 := worker.NewNfdWorker(&worker.Args{CertFile: "crt", CaFile: "ca"})
 			Convey("An error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err2, ShouldNotBeNil)
@@ -86,12 +88,17 @@ func TestNewNfdWorker(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	ctx := setupTest(nfdmaster.Args{})
+	ctx := setupTest(&master.Args{})
 	defer teardownTest(ctx)
 	Convey("When running nfd-worker against nfd-master", t, func() {
 		Convey("When publishing features from fake source", func() {
-			worker, _ := w.NewNfdWorker(w.Args{Oneshot: true, Sources: &[]string{"fake"}, Server: "localhost:8192"})
-			err := worker.Run()
+			args := &worker.Args{
+				Oneshot:   true,
+				Server:    "localhost:8192",
+				Overrides: worker.ConfigOverrideArgs{Sources: &utils.StringSliceVal{"fake"}},
+			}
+			fooasdf, _ := worker.NewNfdWorker(args)
+			err := fooasdf.Run()
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
@@ -100,7 +107,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunTls(t *testing.T) {
-	masterArgs := nfdmaster.Args{
+	masterArgs := &master.Args{
 		CaFile:         data.FilePath("ca.crt"),
 		CertFile:       data.FilePath("nfd-test-master.crt"),
 		KeyFile:        data.FilePath("nfd-test-master.key"),
@@ -110,16 +117,17 @@ func TestRunTls(t *testing.T) {
 	defer teardownTest(ctx)
 	Convey("When running nfd-worker against nfd-master with mutual TLS auth enabled", t, func() {
 		Convey("When publishing features from fake source", func() {
-			workerArgs := w.Args{
+			workerArgs := worker.Args{
 				CaFile:             data.FilePath("ca.crt"),
 				CertFile:           data.FilePath("nfd-test-worker.crt"),
 				KeyFile:            data.FilePath("nfd-test-worker.key"),
 				Oneshot:            true,
-				Sources:            &[]string{"fake"},
 				Server:             "localhost:8192",
-				ServerNameOverride: "nfd-test-master"}
-			worker, _ := w.NewNfdWorker(workerArgs)
-			err := worker.Run()
+				ServerNameOverride: "nfd-test-master",
+				Overrides:          worker.ConfigOverrideArgs{Sources: &utils.StringSliceVal{"fake"}},
+			}
+			w, _ := worker.NewNfdWorker(&workerArgs)
+			err := w.Run()
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
 			})

@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2019-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,7 +34,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"sigs.k8s.io/yaml"
+
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
@@ -50,7 +53,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/storage"
 	"sigs.k8s.io/node-feature-discovery/source/system"
 	"sigs.k8s.io/node-feature-discovery/source/usb"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -66,7 +68,7 @@ type NFDConfig struct {
 }
 
 type coreConfig struct {
-	LabelWhiteList regex
+	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
 	Sources        []string
 	SleepInterval  duration
@@ -87,11 +89,18 @@ type Args struct {
 	Oneshot            bool
 	Server             string
 	ServerNameOverride string
-	// Deprecated options that should be set via the config file
-	LabelWhiteList *regexp.Regexp
-	NoPublish      *bool
+
+	Overrides ConfigOverrideArgs
+}
+
+// ConfigOverrideArgs are args that override config file options
+type ConfigOverrideArgs struct {
+	NoPublish *bool
+
+	// Deprecated
+	LabelWhiteList *utils.RegexpVal
 	SleepInterval  *time.Duration
-	Sources        *[]string
+	Sources        *utils.StringSliceVal
 }
 
 type NfdWorker interface {
@@ -111,18 +120,14 @@ type nfdWorker struct {
 	enabledSources []source.FeatureSource
 }
 
-type regex struct {
-	regexp.Regexp
-}
-
 type duration struct {
 	time.Duration
 }
 
 // Create new NfdWorker instance.
-func NewNfdWorker(args Args) (NfdWorker, error) {
+func NewNfdWorker(args *Args) (NfdWorker, error) {
 	nfd := &nfdWorker{
-		args:   args,
+		args:   *args,
 		config: &NFDConfig{},
 		realSources: []source.FeatureSource{
 			&cpu.Source{},
@@ -203,7 +208,7 @@ func addConfigWatch(path string) (*fsnotify.Watcher, map[string]struct{}, error)
 func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
 		Core: coreConfig{
-			LabelWhiteList: regex{*regexp.MustCompile("")},
+			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 			SleepInterval:  duration{60 * time.Second},
 			Sources:        []string{"all"},
 		},
@@ -238,7 +243,7 @@ func (w *nfdWorker) Run() error {
 		select {
 		case <-labelTrigger:
 			// Get the set of feature labels.
-			labels := createFeatureLabels(w.enabledSources, w.config.Core.LabelWhiteList)
+			labels := createFeatureLabels(w.enabledSources, w.config.Core.LabelWhiteList.Regexp)
 
 			// Update the node with the feature labels.
 			if w.client != nil {
@@ -448,17 +453,17 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		return fmt.Errorf("Failed to parse --options: %s", err)
 	}
 
-	if w.args.LabelWhiteList != nil {
-		c.Core.LabelWhiteList = regex{*w.args.LabelWhiteList}
+	if w.args.Overrides.LabelWhiteList != nil {
+		c.Core.LabelWhiteList = *w.args.Overrides.LabelWhiteList
 	}
-	if w.args.NoPublish != nil {
-		c.Core.NoPublish = *w.args.NoPublish
+	if w.args.Overrides.NoPublish != nil {
+		c.Core.NoPublish = *w.args.Overrides.NoPublish
 	}
-	if w.args.SleepInterval != nil {
-		c.Core.SleepInterval = duration{*w.args.SleepInterval}
+	if w.args.Overrides.SleepInterval != nil {
+		c.Core.SleepInterval = duration{*w.args.Overrides.SleepInterval}
 	}
-	if w.args.Sources != nil {
-		c.Core.Sources = *w.args.Sources
+	if w.args.Overrides.Sources != nil {
+		c.Core.Sources = *w.args.Overrides.Sources
 	}
 
 	c.Core.sanitize()
@@ -477,7 +482,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 // createFeatureLabels returns the set of feature labels from the enabled
 // sources and the whitelist argument.
-func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regex) (labels Labels) {
+func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regexp.Regexp) (labels Labels) {
 	labels = Labels{}
 
 	// Do feature discovery from all configured sources.
@@ -500,7 +505,7 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regex) (
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source source.FeatureSource, labelWhiteList regex) (labels Labels, err error) {
+func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stderrLogger.Printf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
@@ -581,25 +586,6 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 		return err
 	}
 
-	return nil
-}
-
-// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
-func (r *regex) UnmarshalJSON(data []byte) error {
-	var v interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	switch val := v.(type) {
-	case string:
-		if rr, err := regexp.Compile(string(val)); err != nil {
-			return err
-		} else {
-			*r = regex{*rr}
-		}
-	default:
-		return fmt.Errorf("invalid regexp %s", data)
-	}
 	return nil
 }
 

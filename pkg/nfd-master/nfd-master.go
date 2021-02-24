@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2019-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import (
 	api "k8s.io/api/core/v1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -74,16 +75,16 @@ type Annotations map[string]string
 type Args struct {
 	CaFile         string
 	CertFile       string
-	ExtraLabelNs   map[string]struct{}
+	ExtraLabelNs   utils.StringSetVal
 	Instance       string
 	KeyFile        string
 	Kubeconfig     string
-	LabelWhiteList *regexp.Regexp
+	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
 	Port           int
 	Prune          bool
 	VerifyNodeName bool
-	ResourceLabels []string
+	ResourceLabels utils.StringSetVal
 }
 
 type NfdMaster interface {
@@ -102,8 +103,8 @@ type nfdMaster struct {
 }
 
 // Create new NfdMaster server instance.
-func NewNfdMaster(args Args) (NfdMaster, error) {
-	nfd := &nfdMaster{args: args,
+func NewNfdMaster(args *Args) (NfdMaster, error) {
+	nfd := &nfdMaster{args: *args,
 		nodeName: os.Getenv("NODE_NAME"),
 		ready:    make(chan bool, 1),
 	}
@@ -111,6 +112,11 @@ func NewNfdMaster(args Args) (NfdMaster, error) {
 	if args.Instance == "" {
 		nfd.annotationNs = AnnotationNsBase
 	} else {
+		if ok, _ := regexp.MatchString(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`, args.Instance); !ok {
+			return nfd, fmt.Errorf("invalid --instance %q: instance name "+
+				"must start and end with an alphanumeric character and may only contain "+
+				"alphanumerics, `-`, `_` or `.`", args.Instance)
+		}
 		nfd.annotationNs = args.Instance + "." + AnnotationNsBase
 	}
 
@@ -283,7 +289,7 @@ func (m *nfdMaster) updateMasterNode() error {
 // into extended resources. This function also handles proper namespacing of
 // labels and ERs, i.e. adds the possibly missing default namespace for labels
 // arriving through the gRPC API.
-func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelWhiteList *regexp.Regexp, extendedResourceNames []string) (Labels, ExtendedResources) {
+func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelWhiteList regexp.Regexp, extendedResourceNames map[string]struct{}) (Labels, ExtendedResources) {
 	outLabels := Labels{}
 
 	for label, value := range labels {
@@ -310,7 +316,7 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 
 	// Remove labels which are intended to be extended resources
 	extendedResources := ExtendedResources{}
-	for _, extendedResourceName := range extendedResourceNames {
+	for extendedResourceName := range extendedResourceNames {
 		// Add possibly missing default ns
 		extendedResourceName = addNs(extendedResourceName, LabelNs)
 		if value, ok := outLabels[extendedResourceName]; ok {
@@ -354,7 +360,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 	}
 	stdoutLogger.Printf("REQUEST Node: %s NFD-version: %s Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
 
-	labels, extendedResources := filterFeatureLabels(r.Labels, m.args.ExtraLabelNs, m.args.LabelWhiteList, m.args.ResourceLabels)
+	labels, extendedResources := filterFeatureLabels(r.Labels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
 
 	if !m.args.NoPublish {
 		// Advertise NFD worker version as an annotation
