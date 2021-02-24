@@ -45,9 +45,9 @@ spec:
           resources:
             {{- toYaml .Values.master.resources | nindent 12 }}
           args:
-            { { - if .Values.master.instance | empty | not } }
+            {{- if .Values.master.instance | empty | not }}
             - "--instance={{ .Values.master.instance }}"
-            { { - end } }
+            {{- end }}
 ## Enable TLS authentication
 ## The example below assumes having the root certificate named ca.crt stored in
 ## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
