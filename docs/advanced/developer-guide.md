@@ -151,12 +151,12 @@ features-detection.
 ### NFD-Master
 
 When running as a standalone container labeling is expected to fail because
-Kubernetes API is not available. Thus, it is recommended to use `--no-publish`
+Kubernetes API is not available. Thus, it is recommended to use `-no-publish`
 command line flag. E.g.
 
 ```bash
 $ export NFD_CONTAINER_IMAGE={{ site.container_image }}
-$ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master --no-publish
+$ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish
 2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
 2019/02/01 14:48:21 gRPC server serving on port: 8080
 ```
@@ -206,7 +206,7 @@ $ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker
 ```
 
 If you just want to try out feature discovery without connecting to nfd-master,
-pass the `--no-publish` flag to nfd-worker.
+pass the `-no-publish` flag to nfd-worker.
 
 Command line flags of nfd-worker:
 

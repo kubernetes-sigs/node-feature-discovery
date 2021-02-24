@@ -41,12 +41,12 @@ The last component (i.e. `attribute-name`) is optional, and only used if a
 feature logically has sub-hierarchy, e.g. `sriov.capable` and
 `sriov.configure` from the `network` source.
 
-The `--sources` flag controls which sources to use for discovery.
+The `-sources` flag controls which sources to use for discovery.
 
 *Note: Consecutive runs of nfd-worker will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
-such as restricting discovered features with the --label-whitelist option.*
+such as restricting discovered features with the -label-whitelist option.*
 
 ## Feature Sources
 
@@ -559,11 +559,11 @@ e.g. for overriding labels created by other feature sources.
 
 You can also override the default namespace of your labels using this format:
 `<namespace>/<name>[=<value>]`. You must whitelist your namespace using the
-`--extra-label-ns` option on the master. In this case, the name of the
+`-extra-label-ns` option on the master. In this case, the name of the
 file will not be added to the label name. For example, if you want to add the
 label `my.namespace.org/my-label=value`, your hook output or file must contains
 `my.namespace.org/my-label=value` and you must add
-`--extra-label-ns=my.namespace.org` on the master command line.
+`-extra-label-ns=my.namespace.org` on the master command line.
 
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
@@ -649,13 +649,13 @@ This feature is experimental and by no means a replacement for the usage of
 device plugins.
 
 Labels which have integer values, can be promoted to Kubernetes extended
-resources by listing them to the master `--resource-labels` command line flag.
+resources by listing them to the master `-resource-labels` command line flag.
 These labels won't then show in the node label section, they will appear only
 as extended resources.
 
 An example use-case for the extended resources could be based on a hook which
 creates a label for the node SGX EPC memory section size. By giving the name of
-that label in the `--resource-labels` flag, that value will then turn into an
+that label in the `-resource-labels` flag, that value will then turn into an
 extended resource of the node, allowing PODs to request that resource and the
 Kubernetes scheduler to schedule such PODs to only those nodes which have a
 sufficient capacity of said resource left.
@@ -665,7 +665,7 @@ automatically prefixed to the extended resource, if the promoted label doesn't
 have a namespace.
 
 Example usage of the command line arguments, using a new namespace:
-`nfd-master --resource-labels=my_source-my.feature,sgx.some.ns/epc --extra-label-ns=sgx.some.ns`
+`nfd-master -resource-labels=my_source-my.feature,sgx.some.ns/epc -extra-label-ns=sgx.some.ns`
 
 The above would result in following extended resources provided that related
 labels exist:

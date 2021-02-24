@@ -15,42 +15,42 @@ sort: 2
 
 ---
 
-To quickly view available command line flags execute `nfd-master --help`.
+To quickly view available command line flags execute `nfd-master -help`.
 In a docker container:
 
 ```bash
-docker run {{ site.container_image }} nfd-master --help
+docker run {{ site.container_image }} nfd-master -help
 ```
 
-### -h, --help
+### -h, -help
 
 Print usage and exit.
 
-### --version
+### -version
 
 Print version and exit.
 
-### --prune
+### -prune
 
-The `--prune` flag is a sub-command like option for cleaning up the cluster. It
+The `-prune` flag is a sub-command like option for cleaning up the cluster. It
 causes nfd-master to remove all NFD related labels, annotations and extended
 resources from all Node objects of the cluster and exit.
 
-### --port
+### -port
 
-The `--port` flag specifies the TCP port that nfd-master listens for incoming requests.
+The `-port` flag specifies the TCP port that nfd-master listens for incoming requests.
 
 Default: 8080
 
 Example:
 
 ```bash
-nfd-master --port=443
+nfd-master -port=443
 ```
 
-### --instance
+### -instance
 
-The `--instance` flag makes it possible to run multiple NFD deployments in
+The `-instance` flag makes it possible to run multiple NFD deployments in
 parallel. In practice, it separates the node annotations between deployments so
 that each of them can store metadata independently. The instance name must
 start and end with an alphanumeric character and may only contain alphanumeric
@@ -61,67 +61,67 @@ Default: *empty*
 Example:
 
 ```bash
-nfd-master --instance=network
+nfd-master -instance=network
 ```
 
-### --ca-file
+### -ca-file
 
-The `--ca-file` is one of the three flags (together with `--cert-file` and
-`--key-file`) controlling master-worker mutual TLS authentication on the
+The `-ca-file` is one of the three flags (together with `-cert-file` and
+`-key-file`) controlling master-worker mutual TLS authentication on the
 nfd-master side. This flag specifies the TLS root certificate that is used for
 authenticating incoming connections. NFD-Worker side needs to have matching key
 and cert files configured in order for the incoming requests to be accepted.
 
 Default: *empty*
 
-Note: Must be specified together with `--cert-file` and `--key-file`
+Note: Must be specified together with `-cert-file` and `-key-file`
 
 Example:
 
 ```bash
-nfd-master --ca-file=/opt/nfd/ca.crt --cert-file=/opt/nfd/master.crt --key-file=/opt/nfd/master.key
+nfd-master -ca-file=/opt/nfd/ca.crt -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
 ```
 
-### --cert-file
+### -cert-file
 
-The `--cert-file` is one of the three flags (together with `--ca-file` and
-`--key-file`) controlling master-worker mutual TLS authentication on the
+The `-cert-file` is one of the three flags (together with `-ca-file` and
+`-key-file`) controlling master-worker mutual TLS authentication on the
 nfd-master side. This flag specifies the TLS certificate presented for
 authenticating outgoing traffic towards nfd-worker.
 
 Default: *empty*
 
-Note: Must be specified together with `--ca-file` and `--key-file`
+Note: Must be specified together with `-ca-file` and `-key-file`
 
 Example:
 
 ```bash
-nfd-master --cert-file=/opt/nfd/master.crt --key-file=/opt/nfd/master.key --ca-file=/opt/nfd/ca.crt
+nfd-master -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key -ca-file=/opt/nfd/ca.crt
 ```
 
-### --key-file
+### -key-file
 
-The `--key-file` is one of the three flags (together with `--ca-file` and
-`--cert-file`) controlling master-worker mutual TLS authentication on the
+The `-key-file` is one of the three flags (together with `-ca-file` and
+`-cert-file`) controlling master-worker mutual TLS authentication on the
 nfd-master side. This flag specifies the private key corresponding the given
-certificate file (`--cert-file`) that is used for authenticating outgoing
+certificate file (`-cert-file`) that is used for authenticating outgoing
 traffic.
 
 Default: *empty*
 
-Note: Must be specified together with `--cert-file` and `--ca-file`
+Note: Must be specified together with `-cert-file` and `-ca-file`
 
 Example:
 
 ```bash
-nfd-master --key-file=/opt/nfd/master.key --cert-file=/opt/nfd/master.crt --ca-file=/opt/nfd/ca.crt
+nfd-master -key-file=/opt/nfd/master.key -cert-file=/opt/nfd/master.crt -ca-file=/opt/nfd/ca.crt
 ```
 
-### --verify-node-name
+### -verify-node-name
 
-The `--verify-node-name` flag controls the NodeName based authorization of
+The `-verify-node-name` flag controls the NodeName based authorization of
 incoming requests and only has effect when mTLS authentication has been enabled
-(with `--ca-file`, `--cert-file` and `--key-file`). If enabled, the worker node
+(with `-ca-file`, `-cert-file` and `-key-file`). If enabled, the worker node
 name of the incoming must match with the CN in its TLS certificate. Thus,
 workers are only able to label the node they are running on (or the node whose
 certificate they present), and, each worker must have an individual
@@ -136,13 +136,13 @@ Default: *false*
 Example:
 
 ```bash
-nfd-master --verify-node-name --ca-file=/opt/nfd/ca.crt \
-    --cert-file=/opt/nfd/master.crt --key-file=/opt/nfd/master.key
+nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
+    -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
 ```
 
-### --no-publish
+### -no-publish
 
-The `--no-publish` flag disables all communication with the Kubernetes API
+The `-no-publish` flag disables all communication with the Kubernetes API
 server, making a "dry-run" flag for nfd-master. No Labels, Annotations or
 ExtendedResources (or any other properties of any Kubernetes API objects) are
 modified.
@@ -152,12 +152,12 @@ Default: *false*
 Example:
 
 ```bash
-nfd-master --no-publish
+nfd-master -no-publish
 ```
 
-### --label-whitelist
+### -label-whitelist
 
-The `--label-whitelist` specifies a regular expression for filtering feature
+The `-label-whitelist` specifies a regular expression for filtering feature
 labels based on their name. Each label must match against the given reqular
 expression in order to be published.
 
@@ -169,31 +169,31 @@ Default: *empty*
 Example:
 
 ```bash
-nfd-master --label-whitelist='.*cpuid\.'
+nfd-master -label-whitelist='.*cpuid\.'
 ```
 
-### --extra-label-ns
+### -extra-label-ns
 
-The `--extra-label-ns` flag specifies a comma-separated list of allowed feature
+The `-extra-label-ns` flag specifies a comma-separated list of allowed feature
 label namespaces. By default, nfd-master only allows creating labels in the
 default `feature.node.kubernetes.io` label namespace. This option can be used
 to allow vendor-specific namespaces for custom labels from the local and custom
 feature sources.
 
 The same namespace control and this flag applies Extended Resources (created
-with `--resource-labels`), too.
+with `-resource-labels`), too.
 
 Default: *empty*
 
 Example:
 
 ```bash
-nfd-master --extra-label-ns=vendor-1.com,vendor-2.io
+nfd-master -extra-label-ns=vendor-1.com,vendor-2.io
 ```
 
-### --resource-labels
+### -resource-labels
 
-The `--resource-labels` flag specifies a comma-separated list of features to be
+The `-resource-labels` flag specifies a comma-separated list of features to be
 advertised as extended resources instead of labels. Features that have integer
 values can be published as Extended Resources by listing them in this flag.
 
@@ -202,5 +202,5 @@ Default: *empty*
 Example:
 
 ```bash
-nfd-master --resource-labels=vendor-1.com/feature-1,vendor-2.io/feature-2
+nfd-master -resource-labels=vendor-1.com/feature-1,vendor-2.io/feature-2
 ```

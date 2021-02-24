@@ -233,10 +233,10 @@ and mames sure that new nodes are labeled as they are added to the cluster.
 Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
-the `--sleep-interval` option. In the
+the `-sleep-interval` option. In the
 [template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker-daemonset.yaml.template#L26)
 the default interval is set to 60s which is also the default when no
-`--sleep-interval` is specified. Also, the configuration file is re-read on
+`-sleep-interval` is specified. Also, the configuration file is re-read on
 each iteration providing a simple mechanism of run-time reconfiguration.
 
 ### TLS authentication
@@ -245,15 +245,15 @@ NFD supports mutual TLS authentication between the nfd-master and nfd-worker
 instances.  That is, nfd-worker and nfd-master both verify that the other end
 presents a valid certificate.
 
-TLS authentication is enabled by specifying `--ca-file`, `--key-file` and
-`--cert-file` args, on both the nfd-master and nfd-worker instances.
+TLS authentication is enabled by specifying `-ca-file`, `-key-file` and
+`-cert-file` args, on both the nfd-master and nfd-worker instances.
 The template specs provided with NFD contain (commented out) example
 configuration for enabling TLS authentication.
 
 The Common Name (CN) of the nfd-master certificate must match the DNS name of
 the nfd-master Service of the cluster. By default, nfd-master only check that
-the nfd-worker has been signed by the specified root certificate (--ca-file).
-Additional hardening can be enabled by specifying --verify-node-name in
+the nfd-worker has been signed by the specified root certificate (-ca-file).
+Additional hardening can be enabled by specifying -verify-node-name in
 nfd-master args, in which case nfd-master verifies that the NodeName presented
 by nfd-worker matches the Common Name (CN) of its certificate. This means that
 each nfd-worker requires a individual node-specific TLS certificate.
@@ -262,7 +262,7 @@ each nfd-worker requires a individual node-specific TLS certificate.
 
 NFD-Worker supports dynamic configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`,
-but, this can be changed by specifying the`--config` command line flag.
+but, this can be changed by specifying the`-config` command line flag.
 Configuration file is re-read whenever it is modified which makes run-time
 re-configuration of nfd-worker straightforward.
 
@@ -286,12 +286,12 @@ The (empty-by-default)
 contains all available configuration options and can be used as a reference
 for creating creating a configuration.
 
-Configuration options can also be specified via the `--options` command line
+Configuration options can also be specified via the `-options` command line
 flag, in which case no mounts need to be used. The same format as in the config
 file must be used, i.e. JSON (or YAML). For example:
 
 ```
---options='{"sources": { "pci": { "deviceClassWhitelist": ["12"] } } }'
+-options='{"sources": { "pci": { "deviceClassWhitelist": ["12"] } } }'
 ```
 
 Configuration options specified from the command line will override those read
@@ -366,7 +366,7 @@ kubectl delete clusterrolebinding nfd-master
 
 ### Removing Feature Labels
 
-NFD-Master has a special `--prune` command line flag for removing all
+NFD-Master has a special `-prune` command line flag for removing all
 nfd-related node labels, annotations and extended resources from the cluster.
 
 ```bash
