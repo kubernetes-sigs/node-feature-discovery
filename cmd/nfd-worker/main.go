@@ -54,11 +54,11 @@ func main() {
 	// Get new NfdWorker instance
 	instance, err := worker.NewNfdWorker(args)
 	if err != nil {
-		klog.Fatalf("Failed to initialize NfdWorker instance: %v", err)
+		klog.Exitf("Failed to initialize NfdWorker instance: %v", err)
 	}
 
 	if err = instance.Run(); err != nil {
-		klog.Fatal(err)
+		klog.Exit(err)
 	}
 }
 
