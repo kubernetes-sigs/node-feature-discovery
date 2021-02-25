@@ -5,9 +5,11 @@ sort: 1
 ---
 
 # Developer Guide
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -36,6 +38,7 @@ make
 ```
 
 #### Push the container image
+
 Optional, this example with Docker.
 
 ```bash
@@ -117,13 +120,16 @@ make IMAGE_REGISTRY=<my custom registry uri>
 Or to specify a build tool different from Docker, It can be done in 2 ways:
 
 1. via environment
-```bash
-IMAGE_BUILD_CMD="buildah bud" make
-```
+
+    ```bash
+    IMAGE_BUILD_CMD="buildah bud" make
+    ```
+
 1. by overriding the variable value
-```bash
-make  IMAGE_BUILD_CMD="buildah bud"
-```
+
+    ```bash
+    make  IMAGE_BUILD_CMD="buildah bud"
+    ```
 
 ### Testing
 
@@ -167,31 +173,31 @@ Command line flags of nfd-master:
 $ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-master -help
 Usage of nfd-master:
   -ca-file string
-    	Root certificate for verifying connections
+        Root certificate for verifying connections
   -cert-file string
-    	Certificate used for authenticating connections
+        Certificate used for authenticating connections
   -extra-label-ns value
-    	Comma separated list of allowed extra label namespaces
+        Comma separated list of allowed extra label namespaces
   -instance string
-    	Instance name. Used to separate annotation namespaces for multiple parallel deployments.
+        Instance name. Used to separate annotation namespaces for multiple parallel deployments.
   -key-file string
-    	Private key matching -cert-file
+        Private key matching -cert-file
   -kubeconfig string
-    	Kubeconfig to use
+        Kubeconfig to use
   -label-whitelist value
-    	Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.
+        Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.
   -no-publish
-    	Do not publish feature labels
+        Do not publish feature labels
   -port int
-    	Port on which to listen for connections. (default 8080)
+        Port on which to listen for connections. (default 8080)
   -prune
-    	Prune all NFD related attributes from all nodes of the cluaster and exit.
+        Prune all NFD related attributes from all nodes of the cluaster and exit.
   -resource-labels value
-    	Comma separated list of labels to be exposed as extended resources.
+        Comma separated list of labels to be exposed as extended resources.
   -verify-node-name
-    	Verify worker node name against CN from the TLS certificate. Only takes effect when TLS authentication has been enabled.
+        Verify worker node name against CN from the TLS certificate. Only takes effect when TLS authentication has been enabled.
   -version
-    	Print version and exit.
+        Print version and exit.
 ```
 
 ### NFD-Worker
@@ -214,44 +220,44 @@ Command line flags of nfd-worker:
 $ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-worker -help
 Usage of nfd-worker:
   -ca-file string
-    	Root certificate for verifying connections
+        Root certificate for verifying connections
   -cert-file string
-    	Certificate used for authenticating connections
+        Certificate used for authenticating connections
   -config string
-    	Config file to use. (default "/etc/kubernetes/node-feature-discovery/nfd-worker.conf")
+        Config file to use. (default "/etc/kubernetes/node-feature-discovery/nfd-worker.conf")
   -key-file string
-    	Private key matching -cert-file
+        Private key matching -cert-file
   -label-whitelist value
-    	Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'. DEPRECATED: This parameter should be set via the config file.
+        Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'. DEPRECATED: This parameter should be set via the config file.
   -no-publish
-    	Do not publish discovered features, disable connection to nfd-master.
+        Do not publish discovered features, disable connection to nfd-master.
   -oneshot
-    	Do not publish feature labels
+        Do not publish feature labels
   -options string
-    	Specify config options from command line. Config options are specified in the same format as in the config file (i.e. json or yaml). These options
+        Specify config options from command line. Config options are specified in the same format as in the config file (i.e. json or yaml). These options
   -server string
-    	NFD server address to connecto to. (default "localhost:8080")
+        NFD server address to connecto to. (default "localhost:8080")
   -server-name-override string
-    	Hostname expected from server certificate, useful in testing
+        Hostname expected from server certificate, useful in testing
   -sleep-interval duration
-    	Time to sleep between re-labeling. Non-positive value implies no re-labeling (i.e. infinite sleep). DEPRECATED: This parameter should be set via the config file
+        Time to sleep between re-labeling. Non-positive value implies no re-labeling (i.e. infinite sleep). DEPRECATED: This parameter should be set via the config file
   -sources value
-    	Comma separated list of feature sources. Special value 'all' enables all feature sources. DEPRECATED: This parameter should be set via the config file
+        Comma separated list of feature sources. Special value 'all' enables all feature sources. DEPRECATED: This parameter should be set via the config file
   -version
-    	Print version and exit.
+        Print version and exit.
 ```
 
 **NOTE** Some feature sources need certain directories and/or files from the
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker-daemonset.yaml.template)
+[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker-daemonset.yaml.template)
 for up-to-date information about the required volume mounts.
 
 ## Documentation
 
 All documentation resides under the
-[docs](https://github.com/kubernetes-sigs/node-feature-discovery/tree/{{ site.release }}/docs)
+[docs](https://github.com/kubernetes-sigs/node-feature-discovery/tree/{{site.release}}/docs)
 directory in the source tree. It is designed to be served as a html site by
 [GitHub Pages](https://pages.github.com/).
 
@@ -277,4 +283,4 @@ make site-build
 This will generate html documentation under `docs/_site/`.
 
 <!-- Links -->
-[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/test/e2e/e2e-test-config.exapmle.yaml
+[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/test/e2e/e2e-test-config.exapmle.yaml

@@ -5,9 +5,11 @@ sort: 3
 ---
 
 # Deployment and Usage
+
 {: .no_toc }
 
 ## Table of Contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -36,24 +38,27 @@ is recommended to be done via
    [latest release](https://github.com/operator-framework/operator-lifecycle-manager/releases/latest)
    for detailed instructions.
 1. Install the operator:
-```bash
-kubectl create -f https://operatorhub.io/install/nfd-operator.yaml
-```
+
+    ```bash
+    kubectl create -f https://operatorhub.io/install/nfd-operator.yaml
+    ```
+
 1. Create NodeFeatureDiscovery resource (in `nfd` namespace here):
-```bash
-cat << EOF | kubectl apply -f -
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: nfd
----
-apiVersion: nfd.kubernetes.io/v1alpha1
-kind: NodeFeatureDiscovery
-metadata:
-  name: my-nfd-deployment
-  namespace: nfd
-EOF
-```
+
+    ```bash
+    cat << EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: nfd
+    ---
+    apiVersion: nfd.kubernetes.io/v1alpha1
+    kind: NodeFeatureDiscovery
+    metadata:
+      name: my-nfd-deployment
+      namespace: nfd
+    EOF
+    ```
 
 ### Deployment Templates
 
@@ -107,7 +112,7 @@ Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
 
 [Helm package manager](https://helm.sh/) should be installed.
 
-#### Deployment with Helm
+#### Deployment
 
 To install the chart with the release name node-feature-discovery:
 
@@ -118,8 +123,9 @@ export NFD_NS=node-feature-discovery
 helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_NS --create-namespace
 ```
 
-The command deploys Node Feature Discovery on the Kubernetes cluster in the default configuration.
-The Configuration section describes how it can be configured during installation.
+The command deploys Node Feature Discovery on the Kubernetes cluster in the
+default configuration.  The Configuration section describes how it can be
+configured during installation.
 
 #### Configuration
 
@@ -146,7 +152,8 @@ export NFD_NS=node-feature-discovery
 helm uninstall node-feature-discovery --namespace $NFD_NS
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+The command removes all the Kubernetes components associated with the chart and
+deletes the release.
 
 #### Chart Parameters
 
@@ -166,7 +173,6 @@ We have introduced the following Chart parameters.
 | `rbac` | dict |  | RBAC [parameteres](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) |
 | `nameOverride` | string |  | Override the name of the chart |
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
-
 
 ##### Master pod parameters
 
@@ -193,7 +199,6 @@ We have introduced the following Chart parameters.
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
 | `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
 | `worker.annotations` | dict | {} | NFD worker pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
-
 
 ### Build Your Own
 
@@ -234,7 +239,7 @@ Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an interval specified using
 the `-sleep-interval` option. In the
-[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker-daemonset.yaml.template#L26)
+[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker-daemonset.yaml.template#L26)
 the default interval is set to 60s which is also the default when no
 `-sleep-interval` is specified. Also, the configuration file is re-read on
 each iteration providing a simple mechanism of run-time reconfiguration.
@@ -258,7 +263,7 @@ nfd-master args, in which case nfd-master verifies that the NodeName presented
 by nfd-worker matches the Common Name (CN) of its certificate. This means that
 each nfd-worker requires a individual node-specific TLS certificate.
 
-## Configuration
+## Worker Configuration
 
 NFD-Worker supports dynamic configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`,
@@ -274,7 +279,7 @@ re-configurability.
 The provided nfd-worker deployment templates create an empty configmap and
 mount it inside the nfd-worker containers. Configuration can be edited with:
 
-```
+```bash
 kubectl -n ${NFD_NS} edit configmap nfd-worker-conf
 ```
 
@@ -282,7 +287,7 @@ See
 [nfd-worker configuration file reference](../advanced/worker-configuration-reference.md)
 for more details.
 The (empty-by-default)
-[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker.conf.example)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker.conf.example)
 contains all available configuration options and can be used as a reference
 for creating creating a configuration.
 
@@ -290,7 +295,7 @@ Configuration options can also be specified via the `-options` command line
 flag, in which case no mounts need to be used. The same format as in the config
 file must be used, i.e. JSON (or YAML). For example:
 
-```
+```bash
 -options='{"sources": { "pci": { "deviceClassWhitelist": ["12"] } } }'
 ```
 

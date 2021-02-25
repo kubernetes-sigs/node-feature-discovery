@@ -6,9 +6,11 @@ published: false
 ---
 
 # Architecture
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -16,6 +18,6 @@ published: false
 
 ---
 
-***WORK IN PROGRESS***
+***WORK IN PROGRESS.***
 
 This page first gives an architectural overview and describes principles behind.

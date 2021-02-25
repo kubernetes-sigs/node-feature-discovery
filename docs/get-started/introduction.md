@@ -5,9 +5,11 @@ sort: 1
 ---
 
 # Introduction
+
 {: .no_toc }
 
 ## Table of Contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -90,6 +92,7 @@ NFD also annotates nodes it is running on:
 NOTE: the [`--instance`](../advanced/master-commandline-reference.md#instance)
 command line flag affects the annotation names
 
-Unapplicable annotations are not created, i.e. for example master.version is only created on nodes running nfd-master.
+Unapplicable annotations are not created, i.e. for example master.version is
+only created on nodes running nfd-master.
 
 

@@ -6,9 +6,11 @@ published: false
 ---
 
 # End-to-End Test Configuration File Reference
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -16,6 +18,6 @@ published: false
 
 ---
 
-***WORK IN PROGRESS***
+***WORK IN PROGRESS.***
 
 This section describes the end-to-end test configuration file.
