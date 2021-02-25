@@ -1,0 +1,40 @@
+# permissions for end users to edit nodefeaturediscoveries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nodefeaturediscovery-editor-role
+rules:
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries/status
+  verbs:
+  - get
+# For nfd-worker
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+  resourceNames:
+  - nfd-worker
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - '*'
+

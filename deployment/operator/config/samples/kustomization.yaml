@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- nfd.kubernetes.io_v1_nodefeaturediscovery.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
+

@@ -1,0 +1,13 @@
+domain: nodefeaturediscoveries.nfd.kubernetes.io
+layout: go.kubebuilder.io/v3
+projectName: node-feature-discovery-operator
+repo: github.com/kubernetes-sigs/node-feature-discovery-operator
+resources:
+- crdVersion: v1
+  group: nfd.kubernetes.io
+  kind: NodeFeatureDiscovery
+  version: v1
+version: 3-alpha
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
