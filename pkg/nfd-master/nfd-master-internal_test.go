@@ -157,7 +157,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			err := mockMaster.updateNodeFeatures(mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources)
 
 			Convey("Error is produced", func() {
-				So(err, ShouldEqual, expectedError)
+				So(err.Error(), ShouldEndWith, expectedError.Error())
 			})
 		})
 
@@ -182,7 +182,7 @@ func TestUpdateMasterNode(t *testing.T) {
 			})
 		})
 
-		mockErr := errors.New("mock-error")
+		mockErr := errors.New("failed to patch node annotations: mock-error'")
 		Convey("When getting API client fails", func() {
 			mockHelper.On("GetClient").Return(mockClient, mockErr)
 			err := mockMaster.updateMasterNode()
@@ -206,7 +206,7 @@ func TestUpdateMasterNode(t *testing.T) {
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.Anything).Return(mockErr)
 			err := mockMaster.updateMasterNode()
 			Convey("An error should be returned", func() {
-				So(err, ShouldEqual, mockErr)
+				So(err.Error(), ShouldEndWith, mockErr.Error())
 			})
 		})
 	})

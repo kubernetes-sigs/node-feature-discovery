@@ -23,6 +23,8 @@ import (
 	"os"
 	"regexp"
 
+	"k8s.io/klog/v2"
+
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -39,6 +41,8 @@ func main() {
 	printVersion := flags.Bool("version", false, "Print version and exit.")
 
 	args := initFlags(flags)
+	// Inject klog flags
+	klog.InitFlags(flags)
 
 	_ = flags.Parse(os.Args[1:])
 	if len(flags.Args()) > 0 {

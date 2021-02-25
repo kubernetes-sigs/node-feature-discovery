@@ -21,7 +21,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path"
@@ -36,6 +35,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	api "k8s.io/api/core/v1"
+	"k8s.io/klog/v2"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -54,12 +55,6 @@ const (
 	featureLabelAnnotation     = "feature-labels"
 	masterVersionAnnotation    = "master.version"
 	workerVersionAnnotation    = "worker.version"
-)
-
-// package loggers
-var (
-	stdoutLogger = log.New(os.Stdout, "", log.LstdFlags)
-	stderrLogger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 // Labels are a Kubernetes representation of discovered features.
@@ -142,11 +137,11 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 // Run NfdMaster server. The method returns in case of fatal errors or if Stop()
 // is called.
 func (m *nfdMaster) Run() error {
-	stdoutLogger.Printf("Node Feature Discovery Master %s", version.Get())
+	klog.Infof("Node Feature Discovery Master %s", version.Get())
 	if m.args.Instance != "" {
-		stdoutLogger.Printf("Master instance: '%s'", m.args.Instance)
+		klog.Infof("Master instance: %q", m.args.Instance)
 	}
-	stdoutLogger.Printf("NodeName: '%s'", m.nodeName)
+	klog.Infof("NodeName: %q", m.nodeName)
 
 	if m.args.Prune {
 		return m.prune()
@@ -184,7 +179,7 @@ func (m *nfdMaster) Run() error {
 		}
 		caPool := x509.NewCertPool()
 		if ok := caPool.AppendCertsFromPEM(caCert); !ok {
-			return fmt.Errorf("failed to add certificate from '%s'", m.args.CaFile)
+			return fmt.Errorf("failed to add certificate from %q", m.args.CaFile)
 		}
 		// Create TLS config
 		tlsConfig := &tls.Config{
@@ -196,7 +191,7 @@ func (m *nfdMaster) Run() error {
 	}
 	m.server = grpc.NewServer(serverOpts...)
 	pb.RegisterLabelerServer(m.server, m)
-	stdoutLogger.Printf("gRPC server serving on port: %d", m.args.Port)
+	klog.Infof("gRPC server serving on port: %d", m.args.Port)
 	return m.server.Serve(lis)
 }
 
@@ -233,7 +228,7 @@ func (m *nfdMaster) prune() error {
 	}
 
 	for _, node := range nodes.Items {
-		stdoutLogger.Printf("pruning node %q...", node.Name)
+		klog.Infof("pruning node %q...", node.Name)
 
 		// Prune labels and extended resources
 		err := m.updateNodeFeatures(node.Name, Labels{}, Annotations{}, ExtendedResources{})
@@ -255,7 +250,6 @@ func (m *nfdMaster) prune() error {
 		if err != nil {
 			return fmt.Errorf("failed to prune annotations from node %q: %v", node.Name, err)
 		}
-
 	}
 	return nil
 }
@@ -278,8 +272,7 @@ func (m *nfdMaster) updateMasterNode() error {
 		"/metadata/annotations")
 	err = m.apihelper.PatchNode(cli, node.Name, p)
 	if err != nil {
-		stderrLogger.Printf("failed to patch node annotations: %v", err)
-		return err
+		return fmt.Errorf("failed to patch node annotations: %v", err)
 	}
 
 	return nil
@@ -301,14 +294,14 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 		// Check label namespace, filter out if ns is not whitelisted
 		if ns != LabelNs {
 			if _, ok := extraLabelNs[ns]; !ok {
-				stderrLogger.Printf("Namespace '%s' is not allowed. Ignoring label '%s'\n", ns, label)
+				klog.Errorf("Namespace %q is not allowed. Ignoring label %q\n", ns, label)
 				continue
 			}
 		}
 
 		// Skip if label doesn't match labelWhiteList
 		if !labelWhiteList.MatchString(name) {
-			stderrLogger.Printf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, labelWhiteList.String())
+			klog.Errorf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, labelWhiteList.String())
 			continue
 		}
 		outLabels[label] = value
@@ -321,7 +314,7 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 		extendedResourceName = addNs(extendedResourceName, LabelNs)
 		if value, ok := outLabels[extendedResourceName]; ok {
 			if _, err := strconv.Atoi(value); err != nil {
-				stderrLogger.Printf("bad label value (%s: %s) encountered for extended resource: %s", extendedResourceName, value, err.Error())
+				klog.Errorf("bad label value (%s: %s) encountered for extended resource: %s", extendedResourceName, value, err.Error())
 				continue // non-numeric label can't be used
 			}
 
@@ -340,25 +333,30 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		// Check that the node name matches the CN from the TLS cert
 		client, ok := peer.FromContext(c)
 		if !ok {
-			stderrLogger.Printf("gRPC request error: failed to get peer (client)")
+			klog.Errorf("gRPC request error: failed to get peer (client)")
 			return &pb.SetLabelsReply{}, fmt.Errorf("failed to get peer (client)")
 		}
 		tlsAuth, ok := client.AuthInfo.(credentials.TLSInfo)
 		if !ok {
-			stderrLogger.Printf("gRPC request error: incorrect client credentials from '%v'", client.Addr)
+			klog.Errorf("gRPC request error: incorrect client credentials from '%v'", client.Addr)
 			return &pb.SetLabelsReply{}, fmt.Errorf("incorrect client credentials")
 		}
 		if len(tlsAuth.State.VerifiedChains) == 0 || len(tlsAuth.State.VerifiedChains[0]) == 0 {
-			stderrLogger.Printf("gRPC request error: client certificate verification for '%v' failed", client.Addr)
+			klog.Errorf("gRPC request error: client certificate verification for '%v' failed", client.Addr)
 			return &pb.SetLabelsReply{}, fmt.Errorf("client certificate verification failed")
 		}
 		cn := tlsAuth.State.VerifiedChains[0][0].Subject.CommonName
 		if cn != r.NodeName {
-			stderrLogger.Printf("gRPC request error: authorization for %v failed: cert valid for '%s', requested node name '%s'", client.Addr, cn, r.NodeName)
-			return &pb.SetLabelsReply{}, fmt.Errorf("request authorization failed: cert valid for '%s', requested node name '%s'", cn, r.NodeName)
+			klog.Errorf("gRPC request error: authorization for %v failed: cert valid for %q, requested node name %q", client.Addr, cn, r.NodeName)
+			return &pb.SetLabelsReply{}, fmt.Errorf("request authorization failed: cert valid for %q, requested node name %q", cn, r.NodeName)
 		}
 	}
-	stdoutLogger.Printf("REQUEST Node: %s NFD-version: %s Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
+	if klog.V(1).Enabled() {
+		klog.Infof("REQUEST Node: %q NFD-version: %q Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
+
+	} else {
+		klog.Infof("received labeling request for node %q", r.NodeName)
+	}
 
 	labels, extendedResources := filterFeatureLabels(r.Labels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
 
@@ -368,7 +366,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 
 		err := m.updateNodeFeatures(r.NodeName, labels, annotations, extendedResources)
 		if err != nil {
-			stderrLogger.Printf("failed to advertise labels: %s", err.Error())
+			klog.Errorf("failed to advertise labels: %v", err)
 			return &pb.SetLabelsReply{}, err
 		}
 	}
@@ -420,16 +418,14 @@ func (m *nfdMaster) updateNodeFeatures(nodeName string, labels Labels, annotatio
 	// Patch the node object in the apiserver
 	err = m.apihelper.PatchNode(cli, node.Name, patches)
 	if err != nil {
-		stderrLogger.Printf("error while patching node object: %s", err.Error())
-		return err
+		return fmt.Errorf("error while patching node object: %v", err)
 	}
 
 	// patch node status with extended resource changes
 	patches = m.createExtendedResourcePatches(node, extendedResources)
 	err = m.apihelper.PatchNodeStatus(cli, node.Name, patches)
 	if err != nil {
-		stderrLogger.Printf("error while patching extended resources: %s", err.Error())
-		return err
+		return fmt.Errorf("error while patching extended resources: %v", err)
 	}
 
 	return err
