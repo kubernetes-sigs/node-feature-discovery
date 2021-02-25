@@ -19,8 +19,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
+	"strings"
+
+	"k8s.io/klog/v2"
 
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -46,17 +48,17 @@ func main() {
 
 	// Assert that the version is known
 	if version.Undefined() {
-		log.Printf("WARNING: version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
+		klog.Warningf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	// Get new NfdWorker instance
 	instance, err := worker.NewNfdWorker(args)
 	if err != nil {
-		log.Fatalf("Failed to initialize NfdWorker instance: %v", err)
+		klog.Fatalf("Failed to initialize NfdWorker instance: %v", err)
 	}
 
 	if err = instance.Run(); err != nil {
-		log.Fatalf("ERROR: %v", err)
+		klog.Fatal(err)
 	}
 }
 
@@ -76,13 +78,13 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 		case "no-publish":
 			args.Overrides.NoPublish = overrides.NoPublish
 		case "label-whitelist":
-			log.Printf("WARNING: --label-whitelist is deprecated, use 'core.labelWhiteList' option in the config file, instead")
+			klog.Warningf("--label-whitelist is deprecated, use 'core.labelWhiteList' option in the config file, instead")
 			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
 		case "sleep-interval":
-			log.Printf("WARNING: --sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
+			klog.Warningf("--sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
 			args.Overrides.SleepInterval = overrides.SleepInterval
 		case "sources":
-			log.Printf("WARNING: --sources is deprecated, use 'core.sources' option in the config file, instead")
+			klog.Warningf("--sources is deprecated, use 'core.sources' option in the config file, instead")
 			args.Overrides.Sources = overrides.Sources
 		}
 	})
@@ -111,6 +113,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
 		"Hostname expected from server certificate, useful in testing")
 
+	initKlogFlags(flagset, args)
+
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},
@@ -130,4 +134,25 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 			"DEPRECATED: This parameter should be set via the config file")
 
 	return args, overrides
+}
+
+func initKlogFlags(flagset *flag.FlagSet, args *worker.Args) {
+	args.Klog = make(map[string]*utils.KlogFlagVal)
+
+	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
+	//flags.SetOutput(ioutil.Discard)
+	klog.InitFlags(flags)
+	flags.VisitAll(func(f *flag.Flag) {
+		name := klogConfigOptName(f.Name)
+		args.Klog[name] = utils.NewKlogFlagVal(f)
+		flagset.Var(args.Klog[name], f.Name, f.Usage)
+	})
+}
+
+func klogConfigOptName(flagName string) string {
+	split := strings.Split(flagName, "_")
+	for i, v := range split[1:] {
+		split[i+1] = strings.Title(v)
+	}
+	return strings.Join(split, "")
 }

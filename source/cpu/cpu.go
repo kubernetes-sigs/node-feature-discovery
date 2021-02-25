@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package cpu
 
 import (
 	"io/ioutil"
-	"log"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/internal/cpuidutils"
@@ -96,7 +97,7 @@ func (s *Source) SetConfig(conf source.Config) {
 		s.config = v
 		s.initCpuidFilter()
 	default:
-		log.Printf("PANIC: invalid config type: %T", conf)
+		klog.Fatalf("invalid config type: %T", conf)
 	}
 }
 
@@ -106,7 +107,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Check if hyper-threading seems to be enabled
 	found, err := haveThreadSiblings()
 	if err != nil {
-		log.Printf("ERROR: failed to detect hyper-threading: %v", err)
+		klog.Errorf("failed to detect hyper-threading: %v", err)
 	} else if found {
 		features["hardware_multithreading"] = true
 	}
@@ -114,7 +115,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Check SST-BF
 	found, err = discoverSSTBF()
 	if err != nil {
-		log.Printf("ERROR: failed to detect SST-BF: %v", err)
+		klog.Errorf("failed to detect SST-BF: %v", err)
 	} else if found {
 		features["power.sst_bf.enabled"] = true
 	}
@@ -130,7 +131,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Detect pstate features
 	pstate, err := detectPstate()
 	if err != nil {
-		log.Printf("ERROR: %v", err)
+		klog.Error(err)
 	} else {
 		for k, v := range pstate {
 			features["pstate."+k] = v

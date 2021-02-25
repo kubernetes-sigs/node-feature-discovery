@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -52,18 +53,18 @@ func (s *Source) SetConfig(source.Config) {}
 func (s Source) Discover() (source.Features, error) {
 	featuresFromHooks, err := getFeaturesFromHooks()
 	if err != nil {
-		log.Printf("%v", err)
+		klog.Error(err)
 	}
 
 	featuresFromFiles, err := getFeaturesFromFiles()
 	if err != nil {
-		log.Printf("%v", err)
+		klog.Error(err)
 	}
 
 	// Merge features from hooks and files
 	for k, v := range featuresFromHooks {
 		if old, ok := featuresFromFiles[k]; ok {
-			log.Printf("WARNING: overriding label '%s': value changed from '%s' to '%s'",
+			klog.Warningf("overriding label '%s': value changed from '%s' to '%s'",
 				k, old, v)
 		}
 		featuresFromFiles[k] = v
@@ -110,7 +111,7 @@ func getFeaturesFromHooks() (source.Features, error) {
 	files, err := ioutil.ReadDir(hookDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("ERROR: hook directory %v does not exist", hookDir)
+			klog.Infof("hook directory %v does not exist", hookDir)
 			return features, nil
 		}
 		return features, fmt.Errorf("Unable to access %v: %v", hookDir, err)
@@ -120,14 +121,14 @@ func getFeaturesFromHooks() (source.Features, error) {
 		fileName := file.Name()
 		lines, err := runHook(fileName)
 		if err != nil {
-			log.Printf("ERROR: source local failed running hook '%v': %v", fileName, err)
+			klog.Errorf("source local failed running hook '%v': %v", fileName, err)
 			continue
 		}
 
 		// Append features
 		for k, v := range parseFeatures(lines, fileName) {
 			if old, ok := features[k]; ok {
-				log.Printf("WARNING: overriding label '%s' from another hook (%s): value changed from '%s' to '%s'",
+				klog.Warningf("overriding label '%s' from another hook (%s): value changed from '%s' to '%s'",
 					k, fileName, old, v)
 			}
 			features[k] = v
@@ -144,7 +145,7 @@ func runHook(file string) ([][]byte, error) {
 	path := filepath.Join(hookDir, file)
 	filestat, err := os.Stat(path)
 	if err != nil {
-		log.Printf("ERROR: skipping %v, failed to get stat: %v", path, err)
+		klog.Errorf("skipping %v, failed to get stat: %v", path, err)
 		return lines, err
 	}
 
@@ -165,7 +166,7 @@ func runHook(file string) ([][]byte, error) {
 				// Don't print the last empty string
 				break
 			}
-			log.Printf("%v: %s", file, line)
+			klog.Errorf("%v: %s", file, line)
 		}
 
 		// Do not return any lines if an error occurred
@@ -185,7 +186,7 @@ func getFeaturesFromFiles() (source.Features, error) {
 	files, err := ioutil.ReadDir(featureFilesDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("ERROR: features directory %v does not exist", featureFilesDir)
+			klog.Infof("features directory %v does not exist", featureFilesDir)
 			return features, nil
 		}
 		return features, fmt.Errorf("Unable to access %v: %v", featureFilesDir, err)
@@ -195,14 +196,14 @@ func getFeaturesFromFiles() (source.Features, error) {
 		fileName := file.Name()
 		lines, err := getFileContent(fileName)
 		if err != nil {
-			log.Printf("ERROR: source local failed reading file '%v': %v", fileName, err)
+			klog.Errorf("source local failed reading file '%v': %v", fileName, err)
 			continue
 		}
 
 		// Append features
 		for k, v := range parseFeatures(lines, fileName) {
 			if old, ok := features[k]; ok {
-				log.Printf("WARNING: overriding label '%s' from another features.d file (%s): value changed from '%s' to '%s'",
+				klog.Warningf("overriding label '%s' from another features.d file (%s): value changed from '%s' to '%s'",
 					k, fileName, old, v)
 			}
 			features[k] = v
@@ -219,7 +220,7 @@ func getFileContent(fileName string) ([][]byte, error) {
 	path := filepath.Join(featureFilesDir, fileName)
 	filestat, err := os.Stat(path)
 	if err != nil {
-		log.Printf("ERROR: skipping %v, failed to get stat: %v", path, err)
+		klog.Errorf("skipping %v, failed to get stat: %v", path, err)
 		return lines, err
 	}
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2018-2020 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -109,7 +110,7 @@ func ParseKconfig(configPath string) (map[string]string, error) {
 			} else {
 				value := strings.Trim(m[2], `"`)
 				if len(value) > validation.LabelValueMaxLength {
-					log.Printf("WARNING: ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
+					klog.Warningf("ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
 					continue
 				}
 				kconfig[m[1]] = value

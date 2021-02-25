@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2020-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package busutils
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/klog/v2"
 )
 
 type UsbDeviceInfo map[string]string
@@ -125,7 +126,7 @@ func DetectUsb(deviceAttrSpec map[string]bool) (map[string][]UsbDeviceInfo, erro
 	for _, device := range devices {
 		devMap, err := readUsbDevInfo(filepath.Dir(device), deviceAttrSpec)
 		if err != nil {
-			log.Print(err)
+			klog.Error(err)
 			continue
 		}
 

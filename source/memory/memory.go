@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package memory
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -47,7 +48,7 @@ func (s Source) Discover() (source.Features, error) {
 	// Detect NUMA
 	numa, err := isNuma()
 	if err != nil {
-		log.Printf("ERROR: failed to detect NUMA topology: %s", err)
+		klog.Errorf("failed to detect NUMA topology: %s", err)
 	} else if numa {
 		features["numa"] = true
 	}
@@ -55,7 +56,7 @@ func (s Source) Discover() (source.Features, error) {
 	// Detect NVDIMM
 	nv, err := detectNvdimm()
 	if err != nil {
-		log.Printf("ERROR: NVDIMM detection failed: %s", err)
+		klog.Errorf("NVDIMM detection failed: %s", err)
 	} else {
 		for k, v := range nv {
 			features["nv."+k] = v
@@ -110,7 +111,7 @@ func detectNvdimm() (map[string]bool, error) {
 			}
 		}
 	} else {
-		log.Printf("WARNING: failed to detect NVDIMM configuration: %s", err)
+		klog.Warningf("failed to detect NVDIMM configuration: %s", err)
 	}
 
 	return features, nil

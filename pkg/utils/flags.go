@@ -18,6 +18,7 @@ package utils
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"regexp"
 	"sort"
@@ -97,4 +98,65 @@ func (a *StringSliceVal) String() string {
 		return ""
 	}
 	return strings.Join(*a, ",")
+}
+
+// KlogFlagVal is a wrapper to allow dynamic control of klog from the config file
+type KlogFlagVal struct {
+	flag             *flag.Flag
+	isSetFromCmdLine bool
+}
+
+// Set implements flag.Value interface
+func (k *KlogFlagVal) Set(value string) error {
+	k.isSetFromCmdLine = true
+	return k.flag.Value.Set(value)
+}
+
+// String implements flag.Value interface
+func (k *KlogFlagVal) String() string {
+	if k.flag == nil {
+		return ""
+	}
+	// Need to handle "log_backtrace_at" in a special way
+	s := k.flag.Value.String()
+	if k.flag.Name == "log_backtrace_at" && s == ":0" {
+		s = ""
+	}
+	return s
+}
+
+// DefValue returns the default value of KlogFlagVal as string
+func (k *KlogFlagVal) DefValue() string {
+	// Need to handle "log_backtrace_at" in a special way
+	d := k.flag.DefValue
+	if k.flag.Name == "log_backtrace_at" && d == ":0" {
+		d = ""
+	}
+	return d
+}
+
+// SetFromConfig sets the value without marking it as set from the cmdline
+func (k *KlogFlagVal) SetFromConfig(value string) error {
+	return k.flag.Value.Set(value)
+}
+
+// IsSetFromCmdline returns true if the value has been set via Set()
+func (k *KlogFlagVal) IsSetFromCmdline() bool { return k.isSetFromCmdLine }
+
+// IsBoolFlag implements flag.boolFlag.IsBoolFlag() for wrapped klog flags.
+func (k *KlogFlagVal) IsBoolFlag() bool {
+	if ba, ok := k.flag.Value.(boolFlag); ok {
+		return ba.IsBoolFlag()
+	}
+	return false
+}
+
+// NewKlogFlagVal wraps a klog flag into KlogFlagVal type
+func NewKlogFlagVal(f *flag.Flag) *KlogFlagVal {
+	return &KlogFlagVal{flag: f}
+}
+
+// boolFlag replicates boolFlag interface internal to the flag package
+type boolFlag interface {
+	IsBoolFlag() bool
 }
