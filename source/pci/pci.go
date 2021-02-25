@@ -104,7 +104,7 @@ func (s Source) Discover() (source.Features, error) {
 
 	devs, err := pciutils.DetectPci(deviceAttrs)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to detect PCI devices: %s", err.Error())
+		return nil, fmt.Errorf("failed to detect PCI devices: %s", err.Error())
 	}
 
 	// Iterate over all device classes

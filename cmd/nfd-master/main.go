@@ -45,7 +45,7 @@ func main() {
 
 	_ = flags.Parse(os.Args[1:])
 	if len(flags.Args()) > 0 {
-		fmt.Printf("unknown command line argument: %s\n", flags.Args()[0])
+		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
 	}
@@ -63,7 +63,7 @@ func main() {
 	// Get new NfdMaster instance
 	instance, err := master.NewNfdMaster(args)
 	if err != nil {
-		klog.Exitf("Failed to initialize NfdMaster instance: %v", err)
+		klog.Exitf("failed to initialize NfdMaster instance: %v", err)
 	}
 
 	if err = instance.Run(); err != nil {

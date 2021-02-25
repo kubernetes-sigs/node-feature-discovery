@@ -114,7 +114,7 @@ func getFeaturesFromHooks() (source.Features, error) {
 			klog.Infof("hook directory %v does not exist", hookDir)
 			return features, nil
 		}
-		return features, fmt.Errorf("Unable to access %v: %v", hookDir, err)
+		return features, fmt.Errorf("unable to access %v: %v", hookDir, err)
 	}
 
 	for _, file := range files {
@@ -189,7 +189,7 @@ func getFeaturesFromFiles() (source.Features, error) {
 			klog.Infof("features directory %v does not exist", featureFilesDir)
 			return features, nil
 		}
-		return features, fmt.Errorf("Unable to access %v: %v", featureFilesDir, err)
+		return features, fmt.Errorf("unable to access %v: %v", featureFilesDir, err)
 	}
 
 	for _, file := range files {

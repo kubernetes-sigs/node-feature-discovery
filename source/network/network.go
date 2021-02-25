@@ -80,7 +80,7 @@ func (s Source) Discover() (source.Features, error) {
 			total := bytes.TrimSpace(totalBytes)
 			t, err := strconv.Atoi(string(total))
 			if err != nil {
-				klog.Errorf("Error in obtaining maximum supported number of virtual functions for network interface: %s: %v", name, err)
+				klog.Errorf("error in obtaining maximum supported number of virtual functions for network interface: %s: %v", name, err)
 				continue
 			}
 			if t > 0 {
@@ -95,7 +95,7 @@ func (s Source) Discover() (source.Features, error) {
 				num := bytes.TrimSpace(numBytes)
 				n, err := strconv.Atoi(string(num))
 				if err != nil {
-					klog.Errorf("Error in obtaining the configured number of virtual functions for network interface: %s: %v", name, err)
+					klog.Errorf("error in obtaining the configured number of virtual functions for network interface: %s: %v", name, err)
 					continue
 				}
 				if n > 0 {

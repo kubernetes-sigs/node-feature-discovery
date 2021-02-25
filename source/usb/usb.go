@@ -103,7 +103,7 @@ func (s Source) Discover() (source.Features, error) {
 
 	devs, err := usbutils.DetectUsb(deviceAttrs)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to detect USB devices: %s", err.Error())
+		return nil, fmt.Errorf("failed to detect USB devices: %s", err.Error())
 	}
 
 	// Iterate over all device classes

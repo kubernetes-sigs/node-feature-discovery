@@ -58,7 +58,7 @@ func readPciDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceIn
 		attrVal, err := readSinglePciAttribute(devPath, attr)
 		if err != nil {
 			if must {
-				return info, fmt.Errorf("Failed to read device %s: %s", attr, err)
+				return info, fmt.Errorf("failed to read device %s: %s", attr, err)
 			}
 			continue
 

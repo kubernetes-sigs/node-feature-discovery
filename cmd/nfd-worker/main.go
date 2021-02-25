@@ -54,7 +54,7 @@ func main() {
 	// Get new NfdWorker instance
 	instance, err := worker.NewNfdWorker(args)
 	if err != nil {
-		klog.Exitf("Failed to initialize NfdWorker instance: %v", err)
+		klog.Exitf("failed to initialize NfdWorker instance: %v", err)
 	}
 
 	if err = instance.Run(); err != nil {
@@ -67,7 +67,7 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 
 	_ = flags.Parse(osArgs)
 	if len(flags.Args()) > 0 {
-		fmt.Printf("unknown command line argument: %s\n", flags.Args()[0])
+		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
 	}
