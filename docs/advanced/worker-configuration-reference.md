@@ -5,12 +5,14 @@ sort: 4
 ---
 
 # NFD-Worker Configuration File Reference
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
-***WORK IN PROGRESS***
+***WORK IN PROGRESS.***
 
 1. TOC
 {:toc}
@@ -18,7 +20,7 @@ sort: 4
 ---
 
 See the
-[sample configuration file](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker.conf.example)
+[sample configuration file](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker.conf.example)
 for a full example configuration.
 
 ## core

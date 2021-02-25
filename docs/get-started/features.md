@@ -5,9 +5,11 @@ sort: 4
 ---
 
 # Feature Discovery
+
 {: .no_toc }
 
 ## Table of Contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -33,7 +35,7 @@ The published node labels encode a few pieces of information:
 
 Feature label names adhere to the following pattern:
 
-```
+```plaintext
 <namespace>/<source name>-<feature name>[.<attribute name>]
 ```
 
@@ -147,7 +149,7 @@ ConfigMap, mounted into the `custom.d` directory.
 
 #### General Nomenclature & Definitions
 
-```
+```plaintext
 Rule        :Represents a matching logic that is used to match on a feature.
 Rule Input  :The input a Rule is provided. This determines how a Rule performs the match operation.
 Matcher     :A composition of Rules, each Matcher may be composed of at most one instance of each Rule.
@@ -190,7 +192,7 @@ between Rules of a given Matcher.
 
 ###### Nomenclature
 
-```
+```plaintext
 Attribute   :A PCI attribute.
 Element     :An identifier of the PCI attribute.
 ```
@@ -217,7 +219,7 @@ partake in the matching process.
 
 ###### Nomenclature
 
-```
+```plaintext
 Attribute   :A USB attribute.
 Element     :An identifier of the USB attribute.
 ```
@@ -244,7 +246,7 @@ partake in the matching process.
 
 ###### Nomenclature
 
-```
+```plaintext
 Element     :A kernel module
 ```
 
@@ -265,7 +267,7 @@ system.
 
 ###### Nomenclature
 
-```
+```plaintext
 Element     :A CPUID flag
 ```
 
@@ -286,7 +288,7 @@ the system.
 
 ###### Nomenclature
 
-```
+```plaintext
 Element     :A Kconfig option
 ```
 
@@ -307,7 +309,7 @@ Rule will match if all provided Elements (kernel config options) are enabled
 
 ###### Nomenclature
 
-```
+```plaintext
 Element     :A nodename regexp pattern
 ```
 
@@ -426,7 +428,7 @@ The **kernel** feature source supports the following labels:
 
 | Feature | Attribute           | Description                                  |
 | ------- | ------------------- | -------------------------------------------- |
-| config  | &lt;option name&gt; | Kernel config option is enabled (set 'y' or 'm').<br> Default options are `NO_HZ`, `NO_HZ_IDLE`, `NO_HZ_FULL` and `PREEMPT`
+| config  | &lt;option name&gt; | Kernel config option is enabled (set 'y' or 'm'). Default options are `NO_HZ`, `NO_HZ_IDLE`, `NO_HZ_FULL` and `PREEMPT`
 | selinux | enabled             | Selinux is enabled on the node
 | version | full                | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde')
 |         | major               | First component of the kernel version (e.g. '4')
@@ -471,7 +473,7 @@ of fields used in `<device label>` is configurable, valid fields being `class`,
 `vendor`, `device`, `subsystem_vendor` and `subsystem_device`.  Defaults are
 `class` and `vendor`. An example label using the default label fields:
 
-```
+```plaintext
 feature.node.kubernetes.io/pci-1200_8086.present=true
 ```
 
@@ -492,7 +494,7 @@ of fields used in `<device label>` is configurable, valid fields being `class`,
 `vendor`, and `device`.  Defaults are `class`, `vendor` and `device`. An
 example label using the default label fields:
 
-```
+```plaintext
 feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
 ```
 
@@ -575,7 +577,7 @@ Pods outside NFD, e.g. in Kubernetes device plugins. It is possible to mount
 the `source.d` and/or `features.d` directories common with the NFD Pod and
 deploy the custom hooks/features there. NFD will periodically scan the
 directories and run any hooks and read any feature files it finds. The
-[example nfd-worker deployment template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{ site.release }}/nfd-worker-daemonset.yaml.template#L69)
+[example nfd-worker deployment template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker-daemonset.yaml.template#L69)
 contains `hostPath` mounts for `sources.d` and `features.d` directories. By
 using the same mounts in the secondary Pod (e.g. device plugin) you have
 created a shared area for delivering hooks and feature files to NFD.
@@ -586,7 +588,7 @@ User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
 following `stdout` output:
 
-```
+```plaintext
 MY_FEATURE_1
 MY_FEATURE_2=myvalue
 /override_source-OVERRIDE_BOOL
@@ -596,7 +598,7 @@ override.namespace/value=456
 
 which, in turn, will translate into the following node labels:
 
-```
+```plaintext
 feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
 feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
@@ -609,7 +611,7 @@ override.namespace/value=456
 User has a file `/etc/kubernetes/node-feature-discovery/features.d/my-source`
 which contains the following lines:
 
-```
+```plaintext
 MY_FEATURE_1
 MY_FEATURE_2=myvalue
 /override_source-OVERRIDE_BOOL
@@ -619,7 +621,7 @@ override.namespace/value=456
 
 which, in turn, will translate into the following node labels:
 
-```
+```plaintext
 feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
 feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
 feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
@@ -670,7 +672,7 @@ Example usage of the command line arguments, using a new namespace:
 The above would result in following extended resources provided that related
 labels exist:
 
-```
+```plaintext
   sgx.some.ns/epc: <label value>
   feature.node.kubernetes.io/my_source-my.feature: <label value>
 ```
