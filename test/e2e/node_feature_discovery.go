@@ -49,6 +49,7 @@ var (
 	dockerRepo    = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
 	dockerTag     = flag.String("nfd.tag", "master", "Docker tag to use")
 	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
+	openShift     = flag.Bool("nfd.openshift", false, "Enable OpenShift specific bits")
 
 	conf *e2eConfig
 )
@@ -168,14 +169,17 @@ func createClusterRole(cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 				Resources: []string{"nodes"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
-			{
+		},
+	}
+	if *openShift {
+		cr.Rules = append(cr.Rules,
+			rbacv1.PolicyRule{
 				// needed on OpenShift clusters
 				APIGroups:     []string{"security.openshift.io"},
 				Resources:     []string{"securitycontextconstraints"},
 				ResourceNames: []string{"hostaccess"},
 				Verbs:         []string{"use"},
-			},
-		},
+			})
 	}
 	return cs.RbacV1().ClusterRoles().Update(context.TODO(), cr, metav1.UpdateOptions{})
 }
