@@ -9,6 +9,8 @@ IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
 
+MDL ?= mdl
+
 # Docker base command for working with html documentation.
 # Use host networking because 'jekyll serve' is stupid enough to use the
 # same site url than the "host" it binds to. Thus, all the links will be
@@ -116,6 +118,9 @@ gofmt-verify:
 
 ci-lint:
 	golangci-lint run --timeout 5m0s
+
+mdlint:
+	find docs/ -path docs/vendor -prune -false -o -name '*.md' | xargs $(MDL) -s docs/mdl-style.rb
 
 test:
 	$(GO_CMD) test ./cmd/... ./pkg/...
