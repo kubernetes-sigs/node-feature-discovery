@@ -4,9 +4,12 @@
 curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.36.0
 export PATH=$PATH:$(go env GOPATH)/bin
 
+curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -s -- --version v3.5.2
+
 # Run verify steps
 make gofmt-verify
 make ci-lint
+make helm-lint
 
 # Check that repo is clean
 if ! git diff --quiet; then
