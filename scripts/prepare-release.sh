@@ -5,10 +5,23 @@ this=`basename $0`
 
 usage () {
 cat << EOF
-Usage: $this [-h] RELEASE_VERSION
+Usage: $this [-h] RELEASE_VERSION GPG_KEY GPG_KEYRING
 
 Options:
   -h         show this help and exit
+
+Example:
+
+  $this v0.1.2 "Jane Doe <jane.doe@example.com>" ~/.gnupg/secring.gpg
+
+
+NOTE: The GPG key should be associated with the signer's Github account.
+
+NOTE: Helm is not compatible with GnuPG v2 and you need to export the secret
+      keys in order for Helm to be able to sign the package:
+
+  gpg --export-secret-keys > ~/.gnupg/secring.gpg
+
 EOF
 }
 
@@ -28,13 +41,21 @@ done
 shift "$((OPTIND - 1))"
 
 # Check that no extra args were provided
-if [ $# -gt 1 ]; then
-    echo -e "ERROR: unknown arguments: $@\n"
+if [ $# -ne 3 ]; then
+    if [ $# -lt 3 ]; then
+        echo -e "ERROR: too few arguments\n"
+    else
+        echo -e "ERROR: unknown arguments: ${@:4}\n"
+    fi
     usage
     exit 1
 fi
 
 release=$1
+key="$2"
+keyring="$3"
+shift 3
+
 container_image=k8s.gcr.io/nfd/node-feature-discovery:$release
 
 #
@@ -48,6 +69,7 @@ fi
 
 if [[ $release =~ ^(v[0-9]+\.[0-9]+)(\..+)?$ ]]; then
     docs_version=${BASH_REMATCH[1]}
+    semver=${release:1}
 else
     echo -e "ERROR: invalid RELEASE_VERSION '$release'"
     exit 1
@@ -81,3 +103,25 @@ echo Patching test/e2e/node_feature_discovery.go flag defaults to k8s.gcr.io/nfd
 sed -e s'!"nfd\.repo",.*,!"nfd.repo", "k8s.gcr.io/nfd/node-feature-discovery",!' \
     -e s"!\"nfd\.tag\",.*,!\"nfd.tag\", \"$release\",!" \
   -i test/e2e/node_feature_discovery.go
+
+#
+# Create release assets to be uploaded
+#
+helm package deployment/node-feature-discovery/ --version $semver --sign \
+    --key "$key" --keyring "$keyring"
+
+chart_name="node-feature-discovery-chart-$semver.tgz"
+mv node-feature-discovery-$semver.tgz $chart_name
+mv node-feature-discovery-$semver.tgz.prov $chart_name.prov
+
+cat << EOF
+
+*******************************************************************************
+*** Please manually upload the following generated files to the Github release
+*** page:
+***
+***   $chart_name
+***   $chart_name.prov
+***
+*******************************************************************************
+EOF
