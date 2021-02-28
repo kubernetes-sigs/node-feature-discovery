@@ -124,6 +124,9 @@ ci-lint:
 mdlint:
 	find docs/ -path docs/vendor -prune -false -o -name '*.md' | xargs $(MDL) -s docs/mdl-style.rb
 
+helm-lint:
+	helm lint --strict deployment/node-feature-discovery/
+
 test:
 	$(GO_CMD) test ./cmd/... ./pkg/...
 
