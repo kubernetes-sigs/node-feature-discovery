@@ -11,8 +11,8 @@ type MockLabelSource struct {
 	mock.Mock
 }
 
-// Discover provides a mock function with given fields:
-func (_m *MockLabelSource) Discover() (FeatureLabels, error) {
+// GetLabels provides a mock function with given fields:
+func (_m *MockLabelSource) GetLabels() (FeatureLabels, error) {
 	ret := _m.Called()
 
 	var r0 FeatureLabels

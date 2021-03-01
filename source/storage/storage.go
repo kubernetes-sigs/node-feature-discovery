@@ -40,8 +40,8 @@ func (s *storageSource) Name() string { return Name }
 // Priority method of the LabelSource interface
 func (s *storageSource) Priority() int { return 0 }
 
-// Discover returns feature names for storage: nonrotationaldisk if any SSD drive present.
-func (s *storageSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *storageSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Check if there is any non-rotational block devices attached to the node

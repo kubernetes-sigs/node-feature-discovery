@@ -39,7 +39,7 @@ import (
 
 const fakeLabelSourceName string = "testSource"
 
-func TestDiscoveryWithMockSources(t *testing.T) {
+func TestGetLabelsWithMockSources(t *testing.T) {
 	Convey("When I discover features from fake source and update the node using fake client", t, func() {
 		mockLabelSource := new(source.MockLabelSource)
 		allFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test", "test.ns/foo", "/no-ns-label", "invalid/test/feature"}
@@ -54,7 +54,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 
 		Convey("When I successfully get the labels from the mock source", func() {
 			mockLabelSource.On("Name").Return(fakeLabelSourceName)
-			mockLabelSource.On("Discover").Return(fakeFeatures, nil)
+			mockLabelSource.On("GetLabels").Return(fakeFeatures, nil)
 
 			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
 			Convey("Proper label is returned", func() {
@@ -67,7 +67,7 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 
 		Convey("When I fail to get the labels from the mock source", func() {
 			expectedError := errors.New("fake error")
-			mockLabelSource.On("Discover").Return(nil, expectedError)
+			mockLabelSource.On("GetLabels").Return(nil, expectedError)
 
 			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
 			Convey("No label is returned", func() {

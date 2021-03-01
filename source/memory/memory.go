@@ -43,8 +43,8 @@ func (s *memorySource) Name() string { return Name }
 // Priority method of the LabelSource interface
 func (s *memorySource) Priority() int { return 0 }
 
-// Discover returns feature names for memory: numa if more than one memory node is present.
-func (s *memorySource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Detect NUMA

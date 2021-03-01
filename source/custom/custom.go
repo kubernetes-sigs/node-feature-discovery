@@ -85,8 +85,8 @@ func (s *customSource) SetConfig(conf source.Config) {
 // Priority method of the LabelSource interface
 func (s *customSource) Priority() int { return 10 }
 
-// Discover features
-func (s *customSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
 	allFeatureConfig = append(allFeatureConfig, getDirectoryFeatureConfig()...)

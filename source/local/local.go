@@ -53,8 +53,8 @@ func (s *localSource) Name() string { return Name }
 // Priority method of the LabelSource interface
 func (s *localSource) Priority() int { return 20 }
 
-// Discover method of the LabelSource interface
-func (s *localSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *localSource) GetLabels() (source.FeatureLabels, error) {
 	featuresFromHooks, err := getFeaturesFromHooks()
 	if err != nil {
 		klog.Error(err)

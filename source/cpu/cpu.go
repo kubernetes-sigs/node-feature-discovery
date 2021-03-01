@@ -113,7 +113,8 @@ func (s *cpuSource) SetConfig(conf source.Config) {
 // Priority method of the LabelSource interface
 func (s *cpuSource) Priority() int { return 0 }
 
-func (s *cpuSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Check if hyper-threading seems to be enabled

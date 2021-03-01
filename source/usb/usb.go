@@ -78,8 +78,8 @@ func (s *usbSource) SetConfig(conf source.Config) {
 // Priority method of the LabelSource interface
 func (s *usbSource) Priority() int { return 0 }
 
-// Discover features
-func (s *usbSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Construct a device label format, a sorted list of valid attributes
