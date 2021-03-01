@@ -28,23 +28,23 @@ import (
 
 const Name = "memory"
 
-// Source implements LabelSource.
-type Source struct{}
+// memorySource implements the LabelSource interface.
+type memorySource struct{}
+
+// Singleton source instance
+var (
+	src memorySource
+	_   source.LabelSource = &src
+)
 
 // Name returns an identifier string for this feature source.
-func (s Source) Name() string { return Name }
+func (s *memorySource) Name() string { return Name }
 
-// NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return nil }
-
-// GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return nil }
-
-// SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(source.Config) {}
+// Priority method of the LabelSource interface
+func (s *memorySource) Priority() int { return 0 }
 
 // Discover returns feature names for memory: numa if more than one memory node is present.
-func (s Source) Discover() (source.FeatureLabels, error) {
+func (s *memorySource) Discover() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Detect NUMA
@@ -117,4 +117,8 @@ func detectNvdimm() (map[string]bool, error) {
 	}
 
 	return features, nil
+}
+
+func init() {
+	source.Register(&src)
 }

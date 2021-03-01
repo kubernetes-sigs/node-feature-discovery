@@ -47,21 +47,28 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// Source implements LabelSource.
-type Source struct {
+// kernelSource implements the LabelSource and ConfigurableSource interfaces.
+type kernelSource struct {
 	config *Config
 }
 
-func (s *Source) Name() string { return Name }
+// Singleton source instance
+var (
+	src kernelSource
+	_   source.LabelSource        = &src
+	_   source.ConfigurableSource = &src
+)
+
+func (s *kernelSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+func (s *kernelSource) NewConfig() source.Config { return newDefaultConfig() }
 
 // GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return s.config }
+func (s *kernelSource) GetConfig() source.Config { return s.config }
 
 // SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(conf source.Config) {
+func (s *kernelSource) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
 		s.config = v
@@ -70,7 +77,10 @@ func (s *Source) SetConfig(conf source.Config) {
 	}
 }
 
-func (s *Source) Discover() (source.FeatureLabels, error) {
+// Priority method of the LabelSource interface
+func (s *kernelSource) Priority() int { return 0 }
+
+func (s *kernelSource) Discover() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Read kernel version
@@ -134,4 +144,8 @@ func parseVersion() (map[string]string, error) {
 	}
 
 	return version, nil
+}
+
+func init() {
+	source.Register(&src)
 }

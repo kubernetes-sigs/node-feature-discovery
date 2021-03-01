@@ -44,22 +44,29 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// Source implements LabelSource.
-type Source struct {
+// usbSource implements the LabelSource and ConfigurableSource interfaces.
+type usbSource struct {
 	config *Config
 }
 
+// Singleton source instance
+var (
+	src usbSource
+	_   source.LabelSource        = &src
+	_   source.ConfigurableSource = &src
+)
+
 // Name returns the name of the feature source
-func (s Source) Name() string { return Name }
+func (s *usbSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+func (s *usbSource) NewConfig() source.Config { return newDefaultConfig() }
 
 // GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return s.config }
+func (s *usbSource) GetConfig() source.Config { return s.config }
 
 // SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(conf source.Config) {
+func (s *usbSource) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
 		s.config = v
@@ -68,8 +75,11 @@ func (s *Source) SetConfig(conf source.Config) {
 	}
 }
 
+// Priority method of the LabelSource interface
+func (s *usbSource) Priority() int { return 0 }
+
 // Discover features
-func (s Source) Discover() (source.FeatureLabels, error) {
+func (s *usbSource) Discover() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Construct a device label format, a sorted list of valid attributes
@@ -126,4 +136,8 @@ func (s Source) Discover() (source.FeatureLabels, error) {
 		}
 	}
 	return features, nil
+}
+
+func init() {
+	source.Register(&src)
 }

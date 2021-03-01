@@ -34,22 +34,6 @@ func (_m *MockLabelSource) Discover() (FeatureLabels, error) {
 	return r0, r1
 }
 
-// GetConfig provides a mock function with given fields:
-func (_m *MockLabelSource) GetConfig() Config {
-	ret := _m.Called()
-
-	var r0 Config
-	if rf, ok := ret.Get(0).(func() Config); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(Config)
-		}
-	}
-
-	return r0
-}
-
 // Name provides a mock function with given fields:
 func (_m *MockLabelSource) Name() string {
 	ret := _m.Called()
@@ -64,23 +48,16 @@ func (_m *MockLabelSource) Name() string {
 	return r0
 }
 
-// NewConfig provides a mock function with given fields:
-func (_m *MockLabelSource) NewConfig() Config {
+// Priority provides a mock function with given fields:
+func (_m *MockLabelSource) Priority() int {
 	ret := _m.Called()
 
-	var r0 Config
-	if rf, ok := ret.Get(0).(func() Config); ok {
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
 		r0 = rf()
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(Config)
-		}
+		r0 = ret.Get(0).(int)
 	}
 
 	return r0
-}
-
-// SetConfig provides a mock function with given fields: _a0
-func (_m *MockLabelSource) SetConfig(_a0 Config) {
-	_m.Called(_a0)
 }

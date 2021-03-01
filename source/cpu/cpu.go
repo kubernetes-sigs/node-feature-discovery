@@ -78,22 +78,29 @@ type keyFilter struct {
 	whitelist bool
 }
 
-// Source implements LabelSource.
-type Source struct {
+// cpuSource implements the LabelSource and ConfigurableSource interfaces.
+type cpuSource struct {
 	config      *Config
 	cpuidFilter *keyFilter
 }
 
-func (s Source) Name() string { return Name }
+// Singleton source instance
+var (
+	src cpuSource
+	_   source.LabelSource        = &src
+	_   source.ConfigurableSource = &src
+)
+
+func (s *cpuSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+func (s *cpuSource) NewConfig() source.Config { return newDefaultConfig() }
 
 // GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return s.config }
+func (s *cpuSource) GetConfig() source.Config { return s.config }
 
 // SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(conf source.Config) {
+func (s *cpuSource) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
 		s.config = v
@@ -103,7 +110,10 @@ func (s *Source) SetConfig(conf source.Config) {
 	}
 }
 
-func (s *Source) Discover() (source.FeatureLabels, error) {
+// Priority method of the LabelSource interface
+func (s *cpuSource) Priority() int { return 0 }
+
+func (s *cpuSource) Discover() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Check if hyper-threading seems to be enabled
@@ -182,7 +192,7 @@ func haveThreadSiblings() (bool, error) {
 	return false, nil
 }
 
-func (s *Source) initCpuidFilter() {
+func (s *cpuSource) initCpuidFilter() {
 	newFilter := keyFilter{keys: map[string]struct{}{}}
 	if len(s.config.Cpuid.AttributeWhitelist) > 0 {
 		for _, k := range s.config.Cpuid.AttributeWhitelist {
@@ -209,4 +219,8 @@ func (f keyFilter) unmask(k string) bool {
 		}
 	}
 	return false
+}
+
+func init() {
+	source.Register(&src)
 }
