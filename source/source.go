@@ -17,18 +17,7 @@ limitations under the License.
 package source
 
 // Value of a feature
-type FeatureValue interface {
-}
-
-// Boolean feature value
-type BoolFeatureValue bool
-
-func (b BoolFeatureValue) String() string {
-	if b {
-		return "true"
-	}
-	return "false"
-}
+type FeatureValue interface{}
 
 type Features map[string]FeatureValue
 
