@@ -17,7 +17,6 @@ limitations under the License.
 package nfdworker
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,7 +35,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
-	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 )
 
@@ -358,12 +356,12 @@ func TestNewNfdWorker(t *testing.T) {
 
 func TestCreateFeatureLabels(t *testing.T) {
 	Convey("When creating feature labels from the configured sources", t, func() {
+		fakeFeatureSource := source.FeatureSource(new(fake.Source))
+		fakeFeatureSource.SetConfig(fakeFeatureSource.NewConfig())
+		sources := []source.FeatureSource{fakeFeatureSource}
+
 		Convey("When fake feature source is configured", func() {
 			emptyLabelWL := regexp.MustCompile("")
-			fakeFeatureSource := source.FeatureSource(new(fake.Source))
-			fakeFeatureSource.SetConfig(fakeFeatureSource.NewConfig())
-			sources := []source.FeatureSource{}
-			sources = append(sources, fakeFeatureSource)
 			labels := createFeatureLabels(sources, *emptyLabelWL)
 
 			Convey("Proper fake labels are returned", func() {
@@ -374,9 +372,6 @@ func TestCreateFeatureLabels(t *testing.T) {
 			})
 		})
 		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
-			fakeFeatureSource := source.FeatureSource(new(fake.Source))
-			sources := []source.FeatureSource{}
-			sources = append(sources, fakeFeatureSource)
 			labels := createFeatureLabels(sources, *regexp.MustCompile(".*rdt.*"))
 
 			Convey("fake labels are not returned", func() {
@@ -386,21 +381,6 @@ func TestCreateFeatureLabels(t *testing.T) {
 				So(labels, ShouldNotContainKey, "fake-fakefeature3")
 			})
 		})
-	})
-}
-
-func TestGetFeatureLabels(t *testing.T) {
-	Convey("When I get feature labels and panic occurs during discovery of a feature source", t, func() {
-		fakePanicFeatureSource := source.FeatureSource(new(panicfake.Source))
-
-		returnedLabels, err := getFeatureLabels(fakePanicFeatureSource, *regexp.MustCompile(""))
-		Convey("No label is returned", func() {
-			So(len(returnedLabels), ShouldEqual, 0)
-		})
-		Convey("Error is produced and panic error is returned", func() {
-			So(err, ShouldResemble, fmt.Errorf("fake panic error"))
-		})
-
 	})
 }
 

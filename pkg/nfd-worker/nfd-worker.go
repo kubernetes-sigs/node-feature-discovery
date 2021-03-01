@@ -48,7 +48,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/local"
 	"sigs.k8s.io/node-feature-discovery/source/memory"
 	"sigs.k8s.io/node-feature-discovery/source/network"
-	"sigs.k8s.io/node-feature-discovery/source/panic_fake"
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 	"sigs.k8s.io/node-feature-discovery/source/storage"
 	"sigs.k8s.io/node-feature-discovery/source/system"
@@ -146,7 +145,6 @@ func NewNfdWorker(args *Args) (NfdWorker, error) {
 		},
 		testSources: []source.FeatureSource{
 			&fake.Source{},
-			&panicfake.Source{},
 		},
 		stop: make(chan struct{}, 1),
 	}
@@ -527,13 +525,6 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regexp.R
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
 func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			klog.Errorf("panic occurred during discovery of source [%s]: %v", source.Name(), r)
-			err = fmt.Errorf("%v", r)
-		}
-	}()
-
 	labels = Labels{}
 	features, err := source.Discover()
 	if err != nil {
