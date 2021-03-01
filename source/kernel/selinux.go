@@ -27,7 +27,7 @@ import (
 func SelinuxEnabled() (bool, error) {
 	status, err := ioutil.ReadFile(source.SysfsDir.Path("fs/selinux/enforce"))
 	if err != nil {
-		return false, fmt.Errorf("Failed to detect the status of selinux, please check if the system supports selinux and make sure /sys on the host is mounted into the container: %s", err.Error())
+		return false, fmt.Errorf("failed to detect the status of selinux, please check if the system supports selinux and make sure /sys on the host is mounted into the container: %s", err.Error())
 	}
 	if status[0] == byte('1') {
 		// selinux is enabled.

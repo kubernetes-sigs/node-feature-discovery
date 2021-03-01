@@ -460,15 +460,15 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		} else {
 			err = yaml.Unmarshal(data, c)
 			if err != nil {
-				return fmt.Errorf("Failed to parse config file: %s", err)
+				return fmt.Errorf("failed to parse config file: %s", err)
 			}
-			klog.Infof("Configuration successfully loaded from %q", filepath)
+			klog.Infof("configuration successfully loaded from %q", filepath)
 		}
 	}
 
 	// Parse config overrides
 	if err := yaml.Unmarshal([]byte(overrides), c); err != nil {
-		return fmt.Errorf("Failed to parse --options: %s", err)
+		return fmt.Errorf("failed to parse --options: %s", err)
 	}
 
 	if w.args.Overrides.LabelWhiteList != nil {
@@ -558,7 +558,7 @@ func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp)
 		// Validate label name.
 		errs := validation.IsQualifiedName(nameForValidation)
 		if len(errs) > 0 {
-			klog.Warningf("Ignoring invalid feature name '%s': %s", label, errs)
+			klog.Warningf("ignoring invalid feature name '%s': %s", label, errs)
 			continue
 		}
 
@@ -566,7 +566,7 @@ func getFeatureLabels(source source.FeatureSource, labelWhiteList regexp.Regexp)
 		// Validate label value
 		errs = validation.IsValidLabelValue(value)
 		if len(errs) > 0 {
-			klog.Warningf("Ignoring invalid feature value %s=%s: %s", label, value, errs)
+			klog.Warningf("ignoring invalid feature value %s=%s: %s", label, value, errs)
 			continue
 		}
 
@@ -587,7 +587,7 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	klog.Infof("Sending labeling request to nfd-master")
+	klog.Infof("sending labeling request to nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		NfdVersion: version.Get(),

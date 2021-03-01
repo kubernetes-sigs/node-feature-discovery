@@ -74,7 +74,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Read kernel version
 	version, err := parseVersion()
 	if err != nil {
-		klog.Errorf("Failed to get kernel version: %s", err)
+		klog.Errorf("failed to get kernel version: %s", err)
 	} else {
 		for key := range version {
 			features["version."+key] = version[key]
@@ -84,7 +84,7 @@ func (s *Source) Discover() (source.Features, error) {
 	// Read kconfig
 	kconfig, err := kernelutils.ParseKconfig(s.config.KconfigFile)
 	if err != nil {
-		klog.Errorf("Failed to read kconfig: %s", err)
+		klog.Errorf("failed to read kconfig: %s", err)
 	}
 
 	// Check flags

@@ -51,7 +51,7 @@ func readKconfigGzip(filename string) ([]byte, error) {
 	return ioutil.ReadAll(r)
 }
 
-// Read kconfig into a map
+// ParseKconfig reads kconfig and return a map
 func ParseKconfig(configPath string) (map[string]string, error) {
 	kconfig := map[string]string{}
 	raw := []byte(nil)
@@ -95,7 +95,7 @@ func ParseKconfig(configPath string) (map[string]string, error) {
 	}
 
 	if raw == nil {
-		return nil, fmt.Errorf("Failed to read kernel config from %+v:", append([]string{configPath}, searchPaths...))
+		return nil, fmt.Errorf("failed to read kernel config from %+v", append([]string{configPath}, searchPaths...))
 	}
 
 	// Regexp for matching kconfig flags

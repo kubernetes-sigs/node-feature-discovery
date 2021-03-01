@@ -43,7 +43,7 @@ func (s Source) Discover() (source.Features, error) {
 	// Check if any iommu devices are available
 	devices, err := ioutil.ReadDir(source.SysfsDir.Path("class/iommu/"))
 	if err != nil {
-		return nil, fmt.Errorf("Failed to check for IOMMU support: %v", err)
+		return nil, fmt.Errorf("failed to check for IOMMU support: %v", err)
 	}
 
 	if len(devices) > 0 {
