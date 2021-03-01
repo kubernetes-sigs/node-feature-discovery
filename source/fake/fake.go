@@ -40,7 +40,7 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// Source implements FeatureSource.
+// Source implements LabelSource.
 type Source struct {
 	config *Config
 }
@@ -48,13 +48,13 @@ type Source struct {
 // Name returns an identifier string for this feature source.
 func (s Source) Name() string { return Name }
 
-// NewConfig method of the FeatureSource interface
+// NewConfig method of the LabelSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
 
-// GetConfig method of the FeatureSource interface
+// GetConfig method of the LabelSource interface
 func (s *Source) GetConfig() source.Config { return s.config }
 
-// SetConfig method of the FeatureSource interface
+// SetConfig method of the LabelSource interface
 func (s *Source) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
@@ -64,13 +64,13 @@ func (s *Source) SetConfig(conf source.Config) {
 	}
 }
 
-// Configure method of the FeatureSource interface
+// Configure method of the LabelSource interface
 func (s Source) Configure([]byte) error { return nil }
 
 // Discover returns feature names for some fake features.
-func (s Source) Discover() (source.Features, error) {
+func (s Source) Discover() (source.FeatureLabels, error) {
 	// Adding three fake features.
-	features := make(source.Features, len(s.config.Labels))
+	features := make(source.FeatureLabels, len(s.config.Labels))
 	for k, v := range s.config.Labels {
 		features[k] = v
 	}

@@ -99,7 +99,7 @@ templates:
 	@rm nfd-worker.conf.tmp
 
 mock:
-	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
+	mockery --name=LabelSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
 	mockery --name=APIHelpers --dir=pkg/apihelper --inpkg --note="Re-generate by running 'make mock'"
 	mockery --name=LabelerClient --dir=pkg/labeler --inpkg --note="Re-generate by running 'make mock'"
 

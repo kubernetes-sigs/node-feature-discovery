@@ -78,7 +78,7 @@ type keyFilter struct {
 	whitelist bool
 }
 
-// Implement FeatureSource interface
+// Source implements LabelSource.
 type Source struct {
 	config      *Config
 	cpuidFilter *keyFilter
@@ -86,13 +86,13 @@ type Source struct {
 
 func (s Source) Name() string { return Name }
 
-// NewConfig method of the FeatureSource interface
+// NewConfig method of the LabelSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
 
-// GetConfig method of the FeatureSource interface
+// GetConfig method of the LabelSource interface
 func (s *Source) GetConfig() source.Config { return s.config }
 
-// SetConfig method of the FeatureSource interface
+// SetConfig method of the LabelSource interface
 func (s *Source) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
@@ -103,8 +103,8 @@ func (s *Source) SetConfig(conf source.Config) {
 	}
 }
 
-func (s *Source) Discover() (source.Features, error) {
-	features := source.Features{}
+func (s *Source) Discover() (source.FeatureLabels, error) {
+	features := source.FeatureLabels{}
 
 	// Check if hyper-threading seems to be enabled
 	found, err := haveThreadSiblings()

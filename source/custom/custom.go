@@ -51,7 +51,7 @@ func newDefaultConfig() *config {
 	return &config{}
 }
 
-// Source implements FeatureSource Interface
+// Source implements LabelSource.
 type Source struct {
 	config *config
 }
@@ -59,13 +59,13 @@ type Source struct {
 // Name returns the name of the feature source
 func (s Source) Name() string { return Name }
 
-// NewConfig method of the FeatureSource interface
+// NewConfig method of the LabelSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
 
-// GetConfig method of the FeatureSource interface
+// GetConfig method of the LabelSource interface
 func (s *Source) GetConfig() source.Config { return s.config }
 
-// SetConfig method of the FeatureSource interface
+// SetConfig method of the LabelSource interface
 func (s *Source) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *config:
@@ -76,8 +76,8 @@ func (s *Source) SetConfig(conf source.Config) {
 }
 
 // Discover features
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
+func (s Source) Discover() (source.FeatureLabels, error) {
+	features := source.FeatureLabels{}
 	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
 	allFeatureConfig = append(allFeatureConfig, getDirectoryFeatureConfig()...)
 	utils.KlogDump(2, "custom features configuration:", "  ", allFeatureConfig)

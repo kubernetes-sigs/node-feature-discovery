@@ -38,26 +38,26 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 )
 
-const fakeFeatureSourceName string = "testSource"
+const fakeLabelSourceName string = "testSource"
 
 func TestDiscoveryWithMockSources(t *testing.T) {
 	Convey("When I discover features from fake source and update the node using fake client", t, func() {
-		mockFeatureSource := new(source.MockFeatureSource)
+		mockLabelSource := new(source.MockLabelSource)
 		allFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test", "test.ns/foo", "/no-ns-label", "invalid/test/feature"}
 		whiteListFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test"}
 
 		fakeFeatures, _ := makeFakeFeatures(allFeatureNames)
 		_, fakeFeatureLabels := makeFakeFeatures(whiteListFeatureNames)
 
-		fakeFeatureSource := source.FeatureSource(mockFeatureSource)
+		fakeLabelSource := source.LabelSource(mockLabelSource)
 
 		labelWhiteList := utils.RegexpVal{Regexp: *regexp.MustCompile("^test")}
 
 		Convey("When I successfully get the labels from the mock source", func() {
-			mockFeatureSource.On("Name").Return(fakeFeatureSourceName)
-			mockFeatureSource.On("Discover").Return(fakeFeatures, nil)
+			mockLabelSource.On("Name").Return(fakeLabelSourceName)
+			mockLabelSource.On("Discover").Return(fakeFeatures, nil)
 
-			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList.Regexp)
+			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
 			Convey("Proper label is returned", func() {
 				So(returnedLabels, ShouldResemble, fakeFeatureLabels)
 			})
@@ -68,9 +68,9 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 
 		Convey("When I fail to get the labels from the mock source", func() {
 			expectedError := errors.New("fake error")
-			mockFeatureSource.On("Discover").Return(nil, expectedError)
+			mockLabelSource.On("Discover").Return(nil, expectedError)
 
-			returnedLabels, err := getFeatureLabels(fakeFeatureSource, labelWhiteList.Regexp)
+			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
 			Convey("No label is returned", func() {
 				So(returnedLabels, ShouldBeNil)
 			})
@@ -81,12 +81,12 @@ func TestDiscoveryWithMockSources(t *testing.T) {
 	})
 }
 
-func makeFakeFeatures(names []string) (source.Features, Labels) {
-	features := source.Features{}
+func makeFakeFeatures(names []string) (source.FeatureLabels, Labels) {
+	features := source.FeatureLabels{}
 	labels := Labels{}
 	for _, f := range names {
 		features[f] = true
-		labelName := fakeFeatureSourceName + "-" + f
+		labelName := fakeLabelSourceName + "-" + f
 		if strings.IndexByte(f, '/') >= 0 {
 			labelName = f
 		}
@@ -96,7 +96,7 @@ func makeFakeFeatures(names []string) (source.Features, Labels) {
 	return features, labels
 }
 
-func (w *nfdWorker) getSource(name string) source.FeatureSource {
+func (w *nfdWorker) getSource(name string) source.LabelSource {
 	for _, s := range w.realSources {
 		if s.Name() == name {
 			return s
@@ -356,9 +356,9 @@ func TestNewNfdWorker(t *testing.T) {
 
 func TestCreateFeatureLabels(t *testing.T) {
 	Convey("When creating feature labels from the configured sources", t, func() {
-		fakeFeatureSource := source.FeatureSource(new(fake.Source))
-		fakeFeatureSource.SetConfig(fakeFeatureSource.NewConfig())
-		sources := []source.FeatureSource{fakeFeatureSource}
+		fakeLabelSource := source.LabelSource(new(fake.Source))
+		fakeLabelSource.SetConfig(fakeLabelSource.NewConfig())
+		sources := []source.LabelSource{fakeLabelSource}
 
 		Convey("When fake feature source is configured", func() {
 			emptyLabelWL := regexp.MustCompile("")

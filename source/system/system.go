@@ -34,22 +34,22 @@ var osReleaseFields = [...]string{
 
 const Name = "system"
 
-// Implement FeatureSource interface
+// Source implements LabelSource.
 type Source struct{}
 
 func (s Source) Name() string { return Name }
 
-// NewConfig method of the FeatureSource interface
+// NewConfig method of the LabelSource interface
 func (s *Source) NewConfig() source.Config { return nil }
 
-// GetConfig method of the FeatureSource interface
+// GetConfig method of the LabelSource interface
 func (s *Source) GetConfig() source.Config { return nil }
 
-// SetConfig method of the FeatureSource interface
+// SetConfig method of the LabelSource interface
 func (s *Source) SetConfig(source.Config) {}
 
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
+func (s Source) Discover() (source.FeatureLabels, error) {
+	features := source.FeatureLabels{}
 
 	release, err := parseOSRelease()
 	if err != nil {

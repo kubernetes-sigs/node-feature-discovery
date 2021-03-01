@@ -16,18 +16,19 @@ limitations under the License.
 
 package source
 
-// Value of a feature
-type FeatureValue interface{}
+// FeatureLabelValue represents the value of one feature label
+type FeatureLabelValue interface{}
 
-type Features map[string]FeatureValue
+// FeatureLabels is a collection of feature labels
+type FeatureLabels map[string]FeatureLabelValue
 
-// FeatureSource represents a source of a discovered node feature.
-type FeatureSource interface {
-	// Name returns a friendly name for this source of node feature.
+// LabelSource represents a source of node feature labels
+type LabelSource interface {
+	// Name returns a friendly name for this source
 	Name() string
 
-	// Discover returns discovered features for this node.
-	Discover() (Features, error)
+	// Discover returns discovered feature labels
+	Discover() (FeatureLabels, error)
 
 	// NewConfig returns a new default config of the source
 	NewConfig() Config
@@ -39,5 +40,6 @@ type FeatureSource interface {
 	SetConfig(Config)
 }
 
+// Config is the generic interface for source configuration data
 type Config interface {
 }
