@@ -1,6 +1,3 @@
-//go:build !amd64
-// +build !amd64
-
 /*
 Copyright 2021 The Kubernetes Authors.
 
@@ -19,7 +16,21 @@ limitations under the License.
 
 package cpu
 
-// Discover if c-states are enabled
-func detectCstate() (map[string]string, error) {
-	return nil, nil
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+)
+
+func TestCpuSource(t *testing.T) {
+	assert.Equal(t, src.Name(), Name)
+
+	// Check that GetLabels works with empty features
+	src.features = feature.NewDomainFeatures()
+	l, err := src.GetLabels()
+
+	assert.Nil(t, err, err)
+	assert.Empty(t, l)
+
 }

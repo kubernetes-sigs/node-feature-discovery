@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2020-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,26 +17,25 @@ limitations under the License.
 package rules
 
 import (
-	"sigs.k8s.io/node-feature-discovery/source/internal/cpuidutils"
+	"fmt"
+
+	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/cpu"
 )
 
-// CpuIDRule implements Rule
+// CpuIDRule implements Rule for the custom source
 type CpuIDRule []string
 
-var cpuIdFlags map[string]struct{}
-
 func (cpuids *CpuIDRule) Match() (bool, error) {
+	flags, ok := source.GetFeatureSource("cpu").GetFeatures().Keys[cpu.CpuidFeature]
+	if !ok {
+		return false, fmt.Errorf("cpuid information not available")
+	}
+
 	for _, f := range *cpuids {
-		if _, ok := cpuIdFlags[f]; !ok {
+		if _, ok := flags.Elements[f]; !ok {
 			return false, nil
 		}
 	}
 	return true, nil
-}
-
-func init() {
-	cpuIdFlags = make(map[string]struct{})
-	for _, f := range cpuidutils.GetCpuidFlags() {
-		cpuIdFlags[f] = struct{}{}
-	}
 }
