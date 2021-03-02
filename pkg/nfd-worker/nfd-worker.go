@@ -394,7 +394,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 				v = a.DefValue()
 			}
 			if err := a.SetFromConfig(v); err != nil {
-				return err
+				return fmt.Errorf("failed to set logger option klog.%s = %v: %v", k, v, err)
 			}
 		}
 	}
@@ -462,7 +462,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 			if err != nil {
 				return fmt.Errorf("failed to parse config file: %s", err)
 			}
-			klog.Infof("configuration successfully loaded from %q", filepath)
+			klog.Infof("configuration file %q parsed", filepath)
 		}
 	}
 
@@ -496,6 +496,8 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	for _, s := range allSources {
 		s.SetConfig(c.Sources[s.Name()])
 	}
+
+	klog.Infof("worker (re-)configuration successfully completed")
 
 	return nil
 }
