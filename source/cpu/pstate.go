@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"runtime"
+	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -32,14 +35,72 @@ func detectPstate() (map[string]string, error) {
 		return nil, nil
 	}
 
-	// Only looking for turbo boost for now...
+	// Get global pstate status
+	data, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/cpu/intel_pstate/status"))
+	if err != nil {
+		return nil, fmt.Errorf("could not read pstate status: %s", err.Error())
+	}
+	status := strings.TrimSpace(string(data))
+	if status == "off" {
+		// No need to check other pstate features
+		klog.Infof("intel_pstate driver is not in use")
+		return nil, nil
+	}
+	features := map[string]string{"status": status}
+
+	// Check turbo boost
 	bytes, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/cpu/intel_pstate/no_turbo"))
 	if err != nil {
-		return nil, fmt.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
+		klog.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
+	} else {
+		features["turbo"] = "false"
+		if bytes[0] == byte('0') {
+			features["turbo"] = "true"
+		}
 	}
-	features := map[string]string{"turbo": "false"}
-	if bytes[0] == byte('0') {
-		features["turbo"] = "true"
+
+	if status != "active" {
+		// Don't check other features which depend on active state
+		return features, nil
+	}
+
+	// Determine scaling governor that is being used
+	policies, err := ioutil.ReadDir(source.SysfsDir.Path("devices/system/cpu/cpufreq"))
+	if err != nil {
+		klog.Errorf("failed to read cpufreq directory: %s", err.Error())
+		return features, nil
+	}
+
+	scaling := ""
+	for _, policy := range policies {
+		// Ensure at least one cpu is using this policy
+		cpus, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/cpu/cpufreq", policy.Name(), "affected_cpus"))
+		if err != nil {
+			klog.Errorf("could not read cpufreq policy %s affected_cpus", policy.Name())
+			continue
+		}
+		if strings.TrimSpace(string(cpus)) == "" {
+			klog.Infof("policy %s has no associated cpus", policy.Name())
+			continue
+		}
+
+		data, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/cpu/cpufreq", policy.Name(), "scaling_governor"))
+		if err != nil {
+			klog.Errorf("could not read cpufreq policy %s scaling_governor", policy.Name())
+			continue
+		}
+		policy_scaling := strings.TrimSpace(string(data))
+		// Check that all of the policies have the same scaling governor, if not don't set feature
+		if scaling != "" && scaling != policy_scaling {
+			klog.Infof("scaling_governor for policy %s doesn't match prior policy", policy.Name())
+			scaling = ""
+			break
+		}
+		scaling = policy_scaling
+	}
+
+	if scaling != "" {
+		features["scaling_governor"] = scaling
 	}
 
 	return features, nil
