@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kernelutils
+package kernel
 
 import (
 	"bytes"
@@ -26,9 +26,9 @@ import (
 	"regexp"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
 
-	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -52,13 +52,13 @@ func readKconfigGzip(filename string) ([]byte, error) {
 }
 
 // ParseKconfig reads kconfig and return a map
-func ParseKconfig(configPath string) (map[string]string, error) {
+func parseKconfig(configPath string) (map[string]string, error) {
 	kconfig := map[string]string{}
 	raw := []byte(nil)
 	var err error
 	var searchPaths []string
 
-	kVer, err := GetKernelVersion()
+	kVer, err := getVersion()
 	if err != nil {
 		searchPaths = []string{
 			"/proc/config.gz",

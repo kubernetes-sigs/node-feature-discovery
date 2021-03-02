@@ -65,6 +65,7 @@ func TestConfigurableSources(t *testing.T) {
 
 func TestFeatureSources(t *testing.T) {
 	sources := source.GetAllFeatureSources()
+	assert.NotZero(t, len(sources))
 
 	for n, s := range sources {
 		msg := fmt.Sprintf("testing FeatureSource %q failed", n)

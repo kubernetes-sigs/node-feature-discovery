@@ -1,5 +1,5 @@
 /*
-Copyright 2018-2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,17 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kernelutils
+package kernel
 
 import (
-	"io/ioutil"
-	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
-func GetKernelVersion() (string, error) {
-	unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(unameRaw)), nil
+func TestKernelSource(t *testing.T) {
+	assert.Equal(t, src.Name(), Name)
+
+	// Check that GetLabels works with empty features
+	src.features = feature.NewDomainFeatures()
+	l, err := src.GetLabels()
+
+	assert.Nil(t, err, err)
+	assert.Empty(t, l)
+
 }
