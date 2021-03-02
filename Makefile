@@ -119,7 +119,7 @@ gofmt-verify:
 	fi
 
 ci-lint:
-	golangci-lint run --timeout 5m0s
+	golangci-lint run --timeout 7m0s
 
 mdlint:
 	find docs/ -path docs/vendor -prune -false -o -name '*.md' | xargs $(MDL) -s docs/mdl-style.rb
