@@ -33,7 +33,9 @@ type RegexpVal struct {
 // Set implements the flag.Value interface
 func (a *RegexpVal) Set(val string) error {
 	r, err := regexp.Compile(val)
-	a.Regexp = *r
+	if err == nil {
+		a.Regexp = *r
+	}
 	return err
 }
 
