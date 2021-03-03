@@ -29,9 +29,10 @@ import (
 const Name = "kernel"
 
 const (
-	ConfigFeature  = "config"
-	SelinuxFeature = "selinux"
-	VersionFeature = "version"
+	ConfigFeature       = "config"
+	LoadedModuleFeature = "loadedmodule"
+	SelinuxFeature      = "selinux"
+	VersionFeature      = "version"
 )
 
 // Configuration file options
@@ -127,6 +128,12 @@ func (s *kernelSource) Discover() error {
 		klog.Errorf("failed to read kconfig: %s", err)
 	} else {
 		s.features.Values[ConfigFeature] = feature.NewValueFeatures(kconfig)
+	}
+
+	if kmods, err := getLoadedModules(); err != nil {
+		klog.Errorf("failed to get loaded kernel modules: %v", err)
+	} else {
+		s.features.Keys[LoadedModuleFeature] = feature.NewKeyFeatures(kmods...)
 	}
 
 	if selinux, err := SelinuxEnabled(); err != nil {
