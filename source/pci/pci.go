@@ -22,11 +22,14 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
-	pciutils "sigs.k8s.io/node-feature-discovery/source/internal"
 )
 
 const Name = "pci"
+
+const DeviceFeature = "device"
 
 type Config struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
@@ -41,14 +44,16 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// pciSource implements the LabelSource and ConfigurableSource interfaces.
+// pciSource implements the FeatureSource, LabelSource and ConfigurableSource interfaces.
 type pciSource struct {
-	config *Config
+	config   *Config
+	features *feature.DomainFeatures
 }
 
 // Singleton source instance
 var (
-	src pciSource
+	src                           = pciSource{config: newDefaultConfig()}
+	_   source.FeatureSource      = &src
 	_   source.LabelSource        = &src
 	_   source.ConfigurableSource = &src
 )
@@ -77,16 +82,17 @@ func (s *pciSource) Priority() int { return 0 }
 
 // GetLabels method of the LabelSource interface
 func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
-	features := source.FeatureLabels{}
+	labels := source.FeatureLabels{}
+	features := s.GetFeatures()
 
 	// Construct a device label format, a sorted list of valid attributes
-	deviceLabelFields := []string{}
-	configLabelFields := map[string]bool{}
+	deviceLabelFields := make([]string, 0)
+	configLabelFields := make(map[string]struct{}, len(s.config.DeviceLabelFields))
 	for _, field := range s.config.DeviceLabelFields {
-		configLabelFields[field] = true
+		configLabelFields[field] = struct{}{}
 	}
 
-	for _, attr := range pciutils.DefaultPciDevAttrs {
+	for _, attr := range mandatoryDevAttrs {
 		if _, ok := configLabelFields[attr]; ok {
 			deviceLabelFields = append(deviceLabelFields, attr)
 			delete(configLabelFields, attr)
@@ -97,50 +103,59 @@ func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
 		for key := range configLabelFields {
 			keys = append(keys, key)
 		}
-		klog.Warningf("invalid fields '%v' in deviceLabelFields, ignoring...", keys)
+		klog.Warningf("invalid fields (%s) in deviceLabelFields, ignoring...", strings.Join(keys, ", "))
 	}
 	if len(deviceLabelFields) == 0 {
 		klog.Warningf("no valid fields in deviceLabelFields defined, using the defaults")
 		deviceLabelFields = []string{"class", "vendor"}
 	}
 
-	// Read extraDevAttrs + configured or default labels. Attributes
-	// set to 'true' are considered must-have.
-	deviceAttrs := map[string]bool{}
-	for _, label := range pciutils.ExtraPciDevAttrs {
-		deviceAttrs[label] = false
-	}
-	for _, label := range deviceLabelFields {
-		deviceAttrs[label] = true
-	}
-
-	devs, err := pciutils.DetectPci(deviceAttrs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect PCI devices: %s", err.Error())
-	}
-
 	// Iterate over all device classes
-	for class, classDevs := range devs {
+	for _, dev := range features.Instances[DeviceFeature].Elements {
+		attrs := dev.Attributes
+		class := attrs["class"]
 		for _, white := range s.config.DeviceClassWhitelist {
-			if strings.HasPrefix(class, strings.ToLower(white)) {
-				for _, dev := range classDevs {
-					devLabel := ""
-					for i, attr := range deviceLabelFields {
-						devLabel += dev[attr]
-						if i < len(deviceLabelFields)-1 {
-							devLabel += "_"
-						}
-					}
-					features[devLabel+".present"] = true
-
-					if _, ok := dev["sriov_totalvfs"]; ok {
-						features[devLabel+".sriov.capable"] = true
+			if strings.HasPrefix(string(class), strings.ToLower(white)) {
+				devLabel := ""
+				for i, attr := range deviceLabelFields {
+					devLabel += attrs[attr]
+					if i < len(deviceLabelFields)-1 {
+						devLabel += "_"
 					}
 				}
+				labels[devLabel+".present"] = true
+
+				if _, ok := attrs["sriov_totalvfs"]; ok {
+					labels[devLabel+".sriov.capable"] = true
+				}
+				break
 			}
 		}
 	}
-	return features, nil
+	return labels, nil
+}
+
+// Discover method of the FeatureSource interface
+func (s *pciSource) Discover() error {
+	s.features = feature.NewDomainFeatures()
+
+	devs, err := detectPci()
+	if err != nil {
+		return fmt.Errorf("failed to detect PCI devices: %s", err.Error())
+	}
+	s.features.Instances[DeviceFeature] = feature.NewInstanceFeatures(devs)
+
+	utils.KlogDump(3, "discovered pci features:", "  ", s.features)
+
+	return nil
+}
+
+// GetFeatures method of the FeatureSource Interface
+func (s *pciSource) GetFeatures() *feature.DomainFeatures {
+	if s.features == nil {
+		s.features = feature.NewDomainFeatures()
+	}
+	return s.features
 }
 
 func init() {

@@ -14,28 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package busutils
+package pci
 
 import (
 	"fmt"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-type PciDeviceInfo map[string]string
-
-var DefaultPciDevAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
-var ExtraPciDevAttrs = []string{"sriov_totalvfs"}
+var mandatoryDevAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
+var optionalDevAttrs = []string{"sriov_totalvfs"}
 
 // Read a single PCI device attribute
 // A PCI attribute in this context, maps to the corresponding sysfs file
 func readSinglePciAttribute(devPath string, attrName string) (string, error) {
-	data, err := ioutil.ReadFile(path.Join(devPath, attrName))
+	data, err := ioutil.ReadFile(filepath.Join(devPath, attrName))
 	if err != nil {
 		return "", fmt.Errorf("failed to read device attribute %s: %v", attrName, err)
 	}
@@ -51,49 +50,43 @@ func readSinglePciAttribute(devPath string, attrName string) (string, error) {
 }
 
 // Read information of one PCI device
-func readPciDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceInfo, error) {
-	info := PciDeviceInfo{}
-
-	for attr, must := range deviceAttrSpec {
+func readPciDevInfo(devPath string) (*feature.InstanceFeature, error) {
+	attrs := make(map[string]string)
+	for _, attr := range mandatoryDevAttrs {
 		attrVal, err := readSinglePciAttribute(devPath, attr)
 		if err != nil {
-			if must {
-				return info, fmt.Errorf("failed to read device %s: %s", attr, err)
-			}
-			continue
-
+			return nil, fmt.Errorf("failed to read device %s: %s", attr, err)
 		}
-		info[attr] = attrVal
+		attrs[attr] = attrVal
 	}
-	return info, nil
+	for _, attr := range optionalDevAttrs {
+		attrVal, err := readSinglePciAttribute(devPath, attr)
+		if err == nil {
+			attrs[attr] = attrVal
+		}
+	}
+	return feature.NewInstanceFeature(attrs), nil
 }
 
-// DetectPci lists available PCI devices and retrieve device attributes.
-// deviceAttrSpec is a map which specifies which attributes to retrieve.
-// a false value for a specific attribute marks the attribute as optional.
-// a true value for a specific attribute marks the attribute as mandatory.
-// "class" attribute is considered mandatory.
-// will fail if the retrieval of a mandatory attribute fails.
-func DetectPci(deviceAttrSpec map[string]bool) (map[string][]PciDeviceInfo, error) {
+// detectPci detects available PCI devices and retrieves their device attributes.
+// An error is returned if reading any of the mandatory attributes fails.
+func detectPci() ([]feature.InstanceFeature, error) {
 	sysfsBasePath := source.SysfsDir.Path("bus/pci/devices")
-	devInfo := make(map[string][]PciDeviceInfo)
 
 	devices, err := ioutil.ReadDir(sysfsBasePath)
 	if err != nil {
 		return nil, err
 	}
-	// "class" is a mandatory attribute, inject it to spec if needed.
-	deviceAttrSpec["class"] = true
 
 	// Iterate over devices
+	devInfo := make([]feature.InstanceFeature, 0, len(devices))
 	for _, device := range devices {
-		info, err := readPciDevInfo(path.Join(sysfsBasePath, device.Name()), deviceAttrSpec)
+		info, err := readPciDevInfo(filepath.Join(sysfsBasePath, device.Name()))
 		if err != nil {
 			klog.Error(err)
 			continue
 		}
-		class := info["class"]
-		devInfo[class] = append(devInfo[class], info)
+		devInfo = append(devInfo, *info)
 	}
 
 	return devInfo, nil
