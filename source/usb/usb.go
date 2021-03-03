@@ -22,11 +22,14 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
-	usbutils "sigs.k8s.io/node-feature-discovery/source/internal"
 )
 
 const Name = "usb"
+
+const DeviceFeature = "device"
 
 type Config struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
@@ -46,12 +49,14 @@ func newDefaultConfig() *Config {
 
 // usbSource implements the LabelSource and ConfigurableSource interfaces.
 type usbSource struct {
-	config *Config
+	config   *Config
+	features *feature.DomainFeatures
 }
 
 // Singleton source instance
 var (
-	src usbSource
+	src                           = usbSource{config: newDefaultConfig()}
+	_   source.FeatureSource      = &src
 	_   source.LabelSource        = &src
 	_   source.ConfigurableSource = &src
 )
@@ -80,7 +85,8 @@ func (s *usbSource) Priority() int { return 0 }
 
 // GetLabels method of the LabelSource interface
 func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
-	features := source.FeatureLabels{}
+	labels := source.FeatureLabels{}
+	features := s.GetFeatures()
 
 	// Construct a device label format, a sorted list of valid attributes
 	deviceLabelFields := []string{}
@@ -89,7 +95,7 @@ func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
 		configLabelFields[field] = true
 	}
 
-	for _, attr := range usbutils.DefaultUsbDevAttrs {
+	for _, attr := range devAttrs {
 		if _, ok := configLabelFields[attr]; ok {
 			deviceLabelFields = append(deviceLabelFields, attr)
 			delete(configLabelFields, attr)
@@ -100,42 +106,55 @@ func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
 		for key := range configLabelFields {
 			keys = append(keys, key)
 		}
-		klog.Warningf("invalid fields '%v' in deviceLabelFields, ignoring...", keys)
+		klog.Warningf("invalid fields (%s) in deviceLabelFields, ignoring...", strings.Join(keys, ", "))
 	}
 	if len(deviceLabelFields) == 0 {
 		klog.Warningf("no valid fields in deviceLabelFields defined, using the defaults")
 		deviceLabelFields = []string{"vendor", "device"}
 	}
 
-	// Read configured or default labels. Attributes set to 'true' are considered must-have.
-	deviceAttrs := map[string]bool{}
-	for _, label := range deviceLabelFields {
-		deviceAttrs[label] = true
-	}
-
-	devs, err := usbutils.DetectUsb(deviceAttrs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect USB devices: %s", err.Error())
-	}
-
 	// Iterate over all device classes
-	for class, classDevs := range devs {
+	for _, dev := range features.Instances[DeviceFeature].Elements {
+		attrs := dev.Attributes
+		class := attrs["class"]
 		for _, white := range s.config.DeviceClassWhitelist {
-			if strings.HasPrefix(class, strings.ToLower(white)) {
-				for _, dev := range classDevs {
-					devLabel := ""
-					for i, attr := range deviceLabelFields {
-						devLabel += dev[attr]
-						if i < len(deviceLabelFields)-1 {
-							devLabel += "_"
-						}
+			if strings.HasPrefix(string(class), strings.ToLower(white)) {
+				devLabel := ""
+				for i, attr := range deviceLabelFields {
+					devLabel += attrs[attr]
+					if i < len(deviceLabelFields)-1 {
+						devLabel += "_"
 					}
-					features[devLabel+".present"] = true
 				}
+				labels[devLabel+".present"] = true
+				break
 			}
 		}
 	}
-	return features, nil
+	return labels, nil
+}
+
+// Discover method of the FeatureSource interface
+func (s *usbSource) Discover() error {
+	s.features = feature.NewDomainFeatures()
+
+	devs, err := detectUsb()
+	if err != nil {
+		return fmt.Errorf("failed to detect USB devices: %s", err.Error())
+	}
+	s.features.Instances[DeviceFeature] = feature.NewInstanceFeatures(devs)
+
+	utils.KlogDump(3, "discovered usb features:", "  ", s.features)
+
+	return nil
+}
+
+// GetFeatures method of the FeatureSource Interface
+func (s *usbSource) GetFeatures() *feature.DomainFeatures {
+	if s.features == nil {
+		s.features = feature.NewDomainFeatures()
+	}
+	return s.features
 }
 
 func init() {
