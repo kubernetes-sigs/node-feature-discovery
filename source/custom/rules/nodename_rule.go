@@ -17,40 +17,35 @@ limitations under the License.
 package rules
 
 import (
+	"encoding/json"
 	"fmt"
-	"regexp"
-
-	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/system"
 )
 
 // NodenameRule matches on nodenames configured in a ConfigMap
-type NodenameRule []string
+type NodenameRule struct {
+	expression.MatchExpression
+}
 
-// Force implementation of Rule
-var _ Rule = NodenameRule{}
-
-func (n NodenameRule) Match() (bool, error) {
+func (r *NodenameRule) Match() (bool, error) {
 	nodeName, ok := source.GetFeatureSource("system").GetFeatures().Values[system.NameFeature].Elements["nodename"]
-	if !ok {
+	if !ok || nodeName == "" {
 		return false, fmt.Errorf("node name not available")
 	}
+	return r.MatchExpression.Match(true, nodeName)
+}
 
-	for _, nodenamePattern := range n {
-		klog.V(1).Infof("matchNodename %s", nodenamePattern)
-		match, err := regexp.MatchString(nodenamePattern, nodeName)
-		if err != nil {
-			klog.Errorf("nodename rule: invalid nodename regexp %q: %v", nodenamePattern, err)
-			continue
-		}
-		if !match {
-			klog.V(2).Infof("nodename rule: No match for pattern %q with node %q", nodenamePattern, nodeName)
-			continue
-		}
-		klog.V(2).Infof("nodename rule: Match for pattern %q with node %q", nodenamePattern, nodeName)
-		return true, nil
+func (r *NodenameRule) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &r.MatchExpression); err != nil {
+		return err
 	}
-	return false, nil
+	// Force regexp matching
+	if r.Op == expression.MatchIn {
+		r.Op = expression.MatchInRegexp
+	}
+	// We need to run Validate() because operator forcing above
+	return r.Validate()
 }

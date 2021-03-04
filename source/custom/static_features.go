@@ -17,6 +17,7 @@ limitations under the License.
 package custom
 
 import (
+	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
@@ -29,7 +30,9 @@ func getStaticFeatureConfig() []FeatureSpec {
 			MatchOn: []MatchRule{
 				{
 					PciID: &rules.PciIDRule{
-						PciIDRuleInput: rules.PciIDRuleInput{Vendor: []string{"15b3"}},
+						MatchExpressionSet: expression.MatchExpressionSet{
+							"vendor": expression.MustCreateMatchExpression(expression.MatchIn, "15b3"),
+						},
 					},
 				},
 			},
@@ -38,7 +41,12 @@ func getStaticFeatureConfig() []FeatureSpec {
 			Name: "rdma.available",
 			MatchOn: []MatchRule{
 				{
-					LoadedKMod: &rules.LoadedKModRule{"ib_uverbs", "rdma_ucm"},
+					LoadedKMod: &rules.LoadedKModRule{
+						MatchExpressionSet: expression.MatchExpressionSet{
+							"ib_uverbs": expression.MustCreateMatchExpression(expression.MatchExists),
+							"rdma_ucm":  expression.MustCreateMatchExpression(expression.MatchExists),
+						},
+					},
 				},
 			},
 		},

@@ -56,6 +56,10 @@ type customSource struct {
 	config *config
 }
 
+type legacyRule interface {
+	Match() (bool, error)
+}
+
 // Singleton source instance
 var (
 	src                           = customSource{config: newDefaultConfig()}
@@ -114,7 +118,7 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 func (s *customSource) discoverFeature(feature FeatureSpec) (bool, error) {
 	for _, matchRules := range feature.MatchOn {
 
-		allRules := []rules.Rule{
+		allRules := []legacyRule{
 			matchRules.PciID,
 			matchRules.UsbID,
 			matchRules.LoadedKMod,
@@ -124,7 +128,7 @@ func (s *customSource) discoverFeature(feature FeatureSpec) (bool, error) {
 		}
 
 		// return true, nil if all rules match
-		matchRules := func(rules []rules.Rule) (bool, error) {
+		matchRules := func(rules []legacyRule) (bool, error) {
 			for _, rule := range rules {
 				if reflect.ValueOf(rule).IsNil() {
 					continue

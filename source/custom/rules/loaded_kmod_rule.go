@@ -20,24 +20,21 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
 // LoadedKModRule matches loaded kernel modules in the system
-type LoadedKModRule []string
+type LoadedKModRule struct {
+	expression.MatchExpressionSet
+}
 
 // Match loaded kernel modules on provided list of kernel modules
-func (kmods *LoadedKModRule) Match() (bool, error) {
+func (r *LoadedKModRule) Match() (bool, error) {
 	modules, ok := source.GetFeatureSource("kernel").GetFeatures().Keys[kernel.LoadedModuleFeature]
 	if !ok {
 		return false, fmt.Errorf("info about loaded modules not available")
 	}
 
-	for _, kmod := range *kmods {
-		if _, ok := modules.Elements[kmod]; !ok {
-			// kernel module not loaded
-			return false, nil
-		}
-	}
-	return true, nil
+	return r.MatchKeys(modules.Elements)
 }

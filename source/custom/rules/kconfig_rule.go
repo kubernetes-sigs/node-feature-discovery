@@ -17,48 +17,22 @@ limitations under the License.
 package rules
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
-// KconfigRule implements Rule
-type KconfigRule []kconfig
-
-type kconfig struct {
-	Name  string
-	Value string
+// KconfigRule implements Rule for the custom source
+type KconfigRule struct {
+	expression.MatchExpressionSet
 }
 
-func (kconfigs *KconfigRule) Match() (bool, error) {
+func (r *KconfigRule) Match() (bool, error) {
 	options, ok := source.GetFeatureSource("kernel").GetFeatures().Values[kernel.ConfigFeature]
 	if !ok {
 		return false, fmt.Errorf("kernel config options not available")
 	}
-
-	for _, f := range *kconfigs {
-		if v, ok := options.Elements[f.Name]; !ok || f.Value != v {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func (c *kconfig) UnmarshalJSON(data []byte) error {
-	var raw string
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	split := strings.SplitN(raw, "=", 2)
-	c.Name = split[0]
-	if len(split) == 1 {
-		c.Value = "true"
-	} else {
-		c.Value = split[1]
-	}
-	return nil
+	return r.MatchValues(options.Elements)
 }
