@@ -246,6 +246,30 @@ worker:
     #        - feature: local.label
     #          matchExpressions:
     #            custom-feature-knob: {op: Gt, value: ["100"]}
+    #
+    #    # The following feature demonstrates the capabilities of the matchAny
+    #    - name: "my.ng.feature.2"
+    #      labels:
+    #        my-ng-feature-2: "my-value"
+    #      # matchAny implements a logical IF over all elements (sub-matchers) in
+    #      # the list (i.e. at least one feature matcher must match)
+    #      matchAny:
+    #        - matchFeatures:
+    #            - feature: kernel.loadedmodule
+    #              matchExpressions:
+    #                driver-module-X: {op: Exists}
+    #            - feature: pci.device
+    #              matchExpressions:
+    #                vendor: {op: In, value: ["8086"]}
+    #                class: {op: In, value: ["0200"]}
+    #        - matchFeatures:
+    #            - feature: kernel.loadedmodule
+    #              matchExpressions:
+    #                driver-module-Y: {op: Exists}
+    #            - feature: usb.device
+    #              matchExpressions:
+    #                vendor: {op: In, value: ["8086"]}
+    #                class: {op: In, value: ["02"]}
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
   podSecurityContext: {}

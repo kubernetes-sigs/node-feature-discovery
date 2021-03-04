@@ -150,4 +150,32 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m, "instances should have matched")
 
+	// Test MatchAny
+	r5.MatchAny = []MatchAnyElem{
+		MatchAnyElem{
+			MatchFeatures: FeatureMatcher{
+				FeatureMatcherTerm{
+					Feature:          "domain-1.kf-1",
+					MatchExpressions: expression.MatchExpressionSet{"key-na": expression.MustCreateMatchExpression(expression.MatchExists)},
+				},
+			},
+		},
+	}
+	m, err = r5.execute(f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Nil(t, m, "instances should not have matched")
+
+	r5.MatchAny = append(r5.MatchAny,
+		MatchAnyElem{
+			MatchFeatures: FeatureMatcher{
+				FeatureMatcherTerm{
+					Feature:          "domain-1.kf-1",
+					MatchExpressions: expression.MatchExpressionSet{"key-1": expression.MustCreateMatchExpression(expression.MatchExists)},
+				},
+			},
+		})
+	r5.MatchFeatures[0].MatchExpressions["key-1"] = expression.MustCreateMatchExpression(expression.MatchIn, "val-1")
+	m, err = r5.execute(f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r5.Labels, m, "instances should have matched")
 }

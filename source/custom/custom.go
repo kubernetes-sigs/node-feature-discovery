@@ -54,6 +54,11 @@ type Rule struct {
 	Name          string            `json:"name"`
 	Labels        map[string]string `json:"labels"`
 	MatchFeatures FeatureMatcher    `json:"matchFeatures"`
+	MatchAny      []MatchAnyElem    `json:"matchAny"`
+}
+
+type MatchAnyElem struct {
+	MatchFeatures FeatureMatcher
 }
 
 type FeatureMatcher []FeatureMatcherTerm
@@ -185,6 +190,22 @@ func (r *LegacyRule) execute(features map[string]*feature.DomainFeatures) (map[s
 }
 
 func (r *Rule) execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {
+	if len(r.MatchAny) > 0 {
+		// Logical OR over the matchAny matchers
+		matched := false
+		for _, matcher := range r.MatchAny {
+			if m, err := matcher.match(features); err != nil {
+				return nil, err
+			} else if m {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return nil, nil
+		}
+	}
+
 	if len(r.MatchFeatures) > 0 {
 		if m, err := r.MatchFeatures.match(features); err != nil {
 			return nil, err
@@ -199,6 +220,10 @@ func (r *Rule) execute(features map[string]*feature.DomainFeatures) (map[string]
 	}
 
 	return labels, nil
+}
+
+func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (bool, error) {
+	return e.MatchFeatures.match(features)
 }
 
 func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (bool, error) {
