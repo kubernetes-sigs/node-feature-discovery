@@ -542,6 +542,9 @@ The *local* feature source gets its labels by two different ways:
   `/etc/kubernetes/node-feature-discovery/features.d/` directory. The file
   content is expected to be similar to the hook output (described above).
 
+**NOTE:** The [minimal](deployment-and-usage#minimal) image variant only
+supports running statically linked binaries.
+
 These directories must be available inside the Docker image so Volumes and
 VolumeMounts must be used if standard NFD images are used. The given template
 files mount by default the `source.d` and the `features.d` directories
