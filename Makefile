@@ -72,10 +72,17 @@ install:
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
-		--build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
-		-t $(IMAGE_TAG) \
-		$(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
-		$(IMAGE_BUILD_EXTRA_OPTS) ./
+	    --target full \
+	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+	    -t $(IMAGE_TAG) \
+	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
+	    $(IMAGE_BUILD_EXTRA_OPTS) ./
+	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
+	    --target minimal \
+	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+	    -t $(IMAGE_TAG)-minimal \
+	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
+	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 
 yamls: $(yaml_instances)
 
@@ -138,7 +145,8 @@ e2e-test:
 
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
-	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; done
+	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)-minimal
+	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; $(IMAGE_PUSH_CMD) $$tag-minimal; done
 
 poll-image:
 	set -e; \
