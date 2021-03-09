@@ -1,13 +1,13 @@
 ---
-title: "Examples and Demos"
+title: "Examples and demos"
 layout: default
 sort: 5
 ---
 
-# Examples And Demos
+# Examples and demos
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
@@ -23,7 +23,7 @@ This page contains usage examples and demos.
 
 [![asciicast](https://asciinema.org/a/247316.svg)](https://asciinema.org/a/247316)
 
-### Demo Use Case
+### Demo use case
 
 A demo on the benefits of using node feature discovery can be found in the
 source code repository under

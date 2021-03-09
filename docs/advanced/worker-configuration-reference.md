@@ -1,11 +1,11 @@
 ---
-title: "Worker Config Reference"
+title: "Worker config reference"
 layout: default
 sort: 4
 published: false
 ---
 
-# NFD-Worker Configuration File Reference
+# Nfd-worker configuration file reference
 {: .no_toc }
 
 ## Table of contents
