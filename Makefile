@@ -148,17 +148,20 @@ push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)-minimal
 	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; $(IMAGE_PUSH_CMD) $$tag-minimal; done
 
-poll-image:
+poll-images:
 	set -e; \
-	image=$(IMAGE_REPO):$(IMAGE_TAG_NAME); \
+	tags="$(foreach tag,$(IMAGE_TAG_NAME) $(IMAGE_EXTRA_TAG_NAMES),$(tag) $(tag)-minimal)" \
 	base_url=`echo $(IMAGE_REPO) | sed -e s'!\([^/]*\)!\1/v2!'`; \
-	errors=`curl -fsS -X GET https://$$base_url/manifests/$(IMAGE_TAG_NAME)|jq .errors`;  \
-	if [ "$$errors" = "null" ]; then \
-	  echo Image $$image found; \
-	else \
-	  echo Image $$image not found; \
-	  exit 1; \
-	fi;
+	for tag in $$tags; do \
+	    image=$(IMAGE_REPO):$$tag \
+	    errors=`curl -fsS -X GET https://$$base_url/manifests/$$tag|jq .errors`;  \
+	    if [ "$$errors" = "null" ]; then \
+	      echo Image $$image found; \
+	    else \
+	      echo Image $$image not found; \
+	      exit 1; \
+	    fi; \
+	done
 
 site-build:
 	@mkdir -p docs/vendor/bundle
