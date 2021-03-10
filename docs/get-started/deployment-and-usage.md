@@ -81,6 +81,14 @@ is recommended to be done via
     EOF
     ```
 
+In order to deploy the [minimal](#minimal) image you need to add
+
+```yaml
+  image: {{ site.container_image }}-minimal
+```
+
+to the metadata of NodeFeatureDiscovery object above.
+
 ### Deployment templates
 
 The template specs provided in the repo can be used directly:
@@ -94,7 +102,7 @@ This will required RBAC rules and deploy nfd-master (as a deployment) and
 nfd-worker (as a daemonset) in the `node-feature-discovery` namespace.
 
 Alternatively you can download the templates and customize the deployment
-manually.
+manually. For example, to deploy the [minimal](#minimal) image.
 
 #### Master-worker pod
 
@@ -147,6 +155,13 @@ helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_N
 The command deploys Node Feature Discovery on the Kubernetes cluster in the
 default configuration.  The Configuration section describes how it can be
 configured during installation.
+
+In order to deploy the [minimal](#minimal) image you need to override the image
+tag:
+
+```bash
+helm install node-feature-discovery ./node-feature-discovery/ --set image.tag={{ site.release }}-minimal --namespace $NFD_NS --create-namespace
+```
 
 #### Configuration
 
