@@ -72,10 +72,17 @@ install:
 
 image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
-		--build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
-		-t $(IMAGE_TAG) \
-		$(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
-		$(IMAGE_BUILD_EXTRA_OPTS) ./
+	    --target full \
+	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+	    -t $(IMAGE_TAG) \
+	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
+	    $(IMAGE_BUILD_EXTRA_OPTS) ./
+	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
+	    --target minimal \
+	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+	    -t $(IMAGE_TAG)-minimal \
+	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
+	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 
 yamls: $(yaml_instances)
 
@@ -135,22 +142,29 @@ e2e-test:
 	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) \
 	    -kubeconfig=$(KUBECONFIG) -nfd.e2e-config=$(E2E_TEST_CONFIG) -ginkgo.focus="\[NFD\]" \
 	    $(if $(OPENSHIFT),-nfd.openshift,)
+	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME)-minimal \
+	    -kubeconfig=$(KUBECONFIG) -nfd.e2e-config=$(E2E_TEST_CONFIG) -ginkgo.focus="\[NFD\]" \
+	    $(if $(OPENSHIFT),-nfd.openshift,)
 
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
-	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; done
+	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)-minimal
+	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; $(IMAGE_PUSH_CMD) $$tag-minimal; done
 
-poll-image:
+poll-images:
 	set -e; \
-	image=$(IMAGE_REPO):$(IMAGE_TAG_NAME); \
+	tags="$(foreach tag,$(IMAGE_TAG_NAME) $(IMAGE_EXTRA_TAG_NAMES),$(tag) $(tag)-minimal)" \
 	base_url=`echo $(IMAGE_REPO) | sed -e s'!\([^/]*\)!\1/v2!'`; \
-	errors=`curl -fsS -X GET https://$$base_url/manifests/$(IMAGE_TAG_NAME)|jq .errors`;  \
-	if [ "$$errors" = "null" ]; then \
-	  echo Image $$image found; \
-	else \
-	  echo Image $$image not found; \
-	  exit 1; \
-	fi;
+	for tag in $$tags; do \
+	    image=$(IMAGE_REPO):$$tag \
+	    errors=`curl -fsS -X GET https://$$base_url/manifests/$$tag|jq .errors`;  \
+	    if [ "$$errors" = "null" ]; then \
+	      echo Image $$image found; \
+	    else \
+	      echo Image $$image not found; \
+	      exit 1; \
+	    fi; \
+	done
 
 site-build:
 	@mkdir -p docs/vendor/bundle

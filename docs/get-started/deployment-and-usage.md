@@ -23,6 +23,27 @@ sort: 3
 1. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl)
    (properly set up and configured to work with your Kubernetes cluster)
 
+## Image variants
+
+NFD currently offers two variants of the container image. The "full" variant is
+currently deployed by default.
+
+### Full
+
+This image is based on
+[debian:buster-slim](https://hub.docker.com/_/debian) and contains a full Linux
+system for running shell-based nfd-worker hooks and doing live debugging and
+diagnosis of the NFD images.
+
+### Minimal
+
+This is a minimal image based on
+[gcr.io/distroless/base](https://github.com/GoogleContainerTools/distroless/blob/master/base/README.md)
+and only supports running statically linked binaries.
+
+The container image tag has suffix `-minimal`
+(e.g. `{{ site.container_image }}-minimal`)
+
 ## Deployment options
 
 ### Operator
