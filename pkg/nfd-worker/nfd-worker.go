@@ -508,6 +508,7 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regexp.R
 	labels = Labels{}
 
 	// Do feature discovery from all configured sources.
+	klog.Info("starting feature discovery...")
 	for _, source := range sources {
 		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
 		if err != nil {
@@ -516,11 +517,11 @@ func createFeatureLabels(sources []source.FeatureSource, labelWhiteList regexp.R
 		}
 
 		for name, value := range labelsFromSource {
-			// Log discovered feature.
-			klog.Infof("%s = %s", name, value)
 			labels[name] = value
 		}
 	}
+	klog.Info("feature discovery completed")
+	utils.KlogDump(1, "labels discovered by feature sources:", "  ", labels)
 	return labels
 }
 
