@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+patches:
+- path: env.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd.*
+- path: securitycontext.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd.*
+- path: master-affinity.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-master
+- path: worker-mounts.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-worker

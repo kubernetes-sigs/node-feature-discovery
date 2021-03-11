@@ -107,7 +107,7 @@ yamls: $(yaml_instances)
 templates: $(yaml_templates)
 	@# Need to prepend each line in the sample config with spaces in order to
 	@# fit correctly in the configmap spec.
-	@sed s'/^/    /' nfd-worker.conf.example > nfd-worker.conf.tmp
+	@sed s'/^/    /' deployment/components/worker-config/nfd-worker.conf.example > nfd-worker.conf.tmp
 	@# The sed magic below replaces the block of text between the lines with start and end markers
 	@for f in $+; do \
 	    start=NFD-WORKER-CONF-START-DO-NOT-REMOVE; \
