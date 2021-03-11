@@ -17,6 +17,8 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
+
 	"google.golang.org/grpc/grpclog"
 	"k8s.io/klog/v2"
 )
@@ -30,51 +32,51 @@ func ConfigureGrpcKlog() {
 type grpcLogger struct{}
 
 func (g grpcLogger) Error(args ...interface{}) {
-	klog.Error(args...)
+	klog.ErrorDepth(2, args...)
 }
 
 func (g grpcLogger) Errorf(format string, args ...interface{}) {
-	klog.Errorf(format, args...)
+	klog.ErrorDepth(2, fmt.Sprintf(format, args...))
 }
 
 func (g grpcLogger) Errorln(args ...interface{}) {
-	klog.Errorln(args...)
+	klog.ErrorDepth(2, args...)
 }
 
 func (g grpcLogger) Fatal(args ...interface{}) {
-	klog.Fatal(args...)
+	klog.FatalDepth(2, args...)
 }
 
 func (g grpcLogger) Fatalf(format string, args ...interface{}) {
-	klog.Fatalf(format, args...)
+	klog.FatalDepth(2, fmt.Sprintf(format, args...))
 }
 
 func (g grpcLogger) Fatalln(args ...interface{}) {
-	klog.Fatalln(args...)
+	klog.FatalDepth(2, args...)
 }
 
 func (g grpcLogger) Info(args ...interface{}) {
-	klog.Info(args...)
+	klog.InfoDepth(2, args...)
 }
 
 func (g grpcLogger) Infof(format string, args ...interface{}) {
-	klog.Infof(format, args...)
+	klog.InfoDepth(2, fmt.Sprintf(format, args...))
 }
 
 func (g grpcLogger) Infoln(args ...interface{}) {
-	klog.Infoln(args...)
+	klog.InfoDepth(2, args...)
 }
 
 func (g grpcLogger) Warning(args ...interface{}) {
-	klog.Warning(args...)
+	klog.WarningDepth(2, args...)
 }
 
 func (g grpcLogger) Warningf(format string, args ...interface{}) {
-	klog.Warningf(format, args...)
+	klog.WarningDepth(2, fmt.Sprintf(format, args...))
 }
 
 func (g grpcLogger) Warningln(args ...interface{}) {
-	klog.Warningln(args...)
+	klog.WarningDepth(2, args...)
 }
 
 func (g grpcLogger) V(l int) bool {
