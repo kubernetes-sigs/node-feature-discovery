@@ -1,10 +1,10 @@
 ---
-title: "Developer Guide"
+title: "Developer guide"
 layout: default
 sort: 1
 ---
 
-# Developer Guide
+# Developer guide
 
 {: .no_toc }
 
@@ -17,7 +17,7 @@ sort: 1
 
 ---
 
-## Building from Source
+## Building from source
 
 ### Download the source code
 
@@ -26,7 +26,7 @@ git clone https://github.com/kubernetes-sigs/node-feature-discovery
 cd node-feature-discovery
 ```
 
-### Docker Build
+### Docker build
 
 #### Build the container image
 
@@ -81,7 +81,7 @@ NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
 sed s"/NUM_NODES/$NUM_NODES/" nfd-worker-job.yaml | kubectl apply -f -
 ```
 
-### Building Locally
+### Building locally
 
 You can also build the binaries locally
 
@@ -91,7 +91,7 @@ make build
 
 This will compile binaries under `bin/`
 
-### Customizing the Build
+### Customizing the build
 
 There are several Makefile variables that control the build process and the
 name of the resulting container image. The following are targeted targeted for
@@ -149,7 +149,7 @@ cluster you need to specify the kubeconfig to be used:
 make e2e-test KUBECONFIG=$HOME/.kube/config
 ```
 
-## Running Locally
+## Running locally
 
 You can run NFD locally, either directly on your host OS or in containers for
 testing and development purposes. This may be useful e.g. for checking

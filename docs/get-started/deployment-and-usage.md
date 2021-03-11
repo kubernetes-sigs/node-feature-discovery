@@ -1,14 +1,14 @@
 ---
-title: "Deployment and Usage"
+title: "Deployment and usage"
 layout: default
 sort: 3
 ---
 
-# Deployment and Usage
+# Deployment and usage
 
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 
 {: .no_toc .text-delta }
 
@@ -81,7 +81,7 @@ is recommended to be done via
     EOF
     ```
 
-### Deployment Templates
+### Deployment templates
 
 The template specs provided in the repo can be used directly:
 
@@ -96,7 +96,7 @@ nfd-worker (as a daemonset) in the `node-feature-discovery` namespace.
 Alternatively you can download the templates and customize the deployment
 manually.
 
-#### Master-Worker Pod
+#### Master-worker pod
 
 You can also run nfd-master and nfd-worker inside the same pod
 
@@ -108,7 +108,7 @@ This creates a DaemonSet runs both nfd-worker and nfd-master in the same Pod.
 In this case no nfd-master is run on the master node(s), but, the worker nodes
 are able to label themselves which may be desirable e.g. in single-node setups.
 
-#### Worker One-shot
+#### Worker one-shot
 
 Feature discovery can alternatively be configured as a one-shot job.
 The Job template may be used to achieve this:
@@ -125,7 +125,7 @@ this approach does not guarantee running once on every node. For example,
 tainted, non-ready nodes or some other reasons in Job scheduling may cause some
 node(s) will run extra job instance(s) to satisfy the request.
 
-### Deployment with Helm
+### Deployment with helm
 
 Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
 
@@ -164,7 +164,7 @@ export NFD_NS=node-feature-discovery
 helm install node-feature-discovery ./node-feature-discovery/ --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace $NFD_NS --create-namespace
 ```
 
-#### Uninstalling the Chart
+#### Uninstalling the chart
 
 To uninstall the `node-feature-discovery` deployment:
 
@@ -176,7 +176,7 @@ helm uninstall node-feature-discovery --namespace $NFD_NS
 The command removes all the Kubernetes components associated with the chart and
 deletes the release.
 
-#### Chart Parameters
+#### Chart parameters
 
 In order to tailor the deployment of the Node Feature Discovery to your cluster needs
 We have introduced the following Chart parameters.
@@ -221,7 +221,7 @@ We have introduced the following Chart parameters.
 | `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
 | `worker.annotations` | dict | {} | NFD worker pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
 
-### Build Your Own
+### Build your own
 
 If you want to use the latest development version (master branch) you need to
 build your own custom image.
@@ -265,7 +265,7 @@ the default interval is set to 60s which is also the default when no
 `-sleep-interval` is specified. Also, the configuration file is re-read on
 each iteration providing a simple mechanism of run-time reconfiguration.
 
-### TLS authentication
+### Communication security with TLS
 
 NFD supports mutual TLS authentication between the nfd-master and nfd-worker
 instances.  That is, nfd-worker and nfd-master both verify that the other end
@@ -284,7 +284,7 @@ nfd-master args, in which case nfd-master verifies that the NodeName presented
 by nfd-worker matches the Common Name (CN) of its certificate. This means that
 each nfd-worker requires a individual node-specific TLS certificate.
 
-## Worker Configuration
+## Worker configuration
 
 NFD-Worker supports dynamic configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`,
@@ -323,7 +323,7 @@ file must be used, i.e. JSON (or YAML). For example:
 Configuration options specified from the command line will override those read
 from the config file.
 
-## Using Node Labels
+## Using node labels
 
 Nodes with specific features can be targeted using the `nodeSelector` field. The
 following example shows how to target nodes with Intel TurboBoost enabled.
@@ -348,7 +348,7 @@ For more details on targeting nodes, see
 
 ## Uninstallation
 
-### Operator Was Used for Deployment
+### Operator was used for deployment
 
 If you followed the deployment instructions above you can simply do:
 
@@ -390,7 +390,7 @@ kubectl delete clusterrole nfd-master
 kubectl delete clusterrolebinding nfd-master
 ```
 
-### Removing Feature Labels
+### Removing feature labels
 
 NFD-Master has a special `-prune` command line flag for removing all
 nfd-related node labels, annotations and extended resources from the cluster.

@@ -8,7 +8,7 @@ sort: 1
 
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 
 {: .no_toc .text-delta }
 
@@ -38,7 +38,7 @@ NFD-Worker is a daemon responsible for feature detection. It then communicates
 the information to nfd-master which does the actual node labeling.  One
 instance of nfd-worker is supposed to be running on each node of the cluster,
 
-## Feature Discovery
+## Feature discovery
 
 Feature discovery is divided into domain-specific feature sources:
 
@@ -78,7 +78,7 @@ An overview of the default feature labels:
 }
 ```
 
-## Node Annotations
+## Node annotations
 
 NFD also annotates nodes it is running on:
 

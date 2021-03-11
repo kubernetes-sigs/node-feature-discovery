@@ -1,15 +1,15 @@
 ---
-title: "Customization Guide"
+title: "Customization guide"
 layout: default
 sort: 5
 published: false
 ---
 
-# Customization Guide
+# Customization guide
 
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 
 {: .no_toc .text-delta }
 
