@@ -1,13 +1,13 @@
 ---
-title: "Feature Discovery"
+title: "Feature discovery"
 layout: default
 sort: 4
 ---
 
-# Feature Discovery
+# Feature discovery
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
@@ -48,7 +48,7 @@ given node. If features are not discovered on a consecutive run, the correspondi
 label will be removed. This includes any restrictions placed on the consecutive run,
 such as restricting discovered features with the --label-whitelist option.*
 
-## Feature Sources
+## Feature sources
 
 ### CPU
 
@@ -80,7 +80,7 @@ RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
 **NOTE** The cpuid features advertise *supported* CPU capabilities, that is, a
 capability might be supported but not enabled.
 
-#### X86 CPUID Attributes (Partial List)
+#### X86 CPUID attributes (partial list)
 
 | Attribute | Description                                                      |
 | --------- | ---------------------------------------------------------------- |
@@ -91,7 +91,7 @@ capability might be supported but not enabled.
 
 See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 
-#### Arm CPUID Attribute (Partial List)
+#### Arm CPUID attribute (partial list)
 
 | Attribute | Description                                                      |
 | --------- | ---------------------------------------------------------------- |
@@ -108,7 +108,7 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | NEON      | NEON SIMD instructions
 | LPAE      | Large Physical Address Extensions
 
-#### Arm64 CPUID Attribute (Partial List)
+#### Arm64 cpuid attribute (partial list)
 
 | Attribute | Description                                                      |
 | --------- | ---------------------------------------------------------------- |
@@ -134,7 +134,7 @@ examples how to set-up and manage the worker configuration.
 To aid in making Custom Features clearer, we define a general and a per rule
 nomenclature, keeping things as consistent as possible.
 
-#### General Nomenclature & Definitions
+#### General nomenclature & definitions
 
 ```
 Rule        :Represents a matching logic that is used to match on a feature.
@@ -142,7 +142,7 @@ Rule Input  :The input a Rule is provided. This determines how a Rule performs t
 Matcher     :A composition of Rules, each Matcher may be composed of at most one instance of each Rule.
 ```
 
-#### Custom Features Format (using the Nomenclature defined above)
+#### Custom features format (using the nomenclature defined above)
 
 Rules are specified under `sources.custom` in the nfd-worker configuration
 file.
@@ -228,7 +228,7 @@ and logical _AND_ between the specified Attributes for each USB device in the
 system.  At least one Attribute must be specified. Missing attributes will not
 partake in the matching process.
 
-##### LoadedKMod Rule
+##### LoadedKMod rule
 
 ###### Nomenclature
 
@@ -249,7 +249,7 @@ Matching is done by performing logical _AND_ for each provided Element, i.e
 the Rule will match if all provided Elements (kernel modules) are loaded in the
 system.
 
-##### CpuId Rule
+##### CpuId rule
 
 ###### Nomenclature
 
@@ -270,7 +270,7 @@ Matching is done by performing logical _AND_ for each provided Element, i.e the
 Rule will match if all provided Elements (CPUID flag strings) are available in
 the system.
 
-##### Kconfig Rule
+##### Kconfig rule
 
 ###### Nomenclature
 
@@ -478,7 +478,7 @@ The **system** feature source supports the following labels:
 |             | VERSION_ID.major | First component of the OS version id (e.g. '6')
 |             | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
 
-### Local -- User-specific Features
+### Local -- user-specific features
 
 NFD has a special feature source named *local* which is designed for getting
 the labels from user-specific feature detector. It provides a mechanism for
@@ -528,7 +528,7 @@ label `my.namespace.org/my-label=value`, your hook output or file must contains
 `stderr` output of the hooks is propagated to NFD log so it can be used for
 debugging and logging.
 
-#### Injecting Labels from Other Pods
+#### Injecting labels from other pods
 
 One use case for the hooks and/or feature files is detecting features in other
 Pods outside NFD, e.g. in Kubernetes device plugins. It is possible to mount
@@ -540,7 +540,7 @@ contains `hostPath` mounts for `sources.d` and `features.d` directories. By
 using the same mounts in the secondary Pod (e.g. device plugin) you have
 created a shared area for delivering hooks and feature files to NFD.
 
-#### A Hook Example
+#### A hook example
 
 User has a shell script
 `/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
@@ -564,7 +564,7 @@ feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
 override.namespace/value=456
 ```
 
-#### A File Example
+#### A file example
 
 User has a file `/etc/kubernetes/node-feature-discovery/features.d/my-source`
 which contains the following lines:

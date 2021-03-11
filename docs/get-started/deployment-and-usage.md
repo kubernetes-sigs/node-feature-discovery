@@ -1,13 +1,13 @@
 ---
-title: "Deployment and Usage"
+title: "Deployment and usage"
 layout: default
 sort: 3
 ---
 
-# Deployment and Usage
+# Deployment and usage
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
@@ -55,7 +55,7 @@ metadata:
 EOF
 ```
 
-### Deployment Templates
+### Deployment templates
 
 The template specs provided in the repo can be used directly:
 
@@ -70,7 +70,7 @@ nfd-worker (as a daemonset) in the `node-feature-discovery` namespace.
 Alternatively you can download the templates and customize the deployment
 manually.
 
-#### Master-Worker Pod
+#### Master-worker pod
 
 You can also run nfd-master and nfd-worker inside the same pod
 
@@ -82,7 +82,7 @@ This creates a DaemonSet runs both nfd-worker and nfd-master in the same Pod.
 In this case no nfd-master is run on the master node(s), but, the worker nodes
 are able to label themselves which may be desirable e.g. in single-node setups.
 
-#### Worker One-shot
+#### Worker one-shot
 
 Feature discovery can alternatively be configured as a one-shot job.
 The Job template may be used to achieve this:
@@ -99,7 +99,7 @@ this approach does not guarantee running once on every node. For example,
 tainted, non-ready nodes or some other reasons in Job scheduling may cause some
 node(s) will run extra job instance(s) to satisfy the request.
 
-### Build Your Own
+### Build your own
 
 If you want to use the latest development version (master branch) you need to
 build your own custom image.
@@ -199,7 +199,7 @@ file must be used, i.e. JSON (or YAML). For example:
 Configuration options specified from the command line will override those read
 from the config file.
 
-## Using Node Labels
+## Using node labels
 
 Nodes with specific features can be targeted using the `nodeSelector` field. The
 following example shows how to target nodes with Intel TurboBoost enabled.
@@ -224,7 +224,7 @@ For more details on targeting nodes, see
 
 ## Uninstallation
 
-### Operator Was Used for Deployment
+### Operator was used for deployment
 
 If you followed the deployment instructions above you can simply do:
 
@@ -266,7 +266,7 @@ kubectl delete clusterrole nfd-master
 kubectl delete clusterrolebinding nfd-master
 ```
 
-### Removing Feature Labels
+### Removing feature labels
 
 NFD-Master has a special `--prune` command line flag for removing all
 nfd-related node labels, annotations and extended resources from the cluster.

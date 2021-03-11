@@ -1,13 +1,13 @@
 ---
-title: "Worker Cmdline Reference"
+title: "Worker cmdline reference"
 layout: default
 sort: 3
 ---
 
-# NFD-Worker Commandline Flags
+# Nfd-worker commandline flags
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC

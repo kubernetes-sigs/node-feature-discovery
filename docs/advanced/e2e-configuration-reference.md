@@ -1,11 +1,11 @@
 ---
-title: "E2E-Test Config Reference"
+title: "E2E-test config reference"
 layout: default
 sort: 7
 published: false
 ---
 
-# End-to-End Test Configuration File Reference
+# End-to-end test configuration file reference
 {: .no_toc }
 
 ## Table of contents

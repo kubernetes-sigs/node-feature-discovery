@@ -1,13 +1,13 @@
 ---
-title: "Master Cmdline Reference"
+title: "Master cmdline reference"
 layout: default
 sort: 2
 ---
 
-# NFD-Master Commandline Flags
+# Nfd-master commandline flags
 {: .no_toc }
 
-## Table of Contents
+## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
