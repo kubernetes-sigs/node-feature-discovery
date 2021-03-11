@@ -157,7 +157,7 @@ repository and install from there.
 
 ```bash
 git clone https://github.com/kubernetes-sigs/node-feature-discovery/
-cd node-feature-discovery/deployment
+cd node-feature-discovery/deployment/helm
 export NFD_NS=node-feature-discovery
 helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_NS --create-namespace
 ```

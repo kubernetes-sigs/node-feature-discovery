@@ -60,7 +60,7 @@ LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.vers
 yaml_templates := $(wildcard *.yaml.template)
 # Let's treat values.yaml as template to sync configmap
 # and allow users to install without modifications
-yaml_templates := $(yaml_templates) deployment/node-feature-discovery/values.yaml
+yaml_templates := $(yaml_templates) deployment/helm/node-feature-discovery/values.yaml
 yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
 
 all: image
@@ -145,7 +145,7 @@ mdlint:
 	find docs/ -path docs/vendor -prune -false -o -name '*.md' | xargs $(MDL) -s docs/mdl-style.rb
 
 helm-lint:
-	helm lint --strict deployment/node-feature-discovery/
+	helm lint --strict deployment/helm/node-feature-discovery/
 
 test:
 	$(GO_CMD) test ./cmd/... ./pkg/...
