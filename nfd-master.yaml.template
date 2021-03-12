@@ -93,27 +93,21 @@ spec:
           command:
             - "nfd-master"
 ## Enable TLS authentication
-## The example below assumes having the root certificate named ca.crt stored in
-## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
-## in a TLS Secret named nfd-master-cert.
+## The example below assumes having a Secret named nfd-master-cert with
+## the TLS authentication credentials and a root certificate named ca.crt created.
+## cert-manager can be used to automate the Secret creation and updates.
 ## Additional hardening can be enabled by specifying --verify-node-name in
 ## args, in which case every nfd-worker requires a individual node-specific
 ## TLS certificate.
 #          args:
-#            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
+#            - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
 #            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
 #            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
 #          volumeMounts:
-#            - name: nfd-ca-cert
-#              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
-#              readOnly: true
 #            - name: nfd-master-cert
 #              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
 #              readOnly: true
 #      volumes:
-#        - name: nfd-ca-cert
-#          configMap:
-#            name: nfd-ca-cert
 #        - name: nfd-master-cert
 #          secret:
 #            secretName: nfd-master-cert
