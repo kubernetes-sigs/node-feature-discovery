@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: node-feature-discovery
+
+resources:
+- ../../default
+- issuer.yaml
+- master-cert.yaml
+- workers-cert.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+- files:
+  - tls.crt
+  - tls.key
+  name: nfd-ca-key-pair
+  type: kubernetes.io/tls
+
+patches:
+- path: args.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd.*
+- path: master-mounts.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-master
+- path: worker-mounts.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-worker

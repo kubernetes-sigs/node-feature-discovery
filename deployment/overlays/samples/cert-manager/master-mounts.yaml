@@ -1,0 +1,13 @@
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: nfd-master-cert
+    secret:
+      secretName: nfd-master-cert
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: nfd-master-cert
+    mountPath: /etc/kubernetes/node-feature-discovery/certs
+    readOnly: true

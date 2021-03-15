@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nfd-master-cert
+  namespace: node-feature-discovery
+spec:
+  secretName: nfd-master-cert
+  subject:
+    organizations:
+    - node-feature-discovery
+  commonName: nfd-master
+  dnsNames:
+  - nfd-master.node-feature-discovery.svc
+  - nfd-master.node-feature-discovery.svc.cluster.local
+  - nfd-master
+  issuerRef:
+    name: nfd-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

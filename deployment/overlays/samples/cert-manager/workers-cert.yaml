@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nfd-workers-cert
+  namespace: node-feature-discovery
+spec:
+  secretName: nfd-worker-cert
+  subject:
+    organizations:
+    - node-feature-discovery
+  commonName: nfd-worker
+  dnsNames:
+  - nfd-worker.node-feature-discovery.svc.cluster.local
+  issuerRef:
+    name: nfd-ca-issuer
+    kind: Issuer
+    group: cert-manager.io
