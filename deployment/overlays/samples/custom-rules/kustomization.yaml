@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: node-feature-discovery
+
+resources:
+- ../../default
+
+configMapGenerator:
+- name: custom-source-extra-rules-1
+  files:
+  - custom.conf=custom-rules.example.yaml
+
+patches:
+- path: mounts.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-worker
