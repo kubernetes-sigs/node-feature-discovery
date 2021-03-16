@@ -77,7 +77,8 @@ The (sub-)set of CPUID attributes to publish is configurable via the
 If whitelist is specified, only whitelisted attributes will be published. With
 blacklist, only blacklisted attributes are filtered out. `attributeWhitelist`
 has priority over `attributeBlacklist`.  For examples and more information
-about configurability, see [configuration](deployment-and-usage#configuration).
+about configurability, see
+[configuration](deployment-and-usage#worker-configuration).
 By default, the following CPUID flags have been blacklisted:
 BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT,
 RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
@@ -133,8 +134,8 @@ The Custom feature source allows the user to define features based on a mix of
 predefined rules.  A rule is provided input witch affects its process of
 matching for a defined feature. The rules are specified in the
 nfd-worker configuration file. See
-[configuration](deployment-and-usage.md#configuration) for instructions and
-examples how to set-up and manage the worker configuration.
+[configuration](deployment-and-usage.md#worker-configuration) for instructions
+and examples how to set-up and manage the worker configuration.
 
 To aid in making Custom Features clearer, we define a general and a per rule
 nomenclature, keeping things as consistent as possible.
@@ -439,9 +440,8 @@ The **kernel** feature source supports the following labels:
 |         | revision            | Third component of the kernel version (e.g. '6')
 
 Kernel config file to use, and, the set of config options to be detected are
-configurable.
-See [configuration](deployment-and-usage#configuration) for
-more information.
+configurable. See [configuration](deployment-and-usage#worker-configuration)
+for more information.
 
 ### Memory
 
@@ -501,8 +501,8 @@ example label using the default label fields:
 feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
 ```
 
-See [configuration](deployment-and-usage#configuration) for more information on NFD
-config.
+See [configuration](deployment-and-usage#worker-configuration) for more
+information on NFD config.
 
 ### Storage
 
