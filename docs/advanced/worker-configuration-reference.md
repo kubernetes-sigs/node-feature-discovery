@@ -213,10 +213,168 @@ The `sources` section contains feature source specific configuration parameters.
 
 ### sources.cpu
 
+#### sources.cpu.cpuid
+
+##### sources.cpu.cpuid.attributeBlacklist
+
+Prevent publishing cpuid features listed in this option.
+
+Note: overridden by `sources.cpu.cpuid.attributeWhitelist` (if specified)
+
+Default: `[BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT,
+NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3, SSE4.1,
+SSE4.2, SSSE3]`
+
+Example:
+
+```yaml
+sources:
+  cpu:
+    cpuid:
+      attributeBlacklist: [MMX, MMXEXT]
+```
+
+##### sources.cpu.cpuid.attributeWhitelist
+
+Only publish the cpuid features listed in this option.
+
+Note: takes precedence over `sources.cpu.cpuid.attributeBlacklist`
+
+Default: *empty*
+
+Example:
+
+```yaml
+sources:
+  cpu:
+    cpuid:
+      attributeWhitelist: [AVX512BW, AVX512CD, AVX512DQ, AVX512F, AVX512VL]
+```
+
 ### sources.kernel
+
+#### sources.kernel.kconfigFile
+
+Path of the kernel config file. If empty, NFD runs a search in the well-known
+standard locations.
+
+Default: *empty*
+
+Example:
+
+```yaml
+sources:
+  kernel:
+    kconfigFile: "/path/to/kconfig"
+```
+
+#### sources.kernel.configOpts
+
+Kernel configuration options to publish as feature labels.
+
+Default: `[NO_HZ, NO_HZ_IDLE, NO_HZ_FULL, PREEMPT]`
+
+Example:
+
+```yaml
+sources:
+  kernel:
+    configOpts: [NO_HZ, X86, DMI]
+```
 
 ### soures.pci
 
+#### soures.pci.deviceClassWhitelist
+
+List of PCI [device class](https://pci-ids.ucw.cz/read/PD) IDs for which to
+publish a label. Can be specified as a main class only (e.g. `03`) or full
+class-subclass combination (e.g. `0300`) - the former implies that all
+subclasses are accepted.  The format of the labels can be further configured
+with [deviceLabelFields](#soures.pci.deviceLabelFields).
+
+Default: `["03", "0b40", "12"]`
+
+Example:
+
+```yaml
+sources:
+  pci:
+    deviceClassWhitelist: ["0200", "03"]
+```
+
+#### soures.pci.deviceLabelFields
+
+The set of PCI ID fields to use when constructing the name of the feature
+label. Valid fields are `class`, `vendor`, `device`, `subsystem_vendor` and
+`subsystem_device`.
+
+Default: `[class, vendor]`
+
+Example:
+
+```yaml
+sources:
+  pci:
+    deviceLabelFields: [class, vendor, device]
+```
+
+With the example config above NFD would publish labels like:
+`feature.node.kubernetes.io/pci-<class-id>_<vendor-id>_<device-id>.present=true`
+
 ### sources.usb
 
+#### soures.usb.deviceClassWhitelist
+
+List of USB [device class](https://www.usb.org/defined-class-codes) IDs for
+which to publish a feature label. The format of the labels can be further
+configured with [deviceLabelFields](#soures.usb.deviceLabelFields).
+
+Default: `["0e", "ef", "fe", "ff"]`
+
+Example:
+
+```yaml
+sources:
+  usb:
+    deviceClassWhitelist: ["ef", "ff"]
+```
+
+#### soures.usb.deviceLabelFields
+
+The set of USB ID fields from which to compose the name of the feature label.
+Valid fields are `class`, `vendor` and `device`.
+
+Default: `[class, vendor, device]`
+
+Example:
+
+```yaml
+sources:
+  pci:
+    deviceLabelFields: [class, vendor]
+```
+
+With the example config above NFD would publish labels like:
+`feature.node.kubernetes.io/usb-<class-id>_<vendor-id>.present=true`
+
 ### sources.custom
+
+List of rules to process in the custom feature source to create user-specific
+labels. Refer to the documentation of the
+[custom feature source](../get-started/features.html#custom) for details of
+the available rules and their configuration.
+
+Default: *empty*
+
+Example:
+
+```yaml
+source:
+  custom:
+  - name: "my.custom.feature"
+    matchOn:
+    - loadedKMod: ["e1000e"]
+    - pciId:
+        class: ["0200"]
+        vendor: ["8086"]
+```
