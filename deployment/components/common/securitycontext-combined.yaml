@@ -1,0 +1,16 @@
+- op: add
+  path: "/spec/template/spec/containers/0/securityContext"
+  value:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+- op: add
+  path: "/spec/template/spec/containers/1/securityContext"
+  value:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true

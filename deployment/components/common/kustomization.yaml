@@ -18,3 +18,20 @@ patches:
   target:
     labelSelector: app=nfd
     name: nfd-worker
+# We need separate patches for the "combined" daemonset with two containers in the pod :/
+- path: env-combined.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd
+- path: securitycontext-combined.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd
+- path: master-affinity.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd
+- path: worker-mounts-combined.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd
