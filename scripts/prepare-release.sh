@@ -5,24 +5,29 @@ this=`basename $0`
 
 usage () {
 cat << EOF
-Usage: $this [-h] RELEASE_VERSION GPG_KEY GPG_KEYRING
+Usage: $this [-h] RELEASE_VERSION GPG_KEY
 
 Options:
   -h         show this help and exit
 
 Example:
 
-  $this v0.1.2 "Jane Doe <jane.doe@example.com>" ~/.gnupg/secring.gpg
+  $this v0.1.2 "Jane Doe <jane.doe@example.com>"
 
 
 NOTE: The GPG key should be associated with the signer's Github account.
-
-NOTE: Helm is not compatible with GnuPG v2 and you need to export the secret
-      keys in order for Helm to be able to sign the package:
-
-  gpg --export-secret-keys > ~/.gnupg/secring.gpg
-
 EOF
+}
+
+sign_helm_chart() {
+  local chart="$1"
+  echo "Signing Helm chart $chart"
+  local sha256=`openssl dgst -sha256 "$chart" | awk '{ print $2 }'`
+  local yaml=`tar xf $chart -O node-feature-discovery/Chart.yaml`
+  echo "$yaml
+...
+files:
+  $chart: sha256:$sha256" | gpg -u "$key" --clearsign -o "$chart.prov"
 }
 
 #
@@ -41,11 +46,11 @@ done
 shift "$((OPTIND - 1))"
 
 # Check that no extra args were provided
-if [ $# -ne 3 ]; then
-    if [ $# -lt 3 ]; then
+if [ $# -ne 2 ]; then
+    if [ $# -lt 2 ]; then
         echo -e "ERROR: too few arguments\n"
     else
-        echo -e "ERROR: unknown arguments: ${@:4}\n"
+        echo -e "ERROR: unknown arguments: ${@:3}\n"
     fi
     usage
     exit 1
@@ -53,8 +58,7 @@ fi
 
 release=$1
 key="$2"
-keyring="$3"
-shift 3
+shift 2
 
 container_image=k8s.gcr.io/nfd/node-feature-discovery:$release
 
@@ -107,12 +111,11 @@ sed -e s'!"nfd\.repo",.*,!"nfd.repo", "k8s.gcr.io/nfd/node-feature-discovery",!'
 #
 # Create release assets to be uploaded
 #
-helm package deployment/node-feature-discovery/ --version $semver --sign \
-    --key "$key" --keyring "$keyring"
+helm package deployment/node-feature-discovery/ --version $semver
 
 chart_name="node-feature-discovery-chart-$semver.tgz"
 mv node-feature-discovery-$semver.tgz $chart_name
-mv node-feature-discovery-$semver.tgz.prov $chart_name.prov
+sign_helm_chart $chart_name
 
 cat << EOF
 
