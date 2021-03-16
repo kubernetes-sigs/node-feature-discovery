@@ -116,7 +116,7 @@ take precedence over any corresponding config file options.
 
 If true, adds the file directory to the header of the log messages.
 
-Default: false
+Default: `false`
 
 Run-time configurable: yes
 
@@ -124,7 +124,7 @@ Run-time configurable: yes
 
 Log to standard error as well as files.
 
-Default: false
+Default: `false`
 
 Run-time configurable: yes
 
@@ -157,7 +157,7 @@ Run-time configurable: no
 Defines the maximum size a log file can grow to. Unit is megabytes. If the
 value is 0, the maximum file size is unlimited.
 
-Default: 1800
+Default: `1800`
 
 Run-time configurable: no
 
@@ -165,7 +165,7 @@ Run-time configurable: no
 
 Log to standard error instead of files
 
-Default: true
+Default: `true`
 
 Run-time configurable: yes
 
@@ -173,7 +173,7 @@ Run-time configurable: yes
 
 If true, avoid header prefixes in the log messages.
 
-Default: false
+Default: `false`
 
 Run-time configurable: yes
 
@@ -181,7 +181,7 @@ Run-time configurable: yes
 
 If true, avoid headers when opening log files.
 
-Default: false
+Default: `false`
 
 Run-time configurable: no
 
@@ -195,7 +195,7 @@ Run-time configurable: yes
 
 Number for the log level verbosity.
 
-Default: 0
+Default: `0`
 
 Run-time configurable: yes
 
