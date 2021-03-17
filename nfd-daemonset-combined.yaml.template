@@ -94,8 +94,6 @@ spec:
             runAsNonRoot: true
           command:
             - "nfd-worker"
-          args:
-            - "--sleep-interval=60s"
           volumeMounts:
             - name: host-boot
               mountPath: "/host-boot"
