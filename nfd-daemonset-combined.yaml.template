@@ -67,8 +67,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-          imagePullPolicy: Always
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.0
+          imagePullPolicy: IfNotPresent
           name: nfd-master
           securityContext:
             allowPrivilegeEscalation: false
@@ -83,8 +83,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-          imagePullPolicy: Always
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.0
+          imagePullPolicy: IfNotPresent
           name: nfd-worker
           securityContext:
             allowPrivilegeEscalation: false

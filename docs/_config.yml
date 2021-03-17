@@ -41,12 +41,12 @@ remote_theme: rundocs/jekyll-rtd-theme@v2.0.9
 #   - vendor/ruby/
 
 # Document versioning
-version: master
+version: v0.8
 display_version_list: true
 
 # Release is used to make external links to point to the correct blobs in the
 # Github repo
-release: master
+release: v0.8.0
 
 # Container image which to point to in the documentation
-container_image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+container_image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.0
