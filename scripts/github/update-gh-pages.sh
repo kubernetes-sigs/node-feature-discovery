@@ -22,9 +22,57 @@ create_versions_js() {
     # 'stable' is a symlink pointing to the latest version
     [ -f stable ] && echo "    { name: 'stable', url: '$_baseurl/stable' },"
     for f in `ls -d */  | tr -d /` ; do
-        echo "    { name: '$f', url: '$_baseurl/$f' },"
+        if [ -f "$f/index.html" ]; then
+            echo "    { name: '$f', url: '$_baseurl/$f' },"
+        fi
     done
     echo -e "  ];\n}"
+}
+
+# Helper for updating help repo index
+update_helm_repo_index() {
+    echo "Updating Helm repo index"
+
+    # TODO: with a lot of releases github API will paginate and this will break
+    releases="`curl -sSf -H 'Accept: application/vnd.github.v3+json' \
+        $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | jq -c '.[]'`"
+
+    for release_meta in $releases; do
+        # Set fields we're interested in as shell variables
+        eval `echo $release_meta | jq -r '{tag_name, url, assets} | keys[] as $k | "\($k)='"'"'\(.[$k])'"'"'"'`
+
+        for asset_meta in `echo $assets | jq -c '.[]'`; do
+            # Set fields we're interested in as "asset_<field>" shell variables
+            eval `echo $asset_meta | jq -r '{id, name, url, browser_download_url} | keys[] as $k | "local asset_\($k)=\(.[$k])"'`
+
+            if [[ "$asset_name" != node-feature-discovery-chart-*tgz ]]; then
+                echo "Asset $asset_name does not look like a Helm chart archive, skipping..."
+                continue
+            fi
+
+            # Check if the asset has changed
+            asset_id_old=`cat "$asset_name".id 2> /dev/null || :`
+            if [[ $asset_id_old == $asset_id ]]; then
+                echo "$asset_name (id=$asset_id) unchanged, skipping..."
+                continue
+            fi
+
+            # Update helm repo index
+            local tmpdir="`mktemp -d`"
+
+            echo "Downloading $asset_name..."
+            curl -sSfL -H "Accept:application/octet-stream" -o "$tmpdir/$asset_name" $asset_url
+
+            echo "Updating helm index for $asset_name..."
+            local download_baseurl=`dirname $asset_browser_download_url`
+            helm repo index "$tmpdir" --merge index.yaml --url $download_baseurl
+            cp "$tmpdir/index.yaml" .
+            rm -rf "$tmpdir"
+
+            # Update id cache file
+            echo $asset_id > "$asset_name".id
+        done
+    done
 }
 
 #
@@ -132,7 +180,7 @@ else
 fi
 
 # Switch to work in the gh-pages worktree
-cd "$build_dir"
+pushd "$build_dir"
 
 _stable=`(ls -d1 v*/ || :) | sort -n | tail -n1`
 [ -n "$_stable" ] && ln -sfT "$_stable" stable
@@ -140,10 +188,18 @@ _stable=`(ls -d1 v*/ || :) | sort -n | tail -n1`
 # Detect existing versions from the gh-pages branch
 create_versions_js > versions.js
 
+# Create index.html
 cat > index.html << EOF
 <meta http-equiv="refresh" content="0; URL='stable/'"/>
 EOF
 
+# Update Helm repo
+mkdir -p charts
+pushd charts
+update_helm_repo_index
+popd
+
+# Check if there were any changes in the repo
 if [ -z "`git status --short`" ]; then
     echo "No new content, gh-pages branch already up-to-date"
     exit 0
@@ -156,7 +212,7 @@ echo "Committing changes..."
 git add .
 git commit $amend -m "$commit_msg"
 
-cd -
+popd
 
 echo "gh-pages branch successfully updated"
 
