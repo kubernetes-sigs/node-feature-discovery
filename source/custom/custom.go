@@ -21,6 +21,7 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
@@ -37,7 +38,7 @@ type MatchRule struct {
 
 type FeatureSpec struct {
 	Name    string      `json:"name"`
-	Value   *string     `json:"value"`
+	Value   *string     `json:"value,omitempty"`
 	MatchOn []MatchRule `json:"matchOn"`
 }
 
@@ -77,7 +78,7 @@ func (s Source) Discover() (source.Features, error) {
 	features := source.Features{}
 	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
 	allFeatureConfig = append(allFeatureConfig, getDirectoryFeatureConfig()...)
-	klog.V(1).Infof("Custom features: %+v", allFeatureConfig)
+	utils.KlogDump(2, "custom features configuration:", "  ", allFeatureConfig)
 	// Iterate over features
 	for _, customFeature := range allFeatureConfig {
 		featureExist, err := s.discoverFeature(customFeature)
