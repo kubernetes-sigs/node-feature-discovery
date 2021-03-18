@@ -213,6 +213,8 @@ We have introduced the following Chart parameters.
 
 ##### Master pod parameters
 
+| Name | Type | Default | description |
+| ---- | ---- | ------- | ----------- |
 | `master.*` | dict |  | NFD master deployment configuration |
 | `master.instance` | string |  |  Instance name. Used to separate annotation namespaces for multiple parallel deployments |
 | `master.replicaCount` | integer | 1 | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified |
@@ -227,6 +229,8 @@ We have introduced the following Chart parameters.
 
 ##### Worker pod parameters
 
+| Name | Type | Default | description |
+| ---- | ---- | ------- | ----------- |
 | `worker.*` | dict |  | NFD master daemonset configuration |
 | `worker.configmapName` | string | `nfd-worker-conf` | NFD worker pod ConfigMap name |
 | `worker.config` | string | `` | NFD worker service configuration |
