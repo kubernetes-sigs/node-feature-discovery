@@ -37,9 +37,11 @@ update_helm_repo_index() {
     releases="`curl -sSf -H 'Accept: application/vnd.github.v3+json' \
         $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | jq -c '.[]'`"
 
-    for release_meta in $releases; do
+    echo "$releases" | while read -r release_meta; do
         # Set fields we're interested in as shell variables
-        eval `echo $release_meta | jq -r '{tag_name, url, assets} | keys[] as $k | "\($k)='"'"'\(.[$k])'"'"'"'`
+        eval `echo "$release_meta" | jq -r '{tag_name, url, assets} | keys[] as $k | "\($k)='"'"'\(.[$k])'"'"'"'`
+
+        echo "Scanning assets of release $tag_name..."
 
         for asset_meta in `echo $assets | jq -c '.[]'`; do
             # Set fields we're interested in as "asset_<field>" shell variables
