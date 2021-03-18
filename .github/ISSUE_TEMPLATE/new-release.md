@@ -38,6 +38,10 @@ Please do not remove items from the checklist
 - [ ] Add a link to the tagged release in this issue.
 - [ ] Send an announcement email to `kubernetes-dev@googlegroups.com` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
 - [ ] Add a link to the release announcement in this issue
+- [ ] For a major release, update README in master branch
+  - [ ] Update references to point to `$VERSION` and submit a PR
+  - [ ] Wait for the PR to be merged, this will also update the Helm
+        repo index to be updated to contain the latest release
 - [ ] Close this issue
 
 
