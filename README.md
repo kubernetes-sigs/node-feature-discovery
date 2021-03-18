@@ -11,11 +11,11 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.7.0/nfd-master.yaml.template
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.8.0/nfd-master.yaml.template
   namespace/node-feature-discovery created
 ...
 
-$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.7.0/nfd-worker-daemonset.yaml.template
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.8.0/nfd-worker-daemonset.yaml.template
   daemonset.apps/nfd-worker created
 
 $ kubectl -n node-feature-discovery get all
