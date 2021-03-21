@@ -143,7 +143,17 @@ Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
 
 #### Deployment
 
-To install the chart with the release name node-feature-discovery:
+To install the latest stable version:
+
+```bash
+export NFD_NS=node-feature-discovery
+helm repo add nfd http://kubernetes-sigs.github.io/node-feature-discovery/charts
+helm repo update
+helm install nfd/node-feature-discovery --namespace $NFD_NS --create-namespace --generate-name
+```
+
+To install the latest development version you need to clone the NFD Git
+repository and install from there.
 
 ```bash
 git clone https://github.com/kubernetes-sigs/node-feature-discovery/
@@ -152,9 +162,8 @@ export NFD_NS=node-feature-discovery
 helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_NS --create-namespace
 ```
 
-The command deploys Node Feature Discovery on the Kubernetes cluster in the
-default configuration.  The Configuration section describes how it can be
-configured during installation.
+See the [configuration](#configuration) section below for instructions how to
+alter the deployment parameters.
 
 In order to deploy the [minimal](#minimal) image you need to override the image
 tag:
@@ -169,14 +178,14 @@ You can override values from `values.yaml` and provide a file with custom values
 
 ```bash
 export NFD_NS=node-feature-discovery
-helm install node-feature-discovery ./node-feature-discovery/ -f <path/to/custom/values.yaml> --namespace $NFD_NS --create-namespace
+helm install nfd/node-feature-discovery -f <path/to/custom/values.yaml> --namespace $NFD_NS --create-namespace
 ```
 
 To specify each parameter separately you can provide them to helm install command:
 
 ```bash
 export NFD_NS=node-feature-discovery
-helm install node-feature-discovery ./node-feature-discovery/ --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace $NFD_NS --create-namespace
+helm install nfd/node-feature-discovery --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace $NFD_NS --create-namespace
 ```
 
 #### Uninstalling the chart
@@ -213,6 +222,8 @@ We have introduced the following Chart parameters.
 
 ##### Master pod parameters
 
+| Name | Type | Default | description |
+| ---- | ---- | ------- | ----------- |
 | `master.*` | dict |  | NFD master deployment configuration |
 | `master.instance` | string |  |  Instance name. Used to separate annotation namespaces for multiple parallel deployments |
 | `master.replicaCount` | integer | 1 | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified |
@@ -227,6 +238,8 @@ We have introduced the following Chart parameters.
 
 ##### Worker pod parameters
 
+| Name | Type | Default | description |
+| ---- | ---- | ------- | ----------- |
 | `worker.*` | dict |  | NFD master daemonset configuration |
 | `worker.configmapName` | string | `nfd-worker-conf` | NFD worker pod ConfigMap name |
 | `worker.config` | string | `` | NFD worker service configuration |
