@@ -6,4 +6,4 @@ metadata:
   {{- include "node-feature-discovery.labels" . | nindent 4 }}
 data:
   nfd-worker.conf: |
-  {{ .Values.worker.config | indent 4 }}
+    {{- .Values.worker.config | nindent 4 }}
