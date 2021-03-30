@@ -39,10 +39,13 @@ Please do not remove items from the checklist
 - [ ] Add a link to the tagged release in this issue.
 - [ ] Send an announcement email to `kubernetes-dev@googlegroups.com` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
 - [ ] Add a link to the release announcement in this issue
-- [ ] For a major release, update README in master branch
+- [ ] For a major release (or a point release of the latest major release), update README in master branch
   - [ ] Update references e.g. by running `scripts/prepare-release.sh $VERSION` but **only** committing README.md, and,
         submit a PR
   - [ ] Wait for the PR to be merged
+- [ ] For a major release, create an unannotated *devel* tag in the master branch, on the first commit that gets merged after the release branch has been created (presumably the README update commit above), and, push the tag:
+      `DEVEL=v0.$(($MAJ+1)).0-devel; git tag $DEVEL master && git push $DEVEL`
+      This ensures that the devel builds on the master branch will have a meaningful version number.
 - [ ] Close this issue
 
 
