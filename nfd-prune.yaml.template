@@ -74,7 +74,7 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: nfd-master
-          image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.0
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.1
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
