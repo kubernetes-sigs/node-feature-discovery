@@ -32,7 +32,7 @@ Please do not remove items from the checklist
       `gcr.io/k8s-staging-nfd/node-feature-discovery:$VERSION`
   - Triggers build of the documentation and publish it at
         https://kubernetes-sigs.github.io/node-feature
-- [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), updating `k8s.gcr.io/images/k8s-staging-nfd/images.yaml` to promote the container image to production
+- [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), updating `k8s.gcr.io/images/k8s-staging-nfd/images.yaml` to promote the container images (both "full" and "minimal" variants) to production
 - [ ] Wait for the PR to be merged and verify that the image (`k8s.gcr.io/nfd/node-feature-discovery:$VERSION`) is available.
 - [ ] Publish the draft release prepared at the [Github releases page](https://github.com/kubernetes-sigs/node-feature-discovery/releases)
       which will also trigger a Helm repo index update to add the latest release
