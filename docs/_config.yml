@@ -46,7 +46,7 @@ display_version_list: true
 
 # Release is used to make external links to point to the correct blobs in the
 # Github repo
-release: v0.8.0
+release: v0.8.1
 
 # Container image which to point to in the documentation
-container_image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.0
+container_image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.1
