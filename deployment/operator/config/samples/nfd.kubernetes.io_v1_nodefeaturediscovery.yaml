@@ -10,6 +10,26 @@ spec:
     imagePullPolicy: Always
   workerConfig:
     configData: |
+      #core:
+      #  labelWhiteList:
+      #  noPublish: false
+      #  sleepInterval: 60s
+      #  sources: [all]
+      #  klog:
+      #    addDirHeader: false
+      #    alsologtostderr: false
+      #    logBacktraceAt:
+      #    logtostderr: true
+      #    skipHeaders: false
+      #    stderrthreshold: 2
+      #    v: 0
+      #    vmodule:
+      ##   NOTE: the following options are not dynamically run-time configurable
+      ##         and require a nfd-worker restart to take effect after being changed
+      #    logDir:
+      #    logFile:
+      #    logFileMaxSize: 1800
+      #    skipLogHeaders: false
       #sources:
       #  cpu:
       #    cpuid:
@@ -95,4 +115,3 @@ spec:
       #            vendor: ["15b3"]
       #            device: ["1014", "1017"]
       #          loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
-
