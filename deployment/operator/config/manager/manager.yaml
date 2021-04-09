@@ -30,7 +30,7 @@ spec:
             capabilities:
               drop: ["ALL"]
           command:
-            - /manager
+            - /node-feature-discovery-operator
           args:
             - --leader-elect
             - "--zap-encoder=console"
