@@ -6,7 +6,7 @@ metadata:
 spec:
   operand:
     namespace: node-feature-discovery-operator
-    image: quay.io/openshift/origin-node-feature-discovery:4.7
+    image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
     imagePullPolicy: Always
   workerConfig:
     configData: |
