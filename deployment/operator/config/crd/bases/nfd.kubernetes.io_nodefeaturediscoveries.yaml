@@ -52,7 +52,7 @@ spec:
                     type: string
                 type: object
               workerConfig:
-                description: ConfigSpec describes configuration options for the NFD
+                description: ConfigMap describes configuration options for the NFD
                   worker
                 properties:
                   configData:
