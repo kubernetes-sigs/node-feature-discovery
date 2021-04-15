@@ -133,7 +133,7 @@ this approach does not guarantee running once on every node. For example,
 tainted, non-ready nodes or some other reasons in Job scheduling may cause some
 node(s) will run extra job instance(s) to satisfy the request.
 
-### Deployment with helm
+### Deployment with Helm
 
 Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
 
@@ -147,7 +147,7 @@ To install the latest stable version:
 
 ```bash
 export NFD_NS=node-feature-discovery
-helm repo add nfd http://kubernetes-sigs.github.io/node-feature-discovery/charts
+helm repo add nfd https://kubernetes-sigs.github.io/node-feature-discovery/charts
 helm repo update
 helm install nfd/node-feature-discovery --namespace $NFD_NS --create-namespace --generate-name
 ```
