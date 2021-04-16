@@ -1,3 +1,6 @@
+ARG RUNTIME_IMG_FULL
+ARG RUNTIME_IMG_MINIMAL
+
 # Build node feature discovery
 FROM golang:1.16.2-buster as builder
 
@@ -20,7 +23,7 @@ RUN make test
 
 
 # Create full variant of the production image
-FROM debian:buster-slim as full
+FROM ${RUNTIME_IMG_FULL} as full
 
 # Run as unprivileged user
 USER 65534:65534
@@ -32,7 +35,7 @@ COPY --from=builder /go/node-feature-discovery/nfd-worker.conf.example /etc/kube
 COPY --from=builder /go/bin/* /usr/bin/
 
 # Create minimal variant of the production image
-FROM gcr.io/distroless/base as minimal
+FROM ${RUNTIME_IMG_MINIMAL} as minimal
 
 # Run as unprivileged user
 USER 65534:65534

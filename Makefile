@@ -37,6 +37,9 @@ IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
 
+RUNTIME_IMG_FULL?=debian:buster-slim
+RUNTIME_IMG_MINIMAL?=gcr.io/distroless/base
+
 K8S_NAMESPACE ?= node-feature-discovery
 
 OPENSHIFT ?=
@@ -74,12 +77,16 @@ image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target full \
 	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+		--build-arg RUNTIME_IMG_FULL=$(RUNTIME_IMG_FULL) \
+		--build-arg RUNTIME_IMG_MINIMAL=$(RUNTIME_IMG_MINIMAL) \
 	    -t $(IMAGE_TAG) \
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target minimal \
 	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+		--build-arg RUNTIME_IMG_FULL=$(RUNTIME_IMG_FULL) \
+		--build-arg RUNTIME_IMG_MINIMAL=$(RUNTIME_IMG_MINIMAL) \
 	    -t $(IMAGE_TAG)-minimal \
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
