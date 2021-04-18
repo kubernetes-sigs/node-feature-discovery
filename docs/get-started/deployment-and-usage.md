@@ -310,8 +310,8 @@ the nfd-master Service of the cluster. By default, nfd-master only check that
 the nfd-worker has been signed by the specified root certificate (-ca-file).
 Additional hardening can be enabled by specifying -verify-node-name in
 nfd-master args, in which case nfd-master verifies that the NodeName presented
-by nfd-worker matches the Common Name (CN) of its certificate. This means that
-each nfd-worker requires a individual node-specific TLS certificate.
+by nfd-worker matches the Common Name (CN) or a Subject Alternative Name (SAN)
+of its certificate.
 
 #### Automated TLS certificate management using cert-manager
 
@@ -333,9 +333,6 @@ $ kubectl apply -f nfd-cert-manager.yaml
 
 Finally, deploy `nfd-master.yaml` and `nfd-worker-daemonset.yaml` with the Secrets
 (`nfd-master-cert` and `nfd-worker-cert`) mounts enabled.
-
-**Note:** the automated setup to support `--verify-node-name` hardening cannot
-be configured currently.
 
 ## Worker configuration
 
