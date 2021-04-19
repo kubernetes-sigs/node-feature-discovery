@@ -62,19 +62,19 @@ func ParseKconfig(configPath string) (map[string]string, error) {
 	if err != nil {
 		searchPaths = []string{
 			"/proc/config.gz",
-			"/usr/src/linux/.config",
+			source.UsrDir.Path("src/linux/.config"),
 		}
 	} else {
 		// from k8s.io/system-validator used by kubeadm
 		// preflight checks
 		searchPaths = []string{
 			"/proc/config.gz",
-			"/usr/src/linux-" + kVer + "/.config",
-			"/usr/src/linux/.config",
-			"/usr/lib/modules/" + kVer + "/config",
-			"/usr/lib/ostree-boot/config-" + kVer,
-			"/usr/lib/kernel/config-" + kVer,
-			"/usr/src/linux-headers-" + kVer + "/.config",
+			source.UsrDir.Path("src/linux-" + kVer + "/.config"),
+			source.UsrDir.Path("src/linux/.config"),
+			source.UsrDir.Path("lib/modules/" + kVer + "/config"),
+			source.UsrDir.Path("lib/ostree-boot/config-" + kVer),
+			source.UsrDir.Path("lib/kernel/config-" + kVer),
+			source.UsrDir.Path("src/linux-headers-" + kVer + "/.config"),
 			"/lib/modules/" + kVer + "/build/.config",
 			source.BootDir.Path("config-" + kVer),
 		}

@@ -28,6 +28,8 @@ var (
 	EtcDir = HostDir(pathPrefix + "etc")
 	// SysfsPath is where the /sys directory of the system to be inspected is located
 	SysfsDir = HostDir(pathPrefix + "sys")
+	// UsrPath is where the /usr directory of the system to be inspected is located
+	UsrDir = HostDir(pathPrefix + "usr")
 )
 
 // HostDir is a helper for handling host system directories
