@@ -5,6 +5,9 @@ resources:
 - bases/nfd.kubernetes.io_nodefeaturediscoveries.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
+commonAnnotations:
+  api-approved.kubernetes.io: "unapproved, experimental-only"
+
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
