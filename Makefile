@@ -8,8 +8,8 @@ IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
-BASE_IMG_FULL ?= debian:buster-slim
-BASE_IMG_MINIMAL ?= gcr.io/distroless/base
+BASE_IMAGE_FULL ?= debian:buster-slim
+BASE_IMAGE_MINIMAL ?= gcr.io/distroless/base
 
 MDL ?= mdl
 
@@ -76,16 +76,16 @@ image: yamls
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target full \
 	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
-	    --build-arg BASE_IMG_FULL=$(BASE_IMG_FULL) \
-	    --build-arg BASE_IMG_MINIMAL=$(BASE_IMG_MINIMAL) \
+	    --build-arg BASE_IMAGE_FULL=$(BASE_IMAGE_FULL) \
+	    --build-arg BASE_IMAGE_MINIMAL=$(BASE_IMAGE_MINIMAL) \
 	    -t $(IMAGE_TAG) \
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target minimal \
 	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
-	    --build-arg BASE_IMG_FULL=$(BASE_IMG_FULL) \
-	    --build-arg BASE_IMG_MINIMAL=$(BASE_IMG_MINIMAL) \
+	    --build-arg BASE_IMAGE_FULL=$(BASE_IMAGE_FULL) \
+	    --build-arg BASE_IMAGE_MINIMAL=$(BASE_IMAGE_MINIMAL) \
 	    -t $(IMAGE_TAG)-minimal \
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
