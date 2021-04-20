@@ -31,15 +31,26 @@ type NodeFeatureDiscoverySpec struct {
 
 // OperandSpec describes configuration options for the operand
 type OperandSpec struct {
+	// Namespace defines the namespace to deploy nfd-master
+	// and nfd-worker pods
 	// +kubebuilder:validation:Pattern=[a-zA-Z0-9\.\-\/]+
 	Namespace string `json:"namespace,omitempty"`
 
+	// Image defines the image to pull for the
+	// NFD operand
+	// [defaults to k8s.gcr.io/nfd/node-feature-discovery]
 	// +kubebuilder:validation:Pattern=[a-zA-Z0-9\-]+
 	Image string `json:"image,omitempty"`
 
-	// Image pull policy
+	// ImagePullPolicy defines Image pull policy for the
+	// NFD operand image [defaults to Always]
 	// +kubebuilder:validation:Optional
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// ServicePort specifies the TCP port that nfd-master
+	// listens for incoming requests.
+	// +kubebuilder:validation:Optional
+	ServicePort int `json:"servicePort"`
 }
 
 // ConfigMap describes configuration options for the NFD worker

@@ -41,14 +41,23 @@ spec:
                 description: OperandSpec describes configuration options for the operand
                 properties:
                   image:
+                    description: Image defines the image to pull for the NFD operand
+                      [defaults to k8s.gcr.io/nfd/node-feature-discovery]
                     pattern: '[a-zA-Z0-9\-]+'
                     type: string
                   imagePullPolicy:
-                    description: Image pull policy
+                    description: ImagePullPolicy defines Image pull policy for the
+                      NFD operand image [defaults to Always]
                     type: string
                   namespace:
+                    description: Namespace defines the namespace to deploy nfd-master
+                      and nfd-worker pods
                     pattern: '[a-zA-Z0-9\.\-\/]+'
                     type: string
+                  servicePort:
+                    description: ServicePort specifies the TCP port that nfd-master
+                      listens for incoming requests.
+                    type: integer
                 type: object
               workerConfig:
                 description: ConfigMap describes configuration options for the NFD
