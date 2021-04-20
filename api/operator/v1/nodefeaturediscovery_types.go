@@ -26,6 +26,7 @@ import (
 // +k8s:openapi-gen=true
 type NodeFeatureDiscoverySpec struct {
 	Operand      OperandSpec `json:"operand"`
+	Instance     string      `json:"instance"`
 	WorkerConfig ConfigMap   `json:"workerConfig"`
 }
 

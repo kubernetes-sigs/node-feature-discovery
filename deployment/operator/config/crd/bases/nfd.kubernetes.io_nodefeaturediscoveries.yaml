@@ -37,6 +37,9 @@ spec:
           spec:
             description: NodeFeatureDiscoverySpec defines the desired state of NodeFeatureDiscovery
             properties:
+              instance:
+                description: Instance name. Used to separate annotation namespaces for multiple parallel deployments.
+                type: string
               operand:
                 description: OperandSpec describes configuration options for the operand
                 properties:
@@ -60,8 +63,7 @@ spec:
                     type: integer
                 type: object
               workerConfig:
-                description: ConfigMap describes configuration options for the NFD
-                  worker
+                description: WorkerConfig describes configuration options for the NFD worker
                 properties:
                   configData:
                     description: BinaryData holds the NFD configuration file
