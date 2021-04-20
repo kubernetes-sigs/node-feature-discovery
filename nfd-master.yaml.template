@@ -97,7 +97,7 @@ spec:
 ## the TLS authentication credentials and a root certificate named ca.crt created.
 ## cert-manager can be used to automate the Secret creation and updates.
 ## Additional hardening can be enabled by specifying --verify-node-name in
-## args, in which case every nfd-worker requires a individual node-specific
+## args, in which case node name will be checked against the worker's
 ## TLS certificate.
 #          args:
 #            - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
