@@ -5,7 +5,7 @@ image:
   # tag, if defined will use the given image tag, else Chart.AppVersion will be used
   # tag
 imagePullSecrets: []
-  
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -20,6 +20,8 @@ fullnameOverride: ""
 
 master:
   instance:
+  extraLabelNs: []
+
   replicaCount: 1
 
   podSecurityContext: {}
