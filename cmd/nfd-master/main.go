@@ -103,7 +103,7 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 	flagset.Var(&args.ResourceLabels, "resource-labels",
 		"Comma separated list of labels to be exposed as extended resources.")
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
-		"Verify worker node name against CN from the TLS certificate. "+
+		"Verify worker node name against the worker's TLS certificate. "+
 			"Only takes effect when TLS authentication has been enabled.")
 
 	return args

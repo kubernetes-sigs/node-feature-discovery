@@ -198,7 +198,7 @@ Usage of nfd-master:
   -resource-labels value
         Comma separated list of labels to be exposed as extended resources.
   -verify-node-name
-        Verify worker node name against CN from the TLS certificate. Only takes effect when TLS authentication has been enabled.
+        Verify worker node name against the worker's TLS certificate. Only takes effect when TLS authentication has been enabled.
   -version
         Print version and exit.
 ```

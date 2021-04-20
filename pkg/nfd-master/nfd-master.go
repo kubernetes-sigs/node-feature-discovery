@@ -18,6 +18,7 @@ package nfdmaster
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"os"
@@ -347,6 +348,18 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 	return outLabels, extendedResources
 }
 
+func verifyNodeName(cert *x509.Certificate, nodeName string) error {
+	if cert.Subject.CommonName == nodeName {
+		return nil
+	}
+
+	err := cert.VerifyHostname(nodeName)
+	if err != nil {
+		return fmt.Errorf("Certificate %q not valid for node %q: %v", cert.Subject.CommonName, nodeName, err)
+	}
+	return nil
+}
+
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
 	if m.args.VerifyNodeName {
@@ -366,10 +379,11 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 			klog.Errorf("gRPC request error: client certificate verification for '%v' failed", client.Addr)
 			return &pb.SetLabelsReply{}, fmt.Errorf("client certificate verification failed")
 		}
-		cn := tlsAuth.State.VerifiedChains[0][0].Subject.CommonName
-		if cn != r.NodeName {
-			klog.Errorf("gRPC request error: authorization for %v failed: cert valid for %q, requested node name %q", client.Addr, cn, r.NodeName)
-			return &pb.SetLabelsReply{}, fmt.Errorf("request authorization failed: cert valid for %q, requested node name %q", cn, r.NodeName)
+
+		err := verifyNodeName(tlsAuth.State.VerifiedChains[0][0], r.NodeName)
+		if err != nil {
+			klog.Errorf("gRPC request error: authorization for %v failed: %v", client.Addr, err)
+			return &pb.SetLabelsReply{}, err
 		}
 	}
 	if klog.V(1).Enabled() {
