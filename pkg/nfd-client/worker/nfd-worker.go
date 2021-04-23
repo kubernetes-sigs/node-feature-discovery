@@ -32,6 +32,7 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -479,6 +480,17 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 	return labels, nil
 }
 
+// getFeatures returns raw features from all feature sources
+func getFeatures() map[string]*feature.DomainFeatures {
+	features := make(map[string]*feature.DomainFeatures)
+
+	for name, src := range source.GetAllFeatureSources() {
+		features[name] = src.GetFeatures()
+	}
+
+	return features
+}
+
 // advertiseFeatureLabels advertises the feature labels to a Kubernetes node
 // via the NFD server.
 func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
@@ -488,6 +500,7 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 	klog.Infof("sending labeling request to nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
+		Features:   getFeatures(),
 		NfdVersion: version.Get(),
 		NodeName:   nfdclient.NodeName()}
 	_, err := client.SetLabels(ctx, &labelReq)
