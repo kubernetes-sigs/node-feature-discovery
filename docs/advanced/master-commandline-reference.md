@@ -124,14 +124,11 @@ nfd-master -key-file=/opt/nfd/master.key -cert-file=/opt/nfd/master.crt -ca-file
 The `-verify-node-name` flag controls the NodeName based authorization of
 incoming requests and only has effect when mTLS authentication has been enabled
 (with `-ca-file`, `-cert-file` and `-key-file`). If enabled, the worker node
-name of the incoming must match with the CN in its TLS certificate. Thus,
+name of the incoming must match with the CN or a SAN in its TLS certificate. Thus,
 workers are only able to label the node they are running on (or the node whose
-certificate they present), and, each worker must have an individual
-certificate.
+certificate they present).
 
-Node Name based authorization is disabled by default and thus it is possible
-for all nfd-worker pods in the cluster to use one shared certificate, making
-NFD deployment much easier.
+Node Name based authorization is disabled by default.
 
 Default: *false*
 

@@ -53,7 +53,7 @@ spec:
 ## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
 ## in a TLS Secret named nfd-master-cert.
 ## Additional hardening can be enabled by specifying --verify-node-name in
-## args, in which case every nfd-worker requires a individual node-specific
+## args, in which case node name will be checked against the worker's
 ## TLS certificate.
 #            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
 #            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
