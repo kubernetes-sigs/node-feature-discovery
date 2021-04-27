@@ -338,6 +338,16 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 						MountPath: "/host-sys",
 						ReadOnly:  true,
 					},
+					{
+						Name:      "host-usr-lib",
+						MountPath: "/host-usr/lib",
+						ReadOnly:  true,
+					},
+					{
+						Name:      "host-usr-src",
+						MountPath: "/host-usr/src",
+						ReadOnly:  true,
+					},
 				},
 			},
 		},
@@ -367,6 +377,24 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 				VolumeSource: v1.VolumeSource{
 					HostPath: &v1.HostPathVolumeSource{
 						Path: "/sys",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
+			{
+				Name: "host-usr-lib",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/usr/lib",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
+			{
+				Name: "host-usr-src",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/usr/src",
 						Type: newHostPathType(v1.HostPathDirectory),
 					},
 				},
