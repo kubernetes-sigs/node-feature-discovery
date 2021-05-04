@@ -314,44 +314,113 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
 func (m *MatchExpressionSet) MatchKeys(keys map[string]feature.Nil) (bool, error) {
+	v, err := m.MatchGetKeys(keys)
+	return v != nil, err
+}
+
+// MatchedKey holds one matched key.
+type MatchedKey struct {
+	Name string
+}
+
+// MatchGetKeys evaluates the MatchExpressionSet against a set of keys and
+// returns all matched keys or nil if no match was found. Special case of an
+// empty MatchExpressionSet returns all existing keys are returned. Note that
+// an empty MatchExpressionSet and an empty set of keys returns an empty slice
+// which is not nil and is treated as a match.
+func (m *MatchExpressionSet) MatchGetKeys(keys map[string]feature.Nil) ([]MatchedKey, error) {
+	ret := make([]MatchedKey, 0, m.Len())
+
+	// An empty rule matches all existing keys
+	if m.Len() == 0 {
+		for n := range keys {
+			ret = append(ret, MatchedKey{Name: n})
+		}
+	}
+
 	for n, e := range (*m).Expressions {
 		match, err := e.MatchKeys(n, keys)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if !match {
-			return false, nil
+			return nil, nil
 		}
+		ret = append(ret, MatchedKey{Name: n})
 	}
-	return true, nil
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i].Name < ret[j].Name })
+	return ret, nil
 }
 
 // MatchValues evaluates the MatchExpressionSet against a set of key-value pairs.
 func (m *MatchExpressionSet) MatchValues(values map[string]string) (bool, error) {
+	v, err := m.MatchGetValues(values)
+	return v != nil, err
+}
+
+// MatchedValue holds one matched key-value pair.
+type MatchedValue struct {
+	Name  string
+	Value string
+}
+
+// MatchGetValues evaluates the MatchExpressionSet against a set of key-value
+// pairs and returns all matched key-value pairs. Special case of an empty
+// MatchExpressionSet returns all existing key-value pairs. Note that an empty
+// MatchExpressionSet and an empty set of values returns an empty non-nil map
+// which is treated as a match.
+func (m *MatchExpressionSet) MatchGetValues(values map[string]string) ([]MatchedValue, error) {
+	ret := make([]MatchedValue, 0, m.Len())
+
+	// An empty rule matches all existing values
+	if m.Len() == 0 {
+		for n, v := range values {
+			ret = append(ret, MatchedValue{Name: n, Value: v})
+		}
+	}
+
 	for n, e := range (*m).Expressions {
 		match, err := e.MatchValues(n, values)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if !match {
-			return false, nil
+			return nil, nil
 		}
+		ret = append(ret, MatchedValue{Name: n, Value: values[n]})
 	}
-	return true, nil
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i].Name < ret[j].Name })
+	return ret, nil
 }
 
 // MatchInstances evaluates the MatchExpressionSet against a set of instance
 // features, each of which is an individual set of key-value pairs
 // (attributes).
 func (m *MatchExpressionSet) MatchInstances(instances []feature.InstanceFeature) (bool, error) {
+	v, err := m.MatchGetInstances(instances)
+	return len(v) > 0, err
+}
+
+// MatchedInstance holds one matched Instance.
+type MatchedInstance map[string]string
+
+// MatchGetInstances evaluates the MatchExpressionSet against a set of instance
+// features, each of which is an individual set of key-value pairs
+// (attributes). A slice containing all matching instances is returned. An
+// empty (non-nil) slice is returned if no matching instances were found.
+func (m *MatchExpressionSet) MatchGetInstances(instances []feature.InstanceFeature) ([]MatchedInstance, error) {
+	ret := []MatchedInstance{}
+
 	for _, i := range instances {
 		if match, err := m.MatchValues(i.Attributes); err != nil {
-			return false, err
+			return nil, err
 		} else if match {
-			return true, nil
+			ret = append(ret, i.Attributes)
 		}
 	}
-	return false, nil
+	return ret, nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface of "encoding/json".

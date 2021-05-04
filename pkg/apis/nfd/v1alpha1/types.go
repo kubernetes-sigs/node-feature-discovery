@@ -59,6 +59,12 @@ type Rule struct {
 	// +optional
 	Labels map[string]string `json:"labels"`
 
+	// LabelsTemplate specifies a template to expand for dynamically generating
+	// multiple labels. Data (after template expansion) must be keys with an
+	// optional value (<key>[=<value>]) separated by newlines.
+	// +optional
+	LabelsTemplate string `json:"labelsTemplate"`
+
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`
@@ -66,6 +72,10 @@ type Rule struct {
 	// MatchAny specifies a list of matchers one of which must match.
 	// +optional
 	MatchAny []MatchAnyElem `json:"matchAny"`
+
+	// private helpers/cache for handling golang templates
+	labelsTemplate *templateHelper `json:"-"`
+	varsTemplate   *templateHelper `json:"-"`
 }
 
 // MatchAnyElem specifies one sub-matcher of MatchAny.
