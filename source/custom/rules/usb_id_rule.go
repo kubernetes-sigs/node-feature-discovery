@@ -29,6 +29,7 @@ type UsbIDRuleInput struct {
 	Class  []string `json:"class,omitempty"`
 	Vendor []string `json:"vendor,omitempty"`
 	Device []string `json:"device,omitempty"`
+	Serial []string `json:"serial,omitempty"`
 }
 
 type UsbIDRule struct {
@@ -38,7 +39,7 @@ type UsbIDRule struct {
 // Match USB devices on provided USB device attributes
 func (r *UsbIDRule) Match() (bool, error) {
 	devAttr := map[string]bool{}
-	for _, attr := range []string{"class", "vendor", "device"} {
+	for _, attr := range []string{"class", "vendor", "device", "serial"} {
 		devAttr[attr] = true
 	}
 	allDevs, err := usbutils.DetectUsb(devAttr)
@@ -71,6 +72,10 @@ func (r *UsbIDRule) matchDevOnRule(dev usbutils.UsbDeviceInfo) bool {
 	}
 
 	if len(r.Device) > 0 && !in(dev["device"], r.Device) {
+		return false
+	}
+
+	if len(r.Serial) > 0 && !in(dev["serial"], r.Serial) {
 		return false
 	}
 
