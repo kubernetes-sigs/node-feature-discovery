@@ -199,3 +199,7 @@ const (
 	// output of preceding rules.
 	RuleBackrefFeature = "matched"
 )
+
+// MatchAllNames is a special key in MatchExpressionSet to use field names
+// (keys from the input) instead of values when matching.
+const MatchAllNames = "*"

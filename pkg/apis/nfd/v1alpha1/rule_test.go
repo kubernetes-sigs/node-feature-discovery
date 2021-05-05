@@ -214,6 +214,7 @@ func TestTemplating(t *testing.T) {
 						"key-1": "val-1",
 						"keu-2": "val-2",
 						"key-3": "val-3",
+						"key-4": "val-4",
 					},
 				},
 			},
@@ -365,4 +366,29 @@ var-2=
 	_, err = r2.Execute(f)
 	assert.Error(t, err)
 
+	//
+	// Test wildcard
+	//
+	r3 := Rule{
+		LabelsTemplate: "{{range .domain_1.vf_1}}{{.Name}}={{.Value}}\n{{end}}",
+		MatchFeatures: FeatureMatcher{
+			FeatureMatcherTerm{
+				Feature: "domain_1.vf_1",
+				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+					"*":     MustCreateMatchExpression(MatchIn, "key-1", "key-4"),
+					"key-5": MustCreateMatchExpression(MatchDoesNotExist),
+				},
+				},
+			},
+		},
+	}
+	expectedLabels = map[string]string{
+		"key-1": "val-1",
+		"key-4": "val-4",
+		"key-5": "",
+	}
+
+	m, err = r3.Execute(f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
 }

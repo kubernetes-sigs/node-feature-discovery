@@ -339,6 +339,34 @@ func (m *MatchExpressionSet) MatchGetKeys(keys map[string]feature.Nil) ([]Matche
 	}
 
 	for n, e := range (*m).Expressions {
+		if n == MatchAllNames {
+			// Special case for using keys as values, applying the rule on all keys
+			matchedKeys := []string{}
+			for k := range keys {
+				if match, err := e.Match(true, k); err != nil {
+					return nil, err
+				} else if match {
+					matchedKeys = append(matchedKeys, k)
+					ret = append(ret, MatchedKey{Name: k})
+				}
+			}
+			if klog.V(3).Enabled() {
+				sort.Strings(matchedKeys)
+
+				k := make([]string, 0, len(keys))
+				for n := range keys {
+					k = append(k, n)
+				}
+				sort.Strings(k)
+				if len(keys) < 10 || klog.V(4).Enabled() {
+					klog.Infof("matched %v when matching %q %q against %s", matchedKeys, MatchAllNames, e.Op, strings.Join(k, " "))
+				} else {
+					klog.Infof("matched %v when matching %q %q against %s... (list truncated)", matchedKeys, MatchAllNames, e.Op, strings.Join(k[0:10], ", "))
+				}
+			}
+			continue
+		}
+
 		match, err := e.MatchKeys(n, keys)
 		if err != nil {
 			return nil, err
@@ -381,6 +409,35 @@ func (m *MatchExpressionSet) MatchGetValues(values map[string]string) ([]Matched
 	}
 
 	for n, e := range (*m).Expressions {
+		if n == MatchAllNames {
+			// Special case for using keys as values, applying the rule on all keys
+			matchedKeys := []string{}
+			for k, v := range values {
+				if match, err := e.Match(true, k); err != nil {
+					return nil, err
+				} else if match {
+					matchedKeys = append(matchedKeys, k)
+					ret = append(ret, MatchedValue{Name: k, Value: v})
+				}
+			}
+			if klog.V(3).Enabled() {
+				sort.Strings(matchedKeys)
+
+				k := make([]string, 0, len(values))
+				for n := range values {
+					k = append(k, n)
+				}
+				sort.Strings(k)
+
+				if len(values) < 10 || klog.V(4).Enabled() {
+					klog.Infof("matched %v when matching %q %q %v against %s", matchedKeys, MatchAllNames, e.Op, e.Value, strings.Join(k, " "))
+				} else {
+					klog.Infof("matched %v when matching %q %q %v against %s... (list truncated)", matchedKeys, MatchAllNames, e.Op, e.Value, strings.Join(k[0:10], " "))
+				}
+			}
+			continue
+		}
+
 		match, err := e.MatchValues(n, values)
 		if err != nil {
 			return nil, err

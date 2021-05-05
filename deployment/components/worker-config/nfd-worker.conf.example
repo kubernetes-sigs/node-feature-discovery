@@ -204,6 +204,14 @@
 #                vendor: {op: In, value: ["8086"]}
 #                class: {op: In, value: ["02"]}
 #
+#    - name: "my AVX feature"
+#      labels:
+#        "my-avx-feature": "true"
+#      matchFeatures:
+#        - feature: cpu.cpuid
+#          matchExpressions:
+#            '*': {op: InRegexp, value: ["^AVX512"]}
+#
 #    # The following features demonstreate label templating capabilities
 #    - name: "my-template-test"
 #      labelsTemplate: |
@@ -253,3 +261,12 @@
 #          matchExpressions:
 #            my.kernel.feature: {op: IsTrue}
 #            my.dummy.var: {op: Gt, value: ["0"]}
+#
+#    - name: "my kernel wildcard template feature"
+#      labelsTemplate: |
+#        {{ range .kernel.config }}my-kconfig.{{ .Name }}={{ .Value }}
+#        {{ end }}
+#      matchFeatures:
+#        - feature: kernel.config
+#          matchExpressions:
+#            '*': {op: In, value: ["SWAP", "X86", "AARCH64"]}
