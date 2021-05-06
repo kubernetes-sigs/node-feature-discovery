@@ -342,7 +342,7 @@ sources:
 #### soures.usb.deviceLabelFields
 
 The set of USB ID fields from which to compose the name of the feature label.
-Valid fields are `class`, `vendor` and `device`.
+Valid fields are `class`, `vendor`, `device` and `serial`.
 
 Default: `[class, vendor, device]`
 

@@ -29,7 +29,7 @@ import (
 type UsbDeviceInfo map[string]string
 type UsbClassMap map[string]UsbDeviceInfo
 
-var DefaultUsbDevAttrs = []string{"class", "vendor", "device"}
+var DefaultUsbDevAttrs = []string{"class", "vendor", "device", "serial"}
 
 // The USB device sysfs files do not have terribly user friendly names, map
 // these for consistency with the PCI matcher.
@@ -37,6 +37,7 @@ var devAttrFileMap = map[string]string{
 	"class":  "bDeviceClass",
 	"device": "idProduct",
 	"vendor": "idVendor",
+	"serial": "serial",
 }
 
 func readSingleUsbSysfsAttribute(path string) (string, error) {

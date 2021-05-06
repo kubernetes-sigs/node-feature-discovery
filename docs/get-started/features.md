@@ -229,8 +229,8 @@ Element     :An identifier of the USB attribute.
 ```
 
 The UsbId Rule allows matching the USB devices in the system on the following
-Attributes: `class`,`vendor` and `device`. A list of Elements is provided for
-each Attribute.
+Attributes: `class`,`vendor`, `device` and `serial`. A list of Elements is
+provided for each Attribute.
 
 ###### Format
 
@@ -239,6 +239,7 @@ usbId :
   class: [<class id>, ...]
   vendor: [<vendor id>,  ...]
   device: [<device id>, ...]
+  serial: [<serial>, ...]
 ```
 
 Matching is done by performing a logical _OR_ between Elements of an Attribute
@@ -346,6 +347,7 @@ custom:
       - usbId:
           vendor: ["1d6b"]
           device: ["0003"]
+          serial: ["090129a"]
   - name: "my.combined.feature"
     matchOn:
       - loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
@@ -494,8 +496,8 @@ The **usb** feature source supports the following labels:
 
 `<device label>` is composed of raw USB IDs, separated by underscores.  The set
 of fields used in `<device label>` is configurable, valid fields being `class`,
-`vendor`, and `device`.  Defaults are `class`, `vendor` and `device`. An
-example label using the default label fields:
+`vendor`, `device` and `serial`.  Defaults are `class`, `vendor` and `device`.
+An example label using the default label fields:
 
 ```plaintext
 feature.node.kubernetes.io/usb-fe_1a6e_089a.present=true
