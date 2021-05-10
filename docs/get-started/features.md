@@ -525,6 +525,14 @@ The **system** feature source supports the following labels:
 |             | VERSION_ID.major | First component of the OS version id (e.g. '6')
 |             | VERSION_ID.minor | Second component of the OS version id (e.g. '7')
 
+### Crypto
+
+The **crypto** feature source supports the following labels:
+
+| Feature     | Attribute        | Description                                 |
+| ----------- | ---------------- | --------------------------------------------|
+| cex         | present          | Node has at least one Crypto Express Adapter
+
 ### Local -- user-specific features
 
 NFD has a special feature source named *local* which is designed for getting

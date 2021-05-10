@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
+	"sigs.k8s.io/node-feature-discovery/source/crypto"
 	"sigs.k8s.io/node-feature-discovery/source/custom"
 	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/iommu"
@@ -139,6 +140,7 @@ func NewNfdWorker(args *Args) (NfdWorker, error) {
 			&system.Source{},
 			&usb.Source{},
 			&custom.Source{},
+			&crypto.Source{},
 			// local needs to be the last source so that it is able to override
 			// labels from other sources
 			&local.Source{},
