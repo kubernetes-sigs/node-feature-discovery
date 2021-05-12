@@ -43,6 +43,16 @@ var matchOps = map[MatchOp]struct{}{
 	MatchIsFalse:      struct{}{},
 }
 
+// NewMatchExpressionSet returns a new MatchExpressionSet instance.
+func NewMatchExpressionSet() *MatchExpressionSet {
+	return &MatchExpressionSet{Expressions: make(Expressions)}
+}
+
+// Len returns the number of expressions.
+func (e *Expressions) Len() int {
+	return len(*e)
+}
+
 // CreateMatchExpression creates a new MatchExpression instance. Returns an
 // error if validation fails.
 func CreateMatchExpression(op MatchOp, values ...string) (*MatchExpression, error) {
@@ -302,7 +312,7 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
 func (m *MatchExpressionSet) MatchKeys(keys map[string]feature.Nil) (bool, error) {
-	for n, e := range *m {
+	for n, e := range (*m).Expressions {
 		match, err := e.MatchKeys(n, keys)
 		if err != nil {
 			return false, err
@@ -316,7 +326,7 @@ func (m *MatchExpressionSet) MatchKeys(keys map[string]feature.Nil) (bool, error
 
 // MatchValues evaluates the MatchExpressionSet against a set of key-value pairs.
 func (m *MatchExpressionSet) MatchValues(values map[string]string) (bool, error) {
-	for n, e := range *m {
+	for n, e := range (*m).Expressions {
 		match, err := e.MatchValues(n, values)
 		if err != nil {
 			return false, err
@@ -344,7 +354,7 @@ func (m *MatchExpressionSet) MatchInstances(instances []feature.InstanceFeature)
 
 // UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
 func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
-	*m = make(MatchExpressionSet)
+	*m = *NewMatchExpressionSet()
 
 	names := make([]string, 0)
 	if err := json.Unmarshal(data, &names); err == nil {
@@ -352,9 +362,9 @@ func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
 		for _, name := range names {
 			split := strings.SplitN(name, "=", 2)
 			if len(split) == 1 {
-				(*m)[split[0]] = newMatchExpression(MatchExists)
+				(*m).Expressions[split[0]] = newMatchExpression(MatchExists)
 			} else {
-				(*m)[split[0]] = newMatchExpression(MatchIn, split[1])
+				(*m).Expressions[split[0]] = newMatchExpression(MatchIn, split[1])
 			}
 		}
 	} else {
@@ -365,9 +375,9 @@ func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
 		} else {
 			for k, v := range expressions {
 				if v != nil {
-					(*m)[k] = v
+					(*m).Expressions[k] = v
 				} else {
-					(*m)[k] = newMatchExpression(MatchExists)
+					(*m).Expressions[k] = newMatchExpression(MatchExists)
 				}
 			}
 		}

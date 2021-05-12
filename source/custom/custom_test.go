@@ -31,8 +31,12 @@ func TestRule(t *testing.T) {
 		Labels: map[string]string{"label-1": "label-val-1"},
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
-				Feature:          "domain-1.kf-1",
-				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists)},
+				Feature: "domain-1.kf-1",
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+					Expressions: nfdv1alpha1.Expressions{
+						"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+					},
+				},
 			},
 		},
 	}
@@ -94,8 +98,12 @@ func TestRule(t *testing.T) {
 		Labels: map[string]string{"label-3": "label-val-3", "empty": ""},
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
-				Feature:          "domain-1.vf-1",
-				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")},
+				Feature: "domain-1.vf-1",
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+					Expressions: nfdv1alpha1.Expressions{
+						"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1"),
+					},
+				},
 			},
 		},
 	}
@@ -113,8 +121,12 @@ func TestRule(t *testing.T) {
 		Labels: map[string]string{"label-4": "label-val-4"},
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
-				Feature:          "domain-1.if-1",
-				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"attr-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")},
+				Feature: "domain-1.if-1",
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+					Expressions: nfdv1alpha1.Expressions{
+						"attr-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1"),
+					},
+				},
 			},
 		},
 	}
@@ -132,12 +144,20 @@ func TestRule(t *testing.T) {
 		Labels: map[string]string{"label-5": "label-val-5"},
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
-				Feature:          "domain-1.vf-1",
-				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-x")},
+				Feature: "domain-1.vf-1",
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+					Expressions: nfdv1alpha1.Expressions{
+						"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-x"),
+					},
+				},
 			},
 			FeatureMatcherTerm{
-				Feature:          "domain-1.if-1",
-				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"attr-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")},
+				Feature: "domain-1.if-1",
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+					Expressions: nfdv1alpha1.Expressions{
+						"attr-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1"),
+					},
+				},
 			},
 		},
 	}
@@ -145,7 +165,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m, "instances should not have matched")
 
-	r5.MatchFeatures[0].MatchExpressions["key-1"] = nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")
+	r5.MatchFeatures[0].MatchExpressions.Expressions["key-1"] = nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")
 	m, err = r5.execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m, "instances should have matched")
@@ -155,8 +175,12 @@ func TestRule(t *testing.T) {
 		MatchAnyElem{
 			MatchFeatures: FeatureMatcher{
 				FeatureMatcherTerm{
-					Feature:          "domain-1.kf-1",
-					MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-na": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists)},
+					Feature: "domain-1.kf-1",
+					MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+						Expressions: nfdv1alpha1.Expressions{
+							"key-na": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+						},
+					},
 				},
 			},
 		},
@@ -169,12 +193,16 @@ func TestRule(t *testing.T) {
 		MatchAnyElem{
 			MatchFeatures: FeatureMatcher{
 				FeatureMatcherTerm{
-					Feature:          "domain-1.kf-1",
-					MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists)},
+					Feature: "domain-1.kf-1",
+					MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+						Expressions: nfdv1alpha1.Expressions{
+							"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+						},
+					},
 				},
 			},
 		})
-	r5.MatchFeatures[0].MatchExpressions["key-1"] = nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")
+	r5.MatchFeatures[0].MatchExpressions.Expressions["key-1"] = nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")
 	m, err = r5.execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m, "instances should have matched")
