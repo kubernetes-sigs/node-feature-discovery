@@ -28,6 +28,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+const Name = "network"
+
 // Linux net iface flags (we only specify the first few)
 const (
 	flagUp = 1 << iota
@@ -42,7 +44,7 @@ const sysfsBaseDir = "class/net"
 type Source struct{}
 
 // Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "network" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return nil }

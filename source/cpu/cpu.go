@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/internal/cpuidutils"
 )
 
+const Name = "cpu"
+
 // Configuration file options
 type cpuidConfig struct {
 	AttributeBlacklist []string `json:"attributeBlacklist,omitempty"`
@@ -82,7 +84,7 @@ type Source struct {
 	cpuidFilter *keyFilter
 }
 
-func (s Source) Name() string { return "cpu" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }

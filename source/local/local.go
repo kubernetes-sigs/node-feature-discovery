@@ -30,6 +30,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+const Name = "local"
+
 // Config
 var (
 	featureFilesDir = "/etc/kubernetes/node-feature-discovery/features.d/"
@@ -39,7 +41,7 @@ var (
 // Implement FeatureSource interface
 type Source struct{}
 
-func (s Source) Name() string { return "local" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return nil }

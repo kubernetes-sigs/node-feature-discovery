@@ -26,6 +26,8 @@ import (
 	pciutils "sigs.k8s.io/node-feature-discovery/source/internal"
 )
 
+const Name = "pci"
+
 type Config struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
 	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
@@ -45,7 +47,7 @@ type Source struct {
 }
 
 // Return name of the feature source
-func (s Source) Name() string { return "pci" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }

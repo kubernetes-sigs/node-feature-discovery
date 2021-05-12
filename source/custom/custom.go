@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
+const Name = "custom"
+
 // Custom Features Configurations
 type MatchRule struct {
 	PciID      *rules.PciIDRule      `json:"pciId,omitempty"`
@@ -55,7 +57,7 @@ type Source struct {
 }
 
 // Return name of the feature source
-func (s Source) Name() string { return "custom" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }

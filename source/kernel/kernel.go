@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
 )
 
+const Name = "kernel"
+
 // Configuration file options
 type Config struct {
 	KconfigFile string
@@ -50,7 +52,7 @@ type Source struct {
 	config *Config
 }
 
-func (s *Source) Name() string { return "kernel" }
+func (s *Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
