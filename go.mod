@@ -7,6 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.3
+	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/jaypipes/ghw v0.8.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.8
