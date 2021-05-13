@@ -1,0 +1,148 @@
+# This template contains an example of running nfd-master and nfd-worker in the
+# same pod.
+#
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-feature-discovery # NFD namespace
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nfd-master
+  namespace: node-feature-discovery
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nfd-master
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    # when using command line flag --resource-labels to create extended resources
+    # you will need to uncomment "- nodes/status"
+    # - nodes/status
+    verbs:
+      - get
+      - patch
+      - update
+      # List only needed for --prune
+      - list
+  - apiGroups:
+      - topology.node.k8s.io
+    resources:
+      - noderesourcetopologies
+    verbs:
+      - create
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nfd-master
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nfd-master
+subjects:
+  - kind: ServiceAccount
+    name: nfd-master
+    namespace: node-feature-discovery
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd
+  namespace: node-feature-discovery
+spec:
+  selector:
+    matchLabels:
+      app: nfd
+  template:
+    metadata:
+      labels:
+        app: nfd
+    spec:
+      serviceAccount: nfd-master
+      containers:
+        - env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: IfNotPresent
+          name: nfd-master
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          command:
+            - "nfd-master"
+        - env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: IfNotPresent
+          name: nfd-topology-updater
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          command:
+            - "nfd-topology-updater"
+          args:
+            - "--kubelet-config-file=/podresources/config.yaml"
+            - "--podresources-socket=/podresources/kubelet.sock"
+            - "--sleep-interval=3s"
+            - "--watch-namespace=rte"
+            - "--server=127.0.0.1:8080"
+          ## Enable TLS authentication (1/3)
+          ## The example below assumes having the root certificate named ca.crt stored in
+          ## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
+          ## in a TLS Secret named nfd-worker-cert
+          #            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
+          #            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+          #            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+          volumeMounts:
+            - name: kubelet-podresources-conf
+              mountPath: /podresources/config.yaml
+            - name: kubelet-podresources-sock
+              mountPath: /podresources/kubelet.sock
+            - name: host-sys
+              mountPath: /host/sys
+      ## Enable TLS authentication (2/3)
+      #            - name: nfd-ca-cert
+      #              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
+      #              readOnly: true
+      #            - name: nfd-topology-updater-cert
+      #              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+      #              readOnly: true
+      volumes:
+        - name: host-sys
+          hostPath:
+            path: "/sys"
+        - name: kubelet-podresources-conf
+          hostPath:
+            path: /var/lib/kubelet/config.yaml
+        - name: kubelet-podresources-sock
+          hostPath:
+            path: /var/lib/kubelet/pod-resources/kubelet.sock
+## Enable TLS authentication (3/3)
+#       - name: nfd-ca-cert
+#         configMap:
+#           name: nfd-ca-cert
+#       - name: nfd-topology-updater-cert
+#         secret:
+#           secretName: nfd-topology-updater-cert

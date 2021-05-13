@@ -7,3 +7,4 @@ nfd-worker-daemonset.yaml
 nfd-worker-job.yaml
 nfd-prune.yaml
 nfd-cert-manager.yaml
+manifests/*.yaml

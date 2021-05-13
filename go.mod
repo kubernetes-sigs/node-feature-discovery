@@ -3,10 +3,13 @@ module sigs.k8s.io/node-feature-discovery
 go 1.16
 
 require (
-	github.com/codegangsta/negroni v1.0.0 // indirect
+	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/fsnotify/fsnotify v1.4.9
+	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/context v1.1.1 // indirect
+	github.com/jaypipes/ghw v0.8.0
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.8
 	github.com/klauspost/cpuid/v2 v2.0.6
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.0
@@ -22,6 +25,7 @@ require (
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
 	k8s.io/klog/v2 v2.8.0
+	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.21.0
 	sigs.k8s.io/yaml v1.2.0
 )

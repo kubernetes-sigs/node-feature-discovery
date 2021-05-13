@@ -102,7 +102,7 @@ spec:
               mountPath: "/host-etc/os-release"
               readOnly: true
             - name: host-sys
-              mountPath: "/host-sys"
+              mountPath: "/host/sys"
               readOnly: true
             - name: host-usr-lib
               mountPath: "/host-usr/lib"

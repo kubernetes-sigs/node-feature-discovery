@@ -57,11 +57,11 @@ E2E_TEST_CONFIG ?=
 
 LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
-yaml_templates := $(wildcard *.yaml.template)
+yaml_templates := $(wildcard manifests/*.yaml.template)
 # Let's treat values.yaml as template to sync configmap
 # and allow users to install without modifications
 yaml_templates := $(yaml_templates) deployment/node-feature-discovery/values.yaml
-yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
+yaml_instances := $(patsubst manifests/%.yaml.template,manifests/%.yaml,$(yaml_templates))
 
 all: image
 
@@ -118,9 +118,10 @@ templates: $(yaml_templates)
 	@rm nfd-worker.conf.tmp
 
 mock:
-	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
-	mockery --name=APIHelpers --dir=pkg/apihelper --inpkg --note="Re-generate by running 'make mock'"
-	mockery --name=LabelerClient --dir=pkg/labeler --inpkg --note="Re-generate by running 'make mock'"
+	mockery --name=FeatureSource --dir=source --inpackage --note="Re-generate by running 'make mock'"
+	mockery --name=APIHelpers --dir=pkg/apihelper --inpackage --note="Re-generate by running 'make mock'"
+	mockery --name=LabelerClient --dir=pkg/labeler --inpackage --note="Re-generate by running 'make mock'"
+	mockery --name=NodeTopologyClient --dir=pkg/topologyupdater --inpackage --note="Re-generate by running 'make mock'"
 
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')

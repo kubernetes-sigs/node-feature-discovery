@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd-topology-updater
+  name: nfd-topology-updater
+  namespace: node-feature-discovery
+spec:
+  selector:
+    matchLabels:
+      app: nfd-topology-updater
+  template:
+    metadata:
+      labels:
+        app: nfd-topology-updater
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.6.0
+          name: nfd-topology-updater
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          command:
+            - "nfd-topology-updater"
+          args:
+            - "--kubelet-config-file=/podresources/config.yaml"
+            - "--podresources-socket=/podresources/kubelet.sock"
+            - "--sleep-interval=3s"
+            - "--watch-namespace=rte"
+            - "--server=nfd-master:8080"
+## Enable TLS authentication (1/3)
+## The example below assumes having the root certificate named ca.crt stored in
+## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
+## in a TLS Secret named nfd-worker-cert
+#            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
+#            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+#            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+          volumeMounts:
+            - name: kubelet-podresources-conf
+              mountPath: /podresources/config.yaml
+            - name: kubelet-podresources-sock
+              mountPath: /podresources/kubelet.sock
+            - name: host-sysfs
+              mountPath: /host/sys
+## Enable TLS authentication (2/3)
+#            - name: nfd-ca-cert
+#              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
+#              readOnly: true
+#            - name: nfd-topology-updater-cert
+#              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+#              readOnly: true
+      volumes:
+        - name: kubelet-podresources-conf
+          hostPath:
+            path: /var/lib/kubelet/config.yaml
+        - name: kubelet-podresources-sock
+          hostPath:
+            path: /var/lib/kubelet/pod-resources/kubelet.sock
+        - name: host-sysfs
+          hostPath:
+            path: /sys
+## Enable TLS authentication (3/3)
+#        - name: nfd-ca-cert
+#          configMap:
+#            name: nfd-ca-cert
+#        - name: nfd-topology-updater-cert
+#          secret:
+#            secretName: nfd-topology-updater-cert
