@@ -210,7 +210,7 @@ worker:
 
   nodeSelector: {}
 
-  tolerations: []
+  tolerations: {}
 
   annotations: {}
 
