@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 
+	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	api "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,6 +53,27 @@ func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
 		return nil, err
 	}
 	return clientset, nil
+}
+
+func (h K8sHelpers) GetTopologyClient() (*topologyclientset.Clientset, error) {
+	// Set up an in-cluster K8S client.
+	var config *restclient.Config
+	var err error
+
+	if h.Kubeconfig == "" {
+		config, err = restclient.InClusterConfig()
+	} else {
+		config, err = clientcmd.BuildConfigFromFlags("", h.Kubeconfig)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	topologyClient, err := topologyclientset.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return topologyClient, nil
 }
 
 func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Node, error) {
