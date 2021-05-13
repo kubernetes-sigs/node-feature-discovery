@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9
+	github.com/golang/protobuf v1.5.2
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.9
 	github.com/klauspost/cpuid/v2 v2.0.9
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
