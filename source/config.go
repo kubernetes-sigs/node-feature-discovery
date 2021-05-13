@@ -30,6 +30,8 @@ var (
 	SysfsDir = HostDir(pathPrefix + "sys")
 	// UsrPath is where the /usr directory of the system to be inspected is located
 	UsrDir = HostDir(pathPrefix + "usr")
+	// VarPath is where the /var directory of the system to be inspected is located
+	VarDir = HostDir(pathPrefix + "var")
 )
 
 // HostDir is a helper for handling host system directories

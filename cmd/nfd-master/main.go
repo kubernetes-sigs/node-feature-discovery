@@ -105,6 +105,9 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
 		"Verify worker node name against the worker's TLS certificate. "+
 			"Only takes effect when TLS authentication has been enabled.")
+	flagset.StringVar(&args.NRTNamespace, "nrt-namespace", "default",
+		"Namespace in which Node Resource Topology CR are created"+
+			"Ensure that the namespace specified is already exists.")
 
 	return args
 }

@@ -4,7 +4,10 @@ go 1.16
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9
+	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.5.2
+	github.com/google/go-cmp v0.5.5
+	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.9
 	github.com/klauspost/cpuid/v2 v2.0.9
 	github.com/onsi/ginkgo v1.14.0
@@ -20,6 +23,7 @@ require (
 	k8s.io/apimachinery v0.22.0
 	k8s.io/client-go v0.22.0
 	k8s.io/klog/v2 v2.9.0
+	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.22.0
 	sigs.k8s.io/yaml v1.2.0
 )
