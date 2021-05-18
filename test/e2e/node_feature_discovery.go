@@ -47,7 +47,7 @@ import (
 
 var (
 	dockerRepo    = flag.String("nfd.repo", "k8s.gcr.io/nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag     = flag.String("nfd.tag", "v0.8.1", "Docker tag to use")
+	dockerTag     = flag.String("nfd.tag", "v0.8.2", "Docker tag to use")
 	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
 	openShift     = flag.Bool("nfd.openshift", false, "Enable OpenShift specific bits")
 

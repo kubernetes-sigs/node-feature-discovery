@@ -23,7 +23,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
-          image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.1
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.8.2
           imagePullPolicy: IfNotPresent
           name: nfd-worker
           securityContext:
