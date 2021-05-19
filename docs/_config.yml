@@ -43,3 +43,6 @@ remote_theme: rundocs/jekyll-rtd-theme@v2.0.9
 # Document versioning
 version: v0.6
 display_version_list: true
+
+# Full release version. This is the version version number shown in the sidebar.
+release: v0.6.0
