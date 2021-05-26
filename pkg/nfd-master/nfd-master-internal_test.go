@@ -354,15 +354,18 @@ func TestSetLabels(t *testing.T) {
 		Convey("When --extra-label-ns and --instance are specified", func() {
 			// In the gRPC request the label names may omit the default ns
 			instance := "foo"
+			vendorLabel := "vendor." + LabelNs + "/feature-4"
 			mockLabels := map[string]string{"feature-1": "val-1",
 				"valid.ns/feature-2":   "val-2",
-				"invalid.ns/feature-3": "val-3"}
+				"invalid.ns/feature-3": "val-3",
+				vendorLabel:            " val-4"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+wvAnnotation, workerVer),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+flAnnotation, "feature-1,valid.ns/feature-2"),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+flAnnotation, "feature-1,valid.ns/feature-2,"+vendorLabel),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+erAnnotation, ""),
 				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-1", mockLabels["feature-1"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", vendorLabel, mockLabels[vendorLabel]),
 			}
 
 			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
