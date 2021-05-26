@@ -25,9 +25,17 @@ import (
 // NodeFeatureDiscoverySpec defines the desired state of NodeFeatureDiscovery
 // +k8s:openapi-gen=true
 type NodeFeatureDiscoverySpec struct {
-	Operand      OperandSpec `json:"operand"`
-	Instance     string      `json:"instance"`
-	WorkerConfig ConfigMap   `json:"workerConfig"`
+	Operand OperandSpec `json:"operand"`
+
+	// Instance name. Used to separate annotation namespaces for
+	// multiple parallel deployments.
+	// +optional
+	Instance string `json:"instance"`
+
+	// WorkerConfig describes configuration options for the NFD
+	// worker.
+	// +optional
+	WorkerConfig ConfigMap `json:"workerConfig"`
 }
 
 // OperandSpec describes configuration options for the operand
