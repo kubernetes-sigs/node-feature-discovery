@@ -24,20 +24,20 @@ import (
 // e.g RMDA related features. NFD configuration file may extend these custom features by adding rules.
 func getStaticFeatureConfig() []FeatureSpec {
 	return []FeatureSpec{
-		FeatureSpec{
+		{
 			Name: "rdma.capable",
 			MatchOn: []MatchRule{
-				MatchRule{
+				{
 					PciID: &rules.PciIDRule{
 						PciIDRuleInput: rules.PciIDRuleInput{Vendor: []string{"15b3"}},
 					},
 				},
 			},
 		},
-		FeatureSpec{
+		{
 			Name: "rdma.available",
 			MatchOn: []MatchRule{
-				MatchRule{
+				{
 					LoadedKMod: &rules.LoadedKModRule{"ib_uverbs", "rdma_ucm"},
 				},
 			},
