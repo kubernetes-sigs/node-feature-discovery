@@ -20,7 +20,7 @@ import (
 	"github.com/klauspost/cpuid/v2"
 )
 
-// Discover returns feature names for all the supported CPU features.
+// GetCpuidFlags returns feature names for all the supported CPU features.
 func GetCpuidFlags() []string {
 	return cpuid.CPU.FeatureSet()
 }

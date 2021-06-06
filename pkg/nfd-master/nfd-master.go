@@ -43,10 +43,10 @@ import (
 )
 
 const (
-	// Namespace for feature labels
+	// LabelNs defines the Namespace for feature labels
 	LabelNs = "feature.node.kubernetes.io"
 
-	// Base namespace for all NFD-related annotations
+	// AnnotationNsBase namespace for all NFD-related annotations
 	AnnotationNsBase = "nfd.node.kubernetes.io"
 
 	// NFD Annotations
@@ -65,7 +65,7 @@ type ExtendedResources map[string]string
 // Annotations are used for NFD-related node metadata
 type Annotations map[string]string
 
-// Command line arguments
+// Args holds command line arguments
 type Args struct {
 	CaFile         string
 	CertFile       string

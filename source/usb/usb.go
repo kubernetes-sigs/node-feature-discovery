@@ -44,13 +44,13 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// Implement FeatureSource interface
+// Source implements FeatureSource interface
 type Source struct {
 	config *Config
 }
 
-// Return name of the feature source
-func (s Source) Name() string { return Name }
+// Name returns the name of the feature source
+func (s Source) Name() string { return "usb" }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }

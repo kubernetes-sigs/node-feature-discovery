@@ -26,6 +26,7 @@ import (
 const Name = "iommu"
 
 // Implement FeatureSource interface
+// Source implements FeatureSource interface
 type Source struct{}
 
 func (s Source) Name() string { return Name }
