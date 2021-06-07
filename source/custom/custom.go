@@ -51,21 +51,7 @@ type LegacyRule struct {
 }
 
 type Rule struct {
-	Name          string            `json:"name"`
-	Labels        map[string]string `json:"labels"`
-	MatchFeatures FeatureMatcher    `json:"matchFeatures"`
-	MatchAny      []MatchAnyElem    `json:"matchAny"`
-}
-
-type MatchAnyElem struct {
-	MatchFeatures FeatureMatcher
-}
-
-type FeatureMatcher []FeatureMatcherTerm
-
-type FeatureMatcherTerm struct {
-	Feature          string
-	MatchExpressions nfdv1alpha1.MatchExpressionSet
+	nfdv1alpha1.Rule
 }
 
 type config []CustomRule
@@ -155,7 +141,7 @@ func (r *CustomRule) execute(features map[string]*feature.DomainFeatures) (map[s
 	}
 
 	if r.Rule != nil {
-		ruleOut, err := r.Rule.execute(features)
+		ruleOut, err := r.Rule.Execute(features)
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute rule %s: %w", r.Rule.Name, err)
 		}
@@ -187,80 +173,6 @@ func (r *LegacyRule) execute(features map[string]*feature.DomainFeatures) (map[s
 		value = *r.Value
 	}
 	return map[string]string{r.Name: value}, nil
-}
-
-func (r *Rule) execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {
-	if len(r.MatchAny) > 0 {
-		// Logical OR over the matchAny matchers
-		matched := false
-		for _, matcher := range r.MatchAny {
-			if m, err := matcher.match(features); err != nil {
-				return nil, err
-			} else if m {
-				matched = true
-				break
-			}
-		}
-		if !matched {
-			return nil, nil
-		}
-	}
-
-	if len(r.MatchFeatures) > 0 {
-		if m, err := r.MatchFeatures.match(features); err != nil {
-			return nil, err
-		} else if !m {
-			return nil, nil
-		}
-	}
-
-	labels := make(map[string]string, len(r.Labels))
-	for k, v := range r.Labels {
-		labels[k] = v
-	}
-
-	return labels, nil
-}
-
-func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (bool, error) {
-	return e.MatchFeatures.match(features)
-}
-
-func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (bool, error) {
-	// Logical AND over the terms
-	for _, term := range *m {
-		split := strings.SplitN(term.Feature, ".", 2)
-		if len(split) != 2 {
-			return false, fmt.Errorf("invalid selector %q: must be <domain>.<feature>", term.Feature)
-		}
-		domain := split[0]
-		// Ignore case
-		featureName := strings.ToLower(split[1])
-
-		domainFeatures, ok := features[domain]
-		if !ok {
-			return false, fmt.Errorf("unknown feature source/domain %q", domain)
-		}
-
-		var m bool
-		var err error
-		if f, ok := domainFeatures.Keys[featureName]; ok {
-			m, err = term.MatchExpressions.MatchKeys(f.Elements)
-		} else if f, ok := domainFeatures.Values[featureName]; ok {
-			m, err = term.MatchExpressions.MatchValues(f.Elements)
-		} else if f, ok := domainFeatures.Instances[featureName]; ok {
-			m, err = term.MatchExpressions.MatchInstances(f.Elements)
-		} else {
-			return false, fmt.Errorf("%q feature of source/domain %q not available", featureName, domain)
-		}
-
-		if err != nil {
-			return false, err
-		} else if !m {
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 func (m *LegacyMatcher) match() (bool, error) {
