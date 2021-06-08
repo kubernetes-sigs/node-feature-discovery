@@ -139,10 +139,9 @@ nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
 
 ### -no-publish
 
-The `-no-publish` flag disables all communication with the Kubernetes API
-server, making a "dry-run" flag for nfd-master. No Labels, Annotations or
-ExtendedResources (or any other properties of any Kubernetes API objects) are
-modified.
+The `-no-publish` flag disables updates to the Node objects in the Kubernetes
+API server, making a "dry-run" flag for nfd-master. No Labels, Annotations or
+ExtendedResources of nodes are updated.
 
 Default: *false*
 
