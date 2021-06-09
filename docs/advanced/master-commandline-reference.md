@@ -151,6 +151,20 @@ Example:
 nfd-master -no-publish
 ```
 
+### -featurerules-controller
+
+The `-featurerules-controller` flag controlers the processing of
+NodeFeatureRule objects, effectively enabling/disabling labels from these
+custom labeling rules.
+
+Default: *true*
+
+Example:
+
+```bash
+nfd-master -featurerules-controller=false
+```
+
 ### -label-whitelist
 
 The `-label-whitelist` specifies a regular expression for filtering feature
