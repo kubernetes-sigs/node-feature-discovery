@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9
-	github.com/golang/protobuf v1.4.3
 	github.com/klauspost/cpuid/v2 v2.0.7
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.0
@@ -14,6 +13,7 @@ require (
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	google.golang.org/grpc v1.27.1
+	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v0.21.2
@@ -26,7 +26,6 @@ require (
 // need to override with commits (corresponding their kubernetes-* tags)
 replace (
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
-	google.golang.org/grpc => google.golang.org/grpc v1.27.1
 	k8s.io/api => k8s.io/api v0.21.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.2
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.2
