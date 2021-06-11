@@ -23,10 +23,12 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+const Name = "iommu"
+
 // Implement FeatureSource interface
 type Source struct{}
 
-func (s Source) Name() string { return "iommu" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return nil }

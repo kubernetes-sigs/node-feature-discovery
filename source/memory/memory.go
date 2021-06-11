@@ -26,11 +26,13 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+const Name = "memory"
+
 // Source implements FeatureSource.
 type Source struct{}
 
 // Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "memory" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return nil }

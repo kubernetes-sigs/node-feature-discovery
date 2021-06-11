@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+const Name = "fake"
+
 // Configuration file options
 type Config struct {
 	Labels map[string]string `json:"labels"`
@@ -44,7 +46,7 @@ type Source struct {
 }
 
 // Name returns an identifier string for this feature source.
-func (s Source) Name() string { return "fake" }
+func (s Source) Name() string { return Name }
 
 // NewConfig method of the FeatureSource interface
 func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
