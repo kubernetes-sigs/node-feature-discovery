@@ -26,7 +26,9 @@ import (
 
 func KlogDump(v klog.Level, heading, prefix string, obj interface{}) {
 	if klog.V(v).Enabled() {
-		klog.InfoDepth(1, heading)
+		if heading != "" {
+			klog.InfoDepth(1, heading)
+		}
 
 		d := strings.Split(Dump(obj), "\n")
 		// Print all but the last empty line
