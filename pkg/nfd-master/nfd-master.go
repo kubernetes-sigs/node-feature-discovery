@@ -39,6 +39,7 @@ import (
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 
@@ -179,6 +180,7 @@ func (m *nfdMaster) Run() error {
 		if err != nil {
 			return err
 		}
+		klog.Info("starting nfd LabelRule controller")
 		m.nfdController = newNfdController(kubeconfig)
 	}
 
@@ -408,15 +410,25 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		return &pb.SetLabelsReply{}, err
 	}
 	switch {
-	case klog.V(2).Enabled():
-		utils.KlogDump(2, "REQUEST", "  ", r)
+	case klog.V(4).Enabled():
+		utils.KlogDump(3, "REQUEST", "  ", r)
 	case klog.V(1).Enabled():
 		klog.Infof("REQUEST Node: %q NFD-version: %q Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
 	default:
 		klog.Infof("received labeling request for node %q", r.NodeName)
 	}
 
-	labels, extendedResources := filterFeatureLabels(r.Labels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
+	// Mix in CR-originated labels
+	rawLabels := make(map[string]string)
+	if r.Labels != nil {
+		// NOTE: we effectively mangle the request struct by not creating a deep copy of the map
+		rawLabels = r.Labels
+	}
+	for k, v := range m.crLabels(r) {
+		rawLabels[k] = v
+	}
+
+	labels, extendedResources := filterFeatureLabels(rawLabels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
 
 	if !m.args.NoPublish {
 		// Advertise NFD worker version as an annotation
@@ -478,6 +490,43 @@ func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopo
 		}
 	}
 	return &topologypb.NodeTopologyResponse{}, nil
+}
+
+func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
+	if m.nfdController == nil {
+		return nil
+	}
+
+	l := make(map[string]string)
+	ruleSpecs, err := m.nfdController.lister.List(labels.Everything())
+	if err != nil {
+		klog.Errorf("failed to list LabelRule resources: %w", err)
+		return nil
+	}
+
+	// Process all rule CRs
+	for _, spec := range ruleSpecs {
+		switch {
+		case klog.V(3).Enabled():
+			h := fmt.Sprintf("executing LabelRule \"%s/%s\":", spec.ObjectMeta.Namespace, spec.ObjectMeta.Name)
+			utils.KlogDump(3, h, "  ", spec.Spec)
+		case klog.V(1).Enabled():
+			klog.Infof("executing LabelRule \"%s/%s\"", spec.ObjectMeta.Namespace, spec.ObjectMeta.Name)
+		}
+		for _, rule := range spec.Spec.Rules {
+			ruleOut, err := rule.Execute(r.Features)
+			if err != nil {
+				klog.Errorf("failed to process Rule %q: %w", rule.Name, err)
+				continue
+			}
+			for k, v := range ruleOut {
+				l[k] = v
+			}
+			utils.KlogDump(1, "", "  ", ruleOut)
+		}
+	}
+
+	return l
 }
 
 // updateNodeFeatures ensures the Kubernetes node object is up to date,
