@@ -237,6 +237,10 @@ func nfdTopologyUpdaterPodSpec(image string, extraArgs []string) *v1.PodSpec {
 						Name:      "host-sys",
 						MountPath: "/host-sys",
 					},
+					{
+						Name: "exclude-list-config-vol",
+						MountPath: "/etc/nfd-topology-updater-config",
+					},
 				},
 			},
 		},
@@ -270,6 +274,18 @@ func nfdTopologyUpdaterPodSpec(image string, extraArgs []string) *v1.PodSpec {
 					},
 				},
 			},
+			{
+				Name: "exclude-list-config-vol",
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: TopologyUpdaterConfigMapName,
+						},
+						Optional:  pointer.BoolPtr(true),
+					},
+				},
+			},
+
 		},
 	}
 }

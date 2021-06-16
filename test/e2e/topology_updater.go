@@ -74,6 +74,10 @@ var _ = ginkgo.Describe("[NFD] Node topology updater", func() {
 		image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 		f.PodClient().CreateSync(testutils.NFDMasterPod(image, false))
 
+		ginkgo.By("Creating nfd-topology-updater configmap")
+		err = testutils.CreateTopologyUpdaterConfigMap(f.ClientSet, f.Namespace.Name,  &map[string][]string{})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 		// Create nfd-master service
 		masterService, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -136,6 +140,11 @@ var _ = ginkgo.Describe("[NFD] Node topology updater", func() {
 		err = extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
 		if err != nil {
 			framework.Logf("failed to delete node resources topologies CRD: %v", err)
+		}
+
+		err = f.ClientSet.CoreV1().ConfigMaps("default").Delete(context.TODO(), testutils.TopologyUpdaterConfigMapName, metav1.DeleteOptions{})
+		if err != nil {
+			framework.Logf("failed to delete topology updater ConfigMap: %v", err)
 		}
 	})
 })
