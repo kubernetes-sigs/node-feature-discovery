@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"sigs.k8s.io/node-feature-discovery/test/data"
 	"testing"
 	"time"
 
@@ -95,5 +96,13 @@ func TestArgsParse(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 		})
+	})
+
+	Convey("When parsing exclude list data", t, func() {
+		configMapPath := data.FilePath("excludelist.yaml")
+		excludeListWrapper, err := getExcludeListFromConfigMap(configMapPath)
+		So(err, ShouldBeNil)
+		So(excludeListWrapper.ExcludeList, ShouldContainKey, "workernode1")
+		So(excludeListWrapper.ExcludeList, ShouldNotContainKey, "noneExistingKey")
 	})
 }
