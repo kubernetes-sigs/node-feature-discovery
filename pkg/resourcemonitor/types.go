@@ -19,9 +19,8 @@ package resourcemonitor
 import (
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
 	topologyv1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Args struct {
@@ -30,6 +29,7 @@ type Args struct {
 	Namespace             string
 	SysfsRoot             string
 	KubeletConfigFile     string
+	ExcludeList       ResourceExcludeList
 }
 
 type ResourceInfo struct {
@@ -48,10 +48,15 @@ type PodResources struct {
 	Containers []ContainerResources
 }
 
+type ResourceExcludeList struct {
+	ExcludeList map[string][]string
+}
+
 type ResourcesScanner interface {
 	Scan() ([]PodResources, error)
 }
 
 type ResourcesAggregator interface {
-	Aggregate(podResData []PodResources) topologyv1alpha1.ZoneList
+	Aggregate(podResData []PodResources, list ResourceExcludeList) topologyv1alpha1.ZoneList
 }
+

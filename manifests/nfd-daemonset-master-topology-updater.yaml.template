@@ -122,6 +122,8 @@ spec:
               mountPath: /podresources/kubelet.sock
             - name: host-sys
               mountPath: /host/sys
+            - name: exclude-list-config-vol
+              mountPath: /etc/nfd-topology-updater-config
       ## Enable TLS authentication (2/3)
       #            - name: nfd-ca-cert
       #              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
@@ -139,6 +141,10 @@ spec:
         - name: kubelet-podresources-sock
           hostPath:
             path: /var/lib/kubelet/pod-resources/kubelet.sock
+        - name: exclude-list-config-vol
+          configMap:
+            name: topology-updater-config
+            optional: true
 ## Enable TLS authentication (3/3)
 #       - name: nfd-ca-cert
 #         configMap:

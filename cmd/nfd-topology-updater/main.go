@@ -18,11 +18,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"sigs.k8s.io/yaml"
 	"time"
 
 	"github.com/docopt/docopt-go"
-	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/dumpobject"
 	"sigs.k8s.io/node-feature-discovery/pkg/kubeconf"
 	topology "sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater"
@@ -34,6 +37,7 @@ import (
 const (
 	// ProgramName is the canonical name of this program
 	ProgramName = "nfd-topology-updater"
+	excludeListConfigMapPath = "/etc/nfd-topology-updater-config/exclude-list-config.yaml"
 )
 
 func main() {
@@ -45,6 +49,11 @@ func main() {
 	args, resourcemonitorArgs, err := argsParse(nil)
 	if err != nil {
 		log.Fatalf("failed to parse command line: %v", err)
+	}
+
+	resourcemonitorArgs.ExcludeList, err = getExcludeListFromConfigMap(excludeListConfigMapPath)
+	if err != nil {
+		log.Fatalf("error getting exclude list from ConfigMap: %v", err)
 	}
 
 	klConfig, err := kubeconf.GetKubeletConfigFromLocalFile(resourcemonitorArgs.KubeletConfigFile)
@@ -88,7 +97,7 @@ func main() {
 				continue
 			}
 
-			zones = resAggr.Aggregate(podResources)
+			zones = resAggr.Aggregate(podResources, resourcemonitorArgs.ExcludeList)
 			zonesChannel <- zones
 			log.Printf("After aggregating resources identified zones are:%v", dumpobject.DumpObject(zones))
 
@@ -112,6 +121,27 @@ func main() {
 			break
 		}
 	}
+}
+
+func getExcludeListFromConfigMap(configMapPath string) (resourcemonitor.ResourceExcludeList, error) {
+	excludeList := resourcemonitor.ResourceExcludeList{}
+
+	b, err := ioutil.ReadFile(configMapPath)
+	if err != nil {
+		// ConfigMap is optional
+		if os.IsNotExist(err) {
+			log.Printf("Info: couldn't find ConfigMap under %v", configMapPath)
+			return excludeList, nil
+		}
+		return excludeList, err
+	}
+
+	err = yaml.Unmarshal(b, &excludeList)
+	if err != nil {
+		return excludeList, err
+	}
+
+	return excludeList, nil
 }
 
 // argsParse parses the command line arguments passed to the program.
@@ -156,7 +186,7 @@ func argsParse(argv []string) (topology.Args, resourcemonitor.Args, error) {
   --kubelet-config-file=<path>    Kubelet config file path.
                                   [Default: /podresources/config.yaml]
   --podresources-socket=<path>    Pod Resource Socket path to use.
-                                  [Default: /podresources/kubelet.sock] `,
+                                  [Default: /podresources/kubelet.sock]`,
 
 		ProgramName,
 		ProgramName,
@@ -193,3 +223,4 @@ func argsParse(argv []string) (topology.Args, resourcemonitor.Args, error) {
 
 	return args, resourcemonitorArgs, nil
 }
+

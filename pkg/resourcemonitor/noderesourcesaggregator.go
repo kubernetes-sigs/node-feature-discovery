@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -80,11 +81,19 @@ func NewResourcesAggregatorFromData(topo *ghw.TopologyInfo, resp *podresourcesap
 }
 
 // Aggregate provides the mapping (numa zone name) -> Zone from the given PodResources.
-func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topologyv1alpha1.ZoneList {
+func (noderesourceData *nodeResources) Aggregate(podResData []PodResources, excludeList ResourceExcludeList) topologyv1alpha1.ZoneList {
+	clusterNodeName := getNodeName()
+	excludeListAsSet := excludeList.ToMapSet()
 	perNuma := make(map[int]map[v1.ResourceName]*resourceData)
 	for nodeID, nodeRes := range noderesourceData.perNUMACapacity {
 		perNuma[nodeID] = make(map[v1.ResourceName]*resourceData)
 		for resName, resCap := range nodeRes {
+			if set, ok := excludeListAsSet["*"]; ok && set.Has(string(resName)){
+				continue
+			}
+			if set, ok := excludeListAsSet[clusterNodeName]; ok && set.Has(string(resName)){
+				continue
+			}
 			perNuma[nodeID][resName] = &resourceData{
 				capacity:    resCap,
 				allocatable: resCap,
@@ -271,4 +280,8 @@ func findNodeByID(nodes []*ghw.TopologyNode, nodeID int) *ghw.TopologyNode {
 		}
 	}
 	return nil
+}
+
+func getNodeName() string {
+	return os.Getenv("NODE_NAME")
 }

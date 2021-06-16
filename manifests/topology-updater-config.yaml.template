@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-feature-discovery
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: topology-updater-config
+  namespace: node-feature-discovery
+data:
+  exclude-list-config.yaml: |
+    # key = node name, value = list of resources to be excluded.
+    # use * to exclude from all nodes.
+    # an example for how the exclude list should looks like
+    # excludelist:
+    #   node1: [cpu]
+    #   node2: [memory, example/deviceA]
+    #   *: [cpu]
