@@ -308,6 +308,13 @@ func (in *Rule) DeepCopyInto(out *Rule) {
 			(*out)[key] = val
 		}
 	}
+	if in.Vars != nil {
+		in, out := &in.Vars, &out.Vars
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.MatchFeatures != nil {
 		in, out := &in.MatchFeatures, &out.MatchFeatures
 		*out = make(FeatureMatcher, len(*in))

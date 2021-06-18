@@ -50,3 +50,18 @@ func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
 	}
 	return &InstanceFeature{Attributes: attrs}
 }
+
+// InsertFeatureValues inserts new values into a specific feature.
+func InsertFeatureValues(f Features, domain, feature string, values map[string]string) {
+	if _, ok := f[domain]; !ok {
+		f[domain] = NewDomainFeatures()
+	}
+	if _, ok := f[domain].Values[feature]; !ok {
+		f[domain].Values[feature] = NewValueFeatures(values)
+		return
+	}
+
+	for k, v := range values {
+		f[domain].Values[feature].Elements[k] = v
+	}
+}

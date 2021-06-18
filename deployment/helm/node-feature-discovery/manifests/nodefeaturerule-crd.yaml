@@ -188,6 +188,15 @@ spec:
                     name:
                       description: Name of the rule.
                       type: string
+                    vars:
+                      additionalProperties:
+                        type: string
+                      description: Vars is the variables to store if the rule matches.
+                        Variables do not directly inflict any changes in the node
+                        object. However, they can be referenced from other rules enabling
+                        more complex rule hierarchies, without exposing intermediary
+                        output values as labels.
+                      type: object
                   required:
                   - name
                   type: object

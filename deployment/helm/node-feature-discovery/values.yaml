@@ -315,6 +315,32 @@ worker:
     #        - feature: cpu.cpuid
     #          matchExpressions:
     #            AVX: {op: Exists}
+    #
+    #    # The following examples demonstrate vars field and back-referencing
+    #    # previous labels and vars
+    #    - name: "my dummy kernel rule"
+    #      labels:
+    #        "my.kernel.feature": "true"
+    #      matchFeatures:
+    #        - feature: kernel.version
+    #          matchExpressions:
+    #            major: {op: Gt, value: ["2"]}
+    #
+    #    - name: "my dummy rule with no labels"
+    #      vars:
+    #        "my.dummy.var": "1"
+    #      matchFeatures:
+    #        - feature: cpu.cpuid
+    #          matchExpressions: {}
+    #
+    #    - name: "my rule using backrefs"
+    #      labels:
+    #        "my.backref.feature": "true"
+    #      matchFeatures:
+    #        - feature: rule.matched
+    #          matchExpressions:
+    #            my.kernel.feature: {op: IsTrue}
+    #            my.dummy.var: {op: Gt, value: ["0"]}
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
   podSecurityContext: {}
