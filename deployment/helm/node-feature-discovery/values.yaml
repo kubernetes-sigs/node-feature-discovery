@@ -238,6 +238,10 @@ worker:
     #            major: {op: In, value: ["5"]}
     #            minor: {op: Gt, value: ["10"]}
     #
+    #        - storage.block:
+    #            rotational: {op: In, value: ["0"]}
+    #            dax: {op: In, value: ["0"]}
+    #
     #        - feature: system.osrelease
     #          matchExpressions:
     #            ID: {op: In, value: ["fedora", "centos"]}
