@@ -163,8 +163,8 @@ data:
     #        - "SSE"
     #        - "SSE2"
     #        - "SSE3"
-    #        - "SSE4.1"
-    #        - "SSE4.2"
+    #        - "SSE4"
+    #        - "SSE42"
     #        - "SSSE3"
     #      attributeWhitelist:
     #  kernel:

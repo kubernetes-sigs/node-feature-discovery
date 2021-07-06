@@ -81,7 +81,7 @@ about configurability, see
 [configuration](deployment-and-usage#worker-configuration).
 By default, the following CPUID flags have been blacklisted:
 BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT,
-RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4.1, SSE4.2 and SSSE3.
+RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42 and SSSE3.
 
 **NOTE** The cpuid features advertise *supported* CPU capabilities, that is, a
 capability might be supported but not enabled.
