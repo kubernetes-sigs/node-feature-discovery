@@ -63,7 +63,11 @@ func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
 
 func TestUpdateNodeFeatures(t *testing.T) {
 	Convey("When I update the node using fake client", t, func() {
-		fakeFeatureLabels := map[string]string{FeatureLabelNs + "/source-feature.1": "1", FeatureLabelNs + "/source-feature.2": "2", FeatureLabelNs + "/source-feature.3": "val3"}
+		fakeFeatureLabels := map[string]string{
+			FeatureLabelNs + "/source-feature.1": "1",
+			FeatureLabelNs + "/source-feature.2": "2",
+			FeatureLabelNs + "/source-feature.3": "val3",
+			ProfileLabelNs + "/profile-a":        "val4"}
 		fakeAnnotations := map[string]string{"my-annotation": "my-val"}
 		fakeExtResources := ExtendedResources{FeatureLabelNs + "/source-feature.1": "1", FeatureLabelNs + "/source-feature.2": "2"}
 
@@ -354,18 +358,23 @@ func TestSetLabels(t *testing.T) {
 		Convey("When --extra-label-ns and --instance are specified", func() {
 			// In the gRPC request the label names may omit the default ns
 			instance := "foo"
-			vendorLabel := "vendor." + FeatureLabelNs + "/feature-4"
+			vendorFeatureLabel := "vendor." + FeatureLabelNs + "/feature-4"
+			vendorProfileLabel := "vendor." + ProfileLabelNs + "/feature-5"
 			mockLabels := map[string]string{"feature-1": "val-1",
 				"valid.ns/feature-2":   "val-2",
 				"invalid.ns/feature-3": "val-3",
-				vendorLabel:            " val-4"}
+				vendorFeatureLabel:     " val-4",
+				vendorProfileLabel:     " val-5"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+wvAnnotation, workerVer),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+flAnnotation, "feature-1,valid.ns/feature-2,"+vendorLabel),
+				apihelper.NewJsonPatch("add", "/metadata/annotations",
+					instance+"."+flAnnotation,
+					"feature-1,valid.ns/feature-2,"+vendorFeatureLabel+","+vendorProfileLabel),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+erAnnotation, ""),
 				apihelper.NewJsonPatch("add", "/metadata/labels", FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
-				apihelper.NewJsonPatch("add", "/metadata/labels", vendorLabel, mockLabels[vendorLabel]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
 			}
 
 			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}

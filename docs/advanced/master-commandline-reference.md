@@ -175,8 +175,9 @@ nfd-master -label-whitelist='.*cpuid\.'
 
 The `-extra-label-ns` flag specifies a comma-separated list of allowed feature
 label namespaces. By default, nfd-master only allows creating labels in the
-default `feature.node.kubernetes.io` label namespace and its sub-namespaces
-(e.g. `vendor.feature.node.kubernetes.io`). This option can be used to allow
+default `feature.node.kubernetes.io` and `profile.node.kubernetes.io` label
+namespaces and their sub-namespaces (e.g. `vendor.feature.node.kubernetes.io`
+and `sub.ns.profile.node.kubernetes.io`). This option can be used to allow
 other vendor or application specific namespaces for custom labels from the
 local and custom feature sources.
 
