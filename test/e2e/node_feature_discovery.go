@@ -458,7 +458,7 @@ func cleanupNode(cs clientset.Interface) {
 }
 
 // Actual test suite
-var _ = framework.KubeDescribe("[NFD] Node Feature Discovery", func() {
+var _ = SIGDescribe("Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	Context("when deploying a single nfd-master pod", func() {
