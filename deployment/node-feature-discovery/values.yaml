@@ -58,6 +58,10 @@ master:
     operator: "Equal"
     value: ""
     effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Equal"
+    value: ""
+    effect: "NoSchedule"
 
   annotations: {}
 
@@ -68,6 +72,12 @@ master:
           preference:
             matchExpressions:
               - key: "node-role.kubernetes.io/master"
+                operator: In
+                values: [""]
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
                 operator: In
                 values: [""]
 
