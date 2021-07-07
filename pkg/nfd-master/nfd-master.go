@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	// LabelNs defines the Namespace for feature labels
+	// LabelNs defines the namespace for feature labels
 	LabelNs = "feature.node.kubernetes.io"
 
 	// AnnotationNsBase namespace for all NFD-related annotations
