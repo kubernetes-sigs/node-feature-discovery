@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-// Rule that matches on loaded kernel modules in the system
+// LoadedKModRule matches loaded kernel modules in the system
 type LoadedKModRule []string
 
 const kmodProcfsPath = "/proc/modules"

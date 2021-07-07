@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// Directory stores the full path for the custom sources folder
 const Directory = "/etc/kubernetes/node-feature-discovery/custom.d"
 
 // getDirectoryFeatureConfig returns features configured in the "/etc/kubernetes/node-feature-discovery/custom.d"

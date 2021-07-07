@@ -68,12 +68,12 @@ func readPciDevInfo(devPath string, deviceAttrSpec map[string]bool) (PciDeviceIn
 	return info, nil
 }
 
-// List available PCI devices and retrieve device attributes.
+// DetectPci lists available PCI devices and retrieve device attributes.
 // deviceAttrSpec is a map which specifies which attributes to retrieve.
 // a false value for a specific attribute marks the attribute as optional.
 // a true value for a specific attribute marks the attribute as mandatory.
 // "class" attribute is considered mandatory.
-// DetectPci() will fail if the retrieval of a mandatory attribute fails.
+// will fail if the retrieval of a mandatory attribute fails.
 func DetectPci(deviceAttrSpec map[string]bool) (map[string][]PciDeviceInfo, error) {
 	sysfsBasePath := source.SysfsDir.Path("bus/pci/devices")
 	devInfo := make(map[string][]PciDeviceInfo)

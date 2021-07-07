@@ -365,7 +365,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
 			}
 
-			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": struct{}{}}
+			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
 			mockMaster.annotationNs = instance + "." + AnnotationNsBase
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
@@ -391,7 +391,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-3", mockLabels["feature-3"]),
 			}
 
-			mockMaster.args.ResourceLabels = map[string]struct{}{"feature-3": struct{}{}, "feature-1": struct{}{}}
+			mockMaster.args.ResourceLabels = map[string]struct{}{"feature-3": {}, "feature-1": {}}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
