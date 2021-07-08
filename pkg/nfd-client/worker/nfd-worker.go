@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nfdworker
+package worker
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -29,13 +27,12 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
+	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -51,10 +48,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/storage"
 	"sigs.k8s.io/node-feature-discovery/source/system"
 	"sigs.k8s.io/node-feature-discovery/source/usb"
-)
-
-var (
-	nodeName = os.Getenv("NODE_NAME")
 )
 
 // Global config
@@ -78,14 +71,11 @@ type Labels map[string]string
 
 // Command line arguments
 type Args struct {
-	CaFile             string
-	CertFile           string
-	KeyFile            string
-	ConfigFile         string
-	Options            string
-	Oneshot            bool
-	Server             string
-	ServerNameOverride string
+	nfdclient.Args
+
+	ConfigFile string
+	Oneshot    bool
+	Options    string
 
 	Klog      map[string]*utils.KlogFlagVal
 	Overrides ConfigOverrideArgs
@@ -101,15 +91,11 @@ type ConfigOverrideArgs struct {
 	Sources        *utils.StringSliceVal
 }
 
-type NfdWorker interface {
-	Run() error
-	Stop()
-}
-
 type nfdWorker struct {
+	nfdclient.NfdBaseClient
+
 	args           Args
 	certWatch      *utils.FsWatcher
-	clientConn     *grpc.ClientConn
 	client         pb.LabelerClient
 	configFilePath string
 	config         *NFDConfig
@@ -124,8 +110,15 @@ type duration struct {
 }
 
 // Create new NfdWorker instance.
-func NewNfdWorker(args *Args) (NfdWorker, error) {
+func NewNfdWorker(args *Args) (nfdclient.NfdClient, error) {
+	base, err := nfdclient.NewNfdBaseClient(&args.Args)
+	if err != nil {
+		return nil, err
+	}
+
 	nfd := &nfdWorker{
+		NfdBaseClient: base,
+
 		args:   *args,
 		config: &NFDConfig{},
 		realSources: []source.FeatureSource{
@@ -153,19 +146,6 @@ func NewNfdWorker(args *Args) (NfdWorker, error) {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
 
-	// Check TLS related args
-	if args.CertFile != "" || args.KeyFile != "" || args.CaFile != "" {
-		if args.CertFile == "" {
-			return nfd, fmt.Errorf("--cert-file needs to be specified alongside --key-file and --ca-file")
-		}
-		if args.KeyFile == "" {
-			return nfd, fmt.Errorf("--key-file needs to be specified alongside --cert-file and --ca-file")
-		}
-		if args.CaFile == "" {
-			return nfd, fmt.Errorf("--ca-file needs to be specified alongside --cert-file and --key-file")
-		}
-	}
-
 	return nfd, nil
 }
 
@@ -184,7 +164,7 @@ func newDefaultConfig() *NFDConfig {
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
 	klog.Infof("Node Feature Discovery Worker %s", version.Get())
-	klog.Infof("NodeName: '%s'", nodeName)
+	klog.Infof("NodeName: '%s'", nfdclient.NodeName())
 
 	// Create watcher for config file and read initial configuration
 	configWatch, err := utils.CreateFsWatcher(time.Second, w.configFilePath)
@@ -202,11 +182,11 @@ func (w *nfdWorker) Run() error {
 	}
 
 	// Connect to NFD master
-	err = w.connect()
+	err = w.Connect()
 	if err != nil {
 		return fmt.Errorf("failed to connect: %v", err)
 	}
-	defer w.disconnect()
+	defer w.Disconnect()
 
 	labelTrigger := time.After(0)
 	for {
@@ -238,9 +218,9 @@ func (w *nfdWorker) Run() error {
 			}
 			// Manage connection to master
 			if w.config.Core.NoPublish {
-				w.disconnect()
-			} else if w.clientConn == nil {
-				if err := w.connect(); err != nil {
+				w.Disconnect()
+			} else if w.ClientConn() == nil {
+				if err := w.Connect(); err != nil {
 					return err
 				}
 			}
@@ -250,8 +230,8 @@ func (w *nfdWorker) Run() error {
 
 		case <-w.certWatch.Events:
 			klog.Infof("TLS certificate update, renewing connection to nfd-master")
-			w.disconnect()
-			if err := w.connect(); err != nil {
+			w.Disconnect()
+			if err := w.Connect(); err != nil {
 				return err
 			}
 
@@ -272,68 +252,27 @@ func (w *nfdWorker) Stop() {
 	}
 }
 
-// connect creates a client connection to the NFD master
-func (w *nfdWorker) connect() error {
+// Connect creates a client connection to the NFD master
+func (w *nfdWorker) Connect() error {
 	// Return a dummy connection in case of dry-run
 	if w.config.Core.NoPublish {
 		return nil
 	}
 
-	// Check that if a connection already exists
-	if w.clientConn != nil {
-		return fmt.Errorf("client connection already exists")
-	}
-
-	// Dial and create a client
-	dialCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	dialOpts := []grpc.DialOption{grpc.WithBlock()}
-	if w.args.CaFile != "" || w.args.CertFile != "" || w.args.KeyFile != "" {
-		// Load client cert for client authentication
-		cert, err := tls.LoadX509KeyPair(w.args.CertFile, w.args.KeyFile)
-		if err != nil {
-			return fmt.Errorf("failed to load client certificate: %v", err)
-		}
-		// Load CA cert for server cert verification
-		caCert, err := ioutil.ReadFile(w.args.CaFile)
-		if err != nil {
-			return fmt.Errorf("failed to read root certificate file: %v", err)
-		}
-		caPool := x509.NewCertPool()
-		if ok := caPool.AppendCertsFromPEM(caCert); !ok {
-			return fmt.Errorf("failed to add certificate from '%s'", w.args.CaFile)
-		}
-		// Create TLS config
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			RootCAs:      caPool,
-			ServerName:   w.args.ServerNameOverride,
-		}
-		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	} else {
-		dialOpts = append(dialOpts, grpc.WithInsecure())
-	}
-	klog.Infof("connecting to nfd-master at %s ...", w.args.Server)
-	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...)
-	if err != nil {
+	if err := w.NfdBaseClient.Connect(); err != nil {
 		return err
 	}
-	w.clientConn = conn
-	w.client = pb.NewLabelerClient(conn)
+
+	w.client = pb.NewLabelerClient(w.ClientConn())
 
 	return nil
 }
 
-// disconnect closes the connection to NFD master
-func (w *nfdWorker) disconnect() {
-	if w.clientConn != nil {
-		klog.Infof("closing connection to nfd-master ...")
-		w.clientConn.Close()
-	}
-	w.clientConn = nil
+// Disconnect closes the connection to NFD master
+func (w *nfdWorker) Disconnect() {
+	w.NfdBaseClient.Disconnect()
 	w.client = nil
 }
-
 func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
 		klog.Warningf("too short sleep-intervall specified (%s), forcing to 1s",
@@ -551,7 +490,7 @@ func advertiseFeatureLabels(client pb.LabelerClient, labels Labels) error {
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		NfdVersion: version.Get(),
-		NodeName:   nodeName}
+		NodeName:   nfdclient.NodeName()}
 	_, err := client.SetLabels(ctx, &labelReq)
 	if err != nil {
 		klog.Errorf("failed to set node labels: %v", err)
