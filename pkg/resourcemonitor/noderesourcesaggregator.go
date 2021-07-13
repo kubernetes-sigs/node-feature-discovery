@@ -25,7 +25,6 @@ import (
 	topologyv1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -37,13 +36,15 @@ const (
 )
 
 type nodeResources struct {
-	perNUMACapacity map[int]map[v1.ResourceName]int64
+	perNUMAAllocatable map[int]map[v1.ResourceName]int64
 	// mapping: resourceName -> resourceID -> nodeID
-	resourceID2NUMAID map[string]map[string]int
-	topo              *ghw.TopologyInfo
+	resourceID2NUMAID    map[string]map[string]int
+	topo                 *ghw.TopologyInfo
+	reservedCPUIDPerNUMA map[int][]string
 }
 
 type resourceData struct {
+	available   int64
 	allocatable int64
 	capacity    int64
 }
@@ -74,21 +75,43 @@ func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesLister
 func NewResourcesAggregatorFromData(topo *ghw.TopologyInfo, resp *podresourcesapi.AllocatableResourcesResponse) ResourcesAggregator {
 	allDevs := getContainerDevicesFromAllocatableResources(resp, topo)
 	return &nodeResources{
-		topo:              topo,
-		resourceID2NUMAID: makeResourceMap(len(topo.Nodes), allDevs),
-		perNUMACapacity:   makeNodeCapacity(allDevs),
+		topo:                 topo,
+		resourceID2NUMAID:    makeResourceMap(len(topo.Nodes), allDevs),
+		perNUMAAllocatable:   makeNodeAllocatable(allDevs),
+		reservedCPUIDPerNUMA: makeReservedCPUMap(topo.Nodes, allDevs),
 	}
 }
 
 // Aggregate provides the mapping (numa zone name) -> Zone from the given PodResources.
 func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topologyv1alpha1.ZoneList {
 	perNuma := make(map[int]map[v1.ResourceName]*resourceData)
-	for nodeID, nodeRes := range noderesourceData.perNUMACapacity {
-		perNuma[nodeID] = make(map[v1.ResourceName]*resourceData)
-		for resName, resCap := range nodeRes {
-			perNuma[nodeID][resName] = &resourceData{
-				capacity:    resCap,
-				allocatable: resCap,
+	for nodeID := range noderesourceData.topo.Nodes {
+		nodeRes, ok := noderesourceData.perNUMAAllocatable[nodeID]
+		if ok {
+			perNuma[nodeID] = make(map[v1.ResourceName]*resourceData)
+			for resName, resCap := range nodeRes {
+				if resName == "cpu" {
+					perNuma[nodeID][resName] = &resourceData{
+						allocatable: resCap,
+						available:   resCap,
+						capacity:    resCap + int64(len(noderesourceData.reservedCPUIDPerNUMA[nodeID])),
+					}
+				} else {
+					perNuma[nodeID][resName] = &resourceData{
+						allocatable: resCap,
+						available:   resCap,
+						capacity:    resCap,
+					}
+				}
+			}
+			// NUMA node doesn't have any allocatable resources, but yet it exists in the topology
+			// thus all its CPUs are reserved
+		} else {
+			perNuma[nodeID] = make(map[v1.ResourceName]*resourceData)
+			perNuma[nodeID]["cpu"] = &resourceData{
+				allocatable: int64(0),
+				available:   int64(0),
+				capacity:    int64(len(noderesourceData.reservedCPUIDPerNUMA[nodeID])),
 			}
 		}
 	}
@@ -96,12 +119,11 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 	for _, podRes := range podResData {
 		for _, contRes := range podRes.Containers {
 			for _, res := range contRes.Resources {
-				noderesourceData.updateAllocatable(perNuma, res)
+				noderesourceData.updateAvailable(perNuma, res)
 			}
 		}
 	}
 
-	// zones := make([]topologyv1alpha1.Zone, 0)
 	zones := make(topologyv1alpha1.ZoneList, 0)
 	for nodeID, resList := range perNuma {
 		zone := topologyv1alpha1.Zone{
@@ -120,10 +142,12 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 		for name, resData := range resList {
 			allocatableQty := *resource.NewQuantity(resData.allocatable, resource.DecimalSI)
 			capacityQty := *resource.NewQuantity(resData.capacity, resource.DecimalSI)
+			availableQty := *resource.NewQuantity(resData.available, resource.DecimalSI)
 			zone.Resources = append(zone.Resources, topologyv1alpha1.ResourceInfo{
 				Name:        name.String(),
-				Allocatable: intstr.FromString(allocatableQty.String()),
-				Capacity:    intstr.FromString(capacityQty.String()),
+				Available:   availableQty,
+				Allocatable: allocatableQty,
+				Capacity:    capacityQty,
 			})
 		}
 		zones = append(zones, zone)
@@ -168,9 +192,9 @@ func getContainerDevicesFromAllocatableResources(availRes *podresourcesapi.Alloc
 	return contDevs
 }
 
-// updateAllocatable computes the actually alloctable resources.
-// This function assumes the allocatable resources are initialized to be equal to the capacity.
-func (noderesourceData *nodeResources) updateAllocatable(numaData map[int]map[v1.ResourceName]*resourceData, ri ResourceInfo) {
+// updateAvailable computes the actually available resources.
+// This function assumes the available resources are initialized to be equal to the allocatable.
+func (noderesourceData *nodeResources) updateAvailable(numaData map[int]map[v1.ResourceName]*resourceData, ri ResourceInfo) {
 	for _, resID := range ri.Data {
 		resName := string(ri.Name)
 		resMap, ok := noderesourceData.resourceID2NUMAID[resName]
@@ -183,7 +207,7 @@ func (noderesourceData *nodeResources) updateAllocatable(numaData map[int]map[v1
 			klog.Infof("unknown resource %q: %q", resName, resID)
 			continue
 		}
-		numaData[nodeID][ri.Name].allocatable--
+		numaData[nodeID][ri.Name].available--
 	}
 }
 
@@ -192,25 +216,25 @@ func makeZoneName(nodeID int) string {
 	return fmt.Sprintf("node-%d", nodeID)
 }
 
-// makeNodeCapacity computes the node capacity as mapping (NUMA node ID) -> Resource -> Capacity (amount, int).
-// The computation is done assuming all the resources to represent the capacity for are represented on a slice
+// makeNodeAllocatable computes the node allocatable as mapping (NUMA node ID) -> Resource -> Allocatable (amount, int).
+// The computation is done assuming all the resources to represent the allocatable for are represented on a slice
 // of ContainerDevices. No special treatment is done for CPU IDs. See getContainerDevicesFromAllocatableResources.
-func makeNodeCapacity(devices []*podresourcesapi.ContainerDevices) map[int]map[v1.ResourceName]int64 {
-	perNUMACapacity := make(map[int]map[v1.ResourceName]int64)
+func makeNodeAllocatable(devices []*podresourcesapi.ContainerDevices) map[int]map[v1.ResourceName]int64 {
+	perNUMAAllocatable := make(map[int]map[v1.ResourceName]int64)
 	// initialize with the capacities
 	for _, device := range devices {
 		resourceName := device.GetResourceName()
 		for _, node := range device.GetTopology().GetNodes() {
 			nodeID := int(node.GetID())
-			nodeRes, ok := perNUMACapacity[nodeID]
+			nodeRes, ok := perNUMAAllocatable[nodeID]
 			if !ok {
 				nodeRes = make(map[v1.ResourceName]int64)
 			}
 			nodeRes[v1.ResourceName(resourceName)] += int64(len(device.GetDeviceIds()))
-			perNUMACapacity[nodeID] = nodeRes
+			perNUMAAllocatable[nodeID] = nodeRes
 		}
 	}
-	return perNUMACapacity
+	return perNUMAAllocatable
 }
 
 func MakeLogicalCoreIDToNodeIDMap(topo *ghw.TopologyInfo) map[int]int {
@@ -257,7 +281,7 @@ func makeCostsPerNumaNode(nodes []*ghw.TopologyNode, nodeIDSrc int) ([]topologyv
 		// TODO: this assumes there are no holes (= no offline node) in the distance vector
 		nodeCosts = append(nodeCosts, topologyv1alpha1.CostInfo{
 			Name:  makeZoneName(nodeIDDst),
-			Value: dist,
+			Value: int64(dist),
 		})
 	}
 	return nodeCosts, nil
@@ -270,4 +294,39 @@ func findNodeByID(nodes []*ghw.TopologyNode, nodeID int) *ghw.TopologyNode {
 		}
 	}
 	return nil
+}
+
+func makeReservedCPUMap(nodes []*ghw.TopologyNode, devices []*podresourcesapi.ContainerDevices) map[int][]string {
+	reservedCPUsPerNuma := make(map[int][]string)
+	cpus := getCPUs(devices)
+	for _, node := range nodes {
+		nodeID := node.ID
+		for _, core := range node.Cores {
+			for _, cpu := range core.LogicalProcessors {
+				cpuID := fmt.Sprintf("%d", cpu)
+				_, ok := cpus[cpuID]
+				if !ok {
+					cpuIDList, ok := reservedCPUsPerNuma[nodeID]
+					if !ok {
+						cpuIDList = make([]string, 0)
+					}
+					cpuIDList = append(cpuIDList, cpuID)
+					reservedCPUsPerNuma[nodeID] = cpuIDList
+				}
+			}
+		}
+	}
+	return reservedCPUsPerNuma
+}
+
+func getCPUs(devices []*podresourcesapi.ContainerDevices) map[string]int {
+	cpuMap := make(map[string]int)
+	for _, device := range devices {
+		if device.GetResourceName() == "cpu" {
+			for _, devId := range device.DeviceIds {
+				cpuMap[devId] = int(device.Topology.Nodes[0].ID)
+			}
+		}
+	}
+	return cpuMap
 }

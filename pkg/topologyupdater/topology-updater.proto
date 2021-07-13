@@ -15,7 +15,8 @@ limitations under the License.
 */
 syntax = "proto3";
 
-//option go_package = "topologyupdater";
+option go_package = "sigs.k8s.io/node-feature-discovery/pkg/topologyupdater";
+import "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1/generated.proto";
 
 package topologyupdater;
 
@@ -27,33 +28,7 @@ message NodeTopologyRequest {
     string nfd_version = 1;
     string node_name = 2;
     repeated string topology_policies = 3;
-    repeated Zone zones = 4;
-}
-
-message Zone {
-    string name = 1;
-    string type = 2;
-    string parent = 3;
-    repeated CostInfo costs = 4;
-    repeated AttributeInfo attributes = 5;
-    repeated ResourceInfo resources = 6;
-
-}
-
-message CostInfo {
-    string name = 1;
-    int32 value = 2 ;
-}
-
-message AttributeInfo {
-    string name = 1;
-    string value = 2 ;
-}
-
-message ResourceInfo {
-    string name = 1;
-    string allocatable = 2;
-    string capacity = 3;
+    repeated v1alpha1.Zone zones = 4;
 }
 
 message NodeTopologyResponse {

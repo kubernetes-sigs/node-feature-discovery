@@ -178,7 +178,6 @@ func (w *nfdTopologyUpdater) Update(zones v1alpha1.ZoneList) error {
 	if err != nil {
 		return fmt.Errorf("failed to advertise node topology: %w", err)
 	}
-
 	return nil
 }
 
@@ -216,25 +215,16 @@ func (w *nfdTopologyUpdater) Disconnect() {
 func advertiseNodeTopology(client pb.NodeTopologyClient, zoneInfo v1alpha1.ZoneList, tmPolicy string, nodeName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	zones := make([]*pb.Zone, len(zoneInfo))
+	zones := make([]*v1alpha1.Zone, len(zoneInfo))
 	// TODO: Avoid copying of data to allow returning the zone info
 	// directly in a compatible data type (i.e. []*v1alpha1.Zone).
 	for i, zone := range zoneInfo {
-		resInfo := make([]*pb.ResourceInfo, len(zone.Resources))
-		for j, info := range zone.Resources {
-			resInfo[j] = &pb.ResourceInfo{
-				Name:        info.Name,
-				Allocatable: info.Allocatable.String(),
-				Capacity:    info.Capacity.String(),
-			}
-		}
-
-		zones[i] = &pb.Zone{
+		zones[i] = &v1alpha1.Zone{
 			Name:      zone.Name,
 			Type:      zone.Type,
 			Parent:    zone.Parent,
-			Resources: resInfo,
-			Costs:     updateMap(zone.Costs),
+			Resources: zone.Resources,
+			Costs:     zone.Costs,
 		}
 	}
 
@@ -253,14 +243,4 @@ func advertiseNodeTopology(client pb.NodeTopologyClient, zoneInfo v1alpha1.ZoneL
 	}
 
 	return nil
-}
-func updateMap(data []v1alpha1.CostInfo) []*pb.CostInfo {
-	ret := make([]*pb.CostInfo, len(data))
-	for i, cost := range data {
-		ret[i] = &pb.CostInfo{
-			Name:  cost.Name,
-			Value: int32(cost.Value),
-		}
-	}
-	return ret
 }

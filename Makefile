@@ -106,6 +106,7 @@ mock:
 
 apigen:
 	protoc --go_opt=paths=source_relative --go_out=plugins=grpc:.  pkg/labeler/labeler.proto
+	protoc --go_opt=paths=source_relative  --go_out=plugins=grpc:. pkg/topologyupdater/topology-updater.proto
 
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')

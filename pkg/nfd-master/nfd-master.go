@@ -39,7 +39,6 @@ import (
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
@@ -450,7 +449,7 @@ func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopo
 	if !m.args.NoPublish {
 		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones, m.args.NRTNamespace)
 		if err != nil {
-			klog.Errorf("failed to advertise labels: %v", err)
+			klog.Errorf("failed to advertise NodeResourceTopology: %w", err)
 			return &topologypb.NodeTopologyResponse{}, err
 		}
 	}
@@ -627,43 +626,23 @@ func stringToNsNames(cslist, ns string) []string {
 	return names
 }
 
-func updateMap(data []*topologypb.CostInfo) []v1alpha1.CostInfo {
-	ret := make([]v1alpha1.CostInfo, len(data))
-	for i, cost := range data {
-		ret[i] = v1alpha1.CostInfo{
-			Name:  cost.Name,
-			Value: int(cost.Value),
-		}
-	}
-	return ret
-}
-
-func modifyCR(topoUpdaterZones []*topologypb.Zone) []v1alpha1.Zone {
+func modifyCR(topoUpdaterZones []*v1alpha1.Zone) []v1alpha1.Zone {
 	zones := make([]v1alpha1.Zone, len(topoUpdaterZones))
 	// TODO: Avoid copying of data to allow returning the zone info
 	// directly in a compatible data type (i.e. []*v1alpha1.Zone).
 	for i, zone := range topoUpdaterZones {
-		resInfo := make([]v1alpha1.ResourceInfo, len(zone.Resources))
-		for j, info := range zone.Resources {
-			resInfo[j] = v1alpha1.ResourceInfo{
-				Name:        info.Name,
-				Allocatable: intstr.FromString(info.Allocatable),
-				Capacity:    intstr.FromString(info.Capacity),
-			}
-		}
-
 		zones[i] = v1alpha1.Zone{
 			Name:      zone.Name,
 			Type:      zone.Type,
 			Parent:    zone.Parent,
-			Costs:     updateMap(zone.Costs),
-			Resources: resInfo,
+			Costs:     zone.Costs,
+			Resources: zone.Resources,
 		}
 	}
 	return zones
 }
 
-func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZones []*topologypb.Zone, namespace string) error {
+func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZones []*v1alpha1.Zone, namespace string) error {
 	cli, err := m.apihelper.GetTopologyClient()
 	if err != nil {
 		return err

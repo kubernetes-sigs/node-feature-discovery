@@ -26,7 +26,7 @@ import (
 
 	cmp "github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	topologyv1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
@@ -123,8 +123,10 @@ func TestResourcesAggregator(t *testing.T) {
 					},
 				},
 			},
+			// CPUId 0 and 1 are missing from the list below to simulate
+			// that they are not allocatable CPUs (kube-reserved or system-reserved)
 			CpuIds: []int64{
-				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+				2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 				12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 			},
 		}
@@ -149,13 +151,15 @@ func TestResourcesAggregator(t *testing.T) {
 					Resources: topologyv1alpha1.ResourceInfoList{
 						topologyv1alpha1.ResourceInfo{
 							Name:        "cpu",
-							Allocatable: intstr.FromString("12"),
-							Capacity:    intstr.FromString("12"),
+							Available:   resource.MustParse("11"),
+							Allocatable: resource.MustParse("11"),
+							Capacity:    resource.MustParse("12"),
 						},
 						topologyv1alpha1.ResourceInfo{
 							Name:        "fake.io/net",
-							Allocatable: intstr.FromString("4"),
-							Capacity:    intstr.FromString("4"),
+							Available:   resource.MustParse("4"),
+							Allocatable: resource.MustParse("4"),
+							Capacity:    resource.MustParse("4"),
 						},
 					},
 				},
@@ -175,18 +179,21 @@ func TestResourcesAggregator(t *testing.T) {
 					Resources: topologyv1alpha1.ResourceInfoList{
 						topologyv1alpha1.ResourceInfo{
 							Name:        "cpu",
-							Allocatable: intstr.FromString("12"),
-							Capacity:    intstr.FromString("12"),
+							Available:   resource.MustParse("11"),
+							Allocatable: resource.MustParse("11"),
+							Capacity:    resource.MustParse("12"),
 						},
 						topologyv1alpha1.ResourceInfo{
 							Name:        "fake.io/gpu",
-							Allocatable: intstr.FromString("1"),
-							Capacity:    intstr.FromString("1"),
+							Available:   resource.MustParse("1"),
+							Allocatable: resource.MustParse("1"),
+							Capacity:    resource.MustParse("1"),
 						},
 						topologyv1alpha1.ResourceInfo{
 							Name:        "fake.io/net",
-							Allocatable: intstr.FromString("4"),
-							Capacity:    intstr.FromString("4"),
+							Available:   resource.MustParse("4"),
+							Allocatable: resource.MustParse("4"),
+							Capacity:    resource.MustParse("4"),
 						},
 					},
 				},
@@ -250,8 +257,10 @@ func TestResourcesAggregator(t *testing.T) {
 					},
 				},
 			},
+			// CPUId 0 is missing from the list below to simulate
+			// that it not allocatable (kube-reserved or system-reserved)
 			CpuIds: []int64{
-				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+				1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 				12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 			},
 		}
@@ -298,13 +307,15 @@ func TestResourcesAggregator(t *testing.T) {
 					Resources: topologyv1alpha1.ResourceInfoList{
 						topologyv1alpha1.ResourceInfo{
 							Name:        "cpu",
-							Allocatable: intstr.FromString("12"),
-							Capacity:    intstr.FromString("12"),
+							Available:   resource.MustParse("11"),
+							Allocatable: resource.MustParse("11"),
+							Capacity:    resource.MustParse("12"),
 						},
 						topologyv1alpha1.ResourceInfo{
 							Name:        "fake.io/net",
-							Allocatable: intstr.FromString("1"),
-							Capacity:    intstr.FromString("1"),
+							Available:   resource.MustParse("1"),
+							Allocatable: resource.MustParse("1"),
+							Capacity:    resource.MustParse("1"),
 						},
 					},
 				},
@@ -324,18 +335,21 @@ func TestResourcesAggregator(t *testing.T) {
 					Resources: topologyv1alpha1.ResourceInfoList{
 						topologyv1alpha1.ResourceInfo{
 							Name:        "cpu",
-							Allocatable: intstr.FromString("10"),
-							Capacity:    intstr.FromString("12"),
+							Available:   resource.MustParse("10"),
+							Allocatable: resource.MustParse("12"),
+							Capacity:    resource.MustParse("12"),
 						},
 						topologyv1alpha1.ResourceInfo{
 							Name:        "fake.io/gpu",
-							Allocatable: intstr.FromString("1"),
-							Capacity:    intstr.FromString("1"),
+							Available:   resource.MustParse("1"),
+							Allocatable: resource.MustParse("1"),
+							Capacity:    resource.MustParse("1"),
 						},
 						topologyv1alpha1.ResourceInfo{
 							Name:        "fake.io/net",
-							Allocatable: intstr.FromString("0"),
-							Capacity:    intstr.FromString("1"),
+							Available:   resource.MustParse("0"),
+							Allocatable: resource.MustParse("1"),
+							Capacity:    resource.MustParse("1"),
 						},
 					},
 				},

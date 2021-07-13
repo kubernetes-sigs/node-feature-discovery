@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.5
 	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.9
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.10
 	github.com/klauspost/cpuid/v2 v2.0.9
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
@@ -17,6 +17,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
+	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.22.0
