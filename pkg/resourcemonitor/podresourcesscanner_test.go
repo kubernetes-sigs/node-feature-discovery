@@ -26,6 +26,7 @@ import (
 
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 )
 
@@ -36,7 +37,8 @@ func TestPodScanner(t *testing.T) {
 
 	Convey("When I scan for pod resources using fake client and no namespace", t, func() {
 		mockPodResClient := new(podres.MockPodResourcesListerClient)
-		resScan, err = NewPodResourcesScanner("*", mockPodResClient)
+		mockAPIHelper := new(apihelper.MockAPIHelpers)
+		resScan, err = NewPodResourcesScanner("*", mockPodResClient, mockAPIHelper)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)
@@ -309,7 +311,8 @@ func TestPodScanner(t *testing.T) {
 
 	Convey("When I scan for pod resources using fake client and given namespace", t, func() {
 		mockPodResClient := new(podres.MockPodResourcesListerClient)
-		resScan, err = NewPodResourcesScanner("pod-res-test", mockPodResClient)
+		mockAPIHelper := new(apihelper.MockAPIHelpers)
+		resScan, err = NewPodResourcesScanner("pod-res-test", mockPodResClient, mockAPIHelper)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)

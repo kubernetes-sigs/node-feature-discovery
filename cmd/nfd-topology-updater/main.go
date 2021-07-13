@@ -103,6 +103,8 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Update once and exit")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,
 		"Do not publish discovered features to the cluster-local Kubernetes API server.")
+	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
+		"Kube config file.")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
 		"Time to sleep between CR updates. Non-positive value implies no CR updatation (i.e. infinite sleep). [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",

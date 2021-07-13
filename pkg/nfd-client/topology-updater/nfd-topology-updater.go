@@ -25,6 +25,7 @@ import (
 	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	"golang.org/x/net/context"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
@@ -36,8 +37,9 @@ import (
 // Command line arguments
 type Args struct {
 	nfdclient.Args
-	NoPublish bool
-	Oneshot   bool
+	NoPublish      bool
+	Oneshot        bool
+	KubeConfigFile string
 }
 
 type NfdTopologyUpdater interface {
@@ -86,13 +88,17 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	podResClient, err := podres.GetPodResClient(w.resourcemonitorArgs.PodResourceSocketPath)
 	if err != nil {
-		klog.Fatalf("Failed to get PodResource Client: %v", err)
+		klog.Fatalf("failed to get PodResource Client: %w", err)
+		return err
 	}
+
+	kubeApihelper := apihelper.K8sHelpers{Kubeconfig: w.args.KubeConfigFile}
 	var resScan resourcemonitor.ResourcesScanner
 
-	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient)
+	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, kubeApihelper)
 	if err != nil {
-		klog.Fatalf("Failed to initialize ResourceMonitor instance: %v", err)
+		klog.Fatalf("failed to initialize ResourceMonitor instance: %w", err)
+		return err
 	}
 
 	// CAUTION: these resources are expected to change rarely - if ever.
@@ -103,7 +109,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	resAggr, err := resourcemonitor.NewResourcesAggregator(podResClient)
 	if err != nil {
-		klog.Fatalf("Failed to obtain node resource information: %v", err)
+		klog.Fatalf("failed to obtain node resource information: %w", err)
 		return err
 	}
 

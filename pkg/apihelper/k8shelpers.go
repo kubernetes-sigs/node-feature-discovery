@@ -122,3 +122,13 @@ func (h K8sHelpers) PatchNodeStatus(c *k8sclient.Clientset, nodeName string, pat
 	return nil
 
 }
+
+func (h K8sHelpers) GetPod(cli *k8sclient.Clientset, namespace string, podName string) (*api.Pod, error) {
+	// Get the node object using pod name
+	pod, err := cli.CoreV1().Pods(namespace).Get(context.TODO(), podName, meta_v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return pod, nil
+}
