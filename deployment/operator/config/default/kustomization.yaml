@@ -1,3 +1,8 @@
+images:
+- name: kube-rbac-proxy
+  newName: gcr.io/kubebuilder/kube-rbac-proxy
+  newTag: v0.5.0
+
 # Adds namespace to all resources.
 namespace: node-feature-discovery-operator
 
@@ -72,4 +77,3 @@ vars:
 #    kind: Service
 #    version: v1
 #    name: webhook-service
-
