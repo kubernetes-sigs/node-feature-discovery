@@ -16,7 +16,7 @@ limitations under the License.
 
 syntax = "proto3";
 
-//option go_package = "labeler";
+option go_package = "sigs.k8s.io/node-feature-discovery/pkg/labeler";
 
 package labeler;
 
