@@ -1,0 +1,16 @@
+---
+## Example for more custom configs in an additional configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-source-extra-rules
+data:
+# Filename doesn't matter, and there can be multiple. They just need to be unique.
+  custom.conf: |
+    - name: "more.kernel.features"
+      matchOn:
+      - loadedKMod: ["example_kmod3"]
+    - name: "more.features.by.nodename"
+      value: customValue
+      matchOn:
+      - nodename: ["special-.*-node-.*"]

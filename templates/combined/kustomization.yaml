@@ -1,0 +1,12 @@
+resources:
+- nfd-daemonset-combined.yaml
+- nfd-worker-conf.yaml
+# Example for more custom configs in an additional configmap 
+#- nfd-worker-custom-source-extra-rules.yaml
+# Run one shot labels via job run
+#- nfd-worker-job.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: nfd-worker

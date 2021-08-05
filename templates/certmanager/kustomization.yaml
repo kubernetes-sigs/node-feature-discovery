@@ -1,0 +1,64 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources: 
+- nfd-cert-manager.yaml
+- ../nfd-master
+- ../nfd-worker
+
+## Enable TLS authentication
+## The example below assumes having a Secret named nfd-worker-cert with
+## the TLS authentication credentials and a root certificate named ca.crt created.
+## cert-manager can be used to automate the Secret creation and updates.
+patchesJson6902:
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/0
+      value:
+          "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+    - op: add
+      path: /spec/template/spec/containers/0/args/1
+      value:
+          "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+    - op: add
+      path: /spec/template/spec/containers/0/args/2
+      value:
+          "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+            - name: nfd-worker-cert
+              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+              readOnly: true
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: nfd-worker-cert
+          secret:
+            secretName: nfd-worker-cert
+  target:
+    kind: DaemonSet
+    name: nfd-worker
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0
+      value:
+          args:
+            - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+            - name: nfd-master-cert
+              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+              readOnly: true
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: nfd-master-cert
+          secret:
+            secretName: nfd-master-cert
+  target:
+    kind: Deployment
+    name: nfd-master

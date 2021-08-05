@@ -1,0 +1,10 @@
+resources:
+- nfd-master.yaml
+#- nfd-prune.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: nfd-master
+  newName: gcr.io/k8s-staging-nfd/node-feature-discovery
+  newTag: master

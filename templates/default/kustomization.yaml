@@ -1,0 +1,13 @@
+# Adds namespace to all resources.
+# NFD default namespace
+namespace: node-feature-discovery
+
+bases:
+- ../nfd-master
+- ../nfd-worker
+# [CERTMANAGER] To run the Node Feature Discovery with cert-manager
+# comment the lines above and uncomment the line below
+#- ../certmanager
+# [COMBINED] to run nfd-master and nfd-worker in the same pod
+# comment the lines above and uncomment the line below
+#- ../combined
