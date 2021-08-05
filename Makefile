@@ -1,4 +1,4 @@
-.PHONY: all test templates yamls
+.PHONY: all test deploy yamls
 .FORCE:
 
 GO_CMD ?= go
@@ -10,6 +10,7 @@ IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
 BASE_IMAGE_FULL ?= debian:buster-slim
 BASE_IMAGE_MINIMAL ?= gcr.io/distroless/base
+KUSTOMIZE ?= kustomize
 
 MDL ?= mdl
 
@@ -57,12 +58,6 @@ E2E_TEST_CONFIG ?=
 
 LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
-yaml_templates := $(wildcard *.yaml.template)
-# Let's treat values.yaml as template to sync configmap
-# and allow users to install without modifications
-yaml_templates := $(yaml_templates) deployment/node-feature-discovery/values.yaml
-yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
-
 all: image
 
 build:
@@ -72,7 +67,7 @@ build:
 install:
 	$(GO_CMD) install -v $(LDFLAGS) ./cmd/...
 
-image: yamls
+image:
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target full \
 	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
@@ -90,32 +85,20 @@ image: yamls
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 
-yamls: $(yaml_instances)
+deploy:
+	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
+	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
+	$(KUSTOMIZE) build templates/default | kubectl apply -f -
 
-%.yaml: %.yaml.template .FORCE
-	@echo "$@: namespace: ${K8S_NAMESPACE}"
-	@echo "$@: image: ${IMAGE_TAG}"
-	@sed -E \
-	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
-	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
-	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
-	     -e s',^(\s*- |\s*- nfd-master.|\s*- nfd-worker.)node-feature-discovery,\1${K8S_NAMESPACE},' \
-	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${CONTAINER_HOSTMOUNT_PREFIX},' \
-	     -e '/nfd-worker.conf:/r nfd-worker.conf.tmp' \
-	     $< > $@
+undeploy:
+	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
+	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-templates: $(yaml_templates)
-	@# Need to prepend each line in the sample config with spaces in order to
-	@# fit correctly in the configmap spec.
-	@sed s'/^/    /' nfd-worker.conf.example > nfd-worker.conf.tmp
-	@# The sed magic below replaces the block of text between the lines with start and end markers
-	@for f in $+; do \
-	    start=NFD-WORKER-CONF-START-DO-NOT-REMOVE; \
-	    end=NFD-WORKER-CONF-END-DO-NOT-REMOVE; \
-	    sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-worker.conf.tmp" \
-	        -e "}; /$$end/p; d }" -i $$f; \
-	done
-	@rm nfd-worker.conf.tmp
+yamls: 
+	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
+	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
+	$(KUSTOMIZE) build templates/default
 
 mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"
