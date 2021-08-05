@@ -95,7 +95,7 @@ undeploy:
 	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-yamls: 
+yamls:
 	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
 	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
 	$(KUSTOMIZE) build templates/default

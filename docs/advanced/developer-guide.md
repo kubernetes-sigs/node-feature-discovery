@@ -55,7 +55,8 @@ attribute in the spec template(s) to the new location
 ### Deployment
 
 The `deploy` makefile generates deployment specs matching your locally built
-image and applys them using `kubectl`. See [build customization](#customizing-the-build) below for
+image and applys them using `kubectl`.
+See [build customization](#customizing-the-build) below for
 configurability, e.g. changing the deployment namespace.
 
 ```bash

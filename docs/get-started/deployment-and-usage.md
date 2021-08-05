@@ -108,7 +108,7 @@ manually. For example, to deploy the [minimal](#minimal) image.
 
 #### Master-worker pod
 
-You can also run nfd-master and nfd-worker inside the same pod, simply edit the 
+You can also run nfd-master and nfd-worker inside the same pod, simply edit the
 file `templates/default/kustomization.yaml`, to use the combined template base.
 
 ```bash
@@ -122,7 +122,7 @@ are able to label themselves which may be desirable e.g. in single-node setups.
 #### Worker one-shot
 
 Feature discovery can alternatively be configured as a one-shot job.
-The Job template may be used to achieve this, edit the file under 
+The Job template may be used to achieve this, edit the file under
 `templates/nfd-worker/kustomization.yaml` to enable the `nfd-worker-job` then run:
 
 ```bash
@@ -323,18 +323,18 @@ of its certificate.
 [cert-manager](https://cert-manager.io/) can be used to automate certificate
 management between nfd-master and the nfd-worker pods. The instructions below describe
 steps how to set up cert-manager's
-First edit the kustomize file under `templates/default` to point to 
+First edit the kustomize file under `templates/default` to point to
 the certmanager template base.
 [CA Issuer](https://cert-manager.io/docs/configuration/ca/) to
 sign `Certificate` requests for NFD components in `node-feature-discovery` namespace.
 
 ```bash
-$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.2.0/cert-manager.yaml
-$ openssl genrsa -out ca.key 2048
-$ openssl req -x509 -new -nodes -key ca.key -subj "/CN=nfd-ca" -days 10000 -out ca.crt
-$ sed s"/tls.key:.*/tls.key: $(cat ca.key|base64 -w 0)/" -i templates/certmanager/nfd-cert-manager.yaml
-$ sed s"/tls.crt:.*/tls.crt: $(cat ca.crt|base64 -w 0)/" -i templates/certmanager/nfd-cert-manager.yaml
-$ make deploy
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.2.0/cert-manager.yaml
+openssl genrsa -out ca.key 2048
+openssl req -x509 -new -nodes -key ca.key -subj "/CN=nfd-ca" -days 10000 -out ca.crt
+sed s"/tls.key:.*/tls.key: $(cat ca.key|base64 -w 0)/" -i templates/certmanager/nfd-cert-manager.yaml
+sed s"/tls.crt:.*/tls.crt: $(cat ca.crt|base64 -w 0)/" -i templates/certmanager/nfd-cert-manager.yaml
+make deploy
 ```
 
 This will deploy `nfd-master.yaml` and `nfd-worker-daemonset.yaml` with the Secrets
