@@ -54,31 +54,28 @@ attribute in the spec template(s) to the new location
 
 ### Deployment
 
-The `yamls` makefile generates deployment specs matching your locally built
-image. See [build customization](#customizing-the-build) below for
+The `deploy` makefile generates deployment specs matching your locally built
+image and applys them using `kubectl`. See [build customization](#customizing-the-build) below for
 configurability, e.g. changing the deployment namespace.
 
 ```bash
-K8S_NAMESPACE=my-ns make yamls
-kubectl apply -f nfd-master.yaml
-kubectl apply -f nfd-worker-daemonset.yaml
+make deploy
 ```
 
-Alternatively, deploying worker and master in the same pod:
+Alternatively, deploying worker and master in the same pod, by editing
+the `kustomization` file under `templates/default`
 
 ```bash
-K8S_NAMESPACE=my-ns make yamls
-kubectl apply -f nfd-master.yaml
-kubectl apply -f nfd-daemonset-combined.yaml
+make deploy
 ```
 
 Or worker as a one-shot job:
 
 ```bash
-K8S_NAMESPACE=my-ns make yamls
-kubectl apply -f nfd-master.yaml
 NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
-sed s"/NUM_NODES/$NUM_NODES/" nfd-worker-job.yaml | kubectl apply -f -
+curl -fs https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/nfd-worker/nfd-worker-job.yaml | \
+    sed s"/NUM_NODES/$NUM_NODES/" | \
+    make deploy
 ```
 
 ### Building locally

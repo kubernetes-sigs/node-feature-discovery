@@ -95,12 +95,6 @@ if [ -z "$assets_only" ]; then
     echo Patching README.md to refer to $release
     sed s"!node-feature-discovery/v.*/!node-feature-discovery/$release/!" -i README.md
 
-    # Patch deployment templates
-    echo Patching '*.yaml.template' to use $container_image
-    sed -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
-           -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
-           -i *yaml.template
-
     # Patch Helm chart
     echo "Patching Helm chart"
     sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/node-feature-discovery/Chart.yaml
