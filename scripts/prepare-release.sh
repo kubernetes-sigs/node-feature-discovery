@@ -64,7 +64,8 @@ release=$1
 key="$2"
 shift 2
 
-container_image=k8s.gcr.io/nfd/node-feature-discovery:$release
+container_registry=k8s.gcr.io/nfd/node-feature-discovery
+container_image=$container_registry:$release
 
 #
 # Check/parse release number
@@ -90,6 +91,20 @@ if [ -z "$assets_only" ]; then
         -e s"/version:.*/version: $docs_version/" \
         -e s"!container_image:.*!container_image: k8s.gcr.io/nfd/node-feature-discovery:$release!" \
         -i docs/_config.yml
+
+    #Patch templates
+    echo Patching templates/*
+    sed -E  -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
+            -i templates/nfd-master/nfd-master.yaml
+    sed -E  -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
+            -i templates/nfd-worker/nfd-worker-daemonset.yaml
+    sed -E  -e s",^([[:space:]]+)newName:.+$,\1newName: $container_registry," \
+            -e s",^([[:space:]]+)newTag:.+$,\1newTag: $release," \
+            -i templates/nfd-worker/kustomization.yaml
+    sed -E  -e s",^([[:space:]]+)newName:.+$,\1newName: $container_registry," \
+            -e s",^([[:space:]]+)newTag:.+$,\1newTag: $release," \
+            -i templates/nfd-master/kustomization.yaml
+
 
     # Patch README
     echo Patching README.md to refer to $release

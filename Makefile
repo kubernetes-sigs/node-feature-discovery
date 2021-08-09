@@ -10,8 +10,6 @@ IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
 BASE_IMAGE_FULL ?= debian:buster-slim
 BASE_IMAGE_MINIMAL ?= gcr.io/distroless/base
-KUSTOMIZE ?= kustomize
-
 MDL ?= mdl
 
 # Docker base command for working with html documentation.
@@ -40,6 +38,8 @@ IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
 
+TEMPLATE_KUSTOMIZE = sed -E '/^([[:space:]]+)newName/s/gcr.io\/k8s-staging-nfd\/node-feature-discovery/k8s.gcr.io\/nfd\/node-feature-discovery/; /^([[:space:]]+)newTag/s/master/${IMAGE_TAG_NAME}/' -i
+
 K8S_NAMESPACE ?= node-feature-discovery
 
 OPENSHIFT ?=
@@ -67,6 +67,15 @@ build:
 install:
 	$(GO_CMD) install -v $(LDFLAGS) ./cmd/...
 
+ALL_ARCH=amd64 arm arm64
+images: image minimal-image
+
+images-all: $(addprefix arch-image-,$(ALL_ARCH))
+
+arch-image-%:
+	$(MAKE) ARCH=$* build
+	$(MAKE) ARCH=$* images
+
 image:
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target full \
@@ -76,6 +85,8 @@ image:
 	    -t $(IMAGE_TAG) \
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
+
+image-minimal:
 	$(IMAGE_BUILD_CMD) --build-arg VERSION=$(VERSION) \
 	    --target minimal \
 	    --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
@@ -85,20 +96,15 @@ image:
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 
-deploy:
-	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
-	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
-	$(KUSTOMIZE) build templates/default | kubectl apply -f -
+deploy: yamls
+	kubectl apply -k templates/default
 
-undeploy:
-	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
-	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+undeploy: yamls
+	kubectl delete -k templates/default
 
 yamls:
-	cd templates/nfd-master && $(KUSTOMIZE) edit set image nfd-master=${IMAGE_TAG}
-	cd templates/nfd-worker && $(KUSTOMIZE) edit set image nfd-worker=${IMAGE_TAG}
-	$(KUSTOMIZE) build templates/default
+	@$(TEMPLATE_KUSTOMIZE) templates/nfd-worker/kustomization.yaml
+	@$(TEMPLATE_KUSTOMIZE) templates/nfd-master/kustomization.yaml
 
 mock:
 	mockery --name=FeatureSource --dir=source --inpkg --note="Re-generate by running 'make mock'"

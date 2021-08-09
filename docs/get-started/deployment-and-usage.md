@@ -96,7 +96,7 @@ to the metadata of NodeFeatureDiscovery object above.
 The template specs provided in the repo can be used directly:
 
 ```bash
-make deploy
+kubectl apply -k https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/default
 ```
 
 This will deploy required RBAC rules and deploy nfd-master (as a deployment) and
@@ -108,11 +108,10 @@ manually. For example, to deploy the [minimal](#minimal) image.
 
 #### Master-worker pod
 
-You can also run nfd-master and nfd-worker inside the same pod, simply edit the
-file `templates/default/kustomization.yaml`, to use the combined template base.
+You can also run nfd-master and nfd-worker inside the same pod:
 
 ```bash
-make deploy
+kubectl apply -k https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/combined
 ```
 
 This creates a DaemonSet runs both nfd-worker and nfd-master in the same Pod.
@@ -121,15 +120,16 @@ are able to label themselves which may be desirable e.g. in single-node setups.
 
 #### Worker one-shot
 
+> Requirement: A nfd-master instance already deployed
+
 Feature discovery can alternatively be configured as a one-shot job.
-The Job template may be used to achieve this, edit the file under
-`templates/nfd-worker/kustomization.yaml` to enable the `nfd-worker-job` then run:
+The Job template may be used to achieve this:
 
 ```bash
 NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
 curl -fs https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/nfd-worker/nfd-worker-job.yaml | \
     sed s"/NUM_NODES/$NUM_NODES/" | \
-    make deploy
+    kubectl apply -f -
 ```
 
 The example above launces as many jobs as there are non-master nodes. Note that
@@ -334,7 +334,7 @@ openssl genrsa -out ca.key 2048
 openssl req -x509 -new -nodes -key ca.key -subj "/CN=nfd-ca" -days 10000 -out ca.crt
 sed s"/tls.key:.*/tls.key: $(cat ca.key|base64 -w 0)/" -i templates/certmanager/nfd-cert-manager.yaml
 sed s"/tls.crt:.*/tls.crt: $(cat ca.crt|base64 -w 0)/" -i templates/certmanager/nfd-cert-manager.yaml
-make deploy
+kubectl apply -k https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/certmanager
 ```
 
 This will deploy `nfd-master.yaml` and `nfd-worker-daemonset.yaml` with the Secrets

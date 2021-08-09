@@ -60,14 +60,13 @@ See [build customization](#customizing-the-build) below for
 configurability, e.g. changing the deployment namespace.
 
 ```bash
-make deploy
+kubectl apply -k https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/default
 ```
 
-Alternatively, deploying worker and master in the same pod, by editing
-the `kustomization` file under `templates/default`
+Alternatively, deploying worker and master in the same pod:
 
 ```bash
-make deploy
+kubectl apply -k https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/combined
 ```
 
 Or worker as a one-shot job:
@@ -76,7 +75,7 @@ Or worker as a one-shot job:
 NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
 curl -fs https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/templates/nfd-worker/nfd-worker-job.yaml | \
     sed s"/NUM_NODES/$NUM_NODES/" | \
-    make deploy
+    kubectl apply -f -
 ```
 
 ### Building locally
