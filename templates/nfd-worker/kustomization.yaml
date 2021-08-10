@@ -1,14 +1,19 @@
 resources:
 - nfd-worker-daemonset.yaml
-- nfd-worker-conf.yaml
 # Example for more custom configs in an additional configmap
 #- nfd-worker-custom-source-extra-rules.yaml
 # Run one shot labels via job run
 #- nfd-worker-job.yaml
 
+configMapGenerator:
+- name: nfd-worker-config
+  namespace: node-feature-discovery
+  files:
+  - nfd-worker.conf
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: nfd-worker
-  newName: gcr.io/k8s-staging-nfd/node-feature-discovery
-  newTag: master
+  newName: k8s.gcr.io/nfd/node-feature-discovery
+  newTag: v0.9.0-devel-75-gc83b5598-dirty
