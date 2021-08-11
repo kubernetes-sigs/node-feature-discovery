@@ -102,10 +102,13 @@ if [ -z "$assets_only" ]; then
            -i *yaml.template
 
     # Patch Helm chart
+    echo "Patching Helm chart"
     sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/node-feature-discovery/Chart.yaml
     sed -e s"/pullPolicy:.*/pullPolicy: IfNotPresent/" \
         -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery!k8s.gcr.io/nfd/node-feature-discovery!" \
         -i deployment/node-feature-discovery/values.yaml
+    sed -e s"!kubernetes-sigs.github.io/node-feature-discovery/master!kubernetes-sigs.github.io/node-feature-discovery/$docs_version!" \
+        -i deployment/node-feature-discovery/README.md
 
     # Patch e2e test
     echo Patching test/e2e/node_feature_discovery.go flag defaults to k8s.gcr.io/nfd/node-feature-discovery and $release
