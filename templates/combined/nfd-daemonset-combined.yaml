@@ -1,0 +1,155 @@
+# This template contains an example of running nfd-master and nfd-worker in the
+# same pod. All changes in this template should be applied to Helm chart too.
+#
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-feature-discovery # NFD namespace
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nfd-master
+  namespace: node-feature-discovery
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nfd-master
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+# when using command line flag --resource-labels to create extended resources
+# you will need to uncomment "- nodes/status"
+# - nodes/status
+  verbs:
+  - get
+  - patch
+  - update
+  # List only needed for --prune
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nfd-master
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nfd-master
+subjects:
+- kind: ServiceAccount
+  name: nfd-master
+  namespace: node-feature-discovery
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd
+  namespace: node-feature-discovery
+spec:
+  selector:
+    matchLabels:
+      app: nfd
+  template:
+    metadata:
+      labels:
+        app: nfd
+    spec:
+      serviceAccount: nfd-master
+      containers:
+        - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          name: nfd-master
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          command:
+            - "nfd-master"
+        - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          name: nfd-worker
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          command:
+            - "nfd-worker"
+          volumeMounts:
+            - name: host-boot
+              mountPath: "/host-boot"
+              readOnly: true
+            - name: host-os-release
+              mountPath: "/host-etc/os-release"
+              readOnly: true
+            - name: host-sys
+              mountPath: "/host-sys"
+              readOnly: true
+            - name: host-usr-lib
+              mountPath: "/host-usr/lib"
+              readOnly: true
+            - name: host-usr-src
+              mountPath: "/host-usr/src"
+              readOnly: true
+            - name: source-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/source.d/"
+              readOnly: true
+            - name: features-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/features.d/"
+              readOnly: true
+            - name: nfd-worker-conf
+              mountPath: "/etc/kubernetes/node-feature-discovery"
+              readOnly: true
+## Example for more custom configs in an additional configmap (1/3)
+## Mounting into subdirectories of custom.d makes it easy to use multiple configmaps
+#            - name: custom-source-extra-rules
+#              mountPath: "/etc/kubernetes/node-feature-discovery/custom.d/extra-rules-1"
+#              readOnly: true
+      volumes:
+        - name: host-boot
+          hostPath:
+            path: "/boot"
+        - name: host-os-release
+          hostPath:
+            path: "/etc/os-release"
+        - name: host-sys
+          hostPath:
+            path: "/sys"
+        - name: host-usr-lib
+          hostPath:
+            path: "/usr/lib"
+        - name: host-usr-src
+          hostPath:
+            path: "/usr/src"
+        - name: source-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/source.d/"
+        - name: features-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/features.d/"
+        - name: nfd-worker-conf
+          configMap:
+            name: nfd-worker-conf
+## Example for more custom configs in an additional configmap (2/3)
+#        - name: custom-source-extra-rules
+#          configMap:
+#            name: custom-source-extra-rules

@@ -1,9 +1,3 @@
 bin/
 demo/helper-scripts/*.pdf
 demo/helper-scripts/*.log
-nfd-daemonset-combined.yaml
-nfd-master.yaml
-nfd-worker-daemonset.yaml
-nfd-worker-job.yaml
-nfd-prune.yaml
-nfd-cert-manager.yaml

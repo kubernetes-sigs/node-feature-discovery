@@ -1,0 +1,127 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: node-feature-discovery
+  name: nfd-worker
+  namespace: node-feature-discovery
+spec:
+  completions: NUM_NODES
+  parallelism: NUM_NODES
+  template:
+    metadata:
+      labels:
+        app: node-feature-discovery
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - node-feature-discovery
+      containers:
+        - env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          name: nfd-worker
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          command:
+            - "nfd-worker"
+          args:
+            - "--oneshot"
+            - "--server=nfd-master:8080"
+## Enable TLS authentication (1/3)
+## The example below assumes having the root certificate named ca.crt stored in
+## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored
+## in a TLS Secret named nfd-worker-cert
+#            - "--ca-file=/etc/kubernetes/node-feature-discovery/trust/ca.crt"
+#            - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+#            - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+          volumeMounts:
+            - name: host-boot
+              mountPath: "/host-boot"
+              readOnly: true
+            - name: host-os-release
+              mountPath: "/host-etc/os-release"
+              readOnly: true
+            - name: host-sys
+              mountPath: "/host-sys"
+              readOnly: true
+            - name: host-usr-lib
+              mountPath: "/host-usr/lib"
+              readOnly: true
+            - name: host-usr-src
+              mountPath: "/host-usr/src"
+              readOnly: true
+            - name: source-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/source.d/"
+              readOnly: true
+            - name: features-d
+              mountPath: "/etc/kubernetes/node-feature-discovery/features.d/"
+              readOnly: true
+            - name: nfd-worker-conf
+              mountPath: "/etc/kubernetes/node-feature-discovery"
+              readOnly: true
+## Example for more custom configs in an additional configmap (1/3)
+## Mounting into subdirectories of custom.d makes it easy to use multiple configmaps
+#            - name: custom-source-extra-rules
+#              mountPath: "/etc/kubernetes/node-feature-discovery/custom.d/extra-rules-1"
+#              readOnly: true
+## Enable TLS authentication (2/3)
+#            - name: nfd-ca-cert
+#              mountPath: "/etc/kubernetes/node-feature-discovery/trust"
+#              readOnly: true
+#            - name: nfd-worker-cert
+#              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+#              readOnly: true
+      restartPolicy: Never
+      volumes:
+        - name: host-boot
+          hostPath:
+            path: "/boot"
+        - name: host-os-release
+          hostPath:
+            path: "/etc/os-release"
+        - name: host-sys
+          hostPath:
+            path: "/sys"
+        - name: host-usr-lib
+          hostPath:
+            path: "/usr/lib"
+        - name: host-usr-src
+          hostPath:
+            path: "/usr/src"
+        - name: source-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/source.d/"
+        - name: features-d
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/features.d/"
+        - name: nfd-worker-conf
+          configMap:
+            name: nfd-worker-conf
+## Example for more custom configs in an additional configmap (2/3)
+#        - name: custom-source-extra-rules
+#          configMap:
+#            name: custom-source-extra-rules
+## Enable TLS authentication (3/3)
+#        - name: nfd-ca-cert
+#          configMap:
+#            name: nfd-ca-cert
+#        - name: nfd-worker-cert
+#          secret:
+#            secretName: nfd-worker-cert
