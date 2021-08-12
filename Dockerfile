@@ -2,7 +2,7 @@ ARG BASE_IMAGE_FULL
 ARG BASE_IMAGE_MINIMAL
 
 # Build node feature discovery
-FROM golang:1.16.2-buster as builder
+FROM golang:1.16.7-buster as builder
 
 # Get (cache) deps in a separate layer
 COPY go.mod go.sum /go/node-feature-discovery/
