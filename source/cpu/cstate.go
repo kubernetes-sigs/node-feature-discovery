@@ -19,33 +19,49 @@ package cpu
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 // Discover if c-states are enabled
-func detectCstate() (bool, error) {
-	// When the intel_idle driver is in use (default), check setting of max_cstates
-	driver, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/cpu/cpuidle/current_driver"))
-	if err != nil {
-		return false, fmt.Errorf("cannot get driver for cpuidle: %s", err.Error())
+func detectCstate() (bool, bool, error) {
+	// Check that sysfs is available
+	sysfsBase := source.SysfsDir.Path("devices/system/cpu")
+	if _, err := os.Stat(sysfsBase); err != nil {
+		return false, false, fmt.Errorf("unable to detect cstate status: %w", err)
+	}
+	cpuidleDir := filepath.Join(sysfsBase, "cpuidle")
+	if _, err := os.Stat(cpuidleDir); os.IsNotExist(err) {
+		klog.V(1).Info("cpuidle disabled in the kernel")
+		return false, false, nil
 	}
 
-	if strings.TrimSpace(string(driver)) != "intel_idle" {
+	// When the intel_idle driver is in use (default), check setting of max_cstates
+	driver, err := ioutil.ReadFile(filepath.Join(cpuidleDir, "current_driver"))
+	if err != nil {
+		return false, false, fmt.Errorf("cannot get driver for cpuidle: %w", err)
+	}
+
+	if d := strings.TrimSpace(string(driver)); d != "intel_idle" {
 		// Currently only checking intel_idle driver for cstates
-		return false, fmt.Errorf("intel_idle driver is not in use: %s", string(driver))
+		klog.V(1).Infof("intel_idle driver is not in use (%s is active)", d)
+		return false, false, nil
 	}
 
 	data, err := ioutil.ReadFile(source.SysfsDir.Path("module/intel_idle/parameters/max_cstate"))
 	if err != nil {
-		return false, fmt.Errorf("cannot determine cstate from max_cstates: %s", err.Error())
+		return false, false, fmt.Errorf("cannot determine cstate from max_cstates: %w", err)
 	}
 	cstates, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
-		return false, fmt.Errorf("non-integer value of cstates: %s", err.Error())
+		return false, false, fmt.Errorf("non-integer value of cstates: %w", err)
 	}
 
-	return cstates > 0, nil
+	return cstates > 0, true, nil
 }
