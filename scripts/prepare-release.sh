@@ -96,10 +96,10 @@ if [ -z "$assets_only" ]; then
     sed s"!node-feature-discovery/v.*/!node-feature-discovery/$release/!" -i README.md
 
     # Patch deployment templates
-    echo Patching '*.yaml.template' to use $container_image
+    echo Patching kustomize templates to use $container_image
     sed -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
            -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
-           -i *yaml.template
+           -i deployment/base/*/*yaml
 
     # Patch Helm chart
     echo "Patching Helm chart"

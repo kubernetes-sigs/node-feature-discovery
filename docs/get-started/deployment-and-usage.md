@@ -89,27 +89,29 @@ In order to deploy the [minimal](#minimal) image you need to add
 
 to the metadata of NodeFeatureDiscovery object above.
 
-### Deployment templates
+### Deployment with kustomize
 
-The template specs provided in the repo can be used directly:
+The kustomize overlays provided in the repo can be used directly:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-master.yaml.template
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-daemonset.yaml.template
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
 ```
 
 This will required RBAC rules and deploy nfd-master (as a deployment) and
 nfd-worker (as a daemonset) in the `node-feature-discovery` namespace.
 
-Alternatively you can download the templates and customize the deployment
-manually. For example, to deploy the [minimal](#minimal) image.
+Alternatively you can clone the repository and customize the deployment by
+creating your own overlays. For example, to deploy the [minimal](#minimal)
+image. See [kustomize][kustomize] for more information about managing
+deployment configurations.
 
 #### Master-worker pod
 
 You can also run nfd-master and nfd-worker inside the same pod
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-daemonset-combined.yaml.template
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default-combined?ref={{ site.release }}
+
 ```
 
 This creates a DaemonSet runs both nfd-worker and nfd-master in the same Pod.
@@ -119,11 +121,11 @@ are able to label themselves which may be desirable e.g. in single-node setups.
 #### Worker one-shot
 
 Feature discovery can alternatively be configured as a one-shot job.
-The Job template may be used to achieve this:
+The `default-job` overlay may be used to achieve this:
 
 ```bash
 NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
-curl -fs https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-job.yaml.template | \
+kubectl kustomize https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default-job?ref={{ site.release }} | \
     sed s"/NUM_NODES/$NUM_NODES/" | \
     kubectl apply -f -
 ```
@@ -288,12 +290,16 @@ re-labeling on regular intervals capturing changes in the system configuration
 and mames sure that new nodes are labeled as they are added to the cluster.
 Worker connects to the nfd-master service to advertise hardware features.
 
-When run as a daemonset, nodes are re-labeled at an interval specified using
-the `-sleep-interval` option. In the
-[template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker-daemonset.yaml.template#L26)
-the default interval is set to 60s which is also the default when no
-`-sleep-interval` is specified. Also, the configuration file is re-read on
-each iteration providing a simple mechanism of run-time reconfiguration.
+When run as a daemonset, nodes are re-labeled at an default interval of 60s.
+This can be changed by using the
+[`core.sleepInterval`](../advanced/worker-configuration-reference.html#coresleepinterval)
+config option (or
+[`-sleep-interval`](../advanced/worker-commandline-reference.html#-sleep-interval)
+command line flag).
+
+The worker configuration file is watched and re-read on every change which
+provides a simple mechanism of dynamic run-time reconfiguration. See
+[worker configuration](#worker-configuration) for more details.
 
 ### Communication security with TLS
 
@@ -317,23 +323,23 @@ of its certificate.
 #### Automated TLS certificate management using cert-manager
 
 [cert-manager](https://cert-manager.io/) can be used to automate certificate
-management between nfd-master and the nfd-worker pods. The instructions below describe
-steps how to set up cert-manager's
-[CA Issuer](https://cert-manager.io/docs/configuration/ca/) to
-sign `Certificate` requests for NFD components in `node-feature-discovery` namespace.
+management between nfd-master and the nfd-worker pods.
+
+NFD source code repository contains an example kustomize overlay that can be
+used to deploy NFD with cert-manager supplied certificates enabled. The
+instructions below describe steps how to generate a self-signed CA certificate
+and set up cert-manager's
+[CA Issuer](https://cert-manager.io/docs/configuration/ca/) to sign
+`Certificate` requests for NFD components in `node-feature-discovery`
+namespace.
 
 ```bash
-$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.2.0/cert-manager.yaml
-$ make yamls
-$ openssl genrsa -out ca.key 2048
-$ openssl req -x509 -new -nodes -key ca.key -subj "/CN=nfd-ca" -days 10000 -out ca.crt
-$ sed s"/tls.key:.*/tls.key: $(cat ca.key|base64 -w 0)/" -i nfd-cert-manager.yaml
-$ sed s"/tls.crt:.*/tls.crt: $(cat ca.crt|base64 -w 0)/" -i nfd-cert-manager.yaml
-$ kubectl apply -f nfd-cert-manager.yaml
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.1/cert-manager.yaml
+openssl genrsa -out deployment/overlays/samples/cert-manager/tls.key 2048
+openssl req -x509 -new -nodes -key deployment/overlays/samples/cert-manager/tls.key -subj "/CN=nfd-ca" \
+        -days 10000 -out deployment/overlays/samples/cert-manager/tls.crt
+kubectl apply -k deployment/overlays/samples/cert-manager
 ```
-
-Finally, deploy `nfd-master.yaml` and `nfd-worker-daemonset.yaml` with the Secrets
-(`nfd-master-cert` and `nfd-worker-cert`) mounts enabled.
 
 ## Worker configuration
 
@@ -421,11 +427,11 @@ lifecycle manager, respectively.
 
 Simplest way is to invoke `kubectl delete` on the deployment files you used.
 Beware that this will also delete the namespace that NFD is running in. For
-example:
+example, in case the default deployment from the repo was used:
 
 ```bash
-kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-daemonset.yaml.template
-kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-master.yaml.template
+
+kubectl delete -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
 ```
 
 Alternatively you can delete create objects one-by-one, depending on the type
@@ -447,14 +453,15 @@ NFD-Master has a special `-prune` command line flag for removing all
 nfd-related node labels, annotations and extended resources from the cluster.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-prune.yaml.template
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prune?ref={{ site.release }}
 kubectl -n node-feature-discovery wait job.batch/nfd-prune --for=condition=complete && \
-    kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-prune.yaml.template
+    kubectl delete -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prune?ref={{ site.release }}
 ```
 
 **NOTE:** You must run prune before removing the RBAC rules (serviceaccount,
 clusterrole and clusterrolebinding).
 
 <!-- Links -->
+[kustomize]: https://github.com/kubernetes-sigs/kustomize
 [nfd-operator]: https://github.com/kubernetes-sigs/node-feature-discovery-operator
 [OLM]: https://github.com/operator-framework/operator-lifecycle-manager

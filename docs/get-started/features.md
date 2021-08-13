@@ -595,10 +595,9 @@ Pods outside NFD, e.g. in Kubernetes device plugins. It is possible to mount
 the `source.d` and/or `features.d` directories common with the NFD Pod and
 deploy the custom hooks/features there. NFD will periodically scan the
 directories and run any hooks and read any feature files it finds. The
-[example nfd-worker deployment template](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker-daemonset.yaml.template#L69)
-contains `hostPath` mounts for `sources.d` and `features.d` directories. By
-using the same mounts in the secondary Pod (e.g. device plugin) you have
-created a shared area for delivering hooks and feature files to NFD.
+default deployments contain `hostPath` mounts for `sources.d` and `features.d`
+directories. By using the same mounts in the secondary Pod (e.g. device plugin)
+you have created a shared area for delivering hooks and feature files to NFD.
 
 #### A hook example
 

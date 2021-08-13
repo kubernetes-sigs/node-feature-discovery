@@ -10,16 +10,11 @@ Minimal steps to deploy latest released version of NFD in your cluster.
 
 ## Installation
 
-Deploy nfd-master -- creates a new namespace, service and required RBAC rules
+Deploy with kustomize -- creates a new namespace, service and required RBAC
+rules and deploys nfd-master and nfd-worker daemons.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-master.yaml.template
-```
-
-Deploy nfd-worker as a daemonset
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-daemonset.yaml.template
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
 ```
 
 ## Verify
