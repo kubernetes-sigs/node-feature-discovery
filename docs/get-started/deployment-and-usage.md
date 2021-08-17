@@ -105,6 +105,32 @@ creating your own overlays. For example, to deploy the [minimal](#minimal)
 image. See [kustomize][kustomize] for more information about managing
 deployment configurations.
 
+#### Default overlays
+
+The NFD repository hosts a set of overlays for different usages and deployment
+scenarios under
+[`deployment/overlays`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays)
+
+- [`default`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default):
+  default deployment of nfd-worker as a daemonset, descibed above
+- [`default-combined`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-combined)
+  see [Master-worker pod](#master-worker-pod) below
+- [`default-job`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-job):
+  see [Worker one-shot](#worker-one-shot) below
+- [`prune`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prune):
+  clean up the cluster after uninstallation, see
+  [Removing feature labels](#removing-feature-labels)
+- [`samples/cert-manager`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/samples/cert-manager):
+  an example for supplementing the default deployment with cert-manager for TLS
+  authentication, see
+  [Automated TLS certificate management using cert-manager](#automated-tls-certificate-management-using-cert-manager)
+  for details
+- [`samples/custom-rules`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/samples/custom-rules):
+  an example for spicing up the default deployment with a separately managed
+  configmap of custom labeling rules, see
+  [Custom feature source](#features.md#custom) for more information about
+  custom node labels
+
 #### Master-worker pod
 
 You can also run nfd-master and nfd-worker inside the same pod
