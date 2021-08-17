@@ -5,19 +5,19 @@ go 1.16
 require (
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/klauspost/cpuid/v2 v2.0.9
-	github.com/onsi/ginkgo v1.14.0
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.15.0
 	github.com/smartystreets/assertions v1.2.0
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.7.0
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
-	google.golang.org/grpc v1.38.0
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
+	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.22.0
 	k8s.io/apimachinery v0.22.0
-	k8s.io/client-go v0.22.0
-	k8s.io/klog/v2 v2.9.0
+	k8s.io/client-go v1.22.0
+	k8s.io/klog/v2 v2.10.0
 	k8s.io/kubernetes v1.22.0
 	sigs.k8s.io/yaml v1.2.0
 )
