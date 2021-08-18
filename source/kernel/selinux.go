@@ -19,15 +19,30 @@ package kernel
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 // Detect if selinux has been enabled in the kernel
 func SelinuxEnabled() (bool, error) {
-	status, err := ioutil.ReadFile(source.SysfsDir.Path("fs/selinux/enforce"))
+	sysfsBase := source.SysfsDir.Path("fs")
+	if _, err := os.Stat(sysfsBase); err != nil {
+		return false, fmt.Errorf("unable to detect selinux status: %w", err)
+	}
+
+	selinuxBase := filepath.Join(sysfsBase, "selinux")
+	if _, err := os.Stat(selinuxBase); os.IsNotExist(err) {
+		klog.V(1).Info("selinux not available on the system")
+		return false, nil
+	}
+
+	status, err := ioutil.ReadFile(filepath.Join(selinuxBase, "enforce"))
 	if err != nil {
-		return false, fmt.Errorf("failed to detect the status of selinux, please check if the system supports selinux and make sure /sys on the host is mounted into the container: %s", err.Error())
+		return false, fmt.Errorf("failed to detect the status of selinux: %w", err)
 	}
 	if status[0] == byte('1') {
 		// selinux is enabled.

@@ -147,10 +147,10 @@ func (s *Source) Discover() (source.Features, error) {
 	}
 
 	// Detect cstate configuration
-	cstate, err := detectCstate()
+	cstate, ok, err := detectCstate()
 	if err != nil {
-		klog.Errorf("failed to detect cstate: %v", err)
-	} else {
+		klog.Error(err)
+	} else if ok {
 		features["cstate.enabled"] = cstate
 	}
 
