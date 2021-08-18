@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd
+spec:
+  selector:
+    matchLabels:
+      app: nfd
+  template:
+    metadata:
+      labels:
+        app: nfd
+    spec:
+      serviceAccount: nfd-master
+      tolerations: []
+      containers:
+      - name: nfd-master
+        image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+        imagePullPolicy: Always
+        command:
+        - "nfd-master"
+      - name: nfd-worker
+        image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+        imagePullPolicy: Always
+        command:
+        - "nfd-worker"
+        args: []

@@ -20,11 +20,14 @@ Continue to:
 ## Quick-start -- the short-short version
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-master.yaml.template
+$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
   namespace/node-feature-discovery created
-...
-
-$ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/nfd-worker-daemonset.yaml.template
+  serviceaccount/nfd-master created
+  clusterrole.rbac.authorization.k8s.io/nfd-master created
+  clusterrolebinding.rbac.authorization.k8s.io/nfd-master created
+  configmap/nfd-worker-conf created
+  service/nfd-master created
+  deployment.apps/nfd-master created
   daemonset.apps/nfd-worker created
 
 $ kubectl -n node-feature-discovery get all

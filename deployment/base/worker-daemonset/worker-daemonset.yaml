@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd-worker
+spec:
+  selector:
+    matchLabels:
+      app: nfd-worker
+  template:
+    metadata:
+      labels:
+        app: nfd-worker
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: nfd-worker
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          command:
+            - "nfd-worker"
+          args:
+            - "-server=nfd-master:8080"

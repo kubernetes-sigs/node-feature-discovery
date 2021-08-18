@@ -57,12 +57,6 @@ E2E_TEST_CONFIG ?=
 
 LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
-yaml_templates := $(wildcard *.yaml.template)
-# Let's treat values.yaml as template to sync configmap
-# and allow users to install without modifications
-yaml_templates := $(yaml_templates) deployment/node-feature-discovery/values.yaml
-yaml_instances := $(patsubst %.yaml.template,%.yaml,$(yaml_templates))
-
 all: image
 
 build:
@@ -90,31 +84,18 @@ image: yamls
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 
-yamls: $(yaml_instances)
+yamls:
+	@./scripts/kustomize.sh $(K8S_NAMESPACE) $(IMAGE_REPO) $(IMAGE_TAG_NAME)
 
-%.yaml: %.yaml.template .FORCE
-	@echo "$@: namespace: ${K8S_NAMESPACE}"
-	@echo "$@: image: ${IMAGE_TAG}"
-	@sed -E \
-	     -e s',^(\s*)name: node-feature-discovery # NFD namespace,\1name: ${K8S_NAMESPACE},' \
-	     -e s',^(\s*)image:.+$$,\1image: ${IMAGE_TAG},' \
-	     -e s',^(\s*)namespace:.+$$,\1namespace: ${K8S_NAMESPACE},' \
-	     -e s',^(\s*- |\s*- nfd-master.|\s*- nfd-worker.)node-feature-discovery,\1${K8S_NAMESPACE},' \
-	     -e s',^(\s*)mountPath: "/host-,\1mountPath: "${CONTAINER_HOSTMOUNT_PREFIX},' \
-	     -e '/nfd-worker.conf:/r nfd-worker.conf.tmp' \
-	     $< > $@
-
-templates: $(yaml_templates)
+templates:
 	@# Need to prepend each line in the sample config with spaces in order to
 	@# fit correctly in the configmap spec.
-	@sed s'/^/    /' nfd-worker.conf.example > nfd-worker.conf.tmp
+	@sed s'/^/    /' deployment/components/worker-config/nfd-worker.conf.example > nfd-worker.conf.tmp
 	@# The sed magic below replaces the block of text between the lines with start and end markers
-	@for f in $+; do \
-	    start=NFD-WORKER-CONF-START-DO-NOT-REMOVE; \
-	    end=NFD-WORKER-CONF-END-DO-NOT-REMOVE; \
-	    sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-worker.conf.tmp" \
-	        -e "}; /$$end/p; d }" -i $$f; \
-	done
+	@start=NFD-WORKER-CONF-START-DO-NOT-REMOVE; \
+	end=NFD-WORKER-CONF-END-DO-NOT-REMOVE; \
+	sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-worker.conf.tmp" \
+	    -e "}; /$$end/p; d }" -i deployment/helm/node-feature-discovery/values.yaml
 	@rm nfd-worker.conf.tmp
 
 mock:
@@ -145,7 +126,7 @@ mdlint:
 	find docs/ -path docs/vendor -prune -false -o -name '*.md' | xargs $(MDL) -s docs/mdl-style.rb
 
 helm-lint:
-	helm lint --strict deployment/node-feature-discovery/
+	helm lint --strict deployment/helm/node-feature-discovery/
 
 test:
 	$(GO_CMD) test ./cmd/... ./pkg/...

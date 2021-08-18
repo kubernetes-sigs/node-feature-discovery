@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nfd-master
+  labels:
+    app: nfd
+spec:
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app: nfd-prune
+    spec:
+      serviceAccount: nfd-master
+      tolerations: []
+      containers:
+        - name: nfd-master
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          command:
+            - "nfd-master"
+          args:
+            - "--prune"
+      restartPolicy: Never
+

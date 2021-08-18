@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: nfd
+  name: nfd-worker
+spec:
+  completions: NUM_NODES
+  parallelism: NUM_NODES
+  template:
+    metadata:
+      labels:
+        app: nfd-worker
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Never
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - nfd-worker
+      containers:
+        - name: nfd-worker
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          command:
+            - "nfd-worker"
+          args:
+            - "-oneshot"
+            - "-server=nfd-master:8080"
+

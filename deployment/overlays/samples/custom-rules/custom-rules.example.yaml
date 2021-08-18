@@ -1,0 +1,7 @@
+#- name: "more.kernel.features"
+#  matchOn:
+#  - loadedKMod: ["example_kmod3"]
+#- name: "more.features.by.nodename"
+#  value: customValue
+#  matchOn:
+#  - nodename: ["special-.*-node-.*"]

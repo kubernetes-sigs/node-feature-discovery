@@ -54,32 +54,19 @@ attribute in the spec template(s) to the new location
 
 ### Deployment
 
-The `yamls` makefile generates deployment specs matching your locally built
-image. See [build customization](#customizing-the-build) below for
-configurability, e.g. changing the deployment namespace.
+The `yamls` makefile generates a `kustomization.yaml` matching your locally
+built image and using the `deploy/overlays/default` deployment. See
+[build customization](#customizing-the-build) below for configurability, e.g.
+changing the deployment namespace.
 
 ```bash
 K8S_NAMESPACE=my-ns make yamls
-kubectl apply -f nfd-master.yaml
-kubectl apply -f nfd-worker-daemonset.yaml
+kubectl apply -k .
 ```
 
-Alternatively, deploying worker and master in the same pod:
-
-```bash
-K8S_NAMESPACE=my-ns make yamls
-kubectl apply -f nfd-master.yaml
-kubectl apply -f nfd-daemonset-combined.yaml
-```
-
-Or worker as a one-shot job:
-
-```bash
-K8S_NAMESPACE=my-ns make yamls
-kubectl apply -f nfd-master.yaml
-NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
-sed s"/NUM_NODES/$NUM_NODES/" nfd-worker-job.yaml | kubectl apply -f -
-```
+You can use alternative deployment methods by modifying the auto-generated
+kustomization file. For example, deploying worker and master in the same pod by
+pointing to `deployment/overlays/default-combined`.
 
 ### Building locally
 
@@ -254,7 +241,7 @@ Usage of nfd-worker:
 host mounted inside the NFD container. Thus, you need to provide Docker with the
 correct `--volume` options in order for them to work correctly when run
 stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker-daemonset.yaml.template)
+[default deployment](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/common/worker-mounts.yaml)
 for up-to-date information about the required volume mounts.
 
 ## Documentation

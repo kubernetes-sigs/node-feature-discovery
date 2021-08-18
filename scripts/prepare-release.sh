@@ -96,19 +96,19 @@ if [ -z "$assets_only" ]; then
     sed s"!node-feature-discovery/v.*/!node-feature-discovery/$release/!" -i README.md
 
     # Patch deployment templates
-    echo Patching '*.yaml.template' to use $container_image
+    echo Patching kustomize templates to use $container_image
     sed -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
            -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
-           -i *yaml.template
+           -i deployment/base/*/*yaml
 
     # Patch Helm chart
     echo "Patching Helm chart"
-    sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/node-feature-discovery/Chart.yaml
+    sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/helm/node-feature-discovery/Chart.yaml
     sed -e s"/pullPolicy:.*/pullPolicy: IfNotPresent/" \
         -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery!k8s.gcr.io/nfd/node-feature-discovery!" \
-        -i deployment/node-feature-discovery/values.yaml
+        -i deployment/helm/node-feature-discovery/values.yaml
     sed -e s"!kubernetes-sigs.github.io/node-feature-discovery/master!kubernetes-sigs.github.io/node-feature-discovery/$docs_version!" \
-        -i deployment/node-feature-discovery/README.md
+        -i deployment/helm/node-feature-discovery/README.md
 
     # Patch e2e test
     echo Patching test/e2e/node_feature_discovery.go flag defaults to k8s.gcr.io/nfd/node-feature-discovery and $release
@@ -120,7 +120,7 @@ fi
 #
 # Create release assets to be uploaded
 #
-helm package deployment/node-feature-discovery/ --version $semver
+helm package deployment/helm/node-feature-discovery/ --version $semver
 
 chart_name="node-feature-discovery-chart-$semver.tgz"
 mv node-feature-discovery-$semver.tgz $chart_name
