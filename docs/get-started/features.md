@@ -72,7 +72,7 @@ The **cpu** feature source supports the following labels:
 | [pstate][intel-pstate]  | status             | The status of the Intel pstate driver when in use and enabled, either 'active' or 'passive'.
 |                         | turbo              | Set to 'true' if turbo frequencies are enabled in Intel pstate driver, set to 'false' if they have been disabled.
 |                         | scaling_governor   | The value of the Intel pstate scaling_governor when in use, either 'powersave' or 'performance'.
-| cstate                  | enabled            | Set to 'true' if cstates are set in the intel_idle driver, otherwise set to 'false'.
+| cstate                  | enabled            | Set to 'true' if cstates are set in the intel_idle driver, otherwise set to 'false'. Unset if intel_idle cpuidle driver is not active.
 | [rdt][intel-rdt]        | RDTMON             | Intel RDT Monitoring Technology
 |                         | RDTCMT             | Intel Cache Monitoring (CMT)
 |                         | RDTMBM             | Intel Memory Bandwidth Monitoring (MBM)
