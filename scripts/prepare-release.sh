@@ -97,9 +97,10 @@ if [ -z "$assets_only" ]; then
 
     # Patch deployment templates
     echo Patching kustomize templates to use $container_image
+    find deployment/base deployment/overlays deployment/components -name '*.yaml' | xargs -I '{}' \
     sed -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
            -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
-           -i deployment/base/*/*yaml
+           -i '{}'
 
     # Patch Helm chart
     echo "Patching Helm chart"
