@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"k8s.io/klog/v2"
@@ -31,12 +30,6 @@ import (
 
 // Discover p-state related features such as turbo boost.
 func detectPstate() (map[string]string, error) {
-	// On other platforms, the frequency boost mechanism is software-based.
-	// So skip pstate detection on other architectures.
-	if runtime.GOARCH != "amd64" && runtime.GOARCH != "386" {
-		return nil, nil
-	}
-
 	// Check that sysfs is available
 	sysfsBase := source.SysfsDir.Path("devices/system/cpu")
 	if _, err := os.Stat(sysfsBase); err != nil {
