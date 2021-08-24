@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2020-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,35 +17,54 @@ limitations under the License.
 package rules
 
 import (
-	"fmt"
+	"encoding/json"
+	"strings"
+
 	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
 )
 
 // KconfigRule implements Rule
-type KconfigRule []string
+type KconfigRule []kconfig
 
-var kConfigs map[string]struct{}
+type kconfig struct {
+	Name  string
+	Value string
+}
+
+var kConfigs map[string]string
 
 func (kconfigs *KconfigRule) Match() (bool, error) {
 	for _, f := range *kconfigs {
-		if _, ok := kConfigs[f]; !ok {
+		if v, ok := kConfigs[f.Name]; !ok || f.Value != v {
 			return false, nil
 		}
 	}
 	return true, nil
 }
 
+func (c *kconfig) UnmarshalJSON(data []byte) error {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	split := strings.SplitN(raw, "=", 2)
+	c.Name = split[0]
+	if len(split) == 1 {
+		c.Value = "true"
+	} else {
+		c.Value = split[1]
+	}
+	return nil
+}
+
 func init() {
-	kConfigs = make(map[string]struct{})
+	kConfigs = make(map[string]string)
 
 	kconfig, err := kernelutils.ParseKconfig("")
 	if err == nil {
 		for k, v := range kconfig {
-			if v != "true" {
-				kConfigs[fmt.Sprintf("%s=%s", k, v)] = struct{}{}
-			} else {
-				kConfigs[k] = struct{}{}
-			}
+			kConfigs[k] = v
 		}
 	}
 }
