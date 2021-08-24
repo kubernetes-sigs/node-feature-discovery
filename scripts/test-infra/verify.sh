@@ -1,10 +1,15 @@
 #!/bin/bash -e
 
 # Install deps
-curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.36.0
+gobinpath="$(go env GOPATH)/bin"
+curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" v1.36.0
 export PATH=$PATH:$(go env GOPATH)/bin
 
 curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -s -- --version v3.5.2
+
+kubectl="$gobinpath/kubectl"
+curl -L https://dl.k8s.io/release/v1.22.1/bin/linux/amd64/kubectl -o "$kubectl"
+chmod 755 "$kubectl"
 
 # Run verify steps
 make gofmt-verify
@@ -23,3 +28,13 @@ if ! git diff --quiet; then
     echo "Deployment templates are not up-to-date. Run 'make templates' to update"
     exit 1
 fi
+
+# Check that the kustomize overlays are buildable
+for d in `ls deployment/overlays/* -d`; do
+    if [ "`basename $d`" = "samples" ]; then
+        continue
+    fi
+
+    echo "Verifying $d"
+    kubectl kustomize $d > /dev/null
+done
