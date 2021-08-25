@@ -313,7 +313,7 @@ labels. The provided template will configure these for you.
 
 NFD-Worker is preferably run as a Kubernetes DaemonSet. This assures
 re-labeling on regular intervals capturing changes in the system configuration
-and mames sure that new nodes are labeled as they are added to the cluster.
+and makes sure that new nodes are labeled as they are added to the cluster.
 Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an default interval of 60s.
