@@ -56,6 +56,14 @@ spec:
             operstate: {op: In, value: ["up"]}
             speed: {op: Gt, value: ["100"]}
 
+        - feature: memory.numa
+          matchExpressions:
+            node_count: {op: Gt, value: ["2"]}
+        - feature: memory.nv
+          matchExpressions:
+            devtype: {op: In, value: ["nd_dax"]}
+            mode: {op: In, value: ["memory"]}
+
         - feature: system.osrelease
           matchExpressions:
             ID: {op: In, value: ["fedora", "centos"]}
