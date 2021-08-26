@@ -1,4 +1,4 @@
 bin/
 demo/helper-scripts/*.pdf
 demo/helper-scripts/*.log
-kustomization.yaml
+/kustomization.yaml
