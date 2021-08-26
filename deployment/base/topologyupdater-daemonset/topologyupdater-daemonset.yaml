@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd-topology-updater
+spec:
+  selector:
+    matchLabels:
+      app: nfd-topology-updater
+  template:
+    metadata:
+      labels:
+        app: nfd-topology-updater
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccount: nfd-topology-updater
+      containers:
+        - name: nfd-topology-updater
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          command:
+            - "nfd-topology-updater"
+          args:
+            - "--kubelet-config-file=/host-var/lib/kubelet/config.yaml"
+            - "--podresources-socket=/host-var/lib/kubelet/pod-resources/kubelet.sock"
+            - "--sleep-interval=3s"
+            - "--watch-namespace=*"
+            - "--server=nfd-master:8080"

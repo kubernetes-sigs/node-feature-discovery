@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: node-feature-discovery
+
+bases:
+- ../../base/rbac-topologyupdater
+- ../../base/worker-daemonset
+- ../../base/noderesourcetopologies-crd
+- ../../base/topologyupdater-daemonset
+
+resources:
+- namespace.yaml
+
+components:
+- ../../components/topology-updater
