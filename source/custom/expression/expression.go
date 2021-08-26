@@ -46,8 +46,8 @@ type MatchExpression struct {
 	// Value is the list of values that the operand evaluates the input
 	// against. Value should be empty if the operator is Exists, DoesNotExist,
 	// IsTrue or IsFalse. Value should contain exactly one element if the
-	// operator is Gt or Lt. In other cases Value should contain at least one
-	// element.
+	// operator is Gt or Lt and exactly two elements if the operator is GtLt.
+	// In other cases Value should contain at least one element.
 	Value MatchValue `json:",omitempty"`
 
 	// valueRe caches compiled regexps for "InRegexp" operator
@@ -89,6 +89,11 @@ const (
 	// Both the input and value must be integer numbers, otherwise an error is
 	// returned.
 	MatchLt MatchOp = "Lt"
+	// MatchGtLt returns true if the input is between two values, i.e. greater
+	// than the first value and less than the second value of the expression
+	// (number of values in the expression must be exactly two). Both the input
+	// and values must be integer numbers, otherwise an error is returned.
+	MatchGtLt MatchOp = "GtLt"
 	// MatchIsTrue returns true if the input holds the value "true". The
 	// expression must not have any values.
 	MatchIsTrue MatchOp = "IsTrue"
@@ -106,6 +111,7 @@ var matchOps = map[MatchOp]struct{}{
 	MatchDoesNotExist: struct{}{},
 	MatchGt:           struct{}{},
 	MatchLt:           struct{}{},
+	MatchGtLt:         struct{}{},
 	MatchIsTrue:       struct{}{},
 	MatchIsFalse:      struct{}{},
 }
@@ -153,6 +159,20 @@ func (m *MatchExpression) Validate() error {
 		}
 		if _, err := strconv.Atoi(m.Value[0]); err != nil {
 			return fmt.Errorf("Value must be an integer for Op %q (have %v)", m.Op, m.Value[0])
+		}
+	case MatchGtLt:
+		if len(m.Value) != 2 {
+			return fmt.Errorf("Value must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
+		}
+		var err error
+		v := make([]int, 2)
+		for i := 0; i < 2; i++ {
+			if v[i], err = strconv.Atoi(m.Value[i]); err != nil {
+				return fmt.Errorf("Value must contain integers for Op %q (have %v)", m.Op, m.Value)
+			}
+		}
+		if v[0] >= v[1] {
+			return fmt.Errorf("Value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
 		}
 	case MatchInRegexp:
 		if len(m.Value) == 0 {
@@ -223,6 +243,19 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 			if (l < r && m.Op == MatchLt) || (l > r && m.Op == MatchGt) {
 				return true, nil
 			}
+		case MatchGtLt:
+			v, err := strconv.Atoi(value)
+			if err != nil {
+				return false, fmt.Errorf("not a number %q", value)
+			}
+			lr := make([]int, 2)
+			for i := 0; i < 2; i++ {
+				lr[i], err = strconv.Atoi(m.Value[i])
+				if err != nil {
+					return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
+				}
+			}
+			return v > lr[0] && v < lr[1], nil
 		case MatchIsTrue:
 			return value == "true", nil
 		case MatchIsFalse:

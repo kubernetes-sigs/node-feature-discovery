@@ -73,6 +73,13 @@ func TestCreateMatchExpression(t *testing.T) {
 		{op: e.MatchLt, values: V{"1", "2", "3"}, err: assert.NotNilf},
 		{op: e.MatchLt, values: V{"a"}, err: assert.NotNilf},
 
+		{op: e.MatchGtLt, err: assert.NotNilf},
+		{op: e.MatchGtLt, values: V{"1"}, err: assert.NotNilf},
+		{op: e.MatchGtLt, values: V{"1", "2"}, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"2", "1"}, err: assert.NotNilf},
+		{op: e.MatchGtLt, values: V{"1", "2", "3"}, err: assert.NotNilf},
+		{op: e.MatchGtLt, values: V{"a", "2"}, err: assert.NotNilf},
+
 		{op: e.MatchIsTrue, err: assert.Nilf},
 		{op: e.MatchIsTrue, values: V{"1"}, err: assert.NotNilf},
 
@@ -134,6 +141,12 @@ func TestMatch(t *testing.T) {
 		{op: e.MatchLt, values: V{"2"}, input: "1", valid: true, result: assert.Truef, err: assert.Nilf},
 		{op: e.MatchLt, values: V{"2"}, input: "1.0", valid: true, result: assert.Falsef, err: assert.NotNilf},
 
+		{op: e.MatchGtLt, values: V{"1", "10"}, input: "1", valid: false, result: assert.Falsef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"1", "10"}, input: "1", valid: true, result: assert.Falsef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"1", "10"}, input: "10", valid: true, result: assert.Falsef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"1", "10"}, input: "2", valid: true, result: assert.Truef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"1", "10"}, input: "1.0", valid: true, result: assert.Falsef, err: assert.NotNilf},
+
 		{op: e.MatchIsTrue, input: true, valid: false, result: assert.Falsef, err: assert.Nilf},
 		{op: e.MatchIsTrue, input: true, valid: true, result: assert.Truef, err: assert.Nilf},
 		{op: e.MatchIsTrue, input: false, valid: true, result: assert.Falsef, err: assert.Nilf},
@@ -155,6 +168,7 @@ func TestMatch(t *testing.T) {
 
 		{op: e.MatchGt, values: V{"3.0"}, input: 1, valid: true},
 		{op: e.MatchLt, values: V{"0x2"}, input: 1, valid: true},
+		{op: e.MatchGtLt, values: V{"1", "str"}, input: 1, valid: true},
 		{op: "non-existent-op", values: V{"1"}, input: 1, valid: true},
 	}
 
@@ -196,6 +210,7 @@ func TestMatchKeys(t *testing.T) {
 		{op: e.MatchInRegexp, values: V{"foo"}, name: "foo", result: assert.Falsef, err: assert.NotNilf},
 		{op: e.MatchGt, values: V{"1"}, name: "foo", result: assert.Falsef, err: assert.NotNilf},
 		{op: e.MatchLt, values: V{"1"}, name: "foo", result: assert.Falsef, err: assert.NotNilf},
+		{op: e.MatchGtLt, values: V{"1", "10"}, name: "foo", result: assert.Falsef, err: assert.NotNilf},
 		{op: e.MatchIsTrue, name: "foo", result: assert.Falsef, err: assert.NotNilf},
 		{op: e.MatchIsFalse, name: "foo", result: assert.Falsef, err: assert.NotNilf},
 	}
@@ -251,6 +266,12 @@ func TestMatchValues(t *testing.T) {
 		{op: e.MatchLt, values: V{"2"}, name: "foo", input: I{"bar": "1", "foo": "2"}, result: assert.Falsef, err: assert.Nilf},
 		{op: e.MatchLt, values: V{"2"}, name: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.Truef, err: assert.Nilf},
 		{op: e.MatchLt, values: V{"2"}, name: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.Falsef, err: assert.NotNilf},
+
+		{op: e.MatchGtLt, values: V{"-10", "10"}, name: "foo", input: I{"bar": "1"}, result: assert.Falsef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"-10", "10"}, name: "foo", input: I{"bar": "1", "foo": "11"}, result: assert.Falsef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"-10", "10"}, name: "foo", input: I{"bar": "1", "foo": "-11"}, result: assert.Falsef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"-10", "10"}, name: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.Truef, err: assert.Nilf},
+		{op: e.MatchGtLt, values: V{"-10", "10"}, name: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.Falsef, err: assert.NotNilf},
 
 		{op: e.MatchIsTrue, name: "foo", result: assert.Falsef, err: assert.Nilf},
 		{op: e.MatchIsTrue, name: "foo", input: I{"foo": "1"}, result: assert.Falsef, err: assert.Nilf},
