@@ -45,7 +45,7 @@ func (in *NodeFeatureDiscovery) DeepCopyInto(out *NodeFeatureDiscovery) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	out.Spec = in.Spec
+	in.Spec.DeepCopyInto(&out.Spec)
 	in.Status.DeepCopyInto(&out.Status)
 }
 
@@ -103,6 +103,16 @@ func (in *NodeFeatureDiscoveryList) DeepCopyObject() runtime.Object {
 func (in *NodeFeatureDiscoverySpec) DeepCopyInto(out *NodeFeatureDiscoverySpec) {
 	*out = *in
 	out.Operand = in.Operand
+	if in.ExtraLabelNs != nil {
+		in, out := &in.ExtraLabelNs, &out.ExtraLabelNs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ResourceLabels != nil {
+		in, out := &in.ResourceLabels, &out.ResourceLabels
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	out.WorkerConfig = in.WorkerConfig
 }
 

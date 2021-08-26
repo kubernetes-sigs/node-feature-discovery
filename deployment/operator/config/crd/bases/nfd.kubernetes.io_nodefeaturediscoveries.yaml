@@ -37,9 +37,23 @@ spec:
           spec:
             description: NodeFeatureDiscoverySpec defines the desired state of NodeFeatureDiscovery
             properties:
+              extraLabelNs:
+                description: ExtraLabelNs defines the list of of allowed extra label
+                  namespaces By default, only allow labels in the default `feature.node.kubernetes.io`
+                  label namespace
+                items:
+                  type: string
+                nullable: true
+                type: array
               instance:
                 description: Instance name. Used to separate annotation namespaces
                   for multiple parallel deployments.
+                type: string
+              labelWhiteList:
+                description: LabelWhiteList defines a regular expression for filtering
+                  feature labels based on their name. Each label must match against
+                  the given reqular expression in order to be published.
+                nullable: true
                 type: string
               operand:
                 description: OperandSpec describes configuration options for the operand
@@ -63,6 +77,13 @@ spec:
                       listens for incoming requests.
                     type: integer
                 type: object
+              resourceLabels:
+                description: ResourceLabels defines the list of features to be advertised
+                  as extended resources instead of labels.
+                items:
+                  type: string
+                nullable: true
+                type: array
               workerConfig:
                 description: WorkerConfig describes configuration options for the
                   NFD worker.
