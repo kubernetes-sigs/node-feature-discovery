@@ -308,7 +308,7 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
-				So(len(worker.enabledSources), ShouldEqual, len(source.GetAllLabelSources())-1)
+				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-1)
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
@@ -322,8 +322,8 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("proper sources should be enabled", func() {
-				So(len(worker.enabledSources), ShouldEqual, 1)
-				So(worker.enabledSources[0].Name(), ShouldEqual, "fake")
+				So(len(worker.labelSources), ShouldEqual, 1)
+				So(worker.labelSources[0].Name(), ShouldEqual, "fake")
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})

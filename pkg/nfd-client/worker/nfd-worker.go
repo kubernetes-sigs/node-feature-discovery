@@ -105,7 +105,7 @@ type nfdWorker struct {
 	configFilePath string
 	config         *NFDConfig
 	stop           chan struct{} // channel for signaling stop
-	enabledSources []source.LabelSource
+	labelSources   []source.LabelSource
 }
 
 type duration struct {
@@ -186,7 +186,7 @@ func (w *nfdWorker) Run() error {
 			}
 
 			// Get the set of feature labels.
-			labels := createFeatureLabels(w.enabledSources, w.config.Core.LabelWhiteList.Regexp)
+			labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
 
 			// Update the node with the feature labels.
 			if w.client != nil {
@@ -293,13 +293,13 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		}
 	}
 
-	// Determine enabled feature sources
-	enabled := make(map[string]source.LabelSource)
+	// Determine enabled label sources
+	labelSources := make(map[string]source.LabelSource)
 	for _, name := range c.LabelSources {
 		if name == "all" {
 			for n, s := range source.GetAllLabelSources() {
 				if ts, ok := s.(source.TestSource); !ok || !ts.IsTestSource() {
-					enabled[n] = s
+					labelSources[n] = s
 				}
 			}
 		} else {
@@ -311,9 +311,9 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 			}
 			if s := source.GetLabelSource(strippedName); s != nil {
 				if !disable {
-					enabled[strippedName] = s
+					labelSources[name] = s
 				} else {
-					delete(enabled, strippedName)
+					delete(labelSources, strippedName)
 				}
 			} else {
 				klog.Warningf("skipping unknown source %q specified in core.sources (or -sources)", name)
@@ -321,22 +321,22 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		}
 	}
 
-	w.enabledSources = make([]source.LabelSource, 0, len(enabled))
-	for _, s := range enabled {
-		w.enabledSources = append(w.enabledSources, s)
+	w.labelSources = make([]source.LabelSource, 0, len(labelSources))
+	for _, s := range labelSources {
+		w.labelSources = append(w.labelSources, s)
 	}
 
-	sort.Slice(w.enabledSources, func(i, j int) bool {
-		iP, jP := w.enabledSources[i].Priority(), w.enabledSources[j].Priority()
+	sort.Slice(w.labelSources, func(i, j int) bool {
+		iP, jP := w.labelSources[i].Priority(), w.labelSources[j].Priority()
 		if iP != jP {
 			return iP < jP
 		}
-		return w.enabledSources[i].Name() < w.enabledSources[j].Name()
+		return w.labelSources[i].Name() < w.labelSources[j].Name()
 	})
 
 	if klog.V(1).Enabled() {
-		n := make([]string, len(w.enabledSources))
-		for i, s := range w.enabledSources {
+		n := make([]string, len(w.labelSources))
+		for i, s := range w.labelSources {
 			n[i] = s.Name()
 		}
 		klog.Infof("enabled label sources: %s", strings.Join(n, ", "))
