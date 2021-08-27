@@ -426,7 +426,7 @@ func cleanupNode(cs clientset.Interface) {
 			update := false
 			// Remove labels
 			for key := range node.Labels {
-				if strings.HasPrefix(key, master.LabelNs) {
+				if strings.HasPrefix(key, master.FeatureLabelNs) {
 					delete(node.Labels, key)
 					update = true
 				}
@@ -499,9 +499,9 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			It("it should decorate the node with the fake feature labels", func() {
 
 				fakeFeatureLabels := map[string]string{
-					master.LabelNs + "/fake-fakefeature1": "true",
-					master.LabelNs + "/fake-fakefeature2": "true",
-					master.LabelNs + "/fake-fakefeature3": "true",
+					master.FeatureLabelNs + "/fake-fakefeature1": "true",
+					master.FeatureLabelNs + "/fake-fakefeature2": "true",
+					master.FeatureLabelNs + "/fake-fakefeature3": "true",
 				}
 
 				// Remove pre-existing stale annotations and labels
@@ -528,7 +528,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				// Check that there are no unexpected NFD labels
 				for k := range node.Labels {
-					if strings.HasPrefix(k, master.LabelNs) {
+					if strings.HasPrefix(k, master.FeatureLabelNs) {
 						Expect(fakeFeatureLabels).Should(HaveKey(k))
 					}
 				}
@@ -593,7 +593,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 						Expect(node.Labels).To(HaveKey(k))
 					}
 					for k := range node.Labels {
-						if strings.HasPrefix(k, master.LabelNs) {
+						if strings.HasPrefix(k, master.FeatureLabelNs) {
 							if _, ok := nodeConf.ExpectedLabelValues[k]; ok {
 								continue
 							}

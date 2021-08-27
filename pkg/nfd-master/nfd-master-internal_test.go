@@ -63,19 +63,23 @@ func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
 
 func TestUpdateNodeFeatures(t *testing.T) {
 	Convey("When I update the node using fake client", t, func() {
-		fakeFeatureLabels := map[string]string{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2", LabelNs + "/source-feature.3": "val3"}
+		fakeFeatureLabels := map[string]string{
+			FeatureLabelNs + "/source-feature.1": "1",
+			FeatureLabelNs + "/source-feature.2": "2",
+			FeatureLabelNs + "/source-feature.3": "val3",
+			ProfileLabelNs + "/profile-a":        "val4"}
 		fakeAnnotations := map[string]string{"my-annotation": "my-val"}
-		fakeExtResources := ExtendedResources{LabelNs + "/source-feature.1": "1", LabelNs + "/source-feature.2": "2"}
+		fakeExtResources := ExtendedResources{FeatureLabelNs + "/source-feature.1": "1", FeatureLabelNs + "/source-feature.2": "2"}
 
 		fakeFeatureLabelNames := make([]string, 0, len(fakeFeatureLabels))
 		for k := range fakeFeatureLabels {
-			fakeFeatureLabelNames = append(fakeFeatureLabelNames, strings.TrimPrefix(k, LabelNs+"/"))
+			fakeFeatureLabelNames = append(fakeFeatureLabelNames, strings.TrimPrefix(k, FeatureLabelNs+"/"))
 		}
 		sort.Strings(fakeFeatureLabelNames)
 
 		fakeExtResourceNames := make([]string, 0, len(fakeExtResources))
 		for k := range fakeExtResources {
-			fakeExtResourceNames = append(fakeExtResourceNames, strings.TrimPrefix(k, LabelNs+"/"))
+			fakeExtResourceNames = append(fakeExtResourceNames, strings.TrimPrefix(k, FeatureLabelNs+"/"))
 		}
 		sort.Strings(fakeExtResourceNames)
 
@@ -84,7 +88,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		mockClient := &k8sclient.Clientset{}
 		// Mock node with old features
 		mockNode := newMockNode()
-		mockNode.Labels[LabelNs+"/old-feature"] = "old-value"
+		mockNode.Labels[FeatureLabelNs+"/old-feature"] = "old-value"
 		mockNode.Annotations[AnnotationNsBase+"/feature-labels"] = "old-feature"
 
 		Convey("When I successfully update the node with feature labels", func() {
@@ -92,7 +96,7 @@ func TestUpdateNodeFeatures(t *testing.T) {
 			metadataPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/metadata/annotations", AnnotationNsBase+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", AnnotationNsBase+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
-				apihelper.NewJsonPatch("remove", "/metadata/labels", LabelNs+"/old-feature", ""),
+				apihelper.NewJsonPatch("remove", "/metadata/labels", FeatureLabelNs+"/old-feature", ""),
 			}
 			for k, v := range fakeFeatureLabels {
 				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))
@@ -235,8 +239,8 @@ func TestAddingExtResources(t *testing.T) {
 
 		Convey("When the resource already exists", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1"}
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{FeatureLabelNs + "/feature-1": "1"}
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldEqual, 0)
 		})
@@ -260,27 +264,27 @@ func TestRemovingExtResources(t *testing.T) {
 		mockMaster := newMockMaster(nil)
 		Convey("When none are removed", func() {
 			mockNode := newMockNode()
-			mockResourceLabels := ExtendedResources{LabelNs + "/feature-1": "1", LabelNs + "/feature-2": "2"}
+			mockResourceLabels := ExtendedResources{FeatureLabelNs + "/feature-1": "1", FeatureLabelNs + "/feature-2": "2"}
 			mockNode.Annotations[AnnotationNsBase+"/extended-resources"] = "feature-1,feature-2"
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldEqual, 0)
 		})
 		Convey("When the related label is gone", func() {
 			mockNode := newMockNode()
-			mockResourceLabels := ExtendedResources{LabelNs + "/feature-4": "", LabelNs + "/feature-2": "2"}
+			mockResourceLabels := ExtendedResources{FeatureLabelNs + "/feature-4": "", FeatureLabelNs + "/feature-2": "2"}
 			mockNode.Annotations[AnnotationNsBase+"/extended-resources"] = "feature-4,feature-2"
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(LabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			mockResourceLabels := ExtendedResources{LabelNs + "/feature-2": "2"}
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[api.ResourceName(FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockResourceLabels := ExtendedResources{FeatureLabelNs + "/feature-2": "2"}
 			mockNode.Annotations[AnnotationNsBase+"/extended-resources"] = "feature-1,feature-2"
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldBeGreaterThan, 0)
@@ -319,7 +323,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", erAnnotation, ""),
 			}
 			for k, v := range mockLabels {
-				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/"+k, v))
+				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", FeatureLabelNs+"/"+k, v))
 			}
 
 			mockHelper.On("GetClient").Return(mockClient, nil)
@@ -337,7 +341,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", wvAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", flAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", erAnnotation, ""),
-				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-2", mockLabels["feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
 
 			mockMaster.args.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
@@ -354,18 +358,23 @@ func TestSetLabels(t *testing.T) {
 		Convey("When --extra-label-ns and --instance are specified", func() {
 			// In the gRPC request the label names may omit the default ns
 			instance := "foo"
-			vendorLabel := "vendor." + LabelNs + "/feature-4"
+			vendorFeatureLabel := "vendor." + FeatureLabelNs + "/feature-4"
+			vendorProfileLabel := "vendor." + ProfileLabelNs + "/feature-5"
 			mockLabels := map[string]string{"feature-1": "val-1",
 				"valid.ns/feature-2":   "val-2",
 				"invalid.ns/feature-3": "val-3",
-				vendorLabel:            " val-4"}
+				vendorFeatureLabel:     " val-4",
+				vendorProfileLabel:     " val-5"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+wvAnnotation, workerVer),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+flAnnotation, "feature-1,valid.ns/feature-2,"+vendorLabel),
+				apihelper.NewJsonPatch("add", "/metadata/annotations",
+					instance+"."+flAnnotation,
+					"feature-1,valid.ns/feature-2,"+vendorFeatureLabel+","+vendorProfileLabel),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+erAnnotation, ""),
-				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-1", mockLabels["feature-1"]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
-				apihelper.NewJsonPatch("add", "/metadata/labels", vendorLabel, mockLabels[vendorLabel]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
 			}
 
 			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
@@ -387,11 +396,11 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", wvAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", flAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", erAnnotation, "feature-1,feature-3"),
-				apihelper.NewJsonPatch("add", "/metadata/labels", LabelNs+"/feature-2", mockLabels["feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
 			expectedStatusPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-1", mockLabels["feature-1"]),
-				apihelper.NewJsonPatch("add", "/status/capacity", LabelNs+"/feature-3", mockLabels["feature-3"]),
+				apihelper.NewJsonPatch("add", "/status/capacity", FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),
+				apihelper.NewJsonPatch("add", "/status/capacity", FeatureLabelNs+"/feature-3", mockLabels["feature-3"]),
 			}
 
 			mockMaster.args.ResourceLabels = map[string]struct{}{"feature-3": {}, "feature-1": {}}

@@ -31,8 +31,9 @@ The published node labels encode a few pieces of information:
   - all built-in labels use `feature.node.kubernetes.io`
   - user-specified custom labels ([custom](#custom) and
     [local](#local--user-specific-features) feature sources)
-    - `feature.node.kubernetes.io` and its sub-namespaces (e.g.
-      `vendor.profile.node.kubernetes.io`) are allowed by default
+    - `feature.node.kubernetes.io` and `profile.node.kubernetes.io` plus their
+      sub-namespaces (e.g. `vendor.profile.node.kubernetes.io` and
+      `sub.ns.profile.node.kubernetes.io`) are allowed by default
     - additional namespaces may be enabled with the
       [`--extra-label-ns`](../advanced/master-commandline-reference#-extra-label-ns)
       command line flag of nfd-master
@@ -376,7 +377,7 @@ custom:
     matchOn:
       - kConfig: ["GCC_VERSION=100101"]
         loadedKMod: ["kmod1"]
-  - name: "my.datacenter"
+  - name: "profile.node.kubernetes.io/my-datacenter"
     value: "datacenter-1"
     matchOn:
       - nodename: [ "node-datacenter1-rack.*-server.*" ]
@@ -413,7 +414,7 @@ __In the example above:__
   in-tree `kmod1` kernel module is loaded __AND__ it's built with
   `GCC_VERSION=100101`.
 - A node would contain the label:
-  `feature.node.kubernetes.io/my.datacenter=datacenter-1` if the node's name
+  `profile.node.kubernetes.io/my-datacenter=datacenter-1` if the node's name
   matches the `node-datacenter1-rack.*-server.*` pattern, e.g.
   `node-datacenter1-rack2-server42`
 
@@ -577,7 +578,8 @@ e.g. for overriding labels created by other feature sources.
 
 You can also override the default namespace of your labels using this format:
 `<namespace>/<name>[=<value>]`. If using something else than
-`[<sub-ns>.]feature.node.kubernetes.io`, you must whitelist your namespace
+`[<sub-ns>.]feature.node.kubernetes.io` or
+`[<sub-ns>.]profile.node.kubernetes.io`, you must whitelist your namespace
 using the `-extra-label-ns` option on the master.
 In this case, the name of the
 file will not be added to the label name. For example, if you want to add the
