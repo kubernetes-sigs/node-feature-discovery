@@ -206,6 +206,10 @@ worker:
     runAsNonRoot: true
     # runAsUser: 1000
 
+  # Allow users to mount the hostPath /usr/src, useful for RHCOS on s390x
+  # Does not work on systems without /usr/src AND a read-only /usr, such as Talos
+  mountUsrSrc: false
+
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little

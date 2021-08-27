@@ -63,9 +63,11 @@ spec:
         - name: host-usr-lib
           mountPath: "/host-usr/lib"
           readOnly: true
+        {{- if .Values.worker.mountUsrSrc }}
         - name: host-usr-src
           mountPath: "/host-usr/src"
           readOnly: true
+        {{- end }}
         - name: source-d
           mountPath: "/etc/kubernetes/node-feature-discovery/source.d/"
           readOnly: true
@@ -95,9 +97,11 @@ spec:
         - name: host-usr-lib
           hostPath:
             path: "/usr/lib"
+        {{- if .Values.worker.mountUsrSrc }}
         - name: host-usr-src
           hostPath:
             path: "/usr/src"
+        {{- end }}
         - name: source-d
           hostPath:
             path: "/etc/kubernetes/node-feature-discovery/source.d/"
