@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"regexp"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -122,7 +120,7 @@ type MatchExpression struct {
 	Value MatchValue `json:"value,omitempty"`
 
 	// valueRe caches compiled regexps for "InRegexp" operator
-	valueRe []*regexp.Regexp `json:"-"`
+	valueRe valueRegexpCache `json:"-"`
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a
