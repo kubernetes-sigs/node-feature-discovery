@@ -18,7 +18,79 @@ package v1alpha1
 
 import (
 	"regexp"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// NodeFeatureRuleList contains a list of NodeFeatureRule objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureRuleList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NodeFeatureRule `json:"items"`
+}
+
+// NodeFeatureRule resource specifies a configuration for feature-based
+// customization of node objects, such as node labeling.
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureRule struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec NodeFeatureRuleSpec `json:"spec"`
+}
+
+// NodeFeatureRuleSpec describes a NodeFeatureRule.
+type NodeFeatureRuleSpec struct {
+	// Rules is a list of node customization rules.
+	Rules []Rule `json:"rules"`
+}
+
+// Rule defines a rule for node customization such as labeling.
+type Rule struct {
+	// Name of the rule.
+	Name string `json:"name"`
+
+	// Labels to create if the rule matches.
+	// +optional
+	Labels map[string]string `json:"labels"`
+
+	// LabelsTemplate specifies a template to expand for dynamically generating
+	// multiple labels. Data (after template expansion) must be keys with an
+	// optional value (<key>[=<value>]) separated by newlines.
+	// +optional
+	LabelsTemplate string `json:"labelsTemplate"`
+
+	// MatchFeatures specifies a set of matcher terms all of which must match.
+	// +optional
+	MatchFeatures FeatureMatcher `json:"matchFeatures"`
+
+	// MatchAny specifies a list of matchers one of which must match.
+	// +optional
+	MatchAny []MatchAnyElem `json:"matchAny"`
+}
+
+// MatchAnyElem specifies one sub-matcher of MatchAny.
+type MatchAnyElem struct {
+	// MatchFeatures specifies a set of matcher terms all of which must match.
+	MatchFeatures FeatureMatcher `json:"matchFeatures"`
+}
+
+// FeatureMatcher specifies a set of feature matcher terms (i.e. per-feature
+// matchers), all of which must match.
+type FeatureMatcher []FeatureMatcherTerm
+
+// FeatureMatcherTerm defines requirements against one feature set. All
+// requirements (specified as MatchExpressions) are evaluated against each
+// element in the feature set.
+type FeatureMatcherTerm struct {
+	Feature          string             `json:"feature"`
+	MatchExpressions MatchExpressionSet `json:"matchExpressions"`
+}
 
 // MatchExpressionSet contains a set of MatchExpressions, each of which is
 // evaluated against a set of input values.
@@ -27,27 +99,30 @@ type MatchExpressionSet map[string]*MatchExpression
 // MatchExpression specifies an expression to evaluate against a set of input
 // values. It contains an operator that is applied when matching the input and
 // an array of values that the operator evaluates the input against.
+//
 // NB: CreateMatchExpression or MustCreateMatchExpression() should be used for
 //     creating new instances.
 // NB: Validate() must be called if Op or Value fields are modified or if a new
 //     instance is created from scratch without using the helper functions.
 type MatchExpression struct {
 	// Op is the operator to be applied.
-	Op MatchOp
+	Op MatchOp `json:"op"`
 
 	// Value is the list of values that the operand evaluates the input
 	// against. Value should be empty if the operator is Exists, DoesNotExist,
 	// IsTrue or IsFalse. Value should contain exactly one element if the
 	// operator is Gt or Lt and exactly two elements if the operator is GtLt.
 	// In other cases Value should contain at least one element.
-	Value MatchValue `json:",omitempty"`
+	// +optional
+	Value MatchValue `json:"value,omitempty"`
 
 	// valueRe caches compiled regexps for "InRegexp" operator
-	valueRe []*regexp.Regexp
+	valueRe []*regexp.Regexp `json:"-"`
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a
 // MatchExpression.
+// +kubebuilder:validation:Enum="In";"NotIn";"InRegexp";"Exists";"DoesNotExist";"Gt";"Lt";"GtLt";"IsTrue";"IsFalse"
 type MatchOp string
 
 // MatchValue is the list of values associated with a MatchExpression.

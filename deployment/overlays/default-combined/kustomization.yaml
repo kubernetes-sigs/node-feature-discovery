@@ -5,6 +5,7 @@ namespace: node-feature-discovery
 
 bases:
 - ../../base/rbac
+- ../../base/nfd-crds
 - ../../base/master-worker-combined
 
 resources:

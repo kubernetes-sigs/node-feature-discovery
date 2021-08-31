@@ -18,6 +18,9 @@ serviceAccount:
 nameOverride: ""
 fullnameOverride: ""
 
+nodeFeatureRule:
+  createCRD: true
+
 master:
   instance:
   extraLabelNs: []

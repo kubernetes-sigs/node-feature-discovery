@@ -1,0 +1,71 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-rule
+spec:
+  rules:
+    # The following feature demonstrates the capabilities of the matchFeatures and
+    # matchAny matchers.
+    - name: "my feature rule"
+      labels:
+        "my-complex-feature": "my-value"
+      # matchFeatures implements a logical AND over feature matchers.
+      matchFeatures:
+        - feature: cpu.cpuid
+          matchExpressions:
+            AVX512F: {op: Exists}
+        - feature: cpu.cstate
+          matchExpressions:
+            enabled: {op: IsTrue}
+        - feature: cpu.pstate
+          matchExpressions:
+            no_turbo: {op: IsFalse}
+            scaling_governor: {op: In, value: ["performance"]}
+        - feature: cpu.rdt
+          matchExpressions:
+            RDTL3CA: {op: Exists}
+        - feature: cpu.sst
+          matchExpressions:
+            bf.enabled: {op: IsTrue}
+        - feature: cpu.topology
+          matchExpressions:
+            hardware_multithreading: {op: IsFalse}
+
+        - feature: kernel.config
+          matchExpressions:
+            X86: {op: Exists}
+            LSM: {op: InRegexp, value: ["apparmor"]}
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            e1000e: {op: Exists}
+        - feature: kernel.selinux
+          matchExpressions:
+            enabled: {op: IsFalse}
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: In, value: ["5"]}
+            minor: {op: Gt, value: ["10"]}
+
+        - feature: system.osrelease
+          matchExpressions:
+            ID: {op: In, value: ["fedora", "centos"]}
+        - feature: system.name
+          matchExpressions:
+            nodename: {op: InRegexp, value: ["^worker-X"]}
+
+        - feature: local.label
+          matchExpressions:
+            custom-feature-knob: {op: Gt, value: ["100"]}
+
+      # matchAny implements a logical IF over all listed matchers (i.e. at
+      # least one must match)
+      matchAny:
+        - matchFeatures:
+          - feature: pci.device
+            matchExpressions:
+              vendor: {op: In, value: ["8086"]}
+              class: {op: In, value: ["0200"]}
+          - feature: usb.device
+            matchExpressions:
+              vendor: {op: In, value: ["8086"]}
+              class: {op: In, value: ["02"]}
