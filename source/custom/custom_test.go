@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 )
 
 func TestRule(t *testing.T) {
@@ -32,7 +32,7 @@ func TestRule(t *testing.T) {
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature:          "domain-1.kf-1",
-				MatchExpressions: expression.MatchExpressionSet{"key-1": expression.MustCreateMatchExpression(expression.MatchExists)},
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists)},
 			},
 		},
 	}
@@ -95,7 +95,7 @@ func TestRule(t *testing.T) {
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature:          "domain-1.vf-1",
-				MatchExpressions: expression.MatchExpressionSet{"key-1": expression.MustCreateMatchExpression(expression.MatchIn, "val-1")},
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")},
 			},
 		},
 	}
@@ -114,7 +114,7 @@ func TestRule(t *testing.T) {
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature:          "domain-1.if-1",
-				MatchExpressions: expression.MatchExpressionSet{"attr-1": expression.MustCreateMatchExpression(expression.MatchIn, "val-1")},
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"attr-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")},
 			},
 		},
 	}
@@ -133,11 +133,11 @@ func TestRule(t *testing.T) {
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature:          "domain-1.vf-1",
-				MatchExpressions: expression.MatchExpressionSet{"key-1": expression.MustCreateMatchExpression(expression.MatchIn, "val-x")},
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-x")},
 			},
 			FeatureMatcherTerm{
 				Feature:          "domain-1.if-1",
-				MatchExpressions: expression.MatchExpressionSet{"attr-1": expression.MustCreateMatchExpression(expression.MatchIn, "val-1")},
+				MatchExpressions: nfdv1alpha1.MatchExpressionSet{"attr-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")},
 			},
 		},
 	}
@@ -145,7 +145,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m, "instances should not have matched")
 
-	r5.MatchFeatures[0].MatchExpressions["key-1"] = expression.MustCreateMatchExpression(expression.MatchIn, "val-1")
+	r5.MatchFeatures[0].MatchExpressions["key-1"] = nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")
 	m, err = r5.execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m, "instances should have matched")
@@ -156,7 +156,7 @@ func TestRule(t *testing.T) {
 			MatchFeatures: FeatureMatcher{
 				FeatureMatcherTerm{
 					Feature:          "domain-1.kf-1",
-					MatchExpressions: expression.MatchExpressionSet{"key-na": expression.MustCreateMatchExpression(expression.MatchExists)},
+					MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-na": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists)},
 				},
 			},
 		},
@@ -170,11 +170,11 @@ func TestRule(t *testing.T) {
 			MatchFeatures: FeatureMatcher{
 				FeatureMatcherTerm{
 					Feature:          "domain-1.kf-1",
-					MatchExpressions: expression.MatchExpressionSet{"key-1": expression.MustCreateMatchExpression(expression.MatchExists)},
+					MatchExpressions: nfdv1alpha1.MatchExpressionSet{"key-1": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists)},
 				},
 			},
 		})
-	r5.MatchFeatures[0].MatchExpressions["key-1"] = expression.MustCreateMatchExpression(expression.MatchIn, "val-1")
+	r5.MatchFeatures[0].MatchExpressions["key-1"] = nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "val-1")
 	m, err = r5.execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m, "instances should have matched")

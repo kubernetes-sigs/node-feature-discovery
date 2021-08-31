@@ -19,13 +19,13 @@ package rules
 import (
 	"fmt"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 )
 
 type PciIDRule struct {
-	expression.MatchExpressionSet
+	nfdv1alpha1.MatchExpressionSet
 }
 
 // Match PCI devices on provided PCI device attributes

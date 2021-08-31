@@ -17,7 +17,7 @@ limitations under the License.
 package custom
 
 import (
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
@@ -31,8 +31,8 @@ func getStaticFeatureConfig() []CustomRule {
 				MatchOn: []LegacyMatcher{
 					{
 						PciID: &rules.PciIDRule{
-							MatchExpressionSet: expression.MatchExpressionSet{
-								"vendor": expression.MustCreateMatchExpression(expression.MatchIn, "15b3"),
+							MatchExpressionSet: nfdv1alpha1.MatchExpressionSet{
+								"vendor": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "15b3"),
 							},
 						},
 					},
@@ -45,9 +45,9 @@ func getStaticFeatureConfig() []CustomRule {
 				MatchOn: []LegacyMatcher{
 					{
 						LoadedKMod: &rules.LoadedKModRule{
-							MatchExpressionSet: expression.MatchExpressionSet{
-								"ib_uverbs": expression.MustCreateMatchExpression(expression.MatchExists),
-								"rdma_ucm":  expression.MustCreateMatchExpression(expression.MatchExists),
+							MatchExpressionSet: nfdv1alpha1.MatchExpressionSet{
+								"ib_uverbs": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+								"rdma_ucm":  nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
 							},
 						},
 					},

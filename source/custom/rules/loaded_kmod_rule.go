@@ -19,14 +19,14 @@ package rules
 import (
 	"fmt"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
 // LoadedKModRule matches loaded kernel modules in the system
 type LoadedKModRule struct {
-	expression.MatchExpressionSet
+	nfdv1alpha1.MatchExpressionSet
 }
 
 // Match loaded kernel modules on provided list of kernel modules

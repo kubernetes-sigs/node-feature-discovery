@@ -20,14 +20,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/system"
 )
 
 // NodenameRule matches on nodenames configured in a ConfigMap
 type NodenameRule struct {
-	expression.MatchExpression
+	nfdv1alpha1.MatchExpression
 }
 
 func (r *NodenameRule) Match() (bool, error) {
@@ -43,8 +43,8 @@ func (r *NodenameRule) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	// Force regexp matching
-	if r.Op == expression.MatchIn {
-		r.Op = expression.MatchInRegexp
+	if r.Op == nfdv1alpha1.MatchIn {
+		r.Op = nfdv1alpha1.MatchInRegexp
 	}
 	// We need to run Validate() because operator forcing above
 	return r.Validate()
