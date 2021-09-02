@@ -20,7 +20,7 @@ sort: 4
 ---
 
 See the
-[sample configuration file](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker.conf.example)
+[sample configuration file](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/worker-config/nfd-worker.conf.example)
 for a full example configuration.
 
 ## core
