@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -76,7 +77,9 @@ func (s Source) Discover() (source.Features, error) {
 		if flags&flagUp != 0 && flags&flagLoopback == 0 {
 			totalBytes, err := ioutil.ReadFile(source.SysfsDir.Path(sysfsBaseDir, name, "device/sriov_totalvfs"))
 			if err != nil {
-				klog.V(1).Infof("SR-IOV not supported for network interface: %s: %v", name, err)
+				if !os.IsNotExist(err) {
+					klog.Errorf("failed to determine SR-IOV support for network interface: %s: %v", name, err)
+				}
 				continue
 			}
 			total := bytes.TrimSpace(totalBytes)
