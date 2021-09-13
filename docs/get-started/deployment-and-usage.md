@@ -240,7 +240,7 @@ We have introduced the following Chart parameters.
 | `image.repository` | string | `{{ site.container_image | split: ":" | first }}` | NFD image repository |
 | `image.tag` | string | `{{ site.release }}` | NFD image tag |
 | `image.pullPolicy` | string | `Always` | Image pull policy |
-| `imagePullSecrets` | list | [] | ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. [https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod](More info) |
+| `imagePullSecrets` | list | [] | ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
 | `serviceAccount.create` | bool | true | Specifies whether a service account should be created |
 | `serviceAccount.annotations` | dict | {} | Annotations to add to the service account |
 | `serviceAccount.name` | string |  | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
@@ -313,7 +313,7 @@ labels. The provided template will configure these for you.
 
 NFD-Worker is preferably run as a Kubernetes DaemonSet. This assures
 re-labeling on regular intervals capturing changes in the system configuration
-and mames sure that new nodes are labeled as they are added to the cluster.
+and makes sure that new nodes are labeled as they are added to the cluster.
 Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an default interval of 60s.
