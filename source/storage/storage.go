@@ -25,24 +25,24 @@ import (
 
 const Name = "storage"
 
-// Source implements FeatureSource.
+// Source implements LabelSource.
 type Source struct{}
 
 // Name returns an identifier string for this feature source.
 func (s Source) Name() string { return Name }
 
-// NewConfig method of the FeatureSource interface
+// NewConfig method of the LabelSource interface
 func (s *Source) NewConfig() source.Config { return nil }
 
-// GetConfig method of the FeatureSource interface
+// GetConfig method of the LabelSource interface
 func (s *Source) GetConfig() source.Config { return nil }
 
-// SetConfig method of the FeatureSource interface
+// SetConfig method of the LabelSource interface
 func (s *Source) SetConfig(source.Config) {}
 
 // Discover returns feature names for storage: nonrotationaldisk if any SSD drive present.
-func (s Source) Discover() (source.Features, error) {
-	features := source.Features{}
+func (s Source) Discover() (source.FeatureLabels, error) {
+	features := source.FeatureLabels{}
 
 	// Check if there is any non-rotational block devices attached to the node
 	blockdevices, err := ioutil.ReadDir(source.SysfsDir.Path("block"))
