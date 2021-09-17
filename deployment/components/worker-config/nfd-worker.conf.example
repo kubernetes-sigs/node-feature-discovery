@@ -84,25 +84,25 @@
 #            class: ["0200"]
 #            vendor: ["15b3"]
 #            device: ["1014", "1017"]
-#        - pciId :
+#        - pciId:
 #            vendor: ["8086"]
 #            device: ["1000", "1100"]
 #    - name: "my.usb.feature"
 #      matchOn:
 #        - usbId:
-#          class: ["ff"]
-#          vendor: ["03e7"]
-#          device: ["2485"]
+#            class: ["ff"]
+#            vendor: ["03e7"]
+#            device: ["2485"]
 #        - usbId:
-#          class: ["fe"]
-#          vendor: ["1a6e"]
-#          device: ["089a"]
+#            class: ["fe"]
+#            vendor: ["1a6e"]
+#            device: ["089a"]
 #    - name: "my.combined.feature"
 #      matchOn:
 #        - pciId:
 #            vendor: ["15b3"]
 #            device: ["1014", "1017"]
-#          loadedKMod : ["vendor_kmod1", "vendor_kmod2"]
+#          loadedKMod: ["vendor_kmod1", "vendor_kmod2"]
 #    - name: "feature.by.nodename"
 #      value: customValue
 #      matchOn:
