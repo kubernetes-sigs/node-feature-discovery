@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,21 +25,21 @@ import (
 
 const Name = "iommu"
 
-// Source implements LabelSource.
-type Source struct{}
+// iommuSource implements the LabelSource interface.
+type iommuSource struct{}
 
-func (s Source) Name() string { return Name }
+func (s *iommuSource) Name() string { return Name }
 
-// NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return nil }
+// Singleton source instance
+var (
+	src iommuSource
+	_   source.LabelSource = &src
+)
 
-// GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return nil }
+// Priority method of the LabelSource interface
+func (s *iommuSource) Priority() int { return 0 }
 
-// SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(source.Config) {}
-
-func (s Source) Discover() (source.FeatureLabels, error) {
+func (s *iommuSource) Discover() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Check if any iommu devices are available
@@ -53,4 +53,8 @@ func (s Source) Discover() (source.FeatureLabels, error) {
 	}
 
 	return features, nil
+}
+
+func init() {
+	source.Register(&src)
 }

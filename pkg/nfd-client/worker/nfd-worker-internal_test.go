@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
-	"sigs.k8s.io/node-feature-discovery/source/fake"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
 	"sigs.k8s.io/node-feature-discovery/source/pci"
 )
@@ -96,15 +95,6 @@ func makeFakeFeatures(names []string) (source.FeatureLabels, Labels) {
 	return features, labels
 }
 
-func (w *nfdWorker) getSource(name string) source.LabelSource {
-	for _, s := range w.realSources {
-		if s.Name() == name {
-			return s
-		}
-	}
-	return nil
-}
-
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration", t, func() {
 		w, err := NewNfdWorker(&Args{})
@@ -130,7 +120,7 @@ func TestConfigParse(t *testing.T) {
 			Convey("overrides should take effect", func() {
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
 
-				c := worker.getSource("cpu").GetConfig().(*cpu.Config)
+				c := source.GetConfigurableSource("cpu").GetConfig().(*cpu.Config)
 				So(c.Cpuid.AttributeBlacklist, ShouldResemble, []string{"foo", "bar"})
 			})
 		})
@@ -167,9 +157,9 @@ sources:
 
 				// Verify feature source config
 				So(err, ShouldBeNil)
-				c := worker.getSource("kernel").GetConfig()
+				c := source.GetConfigurableSource("kernel").GetConfig()
 				So(c.(*kernel.Config).ConfigOpts, ShouldResemble, []string{"DMI"})
-				c = worker.getSource("pci").GetConfig()
+				c = source.GetConfigurableSource("pci").GetConfig()
 				So(c.(*pci.Config).DeviceClassWhitelist, ShouldResemble, []string{"ff"})
 			})
 		})
@@ -189,9 +179,9 @@ sources:
 
 				// Verify feature source config
 				So(err, ShouldBeNil)
-				c := worker.getSource("kernel").GetConfig()
+				c := source.GetConfigurableSource("kernel").GetConfig()
 				So(c.(*kernel.Config).ConfigOpts, ShouldResemble, []string{"DMI"})
-				c = worker.getSource("pci").GetConfig()
+				c = source.GetConfigurableSource("pci").GetConfig()
 				So(c.(*pci.Config).DeviceClassWhitelist, ShouldResemble, []string{"03"})
 			})
 		})
@@ -318,7 +308,7 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
-				So(len(worker.enabledSources), ShouldEqual, len(worker.realSources))
+				So(len(worker.enabledSources), ShouldEqual, len(source.GetAllLabelSources())-1)
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
@@ -333,7 +323,7 @@ func TestNewNfdWorker(t *testing.T) {
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("proper sources should be enabled", func() {
 				So(len(worker.enabledSources), ShouldEqual, 1)
-				So(worker.enabledSources[0], ShouldHaveSameTypeAs, &fake.Source{})
+				So(worker.enabledSources[0].Name(), ShouldEqual, "fake")
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
@@ -356,9 +346,9 @@ func TestNewNfdWorker(t *testing.T) {
 
 func TestCreateFeatureLabels(t *testing.T) {
 	Convey("When creating feature labels from the configured sources", t, func() {
-		fakeLabelSource := source.LabelSource(new(fake.Source))
-		fakeLabelSource.SetConfig(fakeLabelSource.NewConfig())
-		sources := []source.LabelSource{fakeLabelSource}
+		cs := source.GetConfigurableSource("fake")
+		cs.SetConfig(cs.NewConfig())
+		sources := []source.LabelSource{source.GetLabelSource("fake")}
 
 		Convey("When fake feature source is configured", func() {
 			emptyLabelWL := regexp.MustCompile("")

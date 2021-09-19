@@ -34,21 +34,21 @@ var osReleaseFields = [...]string{
 
 const Name = "system"
 
-// Source implements LabelSource.
-type Source struct{}
+// systemSource implements the LabelSource interface.
+type systemSource struct{}
 
-func (s Source) Name() string { return Name }
+// Singleton source instance
+var (
+	src systemSource
+	_   source.LabelSource = &src
+)
 
-// NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return nil }
+func (s *systemSource) Name() string { return Name }
 
-// GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return nil }
+// Priority method of the LabelSource interface
+func (s *systemSource) Priority() int { return 0 }
 
-// SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(source.Config) {}
-
-func (s Source) Discover() (source.FeatureLabels, error) {
+func (s *systemSource) Discover() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	release, err := parseOSRelease()
@@ -111,4 +111,8 @@ func splitVersion(version string) map[string]string {
 		}
 	}
 	return components
+}
+
+func init() {
+	source.Register(&src)
 }

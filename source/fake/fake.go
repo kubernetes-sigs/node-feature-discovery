@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2017-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -40,22 +40,29 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// Source implements LabelSource.
-type Source struct {
+// fakeSource implements the LabelSource and ConfigurableSource interfaces.
+type fakeSource struct {
 	config *Config
 }
 
+// Singleton source instance
+var (
+	src fakeSource
+	_   source.LabelSource        = &src
+	_   source.ConfigurableSource = &src
+)
+
 // Name returns an identifier string for this feature source.
-func (s Source) Name() string { return Name }
+func (s *fakeSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
-func (s *Source) NewConfig() source.Config { return newDefaultConfig() }
+func (s *fakeSource) NewConfig() source.Config { return newDefaultConfig() }
 
 // GetConfig method of the LabelSource interface
-func (s *Source) GetConfig() source.Config { return s.config }
+func (s *fakeSource) GetConfig() source.Config { return s.config }
 
 // SetConfig method of the LabelSource interface
-func (s *Source) SetConfig(conf source.Config) {
+func (s *fakeSource) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
 		s.config = v
@@ -65,10 +72,13 @@ func (s *Source) SetConfig(conf source.Config) {
 }
 
 // Configure method of the LabelSource interface
-func (s Source) Configure([]byte) error { return nil }
+func (s *fakeSource) Configure([]byte) error { return nil }
+
+// Priority method of the LabelSource interface
+func (s *fakeSource) Priority() int { return 0 }
 
 // Discover returns feature names for some fake features.
-func (s Source) Discover() (source.FeatureLabels, error) {
+func (s *fakeSource) Discover() (source.FeatureLabels, error) {
 	// Adding three fake features.
 	features := make(source.FeatureLabels, len(s.config.Labels))
 	for k, v := range s.config.Labels {
@@ -76,4 +86,11 @@ func (s Source) Discover() (source.FeatureLabels, error) {
 	}
 
 	return features, nil
+}
+
+// IsTestSource method of the LabelSource interface
+func (s *fakeSource) IsTestSource() bool { return true }
+
+func init() {
+	source.Register(&src)
 }
