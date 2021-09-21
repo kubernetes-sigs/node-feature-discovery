@@ -391,7 +391,7 @@ See
 [nfd-worker configuration file reference](../advanced/worker-configuration-reference.md)
 for more details.
 The (empty-by-default)
-[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/nfd-worker.conf.example)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/worker-config/nfd-worker.conf.example)
 contains all available configuration options and can be used as a reference
 for creating creating a configuration.
 
