@@ -29,17 +29,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/peer"
-	api "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
-
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/peer"
+	api "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
+	topologypb "sigs.k8s.io/node-feature-discovery/pkg/topologyupdater"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
@@ -90,6 +94,7 @@ type Args struct {
 	Prune          bool
 	VerifyNodeName bool
 	ResourceLabels utils.StringSetVal
+	NRTNamespace   string
 }
 
 type NfdMaster interface {
@@ -195,6 +200,7 @@ func (m *nfdMaster) Run() error {
 	m.server = grpc.NewServer(serverOpts...)
 	pb.RegisterLabelerServer(m.server, m)
 	grpc_health_v1.RegisterHealthServer(m.server, health.NewServer())
+	topologypb.RegisterNodeTopologyServer(m.server, m)
 	klog.Infof("gRPC server serving on port: %d", m.args.Port)
 
 	// Run gRPC server
@@ -375,29 +381,9 @@ func verifyNodeName(cert *x509.Certificate, nodeName string) error {
 
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
-	if m.args.VerifyNodeName {
-		// Client authorization.
-		// Check that the node name matches the CN from the TLS cert
-		client, ok := peer.FromContext(c)
-		if !ok {
-			klog.Errorf("gRPC request error: failed to get peer (client)")
-			return &pb.SetLabelsReply{}, fmt.Errorf("failed to get peer (client)")
-		}
-		tlsAuth, ok := client.AuthInfo.(credentials.TLSInfo)
-		if !ok {
-			klog.Errorf("gRPC request error: incorrect client credentials from '%v'", client.Addr)
-			return &pb.SetLabelsReply{}, fmt.Errorf("incorrect client credentials")
-		}
-		if len(tlsAuth.State.VerifiedChains) == 0 || len(tlsAuth.State.VerifiedChains[0]) == 0 {
-			klog.Errorf("gRPC request error: client certificate verification for '%v' failed", client.Addr)
-			return &pb.SetLabelsReply{}, fmt.Errorf("client certificate verification failed")
-		}
-
-		err := verifyNodeName(tlsAuth.State.VerifiedChains[0][0], r.NodeName)
-		if err != nil {
-			klog.Errorf("gRPC request error: authorization for %v failed: %v", client.Addr, err)
-			return &pb.SetLabelsReply{}, err
-		}
+	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
+	if err != nil {
+		return &pb.SetLabelsReply{}, err
 	}
 	if klog.V(1).Enabled() {
 		klog.Infof("REQUEST Node: %q NFD-version: %q Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
@@ -419,6 +405,55 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		}
 	}
 	return &pb.SetLabelsReply{}, nil
+}
+
+func authorizeClient(c context.Context, checkNodeName bool, nodeName string) error {
+	if checkNodeName {
+		// Client authorization.
+		// Check that the node name matches the CN from the TLS cert
+		client, ok := peer.FromContext(c)
+		if !ok {
+			klog.Errorf("gRPC request error: failed to get peer (client)")
+			return fmt.Errorf("failed to get peer (client)")
+		}
+		tlsAuth, ok := client.AuthInfo.(credentials.TLSInfo)
+		if !ok {
+			klog.Errorf("gRPC request error: incorrect client credentials from '%v'", client.Addr)
+			return fmt.Errorf("incorrect client credentials")
+		}
+		if len(tlsAuth.State.VerifiedChains) == 0 || len(tlsAuth.State.VerifiedChains[0]) == 0 {
+			klog.Errorf("gRPC request error: client certificate verification for '%v' failed", client.Addr)
+			return fmt.Errorf("client certificate verification failed")
+		}
+
+		err := verifyNodeName(tlsAuth.State.VerifiedChains[0][0], nodeName)
+		if err != nil {
+			klog.Errorf("gRPC request error: authorization for %v failed: %v", client.Addr, err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopologyRequest) (*topologypb.NodeTopologyResponse, error) {
+	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
+	if err != nil {
+		return &topologypb.NodeTopologyResponse{}, err
+	}
+	if klog.V(1).Enabled() {
+		klog.Infof("REQUEST Node: %s NFD-version: %s Topology Policy: %s", r.NodeName, r.NfdVersion, r.TopologyPolicies)
+		utils.KlogDump(1, "Zones received:", "  ", r.Zones)
+	} else {
+		klog.Infof("received CR updation request for node %q", r.NodeName)
+	}
+	if !m.args.NoPublish {
+		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones, m.args.NRTNamespace)
+		if err != nil {
+			klog.Errorf("failed to advertise NodeResourceTopology: %w", err)
+			return &topologypb.NodeTopologyResponse{}, err
+		}
+	}
+	return &topologypb.NodeTopologyResponse{}, nil
 }
 
 // updateNodeFeatures ensures the Kubernetes node object is up to date,
@@ -589,4 +624,58 @@ func stringToNsNames(cslist, ns string) []string {
 		}
 	}
 	return names
+}
+
+func modifyCR(topoUpdaterZones []*v1alpha1.Zone) []v1alpha1.Zone {
+	zones := make([]v1alpha1.Zone, len(topoUpdaterZones))
+	// TODO: Avoid copying of data to allow returning the zone info
+	// directly in a compatible data type (i.e. []*v1alpha1.Zone).
+	for i, zone := range topoUpdaterZones {
+		zones[i] = v1alpha1.Zone{
+			Name:      zone.Name,
+			Type:      zone.Type,
+			Parent:    zone.Parent,
+			Costs:     zone.Costs,
+			Resources: zone.Resources,
+		}
+	}
+	return zones
+}
+
+func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZones []*v1alpha1.Zone, namespace string) error {
+	cli, err := m.apihelper.GetTopologyClient()
+	if err != nil {
+		return err
+	}
+
+	zones := modifyCR(topoUpdaterZones)
+
+	nrt, err := cli.TopologyV1alpha1().NodeResourceTopologies(namespace).Get(context.TODO(), hostname, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		nrtNew := v1alpha1.NodeResourceTopology{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: hostname,
+			},
+			Zones:            zones,
+			TopologyPolicies: tmpolicy,
+		}
+
+		_, err := cli.TopologyV1alpha1().NodeResourceTopologies(namespace).Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create v1alpha1.NodeResourceTopology!:%w", err)
+		}
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	nrtMutated := nrt.DeepCopy()
+	nrtMutated.Zones = zones
+
+	nrtUpdated, err := cli.TopologyV1alpha1().NodeResourceTopologies(namespace).Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update v1alpha1.NodeResourceTopology!:%w", err)
+	}
+	utils.KlogDump(2, "CR instance updated resTopo:", "  ", nrtUpdated)
+	return nil
 }

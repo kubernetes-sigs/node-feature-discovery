@@ -17,6 +17,7 @@ limitations under the License.
 package apihelper
 
 import (
+	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	api "k8s.io/api/core/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 )
@@ -40,4 +41,10 @@ type APIHelpers interface {
 
 	// PatchNodeStatus updates the node status via the API server using a client.
 	PatchNodeStatus(*k8sclient.Clientset, string, []JsonPatch) error
+
+	// GetTopologyClient returns a topologyclientset
+	GetTopologyClient() (*topologyclientset.Clientset, error)
+
+	// GetPod returns the Kubernetes pod in a namepace with a name.
+	GetPod(*k8sclient.Clientset, string, string) (*api.Pod, error)
 }
