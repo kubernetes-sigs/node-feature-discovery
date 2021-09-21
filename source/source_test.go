@@ -17,6 +17,7 @@ limitations under the License.
 package source_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,5 +60,21 @@ func TestConfigurableSources(t *testing.T) {
 		rc := s.GetConfig()
 
 		assert.Equalf(t, c, rc, "testing ConfigurableSource %q failed", n)
+	}
+}
+
+func TestFeatureSources(t *testing.T) {
+	sources := source.GetAllFeatureSources()
+
+	for n, s := range sources {
+		msg := fmt.Sprintf("testing FeatureSource %q failed", n)
+
+		assert.Equal(t, n, s.Name(), msg)
+
+		f := s.GetFeatures()
+		assert.NotNil(t, f, msg)
+		assert.Empty(t, (*f).Keys, msg)
+		assert.Empty(t, (*f).Values, msg)
+		assert.Empty(t, (*f).Instances, msg)
 	}
 }

@@ -39,7 +39,8 @@ var (
 // Priority method of the LabelSource interface
 func (s *iommuSource) Priority() int { return 0 }
 
-func (s *iommuSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *iommuSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Check if any iommu devices are available

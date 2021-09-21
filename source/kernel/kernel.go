@@ -80,7 +80,8 @@ func (s *kernelSource) SetConfig(conf source.Config) {
 // Priority method of the LabelSource interface
 func (s *kernelSource) Priority() int { return 0 }
 
-func (s *kernelSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	// Read kernel version

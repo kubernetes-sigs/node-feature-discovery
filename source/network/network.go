@@ -56,8 +56,8 @@ func (s *networkSource) Name() string { return Name }
 // Priority method of the LabelSource interface
 func (s *networkSource) Priority() int { return 0 }
 
-// Discover returns feature names sriov-configured and sriov if SR-IOV capable NICs are present and/or SR-IOV virtual functions are configured on the node
-func (s *networkSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.FeatureLabels{}
 
 	netInterfaces, err := ioutil.ReadDir(source.SysfsDir.Path(sysfsBaseDir))

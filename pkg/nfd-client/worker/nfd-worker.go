@@ -175,6 +175,14 @@ func (w *nfdWorker) Run() error {
 	for {
 		select {
 		case <-labelTrigger:
+			// Run feature discovery
+			for n, s := range source.GetAllFeatureSources() {
+				klog.V(2).Infof("running discovery for %q source", n)
+				if err := s.Discover(); err != nil {
+					klog.Errorf("feature discovery of %q source failed: %v", n, err)
+				}
+			}
+
 			// Get the set of feature labels.
 			labels := createFeatureLabels(w.enabledSources, w.config.Core.LabelWhiteList.Regexp)
 
@@ -394,7 +402,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels) {
 	labels = Labels{}
 
-	// Do feature discovery from all configured sources.
+	// Get labels from all enabled label sources
 	klog.Info("starting feature discovery...")
 	for _, source := range sources {
 		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
@@ -416,7 +424,7 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 // supplied source.
 func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
 	labels = Labels{}
-	features, err := source.Discover()
+	features, err := source.GetLabels()
 	if err != nil {
 		return nil, err
 	}

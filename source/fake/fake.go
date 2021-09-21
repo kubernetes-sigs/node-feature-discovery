@@ -77,8 +77,8 @@ func (s *fakeSource) Configure([]byte) error { return nil }
 // Priority method of the LabelSource interface
 func (s *fakeSource) Priority() int { return 0 }
 
-// Discover returns feature names for some fake features.
-func (s *fakeSource) Discover() (source.FeatureLabels, error) {
+// GetLabels method of the LabelSource interface
+func (s *fakeSource) GetLabels() (source.FeatureLabels, error) {
 	// Adding three fake features.
 	features := make(source.FeatureLabels, len(s.config.Labels))
 	for k, v := range s.config.Labels {
