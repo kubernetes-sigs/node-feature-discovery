@@ -91,7 +91,7 @@ func parseOSRelease() (map[string]string, error) {
 	for s.Scan() {
 		line := s.Text()
 		if m := re.FindStringSubmatch(line); m != nil {
-			release[m[1]] = strings.Trim(m[2], `"`)
+			release[m[1]] = strings.Trim(m[2], `"'`)
 		}
 	}
 
