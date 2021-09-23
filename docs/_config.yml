@@ -44,6 +44,14 @@ remote_theme: rundocs/jekyll-rtd-theme@v2.0.10
 version: master
 display_version_list: true
 
+# Customize page width (make it wider) for large screens
+scss: |
+  @media(min-width: 1280px){
+    .content-wrap{
+      max-width: 1200px
+    }
+  }
+
 # Release is the full released version number. Used to make external links to
 # point to the correct blobs in the Github repo. This is also the version shown
 # in the sidebar (top left corner of the page)
