@@ -22,8 +22,4 @@ spec:
           command:
             - "nfd-topology-updater"
           args:
-            - "--kubelet-config-file=/host-var/lib/kubelet/config.yaml"
-            - "--podresources-socket=/host-var/lib/kubelet/pod-resources/kubelet.sock"
-            - "--sleep-interval=3s"
-            - "--watch-namespace=*"
-            - "--server=nfd-master:8080"
+            - "-server=nfd-master:8080"
