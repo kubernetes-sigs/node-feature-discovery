@@ -5,12 +5,10 @@ sort: 5
 ---
 
 # Examples and demos
-
-{: .no_toc }
+{: .no_toc}
 
 ## Table of contents
-
-{: .no_toc .text-delta }
+{: .no_toc .text-delta}
 
 1. TOC
 {:toc}
