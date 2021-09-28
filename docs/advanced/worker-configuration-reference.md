@@ -12,8 +12,6 @@ sort: 4
 
 {: .no_toc .text-delta }
 
-***WORK IN PROGRESS.***
-
 1. TOC
 {:toc}
 
