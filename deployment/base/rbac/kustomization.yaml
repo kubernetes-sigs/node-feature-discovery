@@ -7,3 +7,5 @@ resources:
 - master-serviceaccount.yaml
 - master-clusterrole.yaml
 - master-clusterrolebinding.yaml
+- master-role.yaml
+- master-rolebinding.yaml

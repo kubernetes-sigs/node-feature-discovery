@@ -27,7 +27,6 @@ master:
   podSecurityContext: {}
     # fsGroup: 2000
 
-  topologyUpdaterNs: ""
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:

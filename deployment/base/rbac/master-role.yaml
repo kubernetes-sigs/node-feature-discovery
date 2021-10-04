@@ -1,14 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: nfd-master
 rules:
 - apiGroups:
-  - ""
+  - topology.node.k8s.io
   resources:
-  - nodes
+  - noderesourcetopologies
   verbs:
+  - create
   - get
-  - patch
   - update
-  - list
+
