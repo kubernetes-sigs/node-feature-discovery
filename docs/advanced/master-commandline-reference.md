@@ -5,12 +5,10 @@ sort: 2
 ---
 
 # Commandline flags of nfd-master
-
-{: .no_toc }
+{: .no_toc}
 
 ## Table of contents
-
-{: .no_toc .text-delta }
+{: .no_toc .text-delta}
 
 1. TOC
 {:toc}
