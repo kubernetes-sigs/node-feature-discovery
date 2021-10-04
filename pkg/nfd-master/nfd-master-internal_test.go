@@ -520,9 +520,9 @@ func jsonPatchMatcher(expected []apihelper.JsonPatch) func([]apihelper.JsonPatch
 			// We parse the cryptic string message for better readability
 			var f assertions.FailureView
 			if err := yaml.Unmarshal([]byte(msg), &f); err == nil {
-				Printf("%s\n", f.Message)
+				_, _ = Printf("%s\n", f.Message)
 			} else {
-				Printf("%s\n", msg)
+				_, _ = Printf("%s\n", msg)
 			}
 		}
 		return ok
