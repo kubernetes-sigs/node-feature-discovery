@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -92,7 +91,7 @@ type ConfigMap struct {
 type NodeFeatureDiscoveryStatus struct {
 	// Conditions represents the latest available observations of current state.
 	// +optional
-	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
