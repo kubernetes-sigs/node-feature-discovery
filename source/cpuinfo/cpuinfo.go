@@ -1,5 +1,5 @@
 /*
-Copyright 2018-2021 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import (
 var cpuReleaseFields = [...]string{
 	"model",
 	"cpu_MHz",
-        "cpu_family",
-        "vendor_id",
-        "stepping",
+	"cpu_family",
+	"vendor_id",
+	"stepping",
 }
 
 const Name = "cpuinfo"
@@ -42,8 +42,8 @@ type systemSource struct{}
 
 // Singleton source instance
 var (
-        src systemSource
-        _   source.LabelSource = &src
+	src systemSource
+	_   source.LabelSource = &src
 )
 
 func (s *systemSource) Name() string { return Name }
@@ -85,9 +85,9 @@ func parseCPUInfo() (map[string]string, error) {
 	for s.Scan() {
 		line := s.Text()
 		if m := re.FindStringSubmatch(line); m != nil {
-                        m[1] = strings.TrimSpace(m[1])
-                        m[1] = strings.ReplaceAll(m[1], " ", "_")
-                        m[2] = strings.TrimSpace(m[2])
+			m[1] = strings.TrimSpace(m[1])
+			m[1] = strings.ReplaceAll(m[1], " ", "_")
+			m[2] = strings.TrimSpace(m[2])
 			release[m[1]] = strings.Trim(m[2], `"`)
 		}
 	}
@@ -96,5 +96,5 @@ func parseCPUInfo() (map[string]string, error) {
 }
 
 func init() {
-        source.Register(&src)
+	source.Register(&src)
 }

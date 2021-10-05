@@ -32,8 +32,8 @@ var (
 	UsrDir = HostDir(pathPrefix + "usr")
 	// VarPath is where the /var directory of the system to be inspected is located
 	VarDir = HostDir(pathPrefix + "var")
-        // ProcPath is where the /proc directory of the system to be inspected is located
-        ProcDir = HostDir(pathPrefix + "proc")
+	// ProcPath is where the /proc directory of the system to be inspected is located
+	ProcDir = HostDir(pathPrefix + "proc")
 )
 
 // HostDir is a helper for handling host system directories
