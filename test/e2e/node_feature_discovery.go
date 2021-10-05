@@ -328,6 +328,11 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 						MountPath: "/host-etc/os-release",
 						ReadOnly:  true,
 					},
+                                        {
+                                                Name:      "host-proc-cpuinfo",
+                                                MountPath: "/host-proc/cpuinfo",
+                                                ReadOnly:  true,
+                                        },
 					{
 						Name:      "host-sys",
 						MountPath: "/host-sys",
@@ -358,6 +363,15 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 					},
 				},
 			},
+                        {
+                                Name: "host-proc-cpuinfo",
+                                VolumeSource: v1.VolumeSource{
+                                        HostPath: &v1.HostPathVolumeSource{
+                                                Path: "/proc/cpuinfo",
+                                                Type: newHostPathType(v1.HostPathDirectory),
+                                        },
+                                },
+                        },
 			{
 				Name: "host-sys",
 				VolumeSource: v1.VolumeSource{
