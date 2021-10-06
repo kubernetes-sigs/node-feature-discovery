@@ -446,6 +446,21 @@ func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopo
 	} else {
 		klog.Infof("received CR updation request for node %q", r.NodeName)
 	}
+	if len(r.TopologyPolicies[0]) == 0 {
+		klog.Warningf("Using configz-endpoint in order to get Kubelet configuration, consider to be unstable")
+		cli, err := m.apihelper.GetClient()
+		if err != nil {
+			klog.Errorf("%v", err.Error())
+			return &topologypb.NodeTopologyResponse{}, err
+		}
+		kc, err := m.apihelper.GetKubeletConfig(cli, r.NodeName)
+		if err != nil {
+			klog.Errorf("failed to get Kubelet config: %v", err.Error())
+			return &topologypb.NodeTopologyResponse{}, err
+		}
+		r.TopologyPolicies[0] = kc.TopologyManagerPolicy
+		klog.Infof("detected topology policy: %q", kc.TopologyManagerPolicy)
+	}
 	if !m.args.NoPublish {
 		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones, m.args.NRTNamespace)
 		if err != nil {

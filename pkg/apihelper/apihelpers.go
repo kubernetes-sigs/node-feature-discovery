@@ -22,6 +22,7 @@ import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	api "k8s.io/api/core/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 )
 
 // APIHelpers represents a set of API helpers for Kubernetes
@@ -47,6 +48,9 @@ type APIHelpers interface {
 	// GetTopologyClient returns a topologyclientset
 	GetTopologyClient() (*topologyclientset.Clientset, error)
 
-	// GetPod returns the Kubernetes pod in a namepace with a name.
+	// GetPod returns the Kubernetes pod in a namespace with a name.
 	GetPod(*k8sclient.Clientset, string, string) (*api.Pod, error)
+
+	// GetKubeletConfig returns node's kubelet config file
+	GetKubeletConfig(c *k8sclient.Clientset, nodeName string) (*kubeletconfig.KubeletConfiguration, error)
 }

@@ -38,6 +38,12 @@ const (
 	ProgramName = "nfd-topology-updater"
 )
 
+// Options to obtain Kubelet config file
+const (
+	kubeletFile = "kubelet-config-file"
+	configz     = "configz-endpoint"
+)
+
 func main() {
 	flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
 
@@ -58,12 +64,15 @@ func main() {
 	// Plug klog into grpc logging infrastructure
 	utils.ConfigureGrpcKlog()
 
-	klConfig, err := kubeconf.GetKubeletConfigFromLocalFile(resourcemonitorArgs.KubeletConfigFile)
-	if err != nil {
-		klog.Fatalf("error reading kubelet config: %v", err)
-	}
-	tmPolicy := string(topologypolicy.DetectTopologyPolicy(klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope))
-	klog.Infof("detected kubelet Topology Manager policy %q", tmPolicy)
+	var tmPolicy string
+	if resourcemonitorArgs.KubeletConfigObtainOpt == kubeletFile {
+		klConfig, err := kubeconf.GetKubeletConfigFromLocalFile(resourcemonitorArgs.KubeletConfigFile)
+		if err != nil {
+			klog.Fatalf("error reading kubelet config: %v", err)
+		}
+		tmPolicy = string(topologypolicy.DetectTopologyPolicy(klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope))
+		klog.Infof("detected kubelet Topology Manager policy %q", tmPolicy)
+	} // Otherwise get TopologyManagerPolicy from configz-endpoint
 
 	// Get new TopologyUpdater instance
 	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, tmPolicy)
@@ -109,22 +118,17 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Time to sleep between CR updates. Non-positive value implies no CR updatation (i.e. infinite sleep). [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",
 		"Namespace to watch pods (for testing/debugging purpose). Use * for all namespaces.")
+	flagset.StringVar(&resourcemonitorArgs.KubeletConfigObtainOpt, "obtain-kubelet-config", kubeletFile, "Options to obtain Kubelet config file. [Possible arguments: kubelet-config-file/configz-endpoint]")
 	flagset.StringVar(&resourcemonitorArgs.KubeletConfigFile, "kubelet-config-file", source.VarDir.Path("lib/kubelet/config.yaml"),
 		"Kubelet config file path.")
 	flagset.StringVar(&resourcemonitorArgs.PodResourceSocketPath, "podresources-socket", source.VarDir.Path("lib/kubelet/pod-resources/kubelet.sock"),
 		"Pod Resource Socket path to use.")
 	flagset.StringVar(&args.Server, "server", "localhost:8080",
-		"NFD server address to connecto to.")
+		"NFD server address to connect to.")
 	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
 		"Hostname expected from server certificate, useful in testing")
 
-	initKlogFlags(flagset)
+	klog.InitFlags(flagset)
 
 	return args, resourcemonitorArgs
-}
-
-func initKlogFlags(flagset *flag.FlagSet) {
-	flags := flag.NewFlagSet("klog flags", flag.ExitOnError)
-	//flags.SetOutput(ioutil.Discard)
-	klog.InitFlags(flags)
 }

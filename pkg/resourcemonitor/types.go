@@ -26,10 +26,11 @@ import (
 
 // Args stores commandline arguments used for resource monitoring
 type Args struct {
-	PodResourceSocketPath string
-	SleepInterval         time.Duration
-	Namespace             string
-	KubeletConfigFile     string
+	PodResourceSocketPath  string
+	SleepInterval          time.Duration
+	Namespace              string
+	KubeletConfigFile      string
+	KubeletConfigObtainOpt string
 }
 
 // ResourceInfo stores information of resources and their corresponding IDs obtained from PodResource API

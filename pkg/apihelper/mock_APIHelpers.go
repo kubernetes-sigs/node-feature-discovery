@@ -5,6 +5,7 @@ package apihelper
 import (
 	mock "github.com/stretchr/testify/mock"
 	kubernetes "k8s.io/client-go/kubernetes"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 
 	v1 "k8s.io/api/core/v1"
 
@@ -32,6 +33,29 @@ func (_m *MockAPIHelpers) GetClient() (*kubernetes.Clientset, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetKubeletConfig provides a mock function with given fields: c, nodeName
+func (_m *MockAPIHelpers) GetKubeletConfig(c *kubernetes.Clientset, nodeName string) (*kubeletconfig.KubeletConfiguration, error) {
+	ret := _m.Called(c, nodeName)
+
+	var r0 *kubeletconfig.KubeletConfiguration
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string) *kubeletconfig.KubeletConfiguration); ok {
+		r0 = rf(c, nodeName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*kubeletconfig.KubeletConfiguration)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*kubernetes.Clientset, string) error); ok {
+		r1 = rf(c, nodeName)
 	} else {
 		r1 = ret.Error(1)
 	}

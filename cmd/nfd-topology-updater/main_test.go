@@ -36,6 +36,7 @@ func TestArgsParse(t *testing.T) {
 				So(args.Oneshot, ShouldBeTrue)
 				So(finderArgs.SleepInterval, ShouldEqual, 60*time.Second)
 				So(finderArgs.KubeletConfigFile, ShouldEqual, "/var/lib/kubelet/config.yaml")
+				So(finderArgs.KubeletConfigObtainOpt, ShouldEqual, kubeletFile)
 				So(finderArgs.PodResourceSocketPath, ShouldEqual, "/var/lib/kubelet/pod-resources/kubelet.sock")
 			})
 		})
@@ -98,6 +99,15 @@ func TestArgsParse(t *testing.T) {
 				So(finderArgs.SleepInterval, ShouldEqual, 30*time.Second)
 				So(finderArgs.KubeletConfigFile, ShouldEqual, "/path/testconfig.yaml")
 				So(finderArgs.PodResourceSocketPath, ShouldEqual, "/path/testkubelet.sock")
+			})
+		})
+
+		Convey("When configz-endpoint specified", func() {
+			_, finderArgs := parseArgs(flags,
+				"--obtain-kubelet-config=configz-endpoint")
+
+			Convey("obtain-kubelet-config option should be configz-endpoint", func() {
+				So(finderArgs.KubeletConfigObtainOpt, ShouldEqual, configz)
 			})
 		})
 	})
