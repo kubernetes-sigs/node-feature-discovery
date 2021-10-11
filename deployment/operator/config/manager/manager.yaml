@@ -49,7 +49,7 @@ spec:
             - name: OPERATOR_NAME
               value: "cluster-nfd-operator"
             - name: NODE_FEATURE_DISCOVERY_IMAGE
-              value: "k8s.gcr.io/nfd/node-feature-discovery:v0.7.0"
+              value: "k8s.gcr.io/nfd/node-feature-discovery:v0.9.0"
           livenessProbe:
             httpGet:
               path: /healthz
