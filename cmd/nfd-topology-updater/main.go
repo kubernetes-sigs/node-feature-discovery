@@ -118,13 +118,7 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
 		"Hostname expected from server certificate, useful in testing")
 
-	initKlogFlags(flagset)
+	klog.InitFlags(flagset)
 
 	return args, resourcemonitorArgs
-}
-
-func initKlogFlags(flagset *flag.FlagSet) {
-	flags := flag.NewFlagSet("klog flags", flag.ExitOnError)
-	//flags.SetOutput(ioutil.Discard)
-	klog.InitFlags(flags)
 }
