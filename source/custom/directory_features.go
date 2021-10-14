@@ -31,14 +31,14 @@ const Directory = "/etc/kubernetes/node-feature-discovery/custom.d"
 
 // getDirectoryFeatureConfig returns features configured in the "/etc/kubernetes/node-feature-discovery/custom.d"
 // host directory and its 1st level subdirectories, which can be populated e.g. by ConfigMaps
-func getDirectoryFeatureConfig() []FeatureSpec {
+func getDirectoryFeatureConfig() []CustomRule {
 	features := readDir(Directory, true)
 	klog.V(1).Infof("all configmap based custom feature specs: %+v", features)
 	return features
 }
 
-func readDir(dirName string, recursive bool) []FeatureSpec {
-	features := make([]FeatureSpec, 0)
+func readDir(dirName string, recursive bool) []CustomRule {
+	features := make([]CustomRule, 0)
 
 	klog.V(1).Infof("getting files in %s", dirName)
 	files, err := ioutil.ReadDir(dirName)
@@ -76,7 +76,7 @@ func readDir(dirName string, recursive bool) []FeatureSpec {
 		}
 		klog.V(2).Infof("custom config rules raw: %s", string(bytes))
 
-		config := &[]FeatureSpec{}
+		config := &[]CustomRule{}
 		err = yaml.UnmarshalStrict(bytes, config)
 		if err != nil {
 			klog.Errorf("could not parse custom config file %q, %v", fileName, err)

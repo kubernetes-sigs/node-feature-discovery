@@ -193,6 +193,59 @@ worker:
     #      value: customValue
     #      matchOn:
     #        - nodename: ["worker-0", "my-.*-node"]
+    #
+    #    # The following feature demonstrates the capabilities of the matchFeatures
+    #    - name: "my.ng.feature"
+    #      labels:
+    #        my-ng-feature: "true"
+    #      # matchFeatures implements a logical AND over all matcher terms in the
+    #      # list (i.e. all of the terms, or per-feature matchers, must match)
+    #      matchFeatures:
+    #        - feature: cpu.cpuid
+    #          matchExpressions:
+    #            AVX512F: {op: Exists}
+    #        - feature: cpu.cstate
+    #          matchExpressions:
+    #            enabled: {op: IsTrue}
+    #        - feature: cpu.pstate
+    #          matchExpressions:
+    #            no_turbo: {op: IsFalse}
+    #            scaling_governor: {op: In, value: ["performance"]}
+    #        - feature: cpu.rdt
+    #          matchExpressions:
+    #            RDTL3CA: {op: Exists}
+    #        - feature: cpu.sst
+    #          matchExpressions:
+    #            bf.enabled: {op: IsTrue}
+    #        - feature: cpu.topology
+    #          matchExpressions:
+    #            hardware_multithreading: {op: IsFalse}
+    #
+    #        - feature: kernel.config
+    #          matchExpressions:
+    #            X86: {op: Exists}
+    #            LSM: {op: InRegexp, value: ["apparmor"]}
+    #        - feature: kernel.loadedmodule
+    #          matchExpressions:
+    #            e1000e: {op: Exists}
+    #        - feature: kernel.selinux
+    #          matchExpressions:
+    #            enabled: {op: IsFalse}
+    #        - feature: kernel.version
+    #          matchExpressions:
+    #            major: {op: In, value: ["5"]}
+    #            minor: {op: Gt, value: ["10"]}
+    #
+    #        - feature: system.osrelease
+    #          matchExpressions:
+    #            ID: {op: In, value: ["fedora", "centos"]}
+    #        - feature: system.name
+    #          matchExpressions:
+    #            nodename: {op: InRegexp, value: ["^worker-X"]}
+    #
+    #        - feature: local.label
+    #          matchExpressions:
+    #            custom-feature-knob: {op: Gt, value: ["100"]}
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
   podSecurityContext: {}
