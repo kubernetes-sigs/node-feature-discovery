@@ -43,14 +43,31 @@
                 {% endif %}
             </dl>
         {% endif %}
-        {%- assign items = "github" | split: ", " -%}
-        {% for item in items -%}
-            {% include addons/{{ item }}.liquid %}
-        {% endfor -%}
+        <dl>
+            <dt>{{ __.github | default: "GitHub" }}</dt>
+            <dd>
+                <a href="{{ docs.repository_url }}" title="{{ __.stars | default: 'Stars' }}: {{ rest.stargazers_count }}">
+                    <i class="fa fa-github"></i>
+                    {{ __.homepage | default: "Homepage" }}
+                </a>
+            </dd>
+            <dd>
+                <a href="{{ docs.issues_url }}" title="{{ __.open_issues | default: 'Open issues' }}: {{ rest.open_issues }}">
+                    <i class="fa fa-question-circle-o"></i>
+                    {{ __.issues | default: "Issues" }}
+                </a>
+            </dd>
+            <dd>
+                <a href="{{ docs.zip_url }}" title="{{ __.size | default: 'Size' }}: {{ rest.size }} Kb">
+                    <i class="fa fa-download"></i>
+                    {{ __.download | default: "Download" }}
+                </a>
+            </dd>
+        </dl>
         <hr>
         <div class="license f6 pb-2">
-            The
-            <a href="{{ site.baseurl }}/">software</a>
+            This
+            <a href="{{ site.baseurl }}/" title="{{ site.title }}">Software</a>
             is under the terms of
             <a href="{{ docs.repository_url }}">{{ docs.license.name | default: "The Unlicense" }}</a>.
         </div>
