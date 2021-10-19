@@ -241,7 +241,7 @@ $(".status").click(function () {
 });
 
 if (location.pathname == `${ui.baseurl}/search.html`) {
-  $.ajax(`${ui.baseurl}/pages.json`)
+  $.ajax(`${ui.baseurl}/data.json`)
     .done(search)
     .fail((xhr, message) => debug(message));
 }
