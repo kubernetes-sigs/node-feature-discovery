@@ -267,9 +267,9 @@ We have introduced the following Chart parameters.
 
 | Name | Type | Default | description |
 | ---- | ---- | ------- | ----------- |
-| `worker.*` | dict |  | NFD master daemonset configuration |
+| `worker.*` | dict |  | NFD worker daemonset configuration |
 | `worker.configmapName` | string | `nfd-worker-conf` | NFD worker pod ConfigMap name |
-| `worker.config` | string | `` | NFD worker service configuration |
+| `worker.config` | dict |  | NFD worker [service configuration](../advanced/worker-configuration-reference.md) |
 | `worker.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
 | `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
 | `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
