@@ -2,7 +2,7 @@ ARG BASE_IMAGE_FULL
 ARG BASE_IMAGE_MINIMAL
 
 # Build node feature discovery
-FROM golang:1.16.7-buster as builder
+FROM golang:1.17.2-buster as builder
 
 # Download the grpc_health_probe bin
 RUN GRPC_HEALTH_PROBE_VERSION=v0.3.1 && \
