@@ -41,7 +41,6 @@ spec:
         command:
         - "nfd-worker"
         args:
-        - "--sleep-interval=60s"
         - "--server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
 ## Enable TLS authentication (1/3)
 ## The example below assumes having the root certificate named ca.crt stored in
