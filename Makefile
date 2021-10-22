@@ -107,7 +107,7 @@ gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')
 
 gofmt-verify:
-	@out=`$(GO_FMT) -l -d $$(find . -name '*.go')`; \
+	@out=`$(GO_FMT) -w -l -d $$(find . -name '*.go')`; \
 	if [ -n "$$out" ]; then \
 	    echo "$$out"; \
 	    exit 1; \
