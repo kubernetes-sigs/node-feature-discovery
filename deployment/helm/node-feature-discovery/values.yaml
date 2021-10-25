@@ -83,7 +83,7 @@ master:
 
 worker:
   configmapName: nfd-worker-conf
-  config: |### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
+  config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:
     #  noPublish: false
