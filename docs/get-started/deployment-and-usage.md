@@ -18,8 +18,8 @@ sort: 3
 ## Requirements
 
 1. Linux (x86_64/Arm64/Arm)
-1. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl)
-   (properly set up and configured to work with your Kubernetes cluster)
+1. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) v1.21 or
+   later (properly set up and configured to work with your Kubernetes cluster)
 
 ## Image variants
 
