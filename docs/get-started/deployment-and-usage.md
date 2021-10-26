@@ -248,20 +248,21 @@ We have introduced the following Chart parameters.
 
 ##### Master pod parameters
 
-| Name | Type | Default | description |
-| ---- | ---- | ------- | ----------- |
-| `master.*` | dict |  | NFD master deployment configuration |
-| `master.instance` | string |  |  Instance name. Used to separate annotation namespaces for multiple parallel deployments |
-| `master.extraLabelNs` | array | [] | List of allowed extra label namespaces |
-| `master.replicaCount` | integer | 1 | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified |
-| `master.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
-| `master.service.type` | string | ClusterIP | NFD master service type |
-| `master.service.port` | integer | port | NFD master service port |
-| `master.resources` | dict | {} | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
-| `master.nodeSelector` | dict | {} | NFD master pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
-| `master.tolerations` | dict | _Scheduling to master node is disabled_ | NFD master pod [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
-| `master.annotations` | dict | {} | NFD master pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
-| `master.affinity` | dict |  | NFD master pod required [node affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/) |
+| Name                        | Type    | Default                                 | description                                                                                                                              |
+|-----------------------------|---------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
+| `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
+| `master.extraLabelNs`       | array   | []                                      | List of allowed extra label namespaces                                                                                                   |
+| `master.topologyUpdaterNs`  | string  | ""                                      | Namespace in which Node Resource Topology CR are created, the namespace specified must be already existed.                               |
+| `master.replicaCount`       | integer | 1                                       | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified                                         |
+| `master.podSecurityContext` | dict    | {}                                      | SecurityContext holds pod-level security attributes and common container settings                                                        |
+| `master.service.type`       | string  | ClusterIP                               | NFD master service type                                                                                                                  |
+| `master.service.port`       | integer | port                                    | NFD master service port                                                                                                                  |
+| `master.resources`          | dict    | {}                                      | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                    |
+| `master.nodeSelector`       | dict    | {}                                      | NFD master pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                    |
+| `master.tolerations`        | dict    | _Scheduling to master node is disabled_ | NFD master pod [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                              |
+| `master.annotations`        | dict    | {}                                      | NFD master pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                |
+| `master.affinity`           | dict    |                                         | NFD master pod required [node affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/) |
 
 ##### Worker pod parameters
 
@@ -276,6 +277,30 @@ We have introduced the following Chart parameters.
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
 | `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
 | `worker.annotations` | dict | {} | NFD worker pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
+
+##### Topology updater parameters
+
+| Name                                          | Type   | Default | description                                                                                                                                                                |
+|-----------------------------------------------|--------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `topologyUpdater.*`                           | dict   |         | NFD Topology Updater configuration                                                                                                                                         |
+| `topologyUpdater.enable`                      | bool   | false   | Specifies whether the NFD Topology Updater should be created                                                                                                               |
+| `topologyUpdater.createCRDs`                  | bool   | false   | Specifies whether the NFD Topology Updater CRDs should be created                                                                                                          |
+| `topologyUpdater.serviceAccount.create`       | bool   | true    | Specifies whether the service account for topology updater should be created                                                                                               |
+| `topologyUpdater.serviceAccount.annotations`  | dict   | {}      | Annotations to add to the service account for topology updater                                                                                                             |
+| `topologyUpdater.serviceAccount.name`         | string |         | The name of the service account for topology updater to use. If not set and create is true, a name is generated using the fullname template and `-topology-updater` suffix |
+| `topologyUpdater.rbac`                        | dict   |         | RBAC [parameteres](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) for the topology updater                                                                 |
+| `topologyUpdater.rbac.create`                 | bool   | false   | Specifies whether the cluster role and binding for topology updater should be created                                                                                      |
+| `topologyUpdater.kubeletConfigPath`           | string | ""      | Specifies the kubelet config host path                                                                                                                                     |
+| `topologyUpdater.kubeletPodResourcesSockPath` | string | ""      | Specifies the kubelet sock path to read pod resources                                                                                                                      |
+| `topologyUpdater.updateInterval`              | string | 60s     | Time to sleep between CR updates. Non-positive value implies no CR update.                                                                                                 |
+| `topologyUpdater.watchNamespace`              | string | `*`     | Namespace to watch pods, `*` for all namespaces                                                                                                                            |
+| `topologyUpdater.podSecurityContext`          | dict   | {}      | SecurityContext holds pod-level security attributes and common container settings                                                                                          |
+| `topologyUpdater.securityContext`             | dict   | {}      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)                               |
+| `topologyUpdater.resources`                   | dict   | {}      | Topology updater pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                                                |
+| `topologyUpdater.nodeSelector`                | dict   | {}      | Topology updater pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                                                |
+| `topologyUpdater.tolerations`                 | dict   | {}      | Topology updater pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                                                     |
+| `topologyUpdater.annotations`                 | dict   | {}      | Topology updater pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                            |
+| `topologyUpdater.affinity`                    | dict   | {}      | Topology updater pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                           |
 
 ### Build your own
 

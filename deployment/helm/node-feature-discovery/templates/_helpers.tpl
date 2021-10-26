@@ -61,3 +61,14 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create the name of the service account which topologyUpdater will use
+*/}}
+{{- define "node-feature-discovery.topologyUpdater.serviceAccountName" -}}
+{{- if .Values.topologyUpdater.serviceAccount.create -}}
+    {{ default (printf "%s-topology-updater" (include "node-feature-discovery.fullname" .)) .Values.topologyUpdater.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.topologyUpdater.serviceAccount.name }}
+{{- end -}}
+{{- end -}}

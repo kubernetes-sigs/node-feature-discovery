@@ -18,4 +18,38 @@ rules:
   - patch
   - update
   - list
+{{- if .Values.topologyUpdater.enable }}
+- apiGroups:
+  - topology.node.k8s.io
+  resources:
+  - noderesourcetopologies
+  verbs:
+  - create
+  - get
+  - update
+{{- end }}
+{{- end }}
+
+---
+{{- if .Values.topologyUpdater.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "node-feature-discovery.fullname" . }}-topology-updater
+  labels:
+    {{- include "node-feature-discovery.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
 {{- end }}
