@@ -184,6 +184,8 @@ Usage of nfd-master:
         Comma separated list of labels to be exposed as extended resources.
   -verify-node-name
         Verify worker node name against the worker's TLS certificate. Only takes effect when TLS authentication has been enabled.
+  -nrt-namespace
+        Namespace in which Node Resource Topology CR are created. Ensure that the namespace specified already exists
   -version
         Print version and exit.
 ```
@@ -242,6 +244,95 @@ stand-alone directly with `docker run`. See the
 [default deployment](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/common/worker-mounts.yaml)
 for up-to-date information about the required volume mounts.
 
+### NFD-Topology-Updater
+
+In order to run nfd-topology-updater as a "stand-alone" container against your
+standalone nfd-master you need to run them in the same network namespace:
+
+```bash
+$ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-topology-updater
+2019/02/01 14:48:56 Node Feature Discovery Topology Updater <NFD_VERSION>
+...
+```
+
+If you just want to try out feature discovery without connecting to nfd-master,
+pass the `-no-publish` flag to nfd-topology-updater.
+
+Command line flags of nfd-topology-updater:
+
+```bash
+$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-topology-updater -help
+docker run --rm  quay.io/swsehgal/node-feature-discovery:v0.10.0-devel-64-g93a0a9f-dirty nfd-topology-updater -help
+Usage of nfd-topology-updater:
+  -add_dir_header
+       If true, adds the file directory to the header of the log messages
+  -alsologtostderr
+       log to standard error as well as files
+  -ca-file string
+       Root certificate for verifying connections
+  -cert-file string
+       Certificate used for authenticating connections
+  -key-file string
+       Private key matching -cert-file
+  -kubeconfig string
+       Kube config file.
+  -kubelet-config-file string
+       Kubelet config file path. (default "/host-var/lib/kubelet/config.yaml")
+  -log_backtrace_at value
+       when logging hits line file:N, emit a stack trace
+  -log_dir string
+       If non-empty, write log files in this directory
+  -log_file string
+       If non-empty, use this log file
+  -log_file_max_size uint
+       Defines the maximum size a log file can grow to. Unit is megabytes. If the value is 0, the maximum file size is unlimited. (default 1800)
+  -logtostderr
+       log to standard error instead of files (default true)
+  -no-publish
+       Do not publish discovered features to the cluster-local Kubernetes API server.
+  -one_output
+       If true, only write logs to their native severity level (vs also writing to each lower severity level)
+  -oneshot
+       Update once and exit
+  -podresources-socket string
+       Pod Resource Socket path to use. (default "/host-var/lib/kubelet/pod-resources/kubelet.sock")
+  -server string
+       NFD server address to connecto to. (default "localhost:8080")
+  -server-name-override string
+       Hostname expected from server certificate, useful in testing
+  -skip_headers
+       If true, avoid header prefixes in the log messages
+  -skip_log_headers
+       If true, avoid headers when opening log files
+  -sleep-interval duration
+       Time to sleep between CR updates. Non-positive value implies no CR updatation (i.e. infinite sleep). [Default: 60s] (default 1m0s)
+  -stderrthreshold value
+       logs at or above this threshold go to stderr (default 2)
+  -v value
+       number for the log level verbosity
+  -version
+       Print version and exit.
+  -vmodule value
+       comma-separated list of pattern=N settings for file-filtered logging
+  -watch-namespace string
+       Namespace to watch pods (for testing/debugging purpose). Use * for all namespaces. (default "*")
+```
+
+NOTE:
+
+NFD topology updater needs certain directories and/or files from the
+host mounted inside the NFD container. Thus, you need to provide Docker with the
+correct `--volume` options in order for them to work correctly when run
+stand-alone directly with `docker run`. See the
+[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater/topologyupdater-mounts.yaml)
+for up-to-date information about the required volume mounts.
+
+[PodResource API][podresource-api] is a prerequisite for nfd-topology-updater.
+Preceding Kubernetes v1.23, the `kubelet` must be started with the following flag:
+`--feature-gates=KubeletPodResourcesGetAllocatable=true`.
+Starting Kubernetes v1.23, the `GetAllocatableResources` is enabled by default
+through `KubeletPodResourcesGetAllocatable` [feature gate][feature-gate].
+
 ## Documentation
 
 All documentation resides under the
@@ -271,4 +362,6 @@ make site-build
 This will generate html documentation under `docs/_site/`.
 
 <!-- Links -->
-[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/test/e2e/e2e-test-config.example.yaml
+[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/test/e2e/e2e-test-config.exapmle.yaml
+[podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
+[feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates

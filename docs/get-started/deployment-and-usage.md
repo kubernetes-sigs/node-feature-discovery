@@ -96,7 +96,11 @@ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deplo
 ```
 
 This will required RBAC rules and deploy nfd-master (as a deployment) and
-nfd-worker (as a daemonset) in the `node-feature-discovery` namespace.
+nfd-worker (as daemonset) in the `node-feature-discovery` namespace.
+
+**NOTE:** nfd-topology-updater is not deployed as part of the `default` overlay.
+Please refer to the [Master Worker Topologyupdater](#master-worker-topologyupdater)
+and [Topologyupdater](#topology-updater) below.
 
 Alternatively you can clone the repository and customize the deployment by
 creating your own overlays. For example, to deploy the [minimal](#minimal)
@@ -115,6 +119,10 @@ scenarios under
   see [Master-worker pod](#master-worker-pod) below
 - [`default-job`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-job):
   see [Worker one-shot](#worker-one-shot) below
+- [`master-worker-topologyupdater`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/master-worker-topologyupdater):
+  see [Master Worker Topologyupdater](#master-worker-topologyupdater) below
+- [`topologyupdater`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/topologyupdater):
+  see [Topology Updater](#topology-updater) below
 - [`prune`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prune):
   clean up the cluster after uninstallation, see
   [Removing feature labels](#removing-feature-labels)
@@ -138,9 +146,13 @@ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deplo
 
 ```
 
-This creates a DaemonSet runs both nfd-worker and nfd-master in the same Pod.
+This creates a DaemonSet that runs nfd-worker and nfd-master in the same Pod.
 In this case no nfd-master is run on the master node(s), but, the worker nodes
 are able to label themselves which may be desirable e.g. in single-node setups.
+
+**NOTE:** nfd-topology-updater is not deployed by the default-combined overlay.
+To enable nfd-topology-updater in this scenario,the users must customize the
+deployment themselves.
 
 #### Worker one-shot
 
@@ -154,10 +166,43 @@ kubectl kustomize https://github.com/kubernetes-sigs/node-feature-discovery/depl
     kubectl apply -f -
 ```
 
-The example above launces as many jobs as there are non-master nodes. Note that
+The example above launches as many jobs as there are non-master nodes. Note that
 this approach does not guarantee running once on every node. For example,
 tainted, non-ready nodes or some other reasons in Job scheduling may cause some
 node(s) will run extra job instance(s) to satisfy the request.
+
+#### Master Worker Topologyupdater
+
+NFD Master, NFD worker and NFD Topologyupdater can be configured to be deployed
+as separate pods. The `master-worker-topologyupdater` overlay may be used to
+achieve this:
+
+```bash
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/master-worker-topologyupdater?ref={{ site.release }}
+
+```
+
+#### Topologyupdater
+
+In order to deploy just NFD master and NFD Topologyupdater (without nfd-worker)
+use the `topologyupdater` overlay:
+
+```bash
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
+
+```
+
+NFD Topologyupdater can be configured along with the `default` overlay
+(which deploys NFD worker and NFD master) where all the software components
+are deployed as separate pods. The `topologyupdater` overlay may be used
+along with `default` overlay to achieve this:
+
+```bash
+
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
+
+```
 
 ### Deployment with Helm
 
@@ -349,6 +394,21 @@ command line flag).
 The worker configuration file is watched and re-read on every change which
 provides a simple mechanism of dynamic run-time reconfiguration. See
 [worker configuration](#worker-configuration) for more details.
+
+### NFD-Topology-Updater
+
+NFD-Topology-Updater is preferably run as a Kubernetes DaemonSet. This assures
+re-examination (and CR updates) on regular intervals capturing changes in
+the allocated resources and hence the allocatable resources on a per zone
+basis. It makes sure that more CR instances are created as new nodes get
+added to the cluster. Topology-Updater connects to the nfd-master service
+to create CR instances corresponding to nodes.
+
+When run as a daemonset, nodes are re-examined for the allocated resources
+(to determine the information of the allocatable resources on a per zone basis
+where a zone can be a NUMA node) at an interval specified using the
+`-sleep-interval` option. The default sleep interval is set to 60s which is the
+ the value when no -sleep-interval is specified.
 
 ### Communication security with TLS
 
