@@ -109,7 +109,7 @@ spec:
             path: "/etc/kubernetes/node-feature-discovery/features.d/"
         - name: nfd-worker-conf
           configMap:
-            name: {{ .Values.worker.configmapName }}
+            name: {{ include "node-feature-discovery.fullname" . }}-worker-conf
             items:
               - key: nfd-worker.conf
                 path: nfd-worker.conf

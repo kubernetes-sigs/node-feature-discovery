@@ -314,7 +314,6 @@ We have introduced the following Chart parameters.
 | Name | Type | Default | description |
 | ---- | ---- | ------- | ----------- |
 | `worker.*` | dict |  | NFD worker daemonset configuration |
-| `worker.configmapName` | string | `nfd-worker-conf` | NFD worker pod ConfigMap name |
 | `worker.config` | dict |  | NFD worker [configuration](../advanced/worker-configuration-reference.md) |
 | `worker.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
 | `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
@@ -464,11 +463,15 @@ preferred method is to use a ConfigMap which provides easy deployment and
 re-configurability.
 
 The provided nfd-worker deployment templates create an empty configmap and
-mount it inside the nfd-worker containers. Configuration can be edited with:
+mount it inside the nfd-worker containers. In kustomize deployments,
+configuration can be edited with:
 
 ```bash
 kubectl -n ${NFD_NS} edit configmap nfd-worker-conf
 ```
+
+In Helm deployments, [Worker pod parameter](#worker-pod-parameters)
+`worker.config` can be used to edit the respective configuration.
 
 See
 [nfd-worker configuration file reference](../advanced/worker-configuration-reference.md)
