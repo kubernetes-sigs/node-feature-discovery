@@ -162,9 +162,24 @@ func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
 			}
 
 			for _, device := range container.GetDevices() {
+				numaNodesIDs := getNumaNodeIds(device.GetTopology())
 				contRes.Resources = append(contRes.Resources, ResourceInfo{
-					Name: v1.ResourceName(device.ResourceName),
-					Data: device.DeviceIds,
+					Name:        v1.ResourceName(device.ResourceName),
+					Data:        device.DeviceIds,
+					NumaNodeIds: numaNodesIDs,
+				})
+			}
+
+			for _, block := range container.GetMemory() {
+				if block.GetSize_() == 0 {
+					continue
+				}
+
+				topology := getNumaNodeIds(block.GetTopology())
+				contRes.Resources = append(contRes.Resources, ResourceInfo{
+					Name:        v1.ResourceName(block.MemoryType),
+					Data:        []string{fmt.Sprintf("%d", block.GetSize_())},
+					NumaNodeIds: topology,
 				})
 			}
 
@@ -193,4 +208,19 @@ func hasDevice(podResource *podresourcesapi.PodResources) bool {
 	}
 	klog.Infof("pod:%s doesn't have devices", podResource.GetName())
 	return false
+}
+
+func getNumaNodeIds(topologyInfo *podresourcesapi.TopologyInfo) []int {
+	if topologyInfo == nil {
+		return nil
+	}
+
+	var topology []int
+	for _, node := range topologyInfo.Nodes {
+		if node != nil {
+			topology = append(topology, int(node.ID))
+		}
+	}
+
+	return topology
 }
