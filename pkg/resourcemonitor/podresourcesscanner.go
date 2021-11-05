@@ -71,7 +71,7 @@ func (resMon *PodResourcesScanner) isWatchable(podNamespace string, podName stri
 	return resMon.namespace == podNamespace && (isIntegralGuaranteed || hasDevice), isIntegralGuaranteed, nil
 }
 
-// hasExclusiveCPUs returns true if a guranteed pod is allocated exclusive CPUs else returns false.
+// hasExclusiveCPUs returns true if a guaranteed pod is allocated exclusive CPUs else returns false.
 // In isWatchable() function we check for the pod QoS and proceed if it is guaranteed (i.e. request == limit)
 // and hence we only check for request in the function below.
 func hasExclusiveCPUs(pod *v1.Pod) bool {
