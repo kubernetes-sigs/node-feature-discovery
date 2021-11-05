@@ -25,16 +25,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sclient "k8s.io/client-go/kubernetes"
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
-
-	corev1 "k8s.io/api/core/v1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sclient "k8s.io/client-go/kubernetes"
 )
 
 func TestPodScanner(t *testing.T) {
@@ -79,24 +77,44 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 										Topology: &v1.TopologyInfo{
 											Nodes: []*v1.NUMANode{
-												&v1.NUMANode{ID: 0},
+												{ID: 0},
 											},
 										},
 									},
 								},
 								CpuIds: []int64{0, 1},
+								Memory: []*v1.ContainerMemory{
+									{
+										MemoryType: "hugepages-2Mi",
+										Size_:      512,
+										Topology: &v1.TopologyInfo{
+											Nodes: []*v1.NUMANode{
+												{ID: 1},
+											},
+										},
+									},
+									{
+										MemoryType: "memory",
+										Size_:      512,
+										Topology: &v1.TopologyInfo{
+											Nodes: []*v1.NUMANode{
+												{ID: 0},
+											},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -120,12 +138,14 @@ func TestPodScanner(t *testing.T) {
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:                      *resource.NewQuantity(2, resource.DecimalSI),
 									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
-									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
+									corev1.ResourceMemory:                   *resource.NewQuantity(512, resource.DecimalSI),
+									"hugepages-2Mi":                         *resource.NewQuantity(512, resource.DecimalSI),
 								},
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:                      *resource.NewQuantity(2, resource.DecimalSI),
 									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
-									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
+									corev1.ResourceMemory:                   *resource.NewQuantity(512, resource.DecimalSI),
+									"hugepages-2Mi":                         *resource.NewQuantity(512, resource.DecimalSI),
 								},
 							},
 						},
@@ -143,20 +163,31 @@ func TestPodScanner(t *testing.T) {
 				So(len(res), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
-					PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []ContainerResources{
-							ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Resources: []ResourceInfo{
-									ResourceInfo{
+									{
 										Name: "cpu",
 										Data: []string{"0", "1"},
 									},
-									ResourceInfo{
-										Name: "fake.io/resource",
-										Data: []string{"devA"},
+									{
+										Name:        "fake.io/resource",
+										Data:        []string{"devA"},
+										NumaNodeIds: []int{0},
+									},
+									{
+										Name:        "hugepages-2Mi",
+										Data:        []string{"512"},
+										NumaNodeIds: []int{1},
+									},
+									{
+										Name:        "memory",
+										Data:        []string{"512"},
+										NumaNodeIds: []int{0},
 									},
 								},
 							},
@@ -177,14 +208,14 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response without topology", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -238,18 +269,18 @@ func TestPodScanner(t *testing.T) {
 				So(len(res), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
-					PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []ContainerResources{
-							ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Resources: []ResourceInfo{
-									ResourceInfo{
+									{
 										Name: "cpu",
 										Data: []string{"0", "1"},
 									},
-									ResourceInfo{
+									{
 										Name: "fake.io/resource",
 										Data: []string{"devA"},
 									},
@@ -266,11 +297,11 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response without devices", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name:   "test-cnt-0",
 								CpuIds: []int64{0, 1},
 							},
@@ -317,14 +348,14 @@ func TestPodScanner(t *testing.T) {
 				So(len(res), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
-					PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []ContainerResources{
-							ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Resources: []ResourceInfo{
-									ResourceInfo{
+									{
 										Name: "cpu",
 										Data: []string{"0", "1"},
 									},
@@ -341,14 +372,14 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response without cpus", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -399,14 +430,14 @@ func TestPodScanner(t *testing.T) {
 				So(len(res), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
-					PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []ContainerResources{
-							ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Resources: []ResourceInfo{
-									ResourceInfo{
+									{
 										Name: "fake.io/resource",
 										Data: []string{"devA"},
 									},
@@ -423,14 +454,14 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response for (non-guaranteed) pods with devices without cpus", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -478,14 +509,14 @@ func TestPodScanner(t *testing.T) {
 			})
 
 			expected := []PodResources{
-				PodResources{
+				{
 					Name:      "test-pod-0",
 					Namespace: "default",
 					Containers: []ContainerResources{
-						ContainerResources{
+						{
 							Name: "test-cnt-0",
 							Resources: []ResourceInfo{
-								ResourceInfo{
+								{
 									Name: "fake.io/resource",
 									Data: []string{"devA"},
 								},
@@ -501,15 +532,15 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response for (non-guaranteed) pods with devices with cpus", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name:   "test-cnt-0",
 								CpuIds: []int64{0, 1},
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -562,14 +593,14 @@ func TestPodScanner(t *testing.T) {
 			})
 
 			expected := []PodResources{
-				PodResources{
+				{
 					Name:      "test-pod-0",
 					Namespace: "default",
 					Containers: []ContainerResources{
-						ContainerResources{
+						{
 							Name: "test-cnt-0",
 							Resources: []ResourceInfo{
-								ResourceInfo{
+								{
 									Name: "fake.io/resource",
 									Data: []string{"devA"},
 								},
@@ -620,19 +651,19 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 										Topology: &v1.TopologyInfo{
 											Nodes: []*v1.NUMANode{
-												&v1.NUMANode{ID: 0},
+												{ID: 0},
 											},
 										},
 									},
@@ -688,14 +719,14 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response when pod is in the monitoring namespace", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "pod-res-test",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -750,18 +781,18 @@ func TestPodScanner(t *testing.T) {
 				So(len(res), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
-					PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "pod-res-test",
 						Containers: []ContainerResources{
-							ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Resources: []ResourceInfo{
-									ResourceInfo{
+									{
 										Name: "cpu",
 										Data: []string{"0", "1"},
 									},
-									ResourceInfo{
+									{
 										Name: "fake.io/resource",
 										Data: []string{"devA"},
 									},
@@ -778,11 +809,11 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid empty response for a pod not in the monitoring namespace without devices", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name:   "test-cnt-0",
 								CpuIds: []int64{0, 1},
 							},
@@ -835,14 +866,14 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get an empty valid response for a pod without cpus when pod is not in the monitoring namespace", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "default",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -899,14 +930,14 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response for (non-guaranteed) pods with devices without cpus", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "pod-res-test",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name: "test-cnt-0",
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -954,14 +985,14 @@ func TestPodScanner(t *testing.T) {
 			})
 
 			expected := []PodResources{
-				PodResources{
+				{
 					Name:      "test-pod-0",
 					Namespace: "pod-res-test",
 					Containers: []ContainerResources{
-						ContainerResources{
+						{
 							Name: "test-cnt-0",
 							Resources: []ResourceInfo{
-								ResourceInfo{
+								{
 									Name: "fake.io/resource",
 									Data: []string{"devA"},
 								},
@@ -977,15 +1008,15 @@ func TestPodScanner(t *testing.T) {
 		Convey("When I successfully get valid response for (non-guaranteed) pods with devices with cpus", func() {
 			resp := &v1.ListPodResourcesResponse{
 				PodResources: []*v1.PodResources{
-					&v1.PodResources{
+					{
 						Name:      "test-pod-0",
 						Namespace: "pod-res-test",
 						Containers: []*v1.ContainerResources{
-							&v1.ContainerResources{
+							{
 								Name:   "test-cnt-0",
 								CpuIds: []int64{0, 1},
 								Devices: []*v1.ContainerDevices{
-									&v1.ContainerDevices{
+									{
 										ResourceName: "fake.io/resource",
 										DeviceIds:    []string{"devA"},
 									},
@@ -1038,14 +1069,14 @@ func TestPodScanner(t *testing.T) {
 			})
 
 			expected := []PodResources{
-				PodResources{
+				{
 					Name:      "test-pod-0",
 					Namespace: "pod-res-test",
 					Containers: []ContainerResources{
-						ContainerResources{
+						{
 							Name: "test-cnt-0",
 							Resources: []ResourceInfo{
-								ResourceInfo{
+								{
 									Name: "fake.io/resource",
 									Data: []string{"devA"},
 								},

@@ -34,8 +34,9 @@ type Args struct {
 
 // ResourceInfo stores information of resources and their corresponding IDs obtained from PodResource API
 type ResourceInfo struct {
-	Name corev1.ResourceName
-	Data []string
+	Name        corev1.ResourceName
+	Data        []string
+	NumaNodeIds []int
 }
 
 // ContainerResources contains information about the node resources assigned to a container
