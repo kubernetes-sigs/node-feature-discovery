@@ -60,7 +60,7 @@ func main() {
 
 	klConfig, err := kubeconf.GetKubeletConfigFromLocalFile(resourcemonitorArgs.KubeletConfigFile)
 	if err != nil {
-		klog.Fatalf("error reading kubelet config: %v", err)
+		klog.Exitf("error reading kubelet config: %v", err)
 	}
 	tmPolicy := string(topologypolicy.DetectTopologyPolicy(klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope))
 	klog.Infof("detected kubelet Topology Manager policy %q", tmPolicy)

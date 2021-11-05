@@ -88,8 +88,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	podResClient, err := podres.GetPodResClient(w.resourcemonitorArgs.PodResourceSocketPath)
 	if err != nil {
-		klog.Fatalf("failed to get PodResource Client: %w", err)
-		return err
+		return fmt.Errorf("failed to get PodResource Client: %w", err)
 	}
 
 	kubeApihelper := apihelper.K8sHelpers{Kubeconfig: w.args.KubeConfigFile}
@@ -97,8 +96,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, kubeApihelper)
 	if err != nil {
-		klog.Fatalf("failed to initialize ResourceMonitor instance: %w", err)
-		return err
+		return fmt.Errorf("failed to initialize ResourceMonitor instance: %w", err)
 	}
 
 	// CAUTION: these resources are expected to change rarely - if ever.
@@ -109,8 +107,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	resAggr, err := resourcemonitor.NewResourcesAggregator(podResClient)
 	if err != nil {
-		klog.Fatalf("failed to obtain node resource information: %w", err)
-		return err
+		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
 
 	klog.V(2).Infof("resAggr is: %v\n", resAggr)
