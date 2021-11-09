@@ -25,12 +25,28 @@ func NewDomainFeatures() *DomainFeatures {
 		Instances: make(map[string]*InstanceFeatureSet)}
 }
 
-func NewKeyFeatures() *KeyFeatureSet { return &KeyFeatureSet{Elements: make(map[string]Nil)} }
+func NewKeyFeatures(keys ...string) *KeyFeatureSet {
+	e := make(map[string]Nil, len(keys))
+	for _, k := range keys {
+		e[k] = Nil{}
+	}
+	return &KeyFeatureSet{Elements: e}
+}
 
-func NewValueFeatures() *ValueFeatureSet { return &ValueFeatureSet{Elements: make(map[string]string)} }
+func NewValueFeatures(values map[string]string) *ValueFeatureSet {
+	if values == nil {
+		values = make(map[string]string)
+	}
+	return &ValueFeatureSet{Elements: values}
+}
 
-func NewInstanceFeatures() *InstanceFeatureSet { return &InstanceFeatureSet{} }
+func NewInstanceFeatures(instances []InstanceFeature) *InstanceFeatureSet {
+	return &InstanceFeatureSet{Elements: instances}
+}
 
-func NewInstanceFeature() *InstanceFeature {
-	return &InstanceFeature{Attributes: make(map[string]string)}
+func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
+	if attrs == nil {
+		attrs = make(map[string]string)
+	}
+	return &InstanceFeature{Attributes: attrs}
 }
