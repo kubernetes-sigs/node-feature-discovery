@@ -20,9 +20,9 @@ package feature
 // features to empty values
 func NewDomainFeatures() *DomainFeatures {
 	return &DomainFeatures{
-		Keys:      make(map[string]KeyFeatureSet),
-		Values:    make(map[string]ValueFeatureSet),
-		Instances: make(map[string]InstanceFeatureSet)}
+		Keys:      make(map[string]*KeyFeatureSet),
+		Values:    make(map[string]*ValueFeatureSet),
+		Instances: make(map[string]*InstanceFeatureSet)}
 }
 
 func NewKeyFeatures() *KeyFeatureSet { return &KeyFeatureSet{Elements: make(map[string]Nil)} }

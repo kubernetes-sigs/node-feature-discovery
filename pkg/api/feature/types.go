@@ -22,9 +22,9 @@ type Features map[string]*DomainFeatures
 
 // DomainFeatures is the collection of all discovered features of one domain.
 type DomainFeatures struct {
-	Keys      map[string]KeyFeatureSet      `protobuf:"bytes,1,rep,name=keys"`
-	Values    map[string]ValueFeatureSet    `protobuf:"bytes,2,rep,name=values"`
-	Instances map[string]InstanceFeatureSet `protobuf:"bytes,3,rep,name=instances"`
+	Keys      map[string]*KeyFeatureSet      `protobuf:"bytes,1,rep,name=keys"`
+	Values    map[string]*ValueFeatureSet    `protobuf:"bytes,2,rep,name=values"`
+	Instances map[string]*InstanceFeatureSet `protobuf:"bytes,3,rep,name=instances"`
 }
 
 // KeyFeatureSet is a set of simple features only containing names without values.
