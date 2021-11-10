@@ -655,7 +655,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(nodeList.Items)).ToNot(BeZero())
 
-				targetNodeName := ""
+				targetNodeName := nodeList.Items[0].Name
 				for _, node := range nodeList.Items {
 					if _, ok := node.Labels["node-role.kubernetes.io/master"]; !ok {
 						targetNodeName = node.Name
