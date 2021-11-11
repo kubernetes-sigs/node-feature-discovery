@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package busutils
+package usb
 
 import (
 	"fmt"
@@ -24,12 +24,11 @@ import (
 	"strings"
 
 	"k8s.io/klog/v2"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
-type UsbDeviceInfo map[string]string
-type UsbClassMap map[string]UsbDeviceInfo
-
-var DefaultUsbDevAttrs = []string{"class", "vendor", "device", "serial"}
+var devAttrs = []string{"class", "vendor", "device", "serial"}
 
 // The USB device sysfs files do not have terribly user friendly names, map
 // these for consistency with the PCI matcher.
@@ -58,26 +57,26 @@ func readSingleUsbAttribute(devPath string, attrName string) (string, error) {
 }
 
 // Read information of one USB device
-func readUsbDevInfo(devPath string, deviceAttrSpec map[string]bool) (UsbClassMap, error) {
-	classmap := UsbClassMap{}
-	info := UsbDeviceInfo{}
+func readUsbDevInfo(devPath string) ([]feature.InstanceFeature, error) {
+	instances := make([]feature.InstanceFeature, 0)
+	attrs := make(map[string]string)
 
-	for attr := range deviceAttrSpec {
+	for _, attr := range devAttrs {
 		attrVal, _ := readSingleUsbAttribute(devPath, attr)
 		if len(attrVal) > 0 {
-			info[attr] = attrVal
+			attrs[attr] = attrVal
 		}
 	}
 
 	// USB devices encode their class information either at the device or the interface level. If the device class
 	// is set, return as-is.
-	if info["class"] != "00" {
-		classmap[info["class"]] = info
+	if attrs["class"] != "00" {
+		instances = append(instances, *feature.NewInstanceFeature(attrs))
 	} else {
 		// Otherwise, if a 00 is presented at the device level, descend to the interface level.
 		interfaces, err := filepath.Glob(devPath + "/*/bInterfaceClass")
 		if err != nil {
-			return classmap, err
+			return nil, err
 		}
 
 		// A device may, notably, have multiple interfaces with mixed classes, so we create a unique device for each
@@ -86,54 +85,43 @@ func readUsbDevInfo(devPath string, deviceAttrSpec map[string]bool) (UsbClassMap
 			// Determine the interface class
 			attrVal, err := readSingleUsbSysfsAttribute(intf)
 			if err != nil {
-				return classmap, err
+				return nil, err
 			}
 
-			attr := UsbDeviceInfo{}
-			for k, v := range info {
-				attr[k] = v
+			subdevAttrs := make(map[string]string, len(attrs))
+			for k, v := range attrs {
+				subdevAttrs[k] = v
 			}
+			subdevAttrs["class"] = attrVal
 
-			attr["class"] = attrVal
-			classmap[attrVal] = attr
+			instances = append(instances, *feature.NewInstanceFeature(subdevAttrs))
 		}
 	}
 
-	return classmap, nil
+	return instances, nil
 }
 
-// List available USB devices and retrieve device attributes.
-// deviceAttrSpec is a map which specifies which attributes to retrieve.
-// a false value for a specific attribute marks the attribute as optional.
-// a true value for a specific attribute marks the attribute as mandatory.
-// "class" attribute is considered mandatory.
-// DetectUsb() will fail if the retrieval of a mandatory attribute fails.
-func DetectUsb(deviceAttrSpec map[string]bool) (map[string][]UsbDeviceInfo, error) {
+// detectUsb detects available USB devices and retrieves their device attributes.
+func detectUsb() ([]feature.InstanceFeature, error) {
 	// Unlike PCI, the USB sysfs interface includes entries not just for
 	// devices. We work around this by globbing anything that includes a
 	// valid product ID.
-	const devicePath = "/sys/bus/usb/devices/*/idProduct"
-	devInfo := make(map[string][]UsbDeviceInfo)
-
-	devices, err := filepath.Glob(devicePath)
+	const devPathGlob = "/sys/bus/usb/devices/*/idProduct"
+	devPaths, err := filepath.Glob(devPathGlob)
 	if err != nil {
 		return nil, err
 	}
 
-	// "class" is a mandatory attribute, inject it to spec if needed.
-	deviceAttrSpec["class"] = true
-
 	// Iterate over devices
-	for _, device := range devices {
-		devMap, err := readUsbDevInfo(filepath.Dir(device), deviceAttrSpec)
+	devInfo := make([]feature.InstanceFeature, 0)
+	for _, devPath := range devPaths {
+		devs, err := readUsbDevInfo(filepath.Dir(devPath))
 		if err != nil {
 			klog.Error(err)
 			continue
 		}
 
-		for class, info := range devMap {
-			devInfo[class] = append(devInfo[class], info)
-		}
+		devInfo = append(devInfo, devs...)
 	}
 
 	return devInfo, nil

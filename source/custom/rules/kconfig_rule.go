@@ -18,9 +18,11 @@ package rules
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
+	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
 // KconfigRule implements Rule
@@ -31,11 +33,14 @@ type kconfig struct {
 	Value string
 }
 
-var kConfigs map[string]string
-
 func (kconfigs *KconfigRule) Match() (bool, error) {
+	options, ok := source.GetFeatureSource("kernel").GetFeatures().Values[kernel.ConfigFeature]
+	if !ok {
+		return false, fmt.Errorf("kernel config options not available")
+	}
+
 	for _, f := range *kconfigs {
-		if v, ok := kConfigs[f.Name]; !ok || f.Value != v {
+		if v, ok := options.Elements[f.Name]; !ok || f.Value != v {
 			return false, nil
 		}
 	}
@@ -56,15 +61,4 @@ func (c *kconfig) UnmarshalJSON(data []byte) error {
 		c.Value = split[1]
 	}
 	return nil
-}
-
-func init() {
-	kConfigs = make(map[string]string)
-
-	kconfig, err := kernelutils.ParseKconfig("")
-	if err == nil {
-		for k, v := range kconfig {
-			kConfigs[k] = v
-		}
-	}
 }

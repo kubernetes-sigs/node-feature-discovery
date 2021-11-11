@@ -18,7 +18,10 @@ package rules
 
 import (
 	"fmt"
-	usbutils "sigs.k8s.io/node-feature-discovery/source/internal"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/usb"
 )
 
 // Rule that matches on the following USB device attributes: <class, vendor, device>
@@ -38,44 +41,39 @@ type UsbIDRule struct {
 
 // Match USB devices on provided USB device attributes
 func (r *UsbIDRule) Match() (bool, error) {
-	devAttr := map[string]bool{}
-	for _, attr := range []string{"class", "vendor", "device", "serial"} {
-		devAttr[attr] = true
-	}
-	allDevs, err := usbutils.DetectUsb(devAttr)
-	if err != nil {
-		return false, fmt.Errorf("failed to detect USB devices: %s", err.Error())
+	devs, ok := source.GetFeatureSource("usb").GetFeatures().Instances[usb.DeviceFeature]
+	if !ok {
+		return false, fmt.Errorf("usb device information not available")
 	}
 
-	for _, classDevs := range allDevs {
-		for _, dev := range classDevs {
-			// match rule on a single device
-			if r.matchDevOnRule(dev) {
-				return true, nil
-			}
+	for _, dev := range devs.Elements {
+		// match rule on a single device
+		if r.matchDevOnRule(dev) {
+			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (r *UsbIDRule) matchDevOnRule(dev usbutils.UsbDeviceInfo) bool {
+func (r *UsbIDRule) matchDevOnRule(dev feature.InstanceFeature) bool {
 	if len(r.Class) == 0 && len(r.Vendor) == 0 && len(r.Device) == 0 {
 		return false
 	}
 
-	if len(r.Class) > 0 && !in(dev["class"], r.Class) {
+	attrs := dev.Attributes
+	if len(r.Class) > 0 && !in(attrs["class"], r.Class) {
 		return false
 	}
 
-	if len(r.Vendor) > 0 && !in(dev["vendor"], r.Vendor) {
+	if len(r.Vendor) > 0 && !in(attrs["vendor"], r.Vendor) {
 		return false
 	}
 
-	if len(r.Device) > 0 && !in(dev["device"], r.Device) {
+	if len(r.Device) > 0 && !in(attrs["device"], r.Device) {
 		return false
 	}
 
-	if len(r.Serial) > 0 && !in(dev["serial"], r.Serial) {
+	if len(r.Serial) > 0 && !in(attrs["serial"], r.Serial) {
 		return false
 	}
 

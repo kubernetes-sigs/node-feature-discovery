@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"k8s.io/klog/v2"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/cpuid"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -31,6 +33,18 @@ const (
 	// CPUID EAX input values
 	LEAF_PROCESSOR_FREQUENCY_INFORMATION = 0x16
 )
+
+func discoverSST() map[string]string {
+	features := make(map[string]string)
+
+	if bf, err := discoverSSTBF(); err != nil {
+		klog.Errorf("failed to detect SST-BF: %v", err)
+	} else if bf {
+		features["bf.enabled"] = strconv.FormatBool(bf)
+	}
+
+	return features
+}
 
 func discoverSSTBF() (bool, error) {
 	// Get processor's "nominal base frequency" (in MHz) from CPUID

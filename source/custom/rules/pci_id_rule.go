@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2020-2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ package rules
 
 import (
 	"fmt"
-	pciutils "sigs.k8s.io/node-feature-discovery/source/internal"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/pci"
 )
 
 // Rule that matches on the following PCI device attributes: <class, vendor, device>
@@ -37,40 +40,40 @@ type PciIDRule struct {
 
 // Match PCI devices on provided PCI device attributes
 func (r *PciIDRule) Match() (bool, error) {
+	devs, ok := source.GetFeatureSource("pci").GetFeatures().Instances[pci.DeviceFeature]
+	if !ok {
+		return false, fmt.Errorf("cpuid information not available")
+	}
+
 	devAttr := map[string]bool{}
 	for _, attr := range []string{"class", "vendor", "device"} {
 		devAttr[attr] = true
 	}
-	allDevs, err := pciutils.DetectPci(devAttr)
-	if err != nil {
-		return false, fmt.Errorf("failed to detect PCI devices: %s", err.Error())
-	}
 
-	for _, classDevs := range allDevs {
-		for _, dev := range classDevs {
-			// match rule on a single device
-			if r.matchDevOnRule(dev) {
-				return true, nil
-			}
+	for _, dev := range devs.Elements {
+		// match rule on a single device
+		if r.matchDevOnRule(dev) {
+			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (r *PciIDRule) matchDevOnRule(dev pciutils.PciDeviceInfo) bool {
+func (r *PciIDRule) matchDevOnRule(dev feature.InstanceFeature) bool {
 	if len(r.Class) == 0 && len(r.Vendor) == 0 && len(r.Device) == 0 {
 		return false
 	}
 
-	if len(r.Class) > 0 && !in(dev["class"], r.Class) {
+	attrs := dev.Attributes
+	if len(r.Class) > 0 && !in(attrs["class"], r.Class) {
 		return false
 	}
 
-	if len(r.Vendor) > 0 && !in(dev["vendor"], r.Vendor) {
+	if len(r.Vendor) > 0 && !in(attrs["vendor"], r.Vendor) {
 		return false
 	}
 
-	if len(r.Device) > 0 && !in(dev["device"], r.Device) {
+	if len(r.Device) > 0 && !in(attrs["device"], r.Device) {
 		return false
 	}
 

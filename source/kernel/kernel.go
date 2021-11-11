@@ -17,16 +17,23 @@ limitations under the License.
 package kernel
 
 import (
-	"regexp"
-	"strings"
+	"strconv"
 
 	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
-	"sigs.k8s.io/node-feature-discovery/source/internal/kernelutils"
 )
 
 const Name = "kernel"
+
+const (
+	ConfigFeature       = "config"
+	LoadedModuleFeature = "loadedmodule"
+	SelinuxFeature      = "selinux"
+	VersionFeature      = "version"
+)
 
 // Configuration file options
 type Config struct {
@@ -47,14 +54,16 @@ func newDefaultConfig() *Config {
 	}
 }
 
-// kernelSource implements the LabelSource and ConfigurableSource interfaces.
+// kernelSource implements the FeatureSource, LabelSource and ConfigurableSource interfaces.
 type kernelSource struct {
-	config *Config
+	config   *Config
+	features *feature.DomainFeatures
 }
 
 // Singleton source instance
 var (
-	src kernelSource
+	src                           = kernelSource{config: newDefaultConfig()}
+	_   source.FeatureSource      = &src
 	_   source.LabelSource        = &src
 	_   source.ConfigurableSource = &src
 )
@@ -82,69 +91,68 @@ func (s *kernelSource) Priority() int { return 0 }
 
 // GetLabels method of the LabelSource interface
 func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
-	features := source.FeatureLabels{}
+	labels := source.FeatureLabels{}
+	features := s.GetFeatures()
 
-	// Read kernel version
-	version, err := parseVersion()
-	if err != nil {
-		klog.Errorf("failed to get kernel version: %s", err)
-	} else {
-		for key := range version {
-			features["version."+key] = version[key]
-		}
-	}
-
-	// Read kconfig
-	kconfig, err := kernelutils.ParseKconfig(s.config.KconfigFile)
-	if err != nil {
-		klog.Errorf("failed to read kconfig: %s", err)
+	for k, v := range features.Values[VersionFeature].Elements {
+		labels[VersionFeature+"."+k] = v
 	}
 
 	// Check flags
 	for _, opt := range s.config.ConfigOpts {
-		if val, ok := kconfig[opt]; ok {
-			features["config."+opt] = val
+		if val, ok := features.Values[ConfigFeature].Elements[opt]; ok {
+			labels[ConfigFeature+"."+opt] = val
 		}
 	}
 
-	selinux, err := SelinuxEnabled()
-	if err != nil {
-		klog.Warning(err)
-	} else if selinux {
-		features["selinux.enabled"] = true
+	for k, v := range features.Values[SelinuxFeature].Elements {
+		labels[SelinuxFeature+"."+k] = v
 	}
 
-	return features, nil
+	return labels, nil
 }
 
-// Read and parse kernel version
-func parseVersion() (map[string]string, error) {
-	version := map[string]string{}
+// Discover method of the FeatureSource interface
+func (s *kernelSource) Discover() error {
+	s.features = feature.NewDomainFeatures()
 
-	full, err := kernelutils.GetKernelVersion()
-	if err != nil {
-		return nil, err
+	// Read kernel version
+	if version, err := parseVersion(); err != nil {
+		klog.Errorf("failed to get kernel version: %s", err)
+	} else {
+		s.features.Values[VersionFeature] = feature.NewValueFeatures(version)
 	}
 
-	// Replace forbidden symbols
-	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]")
-	full = fullRegex.ReplaceAllString(full, "_")
-	// Label values must start and end with an alphanumeric
-	full = strings.Trim(full, "-_.")
-
-	version["full"] = full
-
-	// Regexp for parsing version components
-	re := regexp.MustCompile(`^(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<revision>\d+))?(-.*)?$`)
-	if m := re.FindStringSubmatch(full); m != nil {
-		for i, name := range re.SubexpNames() {
-			if i != 0 && name != "" {
-				version[name] = m[i]
-			}
-		}
+	// Read kconfig
+	if kconfig, err := parseKconfig(s.config.KconfigFile); err != nil {
+		klog.Errorf("failed to read kconfig: %s", err)
+	} else {
+		s.features.Values[ConfigFeature] = feature.NewValueFeatures(kconfig)
 	}
 
-	return version, nil
+	if kmods, err := getLoadedModules(); err != nil {
+		klog.Errorf("failed to get loaded kernel modules: %v", err)
+	} else {
+		s.features.Keys[LoadedModuleFeature] = feature.NewKeyFeatures(kmods...)
+	}
+
+	if selinux, err := SelinuxEnabled(); err != nil {
+		klog.Warning(err)
+	} else {
+		s.features.Values[SelinuxFeature] = feature.NewValueFeatures(nil)
+		s.features.Values[SelinuxFeature].Elements["enabled"] = strconv.FormatBool(selinux)
+	}
+
+	utils.KlogDump(3, "discovered kernel features:", "  ", s.features)
+
+	return nil
+}
+
+func (s *kernelSource) GetFeatures() *feature.DomainFeatures {
+	if s.features == nil {
+		s.features = feature.NewDomainFeatures()
+	}
+	return s.features
 }
 
 func init() {

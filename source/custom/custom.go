@@ -58,7 +58,7 @@ type customSource struct {
 
 // Singleton source instance
 var (
-	src customSource
+	src                           = customSource{config: newDefaultConfig()}
 	_   source.LabelSource        = &src
 	_   source.ConfigurableSource = &src
 )

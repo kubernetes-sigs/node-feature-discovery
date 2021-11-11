@@ -1,8 +1,5 @@
-//go:build !amd64
-// +build !amd64
-
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +16,11 @@ limitations under the License.
 
 package cpu
 
-// Discover if c-states are enabled
-func detectCstate() (map[string]string, error) {
-	return nil, nil
+import (
+	"github.com/klauspost/cpuid/v2"
+)
+
+// getCpuidFlags returns feature names for all the supported CPU features.
+func getCpuidFlags() []string {
+	return cpuid.CPU.FeatureSet()
 }

@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cpuidutils
+package usb
 
 import (
-	"github.com/klauspost/cpuid/v2"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
-// GetCpuidFlags returns feature names for all the supported CPU features.
-func GetCpuidFlags() []string {
-	return cpuid.CPU.FeatureSet()
+func TestUsbSource(t *testing.T) {
+	assert.Equal(t, src.Name(), Name)
+
+	// Check that GetLabels works with empty features
+	src.features = feature.NewDomainFeatures()
+	l, err := src.GetLabels()
+
+	assert.Nil(t, err, err)
+	assert.Empty(t, l)
+
 }
