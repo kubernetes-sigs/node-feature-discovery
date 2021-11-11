@@ -20,28 +20,28 @@ package feature
 // features to empty values
 func NewDomainFeatures() *DomainFeatures {
 	return &DomainFeatures{
-		Keys:      make(map[string]*KeyFeatureSet),
-		Values:    make(map[string]*ValueFeatureSet),
-		Instances: make(map[string]*InstanceFeatureSet)}
+		Keys:      make(map[string]KeyFeatureSet),
+		Values:    make(map[string]ValueFeatureSet),
+		Instances: make(map[string]InstanceFeatureSet)}
 }
 
-func NewKeyFeatures(keys ...string) *KeyFeatureSet {
+func NewKeyFeatures(keys ...string) KeyFeatureSet {
 	e := make(map[string]Nil, len(keys))
 	for _, k := range keys {
 		e[k] = Nil{}
 	}
-	return &KeyFeatureSet{Elements: e}
+	return KeyFeatureSet{Elements: e}
 }
 
-func NewValueFeatures(values map[string]string) *ValueFeatureSet {
+func NewValueFeatures(values map[string]string) ValueFeatureSet {
 	if values == nil {
 		values = make(map[string]string)
 	}
-	return &ValueFeatureSet{Elements: values}
+	return ValueFeatureSet{Elements: values}
 }
 
-func NewInstanceFeatures(instances []InstanceFeature) *InstanceFeatureSet {
-	return &InstanceFeatureSet{Elements: instances}
+func NewInstanceFeatures(instances []InstanceFeature) InstanceFeatureSet {
+	return InstanceFeatureSet{Elements: instances}
 }
 
 func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
