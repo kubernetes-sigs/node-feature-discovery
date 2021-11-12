@@ -106,7 +106,7 @@ only created on nodes running nfd-master.
 
 ## NodeResourceTopology CR
 
-When run with NFD-Topology-Updater, NFD creates CR intances corresponding to
+When run with NFD-Topology-Updater, NFD creates CR instances corresponding to
 node resource hardware topology such as:
 
  ```yaml

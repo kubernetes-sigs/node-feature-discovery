@@ -188,7 +188,7 @@ The `-podresources-socket` specifies the path to the Unix socket where kubelet
 exports a gRPC service to enable discovery of in-use CPUs and devices, and to
 provide metadata for them.
 
-Default:  /host-var/liblib/kubelet/pod-resources/kubelet.sock
+Default:  /host-var/lib/kubelet/pod-resources/kubelet.sock
 
 Example:
 
