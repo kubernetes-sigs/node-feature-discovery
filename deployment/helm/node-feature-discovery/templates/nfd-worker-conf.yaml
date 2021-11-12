@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.worker.configmapName }}
+  name: {{ include "node-feature-discovery.fullname" . }}-worker-conf
   labels:
   {{- include "node-feature-discovery.labels" . | nindent 4 }}
 data:
