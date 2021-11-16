@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.5
 	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.10
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.12
 	github.com/klauspost/cpuid/v2 v2.0.9
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
@@ -20,8 +20,8 @@ require (
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.22.0
-	k8s.io/apimachinery v0.22.0
-	k8s.io/client-go v0.22.0
+	k8s.io/apimachinery v0.22.3
+	k8s.io/client-go v0.22.3
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.22.0

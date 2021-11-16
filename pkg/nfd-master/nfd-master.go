@@ -94,7 +94,6 @@ type Args struct {
 	Prune          bool
 	VerifyNodeName bool
 	ResourceLabels utils.StringSetVal
-	NRTNamespace   string
 }
 
 type NfdMaster interface {
@@ -447,7 +446,7 @@ func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopo
 		klog.Infof("received CR updation request for node %q", r.NodeName)
 	}
 	if !m.args.NoPublish {
-		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones, m.args.NRTNamespace)
+		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones)
 		if err != nil {
 			klog.Errorf("failed to advertise NodeResourceTopology: %w", err)
 			return &topologypb.NodeTopologyResponse{}, err
@@ -642,7 +641,7 @@ func modifyCR(topoUpdaterZones []*v1alpha1.Zone) []v1alpha1.Zone {
 	return zones
 }
 
-func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZones []*v1alpha1.Zone, namespace string) error {
+func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZones []*v1alpha1.Zone) error {
 	cli, err := m.apihelper.GetTopologyClient()
 	if err != nil {
 		return err
@@ -650,7 +649,7 @@ func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZone
 
 	zones := modifyCR(topoUpdaterZones)
 
-	nrt, err := cli.TopologyV1alpha1().NodeResourceTopologies(namespace).Get(context.TODO(), hostname, metav1.GetOptions{})
+	nrt, err := cli.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), hostname, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		nrtNew := v1alpha1.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
@@ -660,7 +659,7 @@ func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZone
 			TopologyPolicies: tmpolicy,
 		}
 
-		_, err := cli.TopologyV1alpha1().NodeResourceTopologies(namespace).Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
+		_, err := cli.TopologyV1alpha1().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to create v1alpha1.NodeResourceTopology!:%w", err)
 		}
@@ -672,7 +671,7 @@ func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZone
 	nrtMutated := nrt.DeepCopy()
 	nrtMutated.Zones = zones
 
-	nrtUpdated, err := cli.TopologyV1alpha1().NodeResourceTopologies(namespace).Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
+	nrtUpdated, err := cli.TopologyV1alpha1().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update v1alpha1.NodeResourceTopology!:%w", err)
 	}
