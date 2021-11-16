@@ -16,6 +16,8 @@ limitations under the License.
 
 package feature
 
+//go:generate ./generate.sh
+
 // Features is a collection of all features of the system, arranged by domain.
 // +protobuf
 type Features map[string]*DomainFeatures

@@ -384,10 +384,12 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 	if err != nil {
 		return &pb.SetLabelsReply{}, err
 	}
-	if klog.V(1).Enabled() {
+	switch {
+	case klog.V(2).Enabled():
+		utils.KlogDump(2, "REQUEST", "  ", r)
+	case klog.V(1).Enabled():
 		klog.Infof("REQUEST Node: %q NFD-version: %q Labels: %s", r.NodeName, r.NfdVersion, r.Labels)
-
-	} else {
+	default:
 		klog.Infof("received labeling request for node %q", r.NodeName)
 	}
 
