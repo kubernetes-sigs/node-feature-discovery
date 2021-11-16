@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -269,26 +270,66 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 
 // MatchKeys evaluates the MatchExpression against a set of keys.
 func (m *MatchExpression) MatchKeys(name string, keys map[string]feature.Nil) (bool, error) {
-	klog.V(3).Infof("matching %q %q against %v", name, m.Op, keys)
+	matched := false
 
 	_, ok := keys[name]
 	switch m.Op {
 	case MatchAny:
-		return true, nil
+		matched = true
 	case MatchExists:
-		return ok, nil
+		matched = ok
 	case MatchDoesNotExist:
-		return !ok, nil
+		matched = !ok
 	default:
 		return false, fmt.Errorf("invalid Op %q when matching keys", m.Op)
 	}
+
+	if klog.V(3).Enabled() {
+		mString := map[bool]string{false: "no match", true: "match found"}[matched]
+		k := make([]string, 0, len(keys))
+		for n := range keys {
+			k = append(k, n)
+		}
+		sort.Strings(k)
+		if len(keys) < 10 || klog.V(4).Enabled() {
+			klog.Infof("%s when matching %q %q against %s", mString, name, m.Op, strings.Join(k, " "))
+		} else {
+			klog.Infof("%s when matching %q %q against %s... (list truncated)", mString, name, m.Op, strings.Join(k[0:10], ", "))
+		}
+	}
+	return matched, nil
 }
 
 // MatchValues evaluates the MatchExpression against a set of key-value pairs.
 func (m *MatchExpression) MatchValues(name string, values map[string]string) (bool, error) {
-	klog.V(3).Infof("matching %q %q %v against %v", name, m.Op, m.Value, values)
 	v, ok := values[name]
-	return m.Match(ok, v)
+	matched, err := m.Match(ok, v)
+	if err != nil {
+		return false, err
+	}
+
+	if klog.V(3).Enabled() {
+		mString := map[bool]string{false: "no match", true: "match found"}[matched]
+
+		keys := make([]string, 0, len(values))
+		for k := range values {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		kv := make([]string, len(keys))
+		for i, k := range keys {
+			kv[i] = k + ":" + values[k]
+		}
+
+		if len(values) < 10 || klog.V(4).Enabled() {
+			klog.Infof("%s when matching %q %q %v against %s", mString, name, m.Op, m.Value, strings.Join(kv, " "))
+		} else {
+			klog.Infof("%s when matching %q %q %v against %s... (list truncated)", mString, name, m.Op, m.Value, strings.Join(kv[0:10], " "))
+		}
+	}
+
+	return matched, nil
 }
 
 // matchExpression is a helper type for unmarshalling MatchExpression

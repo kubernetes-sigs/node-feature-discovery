@@ -23,28 +23,32 @@ import (
 
 // getStaticFeatures returns statically configured custom features to discover
 // e.g RMDA related features. NFD configuration file may extend these custom features by adding rules.
-func getStaticFeatureConfig() []FeatureSpec {
-	return []FeatureSpec{
+func getStaticFeatureConfig() []CustomRule {
+	return []CustomRule{
 		{
-			Name: "rdma.capable",
-			MatchOn: []MatchRule{
-				{
-					PciID: &rules.PciIDRule{
-						MatchExpressionSet: expression.MatchExpressionSet{
-							"vendor": expression.MustCreateMatchExpression(expression.MatchIn, "15b3"),
+			LegacyRule: &LegacyRule{
+				Name: "rdma.capable",
+				MatchOn: []LegacyMatcher{
+					{
+						PciID: &rules.PciIDRule{
+							MatchExpressionSet: expression.MatchExpressionSet{
+								"vendor": expression.MustCreateMatchExpression(expression.MatchIn, "15b3"),
+							},
 						},
 					},
 				},
 			},
 		},
 		{
-			Name: "rdma.available",
-			MatchOn: []MatchRule{
-				{
-					LoadedKMod: &rules.LoadedKModRule{
-						MatchExpressionSet: expression.MatchExpressionSet{
-							"ib_uverbs": expression.MustCreateMatchExpression(expression.MatchExists),
-							"rdma_ucm":  expression.MustCreateMatchExpression(expression.MatchExists),
+			LegacyRule: &LegacyRule{
+				Name: "rdma.available",
+				MatchOn: []LegacyMatcher{
+					{
+						LoadedKMod: &rules.LoadedKModRule{
+							MatchExpressionSet: expression.MatchExpressionSet{
+								"ib_uverbs": expression.MustCreateMatchExpression(expression.MatchExists),
+								"rdma_ucm":  expression.MustCreateMatchExpression(expression.MatchExists),
+							},
 						},
 					},
 				},
