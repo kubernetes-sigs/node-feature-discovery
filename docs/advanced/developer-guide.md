@@ -184,8 +184,6 @@ Usage of nfd-master:
         Comma separated list of labels to be exposed as extended resources.
   -verify-node-name
         Verify worker node name against the worker's TLS certificate. Only takes effect when TLS authentication has been enabled.
-  -nrt-namespace
-        Namespace in which Node Resource Topology CR are created. Ensure that the namespace specified already exists
   -version
         Print version and exit.
 ```

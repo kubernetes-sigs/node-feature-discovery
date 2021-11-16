@@ -62,11 +62,6 @@ spec:
             {{- if .Values.master.extraLabelNs | empty | not }}
             - "--extra-label-ns={{- join "," .Values.master.extraLabelNs }}"
             {{- end }}
-            {{- if .Values.master.topologyUpdaterNs | empty }}
-            - "--nrt-namespace={{ $.Release.Namespace }}"
-            {{- else }}
-            - "--nrt-namespace={{ .Values.master.topologyUpdaterNs }}"
-            {{- end }}
 ## Enable TLS authentication
 ## The example below assumes having the root certificate named ca.crt stored in
 ## a ConfigMap named nfd-ca-cert, and, the TLS authentication credentials stored

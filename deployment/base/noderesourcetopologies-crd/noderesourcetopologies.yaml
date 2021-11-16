@@ -3,10 +3,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes/enhancements/pull/1870
-    controller-gen.kubebuilder.io/version: v0.6.0
+    controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
   name: noderesourcetopologies.topology.node.k8s.io
-  namespace: ""
 spec:
   group: topology.node.k8s.io
   names:
@@ -16,7 +15,7 @@ spec:
     shortNames:
     - node-res-topo
     singular: noderesourcetopology
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
