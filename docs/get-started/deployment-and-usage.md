@@ -290,6 +290,7 @@ We have introduced the following Chart parameters.
 | `rbac` | dict |  | RBAC [parameteres](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) |
 | `nameOverride` | string |  | Override the name of the chart |
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
+| `nodeFeatureRule.createCRD` | bool | true | Specifies whether to create the NodeFeatureRule CRD |
 
 ##### Master pod parameters
 

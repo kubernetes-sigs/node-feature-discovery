@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package expression
+package v1alpha1
 
 import (
 	"encoding/json"
@@ -29,80 +29,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
-// MatchExpressionSet contains a set of MatchExpressions, each of which is
-// evaluated against a set of input values.
-type MatchExpressionSet map[string]*MatchExpression
-
-// MatchExpression specifies an expression to evaluate against a set of input
-// values. It contains an operator that is applied when matching the input and
-// an array of values that the operator evaluates the input against.
-// NB: CreateMatchExpression or MustCreateMatchExpression() should be used for
-//     creating new instances.
-// NB: Validate() must be called if Op or Value fields are modified or if a new
-//     instance is created from scratch without using the helper functions.
-type MatchExpression struct {
-	// Op is the operator to be applied.
-	Op MatchOp
-
-	// Value is the list of values that the operand evaluates the input
-	// against. Value should be empty if the operator is Exists, DoesNotExist,
-	// IsTrue or IsFalse. Value should contain exactly one element if the
-	// operator is Gt or Lt and exactly two elements if the operator is GtLt.
-	// In other cases Value should contain at least one element.
-	Value MatchValue `json:",omitempty"`
-
-	// valueRe caches compiled regexps for "InRegexp" operator
-	valueRe []*regexp.Regexp
-}
-
-// MatchOp is the match operator that is applied on values when evaluating a
-// MatchExpression.
-type MatchOp string
-
-// MatchValue is the list of values associated with a MatchExpression.
-type MatchValue []string
-
-const (
-	// MatchAny returns always true.
-	MatchAny MatchOp = ""
-	// MatchIn returns true if any of the values stored in the expression is
-	// equal to the input.
-	MatchIn MatchOp = "In"
-	// MatchIn returns true if none of the values in the expression are equal
-	// to the input.
-	MatchNotIn MatchOp = "NotIn"
-	// MatchInRegexp treats values of the expression as regular expressions and
-	// returns true if any of them matches the input.
-	MatchInRegexp MatchOp = "InRegexp"
-	// MatchExists returns true if the input is valid. The expression must not
-	// have any values.
-	MatchExists MatchOp = "Exists"
-	// MatchDoesNotExist returns true if the input is not valid. The expression
-	// must not have any values.
-	MatchDoesNotExist MatchOp = "DoesNotExist"
-	// MatchGt returns true if the input is greater than the value of the
-	// expression (number of values in the expression must be exactly one).
-	// Both the input and value must be integer numbers, otherwise an error is
-	// returned.
-	MatchGt MatchOp = "Gt"
-	// MatchLt returns true if the input is less  than the value of the
-	// expression (number of values in the expression must be exactly one).
-	// Both the input and value must be integer numbers, otherwise an error is
-	// returned.
-	MatchLt MatchOp = "Lt"
-	// MatchGtLt returns true if the input is between two values, i.e. greater
-	// than the first value and less than the second value of the expression
-	// (number of values in the expression must be exactly two). Both the input
-	// and values must be integer numbers, otherwise an error is returned.
-	MatchGtLt MatchOp = "GtLt"
-	// MatchIsTrue returns true if the input holds the value "true". The
-	// expression must not have any values.
-	MatchIsTrue MatchOp = "IsTrue"
-	// MatchIsTrue returns true if the input holds the value "false". The
-	// expression must not have any values.
-	MatchIsFalse MatchOp = "IsFalse"
-)
-
 var matchOps = map[MatchOp]struct{}{
 	MatchAny:          struct{}{},
 	MatchIn:           struct{}{},
@@ -115,6 +41,18 @@ var matchOps = map[MatchOp]struct{}{
 	MatchGtLt:         struct{}{},
 	MatchIsTrue:       struct{}{},
 	MatchIsFalse:      struct{}{},
+}
+
+type valueRegexpCache []*regexp.Regexp
+
+// NewMatchExpressionSet returns a new MatchExpressionSet instance.
+func NewMatchExpressionSet() *MatchExpressionSet {
+	return &MatchExpressionSet{Expressions: make(Expressions)}
+}
+
+// Len returns the number of expressions.
+func (e *Expressions) Len() int {
+	return len(*e)
 }
 
 // CreateMatchExpression creates a new MatchExpression instance. Returns an
@@ -376,7 +314,7 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
 func (m *MatchExpressionSet) MatchKeys(keys map[string]feature.Nil) (bool, error) {
-	for n, e := range *m {
+	for n, e := range (*m).Expressions {
 		match, err := e.MatchKeys(n, keys)
 		if err != nil {
 			return false, err
@@ -390,7 +328,7 @@ func (m *MatchExpressionSet) MatchKeys(keys map[string]feature.Nil) (bool, error
 
 // MatchValues evaluates the MatchExpressionSet against a set of key-value pairs.
 func (m *MatchExpressionSet) MatchValues(values map[string]string) (bool, error) {
-	for n, e := range *m {
+	for n, e := range (*m).Expressions {
 		match, err := e.MatchValues(n, values)
 		if err != nil {
 			return false, err
@@ -418,7 +356,7 @@ func (m *MatchExpressionSet) MatchInstances(instances []feature.InstanceFeature)
 
 // UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
 func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
-	*m = make(MatchExpressionSet)
+	*m = *NewMatchExpressionSet()
 
 	names := make([]string, 0)
 	if err := json.Unmarshal(data, &names); err == nil {
@@ -426,9 +364,9 @@ func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
 		for _, name := range names {
 			split := strings.SplitN(name, "=", 2)
 			if len(split) == 1 {
-				(*m)[split[0]] = newMatchExpression(MatchExists)
+				(*m).Expressions[split[0]] = newMatchExpression(MatchExists)
 			} else {
-				(*m)[split[0]] = newMatchExpression(MatchIn, split[1])
+				(*m).Expressions[split[0]] = newMatchExpression(MatchIn, split[1])
 			}
 		}
 	} else {
@@ -439,9 +377,9 @@ func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
 		} else {
 			for k, v := range expressions {
 				if v != nil {
-					(*m)[k] = v
+					(*m).Expressions[k] = v
 				} else {
-					(*m)[k] = newMatchExpression(MatchExists)
+					(*m).Expressions[k] = newMatchExpression(MatchExists)
 				}
 			}
 		}
@@ -495,4 +433,23 @@ func (m *MatchValue) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// DeepCopy supplements the auto-generated code
+func (in *valueRegexpCache) DeepCopy() *valueRegexpCache {
+	if in == nil {
+		return nil
+	}
+	out := new(valueRegexpCache)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is a stub to augment the auto-generated code
+//nolint:staticcheck  // re.Copy is deprecated but we want to use  it here
+func (in *valueRegexpCache) DeepCopyInto(out *valueRegexpCache) {
+	*out = make(valueRegexpCache, len(*in))
+	for i, re := range *in {
+		(*out)[i] = re.Copy()
+	}
 }

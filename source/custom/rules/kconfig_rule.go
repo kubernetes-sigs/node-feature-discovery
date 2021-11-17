@@ -19,14 +19,14 @@ package rules
 import (
 	"fmt"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
 // KconfigRule implements Rule for the custom source
 type KconfigRule struct {
-	expression.MatchExpressionSet
+	nfdv1alpha1.MatchExpressionSet
 }
 
 func (r *KconfigRule) Match() (bool, error) {

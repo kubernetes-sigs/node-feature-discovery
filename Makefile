@@ -102,6 +102,8 @@ generate:
 	go mod vendor
 	go generate ./cmd/... ./pkg/... ./source/...
 	rm -rf vendor/
+	controller-gen object crd output:crd:stdout paths=./pkg/apis/... > deployment/base/nfd-crds/nodefeaturerule-crd.yaml
+	cp deployment/base/nfd-crds/nodefeaturerule-crd.yaml deployment/helm/node-feature-discovery/manifests/
 
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')

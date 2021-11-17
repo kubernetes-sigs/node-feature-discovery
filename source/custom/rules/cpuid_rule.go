@@ -19,14 +19,14 @@ package rules
 import (
 	"fmt"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 )
 
 // CpuIDRule implements Rule for the custom source
 type CpuIDRule struct {
-	expression.MatchExpressionSet
+	nfdv1alpha1.MatchExpressionSet
 }
 
 func (r *CpuIDRule) Match() (bool, error) {

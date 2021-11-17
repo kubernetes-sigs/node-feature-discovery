@@ -26,9 +26,9 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
-	"sigs.k8s.io/node-feature-discovery/source/custom/expression"
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
@@ -65,7 +65,7 @@ type FeatureMatcher []FeatureMatcherTerm
 
 type FeatureMatcherTerm struct {
 	Feature          string
-	MatchExpressions expression.MatchExpressionSet
+	MatchExpressions nfdv1alpha1.MatchExpressionSet
 }
 
 type config []CustomRule
