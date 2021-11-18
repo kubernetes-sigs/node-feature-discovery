@@ -10,3 +10,7 @@ patches:
   target:
     labelSelector: app=nfd
     name: nfd-topology-updater
+- path: sleep-interval-flag.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-topology-updater
