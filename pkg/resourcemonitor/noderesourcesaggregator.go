@@ -75,7 +75,14 @@ func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesLister
 	// Pod Resource API client
 	resp, err := podResourceClient.GetAllocatableResources(ctx, &podresourcesapi.AllocatableResourcesRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("can't receive response: %v.Get(_) = _, %w", podResourceClient, err)
+		if strings.Contains(err.Error(), "API GetAllocatableResources disabled") {
+			klog.Error("Kubelet's pod resources 'GetAllocatableResources' functionality is disabled. " +
+				"Ensure feature flag 'KubeletPodResourcesGetAllocatable' is set to true. " +
+				"You can find more about the feature gates from the following URL - " +
+				"https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/")
+		}
+
+		return nil, fmt.Errorf("failed to get allocatable resources (ensure that KubeletPodResourcesGetAllocatable feature gate is enabled): %w", err)
 	}
 
 	return NewResourcesAggregatorFromData(topo, resp, memoryResourcesCapacityPerNUMA), nil
