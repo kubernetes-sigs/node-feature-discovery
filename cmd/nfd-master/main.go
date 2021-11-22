@@ -96,6 +96,8 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,
 		"Do not publish feature labels")
+	flagset.BoolVar(&args.FeatureRulesController, "featurerules-controller", true,
+		"Enable controller for NodeFeatureRule objects. Generates node labels based on the rules in these CRs.")
 	flagset.IntVar(&args.Port, "port", 8080,
 		"Port on which to listen for connections.")
 	flagset.BoolVar(&args.Prune, "prune", false,

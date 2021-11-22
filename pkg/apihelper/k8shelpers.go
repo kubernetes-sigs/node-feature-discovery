@@ -31,24 +31,11 @@ import (
 
 // Implements APIHelpers
 type K8sHelpers struct {
-	Kubeconfig string
+	Kubeconfig *restclient.Config
 }
 
 func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
-	// Set up an in-cluster K8S client.
-	var config *restclient.Config
-	var err error
-
-	if h.Kubeconfig == "" {
-		config, err = restclient.InClusterConfig()
-	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", h.Kubeconfig)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	clientset, err := k8sclient.NewForConfig(config)
+	clientset, err := k8sclient.NewForConfig(h.Kubeconfig)
 	if err != nil {
 		return nil, err
 	}
@@ -56,20 +43,7 @@ func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
 }
 
 func (h K8sHelpers) GetTopologyClient() (*topologyclientset.Clientset, error) {
-	// Set up an in-cluster K8S client.
-	var config *restclient.Config
-	var err error
-
-	if h.Kubeconfig == "" {
-		config, err = restclient.InClusterConfig()
-	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", h.Kubeconfig)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	topologyClient, err := topologyclientset.NewForConfig(config)
+	topologyClient, err := topologyclientset.NewForConfig(h.Kubeconfig)
 	if err != nil {
 		return nil, err
 	}
@@ -131,4 +105,11 @@ func (h K8sHelpers) GetPod(cli *k8sclient.Clientset, namespace string, podName s
 	}
 
 	return pod, nil
+}
+
+func GetKubeconfig(path string) (*restclient.Config, error) {
+	if path == "" {
+		return restclient.InClusterConfig()
+	}
+	return clientcmd.BuildConfigFromFlags("", path)
 }
