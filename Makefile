@@ -86,6 +86,14 @@ image: yamls
 	    $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
 	    $(IMAGE_BUILD_EXTRA_OPTS) ./
 
+# clean NFD labels on all nodes
+# devel only
+deploy-prune:
+	kubectl apply -k deployment/overlays/prune/
+	kubectl wait --for=condition=complete job -l app=nfd -n node-feature-discovery
+	kubectl delete -k deployment/overlays/prune/
+
+
 yamls:
 	@./scripts/kustomize.sh $(K8S_NAMESPACE) $(IMAGE_REPO) $(IMAGE_TAG_NAME)
 
