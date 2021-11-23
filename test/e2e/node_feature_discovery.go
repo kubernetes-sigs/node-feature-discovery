@@ -324,6 +324,11 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 				},
 				VolumeMounts: []v1.VolumeMount{
 					{
+						Name:      "host-boot",
+						MountPath: "/host-boot",
+						ReadOnly:  true,
+					},
+					{
 						Name:      "host-os-release",
 						MountPath: "/host-etc/os-release",
 						ReadOnly:  true,
@@ -349,6 +354,15 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 		ServiceAccountName: "nfd-master-e2e",
 		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
 		Volumes: []v1.Volume{
+			{
+				Name: "host-boot",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/boot",
+						Type: newHostPathType(v1.HostPathDirectory),
+					},
+				},
+			},
 			{
 				Name: "host-os-release",
 				VolumeSource: v1.VolumeSource{
