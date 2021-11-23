@@ -51,6 +51,11 @@ spec:
             rotational: {op: In, value: ["0"]}
             dax: {op: In, value: ["0"]}
 
+        - feature: network.device
+          matchExpressions:
+            operstate: {op: In, value: ["up"]}
+            speed: {op: Gt, value: ["100"]}
+
         - feature: system.osrelease
           matchExpressions:
             ID: {op: In, value: ["fedora", "centos"]}
