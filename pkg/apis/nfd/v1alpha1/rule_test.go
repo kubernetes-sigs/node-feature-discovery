@@ -255,6 +255,12 @@ label-2=
 {{end}}
 {{range .domain_1.if_1}}if-{{index . "attr-1"}}_{{index . "attr-2"}}=present
 {{end}}`,
+		Vars: map[string]string{"var-1": "var-val-1"},
+		VarsTemplate: `
+var-1=value-will-be-overridden-by-vars
+var-2=
+{{range .domain_1.kf_1}}kf-{{.Name}}=true
+{{end}}`,
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature: "domain_1.kf_1",
@@ -297,10 +303,19 @@ label-2=
 		"if-1_val-2":   "present",
 		"if-10_val-20": "present",
 	}
+	expectedVars := map[string]string{
+		"var-1": "var-val-1",
+		"var-2": "",
+		// From template
+		"kf-key-a": "true",
+		"kf-key-c": "true",
+		"kf-foo":   "true",
+	}
 
 	m, err := r1.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
+	assert.Equal(t, expectedVars, m.Vars, "instances should have matched")
 
 	//
 	// Test error cases
@@ -320,6 +335,7 @@ label-2=
 	m, err = r2.Execute(f)
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]string{"foo": "bar"}, m.Labels, "instances should have matched")
+	assert.Empty(t, m.Vars)
 
 	r2.labelsTemplate = nil
 	r2.LabelsTemplate = "foo"
@@ -330,4 +346,23 @@ label-2=
 	r2.LabelsTemplate = "{{"
 	_, err = r2.Execute(f)
 	assert.Error(t, err)
+
+	r2.labelsTemplate = nil
+	r2.LabelsTemplate = ""
+	r2.VarsTemplate = "bar=baz"
+	m, err = r2.Execute(f)
+	assert.Nil(t, err)
+	assert.Empty(t, m.Labels)
+	assert.Equal(t, map[string]string{"bar": "baz"}, m.Vars, "instances should have matched")
+
+	r2.varsTemplate = nil
+	r2.VarsTemplate = "bar"
+	_, err = r2.Execute(f)
+	assert.Error(t, err)
+
+	r2.varsTemplate = nil
+	r2.VarsTemplate = "{{"
+	_, err = r2.Execute(f)
+	assert.Error(t, err)
+
 }

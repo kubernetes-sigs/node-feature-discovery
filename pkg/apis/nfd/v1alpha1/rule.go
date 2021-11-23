@@ -58,7 +58,9 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 				if err := r.executeLabelsTemplate(m, labels); err != nil {
 					return RuleOutput{}, err
 				}
-
+				if err := r.executeVarsTemplate(m, vars); err != nil {
+					return RuleOutput{}, err
+				}
 			}
 		}
 		if !matched {
@@ -76,6 +78,9 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 		} else {
 			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", m)
 			if err := r.executeLabelsTemplate(m, labels); err != nil {
+				return RuleOutput{}, err
+			}
+			if err := r.executeVarsTemplate(m, vars); err != nil {
 				return RuleOutput{}, err
 			}
 		}
@@ -112,6 +117,28 @@ func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) 
 		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
 	}
 	for k, v := range labels {
+		out[k] = v
+	}
+	return nil
+}
+
+func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) error {
+	if r.VarsTemplate == "" {
+		return nil
+	}
+	if r.varsTemplate == nil {
+		t, err := newTemplateHelper(r.VarsTemplate)
+		if err != nil {
+			return err
+		}
+		r.varsTemplate = t
+	}
+
+	vars, err := r.varsTemplate.expandMap(in)
+	if err != nil {
+		return err
+	}
+	for k, v := range vars {
 		out[k] = v
 	}
 	return nil
