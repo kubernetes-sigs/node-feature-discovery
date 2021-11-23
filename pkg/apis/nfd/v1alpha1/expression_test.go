@@ -291,23 +291,29 @@ func TestMatchValues(t *testing.T) {
 
 func TestMESMatchKeys(t *testing.T) {
 	type I = map[string]feature.Nil
+	type MK = api.MatchedKey
+	type O = []MK
 	type TC struct {
 		mes    string
 		input  I
+		output O
 		result BoolAssertionFuncf
 		err    ValueAssertionFuncf
 	}
 
 	tcs := []TC{
-		{result: assert.Truef, err: assert.Nilf},
+		{output: O{}, result: assert.Truef, err: assert.Nilf},
 
-		{input: I{"foo": {}}, result: assert.Truef, err: assert.Nilf},
+		{input: I{}, output: O{}, result: assert.Truef, err: assert.Nilf},
+
+		{input: I{"foo": {}}, output: O{MK{Name: "foo"}}, result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
 foo: { op: DoesNotExist }
 bar: { op: Exists }
 `,
-			input:  I{"bar": {}, "baz": {}},
+			input:  I{"bar": {}, "baz": {}, "buzz": {}},
+			output: O{MK{Name: "bar"}, MK{Name: "foo"}},
 			result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
@@ -315,6 +321,7 @@ foo: { op: DoesNotExist }
 bar: { op: Exists }
 `,
 			input:  I{"foo": {}, "bar": {}, "baz": {}},
+			output: nil,
 			result: assert.Falsef, err: assert.Nilf},
 
 		{mes: `
@@ -322,6 +329,7 @@ foo: { op: In, value: ["bar"] }
 bar: { op: Exists }
 `,
 			input:  I{"bar": {}, "baz": {}},
+			output: nil,
 			result: assert.Falsef, err: assert.NotNilf},
 	}
 
@@ -331,6 +339,10 @@ bar: { op: Exists }
 			t.Fatalf("failed to parse data of test case #%d (%v): %v", i, tc, err)
 		}
 
+		out, err := mes.MatchGetKeys(tc.input)
+		assert.Equalf(t, tc.output, out, "test case #%d (%v) failed", i, tc)
+		tc.err(t, err, "test case #%d (%v) failed", i, tc)
+
 		res, err := mes.MatchKeys(tc.input)
 		tc.result(t, res, "test case #%d (%v) failed", i, tc)
 		tc.err(t, err, "test case #%d (%v) failed", i, tc)
@@ -339,17 +351,22 @@ bar: { op: Exists }
 
 func TestMESMatchValues(t *testing.T) {
 	type I = map[string]string
+	type MV = api.MatchedValue
+	type O = []MV
 	type TC struct {
 		mes    string
 		input  I
+		output O
 		result BoolAssertionFuncf
 		err    ValueAssertionFuncf
 	}
 
 	tcs := []TC{
-		{result: assert.Truef, err: assert.Nilf},
+		{output: O{}, result: assert.Truef, err: assert.Nilf},
 
-		{input: I{"foo": "bar"}, result: assert.Truef, err: assert.Nilf},
+		{input: I{}, output: O{}, result: assert.Truef, err: assert.Nilf},
+
+		{input: I{"foo": "bar"}, output: O{MV{Name: "foo", Value: "bar"}}, result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
 foo: { op: Exists }
@@ -364,7 +381,8 @@ foo: { op: Exists }
 bar: { op: In, value: ["val", "wal"] }
 baz: { op: Gt, value: ["10"] }
 `,
-			input:  I{"foo": "1", "bar": "val", "baz": "123"},
+			input:  I{"foo": "1", "bar": "val", "baz": "123", "buzz": "light"},
+			output: O{MV{Name: "bar", Value: "val"}, MV{Name: "baz", Value: "123"}, MV{Name: "foo", Value: "1"}},
 			result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
@@ -382,6 +400,10 @@ baz: { op: Gt, value: ["10"] }
 			t.Fatalf("failed to parse data of test case #%d (%v): %v", i, tc, err)
 		}
 
+		out, err := mes.MatchGetValues(tc.input)
+		assert.Equalf(t, tc.output, out, "test case #%d (%v) failed", i, tc)
+		tc.err(t, err, "test case #%d (%v) failed", i, tc)
+
 		res, err := mes.MatchValues(tc.input)
 		tc.result(t, res, "test case #%d (%v) failed", i, tc)
 		tc.err(t, err, "test case #%d (%v) failed", i, tc)
@@ -390,26 +412,30 @@ baz: { op: Gt, value: ["10"] }
 
 func TestMESMatchInstances(t *testing.T) {
 	type I = feature.InstanceFeature
+	type MI = api.MatchedInstance
+	type O = []MI
 	type A = map[string]string
 	type TC struct {
 		mes    string
 		input  []I
+		output O
 		result BoolAssertionFuncf
 		err    ValueAssertionFuncf
 	}
 
 	tcs := []TC{
-		{result: assert.Falsef, err: assert.Nilf}, // nil instances -> false
+		{output: O{}, result: assert.Falsef, err: assert.Nilf}, // nil instances -> false
 
-		{input: []I{}, result: assert.Falsef, err: assert.Nilf}, // zero instances -> false
+		{input: []I{}, output: O{}, result: assert.Falsef, err: assert.Nilf}, // zero instances -> false
 
-		{input: []I{I{Attributes: A{}}}, result: assert.Truef, err: assert.Nilf}, // one "empty" instance
+		{input: []I{I{Attributes: A{}}}, output: O{A{}}, result: assert.Truef, err: assert.Nilf}, // one "empty" instance
 
 		{mes: `
 foo: { op: Exists }
 bar: { op: Lt, value: ["10"] }
 `,
 			input:  []I{I{Attributes: A{"foo": "1"}}, I{Attributes: A{"bar": "1"}}},
+			output: O{},
 			result: assert.Falsef, err: assert.Nilf},
 
 		{mes: `
@@ -417,6 +443,7 @@ foo: { op: Exists }
 bar: { op: Lt, value: ["10"] }
 `,
 			input:  []I{I{Attributes: A{"foo": "1"}}, I{Attributes: A{"foo": "2", "bar": "1"}}},
+			output: O{A{"foo": "2", "bar": "1"}},
 			result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
@@ -431,6 +458,10 @@ bar: { op: Lt, value: ["10"] }
 		if err := yaml.Unmarshal([]byte(tc.mes), mes); err != nil {
 			t.Fatalf("failed to parse data of test case #%d (%v): %v", i, tc, err)
 		}
+
+		out, err := mes.MatchGetInstances(tc.input)
+		assert.Equalf(t, tc.output, out, "test case #%d (%v) failed", i, tc)
+		tc.err(t, err, "test case #%d (%v) failed", i, tc)
 
 		res, err := mes.MatchInstances(tc.input)
 		tc.result(t, res, "test case #%d (%v) failed", i, tc)

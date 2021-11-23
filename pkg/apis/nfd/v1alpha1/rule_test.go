@@ -192,3 +192,107 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m, "instances should have matched")
 }
+
+func TestTemplating(t *testing.T) {
+	f := map[string]*feature.DomainFeatures{
+		"domain_1": &feature.DomainFeatures{
+			Keys: map[string]feature.KeyFeatureSet{
+				"kf_1": feature.KeyFeatureSet{
+					Elements: map[string]feature.Nil{
+						"key-a": feature.Nil{},
+						"key-b": feature.Nil{},
+						"key-c": feature.Nil{},
+					},
+				},
+			},
+			Values: map[string]feature.ValueFeatureSet{
+				"vf_1": feature.ValueFeatureSet{
+					Elements: map[string]string{
+						"key-1": "val-1",
+						"keu-2": "val-2",
+						"key-3": "val-3",
+					},
+				},
+			},
+			Instances: map[string]feature.InstanceFeatureSet{
+				"if_1": feature.InstanceFeatureSet{
+					Elements: []feature.InstanceFeature{
+						feature.InstanceFeature{
+							Attributes: map[string]string{
+								"attr-1": "1",
+								"attr-2": "val-2",
+							},
+						},
+						feature.InstanceFeature{
+							Attributes: map[string]string{
+								"attr-1": "10",
+								"attr-2": "val-20",
+							},
+						},
+						feature.InstanceFeature{
+							Attributes: map[string]string{
+								"attr-1": "100",
+								"attr-2": "val-200",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	r1 := Rule{
+		Labels: map[string]string{"label-1": "label-val-1"},
+		LabelsTemplate: `
+{{range .domain_1.kf_1}}kf-{{.Name}}=present
+{{end}}
+{{range .domain_1.vf_1}}vf-{{.Name}}=vf-{{.Value}}
+{{end}}
+{{range .domain_1.if_1}}if-{{index . "attr-1"}}_{{index . "attr-2"}}=present
+{{end}}`,
+		MatchFeatures: FeatureMatcher{
+			FeatureMatcherTerm{
+				Feature: "domain_1.kf_1",
+				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+					"key-a": MustCreateMatchExpression(MatchExists),
+					"key-c": MustCreateMatchExpression(MatchExists),
+					"foo":   MustCreateMatchExpression(MatchDoesNotExist),
+				},
+				},
+			},
+			FeatureMatcherTerm{
+				Feature: "domain_1.vf_1",
+				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+					"key-1": MustCreateMatchExpression(MatchIn, "val-1", "val-2"),
+					"bar":   MustCreateMatchExpression(MatchDoesNotExist),
+				},
+				},
+			},
+			FeatureMatcherTerm{
+				Feature: "domain_1.if_1",
+				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+					"attr-1": MustCreateMatchExpression(MatchLt, "100"),
+				},
+				},
+			},
+		},
+	}
+
+	expectedLabels := map[string]string{
+		"label-1": "label-val-1",
+		// From kf_1 template
+		"kf-key-a": "present",
+		"kf-key-c": "present",
+		"kf-foo":   "present",
+		// From vf_1 template
+		"vf-key-1": "vf-val-1",
+		"vf-bar":   "vf-",
+		// From if_1 template
+		"if-1_val-2":   "present",
+		"if-10_val-20": "present",
+	}
+
+	m, err := r1.Execute(f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, expectedLabels, m, "instances should have matched")
+}

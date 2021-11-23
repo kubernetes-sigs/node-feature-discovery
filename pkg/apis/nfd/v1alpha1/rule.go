@@ -18,23 +18,38 @@ package v1alpha1
 
 import (
 	"strings"
+	"text/template"
 
+	"bytes"
 	"fmt"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 // Execute the rule against a set of input features.
 func (r *Rule) Execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {
+	ret := make(map[string]string)
+
 	if len(r.MatchAny) > 0 {
 		// Logical OR over the matchAny matchers
 		matched := false
 		for _, matcher := range r.MatchAny {
 			if m, err := matcher.match(features); err != nil {
 				return nil, err
-			} else if m {
+			} else if m != nil {
 				matched = true
-				break
+				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", m)
+
+				if r.labelsTemplate == nil {
+					// No templating so we stop here (further matches would just
+					// produce the same labels)
+					break
+				}
+				if err := r.executeLabelsTemplate(m, ret); err != nil {
+					return nil, err
+				}
+
 			}
 		}
 		if !matched {
@@ -45,29 +60,62 @@ func (r *Rule) Execute(features map[string]*feature.DomainFeatures) (map[string]
 	if len(r.MatchFeatures) > 0 {
 		if m, err := r.MatchFeatures.match(features); err != nil {
 			return nil, err
-		} else if !m {
+		} else if m == nil {
 			return nil, nil
+		} else {
+			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", m)
+			if err := r.executeLabelsTemplate(m, ret); err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	labels := make(map[string]string, len(r.Labels))
 	for k, v := range r.Labels {
-		labels[k] = v
+		ret[k] = v
 	}
 
-	return labels, nil
+	return ret, nil
 }
 
-func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (bool, error) {
+func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) error {
+	if r.LabelsTemplate == "" {
+		return nil
+	}
+
+	if r.labelsTemplate == nil {
+		t, err := newTemplateHelper(r.LabelsTemplate)
+		if err != nil {
+			return err
+		}
+		r.labelsTemplate = t
+	}
+
+	labels, err := r.labelsTemplate.expandMap(in)
+	if err != nil {
+		return err
+	}
+	for k, v := range labels {
+		out[k] = v
+	}
+	return nil
+}
+
+type matchedFeatures map[string]domainMatchedFeatures
+
+type domainMatchedFeatures map[string]interface{}
+
+func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (matchedFeatures, error) {
 	return e.MatchFeatures.match(features)
 }
 
-func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (bool, error) {
+func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (matchedFeatures, error) {
+	ret := make(matchedFeatures, len(*m))
+
 	// Logical AND over the terms
 	for _, term := range *m {
 		split := strings.SplitN(term.Feature, ".", 2)
 		if len(split) != 2 {
-			return false, fmt.Errorf("invalid selector %q: must be <domain>.<feature>", term.Feature)
+			return nil, fmt.Errorf("invalid feature %q: must be <domain>.<feature>", term.Feature)
 		}
 		domain := split[0]
 		// Ignore case
@@ -75,26 +123,100 @@ func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (boo
 
 		domainFeatures, ok := features[domain]
 		if !ok {
-			return false, fmt.Errorf("unknown feature source/domain %q", domain)
+			return nil, fmt.Errorf("unknown feature source/domain %q", domain)
+		}
+
+		if _, ok := ret[domain]; !ok {
+			ret[domain] = make(domainMatchedFeatures)
 		}
 
 		var m bool
-		var err error
+		var e error
 		if f, ok := domainFeatures.Keys[featureName]; ok {
-			m, err = term.MatchExpressions.MatchKeys(f.Elements)
+			v, err := term.MatchExpressions.MatchGetKeys(f.Elements)
+			m = len(v) > 0
+			e = err
+			ret[domain][featureName] = v
 		} else if f, ok := domainFeatures.Values[featureName]; ok {
-			m, err = term.MatchExpressions.MatchValues(f.Elements)
+			v, err := term.MatchExpressions.MatchGetValues(f.Elements)
+			m = len(v) > 0
+			e = err
+			ret[domain][featureName] = v
 		} else if f, ok := domainFeatures.Instances[featureName]; ok {
-			m, err = term.MatchExpressions.MatchInstances(f.Elements)
+			v, err := term.MatchExpressions.MatchGetInstances(f.Elements)
+			m = len(v) > 0
+			e = err
+			ret[domain][featureName] = v
 		} else {
-			return false, fmt.Errorf("%q feature of source/domain %q not available", featureName, domain)
+			return nil, fmt.Errorf("%q feature of source/domain %q not available", featureName, domain)
 		}
 
-		if err != nil {
-			return false, err
+		if e != nil {
+			return nil, e
 		} else if !m {
-			return false, nil
+			return nil, nil
 		}
 	}
-	return true, nil
+	return ret, nil
+}
+
+type templateHelper struct {
+	template *template.Template
+}
+
+func newTemplateHelper(name string) (*templateHelper, error) {
+	tmpl, err := template.New("").Option("missingkey=error").Parse(name)
+	if err != nil {
+		return nil, fmt.Errorf("invalid template: %w", err)
+	}
+	return &templateHelper{template: tmpl}, nil
+}
+
+// DeepCopy is a stub to augment the auto-generated code
+func (in *templateHelper) DeepCopy() *templateHelper {
+	if in == nil {
+		return nil
+	}
+	out := new(templateHelper)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is a stub to augment the auto-generated code
+func (in *templateHelper) DeepCopyInto(out *templateHelper) {
+	// HACK: just re-use the template
+	out.template = in.template
+}
+
+func (h *templateHelper) execute(data interface{}) (string, error) {
+	var tmp bytes.Buffer
+	if err := h.template.Execute(&tmp, data); err != nil {
+		return "", err
+	}
+	return tmp.String(), nil
+}
+
+// expandMap is a helper for expanding a template in to a map of strings. Data
+// after executing the template is expexted to be key=value pairs separated by
+// newlines.
+func (h *templateHelper) expandMap(data interface{}) (map[string]string, error) {
+	expanded, err := h.execute(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Split out individual key-value pairs
+	out := make(map[string]string)
+	for _, item := range strings.Split(expanded, "\n") {
+		// Remove leading/trailing whitespace and skip empty lines
+		if trimmed := strings.TrimSpace(item); trimmed != "" {
+			split := strings.SplitN(trimmed, "=", 2)
+			if len(split) == 1 {
+				out[split[0]] = ""
+			} else {
+				out[split[0]] = split[1]
+			}
+		}
+	}
+	return out, nil
 }
