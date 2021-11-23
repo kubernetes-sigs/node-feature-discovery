@@ -105,8 +105,8 @@ func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 		}
 	}
 
-	for k, v := range features.Values[SelinuxFeature].Elements {
-		labels[SelinuxFeature+"."+k] = v
+	if enabled, ok := features.Values[SelinuxFeature].Elements["enabled"]; ok && enabled == "true" {
+		labels["selinux.enabled"] = "true"
 	}
 
 	return labels, nil
