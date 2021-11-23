@@ -239,7 +239,8 @@ worker:
     #            major: {op: In, value: ["5"]}
     #            minor: {op: Gt, value: ["10"]}
     #
-    #        - storage.block:
+    #        - feature: storage.block
+    #          matchExpressions:
     #            rotational: {op: In, value: ["0"]}
     #            dax: {op: In, value: ["0"]}
     #
