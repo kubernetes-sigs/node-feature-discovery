@@ -60,7 +60,7 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 	features := s.GetFeatures()
 
 	// NUMA
-	if len(features.Values[NumaFeature].Elements) > 0 {
+	if isNuma, ok := features.Values[NumaFeature].Elements["is_numa"]; ok && isNuma == "true" {
 		labels["numa"] = true
 	}
 
@@ -118,7 +118,10 @@ func detectNuma() (map[string]string, error) {
 		return nil, fmt.Errorf("failed to list numa nodes: %w", err)
 	}
 
-	return map[string]string{"node_count": strconv.Itoa(len(nodes))}, nil
+	return map[string]string{
+		"is_numa":    strconv.FormatBool(len(nodes) > 1),
+		"node_count": strconv.Itoa(len(nodes)),
+	}, nil
 }
 
 // detectNv detects NVDIMM devices
