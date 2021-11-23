@@ -17,24 +17,35 @@ limitations under the License.
 package memory
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 const Name = "memory"
 
-// memorySource implements the LabelSource interface.
-type memorySource struct{}
+const NvFeature = "nv"
+const NumaFeature = "numa"
+
+// memorySource implements the FeatureSource and LabelSource interfaces.
+type memorySource struct {
+	features *feature.DomainFeatures
+}
 
 // Singleton source instance
 var (
 	src memorySource
-	_   source.LabelSource = &src
+	_   source.FeatureSource = &src
+	_   source.LabelSource   = &src
 )
 
 // Name returns an identifier string for this feature source.
@@ -45,78 +56,107 @@ func (s *memorySource) Priority() int { return 0 }
 
 // GetLabels method of the LabelSource interface
 func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
-	features := source.FeatureLabels{}
+	labels := source.FeatureLabels{}
+	features := s.GetFeatures()
+
+	// NUMA
+	if len(features.Values[NumaFeature].Elements) > 0 {
+		labels["numa"] = true
+	}
+
+	// NVDIMM
+	if len(features.Instances[NvFeature].Elements) > 0 {
+		labels["nv.present"] = true
+	}
+	for _, dev := range features.Instances[NvFeature].Elements {
+		if dev.Attributes["devtype"] == "nd_dax" {
+			labels["nv.dax"] = true
+			break
+		}
+	}
+
+	return labels, nil
+}
+
+// Discover method of the FeatureSource interface
+func (s *memorySource) Discover() error {
+	s.features = feature.NewDomainFeatures()
 
 	// Detect NUMA
-	numa, err := isNuma()
-	if err != nil {
-		klog.Errorf("failed to detect NUMA topology: %s", err)
-	} else if numa {
-		features["numa"] = true
+	if numa, err := detectNuma(); err != nil {
+		klog.Errorf("failed to detect NUMA nodes: %v", err)
+	} else {
+		s.features.Values[NumaFeature] = feature.ValueFeatureSet{Elements: numa}
 	}
 
 	// Detect NVDIMM
-	nv, err := detectNvdimm()
-	if err != nil {
-		klog.Errorf("NVDIMM detection failed: %s", err)
+	if nv, err := detectNv(); err != nil {
+		klog.Errorf("failed to detect nvdimm devices: %v", err)
 	} else {
-		for k, v := range nv {
-			features["nv."+k] = v
-		}
+		s.features.Instances[NvFeature] = feature.InstanceFeatureSet{Elements: nv}
 	}
 
-	return features, nil
+	utils.KlogDump(3, "discovered memory features:", "  ", s.features)
+
+	return nil
 }
 
-// Detect if the platform has NUMA topology
-func isNuma() (bool, error) {
-	// Find out how many nodes are online
-	// Multiple nodes is a sign of NUMA
-	bytes, err := ioutil.ReadFile(source.SysfsDir.Path("devices/system/node/online"))
-	if err != nil {
-		return false, err
+// GetFeatures method of the FeatureSource Interface.
+func (s *memorySource) GetFeatures() *feature.DomainFeatures {
+	if s.features == nil {
+		s.features = feature.NewDomainFeatures()
 	}
-
-	// File content is expected to be:
-	//   "0\n" in one-node case
-	//   "0-K\n" in N-node case where K=N-1
-	// presence of newline requires TrimSpace
-	if strings.TrimSpace(string(bytes)) != "0" {
-		// more than one node means NUMA
-		return true, nil
-	}
-	return false, nil
+	return s.features
 }
 
-// Detect NVDIMM devices and configuration
-func detectNvdimm() (map[string]bool, error) {
-	features := make(map[string]bool)
+// detectNuma detects NUMA node information
+func detectNuma() (map[string]string, error) {
+	sysfsBasePath := source.SysfsDir.Path("bus/node/devices")
 
-	// Check presence of physical devices
-	devices, err := ioutil.ReadDir(source.SysfsDir.Path("class/nd"))
-	if err == nil {
-		if len(devices) > 0 {
-			features["present"] = true
-		}
-	} else if os.IsNotExist(err) {
-		return nil, nil
-	} else {
-		return nil, err
+	nodes, err := ioutil.ReadDir(sysfsBasePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list numa nodes: %w", err)
 	}
 
-	// Check presence of DAX-configured regions
-	devices, err = ioutil.ReadDir(source.SysfsDir.Path("bus/nd/devices"))
-	if err == nil {
-		for _, d := range devices {
-			if strings.HasPrefix(d.Name(), "dax") {
-				features["dax"] = true
-			}
-		}
-	} else {
-		klog.Warningf("failed to detect NVDIMM configuration: %s", err)
+	return map[string]string{"node_count": strconv.Itoa(len(nodes))}, nil
+}
+
+// detectNv detects NVDIMM devices
+func detectNv() ([]feature.InstanceFeature, error) {
+	sysfsBasePath := source.SysfsDir.Path("bus/nd/devices")
+	info := make([]feature.InstanceFeature, 0)
+
+	devices, err := ioutil.ReadDir(sysfsBasePath)
+	if os.IsNotExist(err) {
+		klog.V(1).Info("No NVDIMM devices present")
+		return info, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to list nvdimm devices: %w", err)
 	}
 
-	return features, nil
+	// Iterate over devices
+	for _, device := range devices {
+		i := readNdDeviceInfo(filepath.Join(sysfsBasePath, device.Name()))
+		info = append(info, i)
+	}
+
+	return info, nil
+}
+
+// ndDevAttrs is the list of sysfs files (under each nd device) that we're trying to read
+var ndDevAttrs = []string{"devtype", "mode"}
+
+func readNdDeviceInfo(path string) feature.InstanceFeature {
+	attrs := map[string]string{"name": filepath.Base(path)}
+	for _, attrName := range ndDevAttrs {
+		data, err := ioutil.ReadFile(filepath.Join(path, attrName))
+		if err != nil {
+			klog.V(3).Infof("failed to read nd device attribute %s: %w", attrName, err)
+			continue
+		}
+		attrs[attrName] = strings.TrimSpace(string(data))
+	}
+	return *feature.NewInstanceFeature(attrs)
 }
 
 func init() {
