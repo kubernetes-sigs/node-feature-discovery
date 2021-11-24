@@ -47,6 +47,10 @@ const (
 	HWCAP_S390_VXRS_PDE  = 65536
 	HWCAP_S390_SORT      = 131072
 	HWCAP_S390_DFLT      = 262144
+	HWCAP_NR_VXRS_PDE2   = 524288
+	HWCAP_NR_NNPA        = 1048576
+	HWCAP_NR_PCI_MIO     = 2097152
+	HWCAP_NR_SIE         = 4194304
 )
 
 var flagNames_s390x = map[uint64]string{
@@ -69,6 +73,10 @@ var flagNames_s390x = map[uint64]string{
 	HWCAP_S390_VXRS_PDE:  "VXP",
 	HWCAP_S390_SORT:      "SORT",
 	HWCAP_S390_DFLT:      "DFLT",
+	HWCAP_NR_VXRS_PDE2:   "VXP2",
+	HWCAP_NR_NNPA:        "NNPA",
+	HWCAP_NR_PCI_MIO:     "PCIMIO",
+	HWCAP_NR_SIE:         "SIE",
 }
 
 func getCpuidFlags() []string {
