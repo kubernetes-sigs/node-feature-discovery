@@ -78,6 +78,7 @@ The **cpu** feature source supports the following labels:
 |                         | RDTL3CA            | Intel L3 Cache Allocation Technology
 |                         | RDTL2CA            | Intel L2 Cache Allocation Technology
 |                         | RDTMBA             | Intel Memory Bandwidth Allocation (MBA) Technology
+| sgx                     | enabled            | Set to 'true' if Intel SGX is enabled in BIOS (based a non-zero sum value of SGX EPC section sizes).
 
 The (sub-)set of CPUID attributes to publish is configurable via the
 `attributeBlacklist` and `attributeWhitelist` cpuid options of the cpu source.
