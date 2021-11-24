@@ -85,14 +85,14 @@ func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) 
 	if r.labelsTemplate == nil {
 		t, err := newTemplateHelper(r.LabelsTemplate)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse LabelsTemplate: %w", err)
 		}
 		r.labelsTemplate = t
 	}
 
 	labels, err := r.labelsTemplate.expandMap(in)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
 	}
 	for k, v := range labels {
 		out[k] = v
@@ -212,7 +212,7 @@ func (h *templateHelper) expandMap(data interface{}) (map[string]string, error) 
 		if trimmed := strings.TrimSpace(item); trimmed != "" {
 			split := strings.SplitN(trimmed, "=", 2)
 			if len(split) == 1 {
-				out[split[0]] = ""
+				return nil, fmt.Errorf("missing value in expanded template line %q, (format must be '<key>=<value>')", trimmed)
 			} else {
 				out[split[0]] = split[1]
 			}
