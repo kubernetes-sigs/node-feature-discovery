@@ -155,39 +155,6 @@ $ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish
 2019/02/01 14:48:21 gRPC server serving on port: 8080
 ```
 
-Command line flags of nfd-master:
-
-```bash
-$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-master -help
-Usage of nfd-master:
-  -ca-file string
-        Root certificate for verifying connections
-  -cert-file string
-        Certificate used for authenticating connections
-  -extra-label-ns value
-        Comma separated list of allowed extra label namespaces
-  -instance string
-        Instance name. Used to separate annotation namespaces for multiple parallel deployments.
-  -key-file string
-        Private key matching -cert-file
-  -kubeconfig string
-        Kubeconfig to use
-  -label-whitelist value
-        Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.
-  -no-publish
-        Do not publish feature labels
-  -port int
-        Port on which to listen for connections. (default 8080)
-  -prune
-        Prune all NFD related attributes from all nodes of the cluaster and exit.
-  -resource-labels value
-        Comma separated list of labels to be exposed as extended resources.
-  -verify-node-name
-        Verify worker node name against the worker's TLS certificate. Only takes effect when TLS authentication has been enabled.
-  -version
-        Print version and exit.
-```
-
 ### NFD-Worker
 
 In order to run nfd-worker as a "stand-alone" container against your
@@ -201,39 +168,6 @@ $ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker
 
 If you just want to try out feature discovery without connecting to nfd-master,
 pass the `-no-publish` flag to nfd-worker.
-
-Command line flags of nfd-worker:
-
-```bash
-$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-worker -help
-Usage of nfd-worker:
-  -ca-file string
-        Root certificate for verifying connections
-  -cert-file string
-        Certificate used for authenticating connections
-  -config string
-        Config file to use. (default "/etc/kubernetes/node-feature-discovery/nfd-worker.conf")
-  -key-file string
-        Private key matching -cert-file
-  -label-whitelist value
-        Regular expression to filter label names to publish to the Kubernetes API server. NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'. DEPRECATED: This parameter should be set via the config file.
-  -no-publish
-        Do not publish discovered features, disable connection to nfd-master.
-  -oneshot
-        Do not publish feature labels
-  -options string
-        Specify config options from command line. Config options are specified in the same format as in the config file (i.e. json or yaml). These options
-  -server string
-        NFD server address to connecto to. (default "localhost:8080")
-  -server-name-override string
-        Hostname expected from server certificate, useful in testing
-  -sleep-interval duration
-        Time to sleep between re-labeling. Non-positive value implies no re-labeling (i.e. infinite sleep). DEPRECATED: This parameter should be set via the config file
-  -sources value
-        Comma separated list of feature sources. Special value 'all' enables all feature sources. DEPRECATED: This parameter should be set via the config file
-  -version
-        Print version and exit.
-```
 
 **NOTE** Some feature sources need certain directories and/or files from the
 host mounted inside the NFD container. Thus, you need to provide Docker with the
