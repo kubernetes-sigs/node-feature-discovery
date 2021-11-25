@@ -88,7 +88,7 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 			args.Overrides.SleepInterval = overrides.SleepInterval
 		case "sources":
 			klog.Warningf("-sources is deprecated, use 'core.sources' option in the config file, instead")
-			args.Overrides.Sources = overrides.Sources
+			args.Overrides.LabelSources = overrides.LabelSources
 		}
 	})
 
@@ -121,7 +121,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},
-		Sources:        &utils.StringSliceVal{},
+		LabelSources:   &utils.StringSliceVal{},
 	}
 	overrides.NoPublish = flagset.Bool("no-publish", false,
 		"Do not publish discovered features, disable connection to nfd-master.")
@@ -132,7 +132,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	overrides.SleepInterval = flagset.Duration("sleep-interval", 0,
 		"Time to sleep between re-labeling. Non-positive value implies no re-labeling (i.e. infinite sleep). "+
 			"DEPRECATED: This parameter should be set via the config file")
-	flagset.Var(overrides.Sources, "sources",
+	flagset.Var(overrides.LabelSources, "sources",
 		"Comma separated list of feature sources. Special value 'all' enables all feature sources. "+
 			"DEPRECATED: This parameter should be set via the config file")
 

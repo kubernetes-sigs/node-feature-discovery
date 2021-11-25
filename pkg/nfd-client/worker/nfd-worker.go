@@ -64,7 +64,7 @@ type coreConfig struct {
 	Klog           map[string]string
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
-	Sources        []string
+	LabelSources   []string
 	SleepInterval  duration
 }
 
@@ -92,7 +92,7 @@ type ConfigOverrideArgs struct {
 	// Deprecated
 	LabelWhiteList *utils.RegexpVal
 	SleepInterval  *time.Duration
-	Sources        *utils.StringSliceVal
+	LabelSources   *utils.StringSliceVal
 }
 
 type nfdWorker struct {
@@ -138,7 +138,7 @@ func newDefaultConfig() *NFDConfig {
 		Core: coreConfig{
 			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 			SleepInterval:  duration{60 * time.Second},
-			Sources:        []string{"all"},
+			LabelSources:   []string{"all"},
 			Klog:           make(map[string]string),
 		},
 	}
@@ -294,7 +294,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 
 	// Determine enabled feature sources
 	enabled := make(map[string]source.LabelSource)
-	for _, name := range c.Sources {
+	for _, name := range c.LabelSources {
 		if name == "all" {
 			for n, s := range source.GetAllLabelSources() {
 				if ts, ok := s.(source.TestSource); !ok || !ts.IsTestSource() {
@@ -376,8 +376,8 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	if w.args.Overrides.SleepInterval != nil {
 		c.Core.SleepInterval = duration{*w.args.Overrides.SleepInterval}
 	}
-	if w.args.Overrides.Sources != nil {
-		c.Core.Sources = *w.args.Overrides.Sources
+	if w.args.Overrides.LabelSources != nil {
+		c.Core.LabelSources = *w.args.Overrides.LabelSources
 	}
 
 	c.Core.sanitize()

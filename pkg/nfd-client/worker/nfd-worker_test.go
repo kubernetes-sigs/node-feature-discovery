@@ -97,7 +97,7 @@ func TestRun(t *testing.T) {
 				Args: nfdclient.Args{
 					Server: "localhost:8192"},
 				Oneshot:   true,
-				Overrides: worker.ConfigOverrideArgs{Sources: &utils.StringSliceVal{"fake"}},
+				Overrides: worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
 			}
 			fooasdf, _ := worker.NewNfdWorker(args)
 			err := fooasdf.Run()
@@ -128,7 +128,7 @@ func TestRunTls(t *testing.T) {
 					ServerNameOverride: "nfd-test-master",
 				},
 				Oneshot:   true,
-				Overrides: worker.ConfigOverrideArgs{Sources: &utils.StringSliceVal{"fake"}},
+				Overrides: worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
 			}
 			w, _ := worker.NewNfdWorker(&workerArgs)
 			err := w.Run()

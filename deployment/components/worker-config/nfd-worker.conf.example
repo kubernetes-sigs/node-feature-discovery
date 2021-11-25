@@ -2,7 +2,7 @@
 #  labelWhiteList:
 #  noPublish: false
 #  sleepInterval: 60s
-#  sources: [all]
+#  labelSources: [all]
 #  klog:
 #    addDirHeader: false
 #    alsologtostderr: false
