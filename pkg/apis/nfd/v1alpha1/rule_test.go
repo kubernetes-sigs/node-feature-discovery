@@ -244,6 +244,8 @@ func TestTemplating(t *testing.T) {
 	r1 := Rule{
 		Labels: map[string]string{"label-1": "label-val-1"},
 		LabelsTemplate: `
+label-1=will-be-overridden
+label-2=
 {{range .domain_1.kf_1}}kf-{{.Name}}=present
 {{end}}
 {{range .domain_1.vf_1}}vf-{{.Name}}=vf-{{.Value}}
@@ -280,6 +282,7 @@ func TestTemplating(t *testing.T) {
 
 	expectedLabels := map[string]string{
 		"label-1": "label-val-1",
+		"label-2": "",
 		// From kf_1 template
 		"kf-key-a": "present",
 		"kf-key-c": "present",
@@ -295,4 +298,33 @@ func TestTemplating(t *testing.T) {
 	m, err := r1.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, expectedLabels, m, "instances should have matched")
+
+	//
+	// Test error cases
+	//
+	r2 := Rule{
+		MatchFeatures: FeatureMatcher{
+			// We need at least one matcher to match to execute the template.
+			// Use a simple empty matchexpression set to match anything.
+			FeatureMatcherTerm{
+				Feature:          "domain_1.kf_1",
+				MatchExpressions: MatchExpressionSet{},
+			},
+		},
+	}
+
+	r2.LabelsTemplate = "foo=bar"
+	m, err = r2.Execute(f)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]string{"foo": "bar"}, m, "instances should have matched")
+
+	r2.labelsTemplate = nil
+	r2.LabelsTemplate = "foo"
+	_, err = r2.Execute(f)
+	assert.Error(t, err)
+
+	r2.labelsTemplate = nil
+	r2.LabelsTemplate = "{{"
+	_, err = r2.Execute(f)
+	assert.Error(t, err)
 }
