@@ -46,7 +46,7 @@ func TestParseArgs(t *testing.T) {
 			args := parseArgs(flags,
 				"-no-publish",
 				"-label-whitelist=.*rdt.*",
-				"-sources=fake1,fake2,fake3",
+				"-label-sources=fake1,fake2,fake3",
 				"-sleep-interval=30s")
 
 			Convey("args.sources is set to appropriate values", func() {
