@@ -34,7 +34,6 @@ defaultFeatures:
     - "feature.node.kubernetes.io/cpu-rdt.RDTMBA"
     - "feature.node.kubernetes.io/cpu-rdt.RDTMBM"
     - "feature.node.kubernetes.io/cpu-rdt.RDTMON"
-    - "feature.node.kubernetes.io/iommu-enabled"
     - "feature.node.kubernetes.io/kernel-config.NO_HZ"
     - "feature.node.kubernetes.io/kernel-config.NO_HZ_FULL"
     - "feature.node.kubernetes.io/kernel-config.NO_HZ_IDLE"

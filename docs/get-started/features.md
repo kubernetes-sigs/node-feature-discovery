@@ -144,14 +144,6 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | RDTl2CA   | Intel L2 Cache Allocation Technology
 | RDTMBA    | Intel Memory Bandwidth Allocation (MBA) Technology
 
-### IOMMU (deprecated)
-
-| Feature             | Value | Description
-| ------------------- | ----- | -----------
-| **`iommu.enabled`** | true  | IOMMU is present and enabled in the kernel
-
-**DEPRECATED**: The **iommu** source is deprecated and not enabled by default.
-
 ### Kernel
 
 | Feature | Value  | Description

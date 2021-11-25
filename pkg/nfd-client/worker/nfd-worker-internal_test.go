@@ -317,7 +317,7 @@ func TestNewNfdWorker(t *testing.T) {
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
 				So(len(worker.featureSources), ShouldEqual, len(source.GetAllFeatureSources())-1)
-				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-2)
+				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-1)
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})

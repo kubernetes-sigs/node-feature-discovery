@@ -61,7 +61,6 @@ Feature discovery is divided into domain-specific feature sources:
 - USB
 - Custom (rule-based custom features)
 - Local (hooks for user-specific features)
-- IOMMU (*deprecated*)
 
 Each feature source is responsible for detecting a set of features which. in
 turn, are turned into node feature labels.  Feature labels are prefixed with
