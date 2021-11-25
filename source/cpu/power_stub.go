@@ -19,6 +19,6 @@ limitations under the License.
 
 package cpu
 
-func discoverSSTBF() (bool, error) {
-	return false, nil
+func discoverSST() map[string]string {
+	return nil
 }
