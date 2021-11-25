@@ -303,8 +303,18 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 				}
 			}
 		} else {
-			if s := source.GetLabelSource(name); s != nil {
-				enabled[name] = s
+			disable := false
+			strippedName := name
+			if strings.HasPrefix(name, "-") {
+				strippedName = name[1:]
+				disable = true
+			}
+			if s := source.GetLabelSource(strippedName); s != nil {
+				if !disable {
+					enabled[strippedName] = s
+				} else {
+					delete(enabled, strippedName)
+				}
 			} else {
 				klog.Warningf("skipping unknown source %q specified in core.sources (or -sources)", name)
 			}
