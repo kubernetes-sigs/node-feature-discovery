@@ -28,8 +28,8 @@ func TestArgsParse(t *testing.T) {
 	Convey("When parsing command line arguments", t, func() {
 		flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
 
-		Convey("When --no-publish and --oneshot flags are passed", func() {
-			args, finderArgs := parseArgs(flags, "--oneshot", "--no-publish")
+		Convey("When -no-publish and -oneshot flags are passed", func() {
+			args, finderArgs := parseArgs(flags, "-oneshot", "-no-publish")
 
 			Convey("noPublish is set and args.sources is set to the default value", func() {
 				So(args.NoPublish, ShouldBeTrue)
@@ -40,10 +40,10 @@ func TestArgsParse(t *testing.T) {
 			})
 		})
 
-		Convey("When valid args are specified for --kubelet-config-file and --sleep-interval,", func() {
+		Convey("When valid args are specified for -kubelet-config-file and -sleep-interval,", func() {
 			args, finderArgs := parseArgs(flags,
-				"--kubelet-config-file=/path/testconfig.yaml",
-				"--sleep-interval=30s")
+				"-kubelet-config-file=/path/testconfig.yaml",
+				"-sleep-interval=30s")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.NoPublish, ShouldBeFalse)
@@ -54,10 +54,10 @@ func TestArgsParse(t *testing.T) {
 			})
 		})
 
-		Convey("When valid args are specified for --podresources-socket flag and --sleep-interval is specified", func() {
+		Convey("When valid args are specified for -podresources-socket flag and -sleep-interval is specified", func() {
 			args, finderArgs := parseArgs(flags,
-				"--podresources-socket=/path/testkubelet.sock",
-				"--sleep-interval=30s")
+				"-podresources-socket=/path/testkubelet.sock",
+				"-sleep-interval=30s")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.NoPublish, ShouldBeFalse)
@@ -67,9 +67,9 @@ func TestArgsParse(t *testing.T) {
 				So(finderArgs.PodResourceSocketPath, ShouldEqual, "/path/testkubelet.sock")
 			})
 		})
-		Convey("When valid args are specified for--sysfs and --sleep-inteval is specified", func() {
+		Convey("When valid -sleep-inteval is specified", func() {
 			args, finderArgs := parseArgs(flags,
-				"--sleep-interval=30s")
+				"-sleep-interval=30s")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.NoPublish, ShouldBeFalse)
@@ -82,15 +82,15 @@ func TestArgsParse(t *testing.T) {
 
 		Convey("When All valid args are specified", func() {
 			args, finderArgs := parseArgs(flags,
-				"--no-publish",
-				"--sleep-interval=30s",
-				"--kubelet-config-file=/path/testconfig.yaml",
-				"--podresources-socket=/path/testkubelet.sock",
-				"--ca-file=ca",
-				"--cert-file=crt",
-				"--key-file=key")
+				"-no-publish",
+				"-sleep-interval=30s",
+				"-kubelet-config-file=/path/testconfig.yaml",
+				"-podresources-socket=/path/testkubelet.sock",
+				"-ca-file=ca",
+				"-cert-file=crt",
+				"-key-file=key")
 
-			Convey("--no-publish is set and args.sources is set to appropriate values", func() {
+			Convey("-no-publish is set and args.sources is set to appropriate values", func() {
 				So(args.NoPublish, ShouldBeTrue)
 				So(args.CaFile, ShouldEqual, "ca")
 				So(args.CertFile, ShouldEqual, "crt")

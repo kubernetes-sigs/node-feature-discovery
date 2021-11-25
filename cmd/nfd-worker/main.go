@@ -81,13 +81,13 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 		case "no-publish":
 			args.Overrides.NoPublish = overrides.NoPublish
 		case "label-whitelist":
-			klog.Warningf("--label-whitelist is deprecated, use 'core.labelWhiteList' option in the config file, instead")
+			klog.Warningf("-label-whitelist is deprecated, use 'core.labelWhiteList' option in the config file, instead")
 			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
 		case "sleep-interval":
-			klog.Warningf("--sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
+			klog.Warningf("-sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
 			args.Overrides.SleepInterval = overrides.SleepInterval
 		case "sources":
-			klog.Warningf("--sources is deprecated, use 'core.sources' option in the config file, instead")
+			klog.Warningf("-sources is deprecated, use 'core.sources' option in the config file, instead")
 			args.Overrides.Sources = overrides.Sources
 		}
 	})

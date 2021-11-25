@@ -1,4 +1,4 @@
----
+--
 title: "Feature discovery"
 layout: default
 sort: 4
@@ -33,7 +33,7 @@ The published node labels encode a few pieces of information:
       sub-namespaces (e.g. `vendor.profile.node.kubernetes.io` and
       `sub.ns.profile.node.kubernetes.io`) are allowed by default
     - additional namespaces may be enabled with the
-      [`--extra-label-ns`](../advanced/master-commandline-reference#-extra-label-ns)
+      [`-extra-label-ns`](../advanced/master-commandline-reference#-extra-label-ns)
       command line flag of nfd-master
 - The source for each label (e.g. `cpu`).
 - The name of the discovered feature as it appears in the underlying
