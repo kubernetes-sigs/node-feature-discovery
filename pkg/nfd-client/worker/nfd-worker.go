@@ -64,6 +64,7 @@ type coreConfig struct {
 	Klog           map[string]string
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
+	Sources        *[]string
 	LabelSources   []string
 	SleepInterval  duration
 }
@@ -358,6 +359,12 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 			if err != nil {
 				return fmt.Errorf("failed to parse config file: %s", err)
 			}
+
+			if c.Core.Sources != nil {
+				klog.Warningf("found deprecated 'core.sources' config file option, please use 'core.labelSources' instead")
+				c.Core.LabelSources = *c.Core.Sources
+			}
+
 			klog.Infof("configuration file %q parsed", filepath)
 		}
 	}
