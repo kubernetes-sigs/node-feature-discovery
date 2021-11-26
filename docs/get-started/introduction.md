@@ -52,7 +52,6 @@ supposed to be running on each node of the cluster.
 Feature discovery is divided into domain-specific feature sources:
 
 - CPU
-- IOMMU
 - Kernel
 - Memory
 - Network
@@ -62,6 +61,7 @@ Feature discovery is divided into domain-specific feature sources:
 - USB
 - Custom (rule-based custom features)
 - Local (hooks for user-specific features)
+- IOMMU (*deprecated*)
 
 Each feature source is responsible for detecting a set of features which. in
 turn, are turned into node feature labels.  Feature labels are prefixed with
@@ -75,7 +75,6 @@ An overview of the default feature labels:
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
   "feature.node.kubernetes.io/custom-<feature-name>": "true",
-  "feature.node.kubernetes.io/iommu-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/memory-<feature-name>": "true",
   "feature.node.kubernetes.io/network-<feature-name>": "true",

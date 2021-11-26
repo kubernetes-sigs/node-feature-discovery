@@ -56,6 +56,9 @@ func (s *iommuSource) GetLabels() (source.FeatureLabels, error) {
 	return features, nil
 }
 
+// DisableByDefault method of the SupplementalSource interface.
+func (s *iommuSource) DisableByDefault() bool { return true }
+
 func init() {
 	source.Register(&src)
 }
