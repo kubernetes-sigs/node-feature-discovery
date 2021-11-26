@@ -148,8 +148,8 @@ func (s *fakeSource) GetLabels() (source.FeatureLabels, error) {
 	return labels, nil
 }
 
-// IsTestSource method of the LabelSource interface
-func (s *fakeSource) IsTestSource() bool { return true }
+// DisableByDefault method of the SupplementalSource interface.
+func (s *fakeSource) DisableByDefault() bool { return true }
 
 func init() {
 	source.Register(&src)
