@@ -124,31 +124,34 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 			continue
 		}
 
-		for n, v := range ruleOut {
+		for n, v := range ruleOut.Labels {
 			labels[n] = v
 		}
+		// Feed back rule output to features map for subsequent rules to match
+		feature.InsertFeatureValues(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
+		feature.InsertFeatureValues(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 	}
 	return labels, nil
 }
 
-func (r *CustomRule) execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {
+func (r *CustomRule) execute(features map[string]*feature.DomainFeatures) (nfdv1alpha1.RuleOutput, error) {
 	if r.LegacyRule != nil {
 		ruleOut, err := r.LegacyRule.execute(features)
 		if err != nil {
-			return nil, fmt.Errorf("failed to execute legacy rule %s: %w", r.LegacyRule.Name, err)
+			return nfdv1alpha1.RuleOutput{}, fmt.Errorf("failed to execute legacy rule %s: %w", r.LegacyRule.Name, err)
 		}
-		return ruleOut, err
+		return nfdv1alpha1.RuleOutput{Labels: ruleOut}, nil
 	}
 
 	if r.Rule != nil {
 		ruleOut, err := r.Rule.Execute(features)
 		if err != nil {
-			return nil, fmt.Errorf("failed to execute rule %s: %w", r.Rule.Name, err)
+			return ruleOut, fmt.Errorf("failed to execute rule %s: %w", r.Rule.Name, err)
 		}
-		return ruleOut, err
+		return ruleOut, nil
 	}
 
-	return nil, fmt.Errorf("BUG: an empty rule, this really should not happen")
+	return nfdv1alpha1.RuleOutput{}, fmt.Errorf("BUG: an empty rule, this really should not happen")
 }
 
 func (r *LegacyRule) execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {

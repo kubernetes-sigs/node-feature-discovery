@@ -17,26 +17,35 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 
-	"bytes"
-	"fmt"
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
+// RuleOutput contains the output out rule execution.
+// +k8s:deepcopy-gen=false
+type RuleOutput struct {
+	Labels map[string]string
+	Vars   map[string]string
+}
+
 // Execute the rule against a set of input features.
-func (r *Rule) Execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {
-	ret := make(map[string]string)
+func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
+	labels := make(map[string]string)
+	vars := make(map[string]string)
 
 	if len(r.MatchAny) > 0 {
 		// Logical OR over the matchAny matchers
 		matched := false
 		for _, matcher := range r.MatchAny {
 			if m, err := matcher.match(features); err != nil {
-				return nil, err
+				return RuleOutput{}, err
 			} else if m != nil {
 				matched = true
 				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", m)
@@ -46,33 +55,46 @@ func (r *Rule) Execute(features map[string]*feature.DomainFeatures) (map[string]
 					// produce the same labels)
 					break
 				}
-				if err := r.executeLabelsTemplate(m, ret); err != nil {
-					return nil, err
+				if err := r.executeLabelsTemplate(m, labels); err != nil {
+					return RuleOutput{}, err
 				}
-
+				if err := r.executeVarsTemplate(m, vars); err != nil {
+					return RuleOutput{}, err
+				}
 			}
 		}
 		if !matched {
-			return nil, nil
+			klog.V(2).Infof("rule %q did not match", r.Name)
+			return RuleOutput{}, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
 		if m, err := r.MatchFeatures.match(features); err != nil {
-			return nil, err
+			return RuleOutput{}, err
 		} else if m == nil {
-			return nil, nil
+			klog.V(2).Infof("rule %q did not match", r.Name)
+			return RuleOutput{}, nil
 		} else {
 			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", m)
-			if err := r.executeLabelsTemplate(m, ret); err != nil {
-				return nil, err
+			if err := r.executeLabelsTemplate(m, labels); err != nil {
+				return RuleOutput{}, err
+			}
+			if err := r.executeVarsTemplate(m, vars); err != nil {
+				return RuleOutput{}, err
 			}
 		}
 	}
 
 	for k, v := range r.Labels {
-		ret[k] = v
+		labels[k] = v
 	}
+	for k, v := range r.Vars {
+		vars[k] = v
+	}
+
+	ret := RuleOutput{Labels: labels, Vars: vars}
+	utils.KlogDump(2, fmt.Sprintf("rule %q matched with: ", r.Name), "  ", ret)
 
 	return ret, nil
 }
@@ -95,6 +117,28 @@ func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) 
 		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
 	}
 	for k, v := range labels {
+		out[k] = v
+	}
+	return nil
+}
+
+func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) error {
+	if r.VarsTemplate == "" {
+		return nil
+	}
+	if r.varsTemplate == nil {
+		t, err := newTemplateHelper(r.VarsTemplate)
+		if err != nil {
+			return err
+		}
+		r.varsTemplate = t
+	}
+
+	vars, err := r.varsTemplate.expandMap(in)
+	if err != nil {
+		return err
+	}
+	for k, v := range vars {
 		out[k] = v
 	}
 	return nil

@@ -65,6 +65,19 @@ type Rule struct {
 	// +optional
 	LabelsTemplate string `json:"labelsTemplate"`
 
+	// Vars is the variables to store if the rule matches. Variables do not
+	// directly inflict any changes in the node object. However, they can be
+	// referenced from other rules enabling more complex rule hierarchies,
+	// without exposing intermediary output values as labels.
+	// +optional
+	Vars map[string]string `json:"vars"`
+
+	// VarsTemplate specifies a template to expand for dynamically generating
+	// multiple variables. Data (after template expansion) must be keys with an
+	// optional value (<key>[=<value>]) separated by newlines.
+	// +optional
+	VarsTemplate string `json:"varsTemplate"`
+
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`
@@ -176,4 +189,13 @@ const (
 	// MatchIsTrue returns true if the input holds the value "false". The
 	// expression must not have any values.
 	MatchIsFalse MatchOp = "IsFalse"
+)
+
+const (
+	// RuleBackrefDomain is the special feature domain for backreferencing
+	// output of preceding rules.
+	RuleBackrefDomain = "rule"
+	// RuleBackrefFeature is the special feature name for backreferencing
+	// output of preceding rules.
+	RuleBackrefFeature = "matched"
 )
