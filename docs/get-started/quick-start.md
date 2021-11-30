@@ -14,7 +14,7 @@ Deploy with kustomize -- creates a new namespace, service and required RBAC
 rules and deploys nfd-master and nfd-worker daemons.
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/tree/master/deployment/overlays/default?ref={{ site.release }}
 ```
 
 ## Verify
