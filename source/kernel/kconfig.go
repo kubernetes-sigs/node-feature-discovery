@@ -47,11 +47,16 @@ func readKconfigGzip(filename string) ([]byte, error) {
 	return ioutil.ReadAll(r)
 }
 
-// ParseKconfig reads kconfig and return a map
-func parseKconfig(configPath string) (map[string]string, error) {
-	kconfig := map[string]string{}
+// parseKconfig reads Linux kernel configuration and returns all set options
+// and their values. It returns two copies of the parsed options: one with
+// values exactly as they are presented in the kernel configuration file (with
+// the exception that leading and trailing quotes are stripped) and one where
+// '=y' and '=m' are converted to 'true'.
+func parseKconfig(configPath string) (realKconfig, legacyKconfig map[string]string, err error) {
+	realKconfig = map[string]string{}
+	legacyKconfig = map[string]string{}
+
 	raw := []byte(nil)
-	var err error
 	var searchPaths []string
 
 	kVer, err := getVersion()
@@ -91,7 +96,7 @@ func parseKconfig(configPath string) (map[string]string, error) {
 	}
 
 	if raw == nil {
-		return nil, fmt.Errorf("failed to read kernel config from %+v", append([]string{configPath}, searchPaths...))
+		return nil, nil, fmt.Errorf("failed to read kernel config from %+v", append([]string{configPath}, searchPaths...))
 	}
 
 	// Process data, line-by-line
@@ -105,15 +110,18 @@ func parseKconfig(configPath string) (map[string]string, error) {
 			}
 			// Trim the "CONFIG_" prefix
 			name := split[0][7:]
+			value := strings.Trim(split[1], `"`)
 
+			realKconfig[name] = value
+
+			// Provide the "mangled" kconfig values for backwards compatibility
 			if split[1] == "y" || split[1] == "m" {
-				kconfig[name] = "true"
+				legacyKconfig[name] = "true"
 			} else {
-				value := strings.Trim(split[1], `"`)
-				kconfig[name] = value
+				legacyKconfig[name] = value
 			}
 		}
 	}
 
-	return kconfig, nil
+	return realKconfig, legacyKconfig, nil
 }

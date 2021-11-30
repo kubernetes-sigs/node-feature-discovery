@@ -58,6 +58,9 @@ func newDefaultConfig() *Config {
 type kernelSource struct {
 	config   *Config
 	features *feature.DomainFeatures
+	// legacyKconfig contains mangled kconfig values used for
+	// kernel.config-<flag> labels and legacy kConfig custom rules.
+	legacyKconfig map[string]string
 }
 
 // Singleton source instance
@@ -98,9 +101,8 @@ func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 		labels[VersionFeature+"."+k] = v
 	}
 
-	// Check flags
 	for _, opt := range s.config.ConfigOpts {
-		if val, ok := features.Values[ConfigFeature].Elements[opt]; ok {
+		if val, ok := s.legacyKconfig[opt]; ok {
 			labels[ConfigFeature+"."+opt] = val
 		}
 	}
@@ -124,10 +126,12 @@ func (s *kernelSource) Discover() error {
 	}
 
 	// Read kconfig
-	if kconfig, err := parseKconfig(s.config.KconfigFile); err != nil {
+	if realKconfig, legacyKconfig, err := parseKconfig(s.config.KconfigFile); err != nil {
+		s.legacyKconfig = nil
 		klog.Errorf("failed to read kconfig: %s", err)
 	} else {
-		s.features.Values[ConfigFeature] = feature.NewValueFeatures(kconfig)
+		s.features.Values[ConfigFeature] = feature.NewValueFeatures(realKconfig)
+		s.legacyKconfig = legacyKconfig
 	}
 
 	if kmods, err := getLoadedModules(); err != nil {
@@ -153,6 +157,10 @@ func (s *kernelSource) GetFeatures() *feature.DomainFeatures {
 		s.features = feature.NewDomainFeatures()
 	}
 	return s.features
+}
+
+func GetLegacyKconfig() map[string]string {
+	return src.legacyKconfig
 }
 
 func init() {
