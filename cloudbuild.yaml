@@ -1,5 +1,5 @@
 steps:
-  - name: gcr.io/k8s-testimages/gcb-docker-gcloud:v20200824-5d057db
+  - name: gcr.io/k8s-staging-test-infra/gcb-docker-gcloud:v20211008-60e346af
     entrypoint: scripts/test-infra/push-image.sh
     env:
     - IMAGE_REGISTRY=gcr.io/$PROJECT_ID
