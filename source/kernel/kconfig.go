@@ -25,9 +25,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/klog/v2"
-
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -113,10 +110,6 @@ func parseKconfig(configPath string) (map[string]string, error) {
 				kconfig[name] = "true"
 			} else {
 				value := strings.Trim(split[1], `"`)
-				if len(value) > validation.LabelValueMaxLength {
-					klog.Warningf("ignoring kconfig option '%s': value exceeds max length of %d characters", name, validation.LabelValueMaxLength)
-					continue
-				}
 				kconfig[name] = value
 			}
 		}
