@@ -31,7 +31,7 @@ func TestParseArgs(t *testing.T) {
 		flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
 
 		Convey("When no override args are specified", func() {
-			args := parseArgs(flags, "--oneshot")
+			args := parseArgs(flags, "-oneshot")
 
 			Convey("overrides should be nil", func() {
 				So(args.Oneshot, ShouldBeTrue)
@@ -44,7 +44,7 @@ func TestParseArgs(t *testing.T) {
 
 		Convey("When all override args are specified", func() {
 			args := parseArgs(flags,
-				"--no-publish",
+				"-no-publish",
 				"-label-whitelist=.*rdt.*",
 				"-sources=fake1,fake2,fake3",
 				"-sleep-interval=30s")

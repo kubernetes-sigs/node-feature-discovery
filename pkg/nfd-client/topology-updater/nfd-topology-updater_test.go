@@ -74,7 +74,7 @@ func teardownTest(ctx testContext) {
 
 func TestNewTopologyUpdater(t *testing.T) {
 	Convey("When initializing new NfdTopologyUpdater instance", t, func() {
-		Convey("When one of --cert-file, --key-file or --ca-file is missing", func() {
+		Convey("When one of -cert-file, -key-file or -ca-file is missing", func() {
 			tmPolicy := "fake-topology-manager-policy"
 			_, err := u.NewTopologyUpdater(u.Args{Args: nfdclient.Args{CertFile: "crt", KeyFile: "key"}}, resourcemonitor.Args{}, tmPolicy)
 			_, err2 := u.NewTopologyUpdater(u.Args{Args: nfdclient.Args{KeyFile: "key", CaFile: "ca"}}, resourcemonitor.Args{}, tmPolicy)

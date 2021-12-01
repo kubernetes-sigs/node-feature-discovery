@@ -336,7 +336,7 @@ func TestSetLabels(t *testing.T) {
 			})
 		})
 
-		Convey("When --label-whitelist is specified", func() {
+		Convey("When -label-whitelist is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", wvAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", flAnnotation, "feature-2"),
@@ -355,7 +355,7 @@ func TestSetLabels(t *testing.T) {
 			})
 		})
 
-		Convey("When --extra-label-ns and --instance are specified", func() {
+		Convey("When -extra-label-ns and -instance are specified", func() {
 			// In the gRPC request the label names may omit the default ns
 			instance := "foo"
 			vendorFeatureLabel := "vendor." + FeatureLabelNs + "/feature-4"
@@ -391,7 +391,7 @@ func TestSetLabels(t *testing.T) {
 			mockMaster.annotationNs = AnnotationNsBase
 		})
 
-		Convey("When --resource-labels is specified", func() {
+		Convey("When -resource-labels is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", wvAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", flAnnotation, "feature-2"),
@@ -424,7 +424,7 @@ func TestSetLabels(t *testing.T) {
 		})
 
 		mockMaster.args.NoPublish = true
-		Convey("With '--no-publish'", func() {
+		Convey("With '-no-publish'", func() {
 			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("Operation should succeed", func() {
 				So(err, ShouldBeNil)

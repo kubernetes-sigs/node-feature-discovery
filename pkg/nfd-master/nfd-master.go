@@ -132,7 +132,7 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 		nfd.annotationNs = AnnotationNsBase
 	} else {
 		if ok, _ := regexp.MatchString(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`, args.Instance); !ok {
-			return nfd, fmt.Errorf("invalid --instance %q: instance name "+
+			return nfd, fmt.Errorf("invalid -instance %q: instance name "+
 				"must start and end with an alphanumeric character and may only contain "+
 				"alphanumerics, `-`, `_` or `.`", args.Instance)
 		}
@@ -142,13 +142,13 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	// Check TLS related args
 	if args.CertFile != "" || args.KeyFile != "" || args.CaFile != "" {
 		if args.CertFile == "" {
-			return nfd, fmt.Errorf("--cert-file needs to be specified alongside --key-file and --ca-file")
+			return nfd, fmt.Errorf("-cert-file needs to be specified alongside -key-file and -ca-file")
 		}
 		if args.KeyFile == "" {
-			return nfd, fmt.Errorf("--key-file needs to be specified alongside --cert-file and --ca-file")
+			return nfd, fmt.Errorf("-key-file needs to be specified alongside -cert-file and -ca-file")
 		}
 		if args.CaFile == "" {
-			return nfd, fmt.Errorf("--ca-file needs to be specified alongside --cert-file and --key-file")
+			return nfd, fmt.Errorf("-ca-file needs to be specified alongside -cert-file and -key-file")
 		}
 	}
 
@@ -209,7 +209,7 @@ func (m *nfdMaster) Run() error {
 	if err != nil {
 		return err
 	}
-	// Enable mutual TLS authentication if --cert-file, --key-file or --ca-file
+	// Enable mutual TLS authentication if -cert-file, -key-file or -ca-file
 	// is defined
 	if m.args.CertFile != "" || m.args.KeyFile != "" || m.args.CaFile != "" {
 		if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {

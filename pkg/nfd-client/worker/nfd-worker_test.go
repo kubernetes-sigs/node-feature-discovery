@@ -75,7 +75,7 @@ func teardownTest(ctx testContext) {
 
 func TestNewNfdWorker(t *testing.T) {
 	Convey("When initializing new NfdWorker instance", t, func() {
-		Convey("When one of --cert-file, --key-file or --ca-file is missing", func() {
+		Convey("When one of -cert-file, -key-file or -ca-file is missing", func() {
 			_, err := worker.NewNfdWorker(&worker.Args{Args: nfdclient.Args{CertFile: "crt", KeyFile: "key"}})
 			_, err2 := worker.NewNfdWorker(&worker.Args{Args: nfdclient.Args{KeyFile: "key", CaFile: "ca"}})
 			_, err3 := worker.NewNfdWorker(&worker.Args{Args: nfdclient.Args{CertFile: "crt", CaFile: "ca"}})

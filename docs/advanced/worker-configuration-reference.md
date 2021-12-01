@@ -31,7 +31,7 @@ feature (re-)detection, and thus also the interval between node re-labeling. A
 non-positive value implies infinite sleep interval, i.e. no re-detection or
 re-labeling is done.
 
-Note: Overridden by the deprecated `--sleep-interval` command line flag (if
+Note: Overridden by the deprecated `-sleep-interval` command line flag (if
 specified).
 
 Default: `60s`
@@ -48,7 +48,7 @@ core:
 `core.sources` specifies the list of enabled feature sources. A special value
 `all` enables all feature sources.
 
-Note: Overridden by the deprecated `--sources` command line flag (if
+Note: Overridden by the deprecated `-sources` command line flag (if
 specified).
 
 Default: `[all]`
@@ -71,7 +71,7 @@ Note: The regular expression is only matches against the "basename" part of the
 label, i.e. to the part of the name after '/'. The label prefix (or namespace)
 is omitted.
 
-Note: Overridden by the deprecated `--label-whitelist` command line flag (if
+Note: Overridden by the deprecated `-label-whitelist` command line flag (if
 specified).
 
 Default: `null`
@@ -89,7 +89,7 @@ Setting `core.noPublish` to `true` disables all communication with the
 nfd-master. It is effectively a "dry-run" flag: nfd-worker runs feature
 detection normally, but no labeling requests are sent to nfd-master.
 
-Note: Overridden by the `--no-publish` command line flag (if specified).
+Note: Overridden by the `-no-publish` command line flag (if specified).
 
 Default: `false`
 

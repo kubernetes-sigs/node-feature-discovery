@@ -305,7 +305,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 			if s := source.GetLabelSource(name); s != nil {
 				enabled[name] = s
 			} else {
-				klog.Warningf("skipping unknown source %q specified in core.sources (or --sources)", name)
+				klog.Warningf("skipping unknown source %q specified in core.sources (or -sources)", name)
 			}
 		}
 	}
@@ -364,7 +364,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 	// Parse config overrides
 	if err := yaml.Unmarshal([]byte(overrides), c); err != nil {
-		return fmt.Errorf("failed to parse --options: %s", err)
+		return fmt.Errorf("failed to parse -options: %s", err)
 	}
 
 	if w.args.Overrides.LabelWhiteList != nil {
