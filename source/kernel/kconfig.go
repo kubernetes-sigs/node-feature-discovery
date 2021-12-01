@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -98,22 +97,27 @@ func parseKconfig(configPath string) (map[string]string, error) {
 		return nil, fmt.Errorf("failed to read kernel config from %+v", append([]string{configPath}, searchPaths...))
 	}
 
-	// Regexp for matching kconfig flags
-	re := regexp.MustCompile(`^CONFIG_(?P<flag>\w+)=(?P<value>.+)`)
-
 	// Process data, line-by-line
 	lines := bytes.Split(raw, []byte("\n"))
 	for _, line := range lines {
-		if m := re.FindStringSubmatch(string(line)); m != nil {
-			if m[2] == "y" || m[2] == "m" {
-				kconfig[m[1]] = "true"
+		str := string(line)
+		if strings.HasPrefix(str, "CONFIG_") {
+			split := strings.SplitN(str, "=", 2)
+			if len(split) != 2 {
+				continue
+			}
+			// Trim the "CONFIG_" prefix
+			name := split[0][7:]
+
+			if split[1] == "y" || split[1] == "m" {
+				kconfig[name] = "true"
 			} else {
-				value := strings.Trim(m[2], `"`)
+				value := strings.Trim(split[1], `"`)
 				if len(value) > validation.LabelValueMaxLength {
-					klog.Warningf("ignoring kconfig option '%s': value exceeds max length of %d characters", m[1], validation.LabelValueMaxLength)
+					klog.Warningf("ignoring kconfig option '%s': value exceeds max length of %d characters", name, validation.LabelValueMaxLength)
 					continue
 				}
-				kconfig[m[1]] = value
+				kconfig[name] = value
 			}
 		}
 	}
