@@ -257,9 +257,8 @@ func (h *templateHelper) expandMap(data interface{}) (map[string]string, error) 
 			split := strings.SplitN(trimmed, "=", 2)
 			if len(split) == 1 {
 				return nil, fmt.Errorf("missing value in expanded template line %q, (format must be '<key>=<value>')", trimmed)
-			} else {
-				out[split[0]] = split[1]
 			}
+			out[split[0]] = split[1]
 		}
 	}
 	return out, nil
