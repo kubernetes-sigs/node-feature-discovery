@@ -89,6 +89,9 @@ image: yamls
 yamls:
 	@./scripts/kustomize.sh $(K8S_NAMESPACE) $(IMAGE_REPO) $(IMAGE_TAG_NAME)
 
+deploy: yamls
+	kubectl apply -k .
+
 templates:
 	@# Need to prepend each line in the sample config with spaces in order to
 	@# fit correctly in the configmap spec.
