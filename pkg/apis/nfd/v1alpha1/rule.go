@@ -217,19 +217,19 @@ func newTemplateHelper(name string) (*templateHelper, error) {
 }
 
 // DeepCopy is a stub to augment the auto-generated code
-func (in *templateHelper) DeepCopy() *templateHelper {
-	if in == nil {
+func (h *templateHelper) DeepCopy() *templateHelper {
+	if h == nil {
 		return nil
 	}
 	out := new(templateHelper)
-	in.DeepCopyInto(out)
+	h.DeepCopyInto(out)
 	return out
 }
 
 // DeepCopyInto is a stub to augment the auto-generated code
-func (in *templateHelper) DeepCopyInto(out *templateHelper) {
+func (h *templateHelper) DeepCopyInto(out *templateHelper) {
 	// HACK: just re-use the template
-	out.template = in.template
+	out.template = h.template
 }
 
 func (h *templateHelper) execute(data interface{}) (string, error) {
