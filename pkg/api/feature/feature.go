@@ -25,6 +25,7 @@ func NewDomainFeatures() *DomainFeatures {
 		Instances: make(map[string]InstanceFeatureSet)}
 }
 
+// NewKeyFeatures creates a new instance of KeyFeatureSet.
 func NewKeyFeatures(keys ...string) KeyFeatureSet {
 	e := make(map[string]Nil, len(keys))
 	for _, k := range keys {
@@ -33,6 +34,7 @@ func NewKeyFeatures(keys ...string) KeyFeatureSet {
 	return KeyFeatureSet{Elements: e}
 }
 
+// NewValueFeatures creates a new instance of ValueFeatureSet.
 func NewValueFeatures(values map[string]string) ValueFeatureSet {
 	if values == nil {
 		values = make(map[string]string)
@@ -40,10 +42,12 @@ func NewValueFeatures(values map[string]string) ValueFeatureSet {
 	return ValueFeatureSet{Elements: values}
 }
 
+// NewInstanceFeatures creates a new instance of InstanceFeatureSet.
 func NewInstanceFeatures(instances []InstanceFeature) InstanceFeatureSet {
 	return InstanceFeatureSet{Elements: instances}
 }
 
+// NewInstanceFeature creates a new InstanceFeature instance.
 func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
 	if attrs == nil {
 		attrs = make(map[string]string)
