@@ -136,12 +136,14 @@ Example:
 nfd-worker -server-name-override=localhost
 ```
 
-### -sources
+### -label-sources
 
-The `-sources` flag specifies a comma-separated list of enabled feature
-sources. A special value `all` enables all feature sources.
+The `-label-sources` flag specifies a comma-separated list of enabled label
+sources. A special value `all` enables all sources. Consider using the
+`core.labelSources` config file option, instead, allowing dynamic
+configurability.
 
-Note: This flag takes precedence over the `core.sources` configuration
+Note: This flag takes precedence over the `core.labelSources` configuration
 file option.
 
 Default: all
@@ -149,11 +151,12 @@ Default: all
 Example:
 
 ```bash
-nfd-worker -sources=kernel,system,local
+nfd-worker -label-sources=kernel,system,local
 ```
 
-**DEPRECATED**: you should use the `core.sources` option in the
-configuration file, instead.
+### -sources
+
+**DEPRECATED**: use [`-label-sources`](#-label-sources) instead.
 
 ### -no-publish
 

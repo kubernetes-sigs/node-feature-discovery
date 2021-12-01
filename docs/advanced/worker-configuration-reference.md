@@ -43,13 +43,12 @@ core:
   sleepInterval: 60s
 ```
 
-### core.sources
+### core.labelSources
 
-`core.sources` specifies the list of enabled feature sources. A special value
-`all` enables all feature sources.
+`core.labelSources` specifies the list of enabled label sources. A special
+value `all` enables all sources.
 
-Note: Overridden by the deprecated `-sources` command line flag (if
-specified).
+Note: Overridden by the `-label-sources` command line flag (if specified).
 
 Default: `[all]`
 
@@ -61,6 +60,13 @@ core:
     - system
     - custom
 ```
+
+### core.sources
+
+**DEPRECATED**: use [`core.labelSources`](#core.labelSources) instead.
+
+Note: `core.sources` takes precedence over the `core.labelSources`
+configuration file option.
 
 ### core.labelWhiteList
 

@@ -100,22 +100,22 @@ func TestConfigParse(t *testing.T) {
 		w, err := NewNfdWorker(&Args{})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
-		overrides := `{"core": {"sources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
+		overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
 
 		Convey("and no core cmdline flags have been specified", func() {
 			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core overrides should be in effect", func() {
-				So(worker.config.Core.Sources, ShouldResemble, []string{"fake"})
+				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"})
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
 			})
 		})
 		Convey("and a non-accessible file, but core cmdline flags and some overrides are specified", func() {
-			worker.args = Args{Overrides: ConfigOverrideArgs{Sources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
 			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core cmdline flags should be in effect instead overrides", func() {
-				So(worker.config.Core.Sources, ShouldResemble, []string{"cpu", "kernel", "pci"})
+				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"})
 			})
 			Convey("overrides should take effect", func() {
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
@@ -145,13 +145,13 @@ sources:
 		So(err, ShouldBeNil)
 
 		Convey("and a proper config file is specified", func() {
-			worker.args = Args{Overrides: ConfigOverrideArgs{Sources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
 			So(worker.configure(f.Name(), ""), ShouldBeNil)
 
 			Convey("specified configuration should take effect", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeFalse)
-				So(worker.config.Core.Sources, ShouldResemble, []string{"cpu", "kernel", "pci"}) // from cmdline
+				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"}) // from cmdline
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 10*time.Second)
 
@@ -167,13 +167,13 @@ sources:
 		Convey("and a proper config file and overrides are given", func() {
 			sleepIntervalArg := 15 * time.Second
 			worker.args = Args{Overrides: ConfigOverrideArgs{SleepInterval: &sleepIntervalArg}}
-			overrides := `{"core": {"sources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
+			overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
 			So(worker.configure(f.Name(), overrides), ShouldBeNil)
 
 			Convey("overrides should take precedence over the config file", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
-				So(worker.config.Core.Sources, ShouldResemble, []string{"fake"}) // from overrides
+				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"}) // from overrides
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 15*time.Second) // from cmdline
 
@@ -220,8 +220,8 @@ core:
 		w, err := NewNfdWorker(&Args{
 			ConfigFile: configFile,
 			Overrides: ConfigOverrideArgs{
-				Sources:   &utils.StringSliceVal{"fake"},
-				NoPublish: &noPublish},
+				LabelSources: &utils.StringSliceVal{"fake"},
+				NoPublish:    &noPublish},
 		})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
@@ -314,7 +314,7 @@ func TestNewNfdWorker(t *testing.T) {
 		})
 
 		Convey("with non-empty Sources arg specified", func() {
-			args := &Args{Overrides: ConfigOverrideArgs{Sources: &utils.StringSliceVal{"fake"}}}
+			args := &Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)

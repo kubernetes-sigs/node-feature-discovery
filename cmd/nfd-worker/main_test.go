@@ -38,7 +38,7 @@ func TestParseArgs(t *testing.T) {
 				So(args.Overrides.NoPublish, ShouldBeNil)
 				So(args.Overrides.LabelWhiteList, ShouldBeNil)
 				So(args.Overrides.SleepInterval, ShouldBeNil)
-				So(args.Overrides.Sources, ShouldBeNil)
+				So(args.Overrides.LabelSources, ShouldBeNil)
 			})
 		})
 
@@ -46,14 +46,14 @@ func TestParseArgs(t *testing.T) {
 			args := parseArgs(flags,
 				"-no-publish",
 				"-label-whitelist=.*rdt.*",
-				"-sources=fake1,fake2,fake3",
+				"-label-sources=fake1,fake2,fake3",
 				"-sleep-interval=30s")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.Oneshot, ShouldBeFalse)
 				So(*args.Overrides.NoPublish, ShouldBeTrue)
 				So(*args.Overrides.SleepInterval, ShouldEqual, 30*time.Second)
-				So(*args.Overrides.Sources, ShouldResemble, utils.StringSliceVal{"fake1", "fake2", "fake3"})
+				So(*args.Overrides.LabelSources, ShouldResemble, utils.StringSliceVal{"fake1", "fake2", "fake3"})
 				So(args.Overrides.LabelWhiteList.Regexp.String(), ShouldResemble, ".*rdt.*")
 			})
 		})
