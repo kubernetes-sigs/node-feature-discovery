@@ -50,7 +50,8 @@ The last component (i.e. `attribute-name`) is optional, and only used if a
 feature logically has sub-hierarchy, e.g. `sriov.capable` and
 `sriov.configure` from the `network` source.
 
-The `-sources` flag controls which sources to use for discovery.
+The `-label-sources` flag controls which sources to enable for label
+generation.
 
 *Note: Consecutive runs of nfd-worker will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
