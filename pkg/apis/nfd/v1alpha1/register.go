@@ -23,14 +23,17 @@ import (
 )
 
 var (
-	// GroupVersion is group version used to register these objects
+	// SchemeGroupVersion is group version used to register these objects
 	SchemeGroupVersion = schema.GroupVersion{Group: "nfd.k8s-sigs.io", Version: "v1alpha1"}
 
+	// SchemeBuilder is the scheme builder for this API.
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
+	// AddToScheme is a function to register this API group and version to a scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 
+// Resource takes an unqualified resource name and returns a Group qualified GroupResource.
 func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
 }
