@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package v1alpha1 is the v1alpha1 version of the nfd API.
 // +k8s:deepcopy-gen=package
 // +kubebuilder:object:generate=true
 // +groupName=nfd.k8s-sigs.io

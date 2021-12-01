@@ -443,13 +443,12 @@ func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
 		expressions := make(map[string]*MatchExpression)
 		if err := json.Unmarshal(data, &expressions); err != nil {
 			return err
-		} else {
-			for k, v := range expressions {
-				if v != nil {
-					(*m).Expressions[k] = v
-				} else {
-					(*m).Expressions[k] = newMatchExpression(MatchExists)
-				}
+		}
+		for k, v := range expressions {
+			if v != nil {
+				(*m).Expressions[k] = v
+			} else {
+				(*m).Expressions[k] = newMatchExpression(MatchExists)
 			}
 		}
 	}

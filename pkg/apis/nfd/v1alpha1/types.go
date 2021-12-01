@@ -156,8 +156,8 @@ const (
 	// MatchIn returns true if any of the values stored in the expression is
 	// equal to the input.
 	MatchIn MatchOp = "In"
-	// MatchIn returns true if none of the values in the expression are equal
-	// to the input.
+	// MatchNotIn returns true if none of the values in the expression are
+	// equal to the input.
 	MatchNotIn MatchOp = "NotIn"
 	// MatchInRegexp treats values of the expression as regular expressions and
 	// returns true if any of them matches the input.
@@ -186,7 +186,7 @@ const (
 	// MatchIsTrue returns true if the input holds the value "true". The
 	// expression must not have any values.
 	MatchIsTrue MatchOp = "IsTrue"
-	// MatchIsTrue returns true if the input holds the value "false". The
+	// MatchIsFalse returns true if the input holds the value "false". The
 	// expression must not have any values.
 	MatchIsFalse MatchOp = "IsFalse"
 )
