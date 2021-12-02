@@ -48,7 +48,8 @@ core:
 `core.labelSources` specifies the list of enabled label sources. A special
 value `all` enables all sources.
 
-Note: Overridden by the `-label-sources` command line flag (if specified).
+Note: Overridden by the `-label-sources` and `-sources` command line flags and
+the `core.sources` configurations option (if any of them is specified).
 
 Default: `[all]`
 
@@ -56,7 +57,7 @@ Example:
 
 ```yaml
 core:
-  sources:
+  labelSources:
     - system
     - custom
 ```
