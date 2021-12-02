@@ -128,7 +128,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	overrides.NoPublish = flagset.Bool("no-publish", false,
 		"Do not publish discovered features, disable connection to nfd-master.")
 	flagset.Var(overrides.LabelSources, "label-sources",
-		"Comma separated list of label sources. Special value 'all' enables all feature sources.")
+		"Comma separated list of label sources. Special value 'all' enables all feature sources. "+
+			"Prefix the source name with '-' to disable it.")
 	flagset.Var(overrides.LabelWhiteList, "label-whitelist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'. "+
@@ -138,6 +139,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 			"DEPRECATED: This parameter should be set via the config file")
 	flagset.Var(overrides.LabelSources, "sources",
 		"Comma separated list of label sources. Special value 'all' enables all feature sources. "+
+			"Prefix the source name with '-' to disable it. "+
 			"DEPRECATED: use -label-sources instead")
 
 	return args, overrides

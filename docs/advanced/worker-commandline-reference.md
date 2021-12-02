@@ -139,7 +139,9 @@ nfd-worker -server-name-override=localhost
 ### -label-sources
 
 The `-label-sources` flag specifies a comma-separated list of enabled label
-sources. A special value `all` enables all sources. Consider using the
+sources. A special value `all` enables all sources. Prefixing a source name
+with `-` indicates that the source will be disabled instead - this is only
+meaningful when used in conjunction with `all`. Consider using the
 `core.labelSources` config file option, instead, allowing dynamic
 configurability.
 

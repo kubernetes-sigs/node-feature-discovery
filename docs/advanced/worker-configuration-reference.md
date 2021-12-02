@@ -46,9 +46,12 @@ core:
 ### core.labelSources
 
 `core.labelSources` specifies the list of enabled label sources. A special
-value `all` enables all sources.
+value `all` enables all sources. Prefixing a source name with `-` indicates
+that the source will be disabled instead - this is only meaningful when used in
+conjunction with `all`.
 
-Note: Overridden by the `-label-sources` command line flag (if specified).
+Note: Overridden by the `-label-sources` and `-sources` command line flags and
+the `core.sources` configurations option (if any of them is specified).
 
 Default: `[all]`
 
@@ -56,9 +59,19 @@ Example:
 
 ```yaml
 core:
-  sources:
-    - system
-    - custom
+  # Enable all but cpu and system sources
+  labelSources:
+    - "all"
+    - "-cpu"
+    - "-system"
+```
+
+```yaml
+core:
+  # Enable only cpu and system sources
+  labelSources:
+    - "cpu"
+    - "system"
 ```
 
 ### core.sources
