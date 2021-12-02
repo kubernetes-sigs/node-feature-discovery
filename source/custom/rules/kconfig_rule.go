@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
-	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
@@ -30,9 +29,9 @@ type KconfigRule struct {
 }
 
 func (r *KconfigRule) Match() (bool, error) {
-	options, ok := source.GetFeatureSource("kernel").GetFeatures().Values[kernel.ConfigFeature]
-	if !ok {
+	options := kernel.GetLegacyKconfig()
+	if options == nil {
 		return false, fmt.Errorf("kernel config options not available")
 	}
-	return r.MatchValues(options.Elements)
+	return r.MatchValues(options)
 }
