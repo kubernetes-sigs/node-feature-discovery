@@ -55,13 +55,13 @@ var (
 // Name returns an identifier string for this feature source.
 func (s *fakeSource) Name() string { return Name }
 
-// NewConfig method of the LabelSource interface
+// NewConfig method of the ConfigurableSource interface
 func (s *fakeSource) NewConfig() source.Config { return newDefaultConfig() }
 
-// GetConfig method of the LabelSource interface
+// GetConfig method of the ConfigurableSource interface
 func (s *fakeSource) GetConfig() source.Config { return s.config }
 
-// SetConfig method of the LabelSource interface
+// SetConfig method of the ConfigurableSource interface
 func (s *fakeSource) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *Config:
@@ -70,9 +70,6 @@ func (s *fakeSource) SetConfig(conf source.Config) {
 		panic(fmt.Sprintf("invalid config type: %T", conf))
 	}
 }
-
-// Configure method of the LabelSource interface
-func (s *fakeSource) Configure([]byte) error { return nil }
 
 // Priority method of the LabelSource interface
 func (s *fakeSource) Priority() int { return 0 }
