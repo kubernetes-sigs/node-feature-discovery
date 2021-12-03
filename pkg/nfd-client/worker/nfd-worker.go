@@ -94,6 +94,7 @@ type ConfigOverrideArgs struct {
 	// Deprecated
 	LabelWhiteList *utils.RegexpVal
 	SleepInterval  *time.Duration
+	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
 }
 
@@ -436,6 +437,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	}
 	if w.args.Overrides.SleepInterval != nil {
 		c.Core.SleepInterval = duration{*w.args.Overrides.SleepInterval}
+	}
+	if w.args.Overrides.FeatureSources != nil {
+		c.Core.FeatureSources = *w.args.Overrides.FeatureSources
 	}
 	if w.args.Overrides.LabelSources != nil {
 		c.Core.LabelSources = *w.args.Overrides.LabelSources

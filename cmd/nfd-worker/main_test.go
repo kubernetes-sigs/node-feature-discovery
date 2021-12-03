@@ -38,6 +38,7 @@ func TestParseArgs(t *testing.T) {
 				So(args.Overrides.NoPublish, ShouldBeNil)
 				So(args.Overrides.LabelWhiteList, ShouldBeNil)
 				So(args.Overrides.SleepInterval, ShouldBeNil)
+				So(args.Overrides.FeatureSources, ShouldBeNil)
 				So(args.Overrides.LabelSources, ShouldBeNil)
 			})
 		})
@@ -46,6 +47,7 @@ func TestParseArgs(t *testing.T) {
 			args := parseArgs(flags,
 				"-no-publish",
 				"-label-whitelist=.*rdt.*",
+				"-feature-sources=cpu",
 				"-label-sources=fake1,fake2,fake3",
 				"-sleep-interval=30s")
 
@@ -53,6 +55,7 @@ func TestParseArgs(t *testing.T) {
 				So(args.Oneshot, ShouldBeFalse)
 				So(*args.Overrides.NoPublish, ShouldBeTrue)
 				So(*args.Overrides.SleepInterval, ShouldEqual, 30*time.Second)
+				So(*args.Overrides.FeatureSources, ShouldResemble, utils.StringSliceVal{"cpu"})
 				So(*args.Overrides.LabelSources, ShouldResemble, utils.StringSliceVal{"fake1", "fake2", "fake3"})
 				So(args.Overrides.LabelWhiteList.Regexp.String(), ShouldResemble, ".*rdt.*")
 			})

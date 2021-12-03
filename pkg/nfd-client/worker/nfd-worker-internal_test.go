@@ -107,15 +107,19 @@ func TestConfigParse(t *testing.T) {
 
 			Convey("core overrides should be in effect", func() {
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"})
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"all"})
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
 			})
 		})
 		Convey("and a non-accessible file, but core cmdline flags and some overrides are specified", func() {
-			worker.args = Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{
+				LabelSources:   &utils.StringSliceVal{"cpu", "kernel", "pci"},
+				FeatureSources: &utils.StringSliceVal{"cpu"}}}
 			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core cmdline flags should be in effect instead overrides", func() {
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"})
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"cpu"})
 			})
 			Convey("overrides should take effect", func() {
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
@@ -131,6 +135,7 @@ func TestConfigParse(t *testing.T) {
 		_, err = f.WriteString(`
 core:
   noPublish: false
+  featureSources: ["memory", "storage"]
   sources: ["system"]
   labelWhiteList: "foo"
   sleepInterval: "10s"
@@ -151,6 +156,7 @@ sources:
 			Convey("specified configuration should take effect", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeFalse)
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"}) // from cmdline
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 10*time.Second)
@@ -173,6 +179,7 @@ sources:
 			Convey("overrides should take precedence over the config file", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"}) // from overrides
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 15*time.Second) // from cmdline
@@ -315,7 +322,9 @@ func TestNewNfdWorker(t *testing.T) {
 		})
 
 		Convey("with non-empty Sources arg specified", func() {
-			args := &Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}}}
+			args := &Args{Overrides: ConfigOverrideArgs{
+				LabelSources:   &utils.StringSliceVal{"fake"},
+				FeatureSources: &utils.StringSliceVal{"cpu"}}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -323,6 +332,8 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("proper sources should be enabled", func() {
+				So(len(worker.featureSources), ShouldEqual, 1)
+				So(worker.featureSources[0].Name(), ShouldEqual, "cpu")
 				So(len(worker.labelSources), ShouldEqual, 1)
 				So(worker.labelSources[0].Name(), ShouldEqual, "fake")
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
