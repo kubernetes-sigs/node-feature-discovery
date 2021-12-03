@@ -227,8 +227,9 @@ core:
 		w, err := NewNfdWorker(&Args{
 			ConfigFile: configFile,
 			Overrides: ConfigOverrideArgs{
-				LabelSources: &utils.StringSliceVal{"fake"},
-				NoPublish:    &noPublish},
+				FeatureSources: &utils.StringSliceVal{"fake"},
+				LabelSources:   &utils.StringSliceVal{"fake"},
+				NoPublish:      &noPublish},
 		})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
@@ -315,7 +316,7 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
-				So(len(worker.featureSources), ShouldEqual, len(source.GetAllFeatureSources()))
+				So(len(worker.featureSources), ShouldEqual, len(source.GetAllFeatureSources())-1)
 				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-1)
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
