@@ -311,7 +311,7 @@ func nfdWorkerPodSpec(image string, extraArgs []string) v1.PodSpec {
 				Image:           image,
 				ImagePullPolicy: v1.PullAlways,
 				Command:         []string{"nfd-worker"},
-				Args:            append([]string{"--server=nfd-master-e2e:8080"}, extraArgs...),
+				Args:            append([]string{"-server=nfd-master-e2e:8080"}, extraArgs...),
 				Env: []v1.EnvVar{
 					{
 						Name: "NODE_NAME",
@@ -510,7 +510,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
 				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
-				workerPod := nfdWorkerPod(image, []string{"--oneshot", "--sources=fake"})
+				workerPod := nfdWorkerPod(image, []string{"-oneshot", "-label-sources=fake"})
 				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
