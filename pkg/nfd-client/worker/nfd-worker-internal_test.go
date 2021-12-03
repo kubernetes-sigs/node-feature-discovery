@@ -107,15 +107,19 @@ func TestConfigParse(t *testing.T) {
 
 			Convey("core overrides should be in effect", func() {
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"})
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"all"})
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
 			})
 		})
 		Convey("and a non-accessible file, but core cmdline flags and some overrides are specified", func() {
-			worker.args = Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{
+				LabelSources:   &utils.StringSliceVal{"cpu", "kernel", "pci"},
+				FeatureSources: &utils.StringSliceVal{"cpu"}}}
 			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core cmdline flags should be in effect instead overrides", func() {
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"})
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"cpu"})
 			})
 			Convey("overrides should take effect", func() {
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
@@ -131,6 +135,7 @@ func TestConfigParse(t *testing.T) {
 		_, err = f.WriteString(`
 core:
   noPublish: false
+  featureSources: ["memory", "storage"]
   sources: ["system"]
   labelWhiteList: "foo"
   sleepInterval: "10s"
@@ -151,6 +156,7 @@ sources:
 			Convey("specified configuration should take effect", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeFalse)
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"}) // from cmdline
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 10*time.Second)
@@ -173,6 +179,7 @@ sources:
 			Convey("overrides should take precedence over the config file", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"}) // from overrides
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 15*time.Second) // from cmdline
@@ -308,13 +315,16 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
-				So(len(worker.enabledSources), ShouldEqual, len(source.GetAllLabelSources())-1)
+				So(len(worker.featureSources), ShouldEqual, len(source.GetAllFeatureSources()))
+				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-1)
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
 
 		Convey("with non-empty Sources arg specified", func() {
-			args := &Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}}}
+			args := &Args{Overrides: ConfigOverrideArgs{
+				LabelSources:   &utils.StringSliceVal{"fake"},
+				FeatureSources: &utils.StringSliceVal{"cpu"}}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -322,8 +332,10 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			Convey("proper sources should be enabled", func() {
-				So(len(worker.enabledSources), ShouldEqual, 1)
-				So(worker.enabledSources[0].Name(), ShouldEqual, "fake")
+				So(len(worker.featureSources), ShouldEqual, 1)
+				So(worker.featureSources[0].Name(), ShouldEqual, "cpu")
+				So(len(worker.labelSources), ShouldEqual, 1)
+				So(worker.labelSources[0].Name(), ShouldEqual, "fake")
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
 			})
 		})
@@ -376,12 +388,18 @@ func TestCreateFeatureLabels(t *testing.T) {
 
 func TestAdvertiseFeatureLabels(t *testing.T) {
 	Convey("When advertising labels", t, func() {
+		w, err := NewNfdWorker(&Args{})
+		So(err, ShouldBeNil)
+		worker := w.(*nfdWorker)
+
 		mockClient := &labeler.MockLabelerClient{}
+		worker.client = mockClient
+
 		labels := map[string]string{"feature-1": "value-1"}
 
 		Convey("Correct labeling request is sent", func() {
 			mockClient.On("SetLabels", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*labeler.SetLabelsRequest")).Return(&labeler.SetLabelsReply{}, nil)
-			err := advertiseFeatureLabels(mockClient, labels)
+			err := worker.advertiseFeatureLabels(labels)
 			Convey("There should be no error", func() {
 				So(err, ShouldBeNil)
 			})
@@ -389,7 +407,7 @@ func TestAdvertiseFeatureLabels(t *testing.T) {
 		Convey("Labeling request fails", func() {
 			mockErr := errors.New("mock-error")
 			mockClient.On("SetLabels", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*labeler.SetLabelsRequest")).Return(&labeler.SetLabelsReply{}, mockErr)
-			err := advertiseFeatureLabels(mockClient, labels)
+			err := worker.advertiseFeatureLabels(labels)
 			Convey("An error should be returned", func() {
 				So(err, ShouldEqual, mockErr)
 			})

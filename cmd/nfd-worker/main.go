@@ -80,6 +80,8 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 		switch f.Name {
 		case "no-publish":
 			args.Overrides.NoPublish = overrides.NoPublish
+		case "feature-sources":
+			args.Overrides.FeatureSources = overrides.FeatureSources
 		case "label-sources":
 			args.Overrides.LabelSources = overrides.LabelSources
 		case "label-whitelist":
@@ -123,12 +125,16 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},
+		FeatureSources: &utils.StringSliceVal{},
 		LabelSources:   &utils.StringSliceVal{},
 	}
 	overrides.NoPublish = flagset.Bool("no-publish", false,
 		"Do not publish discovered features, disable connection to nfd-master.")
+	flagset.Var(overrides.FeatureSources, "feature-sources",
+		"Comma separated list of feature sources. Special value 'all' enables all sources. "+
+			"Prefix the source name with '-' to disable it.")
 	flagset.Var(overrides.LabelSources, "label-sources",
-		"Comma separated list of label sources. Special value 'all' enables all feature sources. "+
+		"Comma separated list of label sources. Special value 'all' enables all sources. "+
 			"Prefix the source name with '-' to disable it.")
 	flagset.Var(overrides.LabelWhiteList, "label-whitelist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+

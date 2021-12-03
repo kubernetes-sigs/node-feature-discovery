@@ -43,12 +43,44 @@ core:
   sleepInterval: 60s
 ```
 
+### core.featureSources
+
+`core.featureSources` specifies the list of enabled feature sources. A special
+value `all` enables all sources. Prefixing a source name with `-` indicates
+that the source will be disabled instead - this is only meaningful when used in
+conjunction with `all`. This option allows completely disabling the feature
+detection so that neither standard feature labels are generated nor the raw
+feature data is available for custom rule processing.
+
+Default: `[all]`
+
+Example:
+
+```yaml
+core:
+  # Enable all but cpu and local sources
+  featureSources:
+    - "all"
+    - "-cpu"
+    - "-local"
+```
+
+```yaml
+core:
+  # Enable only cpu and local sources
+  featureSources:
+    - "cpu"
+    - "local"
+```
+
 ### core.labelSources
 
 `core.labelSources` specifies the list of enabled label sources. A special
 value `all` enables all sources. Prefixing a source name with `-` indicates
 that the source will be disabled instead - this is only meaningful when used in
-conjunction with `all`.
+conjunction with `all`. This configuration option affects the generation of
+node labels but not the actual discovery of the underlying feature data that is
+used e.g. in custom/`NodeFeatureRule` rules.
 
 Note: Overridden by the `-label-sources` and `-sources` command line flags and
 the `core.sources` configurations option (if any of them is specified).

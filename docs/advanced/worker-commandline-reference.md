@@ -136,6 +136,28 @@ Example:
 nfd-worker -server-name-override=localhost
 ```
 
+### -feature-sources
+
+The `-feature-sources` flag specifies a comma-separated list of enabled feature
+sources. A special value `all` enables all sources. Prefixing a source name
+with `-` indicates that the source will be disabled instead - this is only
+meaningful when used in conjunction with `all`. This command line flag allows
+completely disabling the feature detection so that neither standard feature
+labels are generated nor the raw feature data is available for custom rule
+processing.  Consider using the `core.featureSources` config file option,
+instead, allowing dynamic configurability.
+
+Note: This flag takes precedence over the `core.featureSources` configuration
+file option.
+
+Default: all
+
+Example:
+
+```bash
+nfd-worker -feature-sources=all,-pci
+```
+
 ### -label-sources
 
 The `-label-sources` flag specifies a comma-separated list of enabled label

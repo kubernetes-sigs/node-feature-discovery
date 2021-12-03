@@ -91,6 +91,7 @@ worker:
     #  labelWhiteList:
     #  noPublish: false
     #  sleepInterval: 60s
+    #  featureSources: [all]
     #  labelSources: [all]
     #  klog:
     #    addDirHeader: false
