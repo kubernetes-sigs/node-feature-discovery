@@ -20,14 +20,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
 func TestUsbSource(t *testing.T) {
 	assert.Equal(t, src.Name(), Name)
 
 	// Check that GetLabels works with empty features
-	src.features = feature.NewDomainFeatures()
+	src.features = nil
 	l, err := src.GetLabels()
 
 	assert.Nil(t, err, err)
