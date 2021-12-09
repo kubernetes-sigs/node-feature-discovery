@@ -498,8 +498,8 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 	// Prefix for labels in the default namespace
 	prefix := source.Name() + "-"
 	switch source.Name() {
-	case "local":
-		// Do not prefix labels from the hooks
+	case "local", "custom":
+		// Do not prefix labels from the custom rules, hooks or feature files
 		prefix = ""
 	}
 
