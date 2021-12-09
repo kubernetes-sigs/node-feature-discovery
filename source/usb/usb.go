@@ -43,9 +43,11 @@ func newDefaultConfig() *Config {
 		// By default these include classes where different accelerators are typically mapped:
 		// Video (0e), Miscellaneous (ef), Application Specific (fe), and Vendor Specific (ff).
 		DeviceClassWhitelist: []string{"0e", "ef", "fe", "ff"},
-		DeviceLabelFields:    []string{"class", "vendor", "device"},
+		DeviceLabelFields:    defaultDeviceLabelFields(),
 	}
 }
+
+func defaultDeviceLabelFields() []string { return []string{"class", "vendor", "device"} }
 
 // usbSource implements the LabelSource and ConfigurableSource interfaces.
 type usbSource struct {
@@ -110,7 +112,7 @@ func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
 	}
 	if len(deviceLabelFields) == 0 {
 		klog.Warningf("no valid fields in deviceLabelFields defined, using the defaults")
-		deviceLabelFields = []string{"vendor", "device"}
+		deviceLabelFields = defaultDeviceLabelFields()
 	}
 
 	// Iterate over all device classes
