@@ -108,24 +108,14 @@ func (s *localSource) GetFeatures() *feature.DomainFeatures {
 	return s.features
 }
 
-func parseFeatures(lines [][]byte, prefix string) map[string]string {
+func parseFeatures(lines [][]byte) map[string]string {
 	features := make(map[string]string)
 
 	for _, line := range lines {
 		if len(line) > 0 {
 			lineSplit := strings.SplitN(string(line), "=", 2)
 
-			// Check if we need to add prefix
-			var key string
-			if strings.Contains(lineSplit[0], "/") {
-				if lineSplit[0][0] == '/' {
-					key = lineSplit[0][1:]
-				} else {
-					key = lineSplit[0]
-				}
-			} else {
-				key = prefix + "-" + lineSplit[0]
-			}
+			key := lineSplit[0]
 
 			// Check if it's a boolean value
 			if len(lineSplit) == 1 {
@@ -161,7 +151,7 @@ func getFeaturesFromHooks() (map[string]string, error) {
 		}
 
 		// Append features
-		fileFeatures := parseFeatures(lines, fileName)
+		fileFeatures := parseFeatures(lines)
 		utils.KlogDump(4, fmt.Sprintf("features from hook %q:", fileName), "  ", fileFeatures)
 		for k, v := range fileFeatures {
 			if old, ok := features[k]; ok {
@@ -238,7 +228,7 @@ func getFeaturesFromFiles() (map[string]string, error) {
 		}
 
 		// Append features
-		fileFeatures := parseFeatures(lines, fileName)
+		fileFeatures := parseFeatures(lines)
 		utils.KlogDump(4, fmt.Sprintf("features from feature file %q:", fileName), "  ", fileFeatures)
 		for k, v := range fileFeatures {
 			if old, ok := features[k]; ok {

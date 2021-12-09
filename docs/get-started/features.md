@@ -569,20 +569,15 @@ update them to match your needs.
 In both cases, the labels can be binary or non binary, using either `<name>` or
 `<name>=<value>` format.
 
-Unlike the other feature sources, the name of the file, instead of the name of
-the feature source (that would be `local` in this case), is used as a prefix in
-the label name, normally. However, if the `<name>` of the label starts with a
-slash (`/`) it is used as the label name as is, without any additional prefix.
-This makes it possible for the user to fully control the feature label names,
-e.g. for overriding labels created by other feature sources.
+`local` has precedence over other label sources which makes it possible to
+override labels created by them.
 
 You can also override the default namespace of your labels using this format:
 `<namespace>/<name>[=<value>]`. If using something else than
 `[<sub-ns>.]feature.node.kubernetes.io` or
 `[<sub-ns>.]profile.node.kubernetes.io`, you must whitelist your namespace
 using the `-extra-label-ns` option on the master.
-In this case, the name of the
-file will not be added to the label name. For example, if you want to add the
+For example, if you want to add the
 label `my.namespace.org/my-label=value`, your hook output or file must contains
 `my.namespace.org/my-label=value` and you must add
 `-extra-label-ns=my.namespace.org` on the master command line.
@@ -604,48 +599,40 @@ you have created a shared area for delivering hooks and feature files to NFD.
 #### A hook example
 
 User has a shell script
-`/etc/kubernetes/node-feature-discovery/source.d/my-source` which has the
+`/etc/kubernetes/node-feature-discovery/source.d/my-hook.sh` which has the
 following `stdout` output:
 
 ```plaintext
-MY_FEATURE_1
-MY_FEATURE_2=myvalue
-/override_source-OVERRIDE_BOOL
-/override_source-OVERRIDE_VALUE=123
-override.namespace/value=456
+my-feature.1
+my-feature.2=myvalue
+my.namespace/my-feature.3=456
 ```
 
 which, in turn, will translate into the following node labels:
 
 ```plaintext
-feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
-feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
-feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
-feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
-override.namespace/value=456
+feature.node.kubernetes.io/my-feature.1=true
+feature.node.kubernetes.io/my-feature.2=myvalue
+my.namespace/my-feature.3=456
 ```
 
 #### A file example
 
-User has a file `/etc/kubernetes/node-feature-discovery/features.d/my-source`
+User has a file `/etc/kubernetes/node-feature-discovery/features.d/my-features`
 which contains the following lines:
 
 ```plaintext
-MY_FEATURE_1
-MY_FEATURE_2=myvalue
-/override_source-OVERRIDE_BOOL
-/override_source-OVERRIDE_VALUE=123
-override.namespace/value=456
+my-feature.4
+my-feature.5=myvalue
+my.namespace/my-feature.6=456
 ```
 
 which, in turn, will translate into the following node labels:
 
 ```plaintext
-feature.node.kubernetes.io/my-source-MY_FEATURE_1=true
-feature.node.kubernetes.io/my-source-MY_FEATURE_2=myvalue
-feature.node.kubernetes.io/override_source-OVERRIDE_BOOL=true
-feature.node.kubernetes.io/override_source-OVERRIDE_VALUE=123
-override.namespace/value=456
+feature.node.kubernetes.io/my-feature.4=true
+feature.node.kubernetes.io/my-feature.5=myvalue
+my.namespace/my-feature.6=456
 ```
 
 NFD tries to run any regular files found from the hooks directory. Any
