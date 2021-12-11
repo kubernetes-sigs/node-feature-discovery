@@ -161,7 +161,9 @@ func getFeaturesFromHooks() (map[string]string, error) {
 		}
 
 		// Append features
-		for k, v := range parseFeatures(lines, fileName) {
+		fileFeatures := parseFeatures(lines, fileName)
+		utils.KlogDump(4, fmt.Sprintf("features from hook %q:", fileName), "  ", fileFeatures)
+		for k, v := range fileFeatures {
 			if old, ok := features[k]; ok {
 				klog.Warningf("overriding label '%s' from another hook (%s): value changed from '%s' to '%s'",
 					k, fileName, old, v)
@@ -236,7 +238,9 @@ func getFeaturesFromFiles() (map[string]string, error) {
 		}
 
 		// Append features
-		for k, v := range parseFeatures(lines, fileName) {
+		fileFeatures := parseFeatures(lines, fileName)
+		utils.KlogDump(4, fmt.Sprintf("features from feature file %q:", fileName), "  ", fileFeatures)
+		for k, v := range fileFeatures {
 			if old, ok := features[k]; ok {
 				klog.Warningf("overriding label '%s' from another features.d file (%s): value changed from '%s' to '%s'",
 					k, fileName, old, v)
