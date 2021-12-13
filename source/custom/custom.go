@@ -171,11 +171,18 @@ func (r *LegacyRule) execute(features map[string]*feature.DomainFeatures) (map[s
 		}
 	}
 
+	// Prefix non-namespaced labels with "custom-"
+	name := r.Name
+	if !strings.Contains(name, "/") {
+		name = "custom-" + name
+	}
+
 	value := "true"
 	if r.Value != nil {
 		value = *r.Value
 	}
-	return map[string]string{r.Name: value}, nil
+
+	return map[string]string{name: value}, nil
 }
 
 func (m *LegacyMatcher) match() (bool, error) {
