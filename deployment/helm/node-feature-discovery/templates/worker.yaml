@@ -56,6 +56,9 @@ spec:
         - name: host-os-release
           mountPath: "/host-etc/os-release"
           readOnly: true
+	- name: host-proc-cpuinfo
+          mountPath: "/host-proc/cpuinfo"
+          readOnly: true
         - name: host-sys
           mountPath: "/host-sys"
           readOnly: true
@@ -90,6 +93,9 @@ spec:
         - name: host-os-release
           hostPath:
             path: "/etc/os-release"
+	- name: host-proc-cpuinfo
+          hostPath:
+            path: "/proc/cpuinfo"
         - name: host-sys
           hostPath:
             path: "/sys"

@@ -17,8 +17,12 @@ limitations under the License.
 package cpu
 
 import (
+	"bufio"
 	"io/ioutil"
+	"os"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"k8s.io/klog/v2"
 
@@ -37,7 +41,15 @@ const (
 	SgxFeature      = "sgx"
 	SstFeature      = "sst"
 	TopologyFeature = "topology"
+	CpuFeature      = "cpuinfo"
 )
+
+var cpuFields = [...]string{
+	"model",
+	"cpu_family",
+	"vendor_id",
+	"stepping",
+}
 
 // Configuration file options
 type cpuidConfig struct {
@@ -169,6 +181,14 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["hardware_multithreading"] = v
 	}
 
+	// CPU Info
+	for _, key := range cpuFields {
+		if value, exists := features.Values[CpuFeature].Elements[key]; exists {
+			feature := "cpuinfo." + key
+			labels[feature] = value
+		}
+	}
+
 	return labels, nil
 }
 
@@ -205,6 +225,14 @@ func (s *cpuSource) Discover() error {
 
 	// Detect hyper-threading
 	s.features.Values[TopologyFeature] = feature.NewValueFeatures(discoverTopology())
+
+	// Get cpu-info
+	info, err := parseCPUInfo()
+	if err != nil {
+		klog.Errorf("failed to get cpu-info: %s", err)
+	} else {
+		s.features.Values[CpuFeature] = feature.NewValueFeatures(info)
+	}
 
 	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
 
@@ -283,6 +311,32 @@ func (f keyFilter) unmask(k string) bool {
 		}
 	}
 	return false
+}
+
+// Read and parse cpuinfo file
+func parseCPUInfo() (map[string]string, error) {
+	release := map[string]string{}
+
+	f, err := os.Open(source.ProcDir.Path("cpuinfo"))
+	if err != nil {
+		return nil, err
+	}
+
+	re := regexp.MustCompile(`^(?P<key>\w.+):(?P<value>.+)`)
+
+	// Read line-by-line
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		line := s.Text()
+		if m := re.FindStringSubmatch(line); m != nil {
+			m[1] = strings.TrimSpace(m[1])
+			m[1] = strings.ReplaceAll(m[1], " ", "_")
+			m[2] = strings.TrimSpace(m[2])
+			release[m[1]] = strings.Trim(m[2], `"`)
+		}
+	}
+
+	return release, nil
 }
 
 func init() {
