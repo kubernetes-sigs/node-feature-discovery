@@ -24,7 +24,7 @@ nodeFeatureRule:
 master:
   instance:
   extraLabelNs: []
-  featureRulesController: true
+  featureRulesController: null
 
   replicaCount: 1
 
