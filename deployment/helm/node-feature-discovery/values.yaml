@@ -165,41 +165,8 @@ worker:
     #      - "vendor"
     #      - "device"
     #  custom:
-    #    - name: "my.kernel.feature"
-    #      matchOn:
-    #        - loadedKMod: ["example_kmod1", "example_kmod2"]
-    #    - name: "my.pci.feature"
-    #      matchOn:
-    #        - pciId:
-    #            class: ["0200"]
-    #            vendor: ["15b3"]
-    #            device: ["1014", "1017"]
-    #        - pciId:
-    #            vendor: ["8086"]
-    #            device: ["1000", "1100"]
-    #    - name: "my.usb.feature"
-    #      matchOn:
-    #        - usbId:
-    #            class: ["ff"]
-    #            vendor: ["03e7"]
-    #            device: ["2485"]
-    #        - usbId:
-    #            class: ["fe"]
-    #            vendor: ["1a6e"]
-    #            device: ["089a"]
-    #    - name: "my.combined.feature"
-    #      matchOn:
-    #        - pciId:
-    #            vendor: ["15b3"]
-    #            device: ["1014", "1017"]
-    #          loadedKMod: ["vendor_kmod1", "vendor_kmod2"]
-    #    - name: "feature.by.nodename"
-    #      value: customValue
-    #      matchOn:
-    #        - nodename: ["worker-0", "my-.*-node"]
-    #
     #    # The following feature demonstrates the capabilities of the matchFeatures
-    #    - name: "my.ng.feature"
+    #    - name: "my custom rule"
     #      labels:
     #        my-ng-feature: "true"
     #      # matchFeatures implements a logical AND over all matcher terms in the
@@ -270,7 +237,7 @@ worker:
     #            custom-feature-knob: {op: Gt, value: ["100"]}
     #
     #    # The following feature demonstrates the capabilities of the matchAny
-    #    - name: "my.ng.feature.2"
+    #    - name: "my matchAny rule"
     #      labels:
     #        my-ng-feature-2: "my-value"
     #      # matchAny implements a logical IF over all elements (sub-matchers) in
@@ -294,7 +261,7 @@ worker:
     #                class: {op: In, value: ["02"]}
     #
     #    # The following features demonstreate label templating capabilities
-    #    - name: "my-template-test"
+    #    - name: "my template rule"
     #      labelsTemplate: |
     #        {{ range .system.osrelease }}my-system-feature.{{ .Name }}={{ .Value }}
     #        {{ end }}
@@ -304,7 +271,7 @@ worker:
     #            ID: {op: InRegexp, value: ["^open.*"]}
     #            VERSION_ID.major: {op: In, value: ["13", "15"]}
     #
-    #    - name: "my-template-test-2"
+    #    - name: "my template rule 2"
     #      labelsTemplate: |
     #        {{ range .pci.device }}my-pci-device.{{ .class }}-{{ .device }}=with-cpuid
     #        {{ end }}
@@ -342,6 +309,7 @@ worker:
     #          matchExpressions:
     #            my.kernel.feature: {op: IsTrue}
     #            my.dummy.var: {op: Gt, value: ["0"]}
+    #
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
   podSecurityContext: {}
