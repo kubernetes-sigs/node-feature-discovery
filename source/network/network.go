@@ -53,7 +53,7 @@ var (
 	// ifaceAttrs is the list of files under /sys/class/net/<iface> that we're trying to read
 	ifaceAttrs = []string{"operstate", "speed"}
 	// devAttrs is the list of files under /sys/class/net/<iface>/device that we're trying to read
-	devAttrs = []string{"sriov_numvfs", "sriov_totalvfs"}
+	devAttrs = []string{"sriov_numvfs", "sriov_totalvfs", "iommu_group/type"}
 )
 
 // Name returns an identifier string for this feature source.
