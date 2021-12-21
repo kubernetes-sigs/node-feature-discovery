@@ -514,7 +514,7 @@ The following features are available for matching:
 |                  |              | **`node_count`** | int | Number of NUMA nodes
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system
 |                  |              | **`name`** | string   | Name of the network interface
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`, `iommu_group/type`
 | **`pci.device`** | instance     |          |            | PCI devices present in the system
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`
 | **`storage.device`** | instance |          |            | Block storage devices present in the system
