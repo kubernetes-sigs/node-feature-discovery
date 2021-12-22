@@ -34,12 +34,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             exec:
-              command: ["/usr/bin/grpc_health_probe", "-addr=:8080"]
+              command: ["/usr/bin/grpc-health-probe", "-addr=:8080"]
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["/usr/bin/grpc_health_probe", "-addr=:8080"]
+              command: ["/usr/bin/grpc-health-probe", "-addr=:8080"]
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 10
