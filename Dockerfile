@@ -4,9 +4,12 @@ ARG BASE_IMAGE_MINIMAL
 # Build node feature discovery
 FROM golang:1.17.2-buster as builder
 
-# Download the grpc_health_probe bin
+# Build and install the grpc-health-probe binary
 RUN GRPC_HEALTH_PROBE_VERSION=v0.4.6 && \
-	go install github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION}
+	go install github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION} \
+        # Rename it as it's referenced as grpc_health_probe in the deployment yamls
+        # and in its own project https://github.com/grpc-ecosystem/grpc-health-probe
+        && mv /go/bin/grpc-health-probe /go/bin/grpc_health_probe
 
 # Get (cache) deps in a separate layer
 COPY go.mod go.sum /go/node-feature-discovery/
