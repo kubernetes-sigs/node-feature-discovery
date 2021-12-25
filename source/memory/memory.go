@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const Name = "memory"
+const name = "memory"
 
 const NvFeature = "nv"
 const NumaFeature = "numa"
@@ -49,7 +49,7 @@ var (
 )
 
 // Name returns an identifier string for this feature source.
-func (s *memorySource) Name() string { return Name }
+func (s *memorySource) Name() string { return name }
 
 // Priority method of the LabelSource interface
 func (s *memorySource) Priority() int { return 0 }

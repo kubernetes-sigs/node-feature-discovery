@@ -29,6 +29,7 @@ type CpuIDRule struct {
 	nfdv1alpha1.MatchExpressionSet
 }
 
+// Match returns all matched keys
 func (r *CpuIDRule) Match() (bool, error) {
 	flags, ok := source.GetFeatureSource("cpu").GetFeatures().Keys[cpu.CpuidFeature]
 	if !ok {

@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const Name = "fake"
+const name = "fake"
 
 const FlagFeature = "flag"
 const AttributeFeature = "attribute"
@@ -90,7 +90,7 @@ var (
 )
 
 // Name returns an identifier string for this feature source.
-func (s *fakeSource) Name() string { return Name }
+func (s *fakeSource) Name() string { return name }
 
 // NewConfig method of the ConfigurableSource interface
 func (s *fakeSource) NewConfig() source.Config { return newDefaultConfig() }

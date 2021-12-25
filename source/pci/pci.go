@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const Name = "pci"
+const name = "pci"
 
 const DeviceFeature = "device"
 
@@ -59,7 +59,7 @@ var (
 )
 
 // Name returns the name of the feature source
-func (s *pciSource) Name() string { return Name }
+func (s *pciSource) Name() string { return name }
 
 // NewConfig method of the LabelSource interface
 func (s *pciSource) NewConfig() source.Config { return newDefaultConfig() }

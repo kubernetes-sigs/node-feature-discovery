@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const Name = "network"
+const name = "network"
 
 const DeviceFeature = "device"
 
@@ -57,7 +57,7 @@ var (
 )
 
 // Name returns an identifier string for this feature source.
-func (s *networkSource) Name() string { return Name }
+func (s *networkSource) Name() string { return name }
 
 // Priority method of the LabelSource interface
 func (s *networkSource) Priority() int { return 0 }
