@@ -23,12 +23,12 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const Name = "iommu"
+const name = "iommu"
 
 // iommuSource implements the LabelSource interface.
 type iommuSource struct{}
 
-func (s *iommuSource) Name() string { return Name }
+func (s *iommuSource) Name() string { return name }
 
 // Singleton source instance
 var (
