@@ -284,10 +284,6 @@ We have introduced the following Chart parameters.
 | `image.tag` | string | `{{ site.release }}` | NFD image tag |
 | `image.pullPolicy` | string | `Always` | Image pull policy |
 | `imagePullSecrets` | list | [] | ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
-| `serviceAccount.create` | bool | true | Specifies whether a service account should be created |
-| `serviceAccount.annotations` | dict | {} | Annotations to add to the service account |
-| `serviceAccount.name` | string |  | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
-| `rbac` | dict |  | RBAC [parameteres](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) |
 | `nameOverride` | string |  | Override the name of the chart |
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
 | `nodeFeatureRule.createCRD` | bool | true | Specifies whether to create the NodeFeatureRule CRD |
@@ -304,6 +300,10 @@ We have introduced the following Chart parameters.
 | `master.featureRulesController` | bool | True                                   | Specifies whether the controller for  processing of NodeFeatureRule objects is enable.                                                   |
 | `master.replicaCount`       | integer | 1                                       | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified                                         |
 | `master.podSecurityContext` | dict    | {}                                      | SecurityContext holds pod-level security attributes and common container settings                                                        |
+| `master.serviceAccount.create` | bool | true                                    | Specifies whether a service account should be created
+| `master.serviceAccount.annotations` | dict | {}                                 | Annotations to add to the service account
+| `master.serviceAccount.name` | string |                                         | The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+| `master.rbac.create`        | bool    | true                                    | Specifies whether to create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master
 | `master.service.type`       | string  | ClusterIP                               | NFD master service type                                                                                                                  |
 | `master.service.port`       | integer | port                                    | NFD master service port                                                                                                                  |
 | `master.resources`          | dict    | {}                                      | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                    |
