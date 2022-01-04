@@ -13,6 +13,7 @@ spec:
   - nfd-master.node-feature-discovery.svc
   - nfd-master.node-feature-discovery.svc.cluster.local
   - nfd-master
+  - localhost    # needed for grpc_health_probe
   issuerRef:
     name: nfd-ca-issuer
     kind: Issuer
