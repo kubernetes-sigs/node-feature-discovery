@@ -291,6 +291,8 @@ We have introduced the following Chart parameters.
 | `nameOverride` | string |  | Override the name of the chart |
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
 | `nodeFeatureRule.createCRD` | bool | true | Specifies whether to create the NodeFeatureRule CRD |
+| `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
+| `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
 
 ##### Master pod parameters
 
@@ -436,17 +438,14 @@ management between nfd-master and the nfd-worker pods.
 
 NFD source code repository contains an example kustomize overlay that can be
 used to deploy NFD with cert-manager supplied certificates enabled. The
-instructions below describe steps how to generate a self-signed CA certificate
+instructions below will install cert-manager and generate a self-signed CA certificate
 and set up cert-manager's
 [CA Issuer](https://cert-manager.io/docs/configuration/ca/) to sign
 `Certificate` requests for NFD components in `node-feature-discovery`
 namespace.
 
 ```bash
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.1/cert-manager.yaml
-openssl genrsa -out deployment/overlays/samples/cert-manager/tls.key 2048
-openssl req -x509 -new -nodes -key deployment/overlays/samples/cert-manager/tls.key -subj "/CN=nfd-ca" \
-        -days 10000 -out deployment/overlays/samples/cert-manager/tls.crt
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
 kubectl apply -k deployment/overlays/samples/cert-manager
 ```
 

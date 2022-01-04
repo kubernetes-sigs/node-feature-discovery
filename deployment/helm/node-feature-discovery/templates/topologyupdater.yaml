@@ -50,6 +50,11 @@ spec:
           {{- else }}
           - "--watch-namespace=*"
           {{- end }}
+          {{- if .Values.tls.enable }}
+          - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+          - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+          - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+          {{- end }}
         volumeMounts:
         - name: kubelet-config
           mountPath: /host-var/lib/kubelet/config.yaml
@@ -57,6 +62,12 @@ spec:
           mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
         - name: host-sys
           mountPath: /host-sys
+        {{- if .Values.tls.enable }}
+        - name: nfd-topology-updater-cert
+          mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+          readOnly: true
+        {{- end }}
+
         resources:
       {{- toYaml .Values.topologyUpdater.resources | nindent 12 }}
         securityContext:
@@ -79,6 +90,12 @@ spec:
           {{- else }}
           path: /var/lib/kubelet/pod-resources/kubelet.sock
           {{- end }}
+      {{- if .Values.tls.enable }}
+      - name: nfd-topology-updater-cert
+        secret:
+          secretName: nfd-topology-updater-cert
+      {{- end }}
+
     {{- with .Values.topologyUpdater.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
