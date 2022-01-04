@@ -291,6 +291,8 @@ We have introduced the following Chart parameters.
 | `nameOverride` | string |  | Override the name of the chart |
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
 | `nodeFeatureRule.createCRD` | bool | true | Specifies whether to create the NodeFeatureRule CRD |
+| `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
+| `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
 
 ##### Master pod parameters
 
