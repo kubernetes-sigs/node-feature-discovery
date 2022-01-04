@@ -12,13 +12,6 @@ resources:
 generatorOptions:
   disableNameSuffixHash: true
 
-secretGenerator:
-- files:
-  - tls.crt
-  - tls.key
-  name: nfd-ca-key-pair
-  type: kubernetes.io/tls
-
 patches:
 - path: args.yaml
   target:
@@ -32,3 +25,8 @@ patches:
   target:
     labelSelector: app=nfd
     name: nfd-worker
+- path: probes.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-master
+

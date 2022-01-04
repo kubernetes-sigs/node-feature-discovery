@@ -1,0 +1,26 @@
+- op: add
+  path: /spec/template/spec/containers/0/livenessProbe/exec/command/-
+  value: "-tls"
+- op: add
+  path: /spec/template/spec/containers/0/livenessProbe/exec/command/-
+  value: "-tls-ca-cert=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+- op: add
+  path: /spec/template/spec/containers/0/livenessProbe/exec/command/-
+  value: "-tls-client-key=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+- op: add
+  path: /spec/template/spec/containers/0/livenessProbe/exec/command/-
+  value: "-tls-client-cert=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+
+- op: add
+  path: /spec/template/spec/containers/0/readinessProbe/exec/command/-
+  value: "-tls"
+- op: add
+  path: /spec/template/spec/containers/0/readinessProbe/exec/command/-
+  value: "-tls-ca-cert=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+- op: add
+  path: /spec/template/spec/containers/0/readinessProbe/exec/command/-
+  value: "-tls-client-key=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+- op: add
+  path: /spec/template/spec/containers/0/readinessProbe/exec/command/-
+  value: "-tls-client-cert=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+
