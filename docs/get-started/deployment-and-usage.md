@@ -297,7 +297,7 @@ We have introduced the following Chart parameters.
 | `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
 | `master.extraLabelNs`       | array   | []                                      | List of allowed extra label namespaces                                                                                                   |
-| `master.featureRulesController` | bool | True                                   | Specifies whether the controller for  processing of NodeFeatureRule objects is enable.                                                   |
+| `master.featureRulesController` | bool | null                                   | Specifies whether the controller for processing of NodeFeatureRule objects is enabled. If not set, controller will be enabled if `master.instance` is empty.
 | `master.replicaCount`       | integer | 1                                       | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified                                         |
 | `master.podSecurityContext` | dict    | {}                                      | SecurityContext holds pod-level security attributes and common container settings                                                        |
 | `master.serviceAccount.create` | bool | true                                    | Specifies whether a service account should be created

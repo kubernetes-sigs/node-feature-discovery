@@ -78,7 +78,12 @@ spec:
             {{- if .Values.master.extraLabelNs | empty | not }}
             - "--extra-label-ns={{- join "," .Values.master.extraLabelNs }}"
             {{- end }}
+            {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
             - "-featurerules-controller={{ .Values.master.featureRulesController }}"
+            {{- else }}
+            ## By default, disable NodeFeatureRules controller for other than the default instances
+            - "-featurerules-controller={{ .Values.master.instance | empty }}"
+            {{- end }}
     {{- if .Values.tls.enable }}
             - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
             - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
