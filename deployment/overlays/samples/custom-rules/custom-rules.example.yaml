@@ -1,7 +1,15 @@
-#- name: "more.kernel.features"
-#  matchOn:
-#  - loadedKMod: ["example_kmod3"]
-#- name: "more.features.by.nodename"
-#  value: customValue
-#  matchOn:
-#  - nodename: ["special-.*-node-.*"]
+- name: "kernel module rule"
+  labels:
+    "kernel-br_netfilter.present": "true"
+  matchFeatures:
+    - feature: "kernel.loadedmodule"
+      matchExpressions:
+        br_netfilter: {op: Exists}
+
+- name: "nodename rule"
+  labels:
+    "nodename-rule.matches": "true"
+  matchFeatures:
+    - feature: "system.name"
+      matchExpressions:
+        nodename: {op: InRegexp, value: ["special-.*-node"]}
