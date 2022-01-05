@@ -302,7 +302,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 	for _, name := range c.FeatureSources {
 		if name == "all" {
 			for n, s := range source.GetAllFeatureSources() {
-				if ts, ok := s.(source.TestSource); !ok || !ts.IsTestSource() {
+				if ts, ok := s.(source.SupplementalSource); !ok || !ts.DisableByDefault() {
 					featureSources[n] = s
 				}
 			}
@@ -337,7 +337,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 	for _, name := range c.LabelSources {
 		if name == "all" {
 			for n, s := range source.GetAllLabelSources() {
-				if ts, ok := s.(source.TestSource); !ok || !ts.IsTestSource() {
+				if ts, ok := s.(source.SupplementalSource); !ok || !ts.DisableByDefault() {
 					labelSources[n] = s
 				}
 			}

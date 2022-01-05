@@ -66,12 +66,15 @@ type ConfigurableSource interface {
 	SetConfig(Config)
 }
 
-// TestSource represents a source purposed for testing only
-type TestSource interface {
+// SupplementalSource represents a source that does not belong to the core set
+// sources to be used in production, e.g. is deprecated, very experimental or
+// purposed for testing only.
+type SupplementalSource interface {
 	Source
 
-	// IsTestSource returns true if the source is not for production
-	IsTestSource() bool
+	// DisableByDefault returns true if the source should be disabled by
+	// default in production.
+	DisableByDefault() bool
 }
 
 // FeatureLabelValue represents the value of one feature label

@@ -429,13 +429,15 @@ labels by defining them in the `nfd-worker` configuration file.
 | rdma  | capable | The node has an RDMA capable Network adapter |
 | rdma | enabled | The node has the needed RDMA modules loaded to run RDMA traffic |
 
-### IOMMU
+### IOMMU (deprecated)
 
 The **iommu** feature source supports the following labels:
 
 | Feature name   | Description                                                 |
 | :------------: | :---------------------------------------------------------: |
 | enabled        | IOMMU is present and enabled in the kernel
+
+**DEPRECATED**: The **iommu** source is deprecated and not enabled by default.
 
 ### Kernel
 
