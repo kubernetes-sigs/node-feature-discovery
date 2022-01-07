@@ -27,7 +27,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const name = "cpu"
+// Name of this feature source
+const Name = "cpu"
 
 const (
 	CpuidFeature    = "cpuid"
@@ -105,7 +106,7 @@ var (
 	_   source.ConfigurableSource = &src
 )
 
-func (s *cpuSource) Name() string { return name }
+func (s *cpuSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
 func (s *cpuSource) NewConfig() source.Config { return newDefaultConfig() }

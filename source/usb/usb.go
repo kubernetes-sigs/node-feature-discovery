@@ -27,7 +27,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const name = "usb"
+// Name of this feature source
+const Name = "usb"
 
 const DeviceFeature = "device"
 
@@ -64,7 +65,7 @@ var (
 )
 
 // Name returns the name of the feature source
-func (s *usbSource) Name() string { return name }
+func (s *usbSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
 func (s *usbSource) NewConfig() source.Config { return newDefaultConfig() }

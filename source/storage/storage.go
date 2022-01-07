@@ -29,7 +29,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const name = "storage"
+// Name of this feature source
+const Name = "storage"
 
 const BlockFeature = "block"
 
@@ -49,7 +50,7 @@ var (
 var queueAttrs = []string{"dax", "rotational", "nr_zones", "zoned"}
 
 // Name returns an identifier string for this feature source.
-func (s *storageSource) Name() string { return name }
+func (s *storageSource) Name() string { return Name }
 
 // Priority method of the LabelSource interface
 func (s *storageSource) Priority() int { return 0 }

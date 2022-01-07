@@ -22,15 +22,15 @@ import (
 
 var (
 	pathPrefix = "/"
-	// BootPath is where the /boot directory of the system to be inspected is located
+	// BootDir is where the /boot directory of the system to be inspected is located
 	BootDir = HostDir(pathPrefix + "boot")
-	// EtcPath is where the /etc directory of the system to be inspected is located
+	// EtcDir is where the /etc directory of the system to be inspected is located
 	EtcDir = HostDir(pathPrefix + "etc")
-	// SysfsPath is where the /sys directory of the system to be inspected is located
+	// SysfsDir is where the /sys directory of the system to be inspected is located
 	SysfsDir = HostDir(pathPrefix + "sys")
-	// UsrPath is where the /usr directory of the system to be inspected is located
+	// UsrDir is where the /usr directory of the system to be inspected is located
 	UsrDir = HostDir(pathPrefix + "usr")
-	// VarPath is where the /var directory of the system to be inspected is located
+	// VarDir is where the /var directory of the system to be inspected is located
 	VarDir = HostDir(pathPrefix + "var")
 )
 

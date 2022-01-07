@@ -32,7 +32,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-const name = "local"
+// Name of this feature source
+const Name = "local"
 
 const LabelFeature = "label"
 
@@ -55,7 +56,7 @@ var (
 )
 
 // Name method of the LabelSource interface
-func (s *localSource) Name() string { return name }
+func (s *localSource) Name() string { return Name }
 
 // Priority method of the LabelSource interface
 func (s *localSource) Priority() int { return 20 }

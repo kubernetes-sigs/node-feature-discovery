@@ -32,7 +32,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
-const name = "custom"
+// Name of this feature source
+const Name = "custom"
 
 // LegacyMatcher contains the legacy custom rules.
 type LegacyMatcher struct {
@@ -83,7 +84,7 @@ var (
 )
 
 // Name returns the name of the feature source
-func (s *customSource) Name() string { return name }
+func (s *customSource) Name() string { return Name }
 
 // NewConfig method of the LabelSource interface
 func (s *customSource) NewConfig() source.Config { return newDefaultConfig() }
