@@ -87,7 +87,7 @@ type Config interface {
 // sources contain all registered sources
 var sources = make(map[string]Source)
 
-// Register expects a source and registers a source
+// Register registers a source.
 func Register(s Source) {
 	if name, ok := sources[s.Name()]; ok {
 		panic(fmt.Sprintf("source %q already registered", name))

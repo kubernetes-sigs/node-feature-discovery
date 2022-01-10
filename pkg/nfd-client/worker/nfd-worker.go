@@ -54,7 +54,7 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/usb"
 )
 
-// NFDConfig is a Global config
+// NFDConfig contains the configuration settings of NfdWorker.
 type NFDConfig struct {
 	Core    coreConfig
 	Sources sourcesConfig
@@ -75,7 +75,7 @@ type sourcesConfig map[string]source.Config
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
-// Args are Command line arguments
+// Args are the command line arguments of NfdWorker.
 type Args struct {
 	nfdclient.Args
 
