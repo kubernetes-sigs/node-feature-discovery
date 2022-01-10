@@ -458,14 +458,16 @@ you may use the following:
 kubectl apply -k deployment/overlays/samples/cert-manager
 ```
 
-To make use of the helm chart, override `values.yaml` to enable both the `tls`
-and `certManager` options.  Note that if you do not enable `certManager`, helm
-will successfully install the application, but deployment will wait until
-certificates are manually created, as demonstrated below.
+To make use of the helm chart, override `values.yaml` to enable both the
+`tls.enabled` and `tls.certManager` options. Note that if you do not enable
+`tls.certManager`, helm will successfully install the application, but
+deployment will wait until certificates are manually created, as demonstrated
+below.
 
-See the sample helm installation commands in the Deployment and Configuration
-sections above for how to either override individual values, or provide a yaml
-file with which to override default values.
+See the sample installation commands in the Helm [Deployment](#deployment)
+and [Configuration](#configuration) sections above for how to either override
+individual values, or provide a yaml file with which to override default
+values.
 
 #### Manual TLS certificate management
 
