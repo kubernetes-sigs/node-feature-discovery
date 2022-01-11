@@ -513,11 +513,13 @@ The following features are available for matching:
 |                  |              | **`is_numa`** | bool  | `true` if NUMA architecture, `false` otherwise
 |                  |              | **`node_count`** | int | Number of NUMA nodes
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `name`, `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`
+|                  |              | **`name`** | string   | Name of the network interface
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`
 | **`pci.device`** | instance     |          |            | PCI devices present in the system
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`
 | **`storage.device`** | instance |          |            | Block storage devices present in the system
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `name`, `dax`, `rotational`, `nr_zones`, `zoned`
+|                  |              | **`name`** | string   | Name of the block device
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned`
 | **`system.osrelease`** | attribute |          |            | System identification data from `/etc/os-release`
 |                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release`
 | **`system.name`** | attribute   |          |            | System name information
