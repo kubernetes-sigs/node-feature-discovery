@@ -184,7 +184,7 @@ fi
 # Switch to work in the gh-pages worktree
 pushd "$build_dir" > /dev/null
 
-_stable=`(ls -d1 v*/ || :) | sort -n | tail -n1`
+_stable=`(ls -d1 v*/ || :) | sort -V | tail -n1`
 [ -n "$_stable" ] && ln -sfT "$_stable" stable
 
 # Detect existing versions from the gh-pages branch
