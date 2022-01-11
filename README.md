@@ -11,8 +11,9 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.9.0
+$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.10.0
   namespace/node-feature-discovery created
+  customresourcedefinition.apiextensions.k8s.io/nodefeaturerules.nfd.k8s-sigs.io created
   serviceaccount/nfd-master created
   clusterrole.rbac.authorization.k8s.io/nfd-master created
   clusterrolebinding.rbac.authorization.k8s.io/nfd-master created
