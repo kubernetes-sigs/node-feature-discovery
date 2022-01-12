@@ -33,8 +33,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/kubectl/pkg/util/podutils"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
@@ -107,6 +110,27 @@ func readConfig() {
 		Expect(err).NotTo(HaveOccurred())
 		conf.DefaultFeatures.Nodes[name] = nodeConf
 	}
+}
+
+// waitForPodsReady waits for the pods to become ready.
+// NOTE: copied from k8s v1.22 after which is was removed from there.
+// Convenient for checking that all pods of a daemonset are ready.
+func waitForPodsReady(c clientset.Interface, ns, name string, minReadySeconds int) error {
+	const poll = 2 * time.Second
+	label := labels.SelectorFromSet(labels.Set(map[string]string{"name": name}))
+	options := metav1.ListOptions{LabelSelector: label.String()}
+	return wait.Poll(poll, 5*time.Minute, func() (bool, error) {
+		pods, err := c.CoreV1().Pods(ns).List(context.TODO(), options)
+		if err != nil {
+			return false, nil
+		}
+		for _, pod := range pods.Items {
+			if !podutils.IsPodAvailable(&pod, int32(minReadySeconds), metav1.Now()) {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
 }
 
 // Create required RBAC configuration
@@ -564,7 +588,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for daemonset pods to be ready")
-				Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+				Expect(waitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 				By("Getting node objects")
 				nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
@@ -760,7 +784,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for daemonset pods to be ready")
-				Expect(e2epod.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+				Expect(waitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 				By("Getting target node and checking labels")
 				targetNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), targetNodeName, metav1.GetOptions{})
