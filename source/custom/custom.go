@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/custom/rules"
 )
 
+// Name of this feature source
 const Name = "custom"
 
 // LegacyMatcher contains the legacy custom rules.

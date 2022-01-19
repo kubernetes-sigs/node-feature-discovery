@@ -36,6 +36,7 @@ var osReleaseFields = [...]string{
 	"VERSION_ID.minor",
 }
 
+// Name of this feature source
 const Name = "system"
 
 const (

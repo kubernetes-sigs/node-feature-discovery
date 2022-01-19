@@ -54,7 +54,7 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/usb"
 )
 
-// Global config
+// NFDConfig contains the configuration settings of NfdWorker.
 type NFDConfig struct {
 	Core    coreConfig
 	Sources sourcesConfig
@@ -75,7 +75,7 @@ type sourcesConfig map[string]source.Config
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
-// Command line arguments
+// Args are the command line arguments of NfdWorker.
 type Args struct {
 	nfdclient.Args
 
@@ -115,7 +115,7 @@ type duration struct {
 	time.Duration
 }
 
-// Create new NfdWorker instance.
+// NewNfdWorker creates new NfdWorker instance.
 func NewNfdWorker(args *Args) (nfdclient.NfdClient, error) {
 	base, err := nfdclient.NewNfdBaseClient(&args.Args)
 	if err != nil {

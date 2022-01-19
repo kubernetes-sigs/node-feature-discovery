@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+// Name of this feature source
 const Name = "fake"
 
 const FlagFeature = "flag"
