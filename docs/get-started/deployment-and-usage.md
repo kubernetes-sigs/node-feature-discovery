@@ -300,12 +300,13 @@ We have introduced the following Chart parameters.
 | `master.featureRulesController` | bool | null                                   | Specifies whether the controller for processing of NodeFeatureRule objects is enabled. If not set, controller will be enabled if `master.instance` is empty.
 | `master.replicaCount`       | integer | 1                                       | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified                                         |
 | `master.podSecurityContext` | dict    | {}                                      | SecurityContext holds pod-level security attributes and common container settings                                                        |
+| `master.securityContext`    | dict    | {}                                      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)|
 | `master.serviceAccount.create` | bool | true                                    | Specifies whether a service account should be created
 | `master.serviceAccount.annotations` | dict | {}                                 | Annotations to add to the service account
 | `master.serviceAccount.name` | string |                                         | The name of the service account to use. If not set and create is true, a name is generated using the fullname template
 | `master.rbac.create`        | bool    | true                                    | Specifies whether to create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master
 | `master.service.type`       | string  | ClusterIP                               | NFD master service type                                                                                                                  |
-| `master.service.port`       | integer | port                                    | NFD master service port                                                                                                                  |
+| `master.service.port`       | integer | 8080                                    | NFD master service port                                                                                                                  |
 | `master.resources`          | dict    | {}                                      | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                    |
 | `master.nodeSelector`       | dict    | {}                                      | NFD master pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                    |
 | `master.tolerations`        | dict    | _Scheduling to master node is disabled_ | NFD master pod [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                              |
@@ -320,6 +321,7 @@ We have introduced the following Chart parameters.
 | `worker.config` | dict |  | NFD worker [configuration](../advanced/worker-configuration-reference.md) |
 | `worker.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
 | `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
+| `worker.mountUsrSrc` | bool | false | Specifies whether to allow users to mount the hostpath /user/src. Does not work on systems without /usr/src AND a read-only /usr |
 | `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
 | `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
