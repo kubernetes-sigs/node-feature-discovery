@@ -53,34 +53,39 @@ is recommended to be done via
    for detailed instructions.
 1. Install the operator:
 
-    ```bash
-    kubectl create -f https://operatorhub.io/install/nfd-operator.yaml
-    ```
+   ```bash
+   kubectl create -f https://operatorhub.io/install/stable/nfd-operator.yaml
+   ```
 
-1. Create NodeFeatureDiscovery resource (in `nfd` namespace here):
+1. Create `NodeFeatureDiscovery` object (in `nfd` namespace here):
 
-    ```bash
-    cat << EOF | kubectl apply -f -
-    apiVersion: v1
-    kind: Namespace
-    metadata:
-      name: nfd
-    ---
-    apiVersion: nfd.kubernetes.io/v1alpha1
-    kind: NodeFeatureDiscovery
-    metadata:
-      name: my-nfd-deployment
-      namespace: nfd
-    EOF
-    ```
+   ```bash
+   cat << EOF | kubectl apply -f -
+   apiVersion: v1
+   kind: Namespace
+   metadata:
+     name: nfd
+   ---
+   apiVersion: nfd.kubernetes.io/v1
+   kind: NodeFeatureDiscovery
+   metadata:
+     name: my-nfd-deployment
+     namespace: nfd
+   spec:
+     operand:
+       namespace: nfd
+       image: {{ site.container_image }}
+       imagePullPolicy: IfNotPresent
+   EOF
+   ```
 
-In order to deploy the [minimal](#minimal) image you need to add
+In order to deploy the [minimal](#minimal) image you need to use
 
 ```yaml
   image: {{ site.container_image }}-minimal
 ```
 
-to the metadata of NodeFeatureDiscovery object above.
+in the `NodeFeatureDiscovery` object above.
 
 ### Deployment with kustomize
 
