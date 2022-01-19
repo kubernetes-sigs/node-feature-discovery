@@ -36,24 +36,32 @@ is recommended to be done via
    [latest release](https://github.com/operator-framework/operator-lifecycle-manager/releases/latest)
    for detailed instructions.
 1. Install the operator:
-```bash
-kubectl create -f https://operatorhub.io/install/nfd-operator.yaml
-```
-1. Create NodeFeatureDiscovery resource (in `nfd` namespace here):
-```bash
-cat << EOF | kubectl apply -f -
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: nfd
----
-apiVersion: nfd.kubernetes.io/v1alpha1
-kind: NodeFeatureDiscovery
-metadata:
-  name: my-nfd-deployment
-  namespace: nfd
-EOF
-```
+
+   ```bash
+   kubectl create -f https://operatorhub.io/install/stable/nfd-operator.yaml
+   ```
+
+1. Create `NodeFeatureDiscovery` object (in `nfd` namespace here):
+
+   ```bash
+   cat << EOF | kubectl apply -f -
+   apiVersion: v1
+   kind: Namespace
+   metadata:
+     name: nfd
+   ---
+   apiVersion: nfd.kubernetes.io/v1
+   kind: NodeFeatureDiscovery
+   metadata:
+     name: my-nfd-deployment
+     namespace: nfd
+   spec:
+     operand:
+       namespace: nfd
+       image: {{ site.container_image }}
+       imagePullPolicy: IfNotPresent
+   EOF
+   ```
 
 ### Deployment templates
 
