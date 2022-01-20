@@ -59,7 +59,10 @@ E2E_TEST_CONFIG ?=
 
 LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
+
 # multi-arch build with buildx
+export DOCKER_CLI_EXPERIMENTAL=enabled
+
 IMAGE_ALL_PLATFORMS ?= linux/amd64,linux/arm64
 
 # enable buildx
