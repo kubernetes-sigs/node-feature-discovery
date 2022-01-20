@@ -43,6 +43,32 @@ Optional, this example with Docker.
 docker push <IMAGE_TAG>
 ```
 
+### Docker multi-arch builds with buildx
+
+The default set of architectures enabled for mulit-arch builds are `linux/amd64`
+and `linux/arm64`. If more architectures are needed one can override the
+`IMAGE_ALL_PLATFORMS` variable with a comma separated list of `OS/ARCH` tuples.
+
+#### Build the manifest-list with a container image per arch
+
+```bash
+make image-all
+```
+
+Currently `docker` does not support loading of manifest-lists meaning the images
+are not shown when executing `docker images`, see:
+[buildx issue #59](https://github.com/docker/buildx/issues/59).
+
+#### Push the manifest-list with container image per arch
+
+```bash
+make push-all
+```
+
+The resulting container image can be used in the same way on each arch by pulling
+e.g. `node-feature-discovery:v0.10.0` without specifying the architechture. The
+manifest-list will take care of providing the right architecture image.
+
 #### Change the job spec to use your custom image (optional)
 
 To use your published image from the step above instead of the
@@ -88,6 +114,8 @@ makefile overrides.
 | HOSTMOUNT_PREFIX           | Prefix of system directories for feature discovery (local builds) | / (*local builds*) /host- (*container builds*)
 | IMAGE_BUILD_CMD            | Command to build the image                                        | docker build
 | IMAGE_BUILD_EXTRA_OPTS     | Extra options to pass to build command                            | *empty*
+| IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
+| IMAGE_ALL_PLATFORMS        | Comma seperated list of OS/ARCH tuples for mulit-arch builds    | linux/amd64,linux/arm64
 | IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push
 | IMAGE_REGISTRY             | Container image registry to use                                   | k8s.gcr.io/nfd
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
