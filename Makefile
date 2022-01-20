@@ -182,7 +182,7 @@ push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)-minimal
 	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; $(IMAGE_PUSH_CMD) $$tag-minimal; done
 
-push-all:
+push-all: ensure-buildx yamls
 	$(IMAGE_BUILDX_CMD) --push $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)
 	$(IMAGE_BUILDX_CMD) --push $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_MINIMAL)
 
