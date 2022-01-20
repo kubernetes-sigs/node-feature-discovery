@@ -61,15 +61,13 @@ LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.vers
 
 
 # multi-arch build with buildx
-export DOCKER_CLI_EXPERIMENTAL=enabled
-
 IMAGE_ALL_PLATFORMS ?= linux/amd64,linux/arm64
 
 # enable buildx
 ensure-buildx:
 	./hack/init-buildx.sh
 
-IMAGE_BUILDX_CMD ?= DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
+IMAGE_BUILDX_CMD ?= docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
 
 IMAGE_BUILD_ARGS = --build-arg VERSION=$(VERSION) \
 	    	   --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
