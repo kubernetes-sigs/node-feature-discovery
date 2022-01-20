@@ -15,7 +15,7 @@
 
 set -o errexit -o nounset -o pipefail
 
-export DOCKER_CLI_EXPERIMENTAL=enabled
+#export DOCKER_CLI_EXPERIMENTAL=enabled
 
 # We can skip setup if the current builder already has multi-arch
 # AND if it isn't the docker driver, which doesn't work
