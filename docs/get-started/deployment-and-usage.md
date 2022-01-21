@@ -15,16 +15,11 @@ sort: 3
 
 ---
 
-## Requirements
-
-1. Linux (x86_64/Arm64/Arm)
-1. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) v1.21 or
-   later (properly set up and configured to work with your Kubernetes cluster)
-
 ## Image variants
 
 NFD currently offers two variants of the container image. The "full" variant is
-currently deployed by default.
+currently deployed by default. Released container images are available for
+x86_64 and Arm64 architectures.
 
 ### Full
 
@@ -89,7 +84,9 @@ to the metadata of NodeFeatureDiscovery object above.
 
 ### Deployment with kustomize
 
-The kustomize overlays provided in the repo can be used directly:
+This requires [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl)
+v1.21 or later. The kustomize overlays provided in the repo can be used
+directly:
 
 ```bash
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}

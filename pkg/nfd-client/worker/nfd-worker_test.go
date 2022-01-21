@@ -54,7 +54,7 @@ func setupTest(args *master.Args) testContext {
 		ctx.errs <- ctx.master.Run()
 		close(ctx.errs)
 	}()
-	ready := ctx.master.WaitForReady(time.Second)
+	ready := ctx.master.WaitForReady(5 * time.Second)
 	if !ready {
 		fmt.Println("Test setup failed: timeout while waiting for nfd-master")
 		os.Exit(1)
