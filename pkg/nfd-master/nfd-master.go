@@ -241,8 +241,11 @@ func (m *nfdMaster) Run() error {
 				return err
 			}
 
-		case <-grpcErr:
-			return fmt.Errorf("gRPC server exited with an error: %v", err)
+		case err := <-grpcErr:
+			if err != nil {
+				return fmt.Errorf("gRPC server exited with an error: %v", err)
+			}
+			klog.Infof("gRPC server stopped")
 
 		case <-m.stop:
 			klog.Infof("shutting down nfd-master")
