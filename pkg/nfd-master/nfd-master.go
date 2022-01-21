@@ -257,7 +257,7 @@ func (m *nfdMaster) Run() error {
 
 // Stop NfdMaster
 func (m *nfdMaster) Stop() {
-	m.server.Stop()
+	m.server.GracefulStop()
 
 	if m.nfdController != nil {
 		m.nfdController.stop()
