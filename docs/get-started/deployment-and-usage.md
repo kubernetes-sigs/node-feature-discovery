@@ -294,10 +294,10 @@ We have introduced the following Chart parameters.
 | `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
 | `master.extraLabelNs`       | array   | []                                      | List of allowed extra label namespaces                                                                                                   |
-| `master.featureRulesController` | bool | null                                   | Specifies whether the controller for processing of NodeFeatureRule objects is enabled. If not set, controller will be enabled if `master.instance` is empty.
+| `master.featureRulesController` | bool | null                                   | Specifies whether the controller for processing of NodeFeatureRule objects is enabled. If not set, controller will be enabled if `master.instance` is empty. |
 | `master.replicaCount`       | integer | 1                                       | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified                                         |
-| `master.podSecurityContext` | dict    | {}                                      | SecurityContext holds pod-level security attributes and common container settings                                                        |
-| `master.securityContext`    | dict    | {}                                      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)|
+| `master.podSecurityContext` | dict    | {}                                      | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings |
+| `master.securityContext`    | dict    | {}                                      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)|
 | `master.serviceAccount.create` | bool | true                                    | Specifies whether a service account should be created
 | `master.serviceAccount.annotations` | dict | {}                                 | Annotations to add to the service account
 | `master.serviceAccount.name` | string |                                         | The name of the service account to use. If not set and create is true, a name is generated using the fullname template
@@ -316,8 +316,8 @@ We have introduced the following Chart parameters.
 | ---- | ---- | ------- | ----------- |
 | `worker.*` | dict |  | NFD worker daemonset configuration |
 | `worker.config` | dict |  | NFD worker [configuration](../advanced/worker-configuration-reference.md) |
-| `worker.podSecurityContext` | dict | {} | SecurityContext holds pod-level security attributes and common container settings |
-| `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) |
+| `worker.podSecurityContext` | dict | {} | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings |
+| `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |
 | `worker.mountUsrSrc` | bool | false | Specifies whether to allow users to mount the hostpath /user/src. Does not work on systems without /usr/src AND a read-only /usr |
 | `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
@@ -340,8 +340,8 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.kubeletPodResourcesSockPath` | string | ""      | Specifies the kubelet sock path to read pod resources                                                                                                                      |
 | `topologyUpdater.updateInterval`              | string | 60s     | Time to sleep between CR updates. Non-positive value implies no CR update.                                                                                                 |
 | `topologyUpdater.watchNamespace`              | string | `*`     | Namespace to watch pods, `*` for all namespaces                                                                                                                            |
-| `topologyUpdater.podSecurityContext`          | dict   | {}      | SecurityContext holds pod-level security attributes and common container settings                                                                                          |
-| `topologyUpdater.securityContext`             | dict   | {}      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)                               |
+| `topologyUpdater.podSecurityContext`          | dict   | {}      | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings                                                                                          |
+| `topologyUpdater.securityContext`             | dict   | {}      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)                         |
 | `topologyUpdater.resources`                   | dict   | {}      | Topology updater pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                                                |
 | `topologyUpdater.nodeSelector`                | dict   | {}      | Topology updater pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                                                |
 | `topologyUpdater.tolerations`                 | dict   | {}      | Topology updater pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                                                     |
