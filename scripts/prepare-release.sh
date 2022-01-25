@@ -93,7 +93,9 @@ if [ -z "$assets_only" ]; then
 
     # Patch README
     echo Patching README.md to refer to $release
-    sed s"!node-feature-discovery/v.*/!node-feature-discovery/$release/!" -i README.md
+    sed -e s"!\(node-feature-discovery/deployment/.*\)=v.*!\1=$release!" \
+        -e s"!^\[documentation\]:.*![documentation]: https://kubernetes-sigs.github.io/node-feature-discovery/$docs_version!" \
+        -i README.md
 
     # Patch deployment templates
     echo Patching kustomize templates to use $container_image
