@@ -38,7 +38,7 @@ is recommended to be done via
 1. Install the operator:
 
    ```bash
-   kubectl create -f https://operatorhub.io/install/stable/nfd-operator.yaml
+   kubectl create -f https://operatorhub.io/install/nfd-operator.yaml
    ```
 
 1. Create `NodeFeatureDiscovery` object (in `nfd` namespace here):
