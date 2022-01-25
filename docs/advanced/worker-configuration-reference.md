@@ -408,20 +408,25 @@ With the example config above NFD would publish labels like:
 
 List of rules to process in the custom feature source to create user-specific
 labels. Refer to the documentation of the
-[custom feature source](../get-started/features.html#custom) for details of
-the available rules and their configuration.
+[custom feature source](customization-guide.html#custom-feature-source) for
+details of the available rules and their configuration.
 
 Default: *empty*
 
 Example:
 
 ```yaml
-source:
+sources:
   custom:
-  - name: "my.custom.feature"
-    matchOn:
-    - loadedKMod: ["e1000e"]
-    - pciId:
-        class: ["0200"]
-        vendor: ["8086"]
+    - name: "my custom rule"
+      labels:
+        my-custom-feature: "true"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            e1000e: {op: Exists}
+        - feature: pci.device
+          matchExpressions:
+            class: {op: In, value: ["0200"]}
+            vendor: {op: In, value: ["8086"]}
 ```
