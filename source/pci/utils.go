@@ -19,25 +19,81 @@ package pci
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	extpci "gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvpci"
 	"k8s.io/klog/v2"
-
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 var mandatoryDevAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
-var optionalDevAttrs = []string{"sriov_totalvfs", "iommu_group/type"}
+var optionalDevAttrs = []string{"sriov_totalvfs", "iommu_group/type", "driver", "config", "numa_node", "resource"}
 
 // Read a single PCI device attribute
 // A PCI attribute in this context, maps to the corresponding sysfs file
 func readSinglePciAttribute(devPath string, attrName string) (string, error) {
-	data, err := ioutil.ReadFile(filepath.Join(devPath, attrName))
+
+	filePath := filepath.Join(devPath, attrName)
+
+	fileInfo, err := os.Lstat(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to lstat device attribute %s: %v", attrName, err)
+	}
+
+	if attrName == "driver" {
+		if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+			link, _ := filepath.EvalSymlinks(filePath)
+			return path.Base(link), nil
+		}
+	}
+
+	if attrName == "config" {
+		config := &extpci.ConfigSpace{
+			Path: filePath,
+		}
+		if cfg, err := config.Read(); err == nil {
+			if caps, err := cfg.GetPCICapabilities(); err == nil {
+				fmt.Println("caps.Standard:", caps.Standard)
+				return fmt.Sprintf("%v", caps.Standard), nil
+			}
+		}
+		return "", nil
+	}
+
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read device attribute %s: %v", attrName, err)
 	}
+
+	if attrName == "resource" {
+		resources := make(map[int]*extpci.MemoryResource)
+		for i, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+			values := strings.Split(line, " ")
+			if len(values) != 3 {
+				return "", fmt.Errorf("more than 3 entries in line '%d' of resource file", i)
+			}
+
+			start, _ := strconv.ParseUint(values[0], 0, 64)
+			end, _ := strconv.ParseUint(values[1], 0, 64)
+			flags, _ := strconv.ParseUint(values[2], 0, 64)
+
+			if (end - start) != 0 {
+				resources[i] = &extpci.MemoryResource{
+					uintptr(start),
+					uintptr(end),
+					flags,
+					fmt.Sprintf("%s/resource%d", devPath, i),
+				}
+			}
+		}
+		return fmt.Sprintf("%v", resources), nil
+	}
+
 	// Strip whitespace and '0x' prefix
 	attrVal := strings.TrimSpace(strings.TrimPrefix(string(data), "0x"))
 
