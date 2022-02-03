@@ -157,7 +157,7 @@ for example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
 
-**NOTE:** The [minimal](deployment-and-usage#minimal) image variant only
+**NOTE:** The [minimal](../get-started/deployment-and-usage#minimal) image variant only
 supports running statically linked binaries.
 
 ### Feature files
@@ -207,7 +207,7 @@ label creation, similar to the
 that the rules are specified in the worker configuration instead of a
 Kubernetes API object.
 
-See [worker configuration](deployment-and-usage.md#worker-configuration) for
+See [worker configuration](../get-started/deployment-and-usage.md#worker-configuration) for
 instructions how to set-up and manage the worker configuration.
 
 ### An example custom feature source configuration
