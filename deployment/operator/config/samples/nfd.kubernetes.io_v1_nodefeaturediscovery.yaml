@@ -11,7 +11,6 @@ spec:
   #resourceLabels:
   #  - "example.com/resource"
   operand:
-    namespace: node-feature-discovery-operator
     image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
     imagePullPolicy: Always
     servicePort: 12000

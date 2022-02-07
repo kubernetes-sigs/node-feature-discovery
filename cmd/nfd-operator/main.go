@@ -33,6 +33,7 @@ import (
 
 	nfdkubernetesiov1 "github.com/kubernetes-sigs/node-feature-discovery-operator/api/v1"
 	"github.com/kubernetes-sigs/node-feature-discovery-operator/controllers"
+	"github.com/kubernetes-sigs/node-feature-discovery-operator/pkg/utils"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -82,6 +83,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	watchNamespace, err := utils.GetWatchNamespace()
+	if err != nil {
+		klog.Error(err, "unable to get WatchNamespace, "+
+			"the manager will watch and manage resources in all namespaces")
+	}
+
 	// Create a new manager to manage the operator
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -90,6 +97,7 @@ func main() {
 		HealthProbeBindAddress: args.probeAddr,
 		LeaderElection:         args.enableLeaderElection,
 		LeaderElectionID:       "39f5e5c3.nodefeaturediscoveries.nfd.kubernetes.io",
+		Namespace:              watchNamespace,
 	})
 
 	if err != nil {
