@@ -58,11 +58,6 @@ type NodeFeatureDiscoverySpec struct {
 
 // OperandSpec describes configuration options for the operand
 type OperandSpec struct {
-	// Namespace defines the namespace to deploy nfd-master
-	// and nfd-worker pods
-	// +kubebuilder:validation:Pattern=[a-zA-Z0-9\.\-\/]+
-	Namespace string `json:"namespace,omitempty"`
-
 	// Image defines the image to pull for the
 	// NFD operand
 	// [defaults to k8s.gcr.io/nfd/node-feature-discovery]
