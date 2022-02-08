@@ -83,9 +83,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	watchNamespace, err := utils.GetWatchNamespace()
-	if err != nil {
-		klog.Error(err, "unable to get WatchNamespace, "+
+	watchNamespace, envSet := utils.GetWatchNamespace()
+	if !envSet {
+		klog.Info("unable to get WatchNamespace, " +
 			"the manager will watch and manage resources in all namespaces")
 	}
 
