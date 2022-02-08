@@ -24,7 +24,16 @@ import (
 // NodeFeatureDiscoverySpec defines the desired state of NodeFeatureDiscovery
 // +k8s:openapi-gen=true
 type NodeFeatureDiscoverySpec struct {
+	// +optional
 	Operand OperandSpec `json:"operand"`
+
+	// Deploy the NFD-Topology-Updater
+	// NFD-Topology-Updater is a daemon responsible for examining allocated
+	// resources on a worker node to account for resources available to be
+	// allocated to new pod on a per-zone basis
+	// https://kubernetes-sigs.github.io/node-feature-discovery/v0.10/get-started/introduction.html#nfd-topology-updater
+	// +optional
+	TopologyUpdater bool `json:"topologyUpdater"`
 
 	// Instance name. Used to separate annotation namespaces for
 	// multiple parallel deployments.
