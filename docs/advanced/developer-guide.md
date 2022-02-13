@@ -120,7 +120,7 @@ makefile overrides.
 | IMAGE_REGISTRY             | Container image registry to use                                   | k8s.gcr.io/nfd
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
 | IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty*
-| K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | kube-system
+| K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | node-feature-discovery
 | KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty*
 | E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty*
 | OPENSHIFT                  | Non-empty value enables OpenShift specific support (currently only effective in e2e tests) | *empty*
