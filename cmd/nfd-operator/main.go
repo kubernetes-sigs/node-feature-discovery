@@ -31,9 +31,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
-	nfdkubernetesiov1 "github.com/kubernetes-sigs/node-feature-discovery-operator/api/v1"
-	"github.com/kubernetes-sigs/node-feature-discovery-operator/controllers"
-	"github.com/kubernetes-sigs/node-feature-discovery-operator/pkg/utils"
+	nfdkubernetesiov1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	"sigs.k8s.io/node-feature-discovery-operator/controllers"
+	"sigs.k8s.io/node-feature-discovery-operator/pkg/utils"
 	// +kubebuilder:scaffold:imports
 )
 
