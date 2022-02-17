@@ -22,7 +22,6 @@ import (
 	"os"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +33,7 @@ import (
 	nfdkubernetesiov1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 	"sigs.k8s.io/node-feature-discovery-operator/controllers"
 	"sigs.k8s.io/node-feature-discovery-operator/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery-operator/pkg/version"
 	// +kubebuilder:scaffold:imports
 )
 
