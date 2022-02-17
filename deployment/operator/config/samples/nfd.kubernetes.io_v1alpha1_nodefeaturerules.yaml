@@ -1,0 +1,16 @@
+apiVersion: nfd.kubernetes.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-rule-object
+spec:
+  rules:
+    - name: "my sample rule"
+      labels:
+        "my-sample-feature": "true"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            dummy: {op: Exists}
+        - feature: kernel.config
+          matchExpressions:
+            X86: {op: In, value: ["y"]}
