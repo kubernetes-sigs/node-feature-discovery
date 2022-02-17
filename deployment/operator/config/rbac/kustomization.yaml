@@ -33,3 +33,25 @@ patchesJSON6902:
         - use
         resourceNames:
         - nfd-worker
+    - op: add
+      path: /rules/1
+      value:
+        apiGroups:
+        - nfd.k8s-sigs.io
+        resources:
+        - nodefeaturerules
+        verbs:
+        - get
+        - list
+        - watch
+    - op: add
+      path: /rules/2
+      value:
+        apiGroups:
+        - topology.node.k8s.io
+        resources:
+        - noderesourcetopologies
+        verbs:
+        - create
+        - get
+        - update
