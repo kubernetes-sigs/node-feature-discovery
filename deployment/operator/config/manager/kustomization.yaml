@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: k8s.gcr.io/nfd/node-feature-discovery-operator
-  newTag: v0.2.0
+  newTag: 0.4.0

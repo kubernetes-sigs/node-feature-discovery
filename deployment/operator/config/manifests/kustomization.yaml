@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# These resources constitute the fully configured set of manifests
+# used to generate the 'manifests/' directory in a bundle.
+resources:
+- bases/nfd-operator.clusterserviceversion.yaml
+- ../default
+- ../prometheus
+- ../samples
+- ../scorecard

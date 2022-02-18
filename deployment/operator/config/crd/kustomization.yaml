@@ -3,8 +3,8 @@
 # It should be run by config/default
 resources:
 - bases/nfd.kubernetes.io_nodefeaturediscoveries.yaml
-- bases/nfd.openshift.io_v1alpha1_nodefeaturerules.yaml
-- bases/node.k8s.io_v1alpha1_noderesoursetopologies.yaml
+- bases/nfd.kubernetes.io_v1alpha1_nodefeaturerules.yaml
+- bases/node.k8s.io_v1alpha1_noderesourcetopologies.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 commonAnnotations:
