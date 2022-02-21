@@ -207,8 +207,7 @@ label creation, similar to the
 that the rules are specified in the worker configuration instead of a
 Kubernetes API object.
 
-See [worker configuration](../get-started/deployment-and-usage.md#worker-configuration) for
-instructions how to set-up and manage the worker configuration.
+See [worker configuration](../get-started/deployment-and-usage.md#worker-configuration) for instructions how to set-up and manage the worker configuration.
 
 ### An example custom feature source configuration
 
