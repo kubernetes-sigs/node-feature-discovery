@@ -30,6 +30,7 @@ type NodenameRule struct {
 	nfdv1alpha1.MatchExpression
 }
 
+// Match validates the object against a registered FeatureSource
 func (r *NodenameRule) Match() (bool, error) {
 	nodeName, ok := source.GetFeatureSource("system").GetFeatures().Values[system.NameFeature].Elements["nodename"]
 	if !ok || nodeName == "" {
@@ -38,6 +39,7 @@ func (r *NodenameRule) Match() (bool, error) {
 	return r.MatchExpression.Match(true, nodeName)
 }
 
+// UnmarshalJSON unmarshals and validates the data provided
 func (r *NodenameRule) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &r.MatchExpression); err != nil {
 		return err

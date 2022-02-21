@@ -120,7 +120,7 @@ type nfdMaster struct {
 	kubeconfig   *restclient.Config
 }
 
-// Create new NfdMaster server instance.
+// NewNfdMaster creates a new NfdMaster server instance.
 func NewNfdMaster(args *Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: *args,
 		nodeName: os.Getenv("NODE_NAME"),

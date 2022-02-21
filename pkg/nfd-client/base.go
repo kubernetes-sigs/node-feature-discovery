@@ -64,7 +64,7 @@ func init() {
 // NodeName returns the name of the k8s node we're running on.
 func NodeName() string { return nodeName }
 
-// Create new NfdWorker instance.
+// NewNfdBaseClient creates a new NfdWorker instance.
 func NewNfdBaseClient(args *Args) (NfdBaseClient, error) {
 	nfd := NfdBaseClient{args: *args}
 
@@ -133,7 +133,7 @@ func (w *NfdBaseClient) Connect() error {
 	return nil
 }
 
-// disconnect closes the connection to NFD master
+// Disconnect closes the connection to NFD master
 func (w *NfdBaseClient) Disconnect() {
 	if w.clientConn != nil {
 		klog.Infof("closing connection to nfd-master ...")

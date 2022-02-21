@@ -28,6 +28,7 @@ type KconfigRule struct {
 	nfdv1alpha1.MatchExpressionSet
 }
 
+// Match compares the values of Kernel config provided and legacy config
 func (r *KconfigRule) Match() (bool, error) {
 	options := kernel.GetLegacyKconfig()
 	if options == nil {

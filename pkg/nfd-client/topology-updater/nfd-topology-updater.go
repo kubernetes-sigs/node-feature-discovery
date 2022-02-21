@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
-// Command line arguments
+// Args are the command line arguments
 type Args struct {
 	nfdclient.Args
 	NoPublish      bool
@@ -61,7 +61,7 @@ type nfdTopologyUpdater struct {
 	stop                chan struct{} // channel for signaling stop
 }
 
-// Create new NewTopologyUpdater instance.
+// NewTopologyUpdater creates a new nfdTopologyUpdater instance.
 func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy string) (NfdTopologyUpdater, error) {
 	base, err := nfdclient.NewNfdBaseClient(&args.Args)
 	if err != nil {
