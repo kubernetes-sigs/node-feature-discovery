@@ -51,7 +51,7 @@ func (h K8sHelpers) GetTopologyClient() (*topologyclientset.Clientset, error) {
 	return topologyClient, nil
 }
 
-// GetNode retrieves the node object from the clientset
+// GetNode retrieves one node object.
 func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Node, error) {
 	// Get the node object using node name
 	node, err := cli.CoreV1().Nodes().Get(context.TODO(), nodeName, meta_v1.GetOptions{})
@@ -62,12 +62,12 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 	return node, nil
 }
 
-// GetNode retrieves all the node objects from the clientset
+// GetNodes retrieves all the node objects.
 func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*api.NodeList, error) {
 	return cli.CoreV1().Nodes().List(context.TODO(), meta_v1.ListOptions{})
 }
 
-// UpdateNode sends updated node values to apiserver
+// UpdateNode sends updated node object to the apiserver
 func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	// Send the updated node to the apiserver.
 	_, err := c.CoreV1().Nodes().Update(context.TODO(), n, meta_v1.UpdateOptions{})

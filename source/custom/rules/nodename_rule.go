@@ -30,7 +30,7 @@ type NodenameRule struct {
 	nfdv1alpha1.MatchExpression
 }
 
-// Match validates the object against a registered FeatureSource
+// Match checks if node name matches the rule.
 func (r *NodenameRule) Match() (bool, error) {
 	nodeName, ok := source.GetFeatureSource("system").GetFeatures().Values[system.NameFeature].Elements["nodename"]
 	if !ok || nodeName == "" {

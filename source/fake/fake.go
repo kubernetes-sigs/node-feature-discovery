@@ -36,7 +36,7 @@ const AttributeFeature = "attribute"
 // InstanceFeature of this feature source
 const InstanceFeature = "instance"
 
-// Config is the configuration file options
+// Config contains the configuration parameters of this source.
 type Config struct {
 	Labels            map[string]string `json:"labels"`
 	FlagFeatures      []string          `json:"flagFeatures"`

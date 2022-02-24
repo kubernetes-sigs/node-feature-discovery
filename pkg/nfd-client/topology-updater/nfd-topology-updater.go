@@ -61,7 +61,7 @@ type nfdTopologyUpdater struct {
 	stop                chan struct{} // channel for signaling stop
 }
 
-// NewTopologyUpdater creates a new nfdTopologyUpdater instance.
+// NewTopologyUpdater creates a new NfdTopologyUpdater instance.
 func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy string) (NfdTopologyUpdater, error) {
 	base, err := nfdclient.NewNfdBaseClient(&args.Args)
 	if err != nil {
