@@ -27,11 +27,16 @@ import (
 // Name of this feature source
 const Name = "fake"
 
+// FlagFeature of this feature source
 const FlagFeature = "flag"
+
+// AttributeFeature of this feature source
 const AttributeFeature = "attribute"
+
+// InstanceFeature of this feature source
 const InstanceFeature = "instance"
 
-// Configuration file options
+// Config is the configuration file options
 type Config struct {
 	Labels            map[string]string `json:"labels"`
 	FlagFeatures      []string          `json:"flagFeatures"`

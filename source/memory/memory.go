@@ -34,7 +34,10 @@ import (
 // Name of this feature source
 const Name = "memory"
 
+// NvFeature of this feature source
 const NvFeature = "nv"
+
+// NumaFeature of this feature source
 const NumaFeature = "numa"
 
 // memorySource implements the FeatureSource and LabelSource interfaces.

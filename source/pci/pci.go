@@ -30,8 +30,10 @@ import (
 // Name of this feature source
 const Name = "pci"
 
+// DeviceFeature of this feature source
 const DeviceFeature = "device"
 
+// Config holds the device configuration
 type Config struct {
 	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
 	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
