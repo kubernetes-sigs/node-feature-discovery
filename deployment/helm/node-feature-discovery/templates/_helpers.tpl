@@ -52,13 +52,24 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-Create the name of the service account to use
+Create the name of the service account which the nfd master will use
 */}}
-{{- define "node-feature-discovery.serviceAccountName" -}}
+{{- define "node-feature-discovery.master.serviceAccountName" -}}
 {{- if .Values.master.serviceAccount.create -}}
     {{ default (include "node-feature-discovery.fullname" .) .Values.master.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.master.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the name of the service account which the nfd worker will use
+*/}}
+{{- define "node-feature-discovery.worker.serviceAccountName" -}}
+{{- if .Values.worker.serviceAccount.create -}}
+    {{ default (printf "%s-worker" (include "node-feature-discovery.fullname" .)) .Values.worker.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.worker.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 

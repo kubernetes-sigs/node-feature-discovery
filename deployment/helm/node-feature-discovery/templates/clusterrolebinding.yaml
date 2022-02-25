@@ -11,7 +11,7 @@ roleRef:
   name: {{ include "node-feature-discovery.fullname" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "node-feature-discovery.serviceAccountName" . }}
+  name: {{ include "node-feature-discovery.master.serviceAccountName" . }}
   namespace: {{ $.Release.Namespace }}
 {{- end }}
 
