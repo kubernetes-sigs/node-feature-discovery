@@ -65,6 +65,7 @@ func (c *TlsConfig) UpdateConfig(certFile, keyFile, caFile string) error {
 		ClientCAs:          caPool,
 		ClientAuth:         tls.RequireAndVerifyClientCert,
 		GetConfigForClient: c.GetConfig,
+		MinVersion:         tls.VersionTLS13,
 	}
 	return nil
 }

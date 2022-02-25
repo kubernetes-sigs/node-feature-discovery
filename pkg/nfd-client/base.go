@@ -118,6 +118,7 @@ func (w *NfdBaseClient) Connect() error {
 			Certificates: []tls.Certificate{cert},
 			RootCAs:      caPool,
 			ServerName:   w.args.ServerNameOverride,
+			MinVersion:   tls.VersionTLS13,
 		}
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	} else {
