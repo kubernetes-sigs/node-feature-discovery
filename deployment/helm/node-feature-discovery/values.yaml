@@ -326,6 +326,16 @@ worker:
     runAsNonRoot: true
     # runAsUser: 1000
 
+  serviceAccount:
+    # Specifies whether a service account should be created.
+    # We create this by default to make it easier for downstream users to apply PodSecurityPolicies.
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name:
+
   # Allow users to mount the hostPath /usr/src, useful for RHCOS on s390x
   # Does not work on systems without /usr/src AND a read-only /usr, such as Talos
   mountUsrSrc: false

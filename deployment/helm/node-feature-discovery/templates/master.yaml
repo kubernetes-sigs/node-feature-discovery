@@ -23,7 +23,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "node-feature-discovery.serviceAccountName" . }}
+      serviceAccountName: {{ include "node-feature-discovery.master.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.master.podSecurityContext | nindent 8 }}
       containers:
