@@ -45,7 +45,7 @@ func TestRule(t *testing.T) {
 	assert.Equal(t, r1.Labels, m.Labels, "empty matcher should have matched empty features")
 
 	_, err = r2.Execute(f)
-	assert.Error(t, err, "matching agains a missing domain should have returned an error")
+	assert.Error(t, err, "matching against a missing domain should have returned an error")
 
 	// Test empty domain
 	d := feature.NewDomainFeatures()
@@ -57,7 +57,7 @@ func TestRule(t *testing.T) {
 	assert.Empty(t, r1.Vars, "vars should be empty")
 
 	_, err = r2.Execute(f)
-	assert.Error(t, err, "matching agains a missing feature type should have returned an error")
+	assert.Error(t, err, "matching against a missing feature type should have returned an error")
 
 	// Test empty feature sets
 	d.Keys["kf-1"] = feature.NewKeyFeatures()

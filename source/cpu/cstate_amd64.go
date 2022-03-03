@@ -63,9 +63,9 @@ func detectCstate() (map[string]string, error) {
 	cstates, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
 		return cstate, fmt.Errorf("non-integer value of cstates: %w", err)
-	} else {
-		cstate["enabled"] = strconv.FormatBool(cstates > 0)
 	}
+
+	cstate["enabled"] = strconv.FormatBool(cstates > 0)
 
 	return cstate, nil
 }

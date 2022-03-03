@@ -46,6 +46,7 @@ type cpuidConfig struct {
 	AttributeWhitelist []string `json:"attributeWhitelist,omitempty"`
 }
 
+// Config holds configuration for the cpu source.
 type Config struct {
 	Cpuid cpuidConfig `json:"cpuid,omitempty"`
 }

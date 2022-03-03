@@ -29,11 +29,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Implements APIHelpers
+// K8sHelpers implements APIHelpers
 type K8sHelpers struct {
 	Kubeconfig *restclient.Config
 }
 
+// GetClient creates and returns a new clientset from given config
 func (h K8sHelpers) GetClient() (*k8sclient.Clientset, error) {
 	clientset, err := k8sclient.NewForConfig(h.Kubeconfig)
 	if err != nil {
@@ -50,6 +51,7 @@ func (h K8sHelpers) GetTopologyClient() (*topologyclientset.Clientset, error) {
 	return topologyClient, nil
 }
 
+// GetNode retrieves one node object.
 func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Node, error) {
 	// Get the node object using node name
 	node, err := cli.CoreV1().Nodes().Get(context.TODO(), nodeName, meta_v1.GetOptions{})
@@ -60,10 +62,12 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 	return node, nil
 }
 
+// GetNodes retrieves all the node objects.
 func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*api.NodeList, error) {
 	return cli.CoreV1().Nodes().List(context.TODO(), meta_v1.ListOptions{})
 }
 
+// UpdateNode sends updated node object to the apiserver
 func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
 	// Send the updated node to the apiserver.
 	_, err := c.CoreV1().Nodes().Update(context.TODO(), n, meta_v1.UpdateOptions{})
@@ -107,6 +111,7 @@ func (h K8sHelpers) GetPod(cli *k8sclient.Clientset, namespace string, podName s
 	return pod, nil
 }
 
+// GetKubeconfig returns the kubeconfig for the cluster
 func GetKubeconfig(path string) (*restclient.Config, error) {
 	if path == "" {
 		return restclient.InClusterConfig()

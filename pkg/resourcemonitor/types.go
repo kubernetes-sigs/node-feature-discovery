@@ -57,7 +57,7 @@ type ResourcesScanner interface {
 	Scan() ([]PodResources, error)
 }
 
-// ResourceAggregator aggregates resource information based on the received data from underlying hardware and podresource API
+// ResourcesAggregator aggregates resource information based on the received data from underlying hardware and podresource API
 type ResourcesAggregator interface {
 	Aggregate(podResData []PodResources) topologyv1alpha1.ZoneList
 }

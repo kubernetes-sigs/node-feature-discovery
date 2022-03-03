@@ -35,6 +35,7 @@ type PodResourcesScanner struct {
 	apihelper         apihelper.APIHelpers
 }
 
+// NewPodResourcesScanner creates a new ResourcesScanner instance
 func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, kubeApihelper apihelper.APIHelpers) (ResourcesScanner, error) {
 	resourcemonitorInstance := &PodResourcesScanner{
 		namespace:         namespace,

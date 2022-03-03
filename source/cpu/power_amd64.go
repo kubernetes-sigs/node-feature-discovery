@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	// CPUID EAX input values
+	// LEAF_PROCESSOR_FREQUENCY_INFORMATION is the cpuid leaf to get processor frequency information
 	LEAF_PROCESSOR_FREQUENCY_INFORMATION = 0x16
 )
 
