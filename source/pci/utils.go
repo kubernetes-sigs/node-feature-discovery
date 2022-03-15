@@ -29,7 +29,7 @@ import (
 )
 
 var mandatoryDevAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
-var optionalDevAttrs = []string{"sriov_totalvfs", "iommu_group/type"}
+var optionalDevAttrs = []string{"sriov_totalvfs", "iommu_group/type", "iommu/intel-iommu/version"}
 
 // Read a single PCI device attribute
 // A PCI attribute in this context, maps to the corresponding sysfs file
