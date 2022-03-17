@@ -58,18 +58,27 @@ func (in *FeatureMatcherTerm) DeepCopyInto(out *FeatureMatcherTerm) {
 	*out = *in
 	if in.MatchExpressions != nil {
 		in, out := &in.MatchExpressions, &out.MatchExpressions
-		*out = make(MatchExpressionSet, len(*in))
-		for key, val := range *in {
-			var outVal *MatchExpression
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(MatchExpression)
-				(*in).DeepCopyInto(*out)
+		*out = new(map[string]*MatchExpression)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make(map[string]*MatchExpression, len(*in))
+			for key, val := range *in {
+				var outVal *MatchExpression
+				if val == nil {
+					(*out)[key] = nil
+				} else {
+					in, out := &val, &outVal
+					*out = new(MatchExpression)
+					(*in).DeepCopyInto(*out)
+				}
+				(*out)[key] = outVal
 			}
-			(*out)[key] = outVal
 		}
+	}
+	if in.MatchName != nil {
+		in, out := &in.MatchName, &out.MatchName
+		*out = new(MatchExpression)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

@@ -40,3 +40,12 @@ spec:
           matchExpressions:
             "attr_1": {op: In, value: ["true"]}
 
+    - name: "e2e-template-test-2"
+      labelsTemplate: |
+        {{ range .fake.attribute }}e2e-template-test-2-{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_2": {op: IsFalse}
+          matchName: {op: In, value: ["attr_3"]}

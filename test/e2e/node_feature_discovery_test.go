@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"strings"
 	"time"
@@ -653,7 +654,7 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 
 			// Test NodeFeatureRule
 			//
-			Context("and nfd-worker and NodeFeatureRules objects deployed", func() {
+			Context("and nfd-worker and NodeFeatureRules objects deployed", Label("nodefeaturerule"), func() {
 				testTolerations := []corev1.Toleration{
 					{
 						Key:    "feature.node.kubernetes.io/fake-special-node",
@@ -714,8 +715,11 @@ core:
 					expectedLabels := map[string]k8sLabels{
 						"*": {
 							nfdv1alpha1.FeatureLabelNs + "/e2e-flag-test-1":      "true",
+							nfdv1alpha1.FeatureLabelNs + "/e2e-flag-test-2":      "true",
 							nfdv1alpha1.FeatureLabelNs + "/e2e-attribute-test-1": "true",
+							nfdv1alpha1.FeatureLabelNs + "/e2e-attribute-test-2": "true",
 							nfdv1alpha1.FeatureLabelNs + "/e2e-instance-test-1":  "true",
+							nfdv1alpha1.FeatureLabelNs + "/e2e-instance-test-2":  "true",
 						},
 					}
 
@@ -729,13 +733,17 @@ core:
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-2.yaml")).NotTo(HaveOccurred())
 
 					// Add features from NodeFeatureRule #2
-					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-matchany-test-1"] = "true"
-					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_1"] = "found"
-					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_2"] = "found"
-					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/dynamic-label"] = "true"
+					maps.Copy(expectedLabels["*"], k8sLabels{
+						nfdv1alpha1.FeatureLabelNs + "/e2e-matchany-test-1":            "true",
+						nfdv1alpha1.FeatureLabelNs + "/e2e-template-test-1-instance_1": "found",
+						nfdv1alpha1.FeatureLabelNs + "/e2e-template-test-1-instance_2": "found",
+						nfdv1alpha1.FeatureLabelNs + "/e2e-template-test-2-attr_2":     "false",
+						nfdv1alpha1.FeatureLabelNs + "/e2e-template-test-2-attr_3":     "10",
+						nfdv1alpha1.FeatureLabelNs + "/dynamic-label":                  "true",
+					})
 					expectedAnnotations := map[string]k8sAnnotations{
 						"*": {
-							"nfd.node.kubernetes.io/feature-labels": "dynamic-label,e2e-attribute-test-1,e2e-flag-test-1,e2e-instance-test-1,e2e-matchany-test-1,e2e-template-test-1-instance_1,e2e-template-test-1-instance_2"},
+							"nfd.node.kubernetes.io/feature-labels": "dynamic-label,e2e-attribute-test-1,e2e-attribute-test-2,e2e-flag-test-1,e2e-flag-test-2,e2e-instance-test-1,e2e-instance-test-2,e2e-matchany-test-1,e2e-template-test-1-instance_1,e2e-template-test-1-instance_2,e2e-template-test-2-attr_2,e2e-template-test-2-attr_3"},
 					}
 
 					By("Verifying node labels from NodeFeatureRules #1 and #2")

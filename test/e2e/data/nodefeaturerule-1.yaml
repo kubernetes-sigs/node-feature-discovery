@@ -17,6 +17,13 @@ spec:
           matchExpressions:
             "flag_1": {op: Exists}
 
+    - name: "e2e-flag-test-2"
+      labels:
+        e2e-flag-test-2: "true"
+      matchFeatures:
+        - feature: "fake.flag"
+          matchName: {op: In, value: ["flag_2"]}
+
     # Negative test not supposed to create a label
     - name: "e2e-flag-test-neg-1"
       labels:
@@ -25,6 +32,13 @@ spec:
         - feature: "fake.flag"
           matchExpressions:
             "flag_1": {op: DoesNotExist}
+
+    - name: "e2e-flag-test-neg-2"
+      labels:
+        e2e-flag-test-neg-2: "true"
+      matchFeatures:
+        - feature: "fake.flag"
+          matchName: {op: In, value: ["flag_x"]}
 
     #
     # Simple test rules for attribute features
@@ -40,6 +54,13 @@ spec:
             "attr_1": {op: IsTrue}
             "attr_2": {op: IsFalse}
 
+    - name: "e2e-attribute-test-2"
+      labels:
+        e2e-attribute-test-2: "true"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchName: {op: In, value: ["attr_2", "attr_x"]}
+
     # Negative test not supposed to create a label
     - name: "e2e-attribute-test-neg-1"
       labels:
@@ -50,8 +71,15 @@ spec:
             "attr_1": {op: IsTrue}
             "attr_2": {op: IsTrue}
 
+    - name: "e2e-attribute-test-neg-2"
+      labels:
+        e2e-attribute-test-neg-2: "true"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchName: {op: In, value: ["attr_x"]}
+
     #
-    # Simple test rules for instnace features
+    # Simple test rules for instance features
     #
     - name: "e2e-instance-test-1"
       labels:
@@ -65,6 +93,13 @@ spec:
             "attr_1": {op: In, value: ["true"]}
             "attr_3": {op: Gt, value: ["10"]}
 
+    - name: "e2e-instance-test-2"
+      labels:
+        e2e-instance-test-2: "true"
+      matchFeatures:
+        - feature: "fake.instance"
+          matchName: {op: In, value: ["attr_1", "attr_x"]}
+
     # Negative test not supposed to create a label
     - name: "e2e-instance-test-neg-1"
       labels:
@@ -74,3 +109,10 @@ spec:
           matchExpressions:
             "attr_1": {op: In, value: ["true"]}
             "attr_3": {op: Lt, value: ["10"]}
+
+    - name: "e2e-instance-test-neg-2"
+      labels:
+        e2e-instance-test-neg-2: "true"
+      matchFeatures:
+        - feature: "fake.instance"
+          matchName: {op: In, value: ["attr_x"]}
