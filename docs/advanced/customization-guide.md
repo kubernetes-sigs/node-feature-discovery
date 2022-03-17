@@ -420,10 +420,6 @@ element whose name matches the `<key>`. However, for *instance* features all
 MatchExpressions are evaluated against the attributes of each instance
 separately.
 
-A special case of an empty `matchExpressions` field matches everything, i.e.
-matches/returns all elements of the feature. This makes it possible to write
-[templates](#templating) that run over all discovered features.
-
 #### MatchAny
 
 The `.matchAny` field is a list of of [`matchFeatures`](#matchfeatures)
@@ -623,27 +619,6 @@ would be executed on matcher#1 as well as on matcher#2 and/or matcher#3
 (depending on whether both or only one of them match). All the labels from
 these separate expansions would be created, i.e. the end result would be a
 union of all the individual expansions.
-
-A special case of an empty `matchExpressions` field matches everything, i.e.
-matches/returns all elements of the feature. This makes it possible to write
-[templates](#templating) that run over all discovered features.
-
-Consider the following example:
-<!-- {% raw %} -->
-
-```yaml
-    labelsTemplate: |
-      {{ range .network.device }}net-{{ .name }}.speed-mbps={{ .speed }}
-      {{ end }}
-    matchFeatures:
-      - feature: network.device
-        matchExpressions: null
-```
-
-<!-- {% endraw %} -->
-This will create individual
-`feature.node.kubernetes.io/net-<if-name>.speed-mbpx=<speed-in-mbps>` label for
-each (physical) network device of the system.
 
 Rule templates use the Golang [text/template](https://pkg.go.dev/text/template)
 package and all its built-in functionality (e.g. pipelines and functions) can
