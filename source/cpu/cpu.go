@@ -38,6 +38,7 @@ const (
 	CstateFeature   = "cstate"
 	PstateFeature   = "pstate"
 	RdtFeature      = "rdt"
+	SeFeature       = "se"
 	SgxFeature      = "sgx"
 	SstFeature      = "sst"
 	TopologyFeature = "topology"
@@ -169,6 +170,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["sgx."+k] = v
 	}
 
+	// Secure Execution
+	for k, v := range features.Values[SeFeature].Elements {
+		labels["se."+k] = v
+	}
+
 	// SST
 	for k, v := range features.Values[SstFeature].Elements {
 		labels["power.sst_"+k] = v
@@ -212,6 +218,9 @@ func (s *cpuSource) Discover() error {
 
 	// Detect SGX features
 	s.features.Values[SgxFeature] = feature.NewValueFeatures(discoverSGX())
+
+	// Detect Secure Execution features
+	s.features.Values[SeFeature] = feature.NewValueFeatures(discoverSE())
 
 	// Detect SST features
 	s.features.Values[SstFeature] = feature.NewValueFeatures(discoverSST())
