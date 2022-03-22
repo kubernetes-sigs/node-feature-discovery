@@ -246,6 +246,11 @@ func (noderesourceData *nodeResources) updateAvailable(numaData map[int]map[v1.R
 			klog.Infof("unknown resource %q: %q", resName, resID)
 			continue
 		}
+		if _, ok := numaData[nodeID]; !ok {
+			klog.Infof("unknown node id: %q", nodeID)
+			continue
+		}
+
 		numaData[nodeID][ri.Name].available--
 	}
 }
