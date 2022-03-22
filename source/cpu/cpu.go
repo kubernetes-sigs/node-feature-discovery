@@ -22,6 +22,8 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"github.com/klauspost/cpuid/v2"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -32,6 +34,7 @@ const Name = "cpu"
 
 const (
 	CpuidFeature    = "cpuid"
+	Cpumodel        = "model"
 	CstateFeature   = "cstate"
 	PstateFeature   = "pstate"
 	RdtFeature      = "rdt"
@@ -141,6 +144,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		}
 	}
 
+	// CPUMODEL
+	for k, v := range features.Values[Cpumodel].Elements {
+		labels["model."+k] = v
+	}
+
 	// Cstate
 	for k, v := range features.Values[CstateFeature].Elements {
 		labels["cstate."+k] = v
@@ -181,6 +189,9 @@ func (s *cpuSource) Discover() error {
 	// Detect CPUID
 	s.features.Keys[CpuidFeature] = feature.NewKeyFeatures(getCpuidFlags()...)
 
+	// Detect CPU model
+	s.features.Values[Cpumodel] = feature.NewValueFeatures(getCPUModel())
+
 	// Detect cstate configuration
 	cstate, err := detectCstate()
 	if err != nil {
@@ -219,6 +230,15 @@ func (s *cpuSource) GetFeatures() *feature.DomainFeatures {
 		s.features = feature.NewDomainFeatures()
 	}
 	return s.features
+}
+
+func getCPUModel() map[string]string {
+	cpuModelInfo := make(map[string]string)
+	cpuModelInfo["vendor_id"] = cpuid.CPU.VendorID.String()
+	cpuModelInfo["family"] = strconv.Itoa(cpuid.CPU.Family)
+	cpuModelInfo["id"] = strconv.Itoa(cpuid.CPU.Model)
+
+	return cpuModelInfo
 }
 
 func discoverTopology() map[string]string {

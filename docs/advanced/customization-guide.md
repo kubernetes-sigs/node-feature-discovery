@@ -482,6 +482,10 @@ The following features are available for matching:
 |                  |              | **`<cpuid-flag>`** |  | CPUID flag is present
 | **`cpu.cstate`** | attribute    |          |            | Status of cstates in the intel_idle cpuidle driver
 |                  |              | **`enabled`** | bool  | 'true' if cstates are set, otherwise 'false'. Does not exist of intel_idle driver is not active.
+| **`cpu.model`**  | attribute    |          |            | CPU model related attributes
+|                  |              | **`family`** | string | CPU family
+|                  |              | **`vendor_id`** | string | CPU vendor ID
+|                  |              | **`id`** | string     | CPU model ID
 | **`cpu.pstate`** | attribute    |          |            | State of the Intel pstate driver. Does not exist if the driver is not enabled.
 |                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive'
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false'
