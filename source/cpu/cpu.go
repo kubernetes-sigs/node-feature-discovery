@@ -144,7 +144,7 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		}
 	}
 
-	// CPUMODEL
+	// CPU model
 	for k, v := range features.Values[Cpumodel].Elements {
 		labels["model."+k] = v
 	}
