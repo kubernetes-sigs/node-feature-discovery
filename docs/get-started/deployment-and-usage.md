@@ -116,7 +116,7 @@ scenarios under
 [`deployment/overlays`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays)
 
 - [`default`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default):
-  default deployment of nfd-worker as a daemonset, descibed above
+  default deployment of nfd-worker as a daemonset, described above
 - [`default-combined`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-combined)
   see [Master-worker pod](#master-worker-pod) below
 - [`default-job`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-job):
@@ -340,7 +340,7 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.serviceAccount.create`       | bool   | true    | Specifies whether the service account for topology updater should be created                                                                                               |
 | `topologyUpdater.serviceAccount.annotations`  | dict   | {}      | Annotations to add to the service account for topology updater                                                                                                             |
 | `topologyUpdater.serviceAccount.name`         | string |         | The name of the service account for topology updater to use. If not set and create is true, a name is generated using the fullname template and `-topology-updater` suffix |
-| `topologyUpdater.rbac`                        | dict   |         | RBAC [parameteres](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) for the topology updater                                                                 |
+| `topologyUpdater.rbac`                        | dict   |         | RBAC [parameters](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) for the topology updater                                                                 |
 | `topologyUpdater.rbac.create`                 | bool   | false   | Specifies whether the cluster role and binding for topology updater should be created                                                                                      |
 | `topologyUpdater.kubeletConfigPath`           | string | ""      | Specifies the kubelet config host path                                                                                                                                     |
 | `topologyUpdater.kubeletPodResourcesSockPath` | string | ""      | Specifies the kubelet sock path to read pod resources                                                                                                                      |

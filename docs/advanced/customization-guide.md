@@ -710,7 +710,7 @@ Consider the following configuration:
 The `feature.node.kubernetes.io/high-level-feature = true` label depends on thw
 two previous rules.
 
-Note that when referencing rules accross multiple
+Note that when referencing rules across multiple
 [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects attention must be
 paid to the ordering. `NodeFeatureRule` objects are processed in alphabetical
 order (based on their `.metadata.name`).
