@@ -15,6 +15,7 @@ nodeFeatureRule:
 master:
   instance:
   extraLabelNs: []
+  resourceLabels: []
   featureRulesController: null
 
   replicaCount: 1
