@@ -59,8 +59,8 @@ var (
 
 type e2eConfig struct {
 	DefaultFeatures *struct {
-		LabelWhitelist      lookupMap
-		AnnotationWhitelist lookupMap
+		LabelAllowlist      lookupMap
+		AnnotationAllowlist lookupMap
 		Nodes               map[string]nodeConfig
 	}
 }
@@ -624,8 +624,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 							if _, ok := nodeConf.ExpectedLabelKeys[k]; ok {
 								continue
 							}
-							// Ignore if the label key was not whitelisted
-							Expect(fConf.LabelWhitelist).NotTo(HaveKey(k))
+							// Ignore if the label key was not allowlisted
+							Expect(fConf.LabelAllowlist).NotTo(HaveKey(k))
 						}
 					}
 
@@ -645,8 +645,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 							if _, ok := nodeConf.ExpectedAnnotationKeys[k]; ok {
 								continue
 							}
-							// Ignore if the annotation was not whitelisted
-							Expect(fConf.AnnotationWhitelist).NotTo(HaveKey(k))
+							// Ignore if the annotation was not allowlisted
+							Expect(fConf.AnnotationAllowlist).NotTo(HaveKey(k))
 						}
 					}
 

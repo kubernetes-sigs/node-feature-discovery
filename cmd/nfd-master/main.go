@@ -76,7 +76,7 @@ func main() {
 
 func initFlags(flagset *flag.FlagSet) *master.Args {
 	args := &master.Args{
-		LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+		LabelAllowList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 	}
 
 	flagset.StringVar(&args.CaFile, "ca-file", "",
@@ -91,7 +91,7 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 		"Private key matching -cert-file")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
-	flagset.Var(&args.LabelWhiteList, "label-whitelist",
+	flagset.Var(&args.LabelAllowList, "label-allowlist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,

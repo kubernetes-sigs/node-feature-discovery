@@ -1,5 +1,5 @@
 #core:
-#  labelWhiteList:
+#  labelAllowList:
 #  noPublish: false
 #  sleepInterval: 60s
 #  featureSources: [all]
@@ -22,8 +22,8 @@
 #sources:
 #  cpu:
 #    cpuid:
-##     NOTE: whitelist has priority over blacklist
-#      attributeBlacklist:
+##     NOTE: allowlist has priority over denylist
+#      attributeDenylist:
 #        - "BMI1"
 #        - "BMI2"
 #        - "CLMUL"
@@ -47,7 +47,7 @@
 #        - "SSE4"
 #        - "SSE42"
 #        - "SSSE3"
-#      attributeWhitelist:
+#      attributeAllowlist:
 #  kernel:
 #    kconfigFile: "/path/to/kconfig"
 #    configOpts:
@@ -55,7 +55,7 @@
 #      - "X86"
 #      - "DMI"
 #  pci:
-#    deviceClassWhitelist:
+#    deviceClassAllowlist:
 #      - "0200"
 #      - "03"
 #      - "12"
@@ -66,7 +66,7 @@
 #      - "subsystem_vendor"
 #      - "subsystem_device"
 #  usb:
-#    deviceClassWhitelist:
+#    deviceClassAllowlist:
 #      - "0e"
 #      - "ef"
 #      - "fe"

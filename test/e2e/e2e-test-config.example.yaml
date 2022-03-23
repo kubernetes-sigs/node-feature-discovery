@@ -1,5 +1,5 @@
 defaultFeatures:
-  labelWhitelist:
+  labelAllowlist:
     - "feature.node.kubernetes.io/cpu-cpuid.ADX"
     - "feature.node.kubernetes.io/cpu-cpuid.AESNI"
     - "feature.node.kubernetes.io/cpu-cpuid.AVX"
@@ -55,7 +55,7 @@ defaultFeatures:
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID"
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID.major"
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID.minor"
-  annotationWhitelist:
+  annotationAllowlist:
     - "nfd.node.kubernetes.io/master.version"
     - "nfd.node.kubernetes.io/worker.version"
     - "nfd.node.kubernetes.io/feature-labels"

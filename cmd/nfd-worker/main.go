@@ -84,9 +84,9 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 			args.Overrides.FeatureSources = overrides.FeatureSources
 		case "label-sources":
 			args.Overrides.LabelSources = overrides.LabelSources
-		case "label-whitelist":
-			klog.Warningf("-label-whitelist is deprecated, use 'core.labelWhiteList' option in the config file, instead")
-			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
+		case "label-allowlist":
+			klog.Warningf("-label-allowlist is deprecated, use 'core.labelAllowList' option in the config file, instead")
+			args.Overrides.LabelAllowList = overrides.LabelAllowList
 		case "sleep-interval":
 			klog.Warningf("-sleep-interval is deprecated, use 'core.sleepInterval' option in the config file, instead")
 			args.Overrides.SleepInterval = overrides.SleepInterval
@@ -124,7 +124,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
-		LabelWhiteList: &utils.RegexpVal{},
+		LabelAllowList: &utils.RegexpVal{},
 		FeatureSources: &utils.StringSliceVal{},
 		LabelSources:   &utils.StringSliceVal{},
 	}
@@ -136,7 +136,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.Var(overrides.LabelSources, "label-sources",
 		"Comma separated list of label sources. Special value 'all' enables all sources. "+
 			"Prefix the source name with '-' to disable it.")
-	flagset.Var(overrides.LabelWhiteList, "label-whitelist",
+	flagset.Var(overrides.LabelAllowList, "label-allowlist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'. "+
 			"DEPRECATED: This parameter should be set via the config file.")

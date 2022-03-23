@@ -36,7 +36,7 @@ feature.node.kubernetes.io/<feature> = <value>
 *Note: Consecutive runs of nfd-worker will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
-such as restricting discovered features with the -label-whitelist option.*
+such as restricting discovered features with the -label-allowlist option.*
 
 ### CPU
 
@@ -66,10 +66,10 @@ configuration options for details.
 | AVX       | Advanced Vector Extensions (AVX)
 | AVX2      | Advanced Vector Extensions 2 (AVX2)
 
-By default, the following CPUID flags have been blacklisted: BMI1, BMI2, CLMUL,
-CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED,
-RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42 and SSSE3. See
-[`sources.cpu`](../advanced/worker-configuration-reference#sourcescpu)
+By default, the following CPUID flags have been added to the denylist:
+BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX,
+POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42 and SSSE3.
+See[`sources.cpu`](../advanced/worker-configuration-reference#sourcescpu)
 configuration options to change the behavior.
 
 See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].

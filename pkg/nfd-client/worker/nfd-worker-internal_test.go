@@ -43,20 +43,20 @@ func TestGetLabelsWithMockSources(t *testing.T) {
 	Convey("When I discover features from fake source and update the node using fake client", t, func() {
 		mockLabelSource := new(source.MockLabelSource)
 		allFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test", "test.ns/foo", "/no-ns-label", "invalid/test/feature"}
-		whiteListFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test"}
+		allowListFeatureNames := []string{"testfeature1", "testfeature2", "test.ns/test"}
 
 		fakeFeatures, _ := makeFakeFeatures(allFeatureNames)
-		_, fakeFeatureLabels := makeFakeFeatures(whiteListFeatureNames)
+		_, fakeFeatureLabels := makeFakeFeatures(allowListFeatureNames)
 
 		fakeLabelSource := source.LabelSource(mockLabelSource)
 
-		labelWhiteList := utils.RegexpVal{Regexp: *regexp.MustCompile("^test")}
+		labelAllowList := utils.RegexpVal{Regexp: *regexp.MustCompile("^test")}
 
 		Convey("When I successfully get the labels from the mock source", func() {
 			mockLabelSource.On("Name").Return(fakeLabelSourceName)
 			mockLabelSource.On("GetLabels").Return(fakeFeatures, nil)
 
-			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
+			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelAllowList.Regexp)
 			Convey("Proper label is returned", func() {
 				So(returnedLabels, ShouldResemble, fakeFeatureLabels)
 			})
@@ -69,7 +69,7 @@ func TestGetLabelsWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockLabelSource.On("GetLabels").Return(nil, expectedError)
 
-			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
+			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelAllowList.Regexp)
 			Convey("No label is returned", func() {
 				So(returnedLabels, ShouldBeNil)
 			})
@@ -100,7 +100,7 @@ func TestConfigParse(t *testing.T) {
 		w, err := NewNfdWorker(&Args{})
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
-		overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
+		overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeDenylist": ["foo","bar"]}}}}`
 
 		Convey("and no core cmdline flags have been specified", func() {
 			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
@@ -125,7 +125,7 @@ func TestConfigParse(t *testing.T) {
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
 
 				c := source.GetConfigurableSource("cpu").GetConfig().(*cpu.Config)
-				So(c.Cpuid.AttributeBlacklist, ShouldResemble, []string{"foo", "bar"})
+				So(c.Cpuid.AttributeDenylist, ShouldResemble, []string{"foo", "bar"})
 			})
 		})
 		// Create a temporary config file
@@ -137,14 +137,14 @@ core:
   noPublish: false
   featureSources: ["memory", "storage"]
   sources: ["system"]
-  labelWhiteList: "foo"
+  labelAllowList: "foo"
   sleepInterval: "10s"
 sources:
   kernel:
     configOpts:
       - "DMI"
   pci:
-    deviceClassWhitelist:
+    deviceClassAllowlist:
       - "ff"`)
 		f.Close()
 		So(err, ShouldBeNil)
@@ -158,7 +158,7 @@ sources:
 				So(worker.config.Core.NoPublish, ShouldBeFalse)
 				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"}) // from cmdline
-				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
+				So(worker.config.Core.LabelAllowList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 10*time.Second)
 
 				// Verify feature source config
@@ -166,14 +166,14 @@ sources:
 				c := source.GetConfigurableSource("kernel").GetConfig()
 				So(c.(*kernel.Config).ConfigOpts, ShouldResemble, []string{"DMI"})
 				c = source.GetConfigurableSource("pci").GetConfig()
-				So(c.(*pci.Config).DeviceClassWhitelist, ShouldResemble, []string{"ff"})
+				So(c.(*pci.Config).DeviceClassAllowlist, ShouldResemble, []string{"ff"})
 			})
 		})
 
 		Convey("and a proper config file and overrides are given", func() {
 			sleepIntervalArg := 15 * time.Second
 			worker.args = Args{Overrides: ConfigOverrideArgs{SleepInterval: &sleepIntervalArg}}
-			overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
+			overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassAllowlist": ["03"]}}}`
 			So(worker.configure(f.Name(), overrides), ShouldBeNil)
 
 			Convey("overrides should take precedence over the config file", func() {
@@ -181,7 +181,7 @@ sources:
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
 				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"}) // from overrides
-				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
+				So(worker.config.Core.LabelAllowList.String(), ShouldEqual, "foo")
 				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 15*time.Second) // from cmdline
 
 				// Verify feature source config
@@ -189,7 +189,7 @@ sources:
 				c := source.GetConfigurableSource("kernel").GetConfig()
 				So(c.(*kernel.Config).ConfigOpts, ShouldResemble, []string{"DMI"})
 				c = source.GetConfigurableSource("pci").GetConfig()
-				So(c.(*pci.Config).DeviceClassWhitelist, ShouldResemble, []string{"03"})
+				So(c.(*pci.Config).DeviceClassAllowlist, ShouldResemble, []string{"03"})
 			})
 		})
 	})
@@ -220,7 +220,7 @@ func TestDynamicConfig(t *testing.T) {
 		}
 		writeConfig(`
 core:
-  labelWhiteList: "fake"
+  labelAllowList: "fake"
 `)
 
 		noPublish := true
@@ -239,21 +239,21 @@ core:
 			defer w.Stop()
 
 			// Check initial config
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+			So(func() interface{} { return worker.config.Core.LabelAllowList.String() },
 				withTimeout, 2*time.Second, ShouldEqual, "fake")
 
 			// Update config and verify the effect
 			writeConfig(`
 core:
-  labelWhiteList: "foo"
+  labelAllowList: "foo"
 `)
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+			So(func() interface{} { return worker.config.Core.LabelAllowList.String() },
 				withTimeout, 2*time.Second, ShouldEqual, "foo")
 
 			// Removing config file should get back our defaults
 			err = os.RemoveAll(tmpDir)
 			So(err, ShouldBeNil)
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+			So(func() interface{} { return worker.config.Core.LabelAllowList.String() },
 				withTimeout, 2*time.Second, ShouldEqual, "")
 
 			// Re-creating config dir and file should change the config
@@ -261,9 +261,9 @@ core:
 			So(err, ShouldBeNil)
 			writeConfig(`
 core:
-  labelWhiteList: "bar"
+  labelAllowList: "bar"
 `)
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+			So(func() interface{} { return worker.config.Core.LabelAllowList.String() },
 				withTimeout, 2*time.Second, ShouldEqual, "bar")
 		})
 	})
@@ -315,10 +315,10 @@ func TestNewNfdWorker(t *testing.T) {
 			})
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
-			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
+			Convey("all sources should be enabled and the allowlist regexp should be empty", func() {
 				So(len(worker.featureSources), ShouldEqual, len(source.GetAllFeatureSources())-1)
 				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-2)
-				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
+				So(worker.config.Core.LabelAllowList, ShouldResemble, emptyRegexp)
 			})
 		})
 
@@ -337,12 +337,12 @@ func TestNewNfdWorker(t *testing.T) {
 				So(worker.featureSources[0].Name(), ShouldEqual, "cpu")
 				So(len(worker.labelSources), ShouldEqual, 1)
 				So(worker.labelSources[0].Name(), ShouldEqual, "fake")
-				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
+				So(worker.config.Core.LabelAllowList, ShouldResemble, emptyRegexp)
 			})
 		})
 
-		Convey("with valid LabelWhiteListStr arg specified", func() {
-			args := &Args{Overrides: ConfigOverrideArgs{LabelWhiteList: &utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}}}
+		Convey("with valid LabelAllowListStr arg specified", func() {
+			args := &Args{Overrides: ConfigOverrideArgs{LabelAllowList: &utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}}}
 			w, err := NewNfdWorker(args)
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -350,8 +350,8 @@ func TestNewNfdWorker(t *testing.T) {
 			worker := w.(*nfdWorker)
 			So(worker.configure("", ""), ShouldBeNil)
 			expectRegexp := utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}
-			Convey("proper labelWhiteList regexp should be produced", func() {
-				So(worker.config.Core.LabelWhiteList, ShouldResemble, expectRegexp)
+			Convey("proper labelAllowList regexp should be produced", func() {
+				So(worker.config.Core.LabelAllowList, ShouldResemble, expectRegexp)
 			})
 		})
 	})
@@ -374,7 +374,7 @@ func TestCreateFeatureLabels(t *testing.T) {
 				So(labels, ShouldContainKey, "fake-fakefeature3")
 			})
 		})
-		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {
+		Convey("When fake feature source is configured with a allowlist that doesn't match", func() {
 			labels := createFeatureLabels(sources, *regexp.MustCompile(".*rdt.*"))
 
 			Convey("fake labels are not returned", func() {

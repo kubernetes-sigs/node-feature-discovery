@@ -35,14 +35,14 @@ const DeviceFeature = "device"
 
 // Config holds the configuration parameters of this source.
 type Config struct {
-	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
+	DeviceClassAllowlist []string `json:"deviceClassAllowlist,omitempty"`
 	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
 }
 
 // newDefaultConfig returns a new config with pre-populated defaults
 func newDefaultConfig() *Config {
 	return &Config{
-		DeviceClassWhitelist: []string{"03", "0b40", "12"},
+		DeviceClassAllowlist: []string{"03", "0b40", "12"},
 		DeviceLabelFields:    []string{"class", "vendor"},
 	}
 }
@@ -117,8 +117,8 @@ func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
 	for _, dev := range features.Instances[DeviceFeature].Elements {
 		attrs := dev.Attributes
 		class := attrs["class"]
-		for _, white := range s.config.DeviceClassWhitelist {
-			if strings.HasPrefix(string(class), strings.ToLower(white)) {
+		for _, allow := range s.config.DeviceClassAllowlist {
+			if strings.HasPrefix(string(class), strings.ToLower(allow)) {
 				devLabel := ""
 				for i, attr := range deviceLabelFields {
 					devLabel += attrs[attr]

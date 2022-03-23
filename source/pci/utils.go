@@ -38,7 +38,7 @@ func readSinglePciAttribute(devPath string, attrName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to read device attribute %s: %v", attrName, err)
 	}
-	// Strip whitespace and '0x' prefix
+	// Strip allowspace and '0x' prefix
 	attrVal := strings.TrimSpace(strings.TrimPrefix(string(data), "0x"))
 
 	if attrName == "class" && len(attrVal) > 4 {

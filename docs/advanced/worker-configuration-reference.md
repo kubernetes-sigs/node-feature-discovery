@@ -113,16 +113,16 @@ core:
 Note: `core.sources` takes precedence over the `core.labelSources`
 configuration file option.
 
-### core.labelWhiteList
+### core.labelAllowList
 
-`core.labelWhiteList` specifies a regular expression for filtering feature
+`core.labelAllowList` specifies a regular expression for filtering feature
 labels based on the label name. Non-matching labels are not published.
 
 Note: The regular expression is only matches against the "basename" part of the
 label, i.e. to the part of the name after '/'. The label prefix (or namespace)
 is omitted.
 
-Note: Overridden by the deprecated `-label-whitelist` command line flag (if
+Note: Overridden by the deprecated `-label-allowlist` command line flag (if
 specified).
 
 Default: `null`
@@ -131,7 +131,7 @@ Example:
 
 ```yaml
 core:
-  labelWhiteList: '^cpu-cpuid'
+  labelAllowList: '^cpu-cpuid'
 ```
 
 ### core.noPublish
@@ -262,11 +262,11 @@ The `sources` section contains feature source specific configuration parameters.
 
 #### sources.cpu.cpuid
 
-##### sources.cpu.cpuid.attributeBlacklist
+##### sources.cpu.cpuid.attributeDenylist
 
 Prevent publishing cpuid features listed in this option.
 
-Note: overridden by `sources.cpu.cpuid.attributeWhitelist` (if specified)
+Note: overridden by `sources.cpu.cpuid.attributeAllowlist` (if specified)
 
 Default: `[BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT,
 NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3, SSE4.1,
@@ -278,14 +278,14 @@ Example:
 sources:
   cpu:
     cpuid:
-      attributeBlacklist: [MMX, MMXEXT]
+      attributeDenylist: [MMX, MMXEXT]
 ```
 
-##### sources.cpu.cpuid.attributeWhitelist
+##### sources.cpu.cpuid.attributeAllowlist
 
 Only publish the cpuid features listed in this option.
 
-Note: takes precedence over `sources.cpu.cpuid.attributeBlacklist`
+Note: takes precedence over `sources.cpu.cpuid.attributeDenylist`
 
 Default: *empty*
 
@@ -295,7 +295,7 @@ Example:
 sources:
   cpu:
     cpuid:
-      attributeWhitelist: [AVX512BW, AVX512CD, AVX512DQ, AVX512F, AVX512VL]
+      attributeAllowlist: [AVX512BW, AVX512CD, AVX512DQ, AVX512F, AVX512VL]
 ```
 
 ### sources.kernel
@@ -331,7 +331,7 @@ sources:
 
 ### soures.pci
 
-#### soures.pci.deviceClassWhitelist
+#### soures.pci.deviceClassAllowlist
 
 List of PCI [device class](https://pci-ids.ucw.cz/read/PD) IDs for which to
 publish a label. Can be specified as a main class only (e.g. `03`) or full
@@ -346,7 +346,7 @@ Example:
 ```yaml
 sources:
   pci:
-    deviceClassWhitelist: ["0200", "03"]
+    deviceClassAllowlist: ["0200", "03"]
 ```
 
 #### soures.pci.deviceLabelFields
@@ -370,7 +370,7 @@ With the example config above NFD would publish labels like:
 
 ### sources.usb
 
-#### soures.usb.deviceClassWhitelist
+#### soures.usb.deviceClassAllowlist
 
 List of USB [device class](https://www.usb.org/defined-class-codes) IDs for
 which to publish a feature label. The format of the labels can be further
@@ -383,7 +383,7 @@ Example:
 ```yaml
 sources:
   usb:
-    deviceClassWhitelist: ["ef", "ff"]
+    deviceClassAllowlist: ["ef", "ff"]
 ```
 
 #### soures.usb.deviceLabelFields

@@ -56,7 +56,7 @@ func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
 	return &nfdMaster{
 		nodeName:     mockNodeName,
 		annotationNs: AnnotationNsBase,
-		args:         Args{LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")}},
+		args:         Args{LabelAllowList: utils.RegexpVal{Regexp: *regexp.MustCompile("")}},
 		apihelper:    apihelper,
 	}
 }
@@ -336,7 +336,7 @@ func TestSetLabels(t *testing.T) {
 			})
 		})
 
-		Convey("When -label-whitelist is specified", func() {
+		Convey("When -label-allowlist is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", wvAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", flAnnotation, "feature-2"),
@@ -344,7 +344,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
 
-			mockMaster.args.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
+			mockMaster.args.LabelAllowList.Regexp = *regexp.MustCompile("^f.*2$")
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)

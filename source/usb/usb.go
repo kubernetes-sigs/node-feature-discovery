@@ -33,17 +33,17 @@ const Name = "usb"
 const DeviceFeature = "device"
 
 type Config struct {
-	DeviceClassWhitelist []string `json:"deviceClassWhitelist,omitempty"`
+	DeviceClassAllowlist []string `json:"deviceClassAllowlist,omitempty"`
 	DeviceLabelFields    []string `json:"deviceLabelFields,omitempty"`
 }
 
 // newDefaultConfig returns a new config with pre-populated defaults
 func newDefaultConfig() *Config {
 	return &Config{
-		// Whitelist specific USB classes: https://www.usb.org/defined-class-codes
+		// Allowlist specific USB classes: https://www.usb.org/defined-class-codes
 		// By default these include classes where different accelerators are typically mapped:
 		// Video (0e), Miscellaneous (ef), Application Specific (fe), and Vendor Specific (ff).
-		DeviceClassWhitelist: []string{"0e", "ef", "fe", "ff"},
+		DeviceClassAllowlist: []string{"0e", "ef", "fe", "ff"},
 		DeviceLabelFields:    defaultDeviceLabelFields(),
 	}
 }
@@ -120,8 +120,8 @@ func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
 	for _, dev := range features.Instances[DeviceFeature].Elements {
 		attrs := dev.Attributes
 		class := attrs["class"]
-		for _, white := range s.config.DeviceClassWhitelist {
-			if strings.HasPrefix(string(class), strings.ToLower(white)) {
+		for _, allow := range s.config.DeviceClassAllowlist {
+			if strings.HasPrefix(string(class), strings.ToLower(allow)) {
 				devLabel := ""
 				for i, attr := range deviceLabelFields {
 					devLabel += attrs[attr]

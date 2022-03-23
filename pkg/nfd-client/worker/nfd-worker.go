@@ -62,7 +62,7 @@ type NFDConfig struct {
 
 type coreConfig struct {
 	Klog           map[string]string
-	LabelWhiteList utils.RegexpVal
+	LabelAllowList utils.RegexpVal
 	NoPublish      bool
 	FeatureSources []string
 	Sources        *[]string
@@ -92,7 +92,7 @@ type ConfigOverrideArgs struct {
 	NoPublish *bool
 
 	// Deprecated
-	LabelWhiteList *utils.RegexpVal
+	LabelAllowList *utils.RegexpVal
 	SleepInterval  *time.Duration
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
@@ -140,7 +140,7 @@ func NewNfdWorker(args *Args) (nfdclient.NfdClient, error) {
 func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
 		Core: coreConfig{
-			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+			LabelAllowList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 			SleepInterval:  duration{60 * time.Second},
 			FeatureSources: []string{"all"},
 			LabelSources:   []string{"all"},
@@ -190,7 +190,7 @@ func (w *nfdWorker) Run() error {
 			}
 
 			// Get the set of feature labels.
-			labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+			labels := createFeatureLabels(w.labelSources, w.config.Core.LabelAllowList.Regexp)
 
 			// Update the node with the feature labels.
 			if w.client != nil {
@@ -429,8 +429,8 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		return fmt.Errorf("failed to parse -options: %s", err)
 	}
 
-	if w.args.Overrides.LabelWhiteList != nil {
-		c.Core.LabelWhiteList = *w.args.Overrides.LabelWhiteList
+	if w.args.Overrides.LabelAllowList != nil {
+		c.Core.LabelAllowList = *w.args.Overrides.LabelAllowList
 	}
 	if w.args.Overrides.NoPublish != nil {
 		c.Core.NoPublish = *w.args.Overrides.NoPublish
@@ -464,14 +464,14 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
-// sources and the whitelist argument.
-func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels) {
+// sources and the allowlist argument.
+func createFeatureLabels(sources []source.LabelSource, labelAllowList regexp.Regexp) (labels Labels) {
 	labels = Labels{}
 
 	// Get labels from all enabled label sources
 	klog.Info("starting feature discovery...")
 	for _, source := range sources {
-		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
+		labelsFromSource, err := getFeatureLabels(source, labelAllowList)
 		if err != nil {
 			klog.Errorf("discovery failed for source %q: %v", source.Name(), err)
 			continue
@@ -488,7 +488,7 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
+func getFeatureLabels(source source.LabelSource, labelAllowList regexp.Regexp) (labels Labels, err error) {
 	labels = Labels{}
 	features, err := source.GetLabels()
 	if err != nil {
@@ -511,12 +511,12 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 
 		label := prefix + split[0]
 		nameForValidation := "ns/" + label
-		nameForWhiteListing := label
+		nameForAllowListing := label
 
 		if len(split) == 2 {
 			label = k
 			nameForValidation = label
-			nameForWhiteListing = split[1]
+			nameForAllowListing = split[1]
 		}
 
 		// Validate label name.
@@ -534,9 +534,9 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 			continue
 		}
 
-		// Skip if label doesn't match labelWhiteList
-		if !labelWhiteList.MatchString(nameForWhiteListing) {
-			klog.Infof("%q does not match the whitelist (%s) and will not be published.", nameForWhiteListing, labelWhiteList.String())
+		// Skip if label doesn't match labelAllowList
+		if !labelAllowList.MatchString(nameForAllowListing) {
+			klog.Infof("%q does not match the allowlist (%s) and will not be published.", nameForAllowListing, labelAllowList.String())
 			continue
 		}
 

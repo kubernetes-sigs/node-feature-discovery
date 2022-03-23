@@ -252,7 +252,7 @@ func (h *templateHelper) expandMap(data interface{}) (map[string]string, error) 
 	// Split out individual key-value pairs
 	out := make(map[string]string)
 	for _, item := range strings.Split(expanded, "\n") {
-		// Remove leading/trailing whitespace and skip empty lines
+		// Remove leading/trailing allowspace and skip empty lines
 		if trimmed := strings.TrimSpace(item); trimmed != "" {
 			split := strings.SplitN(trimmed, "=", 2)
 			if len(split) == 1 {

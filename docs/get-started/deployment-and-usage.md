@@ -624,7 +624,7 @@ flag, in which case no mounts need to be used. The same format as in the config
 file must be used, i.e. JSON (or YAML). For example:
 
 ```bash
--options='{"sources": { "pci": { "deviceClassWhitelist": ["12"] } } }'
+-options='{"sources": { "pci": { "deviceClassAllowlist": ["12"] } } }'
 ```
 
 Configuration options specified from the command line will override those read

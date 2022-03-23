@@ -55,7 +55,7 @@ Default: *empty*
 Example:
 
 ```bash
-nfd-worker -options='{"sources":{"cpu":{"cpuid":{"attributeWhitelist":["AVX","AVX2"]}}}}'
+nfd-worker -options='{"sources":{"cpu":{"cpuid":{"attributeAllowlist":["AVX","AVX2"]}}}}'
 ```
 
 ### -server
@@ -196,16 +196,16 @@ Example:
 nfd-worker -no-publish
 ```
 
-### -label-whitelist
+### -label-allowlist
 
-The `-label-whitelist` specifies a regular expression for filtering feature
+The `-label-allowlist` specifies a regular expression for filtering feature
 labels based on their name. Each label must match against the given reqular
 expression in order to be published.
 
 Note: The regular expression is only matches against the "basename" part of the
 label, i.e. to the part of the name after '/'. The label namespace is omitted.
 
-Note: This flag takes precedence over the `core.labelWhiteList` configuration
+Note: This flag takes precedence over the `core.labelAllowList` configuration
 file option.
 
 Default: *empty*
@@ -213,10 +213,10 @@ Default: *empty*
 Example:
 
 ```bash
-nfd-worker -label-whitelist='.*cpuid\.'
+nfd-worker -label-allowlist='.*cpuid\.'
 ```
 
-**DEPRECATED**: you should use the `core.labelWhiteList` option in the
+**DEPRECATED**: you should use the `core.labelAllowList` option in the
 configuration file, instead.
 
 ### -oneshot

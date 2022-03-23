@@ -92,7 +92,7 @@ type Args struct {
 	Instance               string
 	KeyFile                string
 	Kubeconfig             string
-	LabelWhiteList         utils.RegexpVal
+	LabelAllowList         utils.RegexpVal
 	FeatureRulesController bool
 	NoPublish              bool
 	Port                   int
@@ -347,11 +347,11 @@ func (m *nfdMaster) updateMasterNode() error {
 	return nil
 }
 
-// Filter labels by namespace and name whitelist, and, turn selected labels
+// Filter labels by namespace and name allowlist, and, turn selected labels
 // into extended resources. This function also handles proper namespacing of
 // labels and ERs, i.e. adds the possibly missing default namespace for labels
 // arriving through the gRPC API.
-func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelWhiteList regexp.Regexp, extendedResourceNames map[string]struct{}) (Labels, ExtendedResources) {
+func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelAllowList regexp.Regexp, extendedResourceNames map[string]struct{}) (Labels, ExtendedResources) {
 	outLabels := Labels{}
 
 	for label, value := range labels {
@@ -360,7 +360,7 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 
 		ns, name := splitNs(label)
 
-		// Check label namespace, filter out if ns is not whitelisted
+		// Check label namespace, filter out if ns is not allowlisted
 		if ns != FeatureLabelNs && ns != ProfileLabelNs &&
 			!strings.HasSuffix(ns, FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, ProfileLabelSubNsSuffix) {
 			if _, ok := extraLabelNs[ns]; !ok {
@@ -369,9 +369,9 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 			}
 		}
 
-		// Skip if label doesn't match labelWhiteList
-		if !labelWhiteList.MatchString(name) {
-			klog.Errorf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, labelWhiteList.String())
+		// Skip if label doesn't match labelAllowList
+		if !labelAllowList.MatchString(name) {
+			klog.Errorf("%s (%s) does not match the allowlist (%s) and will not be published.", name, label, labelAllowList.String())
 			continue
 		}
 		outLabels[label] = value
@@ -433,7 +433,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		rawLabels[k] = v
 	}
 
-	labels, extendedResources := filterFeatureLabels(rawLabels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
+	labels, extendedResources := filterFeatureLabels(rawLabels, m.args.ExtraLabelNs, m.args.LabelAllowList.Regexp, m.args.ResourceLabels)
 
 	if !m.args.NoPublish {
 		// Advertise NFD worker version as an annotation

@@ -165,9 +165,9 @@ Example:
 nfd-master -featurerules-controller=false
 ```
 
-### -label-whitelist
+### -label-allowlist
 
-The `-label-whitelist` specifies a regular expression for filtering feature
+The `-label-allowlist` specifies a regular expression for filtering feature
 labels based on their name. Each label must match against the given reqular
 expression in order to be published.
 
@@ -179,7 +179,7 @@ Default: *empty*
 Example:
 
 ```bash
-nfd-master -label-whitelist='.*cpuid\.'
+nfd-master -label-allowlist='.*cpuid\.'
 ```
 
 ### -extra-label-ns

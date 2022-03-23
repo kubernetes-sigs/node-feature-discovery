@@ -42,8 +42,8 @@ const (
 
 // Configuration file options
 type cpuidConfig struct {
-	AttributeBlacklist []string `json:"attributeBlacklist,omitempty"`
-	AttributeWhitelist []string `json:"attributeWhitelist,omitempty"`
+	AttributeDenylist  []string `json:"attributeDenylist,omitempty"`
+	AttributeAllowlist []string `json:"attributeAllowlist,omitempty"`
 }
 
 // Config holds configuration for the cpu source.
@@ -55,7 +55,7 @@ type Config struct {
 func newDefaultConfig() *Config {
 	return &Config{
 		cpuidConfig{
-			AttributeBlacklist: []string{
+			AttributeDenylist: []string{
 				"BMI1",
 				"BMI2",
 				"CLMUL",
@@ -81,7 +81,7 @@ func newDefaultConfig() *Config {
 				"SSE42",
 				"SSSE3",
 			},
-			AttributeWhitelist: []string{},
+			AttributeAllowlist: []string{},
 		},
 	}
 }
@@ -89,7 +89,7 @@ func newDefaultConfig() *Config {
 // Filter for cpuid labels
 type keyFilter struct {
 	keys      map[string]struct{}
-	whitelist bool
+	allowlist bool
 }
 
 // cpuSource implements the FeatureSource, LabelSource and ConfigurableSource interfaces.
@@ -260,22 +260,22 @@ func haveThreadSiblings() (bool, error) {
 
 func (s *cpuSource) initCpuidFilter() {
 	newFilter := keyFilter{keys: map[string]struct{}{}}
-	if len(s.config.Cpuid.AttributeWhitelist) > 0 {
-		for _, k := range s.config.Cpuid.AttributeWhitelist {
+	if len(s.config.Cpuid.AttributeAllowlist) > 0 {
+		for _, k := range s.config.Cpuid.AttributeAllowlist {
 			newFilter.keys[k] = struct{}{}
 		}
-		newFilter.whitelist = true
+		newFilter.allowlist = true
 	} else {
-		for _, k := range s.config.Cpuid.AttributeBlacklist {
+		for _, k := range s.config.Cpuid.AttributeDenylist {
 			newFilter.keys[k] = struct{}{}
 		}
-		newFilter.whitelist = false
+		newFilter.allowlist = false
 	}
 	s.cpuidFilter = &newFilter
 }
 
 func (f keyFilter) unmask(k string) bool {
-	if f.whitelist {
+	if f.allowlist {
 		if _, ok := f.keys[k]; ok {
 			return true
 		}
