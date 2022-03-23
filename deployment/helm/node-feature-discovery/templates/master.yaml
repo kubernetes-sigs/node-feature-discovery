@@ -5,6 +5,8 @@ metadata:
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
     role: master
+  annotations:
+    {{- toYaml .Values.master.deploymentAnnotations | nindent 4 }}
 spec:
   replicas: {{ .Values.master.replicaCount }}
   selector:

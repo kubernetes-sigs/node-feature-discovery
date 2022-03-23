@@ -5,6 +5,8 @@ metadata:
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
     role: worker
+  annotations:
+    {{- toYaml .Values.worker.daemonsetAnnotations | nindent 4 }}
 spec:
   selector:
     matchLabels:
