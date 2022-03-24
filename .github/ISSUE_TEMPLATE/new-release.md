@@ -18,7 +18,7 @@ Please do not remove items from the checklist
   - [ ] An OWNER pushes the new release branch with
         `git push release-0.$MAJ`
 - [ ] Run `scripts/prepare-release.sh $VERSION` to turn references to point to the upcoming release
-      (README, deployment templates, docs configuration, test/e2e flags), submit a PR agains the release branch
+      (README, deployment templates, docs configuration, test/e2e flags), submit a PR against the release branch
 - An OWNER prepares a draft release
   - [ ] Create a draft release at [Github releases page](https://github.com/kubernetes-sigs/node-feature-discovery/releases)
   - [ ] Write the change log into the draft release
