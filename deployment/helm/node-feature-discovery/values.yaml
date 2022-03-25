@@ -17,7 +17,7 @@ master:
   extraLabelNs: []
   resourceLabels: []
   featureRulesController: null
-
+  deploymentAnnotations: {}
   replicaCount: 1
 
   podSecurityContext: {}
@@ -316,6 +316,7 @@ worker:
     #
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
+  daemonsetAnnotations: {}
   podSecurityContext: {}
     # fsGroup: 2000
 

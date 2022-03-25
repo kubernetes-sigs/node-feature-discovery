@@ -313,8 +313,9 @@ We have introduced the following Chart parameters.
 | `master.resources`          | dict    | {}                                      | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                    |
 | `master.nodeSelector`       | dict    | {}                                      | NFD master pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                    |
 | `master.tolerations`        | dict    | _Scheduling to master node is disabled_ | NFD master pod [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                              |
-| `master.annotations`        | dict    | {}                                      | NFD master pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                |
+| `master.annotations`        | dict    | {}                                      | NFD master pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                |
 | `master.affinity`           | dict    |                                         | NFD master pod required [node affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/) |
+| `master.deploymentAnnotations` | dict | {}                                      | NFD master deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
 
 ##### Worker pod parameters
 
@@ -328,7 +329,8 @@ We have introduced the following Chart parameters.
 | `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
 | `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
-| `worker.annotations` | dict | {} | NFD worker pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
+| `worker.annotations` | dict | {} | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
+| `worker.daemonsetAnnotations` | dict | {} | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
 
 ##### Topology updater parameters
 
@@ -351,7 +353,7 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.resources`                   | dict   | {}      | Topology updater pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                                                |
 | `topologyUpdater.nodeSelector`                | dict   | {}      | Topology updater pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                                                |
 | `topologyUpdater.tolerations`                 | dict   | {}      | Topology updater pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                                                     |
-| `topologyUpdater.annotations`                 | dict   | {}      | Topology updater pod [metadata](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                            |
+| `topologyUpdater.annotations`                 | dict   | {}      | Topology updater pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                            |
 | `topologyUpdater.affinity`                    | dict   | {}      | Topology updater pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                           |
 
 ### Build your own
