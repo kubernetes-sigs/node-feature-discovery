@@ -82,6 +82,17 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r1.Labels, m.Labels, "empty matcher should have matched empty features")
 
+	// Test empty MatchExpressions
+	r1.MatchFeatures = FeatureMatcher{
+		FeatureMatcherTerm{
+			Feature:          "domain-1.kf-1",
+			MatchExpressions: MatchExpressionSet{},
+		},
+	}
+	m, err = r1.Execute(f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r1.Labels, m.Labels, "empty match expression set mathces anything")
+
 	// Match "key" features
 	m, err = r2.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
@@ -325,8 +336,11 @@ var-2=
 			// We need at least one matcher to match to execute the template.
 			// Use a simple empty matchexpression set to match anything.
 			FeatureMatcherTerm{
-				Feature:          "domain_1.kf_1",
-				MatchExpressions: MatchExpressionSet{},
+				Feature: "domain_1.kf_1",
+				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+					"key-a": MustCreateMatchExpression(MatchExists),
+				},
+				},
 			},
 		},
 	}

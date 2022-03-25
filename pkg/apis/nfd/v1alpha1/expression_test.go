@@ -306,7 +306,7 @@ func TestMESMatchKeys(t *testing.T) {
 
 		{input: I{}, output: O{}, result: assert.Truef, err: assert.Nilf},
 
-		{input: I{"foo": {}}, output: O{MK{Name: "foo"}}, result: assert.Truef, err: assert.Nilf},
+		{input: I{"foo": {}}, output: O{}, result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
 foo: { op: DoesNotExist }
@@ -339,11 +339,12 @@ bar: { op: Exists }
 			t.Fatalf("failed to parse data of test case #%d (%v): %v", i, tc, err)
 		}
 
-		out, err := mes.MatchGetKeys(tc.input)
+		res, out, err := mes.MatchGetKeys(tc.input)
+		tc.result(t, res, "test case #%d (%v) failed", i, tc)
 		assert.Equalf(t, tc.output, out, "test case #%d (%v) failed", i, tc)
 		tc.err(t, err, "test case #%d (%v) failed", i, tc)
 
-		res, err := mes.MatchKeys(tc.input)
+		res, err = mes.MatchKeys(tc.input)
 		tc.result(t, res, "test case #%d (%v) failed", i, tc)
 		tc.err(t, err, "test case #%d (%v) failed", i, tc)
 	}
@@ -366,7 +367,7 @@ func TestMESMatchValues(t *testing.T) {
 
 		{input: I{}, output: O{}, result: assert.Truef, err: assert.Nilf},
 
-		{input: I{"foo": "bar"}, output: O{MV{Name: "foo", Value: "bar"}}, result: assert.Truef, err: assert.Nilf},
+		{input: I{"foo": "bar"}, output: O{}, result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
 foo: { op: Exists }
@@ -400,11 +401,12 @@ baz: { op: Gt, value: ["10"] }
 			t.Fatalf("failed to parse data of test case #%d (%v): %v", i, tc, err)
 		}
 
-		out, err := mes.MatchGetValues(tc.input)
+		res, out, err := mes.MatchGetValues(tc.input)
+		tc.result(t, res, "test case #%d (%v) failed", i, tc)
 		assert.Equalf(t, tc.output, out, "test case #%d (%v) failed", i, tc)
 		tc.err(t, err, "test case #%d (%v) failed", i, tc)
 
-		res, err := mes.MatchValues(tc.input)
+		res, err = mes.MatchValues(tc.input)
 		tc.result(t, res, "test case #%d (%v) failed", i, tc)
 		tc.err(t, err, "test case #%d (%v) failed", i, tc)
 	}

@@ -44,21 +44,21 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 		// Logical OR over the matchAny matchers
 		matched := false
 		for _, matcher := range r.MatchAny {
-			if m, err := matcher.match(features); err != nil {
+			if isMatch, matches, err := matcher.match(features); err != nil {
 				return RuleOutput{}, err
-			} else if m != nil {
+			} else if isMatch {
 				matched = true
-				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", m)
+				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", matches)
 
 				if r.labelsTemplate == nil {
 					// No templating so we stop here (further matches would just
 					// produce the same labels)
 					break
 				}
-				if err := r.executeLabelsTemplate(m, labels); err != nil {
+				if err := r.executeLabelsTemplate(matches, labels); err != nil {
 					return RuleOutput{}, err
 				}
-				if err := r.executeVarsTemplate(m, vars); err != nil {
+				if err := r.executeVarsTemplate(matches, vars); err != nil {
 					return RuleOutput{}, err
 				}
 			}
@@ -70,17 +70,17 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if m, err := r.MatchFeatures.match(features); err != nil {
+		if isMatch, matches, err := r.MatchFeatures.match(features); err != nil {
 			return RuleOutput{}, err
-		} else if m == nil {
+		} else if !isMatch {
 			klog.V(2).Infof("rule %q did not match", r.Name)
 			return RuleOutput{}, nil
 		} else {
-			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", m)
-			if err := r.executeLabelsTemplate(m, labels); err != nil {
+			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", matches)
+			if err := r.executeLabelsTemplate(matches, labels); err != nil {
 				return RuleOutput{}, err
 			}
-			if err := r.executeVarsTemplate(m, vars); err != nil {
+			if err := r.executeVarsTemplate(matches, vars); err != nil {
 				return RuleOutput{}, err
 			}
 		}
@@ -148,18 +148,18 @@ type matchedFeatures map[string]domainMatchedFeatures
 
 type domainMatchedFeatures map[string]interface{}
 
-func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (matchedFeatures, error) {
+func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (bool, matchedFeatures, error) {
 	return e.MatchFeatures.match(features)
 }
 
-func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (matchedFeatures, error) {
-	ret := make(matchedFeatures, len(*m))
+func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (bool, matchedFeatures, error) {
+	matches := make(matchedFeatures, len(*m))
 
 	// Logical AND over the terms
 	for _, term := range *m {
 		split := strings.SplitN(term.Feature, ".", 2)
 		if len(split) != 2 {
-			return nil, fmt.Errorf("invalid feature %q: must be <domain>.<feature>", term.Feature)
+			return false, nil, fmt.Errorf("invalid feature %q: must be <domain>.<feature>", term.Feature)
 		}
 		domain := split[0]
 		// Ignore case
@@ -167,41 +167,41 @@ func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (mat
 
 		domainFeatures, ok := features[domain]
 		if !ok {
-			return nil, fmt.Errorf("unknown feature source/domain %q", domain)
+			return false, nil, fmt.Errorf("unknown feature source/domain %q", domain)
 		}
 
-		if _, ok := ret[domain]; !ok {
-			ret[domain] = make(domainMatchedFeatures)
+		if _, ok := matches[domain]; !ok {
+			matches[domain] = make(domainMatchedFeatures)
 		}
 
-		var m bool
-		var e error
+		var isMatch bool
+		var err error
 		if f, ok := domainFeatures.Keys[featureName]; ok {
-			v, err := term.MatchExpressions.MatchGetKeys(f.Elements)
-			m = len(v) > 0
-			e = err
-			ret[domain][featureName] = v
+			m, v, e := term.MatchExpressions.MatchGetKeys(f.Elements)
+			isMatch = m
+			err = e
+			matches[domain][featureName] = v
 		} else if f, ok := domainFeatures.Values[featureName]; ok {
-			v, err := term.MatchExpressions.MatchGetValues(f.Elements)
-			m = len(v) > 0
-			e = err
-			ret[domain][featureName] = v
+			m, v, e := term.MatchExpressions.MatchGetValues(f.Elements)
+			isMatch = m
+			err = e
+			matches[domain][featureName] = v
 		} else if f, ok := domainFeatures.Instances[featureName]; ok {
-			v, err := term.MatchExpressions.MatchGetInstances(f.Elements)
-			m = len(v) > 0
-			e = err
-			ret[domain][featureName] = v
+			v, e := term.MatchExpressions.MatchGetInstances(f.Elements)
+			isMatch = len(v) > 0
+			err = e
+			matches[domain][featureName] = v
 		} else {
-			return nil, fmt.Errorf("%q feature of source/domain %q not available", featureName, domain)
+			return false, nil, fmt.Errorf("%q feature of source/domain %q not available", featureName, domain)
 		}
 
-		if e != nil {
-			return nil, e
-		} else if !m {
-			return nil, nil
+		if err != nil {
+			return false, nil, err
+		} else if !isMatch {
+			return false, nil, nil
 		}
 	}
-	return ret, nil
+	return true, matches, nil
 }
 
 type templateHelper struct {
