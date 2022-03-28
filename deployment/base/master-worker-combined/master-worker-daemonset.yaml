@@ -17,8 +17,8 @@ spec:
       tolerations: []
       containers:
       - name: nfd-master
-        image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-        imagePullPolicy: Always
+        image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.0
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
             command: ["/usr/bin/grpc_health_probe", "-addr=:8080"]
@@ -33,8 +33,8 @@ spec:
         command:
         - "nfd-master"
       - name: nfd-worker
-        image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-        imagePullPolicy: Always
+        image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.0
+        imagePullPolicy: IfNotPresent
         command:
         - "nfd-worker"
         args: []
