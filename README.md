@@ -11,7 +11,7 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.10.1
+$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.11.0
   namespace/node-feature-discovery created
   customresourcedefinition.apiextensions.k8s.io/nodefeaturerules.nfd.k8s-sigs.io created
   serviceaccount/nfd-master created
@@ -38,4 +38,4 @@ $ kubectl get no -o json | jq .items[].metadata.labels
 
 ```
 
-[documentation]: https://kubernetes-sigs.github.io/node-feature-discovery
+[documentation]: https://kubernetes-sigs.github.io/node-feature-discovery/v0.11
