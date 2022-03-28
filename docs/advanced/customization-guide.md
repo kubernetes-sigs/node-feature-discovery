@@ -492,6 +492,8 @@ The following features are available for matching:
 |                  |              | **`enabled`** | bool  | `true` if Intel SGX has been enabled, otherwise does not exist
 | **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities
 |                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist
+| **`cpu.se`**     | attribute    |          |            | IBM Secure Execution for Linux (IBM Z & LinuxONE)
+|                  |              | **`enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
 | **`cpu.topology`** | attribute  |          |            | CPU topology related features
 | | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled
 | **`kernel.config`** | attribute |          |            | Kernel configuration options
