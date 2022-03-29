@@ -2,6 +2,23 @@ apiVersion: v1
 entries:
   node-feature-discovery:
   - apiVersion: v2
+    appVersion: v0.11.0
+    created: "2022-03-29T10:42:36.742187682Z"
+    description: 'Detects hardware features available on each node in a Kubernetes cluster, and advertises those features using node labels. '
+    digest: 76622631aeb287b26f4c57ca5d3f8ab76571bbb1473b276227bf769cb40b9318
+    home: https://github.com/kubernetes-sigs/node-feature-discovery
+    keywords:
+    - feature-discovery
+    - feature-detection
+    - node-labels
+    name: node-feature-discovery
+    sources:
+    - https://github.com/kubernetes-sigs/node-feature-discovery
+    type: application
+    urls:
+    - https://github.com/kubernetes-sigs/node-feature-discovery/releases/download/v0.11.0/node-feature-discovery-chart-0.11.0.tgz
+    version: 0.11.0
+  - apiVersion: v2
     appVersion: v0.10.1
     created: "2022-01-24T14:35:13.897196757Z"
     description: 'Detects hardware features available on each node in a Kubernetes cluster, and advertises those features using node labels. '
@@ -103,4 +120,4 @@ entries:
     urls:
     - https://github.com/kubernetes-sigs/node-feature-discovery/releases/download/v0.8.0/node-feature-discovery-chart-0.8.0.tgz
     version: 0.8.0
-generated: "2022-01-24T14:35:13.895864439Z"
+generated: "2022-03-29T10:42:36.740846274Z"
