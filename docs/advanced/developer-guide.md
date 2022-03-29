@@ -66,8 +66,9 @@ make push-all
 ```
 
 The resulting container image can be used in the same way on each arch by pulling
-e.g. `node-feature-discovery:v0.10.0` without specifying the architecture. The
-manifest-list will take care of providing the right architecture image.
+e.g. `node-feature-discovery:{{ site.release }}` without specifying the
+architecture. The manifest-list will take care of providing the right
+architecture image.
 
 #### Change the job spec to use your custom image (optional)
 
