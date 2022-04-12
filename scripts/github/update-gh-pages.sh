@@ -178,7 +178,7 @@ make site-build
 if [ -n "$_GIT_TAG" ]; then
     commit_hash=${GIT_TAG:10}
 else
-    commit_hash=`git describe --dirty --always`
+    commit_hash=`git describe --tags --dirty --always`
 fi
 
 # Switch to work in the gh-pages worktree
