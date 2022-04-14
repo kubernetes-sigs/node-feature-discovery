@@ -1,6 +1,6 @@
 module sigs.k8s.io/node-feature-discovery
 
-go 1.17
+go 1.18
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9
