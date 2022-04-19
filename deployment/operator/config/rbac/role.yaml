@@ -6,6 +6,14 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - update
+  - watch
+- apiGroups:
   - apps
   resources:
   - daemonsets
@@ -28,6 +36,22 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - issuers
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - coordination.k8s.io
@@ -55,34 +79,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - endpoints
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - imagestreams/layers
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
   - namespaces
   verbs:
   - create
@@ -97,8 +93,6 @@ rules:
   resources:
   - nodes
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
@@ -115,44 +109,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - persistentvolumeclaims
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/log
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - secrets
   verbs:
   - create
   - delete
@@ -186,55 +143,21 @@ rules:
   - update
   - watch
 - apiGroups:
-  - monitoring.coreos.com
+  - nfd.k8s-sigs.io
   resources:
-  - prometheusrules
+  - nodefeaturerules
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
-  - monitoring.coreos.com
+  - policy
+  resourceNames:
+  - nfd-worker
   resources:
-  - servicemonitors
+  - podsecuritypolicies
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - nfd.kubernetes.io
-  resources:
-  - nodefeaturediscoveries
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - nfd.kubernetes.io
-  resources:
-  - nodefeaturediscoveries/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - nfd.kubernetes.io
-  resources:
-  - nodefeaturediscoveries/status
-  verbs:
-  - get
-  - patch
-  - update
+  - use
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -284,28 +207,10 @@ rules:
   - update
   - watch
 - apiGroups:
-  - storage.k8s.io
+  - topology.node.k8s.io
   resources:
-  - csidrivers
+  - noderesourcetopologies
   verbs:
   - create
-  - delete
   - get
-  - list
-  - patch
   - update
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - csinodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses
-  verbs:
-  - watch
