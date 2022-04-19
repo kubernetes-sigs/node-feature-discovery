@@ -6,6 +6,5 @@ kind: Kustomization
 resources:
 - bases/nfd-operator.clusterserviceversion.yaml
 - ../default
-- ../prometheus
 - ../samples
 - ../scorecard
