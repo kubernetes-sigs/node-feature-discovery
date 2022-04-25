@@ -17,6 +17,7 @@ limitations under the License.
 package worker
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -202,7 +203,7 @@ func TestDynamicConfig(t *testing.T) {
 		defer os.RemoveAll(tmpDir)
 
 		// Create (temporary) dir for config
-		configDir := filepath.Join(tmpDir, "subdir-1", "subdir-2", "worker.conf")
+		configDir := filepath.Join(tmpDir, "subdir-1", "subdir-2")
 		err = os.MkdirAll(configDir, 0755)
 		So(err, ShouldBeNil)
 
@@ -265,6 +266,92 @@ core:
 `)
 			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
 				withTimeout, 2*time.Second, ShouldEqual, "bar")
+		})
+	})
+}
+
+// Simulates a config file mounted as a Kubernetes ConfigMap which uses symlinks
+func TestDynamicConfigSymlink(t *testing.T) {
+	Convey("When running nfd-worker with a Kubernetes ConfigMap", t, func() {
+		tmpDir, err := ioutil.TempDir("", "*.nfd-test")
+		So(err, ShouldBeNil)
+		defer os.RemoveAll(tmpDir)
+
+		// Create (temporary) dir for config
+		configDir := filepath.Join(tmpDir, "subdir-1", "subdir-2")
+		err = os.MkdirAll(configDir, 0755)
+		So(err, ShouldBeNil)
+
+		// Simulate the symlink structure of a mounted ConfigMap
+		// Ref: https://github.com/kubernetes/kubernetes/blob/release-1.24/pkg/volume/util/atomic_writer.go
+		configMapDir := filepath.Join(configDir, "..20060102150405.0")
+		err = os.MkdirAll(configDir, 0755)
+		So(err, ShouldBeNil)
+		indirectionDir := filepath.Join(configDir, "..data")
+		err = os.Symlink(configMapDir, indirectionDir)
+		So(err, ShouldBeNil)
+		configFile := filepath.Join(configDir, "worker.conf")
+		err = os.Symlink(filepath.Join(indirectionDir, "worker.conf"), configFile)
+		So(err, ShouldBeNil)
+
+		// This is how Kubelet updates mounted configmaps.
+		writeConfigMap := func(data string) {
+			// Create a new timestamped dir with the new file in it
+			ts := time.Now().Format("20060102150405.0")
+			newConfigMapDir := filepath.Join(configDir, fmt.Sprintf("..%s", ts))
+			err = os.MkdirAll(newConfigMapDir, 0755)
+			So(err, ShouldBeNil)
+			realConfigFile := filepath.Join(newConfigMapDir, "worker.conf")
+			f, err := os.Create(realConfigFile)
+			So(err, ShouldBeNil)
+			_, err = f.WriteString(data)
+			So(err, ShouldBeNil)
+			err = f.Close()
+			So(err, ShouldBeNil)
+			// Create new symlink to newConfigMapDir
+			newIndirectionDir := filepath.Join(configDir, "..data_tmp")
+			err = os.Symlink(newConfigMapDir, newIndirectionDir)
+			So(err, ShouldBeNil)
+			// Rename to atomically overwrite the old "..data" indirectionDir
+			err = os.Rename(newIndirectionDir, indirectionDir)
+			So(err, ShouldBeNil)
+		}
+		writeConfigMap(`
+core:
+  labelWhiteList: "fake"
+`)
+		noPublish := true
+		w, err := NewNfdWorker(&Args{
+			ConfigFile: configFile,
+			Overrides: ConfigOverrideArgs{
+				FeatureSources: &utils.StringSliceVal{"fake"},
+				LabelSources:   &utils.StringSliceVal{"fake"},
+				NoPublish:      &noPublish},
+		})
+		So(err, ShouldBeNil)
+		worker := w.(*nfdWorker)
+
+		Convey("config file updates should take effect", func() {
+			go func() { _ = w.Run() }()
+			defer w.Stop()
+
+			// Check initial config
+			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+				withTimeout, 2*time.Second, ShouldEqual, "fake")
+
+			// Update config and verify the effect
+			writeConfigMap(`
+core:
+  labelWhiteList: "foo"
+`)
+			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+				withTimeout, 2*time.Second, ShouldEqual, "foo")
+
+			// Removing config file should get back our defaults
+			err = os.RemoveAll(tmpDir)
+			So(err, ShouldBeNil)
+			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
+				withTimeout, 2*time.Second, ShouldEqual, "")
 		})
 	})
 }

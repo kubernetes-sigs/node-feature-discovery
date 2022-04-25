@@ -18,6 +18,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -25,7 +26,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// FsWatcher is a wrapper helper for watching files
+// FsWatcher is a wrapper helper for watching files. It works by listening for file change
+// events and using modtimes to check if the file actually changed. If so, a message will be
+// sent on the Events channel.
 type FsWatcher struct {
 	*fsnotify.Watcher
 
@@ -33,6 +36,7 @@ type FsWatcher struct {
 	ratelimit time.Duration
 	names     []string
 	paths     map[string]struct{}
+	modtimes  map[string]time.Time
 }
 
 // CreateFsWatcher creates a new FsWatcher
@@ -41,10 +45,23 @@ func CreateFsWatcher(ratelimit time.Duration, names ...string) (*FsWatcher, erro
 		Events:    make(chan struct{}),
 		names:     names,
 		ratelimit: ratelimit,
+		modtimes:  make(map[string]time.Time, len(names)),
 	}
 
 	if err := w.reset(names...); err != nil {
 		return nil, err
+	}
+
+	// Get initial modification times for all watched files
+	for _, path := range names {
+		if path == "" {
+			continue
+		}
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			return nil, err
+		}
+		w.modtimes[path] = fileInfo.ModTime()
 	}
 
 	go w.watch()
@@ -118,6 +135,7 @@ func (w *FsWatcher) add(names ...string) error {
 }
 
 func (w *FsWatcher) watch() {
+	// Rate limiter. In certain filesystem operations we get numerous events in quick succession
 	var ratelimiter <-chan time.Time
 	for {
 		select {
@@ -130,12 +148,24 @@ func (w *FsWatcher) watch() {
 
 			// If any of our paths change
 			name := filepath.Clean(e.Name)
-			if _, ok := w.paths[filepath.Clean(name)]; ok {
-				klog.V(2).Infof("fsnotify %s event in %q detected", e, name)
+			if _, ok := w.paths[name]; ok {
+				klog.Infof("fsnotify %s event in %q detected", e, name)
+				// Creation and deletion events should always trigger reloads since stat may fail
+				if e.Op&fsnotify.Create == fsnotify.Create || e.Op&fsnotify.Remove == fsnotify.Remove {
+					ratelimiter = time.After(w.ratelimit)
+					continue
+				}
+				// Did the file really change according to the modtimes?
+				statResult, err := os.Stat(name)
+				if err != nil {
+					klog.Errorf("Failed to check modtime on file %s: %v", name, err)
+					return
+				}
+				if statResult.ModTime() != w.modtimes[name] {
+					w.modtimes[name] = statResult.ModTime()
+					ratelimiter = time.After(w.ratelimit)
+				}
 
-				// Rate limiter. In certain filesystem operations we get
-				// numerous events in quick succession
-				ratelimiter = time.After(w.ratelimit)
 			}
 
 		case e, ok := <-w.Watcher.Errors:
