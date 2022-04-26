@@ -149,7 +149,7 @@ func (w *FsWatcher) watch() {
 			// If any of our paths change
 			name := filepath.Clean(e.Name)
 			if _, ok := w.paths[name]; ok {
-				klog.Infof("fsnotify %s event in %q detected", e, name)
+				klog.V(2).Infof("fsnotify %s event in %q detected", e, name)
 				// Creation and deletion events should always trigger reloads since stat may fail
 				if e.Op&fsnotify.Create == fsnotify.Create || e.Op&fsnotify.Remove == fsnotify.Remove {
 					ratelimiter = time.After(w.ratelimit)
