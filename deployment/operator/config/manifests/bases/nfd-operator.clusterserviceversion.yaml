@@ -15,7 +15,6 @@ metadata:
             "operand": {
               "image": "gcr.io/k8s-staging-nfd/node-feature-discovery:master",
               "imagePullPolicy": "Always",
-              "namespace": "node-feature-discovery-operator",
               "servicePort": 12000
             },
             "workerConfig": {
