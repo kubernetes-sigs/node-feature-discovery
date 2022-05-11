@@ -73,7 +73,6 @@ is recommended to be done via
      namespace: nfd
    spec:
      operand:
-       namespace: nfd
        image: {{ site.container_image }}
        imagePullPolicy: IfNotPresent
    EOF
