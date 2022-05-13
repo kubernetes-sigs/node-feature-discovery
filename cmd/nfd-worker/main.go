@@ -167,7 +167,7 @@ func initKlogFlags(flagset *flag.FlagSet, args *worker.Args) {
 func klogConfigOptName(flagName string) string {
 	split := strings.Split(flagName, "_")
 	for i, v := range split[1:] {
-		split[i+1] = strings.Title(v)
+		split[i+1] = strings.ToUpper(v[0:1]) + v[1:]
 	}
 	return strings.Join(split, "")
 }
