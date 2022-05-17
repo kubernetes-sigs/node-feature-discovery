@@ -13,7 +13,7 @@ metadata:
           },
           "spec": {
             "operand": {
-              "image": "gcr.io/k8s-staging-nfd/node-feature-discovery:master",
+              "image": "gcr.io/k8s-staging-nfd/node-feature-discovery:master-minimal",
               "imagePullPolicy": "Always",
               "servicePort": 12000
             },
@@ -463,8 +463,8 @@ spec:
                 - name: OPERATOR_NAME
                   value: cluster-nfd-operator
                 - name: NODE_FEATURE_DISCOVERY_IMAGE
-                  value: k8s.gcr.io/nfd/node-feature-discovery:master
-                image: k8s.gcr.io/nfd/node-feature-discovery-operator:master
+                  value: gcr.io/k8s-staging-nfd/node-feature-discovery:master-minimal
+                image: gcr.io/k8s-staging-nfd/node-feature-discovery-operator:master-minimal
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
