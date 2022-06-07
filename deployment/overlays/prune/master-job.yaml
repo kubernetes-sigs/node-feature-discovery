@@ -15,7 +15,7 @@ spec:
       tolerations: []
       containers:
         - name: nfd-master
-          image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.0
+          image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.1
           imagePullPolicy: IfNotPresent
           command:
             - "nfd-master"
