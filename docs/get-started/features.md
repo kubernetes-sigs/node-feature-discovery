@@ -63,12 +63,36 @@ configuration options for details.
 
 #### X86 CPUID flags (partial list)
 
-| Flag      | Description                                                      |
-| --------- | ---------------------------------------------------------------- |
-| ADX       | Multi-Precision Add-Carry Instruction Extensions (ADX)
-| AESNI     | Advanced Encryption Standard (AES) New Instructions (AES-NI)
-| AVX       | Advanced Vector Extensions (AVX)
-| AVX2      | Advanced Vector Extensions 2 (AVX2)
+| Flag               | Description                                             |
+| ------------------ | ------------------------------------------------------- |
+| ADX                | Multi-Precision Add-Carry Instruction Extensions (ADX)
+| AESNI              | Advanced Encryption Standard (AES) New Instructions (AES-NI)
+| AVX                | Advanced Vector Extensions (AVX)
+| AVX2               | Advanced Vector Extensions 2 (AVX2)
+| AMXBF16            | Advanced Matrix Extension, tile multiplication operations on BFLOAT16 numbers
+| AMXINT8            | Advanced Matrix Extension, tile multiplication operations on 8-bit integers
+| AMXTILE            | Advanced Matrix Extension, base tile architecture support
+| AVX512BF16         | AVX-512 BFLOAT16 instructions
+| AVX512BITALG       | AVX-512 bit Algorithms
+| AVX512BW           | AVX-512 byte and word Instructions
+| AVX512CD           | AVX-512 conflict detection instructions
+| AVX512DQ           | AVX-512 doubleword and quadword instructions
+| AVX512ER           | AVX-512 exponential and reciprocal instructions
+| AVX512F            | AVX-512 foundation
+| AVX512FP16         | AVX-512 FP16 instructions
+| AVX512IFMA         | AVX-512 integer fused multiply-add instructions
+| AVX512PF           | AVX-512 prefetch instructions
+| AVX512VBMI         | AVX-512 vector bit manipulation instructions
+| AVX512VBMI2        | AVX-512 vector bit manipulation instructions, version 2
+| AVX512VL           | AVX-512 vector length extensions
+| AVX512VNNI         | AVX-512 vector neural network instructions
+| AVX512VP2INTERSECT | AVX-512 intersect for D/Q
+| AVX512VPOPCNTDQ    | AVX-512 vector population count doubleword and quadword
+| ENQCMD             | Enqueue Command
+| GFNI               | Galois Field New Instructions
+| HYPERVISOR         | Running under hypervi§sor
+| VAES               | AVX-512 vector AES instructions
+| VPCLMULQDQ         | Carry-less multiplication quadword
 
 By default, the following CPUID flags have been blacklisted: BMI1, BMI2, CLMUL,
 CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED,
