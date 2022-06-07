@@ -70,9 +70,6 @@ func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 
 	for _, dev := range features.Instances[DeviceFeature].Elements {
 		attrs := dev.Attributes
-		if attrs["operstate"] != "up" {
-			continue
-		}
 		for attr, feature := range map[string]string{
 			"sriov_totalvfs": "sriov.capable",
 			"sriov_numvfs":   "sriov.configured"} {
