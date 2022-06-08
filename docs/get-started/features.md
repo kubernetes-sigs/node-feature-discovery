@@ -90,7 +90,7 @@ configuration options for details.
 | AVX512VPOPCNTDQ    | AVX-512 vector population count doubleword and quadword
 | ENQCMD             | Enqueue Command
 | GFNI               | Galois Field New Instructions
-| HYPERVISOR         | Running under hypervi§sor
+| HYPERVISOR         | Running under hypervisor
 | VAES               | AVX-512 vector AES instructions
 | VPCLMULQDQ         | Carry-less multiplication quadword
 
