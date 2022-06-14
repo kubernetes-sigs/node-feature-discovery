@@ -20,26 +20,26 @@ package feature
 // features to empty values
 func NewDomainFeatures() *DomainFeatures {
 	return &DomainFeatures{
-		Keys:      make(map[string]KeyFeatureSet),
-		Values:    make(map[string]ValueFeatureSet),
-		Instances: make(map[string]InstanceFeatureSet)}
+		Flags:      make(map[string]FlagFeatureSet),
+		Attributes: make(map[string]AttributeFeatureSet),
+		Instances:  make(map[string]InstanceFeatureSet)}
 }
 
-// NewKeyFeatures creates a new instance of KeyFeatureSet.
-func NewKeyFeatures(keys ...string) KeyFeatureSet {
+// NewFlagFeatures creates a new instance of KeyFeatureSet.
+func NewFlagFeatures(keys ...string) FlagFeatureSet {
 	e := make(map[string]Nil, len(keys))
 	for _, k := range keys {
 		e[k] = Nil{}
 	}
-	return KeyFeatureSet{Elements: e}
+	return FlagFeatureSet{Elements: e}
 }
 
-// NewValueFeatures creates a new instance of ValueFeatureSet.
-func NewValueFeatures(values map[string]string) ValueFeatureSet {
+// NewAttributeFeatures creates a new instance of ValueFeatureSet.
+func NewAttributeFeatures(values map[string]string) AttributeFeatureSet {
 	if values == nil {
 		values = make(map[string]string)
 	}
-	return ValueFeatureSet{Elements: values}
+	return AttributeFeatureSet{Elements: values}
 }
 
 // NewInstanceFeatures creates a new instance of InstanceFeatureSet.
@@ -55,17 +55,17 @@ func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
 	return &InstanceFeature{Attributes: attrs}
 }
 
-// InsertFeatureValues inserts new values into a specific feature.
-func InsertFeatureValues(f Features, domain, feature string, values map[string]string) {
+// InsertAttributeFeatures inserts new values into a specific feature.
+func InsertAttributeFeatures(f Features, domain, feature string, values map[string]string) {
 	if _, ok := f[domain]; !ok {
 		f[domain] = NewDomainFeatures()
 	}
-	if _, ok := f[domain].Values[feature]; !ok {
-		f[domain].Values[feature] = NewValueFeatures(values)
+	if _, ok := f[domain].Attributes[feature]; !ok {
+		f[domain].Attributes[feature] = NewAttributeFeatures(values)
 		return
 	}
 
 	for k, v := range values {
-		f[domain].Values[feature].Elements[k] = v
+		f[domain].Attributes[feature].Elements[k] = v
 	}
 }

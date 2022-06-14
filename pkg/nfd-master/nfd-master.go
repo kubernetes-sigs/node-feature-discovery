@@ -534,8 +534,8 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 			}
 
 			// Feed back rule output to features map for subsequent rules to match
-			feature.InsertFeatureValues(r.Features, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
-			feature.InsertFeatureValues(r.Features, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
+			feature.InsertAttributeFeatures(r.Features, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
+			feature.InsertAttributeFeatures(r.Features, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 		}
 	}
 

@@ -98,7 +98,7 @@ func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 	labels := source.FeatureLabels{}
 	features := s.GetFeatures()
 
-	for k, v := range features.Values[VersionFeature].Elements {
+	for k, v := range features.Attributes[VersionFeature].Elements {
 		labels[VersionFeature+"."+k] = v
 	}
 
@@ -108,7 +108,7 @@ func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 		}
 	}
 
-	if enabled, ok := features.Values[SelinuxFeature].Elements["enabled"]; ok && enabled == "true" {
+	if enabled, ok := features.Attributes[SelinuxFeature].Elements["enabled"]; ok && enabled == "true" {
 		labels["selinux.enabled"] = "true"
 	}
 
@@ -123,7 +123,7 @@ func (s *kernelSource) Discover() error {
 	if version, err := parseVersion(); err != nil {
 		klog.Errorf("failed to get kernel version: %s", err)
 	} else {
-		s.features.Values[VersionFeature] = feature.NewValueFeatures(version)
+		s.features.Attributes[VersionFeature] = feature.NewAttributeFeatures(version)
 	}
 
 	// Read kconfig
@@ -131,21 +131,21 @@ func (s *kernelSource) Discover() error {
 		s.legacyKconfig = nil
 		klog.Errorf("failed to read kconfig: %s", err)
 	} else {
-		s.features.Values[ConfigFeature] = feature.NewValueFeatures(realKconfig)
+		s.features.Attributes[ConfigFeature] = feature.NewAttributeFeatures(realKconfig)
 		s.legacyKconfig = legacyKconfig
 	}
 
 	if kmods, err := getLoadedModules(); err != nil {
 		klog.Errorf("failed to get loaded kernel modules: %v", err)
 	} else {
-		s.features.Keys[LoadedModuleFeature] = feature.NewKeyFeatures(kmods...)
+		s.features.Flags[LoadedModuleFeature] = feature.NewFlagFeatures(kmods...)
 	}
 
 	if selinux, err := SelinuxEnabled(); err != nil {
 		klog.Warning(err)
 	} else {
-		s.features.Values[SelinuxFeature] = feature.NewValueFeatures(nil)
-		s.features.Values[SelinuxFeature].Elements["enabled"] = strconv.FormatBool(selinux)
+		s.features.Attributes[SelinuxFeature] = feature.NewAttributeFeatures(nil)
+		s.features.Attributes[SelinuxFeature].Elements["enabled"] = strconv.FormatBool(selinux)
 	}
 
 	utils.KlogDump(3, "discovered kernel features:", "  ", s.features)

@@ -60,8 +60,8 @@ func TestRule(t *testing.T) {
 	assert.Error(t, err, "matching against a missing feature type should have returned an error")
 
 	// Test empty feature sets
-	d.Keys["kf-1"] = feature.NewKeyFeatures()
-	d.Values["vf-1"] = feature.NewValueFeatures(nil)
+	d.Flags["kf-1"] = feature.NewFlagFeatures()
+	d.Attributes["vf-1"] = feature.NewAttributeFeatures(nil)
 	d.Instances["if-1"] = feature.NewInstanceFeatures(nil)
 
 	m, err = r1.Execute(f)
@@ -73,8 +73,8 @@ func TestRule(t *testing.T) {
 	assert.Nil(t, m.Labels, "unexpected match")
 
 	// Test non-empty feature sets
-	d.Keys["kf-1"].Elements["key-x"] = feature.Nil{}
-	d.Values["vf-1"].Elements["key-1"] = "val-x"
+	d.Flags["kf-1"].Elements["key-x"] = feature.Nil{}
+	d.Attributes["vf-1"].Elements["key-1"] = "val-x"
 	d.Instances["if-1"] = feature.NewInstanceFeatures([]feature.InstanceFeature{
 		*feature.NewInstanceFeature(map[string]string{"attr-1": "val-x"})})
 
@@ -98,7 +98,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "keys should not have matched")
 
-	d.Keys["kf-1"].Elements["key-1"] = feature.Nil{}
+	d.Flags["kf-1"].Elements["key-1"] = feature.Nil{}
 	m, err = r2.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r2.Labels, m.Labels, "keys should have matched")
@@ -120,7 +120,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "values should not have matched")
 
-	d.Values["vf-1"].Elements["key-1"] = "val-1"
+	d.Attributes["vf-1"].Elements["key-1"] = "val-1"
 	m, err = r3.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r3.Labels, m.Labels, "values should have matched")
@@ -210,8 +210,8 @@ func TestRule(t *testing.T) {
 func TestTemplating(t *testing.T) {
 	f := map[string]*feature.DomainFeatures{
 		"domain_1": &feature.DomainFeatures{
-			Keys: map[string]feature.KeyFeatureSet{
-				"kf_1": feature.KeyFeatureSet{
+			Flags: map[string]feature.FlagFeatureSet{
+				"kf_1": feature.FlagFeatureSet{
 					Elements: map[string]feature.Nil{
 						"key-a": feature.Nil{},
 						"key-b": feature.Nil{},
@@ -219,8 +219,8 @@ func TestTemplating(t *testing.T) {
 					},
 				},
 			},
-			Values: map[string]feature.ValueFeatureSet{
-				"vf_1": feature.ValueFeatureSet{
+			Attributes: map[string]feature.AttributeFeatureSet{
+				"vf_1": feature.AttributeFeatureSet{
 					Elements: map[string]string{
 						"key-1": "val-1",
 						"keu-2": "val-2",

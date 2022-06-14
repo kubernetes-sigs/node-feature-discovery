@@ -31,7 +31,7 @@ type CpuIDRule struct {
 
 // Match checks if CpuId rule matches.
 func (r *CpuIDRule) Match() (bool, error) {
-	flags, ok := source.GetFeatureSource("cpu").GetFeatures().Keys[cpu.CpuidFeature]
+	flags, ok := source.GetFeatureSource("cpu").GetFeatures().Flags[cpu.CpuidFeature]
 	if !ok {
 		return false, fmt.Errorf("cpuid information not available")
 	}

@@ -140,54 +140,54 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 	features := s.GetFeatures()
 
 	// CPUID
-	for f := range features.Keys[CpuidFeature].Elements {
+	for f := range features.Flags[CpuidFeature].Elements {
 		if s.cpuidFilter.unmask(f) {
 			labels["cpuid."+f] = true
 		}
 	}
 
 	// CPU model
-	for k, v := range features.Values[Cpumodel].Elements {
+	for k, v := range features.Attributes[Cpumodel].Elements {
 		labels["model."+k] = v
 	}
 
 	// Cstate
-	for k, v := range features.Values[CstateFeature].Elements {
+	for k, v := range features.Attributes[CstateFeature].Elements {
 		labels["cstate."+k] = v
 	}
 
 	// Pstate
-	for k, v := range features.Values[PstateFeature].Elements {
+	for k, v := range features.Attributes[PstateFeature].Elements {
 		labels["pstate."+k] = v
 	}
 
 	// RDT
-	for k := range features.Keys[RdtFeature].Elements {
+	for k := range features.Flags[RdtFeature].Elements {
 		labels["rdt."+k] = true
 	}
 
 	// Security
-	for k, v := range features.Values[SecurityFeature].Elements {
+	for k, v := range features.Attributes[SecurityFeature].Elements {
 		labels["security."+k] = v
 	}
 
 	// SGX
-	for k, v := range features.Values[SgxFeature].Elements {
+	for k, v := range features.Attributes[SgxFeature].Elements {
 		labels["sgx."+k] = v
 	}
 
 	// Secure Execution
-	for k, v := range features.Values[SeFeature].Elements {
+	for k, v := range features.Attributes[SeFeature].Elements {
 		labels["se."+k] = v
 	}
 
 	// SST
-	for k, v := range features.Values[SstFeature].Elements {
+	for k, v := range features.Attributes[SstFeature].Elements {
 		labels["power.sst_"+k] = v
 	}
 
 	// Hyperthreading
-	if v, ok := features.Values[TopologyFeature].Elements["hardware_multithreading"]; ok {
+	if v, ok := features.Attributes[TopologyFeature].Elements["hardware_multithreading"]; ok {
 		labels["hardware_multithreading"] = v
 	}
 
@@ -199,17 +199,17 @@ func (s *cpuSource) Discover() error {
 	s.features = feature.NewDomainFeatures()
 
 	// Detect CPUID
-	s.features.Keys[CpuidFeature] = feature.NewKeyFeatures(getCpuidFlags()...)
+	s.features.Flags[CpuidFeature] = feature.NewFlagFeatures(getCpuidFlags()...)
 
 	// Detect CPU model
-	s.features.Values[Cpumodel] = feature.NewValueFeatures(getCPUModel())
+	s.features.Attributes[Cpumodel] = feature.NewAttributeFeatures(getCPUModel())
 
 	// Detect cstate configuration
 	cstate, err := detectCstate()
 	if err != nil {
 		klog.Errorf("failed to detect cstate: %v", err)
 	} else {
-		s.features.Values[CstateFeature] = feature.NewValueFeatures(cstate)
+		s.features.Attributes[CstateFeature] = feature.NewAttributeFeatures(cstate)
 	}
 
 	// Detect pstate features
@@ -217,33 +217,33 @@ func (s *cpuSource) Discover() error {
 	if err != nil {
 		klog.Error(err)
 	}
-	s.features.Values[PstateFeature] = feature.NewValueFeatures(pstate)
+	s.features.Attributes[PstateFeature] = feature.NewAttributeFeatures(pstate)
 
 	// Detect RDT features
-	s.features.Keys[RdtFeature] = feature.NewKeyFeatures(discoverRDT()...)
+	s.features.Flags[RdtFeature] = feature.NewFlagFeatures(discoverRDT()...)
 
 	// Detect SGX features
-	s.features.Values[SecurityFeature] = feature.NewValueFeatures(discoverSecurity())
+	s.features.Attributes[SecurityFeature] = feature.NewAttributeFeatures(discoverSecurity())
 
 	// Detect SGX features
 	//
 	// DEPRECATED in v0.12: will be removed in the future
-	if val, ok := s.features.Values[SecurityFeature].Elements["sgx.enabled"]; ok {
-		s.features.Values[SgxFeature] = feature.NewValueFeatures(map[string]string{"enabled": val})
+	if val, ok := s.features.Attributes[SecurityFeature].Elements["sgx.enabled"]; ok {
+		s.features.Attributes[SgxFeature] = feature.NewAttributeFeatures(map[string]string{"enabled": val})
 	}
 
 	// Detect Secure Execution features
 	//
 	// DEPRECATED in v0.12: will be removed in the future
-	if val, ok := s.features.Values[SecurityFeature].Elements["se.enabled"]; ok {
-		s.features.Values[SeFeature] = feature.NewValueFeatures(map[string]string{"enabled": val})
+	if val, ok := s.features.Attributes[SecurityFeature].Elements["se.enabled"]; ok {
+		s.features.Attributes[SeFeature] = feature.NewAttributeFeatures(map[string]string{"enabled": val})
 	}
 
 	// Detect SST features
-	s.features.Values[SstFeature] = feature.NewValueFeatures(discoverSST())
+	s.features.Attributes[SstFeature] = feature.NewAttributeFeatures(discoverSST())
 
 	// Detect hyper-threading
-	s.features.Values[TopologyFeature] = feature.NewValueFeatures(discoverTopology())
+	s.features.Attributes[TopologyFeature] = feature.NewAttributeFeatures(discoverTopology())
 
 	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
 

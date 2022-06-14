@@ -127,15 +127,15 @@ func (m *InstanceFeatureSet) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_InstanceFeatureSet proto.InternalMessageInfo
 
-func (m *KeyFeatureSet) Reset()      { *m = KeyFeatureSet{} }
-func (*KeyFeatureSet) ProtoMessage() {}
-func (*KeyFeatureSet) Descriptor() ([]byte, []int) {
+func (m *FlagFeatureSet) Reset()      { *m = FlagFeatureSet{} }
+func (*FlagFeatureSet) ProtoMessage() {}
+func (*FlagFeatureSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_870e6eafce4d2482, []int{3}
 }
-func (m *KeyFeatureSet) XXX_Unmarshal(b []byte) error {
+func (m *FlagFeatureSet) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KeyFeatureSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *FlagFeatureSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	b = b[:cap(b)]
 	n, err := m.MarshalToSizedBuffer(b)
 	if err != nil {
@@ -143,13 +143,13 @@ func (m *KeyFeatureSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 	}
 	return b[:n], nil
 }
-func (m *KeyFeatureSet) XXX_Merge(src proto.Message) {
+func (m *FlagFeatureSet) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_KeyFeatureSet.Merge(m, src)
 }
-func (m *KeyFeatureSet) XXX_Size() int {
+func (m *FlagFeatureSet) XXX_Size() int {
 	return m.Size()
 }
-func (m *KeyFeatureSet) XXX_DiscardUnknown() {
+func (m *FlagFeatureSet) XXX_DiscardUnknown() {
 	xxx_messageInfo_KeyFeatureSet.DiscardUnknown(m)
 }
 
@@ -183,15 +183,15 @@ func (m *Nil) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Nil proto.InternalMessageInfo
 
-func (m *ValueFeatureSet) Reset()      { *m = ValueFeatureSet{} }
-func (*ValueFeatureSet) ProtoMessage() {}
-func (*ValueFeatureSet) Descriptor() ([]byte, []int) {
+func (m *AttributeFeatureSet) Reset()      { *m = AttributeFeatureSet{} }
+func (*AttributeFeatureSet) ProtoMessage() {}
+func (*AttributeFeatureSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_870e6eafce4d2482, []int{5}
 }
-func (m *ValueFeatureSet) XXX_Unmarshal(b []byte) error {
+func (m *AttributeFeatureSet) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ValueFeatureSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AttributeFeatureSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	b = b[:cap(b)]
 	n, err := m.MarshalToSizedBuffer(b)
 	if err != nil {
@@ -199,13 +199,13 @@ func (m *ValueFeatureSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 	}
 	return b[:n], nil
 }
-func (m *ValueFeatureSet) XXX_Merge(src proto.Message) {
+func (m *AttributeFeatureSet) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ValueFeatureSet.Merge(m, src)
 }
-func (m *ValueFeatureSet) XXX_Size() int {
+func (m *AttributeFeatureSet) XXX_Size() int {
 	return m.Size()
 }
-func (m *ValueFeatureSet) XXX_DiscardUnknown() {
+func (m *AttributeFeatureSet) XXX_DiscardUnknown() {
 	xxx_messageInfo_ValueFeatureSet.DiscardUnknown(m)
 }
 
@@ -214,15 +214,15 @@ var xxx_messageInfo_ValueFeatureSet proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*DomainFeatures)(nil), "feature.DomainFeatures")
 	proto.RegisterMapType((map[string]InstanceFeatureSet)(nil), "feature.DomainFeatures.InstancesEntry")
-	proto.RegisterMapType((map[string]KeyFeatureSet)(nil), "feature.DomainFeatures.KeysEntry")
-	proto.RegisterMapType((map[string]ValueFeatureSet)(nil), "feature.DomainFeatures.ValuesEntry")
+	proto.RegisterMapType((map[string]FlagFeatureSet)(nil), "feature.DomainFeatures.KeysEntry")
+	proto.RegisterMapType((map[string]AttributeFeatureSet)(nil), "feature.DomainFeatures.ValuesEntry")
 	proto.RegisterType((*InstanceFeature)(nil), "feature.InstanceFeature")
 	proto.RegisterMapType((map[string]string)(nil), "feature.InstanceFeature.AttributesEntry")
 	proto.RegisterType((*InstanceFeatureSet)(nil), "feature.InstanceFeatureSet")
-	proto.RegisterType((*KeyFeatureSet)(nil), "feature.KeyFeatureSet")
+	proto.RegisterType((*FlagFeatureSet)(nil), "feature.KeyFeatureSet")
 	proto.RegisterMapType((map[string]Nil)(nil), "feature.KeyFeatureSet.ElementsEntry")
 	proto.RegisterType((*Nil)(nil), "feature.Nil")
-	proto.RegisterType((*ValueFeatureSet)(nil), "feature.ValueFeatureSet")
+	proto.RegisterType((*AttributeFeatureSet)(nil), "feature.ValueFeatureSet")
 	proto.RegisterMapType((map[string]string)(nil), "feature.ValueFeatureSet.ElementsEntry")
 }
 
@@ -313,14 +313,14 @@ func (m *DomainFeatures) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x1a
 		}
 	}
-	if len(m.Values) > 0 {
-		keysForValues := make([]string, 0, len(m.Values))
-		for k := range m.Values {
+	if len(m.Attributes) > 0 {
+		keysForValues := make([]string, 0, len(m.Attributes))
+		for k := range m.Attributes {
 			keysForValues = append(keysForValues, string(k))
 		}
 		github_com_gogo_protobuf_sortkeys.Strings(keysForValues)
 		for iNdEx := len(keysForValues) - 1; iNdEx >= 0; iNdEx-- {
-			v := m.Values[string(keysForValues[iNdEx])]
+			v := m.Attributes[string(keysForValues[iNdEx])]
 			baseI := i
 			{
 				size, err := (&v).MarshalToSizedBuffer(dAtA[:i])
@@ -342,14 +342,14 @@ func (m *DomainFeatures) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if len(m.Keys) > 0 {
-		keysForKeys := make([]string, 0, len(m.Keys))
-		for k := range m.Keys {
+	if len(m.Flags) > 0 {
+		keysForKeys := make([]string, 0, len(m.Flags))
+		for k := range m.Flags {
 			keysForKeys = append(keysForKeys, string(k))
 		}
 		github_com_gogo_protobuf_sortkeys.Strings(keysForKeys)
 		for iNdEx := len(keysForKeys) - 1; iNdEx >= 0; iNdEx-- {
-			v := m.Keys[string(keysForKeys[iNdEx])]
+			v := m.Flags[string(keysForKeys[iNdEx])]
 			baseI := i
 			{
 				size, err := (&v).MarshalToSizedBuffer(dAtA[:i])
@@ -458,7 +458,7 @@ func (m *InstanceFeatureSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *KeyFeatureSet) Marshal() (dAtA []byte, err error) {
+func (m *FlagFeatureSet) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -468,12 +468,12 @@ func (m *KeyFeatureSet) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KeyFeatureSet) MarshalTo(dAtA []byte) (int, error) {
+func (m *FlagFeatureSet) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *KeyFeatureSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *FlagFeatureSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -533,7 +533,7 @@ func (m *Nil) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ValueFeatureSet) Marshal() (dAtA []byte, err error) {
+func (m *AttributeFeatureSet) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -543,12 +543,12 @@ func (m *ValueFeatureSet) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ValueFeatureSet) MarshalTo(dAtA []byte) (int, error) {
+func (m *AttributeFeatureSet) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ValueFeatureSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AttributeFeatureSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -597,8 +597,8 @@ func (m *DomainFeatures) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.Keys) > 0 {
-		for k, v := range m.Keys {
+	if len(m.Flags) > 0 {
+		for k, v := range m.Flags {
 			_ = k
 			_ = v
 			l = v.Size()
@@ -606,8 +606,8 @@ func (m *DomainFeatures) Size() (n int) {
 			n += mapEntrySize + 1 + sovGenerated(uint64(mapEntrySize))
 		}
 	}
-	if len(m.Values) > 0 {
-		for k, v := range m.Values {
+	if len(m.Attributes) > 0 {
+		for k, v := range m.Attributes {
 			_ = k
 			_ = v
 			l = v.Size()
@@ -659,7 +659,7 @@ func (m *InstanceFeatureSet) Size() (n int) {
 	return n
 }
 
-func (m *KeyFeatureSet) Size() (n int) {
+func (m *FlagFeatureSet) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -686,7 +686,7 @@ func (m *Nil) Size() (n int) {
 	return n
 }
 
-func (m *ValueFeatureSet) Size() (n int) {
+func (m *AttributeFeatureSet) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -713,24 +713,24 @@ func (this *DomainFeatures) String() string {
 	if this == nil {
 		return "nil"
 	}
-	keysForKeys := make([]string, 0, len(this.Keys))
-	for k := range this.Keys {
+	keysForKeys := make([]string, 0, len(this.Flags))
+	for k := range this.Flags {
 		keysForKeys = append(keysForKeys, k)
 	}
 	github_com_gogo_protobuf_sortkeys.Strings(keysForKeys)
 	mapStringForKeys := "map[string]KeyFeatureSet{"
 	for _, k := range keysForKeys {
-		mapStringForKeys += fmt.Sprintf("%v: %v,", k, this.Keys[k])
+		mapStringForKeys += fmt.Sprintf("%v: %v,", k, this.Flags[k])
 	}
 	mapStringForKeys += "}"
-	keysForValues := make([]string, 0, len(this.Values))
-	for k := range this.Values {
+	keysForValues := make([]string, 0, len(this.Attributes))
+	for k := range this.Attributes {
 		keysForValues = append(keysForValues, k)
 	}
 	github_com_gogo_protobuf_sortkeys.Strings(keysForValues)
 	mapStringForValues := "map[string]ValueFeatureSet{"
 	for _, k := range keysForValues {
-		mapStringForValues += fmt.Sprintf("%v: %v,", k, this.Values[k])
+		mapStringForValues += fmt.Sprintf("%v: %v,", k, this.Attributes[k])
 	}
 	mapStringForValues += "}"
 	keysForInstances := make([]string, 0, len(this.Instances))
@@ -786,7 +786,7 @@ func (this *InstanceFeatureSet) String() string {
 	}, "")
 	return s
 }
-func (this *KeyFeatureSet) String() string {
+func (this *FlagFeatureSet) String() string {
 	if this == nil {
 		return "nil"
 	}
@@ -815,7 +815,7 @@ func (this *Nil) String() string {
 	}, "")
 	return s
 }
-func (this *ValueFeatureSet) String() string {
+func (this *AttributeFeatureSet) String() string {
 	if this == nil {
 		return "nil"
 	}
@@ -901,11 +901,11 @@ func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Keys == nil {
-				m.Keys = make(map[string]KeyFeatureSet)
+			if m.Flags == nil {
+				m.Flags = make(map[string]FlagFeatureSet)
 			}
 			var mapkey string
-			mapvalue := &KeyFeatureSet{}
+			mapvalue := &FlagFeatureSet{}
 			for iNdEx < postIndex {
 				entryPreIndex := iNdEx
 				var wire uint64
@@ -979,7 +979,7 @@ func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
 					if postmsgIndex > l {
 						return io.ErrUnexpectedEOF
 					}
-					mapvalue = &KeyFeatureSet{}
+					mapvalue = &FlagFeatureSet{}
 					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
@@ -999,7 +999,7 @@ func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.Keys[mapkey] = *mapvalue
+			m.Flags[mapkey] = *mapvalue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1030,11 +1030,11 @@ func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Values == nil {
-				m.Values = make(map[string]ValueFeatureSet)
+			if m.Attributes == nil {
+				m.Attributes = make(map[string]AttributeFeatureSet)
 			}
 			var mapkey string
-			mapvalue := &ValueFeatureSet{}
+			mapvalue := &AttributeFeatureSet{}
 			for iNdEx < postIndex {
 				entryPreIndex := iNdEx
 				var wire uint64
@@ -1108,7 +1108,7 @@ func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
 					if postmsgIndex > l {
 						return io.ErrUnexpectedEOF
 					}
-					mapvalue = &ValueFeatureSet{}
+					mapvalue = &AttributeFeatureSet{}
 					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
@@ -1128,7 +1128,7 @@ func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.Values[mapkey] = *mapvalue
+			m.Attributes[mapkey] = *mapvalue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1541,7 +1541,7 @@ func (m *InstanceFeatureSet) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KeyFeatureSet) Unmarshal(dAtA []byte) error {
+func (m *FlagFeatureSet) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1770,7 +1770,7 @@ func (m *Nil) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ValueFeatureSet) Unmarshal(dAtA []byte) error {
+func (m *AttributeFeatureSet) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

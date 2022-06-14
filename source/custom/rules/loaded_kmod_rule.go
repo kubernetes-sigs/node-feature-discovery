@@ -31,7 +31,7 @@ type LoadedKModRule struct {
 
 // Match loaded kernel modules on provided list of kernel modules
 func (r *LoadedKModRule) Match() (bool, error) {
-	modules, ok := source.GetFeatureSource("kernel").GetFeatures().Keys[kernel.LoadedModuleFeature]
+	modules, ok := source.GetFeatureSource("kernel").GetFeatures().Flags[kernel.LoadedModuleFeature]
 	if !ok {
 		return false, fmt.Errorf("info about loaded modules not available")
 	}

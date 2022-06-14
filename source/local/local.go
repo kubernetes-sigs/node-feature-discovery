@@ -88,7 +88,7 @@ func (s *localSource) GetLabels() (source.FeatureLabels, error) {
 	labels := make(source.FeatureLabels)
 	features := s.GetFeatures()
 
-	for k, v := range features.Values[LabelFeature].Elements {
+	for k, v := range features.Attributes[LabelFeature].Elements {
 		labels[k] = v
 	}
 	return labels, nil
@@ -129,7 +129,7 @@ func (s *localSource) Discover() error {
 		}
 	}
 
-	s.features.Values[LabelFeature] = feature.NewValueFeatures(featuresFromFiles)
+	s.features.Attributes[LabelFeature] = feature.NewAttributeFeatures(featuresFromFiles)
 
 	utils.KlogDump(3, "discovered local features:", "  ", s.features)
 

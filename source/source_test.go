@@ -73,8 +73,8 @@ func TestFeatureSources(t *testing.T) {
 
 		f := s.GetFeatures()
 		assert.NotNil(t, f, msg)
-		assert.Empty(t, (*f).Keys, msg)
-		assert.Empty(t, (*f).Values, msg)
+		assert.Empty(t, (*f).Flags, msg)
+		assert.Empty(t, (*f).Attributes, msg)
 		assert.Empty(t, (*f).Instances, msg)
 	}
 }

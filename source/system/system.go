@@ -67,7 +67,7 @@ func (s *systemSource) GetLabels() (source.FeatureLabels, error) {
 	features := s.GetFeatures()
 
 	for _, key := range osReleaseFields {
-		if value, exists := features.Values[OsReleaseFeature].Elements[key]; exists {
+		if value, exists := features.Attributes[OsReleaseFeature].Elements[key]; exists {
 			feature := "os_release." + key
 			labels[feature] = value
 		}
@@ -80,21 +80,21 @@ func (s *systemSource) Discover() error {
 	s.features = feature.NewDomainFeatures()
 
 	// Get node name
-	s.features.Values[NameFeature] = feature.NewValueFeatures(nil)
-	s.features.Values[NameFeature].Elements["nodename"] = os.Getenv("NODE_NAME")
+	s.features.Attributes[NameFeature] = feature.NewAttributeFeatures(nil)
+	s.features.Attributes[NameFeature].Elements["nodename"] = os.Getenv("NODE_NAME")
 
 	// Get os-release information
 	release, err := parseOSRelease()
 	if err != nil {
 		klog.Errorf("failed to get os-release: %s", err)
 	} else {
-		s.features.Values[OsReleaseFeature] = feature.NewValueFeatures(release)
+		s.features.Attributes[OsReleaseFeature] = feature.NewAttributeFeatures(release)
 
 		if v, ok := release["VERSION_ID"]; ok {
 			versionComponents := splitVersion(v)
 			for subKey, subValue := range versionComponents {
 				if subValue != "" {
-					s.features.Values[OsReleaseFeature].Elements["VERSION_ID."+subKey] = subValue
+					s.features.Attributes[OsReleaseFeature].Elements["VERSION_ID."+subKey] = subValue
 				}
 			}
 		}

@@ -63,7 +63,7 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 	features := s.GetFeatures()
 
 	// NUMA
-	if isNuma, ok := features.Values[NumaFeature].Elements["is_numa"]; ok && isNuma == "true" {
+	if isNuma, ok := features.Attributes[NumaFeature].Elements["is_numa"]; ok && isNuma == "true" {
 		labels["numa"] = true
 	}
 
@@ -89,7 +89,7 @@ func (s *memorySource) Discover() error {
 	if numa, err := detectNuma(); err != nil {
 		klog.Errorf("failed to detect NUMA nodes: %v", err)
 	} else {
-		s.features.Values[NumaFeature] = feature.ValueFeatureSet{Elements: numa}
+		s.features.Attributes[NumaFeature] = feature.AttributeFeatureSet{Elements: numa}
 	}
 
 	// Detect NVDIMM
