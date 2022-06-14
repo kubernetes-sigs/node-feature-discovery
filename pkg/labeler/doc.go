@@ -17,4 +17,4 @@ limitations under the License.
 package labeler
 
 //go:generate protoc --go_opt=paths=source_relative --go_out=plugins=grpc:. -I . -I ../.. -I ../../vendor labeler.proto
-//go:generate mockery --name=LabelerClient --inpkg
+//go:generate mockery --name=LabelerClient --inpackage

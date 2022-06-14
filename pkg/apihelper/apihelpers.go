@@ -16,7 +16,7 @@ limitations under the License.
 
 package apihelper
 
-//go:generate mockery --name=APIHelpers --inpkg
+//go:generate mockery --name=APIHelpers --inpackage
 
 import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"

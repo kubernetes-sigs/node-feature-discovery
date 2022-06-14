@@ -16,7 +16,7 @@ limitations under the License.
 
 package source
 
-//go:generate mockery --name=LabelSource --inpkg
+//go:generate mockery --name=LabelSource --inpackage
 
 import (
 	"fmt"

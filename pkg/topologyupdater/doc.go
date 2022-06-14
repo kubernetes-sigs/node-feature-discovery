@@ -17,4 +17,4 @@ limitations under the License.
 package topologyupdater
 
 //go:generate protoc --go_opt=paths=source_relative --go_out=plugins=grpc:. -I . -I ../../vendor/ topology-updater.proto
-//go:generate mockery --name=NodeTopologyClient --inpkg
+//go:generate mockery --name=NodeTopologyClient --inpackage
