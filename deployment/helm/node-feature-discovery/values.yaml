@@ -8,6 +8,7 @@ imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
+namespaceOverride: ""
 
 nodeFeatureRule:
   createCRD: true
