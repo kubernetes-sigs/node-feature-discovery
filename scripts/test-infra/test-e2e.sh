@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # Install deps
-curl -o $HOME/bin/aws-iam-authenticator --create-dirs https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+curl -o $HOME/bin/aws-iam-authenticator --create-dirs -L https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.7/aws-iam-authenticator_0.5.7_linux_amd64
 chmod a+x $HOME/bin/aws-iam-authenticator
 export PATH=$PATH:$HOME/bin
 
