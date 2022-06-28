@@ -488,12 +488,15 @@ The following features are available for matching:
 |                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'.
 | **`cpu.rdt`**    | flag         |          |            | Intel RDT capabilities supported by the system
 |                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](../get-started/features#intel-rdt-flags) for details
-| **`cpu.sgx`**    | attribute    |          |            | Intel SGX (Software Guard Extensions) capabilities
-|                  |              | **`enabled`** | bool  | `true` if Intel SGX has been enabled, otherwise does not exist
+| **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
+|                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
+|                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
+| **`cpu.sgx`**    | attribute    |          |            | **DEPRECATED**: replaced by **`cpu.security`** feature
+|                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`sgx.enabled`** from **`cpu.security`** instead
 | **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities
 |                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist
-| **`cpu.se`**     | attribute    |          |            | IBM Secure Execution for Linux (IBM Z & LinuxONE)
-|                  |              | **`enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
+| **`cpu.se`**     | attribute    |          |            | **DEPRECATED**: replaced by **`cpu.security`** feature
+|                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`se.enabled`** from **`cpu.security`** instead
 | **`cpu.topology`** | attribute  |          |            | CPU topology related features
 | | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled
 | **`kernel.config`** | attribute |          |            | Kernel configuration options

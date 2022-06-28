@@ -1,8 +1,8 @@
-//go:build !s390x
-// +build !s390x
+//go:build !(amd64 || s390x)
+// +build !amd64,!s390x
 
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ limitations under the License.
 
 package cpu
 
-// Secure Execution is exclusive to s390x
-func discoverSE() map[string]string {
+func discoverSecurity() map[string]string {
 	return nil
 }

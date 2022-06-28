@@ -23,10 +23,18 @@ import (
 	"github.com/klauspost/cpuid/v2"
 )
 
-func discoverSGX() map[string]string {
-	var epcSize uint64
-	sgx := make(map[string]string)
+func discoverSecurity() map[string]string {
+	elems := make(map[string]string)
 
+	if sgxEnabled() {
+		elems["sgx.enabled"] = "true"
+	}
+
+	return elems
+}
+
+func sgxEnabled() bool {
+	var epcSize uint64
 	if cpuid.CPU.SGX.Available {
 		for _, s := range cpuid.CPU.SGX.EPCSections {
 			epcSize += s.EPCSize
@@ -39,8 +47,8 @@ func discoverSGX() map[string]string {
 	// allocates "Processor Reserved Memory" for SGX EPC so we rely on > 0
 	// size here to set "SGX = enabled".
 	if epcSize > 0 {
-		sgx["enabled"] = "true"
+		return true
 	}
 
-	return sgx
+	return false
 }

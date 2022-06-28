@@ -25,16 +25,25 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
-func discoverSE() map[string]string {
-	se := make(map[string]string)
+func discoverSecurity() map[string]string {
+	elems := make(map[string]string)
+
+	if seEnabled() {
+		elems["se.enabled"] = "true"
+	}
+
+	return elems
+}
+
+func seEnabled() bool {
 	// This file is available in kernels >=5.12 + backports. Skip specifically
 	// checking facilities and kernel command lines and just assume Secure
 	// Execution to be unavailable or disabled if the file is not present.
 	protVirtHost := source.SysfsDir.Path("firmware/uv/prot_virt_host")
 	if content, err := os.ReadFile(protVirtHost); err == nil {
 		if string(content) == "1\n" {
-			se["enabled"] = "true"
+			return true
 		}
 	}
-	return se
+	return false
 }
