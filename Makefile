@@ -8,6 +8,7 @@ IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
+BUILDER_IMAGE ?= golang:1.18-buster
 BASE_IMAGE_FULL ?= debian:buster-slim
 BASE_IMAGE_MINIMAL ?= gcr.io/distroless/base
 
@@ -69,9 +70,10 @@ ensure-buildx:
 IMAGE_BUILDX_CMD ?= DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
 
 IMAGE_BUILD_ARGS = --build-arg VERSION=$(VERSION) \
-	    	   --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
-	    	   --build-arg BASE_IMAGE_FULL=$(BASE_IMAGE_FULL) \
-	    	   --build-arg BASE_IMAGE_MINIMAL=$(BASE_IMAGE_MINIMAL)
+                --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
+                --build-arg BUILDER_IMAGE=$(BUILDER_IMAGE) \
+                --build-arg BASE_IMAGE_FULL=$(BASE_IMAGE_FULL) \
+                --build-arg BASE_IMAGE_MINIMAL=$(BASE_IMAGE_MINIMAL)
 
 IMAGE_BUILD_ARGS_FULL = --target full \
                 	-t $(IMAGE_TAG) \
