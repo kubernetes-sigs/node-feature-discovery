@@ -506,6 +506,15 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			By("Waiting for the nfd-master pod to be running")
 			Expect(e2epod.WaitTimeoutForPodRunningInNamespace(f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(HaveOccurred())
 
+			By("Verifying the node where nfd-master is running")
+			// Get updated masterPod object (we want to know where it was scheduled)
+			masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), masterPod.ObjectMeta.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			// Node running nfd-master should have master version annotation
+			masterPodNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), masterPod.Spec.NodeName, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(masterPodNode.Annotations).To(HaveKey(master.AnnotationNsBase + "/master.version"))
+
 			By("Waiting for the nfd-master service to be up")
 			Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 		})
@@ -650,10 +659,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 						}
 					}
 
-					// Node running nfd-master should have master version annotation
-					if node.Name == masterPod.Spec.NodeName {
-						Expect(node.Annotations).To(HaveKey(master.AnnotationNsBase + "master.version"))
-					}
 				}
 
 				By("Deleting nfd-worker daemonset")
