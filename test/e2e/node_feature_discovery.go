@@ -61,16 +61,19 @@ type e2eConfig struct {
 	DefaultFeatures *struct {
 		LabelWhitelist      lookupMap
 		AnnotationWhitelist lookupMap
-		Nodes               map[string]nodeConfig
+		Nodes               []nodeConfig
 	}
 }
 
 type nodeConfig struct {
-	nameRe                   *regexp.Regexp
+	Name                     string
+	NodeNameRegexp           string
 	ExpectedLabelValues      map[string]string
 	ExpectedLabelKeys        lookupMap
 	ExpectedAnnotationValues map[string]string
 	ExpectedAnnotationKeys   lookupMap
+
+	nameRe *regexp.Regexp
 }
 
 type lookupMap map[string]struct{}
@@ -105,10 +108,9 @@ func readConfig() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// Pre-compile node name matching regexps
-	for name, nodeConf := range conf.DefaultFeatures.Nodes {
-		nodeConf.nameRe, err = regexp.Compile(name)
+	for i, nodeConf := range conf.DefaultFeatures.Nodes {
+		conf.DefaultFeatures.Nodes[i].nameRe, err = regexp.Compile(nodeConf.NodeNameRegexp)
 		Expect(err).NotTo(HaveOccurred())
-		conf.DefaultFeatures.Nodes[name] = nodeConf
 	}
 }
 
@@ -607,7 +609,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					var nodeConf *nodeConfig
 					for _, conf := range fConf.Nodes {
 						if conf.nameRe.MatchString(node.Name) {
-							e2elog.Logf("node %q matches rule %q", node.Name, conf.nameRe)
+							e2elog.Logf("node %q matches rule %q (regexp %q)", node.Name, conf.Name, conf.nameRe)
 							nodeConf = &conf
 							break
 						}
