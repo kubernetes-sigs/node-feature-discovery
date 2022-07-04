@@ -71,15 +71,15 @@ func (m *AttributeFeatureSet) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AttributeFeatureSet proto.InternalMessageInfo
 
-func (m *DomainFeatures) Reset()      { *m = DomainFeatures{} }
-func (*DomainFeatures) ProtoMessage() {}
-func (*DomainFeatures) Descriptor() ([]byte, []int) {
+func (m *Features) Reset()      { *m = Features{} }
+func (*Features) ProtoMessage() {}
+func (*Features) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6f67d44e41cfe439, []int{1}
 }
-func (m *DomainFeatures) XXX_Unmarshal(b []byte) error {
+func (m *Features) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DomainFeatures) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Features) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	b = b[:cap(b)]
 	n, err := m.MarshalToSizedBuffer(b)
 	if err != nil {
@@ -87,13 +87,13 @@ func (m *DomainFeatures) XXX_Marshal(b []byte, deterministic bool) ([]byte, erro
 	}
 	return b[:n], nil
 }
-func (m *DomainFeatures) XXX_Merge(src proto.Message) {
+func (m *Features) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_DomainFeatures.Merge(m, src)
 }
-func (m *DomainFeatures) XXX_Size() int {
+func (m *Features) XXX_Size() int {
 	return m.Size()
 }
-func (m *DomainFeatures) XXX_DiscardUnknown() {
+func (m *Features) XXX_DiscardUnknown() {
 	xxx_messageInfo_DomainFeatures.DiscardUnknown(m)
 }
 
@@ -214,7 +214,7 @@ var xxx_messageInfo_Nil proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*AttributeFeatureSet)(nil), "v1alpha1.AttributeFeatureSet")
 	proto.RegisterMapType((map[string]string)(nil), "v1alpha1.AttributeFeatureSet.ElementsEntry")
-	proto.RegisterType((*DomainFeatures)(nil), "v1alpha1.DomainFeatures")
+	proto.RegisterType((*Features)(nil), "v1alpha1.DomainFeatures")
 	proto.RegisterMapType((map[string]FlagFeatureSet)(nil), "v1alpha1.DomainFeatures.FlagsEntry")
 	proto.RegisterMapType((map[string]InstanceFeatureSet)(nil), "v1alpha1.DomainFeatures.InstancesEntry")
 	proto.RegisterMapType((map[string]AttributeFeatureSet)(nil), "v1alpha1.DomainFeatures.VattributesEntry")
@@ -316,7 +316,7 @@ func (m *AttributeFeatureSet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DomainFeatures) Marshal() (dAtA []byte, err error) {
+func (m *Features) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -326,12 +326,12 @@ func (m *DomainFeatures) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DomainFeatures) MarshalTo(dAtA []byte) (int, error) {
+func (m *Features) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DomainFeatures) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Features) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -613,7 +613,7 @@ func (m *AttributeFeatureSet) Size() (n int) {
 	return n
 }
 
-func (m *DomainFeatures) Size() (n int) {
+func (m *Features) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -734,7 +734,7 @@ func (this *AttributeFeatureSet) String() string {
 	}, "")
 	return s
 }
-func (this *DomainFeatures) String() string {
+func (this *Features) String() string {
 	if this == nil {
 		return "nil"
 	}
@@ -1025,7 +1025,7 @@ func (m *AttributeFeatureSet) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DomainFeatures) Unmarshal(dAtA []byte) error {
+func (m *Features) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

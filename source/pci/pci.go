@@ -50,7 +50,7 @@ func newDefaultConfig() *Config {
 // pciSource implements the FeatureSource, LabelSource and ConfigurableSource interfaces.
 type pciSource struct {
 	config   *Config
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -140,7 +140,7 @@ func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *pciSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	devs, err := detectPci()
 	if err != nil {
@@ -154,9 +154,9 @@ func (s *pciSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *pciSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *pciSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

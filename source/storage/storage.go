@@ -37,7 +37,7 @@ const BlockFeature = "block"
 
 // storageSource implements the FeatureSource and LabelSource interfaces.
 type storageSource struct {
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -73,7 +73,7 @@ func (s *storageSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *storageSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	devs, err := detectBlock()
 	if err != nil {
@@ -87,9 +87,9 @@ func (s *storageSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface.
-func (s *storageSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *storageSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

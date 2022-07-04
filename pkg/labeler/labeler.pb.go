@@ -53,7 +53,7 @@ type SetLabelsRequest struct {
 	NfdVersion string                              `protobuf:"bytes,1,opt,name=nfd_version,json=nfdVersion,proto3" json:"nfd_version,omitempty"`
 	NodeName   string                              `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
 	Labels     map[string]string                   `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Features   map[string]*v1alpha1.DomainFeatures `protobuf:"bytes,4,rep,name=features,proto3" json:"features,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Features   map[string]*v1alpha1.Features `protobuf:"bytes,4,rep,name=features,proto3" json:"features,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *SetLabelsRequest) Reset() {
@@ -109,7 +109,7 @@ func (x *SetLabelsRequest) GetLabels() map[string]string {
 	return nil
 }
 
-func (x *SetLabelsRequest) GetFeatures() map[string]*v1alpha1.DomainFeatures {
+func (x *SetLabelsRequest) GetFeatures() map[string]*v1alpha1.Features {
 	if x != nil {
 		return x.Features
 	}
@@ -214,7 +214,7 @@ var file_labeler_proto_goTypes = []interface{}{
 	(*SetLabelsReply)(nil),          // 1: labeler.SetLabelsReply
 	nil,                             // 2: labeler.SetLabelsRequest.LabelsEntry
 	nil,                             // 3: labeler.SetLabelsRequest.FeaturesEntry
-	(*v1alpha1.DomainFeatures)(nil), // 4: v1alpha1.DomainFeatures
+	(*v1alpha1.Features)(nil), // 4: v1alpha1.DomainFeatures
 }
 var file_labeler_proto_depIdxs = []int32{
 	2, // 0: labeler.SetLabelsRequest.labels:type_name -> labeler.SetLabelsRequest.LabelsEntry

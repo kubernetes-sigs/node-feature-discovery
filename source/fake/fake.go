@@ -84,7 +84,7 @@ func newDefaultConfig() *Config {
 // fakeSource implements the FeatureSource, LabelSource and ConfigurableSource interfaces.
 type fakeSource struct {
 	config   *Config
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -116,7 +116,7 @@ func (s *fakeSource) SetConfig(conf source.Config) {
 
 // Discover method of the FeatureSource interface
 func (s *fakeSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	s.features.Flags[FlagFeature] = nfdv1alpha1.NewFlagFeatures(s.config.FlagFeatures...)
 	s.features.Attributes[AttributeFeature] = nfdv1alpha1.NewAttributeFeatures(s.config.AttributeFeatures)
@@ -133,9 +133,9 @@ func (s *fakeSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface.
-func (s *fakeSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *fakeSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

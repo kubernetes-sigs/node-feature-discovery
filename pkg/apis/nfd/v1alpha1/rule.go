@@ -35,7 +35,7 @@ type RuleOutput struct {
 }
 
 // Execute the rule against a set of input features.
-func (r *Rule) Execute(features Features) (RuleOutput, error) {
+func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
@@ -145,55 +145,39 @@ func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) er
 	return nil
 }
 
-type matchedFeatures map[string]domainMatchedFeatures
+type matchedFeatures map[string]interface{}
 
-type domainMatchedFeatures map[string]interface{}
-
-func (e *MatchAnyElem) match(features map[string]*DomainFeatures) (bool, matchedFeatures, error) {
+func (e *MatchAnyElem) match(features *Features) (bool, matchedFeatures, error) {
 	return e.MatchFeatures.match(features)
 }
 
-func (m *FeatureMatcher) match(features map[string]*DomainFeatures) (bool, matchedFeatures, error) {
+func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error) {
 	matches := make(matchedFeatures, len(*m))
 
 	// Logical AND over the terms
 	for _, term := range *m {
-		split := strings.SplitN(term.Feature, ".", 2)
-		if len(split) != 2 {
-			return false, nil, fmt.Errorf("invalid feature %q: must be <domain>.<feature>", term.Feature)
-		}
-		domain := split[0]
 		// Ignore case
-		featureName := strings.ToLower(split[1])
-
-		domainFeatures, ok := features[domain]
-		if !ok {
-			return false, nil, fmt.Errorf("unknown feature source/domain %q", domain)
-		}
-
-		if _, ok := matches[domain]; !ok {
-			matches[domain] = make(domainMatchedFeatures)
-		}
+		featureName := strings.ToLower(term.Feature)
 
 		var isMatch bool
 		var err error
-		if f, ok := domainFeatures.Flags[featureName]; ok {
+		if f, ok := features.Flags[featureName]; ok {
 			m, v, e := term.MatchExpressions.MatchGetKeys(f.Elements)
 			isMatch = m
 			err = e
-			matches[domain][featureName] = v
-		} else if f, ok := domainFeatures.Attributes[featureName]; ok {
+			matches[featureName] = v
+		} else if f, ok := features.Attributes[featureName]; ok {
 			m, v, e := term.MatchExpressions.MatchGetValues(f.Elements)
 			isMatch = m
 			err = e
-			matches[domain][featureName] = v
-		} else if f, ok := domainFeatures.Instances[featureName]; ok {
+			matches[featureName] = v
+		} else if f, ok := features.Instances[featureName]; ok {
 			v, e := term.MatchExpressions.MatchGetInstances(f.Elements)
 			isMatch = len(v) > 0
 			err = e
-			matches[domain][featureName] = v
+			matches[featureName] = v
 		} else {
-			return false, nil, fmt.Errorf("%q feature of source/domain %q not available", featureName, domain)
+			return false, nil, fmt.Errorf("feature %q not available", featureName)
 		}
 
 		if err != nil {
