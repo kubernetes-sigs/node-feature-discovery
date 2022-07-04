@@ -24,7 +24,6 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
@@ -36,7 +35,7 @@ type RuleOutput struct {
 }
 
 // Execute the rule against a set of input features.
-func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
+func (r *Rule) Execute(features Features) (RuleOutput, error) {
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
@@ -150,11 +149,11 @@ type matchedFeatures map[string]domainMatchedFeatures
 
 type domainMatchedFeatures map[string]interface{}
 
-func (e *MatchAnyElem) match(features map[string]*feature.DomainFeatures) (bool, matchedFeatures, error) {
+func (e *MatchAnyElem) match(features map[string]*DomainFeatures) (bool, matchedFeatures, error) {
 	return e.MatchFeatures.match(features)
 }
 
-func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (bool, matchedFeatures, error) {
+func (m *FeatureMatcher) match(features map[string]*DomainFeatures) (bool, matchedFeatures, error) {
 	matches := make(matchedFeatures, len(*m))
 
 	// Logical AND over the terms

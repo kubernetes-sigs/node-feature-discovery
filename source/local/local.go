@@ -26,7 +26,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -45,7 +45,7 @@ var (
 
 // localSource implements the FeatureSource and LabelSource interfaces.
 type localSource struct {
-	features *feature.DomainFeatures
+	features *nfdv1alpha1.DomainFeatures
 	config   *Config
 }
 
@@ -103,7 +103,7 @@ func newDefaultConfig() *Config {
 
 // Discover method of the FeatureSource interface
 func (s *localSource) Discover() error {
-	s.features = feature.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewDomainFeatures()
 
 	featuresFromFiles, err := getFeaturesFromFiles()
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *localSource) Discover() error {
 		}
 	}
 
-	s.features.Attributes[LabelFeature] = feature.NewAttributeFeatures(featuresFromFiles)
+	s.features.Attributes[LabelFeature] = nfdv1alpha1.NewAttributeFeatures(featuresFromFiles)
 
 	utils.KlogDump(3, "discovered local features:", "  ", s.features)
 
@@ -137,9 +137,9 @@ func (s *localSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *localSource) GetFeatures() *feature.DomainFeatures {
+func (s *localSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
 	if s.features == nil {
-		s.features = feature.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewDomainFeatures()
 	}
 	return s.features
 }

@@ -25,7 +25,6 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -108,7 +107,7 @@ func (s *customSource) Priority() int { return 10 }
 // GetLabels method of the LabelSource interface
 func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	// Get raw features from all sources
-	domainFeatures := make(map[string]*feature.DomainFeatures)
+	domainFeatures := make(map[string]*nfdv1alpha1.DomainFeatures)
 	for n, s := range source.GetAllFeatureSources() {
 		domainFeatures[n] = s.GetFeatures()
 	}
@@ -129,13 +128,13 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 			labels[n] = v
 		}
 		// Feed back rule output to features map for subsequent rules to match
-		feature.InsertAttributeFeatures(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
-		feature.InsertAttributeFeatures(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
+		nfdv1alpha1.InsertAttributeFeatures(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
+		nfdv1alpha1.InsertAttributeFeatures(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 	}
 	return labels, nil
 }
 
-func (r *CustomRule) execute(features map[string]*feature.DomainFeatures) (nfdv1alpha1.RuleOutput, error) {
+func (r *CustomRule) execute(features map[string]*nfdv1alpha1.DomainFeatures) (nfdv1alpha1.RuleOutput, error) {
 	if r.LegacyRule != nil {
 		ruleOut, err := r.LegacyRule.execute(features)
 		if err != nil {
@@ -155,7 +154,7 @@ func (r *CustomRule) execute(features map[string]*feature.DomainFeatures) (nfdv1
 	return nfdv1alpha1.RuleOutput{}, fmt.Errorf("BUG: an empty rule, this really should not happen")
 }
 
-func (r *LegacyRule) execute(features map[string]*feature.DomainFeatures) (map[string]string, error) {
+func (r *LegacyRule) execute(features map[string]*nfdv1alpha1.DomainFeatures) (map[string]string, error) {
 	if len(r.MatchOn) > 0 {
 		// Logical OR over the legacy rules
 		matched := false

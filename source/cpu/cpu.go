@@ -24,7 +24,7 @@ import (
 
 	"github.com/klauspost/cpuid/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -102,7 +102,7 @@ type keyFilter struct {
 type cpuSource struct {
 	config      *Config
 	cpuidFilter *keyFilter
-	features    *feature.DomainFeatures
+	features    *nfdv1alpha1.DomainFeatures
 }
 
 // Singleton source instance
@@ -197,20 +197,20 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource Interface
 func (s *cpuSource) Discover() error {
-	s.features = feature.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewDomainFeatures()
 
 	// Detect CPUID
-	s.features.Flags[CpuidFeature] = feature.NewFlagFeatures(getCpuidFlags()...)
+	s.features.Flags[CpuidFeature] = nfdv1alpha1.NewFlagFeatures(getCpuidFlags()...)
 
 	// Detect CPU model
-	s.features.Attributes[Cpumodel] = feature.NewAttributeFeatures(getCPUModel())
+	s.features.Attributes[Cpumodel] = nfdv1alpha1.NewAttributeFeatures(getCPUModel())
 
 	// Detect cstate configuration
 	cstate, err := detectCstate()
 	if err != nil {
 		klog.Errorf("failed to detect cstate: %v", err)
 	} else {
-		s.features.Attributes[CstateFeature] = feature.NewAttributeFeatures(cstate)
+		s.features.Attributes[CstateFeature] = nfdv1alpha1.NewAttributeFeatures(cstate)
 	}
 
 	// Detect pstate features
@@ -218,33 +218,33 @@ func (s *cpuSource) Discover() error {
 	if err != nil {
 		klog.Error(err)
 	}
-	s.features.Attributes[PstateFeature] = feature.NewAttributeFeatures(pstate)
+	s.features.Attributes[PstateFeature] = nfdv1alpha1.NewAttributeFeatures(pstate)
 
 	// Detect RDT features
-	s.features.Flags[RdtFeature] = feature.NewFlagFeatures(discoverRDT()...)
+	s.features.Flags[RdtFeature] = nfdv1alpha1.NewFlagFeatures(discoverRDT()...)
 
 	// Detect SGX features
-	s.features.Attributes[SecurityFeature] = feature.NewAttributeFeatures(discoverSecurity())
+	s.features.Attributes[SecurityFeature] = nfdv1alpha1.NewAttributeFeatures(discoverSecurity())
 
 	// Detect SGX features
 	//
 	// DEPRECATED in v0.12: will be removed in the future
 	if val, ok := s.features.Attributes[SecurityFeature].Elements["sgx.enabled"]; ok {
-		s.features.Attributes[SgxFeature] = feature.NewAttributeFeatures(map[string]string{"enabled": val})
+		s.features.Attributes[SgxFeature] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"enabled": val})
 	}
 
 	// Detect Secure Execution features
 	//
 	// DEPRECATED in v0.12: will be removed in the future
 	if val, ok := s.features.Attributes[SecurityFeature].Elements["se.enabled"]; ok {
-		s.features.Attributes[SeFeature] = feature.NewAttributeFeatures(map[string]string{"enabled": val})
+		s.features.Attributes[SeFeature] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"enabled": val})
 	}
 
 	// Detect SST features
-	s.features.Attributes[SstFeature] = feature.NewAttributeFeatures(discoverSST())
+	s.features.Attributes[SstFeature] = nfdv1alpha1.NewAttributeFeatures(discoverSST())
 
 	// Detect hyper-threading
-	s.features.Attributes[TopologyFeature] = feature.NewAttributeFeatures(discoverTopology())
+	s.features.Attributes[TopologyFeature] = nfdv1alpha1.NewAttributeFeatures(discoverTopology())
 
 	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
 
@@ -252,9 +252,9 @@ func (s *cpuSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *cpuSource) GetFeatures() *feature.DomainFeatures {
+func (s *cpuSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
 	if s.features == nil {
-		s.features = feature.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewDomainFeatures()
 	}
 	return s.features
 }

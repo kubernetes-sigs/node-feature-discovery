@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	api "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 )
 
@@ -182,7 +181,7 @@ func TestMatch(t *testing.T) {
 
 func TestMatchKeys(t *testing.T) {
 	type V = api.MatchValue
-	type I = map[string]feature.Nil
+	type I = map[string]api.Nil
 	type TC struct {
 		op     api.MatchOp
 		values V
@@ -290,7 +289,7 @@ func TestMatchValues(t *testing.T) {
 }
 
 func TestMESMatchKeys(t *testing.T) {
-	type I = map[string]feature.Nil
+	type I = map[string]api.Nil
 	type MK = api.MatchedKey
 	type O = []MK
 	type TC struct {
@@ -413,7 +412,7 @@ baz: { op: Gt, value: ["10"] }
 }
 
 func TestMESMatchInstances(t *testing.T) {
-	type I = feature.InstanceFeature
+	type I = api.InstanceFeature
 	type MI = api.MatchedInstance
 	type O = []MI
 	type A = map[string]string

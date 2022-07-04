@@ -25,7 +25,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -42,7 +42,7 @@ const NumaFeature = "numa"
 
 // memorySource implements the FeatureSource and LabelSource interfaces.
 type memorySource struct {
-	features *feature.DomainFeatures
+	features *nfdv1alpha1.DomainFeatures
 }
 
 // Singleton source instance
@@ -84,20 +84,20 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *memorySource) Discover() error {
-	s.features = feature.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewDomainFeatures()
 
 	// Detect NUMA
 	if numa, err := detectNuma(); err != nil {
 		klog.Errorf("failed to detect NUMA nodes: %v", err)
 	} else {
-		s.features.Attributes[NumaFeature] = feature.AttributeFeatureSet{Elements: numa}
+		s.features.Attributes[NumaFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: numa}
 	}
 
 	// Detect NVDIMM
 	if nv, err := detectNv(); err != nil {
 		klog.Errorf("failed to detect nvdimm devices: %v", err)
 	} else {
-		s.features.Instances[NvFeature] = feature.InstanceFeatureSet{Elements: nv}
+		s.features.Instances[NvFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: nv}
 	}
 
 	utils.KlogDump(3, "discovered memory features:", "  ", s.features)
@@ -106,9 +106,9 @@ func (s *memorySource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface.
-func (s *memorySource) GetFeatures() *feature.DomainFeatures {
+func (s *memorySource) GetFeatures() *nfdv1alpha1.DomainFeatures {
 	if s.features == nil {
-		s.features = feature.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewDomainFeatures()
 	}
 	return s.features
 }
@@ -129,9 +129,9 @@ func detectNuma() (map[string]string, error) {
 }
 
 // detectNv detects NVDIMM devices
-func detectNv() ([]feature.InstanceFeature, error) {
+func detectNv() ([]nfdv1alpha1.InstanceFeature, error) {
 	sysfsBasePath := hostpath.SysfsDir.Path("bus/nd/devices")
-	info := make([]feature.InstanceFeature, 0)
+	info := make([]nfdv1alpha1.InstanceFeature, 0)
 
 	devices, err := os.ReadDir(sysfsBasePath)
 	if os.IsNotExist(err) {
@@ -153,7 +153,7 @@ func detectNv() ([]feature.InstanceFeature, error) {
 // ndDevAttrs is the list of sysfs files (under each nd device) that we're trying to read
 var ndDevAttrs = []string{"devtype", "mode"}
 
-func readNdDeviceInfo(path string) feature.InstanceFeature {
+func readNdDeviceInfo(path string) nfdv1alpha1.InstanceFeature {
 	attrs := map[string]string{"name": filepath.Base(path)}
 	for _, attrName := range ndDevAttrs {
 		data, err := os.ReadFile(filepath.Join(path, attrName))
@@ -163,7 +163,7 @@ func readNdDeviceInfo(path string) feature.InstanceFeature {
 		}
 		attrs[attrName] = strings.TrimSpace(string(data))
 	}
-	return *feature.NewInstanceFeature(attrs)
+	return *nfdv1alpha1.NewInstanceFeature(attrs)
 }
 
 func init() {
