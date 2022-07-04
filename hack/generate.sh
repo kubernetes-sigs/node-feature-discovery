@@ -10,10 +10,10 @@ go generate ./cmd/... ./pkg/... ./source/...
 
 rm -rf vendor/
 
-controller-gen object crd output:crd:stdout paths=./pkg/apis/... > deployment/base/nfd-crds/nodefeaturerule-crd.yaml
+controller-gen object crd output:crd:stdout paths=./pkg/apis/... > deployment/base/nfd-crds/nfd-api-crds.yaml
 
 mkdir -p deployment/helm/node-feature-discovery/crds
-cp deployment/base/nfd-crds/nodefeaturerule-crd.yaml deployment/helm/node-feature-discovery/crds/
+cp deployment/base/nfd-crds/nfd-api-crds.yaml deployment/helm/node-feature-discovery/crds
 
 rm -rf sigs.k8s.io
 
