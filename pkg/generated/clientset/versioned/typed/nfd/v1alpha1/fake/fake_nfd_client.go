@@ -28,6 +28,10 @@ type FakeNfdV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeNfdV1alpha1) NodeFeatures(namespace string) v1alpha1.NodeFeatureInterface {
+	return &FakeNodeFeatures{c, namespace}
+}
+
 func (c *FakeNfdV1alpha1) NodeFeatureRules() v1alpha1.NodeFeatureRuleInterface {
 	return &FakeNodeFeatureRules{c}
 }
