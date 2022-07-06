@@ -118,7 +118,7 @@ func (s *fakeSource) SetConfig(conf source.Config) {
 func (s *fakeSource) Discover() error {
 	s.features = feature.NewDomainFeatures()
 
-	s.features.Keys[AttributeFeature] = feature.NewKeyFeatures(s.config.FlagFeatures...)
+	s.features.Keys[FlagFeature] = feature.NewKeyFeatures(s.config.FlagFeatures...)
 	s.features.Values[AttributeFeature] = feature.NewValueFeatures(s.config.AttributeFeatures)
 
 	instances := make([]feature.InstanceFeature, len(s.config.InstanceFeatures))
