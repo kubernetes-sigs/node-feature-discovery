@@ -33,7 +33,7 @@ func TestRule(t *testing.T) {
 			FeatureMatcherTerm{
 				Feature: "domain-1.kf-1",
 				MatchExpressions: MatchExpressionSet{
-					Expressions: Expressions{"key-1": MustCreateMatchExpression(MatchExists)},
+					"key-1": MustCreateMatchExpression(MatchExists),
 				},
 			},
 		},
@@ -111,7 +111,7 @@ func TestRule(t *testing.T) {
 			FeatureMatcherTerm{
 				Feature: "domain-1.vf-1",
 				MatchExpressions: MatchExpressionSet{
-					Expressions: Expressions{"key-1": MustCreateMatchExpression(MatchIn, "val-1")},
+					"key-1": MustCreateMatchExpression(MatchIn, "val-1"),
 				},
 			},
 		},
@@ -132,7 +132,7 @@ func TestRule(t *testing.T) {
 			FeatureMatcherTerm{
 				Feature: "domain-1.if-1",
 				MatchExpressions: MatchExpressionSet{
-					Expressions: Expressions{"attr-1": MustCreateMatchExpression(MatchIn, "val-1")},
+					"attr-1": MustCreateMatchExpression(MatchIn, "val-1"),
 				},
 			},
 		},
@@ -153,13 +153,13 @@ func TestRule(t *testing.T) {
 			FeatureMatcherTerm{
 				Feature: "domain-1.vf-1",
 				MatchExpressions: MatchExpressionSet{
-					Expressions: Expressions{"key-1": MustCreateMatchExpression(MatchIn, "val-x")},
+					"key-1": MustCreateMatchExpression(MatchIn, "val-x"),
 				},
 			},
 			FeatureMatcherTerm{
 				Feature: "domain-1.if-1",
 				MatchExpressions: MatchExpressionSet{
-					Expressions: Expressions{"attr-1": MustCreateMatchExpression(MatchIn, "val-1")},
+					"attr-1": MustCreateMatchExpression(MatchIn, "val-1"),
 				},
 			},
 		},
@@ -168,7 +168,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "instances should not have matched")
 
-	r5.MatchFeatures[0].MatchExpressions.Expressions["key-1"] = MustCreateMatchExpression(MatchIn, "val-1")
+	r5.MatchFeatures[0].MatchExpressions["key-1"] = MustCreateMatchExpression(MatchIn, "val-1")
 	m, err = r5.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m.Labels, "instances should have matched")
@@ -180,7 +180,7 @@ func TestRule(t *testing.T) {
 				FeatureMatcherTerm{
 					Feature: "domain-1.kf-1",
 					MatchExpressions: MatchExpressionSet{
-						Expressions: Expressions{"key-na": MustCreateMatchExpression(MatchExists)},
+						"key-na": MustCreateMatchExpression(MatchExists),
 					},
 				},
 			},
@@ -196,12 +196,12 @@ func TestRule(t *testing.T) {
 				FeatureMatcherTerm{
 					Feature: "domain-1.kf-1",
 					MatchExpressions: MatchExpressionSet{
-						Expressions: Expressions{"key-1": MustCreateMatchExpression(MatchExists)},
+						"key-1": MustCreateMatchExpression(MatchExists),
 					},
 				},
 			},
 		})
-	r5.MatchFeatures[0].MatchExpressions.Expressions["key-1"] = MustCreateMatchExpression(MatchIn, "val-1")
+	r5.MatchFeatures[0].MatchExpressions["key-1"] = MustCreateMatchExpression(MatchIn, "val-1")
 	m, err = r5.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r5.Labels, m.Labels, "instances should have matched")
@@ -275,26 +275,23 @@ var-2=
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature: "domain_1.kf_1",
-				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+				MatchExpressions: MatchExpressionSet{
 					"key-a": MustCreateMatchExpression(MatchExists),
 					"key-c": MustCreateMatchExpression(MatchExists),
 					"foo":   MustCreateMatchExpression(MatchDoesNotExist),
 				},
-				},
 			},
 			FeatureMatcherTerm{
 				Feature: "domain_1.vf_1",
-				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+				MatchExpressions: MatchExpressionSet{
 					"key-1": MustCreateMatchExpression(MatchIn, "val-1", "val-2"),
 					"bar":   MustCreateMatchExpression(MatchDoesNotExist),
-				},
 				},
 			},
 			FeatureMatcherTerm{
 				Feature: "domain_1.if_1",
-				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+				MatchExpressions: MatchExpressionSet{
 					"attr-1": MustCreateMatchExpression(MatchLt, "100"),
-				},
 				},
 			},
 		},
@@ -337,9 +334,8 @@ var-2=
 			// Use a simple empty matchexpression set to match anything.
 			FeatureMatcherTerm{
 				Feature: "domain_1.kf_1",
-				MatchExpressions: MatchExpressionSet{Expressions: Expressions{
+				MatchExpressions: MatchExpressionSet{
 					"key-a": MustCreateMatchExpression(MatchExists),
-				},
 				},
 			},
 		},

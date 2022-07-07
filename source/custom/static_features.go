@@ -32,9 +32,7 @@ func getStaticFeatureConfig() []CustomRule {
 					{
 						PciID: &rules.PciIDRule{
 							MatchExpressionSet: nfdv1alpha1.MatchExpressionSet{
-								Expressions: nfdv1alpha1.Expressions{
-									"vendor": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "15b3"),
-								},
+								"vendor": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "15b3"),
 							},
 						},
 					},
@@ -48,10 +46,8 @@ func getStaticFeatureConfig() []CustomRule {
 					{
 						LoadedKMod: &rules.LoadedKModRule{
 							MatchExpressionSet: nfdv1alpha1.MatchExpressionSet{
-								Expressions: nfdv1alpha1.Expressions{
-									"ib_uverbs": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
-									"rdma_ucm":  nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
-								},
+								"ib_uverbs": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+								"rdma_ucm":  nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
 							},
 						},
 					},
