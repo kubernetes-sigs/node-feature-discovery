@@ -5,12 +5,14 @@ this=`basename $0`
 
 usage () {
 cat << EOF
-Usage: $this [-h] [-a] [-b] [-k GPG_KEY] RELEASE_VERSION
+Usage: $this [-h] [-b] [-k GPG_KEY] {-a|-g GOLANG_VERSION} RELEASE_VERSION
 
 Options:
   -h         show this help and exit
   -a         do not patch files in the repo
   -b         do not generate assets
+  -g         golang version to fix for the release (mandatory when -a not
+             specified). Should be a exact point release e.g. 1.18.3.
   -k         gpg key to use for signing the assets
 
 Example:
@@ -39,11 +41,13 @@ files:
 #
 no_patching=
 no_assets=
-while getopts "abk:h" opt; do
+while getopts "abg:k:h" opt; do
     case $opt in
         a)  no_patching=y
             ;;
         b)  no_assets=y
+            ;;
+        g) golang_version="$OPTARG"
             ;;
         k) signing_key="$OPTARG"
             ;;
@@ -64,6 +68,12 @@ if [ $# -ne 1 ]; then
     else
         echo -e "ERROR: unknown arguments: ${@:3}\n"
     fi
+    usage
+    exit 1
+fi
+
+if [ -z "$no_patching" -a -z "$golang_version" ]; then
+    echo -e "ERROR: '-g GOLANG_VERSION' must be specified when modifying repo (i.e. when '-a' is not used)\n"
     usage
     exit 1
 fi
@@ -94,6 +104,11 @@ fi
 # Modify files in the repo to point to new release
 #
 if [ -z "$no_patching" ]; then
+    # Patch docs configuration
+    echo Patching golang version $golang_version into Makefile
+    sed -e s"/\(^BUILDER_IMAGE.*=.*golang:\)[0-9][0-9.]*\(.*\)/\1$golang_version\2/" \
+        -i Makefile
+
     # Patch docs configuration
     echo Patching docs/_config.yml
     sed -e s"/release:.*/release: $release/"  \
