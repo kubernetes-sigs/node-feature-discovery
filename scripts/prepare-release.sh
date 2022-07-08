@@ -5,11 +5,12 @@ this=`basename $0`
 
 usage () {
 cat << EOF
-Usage: $this [-h] RELEASE_VERSION GPG_KEY
+Usage: $this [-h] [-a] [-b] RELEASE_VERSION GPG_KEY
 
 Options:
   -h         show this help and exit
-  -a         only generate release assets, do not patch files in the repo
+  -a         do not patch files in the repo
+  -b         do not generate assets
 
 Example:
 
@@ -34,10 +35,13 @@ files:
 #
 # Parse command line
 #
-assets_only=
-while getopts "ah" opt; do
+no_patching=
+no_assets=
+while getopts "abh" opt; do
     case $opt in
-        a)  assets_only=y
+        a)  no_patching=y
+            ;;
+        b)  no_assets=y
             ;;
         h)  usage
             exit 0
@@ -83,7 +87,10 @@ else
     exit 1
 fi
 
-if [ -z "$assets_only" ]; then
+#
+# Modify files in the repo to point to new release
+#
+if [ -z "$no_patching" ]; then
     # Patch docs configuration
     echo Patching docs/_config.yml
     sed -e s"/release:.*/release: $release/"  \
@@ -123,13 +130,14 @@ fi
 #
 # Create release assets to be uploaded
 #
-helm package deployment/helm/node-feature-discovery/ --version $semver
+if [ -z "$no_assets" ]; then
+    helm package deployment/helm/node-feature-discovery/ --version $semver
 
-chart_name="node-feature-discovery-chart-$semver.tgz"
-mv node-feature-discovery-$semver.tgz $chart_name
-sign_helm_chart $chart_name
+    chart_name="node-feature-discovery-chart-$semver.tgz"
+    mv node-feature-discovery-$semver.tgz $chart_name
+    sign_helm_chart $chart_name
 
-cat << EOF
+    cat << EOF
 
 *******************************************************************************
 *** Please manually upload the following generated files to the Github release
@@ -140,3 +148,4 @@ cat << EOF
 ***
 *******************************************************************************
 EOF
+fi
