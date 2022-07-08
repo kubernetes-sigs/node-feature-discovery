@@ -43,7 +43,6 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/cpu"
 	_ "sigs.k8s.io/node-feature-discovery/source/custom"
 	_ "sigs.k8s.io/node-feature-discovery/source/fake"
-	_ "sigs.k8s.io/node-feature-discovery/source/iommu"
 	_ "sigs.k8s.io/node-feature-discovery/source/kernel"
 	_ "sigs.k8s.io/node-feature-discovery/source/local"
 	_ "sigs.k8s.io/node-feature-discovery/source/memory"
