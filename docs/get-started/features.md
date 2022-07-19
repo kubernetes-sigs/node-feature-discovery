@@ -69,6 +69,7 @@ configuration options for details.
 | AESNI              | Advanced Encryption Standard (AES) New Instructions (AES-NI)
 | AVX                | Advanced Vector Extensions (AVX)
 | AVX2               | Advanced Vector Extensions 2 (AVX2)
+| AVXVNNI            | AVX (VEX encoded) VNNI neural network instructions
 | AMXBF16            | Advanced Matrix Extension, tile multiplication operations on BFLOAT16 numbers
 | AMXINT8            | Advanced Matrix Extension, tile multiplication operations on 8-bit integers
 | AMXTILE            | Advanced Matrix Extension, base tile architecture support
