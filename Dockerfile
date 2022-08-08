@@ -1,8 +1,9 @@
+ARG BUILDER_IMAGE
 ARG BASE_IMAGE_FULL
 ARG BASE_IMAGE_MINIMAL
 
 # Build node feature discovery
-FROM golang:1.18.1-buster as builder
+FROM ${BUILDER_IMAGE} as builder
 
 # Build and install the grpc-health-probe binary
 RUN GRPC_HEALTH_PROBE_VERSION=v0.4.6 && \
