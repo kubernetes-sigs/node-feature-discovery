@@ -104,6 +104,9 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			err := testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
 			Expect(err).NotTo(HaveOccurred())
 
+			// Remove pre-existing stale annotations and labels
+			cleanupNode(f.ClientSet)
+
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
 			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
@@ -130,9 +133,9 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 		})
 
 		AfterEach(func() {
-			err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
+			cleanupNode(f.ClientSet)
 		})
 
 		//
@@ -146,9 +149,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					master.FeatureLabelNs + "/fake-fakefeature2": "true",
 					master.FeatureLabelNs + "/fake-fakefeature3": "true",
 				}
-
-				// Remove pre-existing stale annotations and labels
-				cleanupNode(f.ClientSet)
 
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
@@ -179,8 +179,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				By("Deleting the node-feature-discovery worker pod")
 				err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.ObjectMeta.Name, metav1.DeleteOptions{})
 				Expect(err).NotTo(HaveOccurred())
-
-				cleanupNode(f.ClientSet)
 			})
 		})
 
@@ -199,9 +197,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					Skip("no 'defaultFeatures' specified in e2e-config")
 				}
 				fConf := cfg.DefaultFeatures
-
-				// Remove pre-existing stale annotations and labels
-				cleanupNode(f.ClientSet)
 
 				By("Creating nfd-worker daemonset")
 				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
@@ -269,8 +264,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				By("Deleting nfd-worker daemonset")
 				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
 				Expect(err).NotTo(HaveOccurred())
-
-				cleanupNode(f.ClientSet)
 			})
 		})
 
@@ -279,9 +272,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 		//
 		Context("and nfd-workers as a daemonset with 2 additional configmaps for the custom source configured", func() {
 			It("the nodename matching features listed in the configmaps should be present", func() {
-				// Remove pre-existing stale annotations and labels
-				cleanupNode(f.ClientSet)
-
 				By("Getting a worker node")
 
 				// We need a valid nodename for the configmap
@@ -426,8 +416,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				By("Deleting nfd-worker daemonset")
 				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
 				Expect(err).NotTo(HaveOccurred())
-
-				cleanupNode(f.ClientSet)
 			})
 		})
 
