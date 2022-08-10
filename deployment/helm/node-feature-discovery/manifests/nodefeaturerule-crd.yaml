@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: nodefeaturerules.nfd.k8s-sigs.io
 spec:
@@ -79,9 +78,9 @@ spec:
                                       the input and an array of values that the operator
                                       evaluates the input against. \n NB: CreateMatchExpression
                                       or MustCreateMatchExpression() should be used
-                                      for     creating new instances. NB: Validate()
-                                      must be called if Op or Value fields are modified
-                                      or if a new     instance is created from scratch
+                                      for creating new instances. NB: Validate() must
+                                      be called if Op or Value fields are modified
+                                      or if a new instance is created from scratch
                                       without using the helper functions."
                                     properties:
                                       op:
@@ -144,9 +143,9 @@ spec:
                                 an operator that is applied when matching the input
                                 and an array of values that the operator evaluates
                                 the input against. \n NB: CreateMatchExpression or
-                                MustCreateMatchExpression() should be used for     creating
+                                MustCreateMatchExpression() should be used for creating
                                 new instances. NB: Validate() must be called if Op
-                                or Value fields are modified or if a new     instance
+                                or Value fields are modified or if a new instance
                                 is created from scratch without using the helper functions."
                               properties:
                                 op:
@@ -215,9 +214,3 @@ spec:
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

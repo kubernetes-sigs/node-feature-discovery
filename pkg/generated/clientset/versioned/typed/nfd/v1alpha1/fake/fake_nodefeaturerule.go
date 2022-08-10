@@ -99,7 +99,7 @@ func (c *FakeNodeFeatureRules) Update(ctx context.Context, nodeFeatureRule *v1al
 // Delete takes name of the nodeFeatureRule and deletes it. Returns an error if one occurs.
 func (c *FakeNodeFeatureRules) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(nodefeaturerulesResource, name), &v1alpha1.NodeFeatureRule{})
+		Invokes(testing.NewRootDeleteActionWithOptions(nodefeaturerulesResource, name, opts), &v1alpha1.NodeFeatureRule{})
 	return err
 }
 

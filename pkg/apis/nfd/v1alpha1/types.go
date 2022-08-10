@@ -111,12 +111,9 @@ type FeatureMatcherTerm struct {
 
 // MatchExpressionSet contains a set of MatchExpressions, each of which is
 // evaluated against a set of input values.
-type MatchExpressionSet struct {
-	Expressions `json:",inline"`
-}
+type MatchExpressionSet map[string]*MatchExpression
 
 // Expressions is a helper type to work around issues with k8s deepcopy-gen
-type Expressions map[string]*MatchExpression
 
 // MatchExpression specifies an expression to evaluate against a set of input
 // values. It contains an operator that is applied when matching the input and

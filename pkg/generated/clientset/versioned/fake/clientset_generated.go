@@ -74,7 +74,10 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var _ clientset.Interface = &Clientset{}
+var (
+	_ clientset.Interface = &Clientset{}
+	_ testing.FakeClient  = &Clientset{}
+)
 
 // NfdV1alpha1 retrieves the NfdV1alpha1Client
 func (c *Clientset) NfdV1alpha1() nfdv1alpha1.NfdV1alpha1Interface {
