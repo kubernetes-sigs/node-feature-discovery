@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -74,10 +74,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var (
-	_ clientset.Interface = &Clientset{}
-	_ testing.FakeClient  = &Clientset{}
-)
+var _ clientset.Interface = &Clientset{}
 
 // NfdV1alpha1 retrieves the NfdV1alpha1Client
 func (c *Clientset) NfdV1alpha1() nfdv1alpha1.NfdV1alpha1Interface {

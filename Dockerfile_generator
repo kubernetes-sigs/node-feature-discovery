@@ -1,0 +1,22 @@
+FROM golang:1.18-buster as builder
+
+# Install tools
+RUN go install github.com/vektra/mockery/v2@v2.13.0 && \
+    go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0 && \
+    git clone https://github.com/kubernetes/code-generator -b v0.20.7 --depth 1 && \
+    go install k8s.io/code-generator/cmd/...@v0.20.7 && \
+    go install golang.org/x/tools/cmd/goimports@v0.1.1 && \
+    go install github.com/golang/protobuf/protoc-gen-go@v1.4.3
+
+RUN apt-get update && apt-get install unzip
+
+RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protoc-3.17.3-linux-x86_64.zip && \
+    unzip protoc-3.17.3-linux-x86_64.zip -d /usr/local && \
+    rm protoc-3.17.3-linux-x86_64.zip && \
+    chmod a+x /usr/local/bin/protoc && \
+    find /usr/local -type d | xargs chmod 755 && \
+    find /usr/local -type f | xargs chmod a+r
+
+
+# Expect to be working with nfd
+WORKDIR /go/node-feature-discovery
