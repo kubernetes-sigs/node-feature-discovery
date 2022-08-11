@@ -26,11 +26,21 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	DefaultConfigPath             = "/var/lib/kubelet/config.yaml"
+	DefaultPodResourcesSocketPath = "/var/lib/kubelet/pod-resources/kubelet.sock"
+)
+
 var (
 	e2eConfigFile = flag.String("nfd.e2e-config", "", "Configuration parameters for end-to-end tests")
 
 	config *E2EConfig
 )
+
+type KubeletConfig struct {
+	ConfigPath             string
+	PodResourcesSocketPath string
+}
 
 type E2EConfig struct {
 	DefaultFeatures *struct {
@@ -38,6 +48,26 @@ type E2EConfig struct {
 		AnnotationWhitelist lookupMap
 		Nodes               []NodeConfig
 	}
+
+	Kubelet *KubeletConfig
+}
+
+// GetKubeletConfig returns a KubeletConfig object with default values, possibly overridden by user settings.
+func (conf *E2EConfig) GetKubeletConfig() KubeletConfig {
+	kcfg := KubeletConfig{
+		ConfigPath:             DefaultConfigPath,
+		PodResourcesSocketPath: DefaultPodResourcesSocketPath,
+	}
+	if conf.Kubelet == nil {
+		return kcfg
+	}
+	if conf.Kubelet.ConfigPath != "" {
+		kcfg.ConfigPath = conf.Kubelet.ConfigPath
+	}
+	if conf.Kubelet.PodResourcesSocketPath != "" {
+		kcfg.PodResourcesSocketPath = conf.Kubelet.PodResourcesSocketPath
+	}
+	return kcfg
 }
 
 type NodeConfig struct {

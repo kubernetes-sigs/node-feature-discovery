@@ -112,4 +112,7 @@ defaultFeatures:
       expectedAnnotationKeys:
         - "nfd.node.kubernetes.io/worker.version"
         - "nfd.node.kubernetes.io/feature-labels"
+  kubelet:
+    configPath: "/var/lib/kubelet/config.yaml"
+    podResourcesSocketPath: "/var/lib/kubelet/pod-resources/kubelet.sock"
 
