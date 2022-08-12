@@ -58,7 +58,7 @@ func (in *FeatureMatcherTerm) DeepCopyInto(out *FeatureMatcherTerm) {
 	*out = *in
 	if in.MatchExpressions != nil {
 		in, out := &in.MatchExpressions, &out.MatchExpressions
-		*out = new(map[string]*MatchExpression)
+		*out = new(MatchExpressionSet)
 		if **in != nil {
 			in, out := *in, *out
 			*out = make(map[string]*MatchExpression, len(*in))
