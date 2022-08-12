@@ -10,6 +10,8 @@ nameOverride: ""
 fullnameOverride: ""
 namespaceOverride: ""
 
+enableNodeFeatureApi: false
+
 master:
   instance:
   extraLabelNs: []
@@ -337,6 +339,9 @@ worker:
     # The name of the service account to use.
     # If not set and create is true, a name is generated using the fullname template
     name:
+
+  rbac:
+    create: true
 
   # Allow users to mount the hostPath /usr/src, useful for RHCOS on s390x
   # Does not work on systems without /usr/src AND a read-only /usr, such as Talos

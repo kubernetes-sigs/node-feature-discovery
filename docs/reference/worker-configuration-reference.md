@@ -131,10 +131,14 @@ core:
 ### core.noPublish
 
 Setting `core.noPublish` to `true` disables all communication with the
-nfd-master. It is effectively a "dry-run" flag: nfd-worker runs feature
-detection normally, but no labeling requests are sent to nfd-master.
+nfd-master and the Kubernetes API server. It is effectively a "dry-run" option.
+NFD-Worker runs feature detection normally, but no labeling requests are sent
+to nfd-master and no NodeFeature objects are created or updated in the API
+server.
 
-Note: Overridden by the `-no-publish` command line flag (if specified).
+Note: Overridden by the
+[`-no-publish`](worker-commandline-reference#-no-publish) command line flag (if
+specified).
 
 Default: `false`
 

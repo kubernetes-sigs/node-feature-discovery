@@ -97,6 +97,7 @@ We have introduced the following Chart parameters.
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
 | `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
 | `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
+| `enableNodeFeatureApi` | bool  | false | Enable the NodeFeature CRD API for communicating node features. This will automatically disable the gRPC communication.
 
 ### Master pod parameters
 
@@ -134,6 +135,7 @@ We have introduced the following Chart parameters.
 | `worker.serviceAccount.create`      | bool   | true | Specifies whether a service account for nfd-worker should be created
 | `worker.serviceAccount.annotations` | dict   | {}   | Annotations to add to the service account for nfd-worker
 | `worker.serviceAccount.name`        | string |      | The name of the service account to use for nfd-worker. If not set and create is true, a name is generated using the fullname template (suffixed with `-worker`)
+| `worker.rbac.create`  | bool | true | Specifies whether to create [RBAC][rbac] configuration for nfd-worker
 | `worker.mountUsrSrc` | bool | false | Specifies whether to allow users to mount the hostpath /user/src. Does not work on systems without /usr/src AND a read-only /usr |
 | `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
