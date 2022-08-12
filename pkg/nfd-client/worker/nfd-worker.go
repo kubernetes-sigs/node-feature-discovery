@@ -168,11 +168,6 @@ func (w *nfdWorker) Run() error {
 		return err
 	}
 
-	// Connect to NFD master
-	err = w.GrpcConnect()
-	if err != nil {
-		return fmt.Errorf("failed to connect: %v", err)
-	}
 	defer w.GrpcDisconnect()
 
 	labelTrigger := time.After(0)
@@ -191,7 +186,7 @@ func (w *nfdWorker) Run() error {
 			labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
 
 			// Update the node with the feature labels.
-			if w.grpcClient != nil {
+			if !w.config.Core.NoPublish {
 				err := w.advertiseFeatureLabels(labels)
 				if err != nil {
 					return fmt.Errorf("failed to advertise labels: %s", err.Error())
@@ -214,11 +209,8 @@ func (w *nfdWorker) Run() error {
 			// Manage connection to master
 			if w.config.Core.NoPublish {
 				w.GrpcDisconnect()
-			} else if w.ClientConn() == nil {
-				if err := w.GrpcConnect(); err != nil {
-					return err
-				}
 			}
+
 			// Always re-label after a re-config event. This way the new config
 			// comes into effect even if the sleep interval is long (or infinite)
 			labelTrigger = time.After(0)
@@ -226,9 +218,6 @@ func (w *nfdWorker) Run() error {
 		case <-w.certWatch.Events:
 			klog.Infof("TLS certificate update, renewing connection to nfd-master")
 			w.GrpcDisconnect()
-			if err := w.GrpcConnect(); err != nil {
-				return err
-			}
 
 		case <-w.stop:
 			klog.Infof("shutting down nfd-worker")
@@ -247,20 +236,20 @@ func (w *nfdWorker) Stop() {
 	}
 }
 
-// GrpcConnect creates a gRPC client connection to the NFD master
-func (w *nfdWorker) GrpcConnect() error {
-	// Return a dummy connection in case of dry-run
-	if w.config.Core.NoPublish {
-		return nil
+// getGrpcClient returns client connection to the NFD gRPC server. It creates a
+// connection if one hasn't yet been established,.
+func (w *nfdWorker) getGrpcClient() (pb.LabelerClient, error) {
+	if w.grpcClient != nil {
+		return w.grpcClient, nil
 	}
 
 	if err := w.NfdBaseClient.Connect(); err != nil {
-		return err
+		return nil, err
 	}
 
 	w.grpcClient = pb.NewLabelerClient(w.ClientConn())
 
-	return nil
+	return w.grpcClient, nil
 }
 
 // GrpcDisconnect closes the gRPC connection to NFD master
@@ -566,7 +555,13 @@ func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
 		Features:   getFeatures(),
 		NfdVersion: version.Get(),
 		NodeName:   clientcommon.NodeName()}
-	_, err := w.grpcClient.SetLabels(ctx, &labelReq)
+
+	cli, err := w.getGrpcClient()
+	if err != nil {
+		return err
+	}
+
+	_, err = cli.SetLabels(ctx, &labelReq)
 	if err != nil {
 		klog.Errorf("failed to set node labels: %v", err)
 		return err
