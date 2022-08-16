@@ -49,15 +49,15 @@ func newNfdController(config *restclient.Config) *nfdController {
 	informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
-			klog.V(2).Infof("LabelRule %v added", key)
+			klog.V(2).Infof("NodeFeatureRule %v added", key)
 		},
 		UpdateFunc: func(oldObject, newObject interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(newObject)
-			klog.V(2).Infof("LabelRule %v updated", key)
+			klog.V(2).Infof("NodeFeatureRule %v updated", key)
 		},
 		DeleteFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
-			klog.V(2).Infof("LabelRule %v deleted", key)
+			klog.V(2).Infof("NodeFeatureRule %v deleted", key)
 		},
 	})
 	informerFactory.Start(c.stopChan)
