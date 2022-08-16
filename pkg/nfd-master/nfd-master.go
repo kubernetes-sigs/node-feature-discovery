@@ -503,7 +503,7 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 	}
 
 	l := make(map[string]string)
-	ruleSpecs, err := m.nfdController.lister.List(labels.Everything())
+	ruleSpecs, err := m.nfdController.ruleLister.List(labels.Everything())
 	sort.Slice(ruleSpecs, func(i, j int) bool {
 		return ruleSpecs[i].Name < ruleSpecs[j].Name
 	})

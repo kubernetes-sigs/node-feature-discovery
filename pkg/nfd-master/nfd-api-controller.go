@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2021-2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 )
 
 type nfdController struct {
-	lister nfdlisters.NodeFeatureRuleLister
+	ruleLister nfdlisters.NodeFeatureRuleLister
 
 	stopChan chan struct{}
 }
@@ -45,8 +45,8 @@ func newNfdController(config *restclient.Config) *nfdController {
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 5*time.Minute)
-	informer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
-	informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	ruleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
+	ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v added", key)
@@ -64,7 +64,7 @@ func newNfdController(config *restclient.Config) *nfdController {
 
 	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
 
-	c.lister = informer.Lister()
+	c.ruleLister = ruleInformer.Lister()
 
 	return c
 }
