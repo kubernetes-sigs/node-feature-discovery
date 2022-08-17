@@ -182,7 +182,7 @@ func (m *nfdMaster) Run() error {
 		if err != nil {
 			return err
 		}
-		klog.Info("starting nfd LabelRule controller")
+		klog.Info("starting nfd api controller")
 		m.nfdController = newNfdController(kubeconfig)
 	}
 
@@ -509,7 +509,7 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 	})
 
 	if err != nil {
-		klog.Errorf("failed to list LabelRule resources: %w", err)
+		klog.Errorf("failed to list NodeFeatureRule resources: %w", err)
 		return nil
 	}
 
@@ -517,10 +517,10 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 	for _, spec := range ruleSpecs {
 		switch {
 		case klog.V(3).Enabled():
-			h := fmt.Sprintf("executing LabelRule \"%s/%s\":", spec.ObjectMeta.Namespace, spec.ObjectMeta.Name)
+			h := fmt.Sprintf("executing NodeFeatureRule %q:", spec.ObjectMeta.Name)
 			utils.KlogDump(3, h, "  ", spec.Spec)
 		case klog.V(1).Enabled():
-			klog.Infof("executing LabelRule \"%s/%s\"", spec.ObjectMeta.Namespace, spec.ObjectMeta.Name)
+			klog.Infof("executing NodeFeatureRule %q", spec.ObjectMeta.Name)
 		}
 		for _, rule := range spec.Spec.Rules {
 			ruleOut, err := rule.Execute(r.Features)
