@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
-// RuleOutput contains the output out rule execution.
+// RuleOutput contains the output of rule execution.
 // +k8s:deepcopy-gen=false
 type RuleOutput struct {
 	Labels map[string]string
@@ -37,8 +37,10 @@ type RuleOutput struct {
 
 // Execute the rule against a set of input features.
 func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
-	labels := make(map[string]string)
-	vars := make(map[string]string)
+	ret := RuleOutput{
+		Labels: make(map[string]string),
+		Vars:   make(map[string]string),
+	}
 
 	if len(r.MatchAny) > 0 {
 		// Logical OR over the matchAny matchers
@@ -49,11 +51,7 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 			} else if isMatch {
 				matched = true
 				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", matches)
-
-				if err := r.executeLabelsTemplate(matches, labels); err != nil {
-					return RuleOutput{}, err
-				}
-				if err := r.executeVarsTemplate(matches, vars); err != nil {
+				if err := r.executeTemplates(matches, &ret); err != nil {
 					return RuleOutput{}, err
 				}
 			}
@@ -72,39 +70,61 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 			return RuleOutput{}, nil
 		} else {
 			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", matches)
-			if err := r.executeLabelsTemplate(matches, labels); err != nil {
-				return RuleOutput{}, err
-			}
-			if err := r.executeVarsTemplate(matches, vars); err != nil {
+			if err := r.executeTemplates(matches, &ret); err != nil {
 				return RuleOutput{}, err
 			}
 		}
 	}
 
 	for k, v := range r.Labels {
-		labels[k] = v
+		ret.Labels[k] = v
 	}
 	for k, v := range r.Vars {
-		vars[k] = v
+		ret.Vars[k] = v
 	}
 
-	ret := RuleOutput{Labels: labels, Vars: vars}
 	utils.KlogDump(2, fmt.Sprintf("rule %q matched with: ", r.Name), "  ", ret)
 
 	return ret, nil
 }
 
-func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) error {
-	if r.LabelsTemplate == "" {
-		return nil
-	}
-
-	if r.labelsTemplate == nil {
+func (r *Rule) ensureTemplates() error {
+	if r.LabelsTemplate != "" && r.labelsTemplate == nil {
 		t, err := newTemplateHelper(r.LabelsTemplate)
 		if err != nil {
 			return fmt.Errorf("failed to parse LabelsTemplate: %w", err)
 		}
 		r.labelsTemplate = t
+	}
+
+	if r.VarsTemplate != "" && r.varsTemplate == nil {
+		t, err := newTemplateHelper(r.VarsTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse VarsTemplate: %w", err)
+		}
+		r.varsTemplate = t
+	}
+
+	return nil
+}
+
+func (r *Rule) executeTemplates(in matchedFeatures, out *RuleOutput) error {
+	if err := r.ensureTemplates(); err != nil {
+		return err
+	}
+
+	if err := r.executeLabelsTemplate(in, out.Labels); err != nil {
+		return err
+	}
+	if err := r.executeVarsTemplate(in, out.Vars); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) error {
+	if r.labelsTemplate == nil {
+		return nil
 	}
 
 	labels, err := r.labelsTemplate.expandMap(in)
@@ -118,20 +138,13 @@ func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) 
 }
 
 func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) error {
-	if r.VarsTemplate == "" {
-		return nil
-	}
 	if r.varsTemplate == nil {
-		t, err := newTemplateHelper(r.VarsTemplate)
-		if err != nil {
-			return err
-		}
-		r.varsTemplate = t
+		return nil
 	}
 
 	vars, err := r.varsTemplate.expandMap(in)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to expand VarsTemplate: %w", err)
 	}
 	for k, v := range vars {
 		out[k] = v
