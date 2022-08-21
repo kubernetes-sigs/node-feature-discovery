@@ -50,11 +50,6 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 				matched = true
 				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", matches)
 
-				if r.labelsTemplate == nil {
-					// No templating so we stop here (further matches would just
-					// produce the same labels)
-					break
-				}
 				if err := r.executeLabelsTemplate(matches, labels); err != nil {
 					return RuleOutput{}, err
 				}
