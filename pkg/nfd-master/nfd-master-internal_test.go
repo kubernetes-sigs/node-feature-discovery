@@ -77,6 +77,12 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		}
 		sort.Strings(fakeFeatureLabelNames)
 
+		fakeFeatureAnnotationNames := make([]string, 0, len(fakeAnnotations))
+		for k := range fakeAnnotations {
+			fakeFeatureAnnotationNames = append(fakeFeatureAnnotationNames, strings.TrimPrefix(k, FeatureAnnotationNs+"/"))
+		}
+		sort.Strings(fakeFeatureAnnotationNames)
+
 		fakeExtResourceNames := make([]string, 0, len(fakeExtResources))
 		for k := range fakeExtResources {
 			fakeExtResourceNames = append(fakeExtResourceNames, strings.TrimPrefix(k, FeatureLabelNs+"/"))
@@ -89,14 +95,18 @@ func TestUpdateNodeFeatures(t *testing.T) {
 		// Mock node with old features
 		mockNode := newMockNode()
 		mockNode.Labels[FeatureLabelNs+"/old-feature"] = "old-value"
-		mockNode.Annotations[AnnotationNsBase+"/feature-labels"] = "old-feature"
+		mockNode.Annotations[AnnotationNsBase+"/"+featureLabelAnnotation] = "old-feature"
+		mockNode.Annotations[AnnotationNsBase+"/"+featureAnnotationsAnnotation] = "old-annotation"
+		mockNode.Annotations[FeatureAnnotationNs+"/old-annotation"] = "old-value"
 
 		Convey("When I successfully update the node with feature labels", func() {
 			// Create a list of expected node metadata patches
 			metadataPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("replace", "/metadata/annotations", AnnotationNsBase+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", AnnotationNsBase+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
+				apihelper.NewJsonPatch("replace", "/metadata/annotations", AnnotationNsBase+"/"+featureLabelAnnotation, strings.Join(fakeFeatureLabelNames, ",")),
+				apihelper.NewJsonPatch("replace", "/metadata/annotations", AnnotationNsBase+"/"+featureAnnotationsAnnotation, strings.Join(fakeFeatureAnnotationNames, ",")),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", AnnotationNsBase+"/"+extendedResourceAnnotation, strings.Join(fakeExtResourceNames, ",")),
 				apihelper.NewJsonPatch("remove", "/metadata/labels", FeatureLabelNs+"/old-feature", ""),
+				apihelper.NewJsonPatch("remove", "/metadata/annotations", FeatureAnnotationNs+"/old-annotation", ""),
 			}
 			for k, v := range fakeFeatureLabels {
 				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))

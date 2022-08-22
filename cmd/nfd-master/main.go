@@ -85,6 +85,8 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 		"Certificate used for authenticating connections")
 	flagset.Var(&args.ExtraLabelNs, "extra-label-ns",
 		"Comma separated list of allowed extra label namespaces")
+	flagset.Var(&args.ExtraAnnotationNs, "extra-annotation-ns",
+		"Comma separated list of allowed extra annotaion namespaces")
 	flagset.StringVar(&args.Instance, "instance", "",
 		"Instance name. Used to separate annotation namespaces for multiple parallel deployments.")
 	flagset.StringVar(&args.KeyFile, "key-file", "",
@@ -93,6 +95,9 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 		"Kubeconfig to use")
 	flagset.Var(&args.LabelWhiteList, "label-whitelist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+
+			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
+	flagset.Var(&args.AnnotationsWhiteList, "annotation-whitelist",
+		"Regular expression to filter annotation names to publish to the Kubernetes API server. "+
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,
 		"Do not publish feature labels")
