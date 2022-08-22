@@ -490,7 +490,7 @@ func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopo
 	if !m.args.NoPublish {
 		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones)
 		if err != nil {
-			klog.Errorf("failed to advertise NodeResourceTopology: %w", err)
+			klog.Errorf("failed to advertise NodeResourceTopology: %v", err)
 			return &topologypb.NodeTopologyResponse{}, err
 		}
 	}
@@ -509,7 +509,7 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 	})
 
 	if err != nil {
-		klog.Errorf("failed to list NodeFeatureRule resources: %w", err)
+		klog.Errorf("failed to list NodeFeatureRule resources: %v", err)
 		return nil
 	}
 
@@ -525,7 +525,7 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 		for _, rule := range spec.Spec.Rules {
 			ruleOut, err := rule.Execute(r.Features)
 			if err != nil {
-				klog.Errorf("failed to process Rule %q: %w", rule.Name, err)
+				klog.Errorf("failed to process Rule %q: %v", rule.Name, err)
 				continue
 			}
 

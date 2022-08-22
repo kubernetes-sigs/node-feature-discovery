@@ -415,7 +415,7 @@ func (noderesourceData *nodeResources) updateMemoryAvailable(numaData map[int]ma
 
 	requestedSize, err := strconv.ParseInt(ri.Data[0], 10, 64)
 	if err != nil {
-		klog.Errorf("failed to parse resource requested size: %w", err)
+		klog.Errorf("failed to parse resource requested size: %v", err)
 		return
 	}
 
