@@ -363,6 +363,8 @@ worker:
 
   affinity: {}
 
+  priorityClassName: ""
+
 topologyUpdater:
   enable: false
   createCRDs: false

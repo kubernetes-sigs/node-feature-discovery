@@ -328,6 +328,7 @@ We have introduced the following Chart parameters.
 | `worker.resources` | dict | {} | NFD worker pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
 | `worker.nodeSelector` | dict | {} | NFD worker pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) |
 | `worker.tolerations` | dict | {} | NFD worker pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
+| `worker.priorityClassName` | string |  | NFD worker pod [priority class](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/) |
 | `worker.annotations` | dict | {} | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
 | `worker.daemonsetAnnotations` | dict | {} | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
 
