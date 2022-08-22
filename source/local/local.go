@@ -47,17 +47,39 @@ var (
 // localSource implements the FeatureSource and LabelSource interfaces.
 type localSource struct {
 	features *feature.DomainFeatures
+	config   *Config
+}
+
+type Config struct {
+	HooksEnabled bool `json:"hooksEnabled,omitempty"`
 }
 
 // Singleton source instance
 var (
-	src localSource
-	_   source.FeatureSource = &src
-	_   source.LabelSource   = &src
+	src                           = localSource{config: newDefaultConfig()}
+	_   source.FeatureSource      = &src
+	_   source.LabelSource        = &src
+	_   source.ConfigurableSource = &src
 )
 
 // Name method of the LabelSource interface
 func (s *localSource) Name() string { return Name }
+
+// NewConfig method of the LabelSource interface
+func (s *localSource) NewConfig() source.Config { return newDefaultConfig() }
+
+// GetConfig method of the LabelSource interface
+func (s *localSource) GetConfig() source.Config { return s.config }
+
+// SetConfig method of the LabelSource interface
+func (s *localSource) SetConfig(conf source.Config) {
+	switch v := conf.(type) {
+	case *Config:
+		s.config = v
+	default:
+		klog.Fatalf("invalid config type: %T", conf)
+	}
+}
 
 // Priority method of the LabelSource interface
 func (s *localSource) Priority() int { return 20 }
@@ -73,28 +95,41 @@ func (s *localSource) GetLabels() (source.FeatureLabels, error) {
 	return labels, nil
 }
 
+// newDefaultConfig returns a new config with pre-populated defaults
+func newDefaultConfig() *Config {
+	return &Config{
+		HooksEnabled: true,
+	}
+}
+
 // Discover method of the FeatureSource interface
 func (s *localSource) Discover() error {
 	s.features = feature.NewDomainFeatures()
-
-	featuresFromHooks, err := getFeaturesFromHooks()
-	if err != nil {
-		klog.Error(err)
-	}
 
 	featuresFromFiles, err := getFeaturesFromFiles()
 	if err != nil {
 		klog.Error(err)
 	}
 
-	// Merge features from hooks and files
-	for k, v := range featuresFromHooks {
-		if old, ok := featuresFromFiles[k]; ok {
-			klog.Warningf("overriding '%s': value changed from '%s' to '%s'",
-				k, old, v)
+	if s.config.HooksEnabled {
+
+		klog.Info("starting hooks...")
+
+		featuresFromHooks, err := getFeaturesFromHooks()
+		if err != nil {
+			klog.Error(err)
 		}
-		featuresFromFiles[k] = v
+
+		// Merge features from hooks and files
+		for k, v := range featuresFromHooks {
+			if old, ok := featuresFromFiles[k]; ok {
+				klog.Warningf("overriding '%s': value changed from '%s' to '%s'",
+					k, old, v)
+			}
+			featuresFromFiles[k] = v
+		}
 	}
+
 	s.features.Values[LabelFeature] = feature.NewValueFeatures(featuresFromFiles)
 
 	utils.KlogDump(3, "discovered local features:", "  ", s.features)
@@ -133,6 +168,7 @@ func parseFeatures(lines [][]byte) map[string]string {
 
 // Run all hooks and get features
 func getFeaturesFromHooks() (map[string]string, error) {
+
 	features := make(map[string]string)
 
 	files, err := ioutil.ReadDir(hookDir)
@@ -142,6 +178,9 @@ func getFeaturesFromHooks() (map[string]string, error) {
 			return features, nil
 		}
 		return features, fmt.Errorf("unable to access %v: %v", hookDir, err)
+	}
+	if len(files) > 0 {
+		klog.Warning("hooks are DEPRECATED since v0.12.0 and support will be removed in a future release; use feature files instead")
 	}
 
 	for _, file := range files {
