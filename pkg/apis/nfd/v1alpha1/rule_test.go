@@ -27,8 +27,9 @@ func TestRule(t *testing.T) {
 	f := map[string]*feature.DomainFeatures{}
 	r1 := Rule{Labels: map[string]string{"label-1": "", "label-2": "true"}}
 	r2 := Rule{
-		Labels: map[string]string{"label-1": "label-val-1"},
-		Vars:   map[string]string{"var-1": "var-val-1"},
+		Labels:      map[string]string{"label-1": "label-val-1"},
+		Annotations: map[string]string{"annotation-1": "annotation-val-1"},
+		Vars:        map[string]string{"var-1": "var-val-1"},
 		MatchFeatures: FeatureMatcher{
 			FeatureMatcherTerm{
 				Feature: "domain-1.kf-1",
@@ -55,6 +56,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r1.Labels, m.Labels, "empty matcher should have matched empty features")
 	assert.Empty(t, r1.Vars, "vars should be empty")
+	assert.Empty(t, r1.Annotations, "annotations should be empty")
 
 	_, err = r2.Execute(f)
 	assert.Error(t, err, "matching against a missing feature type should have returned an error")
@@ -102,6 +104,7 @@ func TestRule(t *testing.T) {
 	m, err = r2.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r2.Labels, m.Labels, "keys should have matched")
+	assert.Equal(t, r2.Annotations, m.Annotations, "annotations should be present")
 	assert.Equal(t, r2.Vars, m.Vars, "vars should be present")
 
 	// Match "value" features
@@ -266,6 +269,11 @@ label-2=
 {{end}}
 {{range .domain_1.if_1}}if-{{index . "attr-1"}}_{{index . "attr-2"}}=present
 {{end}}`,
+		Annotations: map[string]string{"annotation-1": "annotation-val-1"},
+		AnnotationsTemplate: `
+annotation-1=will-be-overriden
+annotation-2=
+kf-1={{range .domain_1.kf_1}}{{.Name}} {{end}}`,
 		Vars: map[string]string{"var-1": "var-val-1"},
 		VarsTemplate: `
 var-1=value-will-be-overridden-by-vars
@@ -316,6 +324,12 @@ var-2=
 		"if-1_val-2":   "present",
 		"if-10_val-20": "present",
 	}
+	expectedAnnotations := map[string]string{
+		"annotation-1": "annotation-val-1",
+		"annotation-2": "",
+		// From template
+		"kf-1": "foo key-a key-c",
+	}
 	expectedVars := map[string]string{
 		"var-1": "var-val-1",
 		"var-2": "",
@@ -329,6 +343,7 @@ var-2=
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
 	assert.Equal(t, expectedVars, m.Vars, "instances should have matched")
+	assert.Equal(t, expectedAnnotations, m.Annotations, "instances should have matched")
 
 	m, err = r3.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
@@ -355,6 +370,7 @@ var-2=
 	m, err = r2.Execute(f)
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]string{"foo": "bar"}, m.Labels, "instances should have matched")
+	assert.Empty(t, m.Annotations)
 	assert.Empty(t, m.Vars)
 
 	r2.labelsTemplate = nil
@@ -369,10 +385,32 @@ var-2=
 
 	r2.labelsTemplate = nil
 	r2.LabelsTemplate = ""
+
+	r2.AnnotationsTemplate = "boo=far"
+	m, err = r2.Execute(f)
+	assert.Nil(t, err)
+	assert.Empty(t, m.Labels)
+	assert.Equal(t, map[string]string{"boo": "far"}, m.Annotations, "instances should have matched")
+	assert.Empty(t, m.Vars)
+
+	r2.annotationsTemplate = nil
+	r2.AnnotationsTemplate = "boo"
+	_, err = r2.Execute(f)
+	assert.Error(t, err)
+
+	r2.annotationsTemplate = nil
+	r2.AnnotationsTemplate = "{{"
+	_, err = r2.Execute(f)
+	assert.Error(t, err)
+
+	r2.annotationsTemplate = nil
+	r2.AnnotationsTemplate = ""
+
 	r2.VarsTemplate = "bar=baz"
 	m, err = r2.Execute(f)
 	assert.Nil(t, err)
 	assert.Empty(t, m.Labels)
+	assert.Empty(t, m.Annotations)
 	assert.Equal(t, map[string]string{"bar": "baz"}, m.Vars, "instances should have matched")
 
 	r2.varsTemplate = nil
