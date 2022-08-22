@@ -65,6 +65,16 @@ type Rule struct {
 	// +optional
 	LabelsTemplate string `json:"labelsTemplate"`
 
+	// Annotations to create if the rule matches.
+	// +optional
+	Annotations map[string]string `json:"annotations"`
+
+	// AnnotationsTemplate specifies a template to expand for dynamically generating
+	// multiple annotations. Data (after template expansion) must be keys with an
+	// optional value (<key>[=<value>]) separated by newlines.
+	// +optional
+	AnnotationsTemplate string `json:"annotationsTemplate"`
+
 	// Vars is the variables to store if the rule matches. Variables do not
 	// directly inflict any changes in the node object. However, they can be
 	// referenced from other rules enabling more complex rule hierarchies,
@@ -87,8 +97,9 @@ type Rule struct {
 	MatchAny []MatchAnyElem `json:"matchAny"`
 
 	// private helpers/cache for handling golang templates
-	labelsTemplate *templateHelper `json:"-"`
-	varsTemplate   *templateHelper `json:"-"`
+	labelsTemplate      *templateHelper `json:"-"`
+	annotationsTemplate *templateHelper `json:"-"`
+	varsTemplate        *templateHelper `json:"-"`
 }
 
 // MatchAnyElem specifies one sub-matcher of MatchAny.

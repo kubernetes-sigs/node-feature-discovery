@@ -31,15 +31,17 @@ import (
 // RuleOutput contains the output of rule execution.
 // +k8s:deepcopy-gen=false
 type RuleOutput struct {
-	Labels map[string]string
-	Vars   map[string]string
+	Labels      map[string]string
+	Annotations map[string]string
+	Vars        map[string]string
 }
 
 // Execute the rule against a set of input features.
 func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 	ret := RuleOutput{
-		Labels: make(map[string]string),
-		Vars:   make(map[string]string),
+		Labels:      make(map[string]string),
+		Annotations: make(map[string]string),
+		Vars:        make(map[string]string),
 	}
 
 	if len(r.MatchAny) > 0 {
@@ -79,6 +81,9 @@ func (r *Rule) Execute(features feature.Features) (RuleOutput, error) {
 	for k, v := range r.Labels {
 		ret.Labels[k] = v
 	}
+	for k, v := range r.Annotations {
+		ret.Annotations[k] = v
+	}
 	for k, v := range r.Vars {
 		ret.Vars[k] = v
 	}
@@ -96,7 +101,13 @@ func (r *Rule) ensureTemplates() error {
 		}
 		r.labelsTemplate = t
 	}
-
+	if r.AnnotationsTemplate != "" && r.annotationsTemplate == nil {
+		t, err := newTemplateHelper(r.AnnotationsTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse AnnotationsTemplate: %w", err)
+		}
+		r.annotationsTemplate = t
+	}
 	if r.VarsTemplate != "" && r.varsTemplate == nil {
 		t, err := newTemplateHelper(r.VarsTemplate)
 		if err != nil {
@@ -104,7 +115,6 @@ func (r *Rule) ensureTemplates() error {
 		}
 		r.varsTemplate = t
 	}
-
 	return nil
 }
 
@@ -113,40 +123,28 @@ func (r *Rule) executeTemplates(in matchedFeatures, out *RuleOutput) error {
 		return err
 	}
 
-	if err := r.executeLabelsTemplate(in, out.Labels); err != nil {
-		return err
+	if err := executeTemplate(r.labelsTemplate, in, out.Labels); err != nil {
+		return fmt.Errorf("failed to execute LabelsTemplate: %w", err)
 	}
-	if err := r.executeVarsTemplate(in, out.Vars); err != nil {
-		return err
+	if err := executeTemplate(r.annotationsTemplate, in, out.Annotations); err != nil {
+		return fmt.Errorf("failed to execute AnnotationsTemplate: %w", err)
 	}
+	if err := executeTemplate(r.varsTemplate, in, out.Vars); err != nil {
+		return fmt.Errorf("failed to execute VarsTemplate: %w", err)
+	}
+
 	return nil
 }
 
-func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) error {
-	if r.labelsTemplate == nil {
+func executeTemplate(template *templateHelper, in matchedFeatures, out map[string]string) error {
+	if template == nil {
 		return nil
 	}
-
-	labels, err := r.labelsTemplate.expandMap(in)
+	result, err := template.expandMap(in)
 	if err != nil {
-		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
+		return err
 	}
-	for k, v := range labels {
-		out[k] = v
-	}
-	return nil
-}
-
-func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) error {
-	if r.varsTemplate == nil {
-		return nil
-	}
-
-	vars, err := r.varsTemplate.expandMap(in)
-	if err != nil {
-		return fmt.Errorf("failed to expand VarsTemplate: %w", err)
-	}
-	for k, v := range vars {
+	for k, v := range result {
 		out[k] = v
 	}
 	return nil

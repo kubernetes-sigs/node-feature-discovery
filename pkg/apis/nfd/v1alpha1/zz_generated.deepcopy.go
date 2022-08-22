@@ -292,6 +292,13 @@ func (in *Rule) DeepCopyInto(out *Rule) {
 			(*out)[key] = val
 		}
 	}
+	if in.Annotations != nil {
+		in, out := &in.Annotations, &out.Annotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Vars != nil {
 		in, out := &in.Vars, &out.Vars
 		*out = make(map[string]string, len(*in))
@@ -315,6 +322,10 @@ func (in *Rule) DeepCopyInto(out *Rule) {
 	}
 	if in.labelsTemplate != nil {
 		in, out := &in.labelsTemplate, &out.labelsTemplate
+		*out = (*in).DeepCopy()
+	}
+	if in.annotationsTemplate != nil {
+		in, out := &in.annotationsTemplate, &out.annotationsTemplate
 		*out = (*in).DeepCopy()
 	}
 	if in.varsTemplate != nil {

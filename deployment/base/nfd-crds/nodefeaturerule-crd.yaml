@@ -42,6 +42,17 @@ spec:
                   description: Rule defines a rule for node customization such as
                     labeling.
                   properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations to create if the rule matches.
+                      type: object
+                    annotationsTemplate:
+                      description: AnnotationsTemplate specifies a template to expand
+                        for dynamically generating multiple annotations. Data (after
+                        template expansion) must be keys with an optional value (<key>[=<value>])
+                        separated by newlines.
+                      type: string
                     labels:
                       additionalProperties:
                         type: string
