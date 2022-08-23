@@ -297,6 +297,11 @@ var-2=
 		},
 	}
 
+	// test with empty MatchFeatures, but with MatchAny
+	r3 := r1.DeepCopy()
+	r3.MatchAny = []MatchAnyElem{{MatchFeatures: r3.MatchFeatures}}
+	r3.MatchFeatures = nil
+
 	expectedLabels := map[string]string{
 		"label-1": "label-val-1",
 		"label-2": "",
@@ -321,6 +326,11 @@ var-2=
 	}
 
 	m, err := r1.Execute(f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
+	assert.Equal(t, expectedVars, m.Vars, "instances should have matched")
+
+	m, err = r3.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
 	assert.Equal(t, expectedVars, m.Vars, "instances should have matched")
