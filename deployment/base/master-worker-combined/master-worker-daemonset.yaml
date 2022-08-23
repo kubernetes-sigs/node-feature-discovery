@@ -17,7 +17,7 @@ spec:
       tolerations: []
       containers:
       - name: nfd-master
-        image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.1
+        image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -33,7 +33,7 @@ spec:
         command:
         - "nfd-master"
       - name: nfd-worker
-        image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.1
+        image: k8s.gcr.io/nfd/node-feature-discovery:v0.11.2
         imagePullPolicy: IfNotPresent
         command:
         - "nfd-worker"
