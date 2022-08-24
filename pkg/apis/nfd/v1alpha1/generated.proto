@@ -31,15 +31,15 @@ message AttributeFeatureSet {
   map<string, string> elements = 1;
 }
 
-// DomainFeatures is the collection of all discovered features of one domain.
+// Features is the collection of all discovered features.
 //
 // +protobuf=true
-message DomainFeatures {
-  map<string, FlagFeatureSet> flags = 2;
+message Features {
+  map<string, FlagFeatureSet> flags = 1;
 
-  map<string, AttributeFeatureSet> vattributes = 3;
+  map<string, AttributeFeatureSet> vattributes = 2;
 
-  map<string, InstanceFeatureSet> instances = 4;
+  map<string, InstanceFeatureSet> instances = 3;
 }
 
 // FlagFeatureSet is a set of simple features only containing names without values.

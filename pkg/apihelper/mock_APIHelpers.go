@@ -6,7 +6,7 @@ import (
 	mock "github.com/stretchr/testify/mock"
 	kubernetes "k8s.io/client-go/kubernetes"
 
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	versioned "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 )
@@ -40,15 +40,15 @@ func (_m *MockAPIHelpers) GetClient() (*kubernetes.Clientset, error) {
 }
 
 // GetNode provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset, _a1 string) (*corev1.Node, error) {
+func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset, _a1 string) (*v1.Node, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *corev1.Node
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string) *corev1.Node); ok {
+	var r0 *v1.Node
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string) *v1.Node); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*corev1.Node)
+			r0 = ret.Get(0).(*v1.Node)
 		}
 	}
 
@@ -63,15 +63,15 @@ func (_m *MockAPIHelpers) GetNode(_a0 *kubernetes.Clientset, _a1 string) (*corev
 }
 
 // GetNodes provides a mock function with given fields: _a0
-func (_m *MockAPIHelpers) GetNodes(_a0 *kubernetes.Clientset) (*corev1.NodeList, error) {
+func (_m *MockAPIHelpers) GetNodes(_a0 *kubernetes.Clientset) (*v1.NodeList, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *corev1.NodeList
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset) *corev1.NodeList); ok {
+	var r0 *v1.NodeList
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset) *v1.NodeList); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*corev1.NodeList)
+			r0 = ret.Get(0).(*v1.NodeList)
 		}
 	}
 
@@ -86,15 +86,15 @@ func (_m *MockAPIHelpers) GetNodes(_a0 *kubernetes.Clientset) (*corev1.NodeList,
 }
 
 // GetPod provides a mock function with given fields: _a0, _a1, _a2
-func (_m *MockAPIHelpers) GetPod(_a0 *kubernetes.Clientset, _a1 string, _a2 string) (*corev1.Pod, error) {
+func (_m *MockAPIHelpers) GetPod(_a0 *kubernetes.Clientset, _a1 string, _a2 string) (*v1.Pod, error) {
 	ret := _m.Called(_a0, _a1, _a2)
 
-	var r0 *corev1.Pod
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, string) *corev1.Pod); ok {
+	var r0 *v1.Pod
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, string) *v1.Pod); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*corev1.Pod)
+			r0 = ret.Get(0).(*v1.Pod)
 		}
 	}
 
@@ -160,11 +160,11 @@ func (_m *MockAPIHelpers) PatchNodeStatus(_a0 *kubernetes.Clientset, _a1 string,
 }
 
 // UpdateNode provides a mock function with given fields: _a0, _a1
-func (_m *MockAPIHelpers) UpdateNode(_a0 *kubernetes.Clientset, _a1 *corev1.Node) error {
+func (_m *MockAPIHelpers) UpdateNode(_a0 *kubernetes.Clientset, _a1 *v1.Node) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, *corev1.Node) error); ok {
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, *v1.Node) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
