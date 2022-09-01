@@ -151,6 +151,22 @@ Example:
 nfd-master -no-publish
 ```
 
+### -label-ns
+
+The `-label-ns` flag switches label namespace from old
+`feature.node.kubernetes.io` format to the new and short format `nfd.k8s.io`.
+By default `feature.node.kubernetes.io` (i.e. `label-ns=legacy`) is used.
+Setting the flag to any value except `legacy`, will enforce the use of the
+short namespace.
+
+Default: *legacy*
+
+Example:
+
+```bash
+nfd-master -no-publish=short
+```
+
 ### -featurerules-controller
 
 The `-featurerules-controller` flag controlers the processing of
