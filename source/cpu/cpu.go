@@ -38,8 +38,9 @@ const (
 	CstateFeature   = "cstate"
 	PstateFeature   = "pstate"
 	RdtFeature      = "rdt"
-	SeFeature       = "se"
-	SgxFeature      = "sgx"
+	SeFeature       = "se" // DEPRECATED in v0.12: will be removed in the future
+	SecurityFeature = "security"
+	SgxFeature      = "sgx" // DEPRECATED in v0.12: will be removed in the future
 	SstFeature      = "sst"
 	TopologyFeature = "topology"
 )
@@ -165,6 +166,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["rdt."+k] = true
 	}
 
+	// Security
+	for k, v := range features.Values[SecurityFeature].Elements {
+		labels["security."+k] = v
+	}
+
 	// SGX
 	for k, v := range features.Values[SgxFeature].Elements {
 		labels["sgx."+k] = v
@@ -217,10 +223,21 @@ func (s *cpuSource) Discover() error {
 	s.features.Keys[RdtFeature] = feature.NewKeyFeatures(discoverRDT()...)
 
 	// Detect SGX features
-	s.features.Values[SgxFeature] = feature.NewValueFeatures(discoverSGX())
+	s.features.Values[SecurityFeature] = feature.NewValueFeatures(discoverSecurity())
+
+	// Detect SGX features
+	//
+	// DEPRECATED in v0.12: will be removed in the future
+	if val, ok := s.features.Values[SecurityFeature].Elements["sgx.enabled"]; ok {
+		s.features.Values[SgxFeature] = feature.NewValueFeatures(map[string]string{"enabled": val})
+	}
 
 	// Detect Secure Execution features
-	s.features.Values[SeFeature] = feature.NewValueFeatures(discoverSE())
+	//
+	// DEPRECATED in v0.12: will be removed in the future
+	if val, ok := s.features.Values[SecurityFeature].Elements["se.enabled"]; ok {
+		s.features.Values[SeFeature] = feature.NewValueFeatures(map[string]string{"enabled": val})
+	}
 
 	// Detect SST features
 	s.features.Values[SstFeature] = feature.NewValueFeatures(discoverSST())

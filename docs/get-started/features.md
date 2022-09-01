@@ -50,8 +50,10 @@ such as restricting discovered features with the -label-whitelist option.*
 | **`cpu-pstate.scaling_governor`** | string | The value of the Intel pstate scaling_governor when in use, either 'powersave' or 'performance'.
 | **`cpu-cstate.enabled`**          | bool   | Set to 'true' if cstates are set in the intel_idle driver, otherwise set to 'false'. Unset if intel_idle cpuidle driver is not active.
 | **`cpu-rdt.<rdt-flag>`**          | true   | [Intel RDT][intel-rdt] capability is supported. See [RDT flags](#intel-rdt-flags) for details.
-| **`cpu-sgx.enabled`**             | true   | Set to 'true' if Intel SGX is enabled in BIOS (based a non-zero sum value of SGX EPC section sizes).
-| **`cpu-se.enabled`**              | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility)
+| **`cpu-security.sgx.enabled`**    | true   | Set to 'true' if Intel SGX is enabled in BIOS (based a non-zero sum value of SGX EPC section sizes).
+| **`cpu-security.se.enabled`**     | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility)
+| **`cpu-sgx.enabled`**             | true   | **DEPRECATED**: use **`cpu-security.sgx.enabled`** instead.
+| **`cpu-se.enabled`**              | true   | **DEPRECATED**: use **`cpu-security.se.enabled`** instead.
 | **`cpu-model.vendor_id`**         | string | Comparable CPU vendor ID.
 | **`cpu-model.family`**            | int    | CPU family.
 | **`cpu-model.id`**                | int    | CPU model number.
