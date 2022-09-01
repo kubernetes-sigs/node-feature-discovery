@@ -52,6 +52,24 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
+var (
+	// FeatureLabelNs is the namespace for feature labels
+	FeatureLabelNs = "feature.node.kubernetes.io"
+	// FeatureLabelSubNsSuffix is the suffix for allowed feature label sub-namespaces
+	FeatureLabelSubNsSuffix = "." + FeatureLabelNs
+)
+
+const (
+	// ProfileLabelNs is the namespace for profile labels
+	ProfileLabelNs = "profile.node.kubernetes.io"
+
+	// ProfileLabelSubNsSuffix is the suffix for allowed profile label sub-namespaces
+	ProfileLabelSubNsSuffix = "." + ProfileLabelNs
+
+	// AnnotationNsBase namespace for all NFD-related annotations
+	AnnotationNsBase = "nfd.node.kubernetes.io"
+)
+
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
@@ -72,6 +90,7 @@ type Args struct {
 	LabelWhiteList         utils.RegexpVal
 	FeatureRulesController bool
 	NoPublish              bool
+	NsFormat               string
 	Port                   int
 	Prune                  bool
 	VerifyNodeName         bool
@@ -102,6 +121,13 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 		nodeName: os.Getenv("NODE_NAME"),
 		ready:    make(chan bool, 1),
 		stop:     make(chan struct{}, 1),
+	}
+
+	if args.NsFormat != "legacy" {
+		// FeatureLabelNs is the namespace for feature labels
+		FeatureLabelNs = "nfd.k8s.io"
+		// FeatureLabelSubNsSuffix is the suffix for allowed feature label sub-namespaces
+		FeatureLabelSubNsSuffix = "." + FeatureLabelNs
 	}
 
 	if args.Instance != "" {
@@ -141,6 +167,12 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 // is called.
 func (m *nfdMaster) Run() error {
 	klog.Infof("Node Feature Discovery Master %s", version.Get())
+
+	// TODO(fmuyassarov): Remove this logging when short label namespace becomes default option.
+	if m.args.NsFormat != "legacy" {
+		klog.Infof("Using short label namespace %q instead of legacy namespace", FeatureLabelNs)
+	}
+
 	if m.args.Instance != "" {
 		klog.Infof("Master instance: %q", m.args.Instance)
 	}
@@ -344,6 +376,7 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 	outLabels := Labels{}
 
 	for label, value := range labels {
+
 		// Add possibly missing default ns
 		label := addNs(label, nfdv1alpha1.FeatureLabelNs)
 

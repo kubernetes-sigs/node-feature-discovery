@@ -107,6 +107,8 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
 		"Verify worker node name against the worker's TLS certificate. "+
 			"Only takes effect when TLS authentication has been enabled.")
+	flagset.StringVar(&args.NsFormat, "label-ns", "legacy",
+		"Feature label namespace format. By default set to legacy.")
 
 	return args
 }
