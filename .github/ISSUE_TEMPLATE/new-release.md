@@ -17,7 +17,7 @@ Please do not remove items from the checklist
         `git branch release-0.$MAJ master`
   - [ ] An OWNER pushes the new release branch with
         `git push release-0.$MAJ`
-- [ ] Run `scripts/prepare-release.sh $VERSION` to turn references to point to the upcoming release
+- [ ] Run `hack/prepare-release.sh $VERSION` to turn references to point to the upcoming release
       (README, deployment templates, docs configuration, test/e2e flags), submit a PR against the release branch
 - An OWNER prepares a draft release
   - [ ] Create a draft release at [Github releases page](https://github.com/kubernetes-sigs/node-feature-discovery/releases)
@@ -40,7 +40,7 @@ Please do not remove items from the checklist
 - [ ] Send an announcement email to `dev@kubernetes.io` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
 - [ ] Add a link to the release announcement in this issue
 - [ ] For a major release (or a point release of the latest major release), update README in master branch
-  - [ ] Update references e.g. by running `scripts/prepare-release.sh $VERSION` but **only** committing README.md, and,
+  - [ ] Update references e.g. by running `hack/prepare-release.sh $VERSION` but **only** committing README.md, and,
         submit a PR
   - [ ] Wait for the PR to be merged
 - [ ] For a major release, create an unannotated *devel* tag in the master branch, on the first commit that gets merged after the release branch has been created (presumably the README update commit above), and, push the tag:

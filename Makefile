@@ -110,7 +110,7 @@ deploy-prune:
 
 
 yamls:
-	@./scripts/kustomize.sh $(K8S_NAMESPACE) $(IMAGE_REPO) $(IMAGE_TAG_NAME)
+	@./hack/kustomize.sh $(K8S_NAMESPACE) $(IMAGE_REPO) $(IMAGE_TAG_NAME)
 
 deploy: yamls
 	kubectl apply -k .
