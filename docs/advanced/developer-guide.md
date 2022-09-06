@@ -126,8 +126,6 @@ makefile overrides.
 | E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty*
 | E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false
 | OPENSHIFT                  | Non-empty value enables OpenShift specific support (currently only effective in e2e tests) | *empty*
-| BASE_IMAGE_FULL            | Container base image for target image full (--target full)        | debian:buster-slim
-| BASE_IMAGE_MINIMAL         | Container base image for target image minimal (--target minimal)  | gcr.io/distroless/base
 
 For example, to use a custom registry:
 
@@ -234,6 +232,50 @@ Preceding Kubernetes v1.23, the `kubelet` must be started with the following fla
 `--feature-gates=KubeletPodResourcesGetAllocatable=true`.
 Starting Kubernetes v1.23, the `GetAllocatableResources` is enabled by default
 through `KubeletPodResourcesGetAllocatable` [feature gate][feature-gate].
+
+## Running with Tilt
+
+Another option for building NFD locally is via Tilt tool, which can build container
+images, push them to a local registry and reload your Kubernetes pods automatically.
+When using Tilt, you don't have to build container images and re-deploy your pods
+manually but instead let the Tilt take care of it. Tiltfile is a configuration file
+for the Tilt and is located at the root direcotry. To develop NFD with Tilt, follow
+the steps below.
+
+### Prerequisites
+
+1. Install [Docker](https://docs.docker.com/engine/install/)
+1. Setup Docker as a non-root user.
+1. Install [kubectl](https://kubernetes.io/docs/tasks/tools/)
+1. Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
+1. Install [tilt](https://docs.tilt.dev/install.html)
+1. Create a local Kubernetes cluster
+
+To start up your Tilt development environment, just run
+
+```shell
+tilt up
+```
+
+at the root of your local NFD codebase. Tilt will start a web interface in the
+localhost and port 10350. From the web interface, you are able to see how NFD worker
+and master are progressing,  watch their build and runtime logs. Once your code changes
+are saved locally, Tilt will notice it and re-build the container image from the
+current code, push the image to the registry and re-deploy NFD pods with the latest
+container image.
+
+### Environment variables
+
+To override environment variables used in the Tiltfile during image build,
+export them in your current terminal before starting Tilt.
+
+```shell
+export IMAGE_TAG_NAME="v1"
+tilt up
+```
+
+This will override the default value(`master`) of `IMAGE_TAG_NAME` variable defined
+in the Tiltfile.
 
 ## Documentation
 
