@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	"k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/kubernetes/test/e2e/framework/kubelet"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
@@ -103,7 +104,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		topologyUpdaterNode, err = f.ClientSet.CoreV1().Nodes().Get(context.TODO(), pods.Items[0].Spec.NodeName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
-		kubeletConfig, err = testutils.GetCurrentKubeletConfig(topologyUpdaterNode.Name, "", true)
+		kubeletConfig, err = kubelet.GetCurrentKubeletConfig(topologyUpdaterNode.Name, "", true)
 		Expect(err).NotTo(HaveOccurred())
 
 		workerNodes, err = testutils.GetWorkerNodes(f)
