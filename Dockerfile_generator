@@ -1,4 +1,5 @@
-FROM golang:1.18-buster as builder
+ARG BUILDER_IMAGE
+FROM ${BUILDER_IMAGE} as builder
 
 # Install tools
 RUN go install github.com/vektra/mockery/v2@v2.13.0 && \
