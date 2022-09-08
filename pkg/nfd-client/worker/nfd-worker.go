@@ -19,7 +19,6 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -401,7 +400,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 	// Try to read and parse config file
 	if filepath != "" {
-		data, err := ioutil.ReadFile(filepath)
+		data, err := os.ReadFile(filepath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				klog.Infof("config file %q not found, using defaults", filepath)

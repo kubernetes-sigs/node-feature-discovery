@@ -19,7 +19,6 @@ package local
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -135,7 +134,7 @@ func parseFeatures(lines [][]byte) map[string]string {
 func getFeaturesFromHooks() (map[string]string, error) {
 	features := make(map[string]string)
 
-	files, err := ioutil.ReadDir(hookDir)
+	files, err := os.ReadDir(hookDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.Infof("hook directory %v does not exist", hookDir)
@@ -212,7 +211,7 @@ func runHook(file string) ([][]byte, error) {
 func getFeaturesFromFiles() (map[string]string, error) {
 	features := make(map[string]string)
 
-	files, err := ioutil.ReadDir(featureFilesDir)
+	files, err := os.ReadDir(featureFilesDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.Infof("features directory %v does not exist", featureFilesDir)
@@ -256,7 +255,7 @@ func getFileContent(fileName string) ([][]byte, error) {
 	}
 
 	if filestat.Mode().IsRegular() {
-		fileContent, err := ioutil.ReadFile(path)
+		fileContent, err := os.ReadFile(path)
 
 		// Do not return any lines if an error occurred
 		if err != nil {

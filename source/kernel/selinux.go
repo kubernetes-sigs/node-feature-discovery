@@ -18,7 +18,6 @@ package kernel
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -40,7 +39,7 @@ func SelinuxEnabled() (bool, error) {
 		return false, nil
 	}
 
-	status, err := ioutil.ReadFile(filepath.Join(selinuxBase, "enforce"))
+	status, err := os.ReadFile(filepath.Join(selinuxBase, "enforce"))
 	if err != nil {
 		return false, fmt.Errorf("failed to detect the status of selinux: %w", err)
 	}

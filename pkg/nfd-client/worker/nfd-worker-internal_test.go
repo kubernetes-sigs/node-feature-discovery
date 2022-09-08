@@ -17,7 +17,6 @@ limitations under the License.
 package worker
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -129,7 +128,7 @@ func TestConfigParse(t *testing.T) {
 			})
 		})
 		// Create a temporary config file
-		f, err := ioutil.TempFile("", "nfd-test-")
+		f, err := os.CreateTemp("", "nfd-test-")
 		defer os.Remove(f.Name())
 		So(err, ShouldBeNil)
 		_, err = f.WriteString(`
@@ -197,7 +196,7 @@ sources:
 
 func TestDynamicConfig(t *testing.T) {
 	Convey("When running nfd-worker", t, func() {
-		tmpDir, err := ioutil.TempDir("", "*.nfd-test")
+		tmpDir, err := os.MkdirTemp("", "*.nfd-test")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmpDir)
 

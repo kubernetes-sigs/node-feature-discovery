@@ -18,7 +18,6 @@ package network
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -115,7 +114,7 @@ func (s *networkSource) GetFeatures() *feature.DomainFeatures {
 func detectNetDevices() ([]feature.InstanceFeature, error) {
 	sysfsBasePath := source.SysfsDir.Path(sysfsBaseDir)
 
-	ifaces, err := ioutil.ReadDir(sysfsBasePath)
+	ifaces, err := os.ReadDir(sysfsBasePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list network interfaces: %w", err)
 	}
@@ -137,7 +136,7 @@ func detectNetDevices() ([]feature.InstanceFeature, error) {
 func readIfaceInfo(path string) feature.InstanceFeature {
 	attrs := map[string]string{"name": filepath.Base(path)}
 	for _, attrName := range ifaceAttrs {
-		data, err := ioutil.ReadFile(filepath.Join(path, attrName))
+		data, err := os.ReadFile(filepath.Join(path, attrName))
 		if err != nil {
 			if !os.IsNotExist(err) {
 				klog.Errorf("failed to read net iface attribute %s: %v", attrName, err)
@@ -148,7 +147,7 @@ func readIfaceInfo(path string) feature.InstanceFeature {
 	}
 
 	for _, attrName := range devAttrs {
-		data, err := ioutil.ReadFile(filepath.Join(path, "device", attrName))
+		data, err := os.ReadFile(filepath.Join(path, "device", attrName))
 		if err != nil {
 			if !os.IsNotExist(err) {
 				klog.Errorf("failed to read net device attribute %s: %v", attrName, err)

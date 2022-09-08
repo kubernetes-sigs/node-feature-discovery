@@ -18,14 +18,14 @@ package kernel
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
 const kmodProcfsPath = "/proc/modules"
 
 func getLoadedModules() ([]string, error) {
-	out, err := ioutil.ReadFile(kmodProcfsPath)
+	out, err := os.ReadFile(kmodProcfsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %s", kmodProcfsPath, err.Error())
 	}

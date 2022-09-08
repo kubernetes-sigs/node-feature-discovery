@@ -20,7 +20,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -105,7 +104,7 @@ func (w *NfdBaseClient) Connect() error {
 			return fmt.Errorf("failed to load client certificate: %v", err)
 		}
 		// Load CA cert for server cert verification
-		caCert, err := ioutil.ReadFile(w.args.CaFile)
+		caCert, err := os.ReadFile(w.args.CaFile)
 		if err != nil {
 			return fmt.Errorf("failed to read root certificate file: %v", err)
 		}

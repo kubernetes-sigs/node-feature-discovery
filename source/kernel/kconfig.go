@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,7 +44,7 @@ func readKconfigGzip(filename string) ([]byte, error) {
 	}
 	defer r.Close()
 
-	return ioutil.ReadAll(r)
+	return io.ReadAll(r)
 }
 
 // parseKconfig reads Linux kernel configuration and returns all set options
@@ -88,7 +88,7 @@ func parseKconfig(configPath string) (realKconfig, legacyKconfig map[string]stri
 					break
 				}
 			} else {
-				if raw, err = ioutil.ReadFile(path); err == nil {
+				if raw, err = os.ReadFile(path); err == nil {
 					break
 				}
 			}

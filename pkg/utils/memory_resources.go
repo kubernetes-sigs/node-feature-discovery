@@ -18,7 +18,7 @@ package utils
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -44,7 +44,7 @@ type MemoryResourceInfo map[v1.ResourceName]int64
 
 // GetNumaMemoryResources returns total amount of memory and hugepages under NUMA nodes
 func GetNumaMemoryResources() (NumaMemoryResources, error) {
-	nodes, err := ioutil.ReadDir(sysBusNodeBasepath)
+	nodes, err := os.ReadDir(sysBusNodeBasepath)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func GetNumaMemoryResources() (NumaMemoryResources, error) {
 }
 
 func getHugepagesBytes(path string) (MemoryResourceInfo, error) {
-	entries, err := ioutil.ReadDir(path)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func getHugepagesBytes(path string) (MemoryResourceInfo, error) {
 			return nil, err
 		}
 
-		data, err := ioutil.ReadFile(filepath.Join(path, entry.Name(), "nr_hugepages"))
+		data, err := os.ReadFile(filepath.Join(path, entry.Name(), "nr_hugepages"))
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func getHugepagesBytes(path string) (MemoryResourceInfo, error) {
 }
 
 func readTotalMemoryFromMeminfo(path string) (int64, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return -1, err
 	}

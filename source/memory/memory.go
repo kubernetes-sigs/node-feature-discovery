@@ -18,7 +18,6 @@ package memory
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -117,7 +116,7 @@ func (s *memorySource) GetFeatures() *feature.DomainFeatures {
 func detectNuma() (map[string]string, error) {
 	sysfsBasePath := source.SysfsDir.Path("bus/node/devices")
 
-	nodes, err := ioutil.ReadDir(sysfsBasePath)
+	nodes, err := os.ReadDir(sysfsBasePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list numa nodes: %w", err)
 	}
@@ -133,7 +132,7 @@ func detectNv() ([]feature.InstanceFeature, error) {
 	sysfsBasePath := source.SysfsDir.Path("bus/nd/devices")
 	info := make([]feature.InstanceFeature, 0)
 
-	devices, err := ioutil.ReadDir(sysfsBasePath)
+	devices, err := os.ReadDir(sysfsBasePath)
 	if os.IsNotExist(err) {
 		klog.V(1).Info("No NVDIMM devices present")
 		return info, nil
@@ -156,7 +155,7 @@ var ndDevAttrs = []string{"devtype", "mode"}
 func readNdDeviceInfo(path string) feature.InstanceFeature {
 	attrs := map[string]string{"name": filepath.Base(path)}
 	for _, attrName := range ndDevAttrs {
-		data, err := ioutil.ReadFile(filepath.Join(path, attrName))
+		data, err := os.ReadFile(filepath.Join(path, attrName))
 		if err != nil {
 			klog.V(3).Infof("failed to read nd device attribute %s: %w", attrName, err)
 			continue

@@ -18,7 +18,7 @@ package storage
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -96,7 +96,7 @@ func (s *storageSource) GetFeatures() *feature.DomainFeatures {
 func detectBlock() ([]feature.InstanceFeature, error) {
 	sysfsBasePath := source.SysfsDir.Path("block")
 
-	blockdevices, err := ioutil.ReadDir(sysfsBasePath)
+	blockdevices, err := os.ReadDir(sysfsBasePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list block devices: %w", err)
 	}
@@ -113,7 +113,7 @@ func detectBlock() ([]feature.InstanceFeature, error) {
 func readBlockDevQueueInfo(path string) *feature.InstanceFeature {
 	attrs := map[string]string{"name": filepath.Base(path)}
 	for _, attrName := range queueAttrs {
-		data, err := ioutil.ReadFile(filepath.Join(path, "queue", attrName))
+		data, err := os.ReadFile(filepath.Join(path, "queue", attrName))
 		if err != nil {
 			klog.V(3).Infof("failed to read block device queue attribute %s: %w", attrName, err)
 			continue

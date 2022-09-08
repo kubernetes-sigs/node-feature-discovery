@@ -17,7 +17,7 @@ limitations under the License.
 package kubeconf
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/ghodss/yaml"
 
@@ -26,7 +26,7 @@ import (
 
 // GetKubeletConfigFromLocalFile returns KubeletConfiguration loaded from the node local config
 func GetKubeletConfigFromLocalFile(kubeletConfigPath string) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
-	kubeletBytes, err := ioutil.ReadFile(kubeletConfigPath)
+	kubeletBytes, err := os.ReadFile(kubeletConfigPath)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 )
 
@@ -50,7 +50,7 @@ func (c *TlsConfig) UpdateConfig(certFile, keyFile, caFile string) error {
 		return fmt.Errorf("failed to load server certificate: %v", err)
 	}
 	// Load CA cert for client cert verification
-	caCert, err := ioutil.ReadFile(caFile)
+	caCert, err := os.ReadFile(caFile)
 	if err != nil {
 		return fmt.Errorf("failed to read root certificate file: %v", err)
 	}
