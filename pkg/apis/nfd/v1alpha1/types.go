@@ -120,9 +120,10 @@ type MatchExpressionSet map[string]*MatchExpression
 // an array of values that the operator evaluates the input against.
 //
 // NB: CreateMatchExpression or MustCreateMatchExpression() should be used for
-//     creating new instances.
+// creating new instances.
+//
 // NB: Validate() must be called if Op or Value fields are modified or if a new
-//     instance is created from scratch without using the helper functions.
+// instance is created from scratch without using the helper functions.
 type MatchExpression struct {
 	// Op is the operator to be applied.
 	Op MatchOp `json:"op"`

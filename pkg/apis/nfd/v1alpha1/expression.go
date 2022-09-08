@@ -490,6 +490,7 @@ func (in *valueRegexpCache) DeepCopy() *valueRegexpCache {
 }
 
 // DeepCopyInto is a stub to augment the auto-generated code
+//
 //nolint:staticcheck  // re.Copy is deprecated but we want to use  it here
 func (in *valueRegexpCache) DeepCopyInto(out *valueRegexpCache) {
 	*out = make(valueRegexpCache, len(*in))
