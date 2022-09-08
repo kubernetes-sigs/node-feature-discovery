@@ -18,7 +18,6 @@ package cpu
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +41,7 @@ func detectPstate() (map[string]string, error) {
 	}
 
 	// Get global pstate status
-	data, err := ioutil.ReadFile(filepath.Join(pstateDir, "status"))
+	data, err := os.ReadFile(filepath.Join(pstateDir, "status"))
 	if err != nil {
 		return nil, fmt.Errorf("could not read pstate status: %w", err)
 	}
@@ -55,7 +54,7 @@ func detectPstate() (map[string]string, error) {
 	features := map[string]string{"status": status}
 
 	// Check turbo boost
-	bytes, err := ioutil.ReadFile(filepath.Join(pstateDir, "no_turbo"))
+	bytes, err := os.ReadFile(filepath.Join(pstateDir, "no_turbo"))
 	if err != nil {
 		klog.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
 	} else {
@@ -72,7 +71,7 @@ func detectPstate() (map[string]string, error) {
 
 	// Determine scaling governor that is being used
 	cpufreqDir := filepath.Join(sysfsBase, "cpufreq")
-	policies, err := ioutil.ReadDir(cpufreqDir)
+	policies, err := os.ReadDir(cpufreqDir)
 	if err != nil {
 		klog.Errorf("failed to read cpufreq directory: %s", err.Error())
 		return features, nil
@@ -81,7 +80,7 @@ func detectPstate() (map[string]string, error) {
 	scaling := ""
 	for _, policy := range policies {
 		// Ensure at least one cpu is using this policy
-		cpus, err := ioutil.ReadFile(filepath.Join(cpufreqDir, policy.Name(), "affected_cpus"))
+		cpus, err := os.ReadFile(filepath.Join(cpufreqDir, policy.Name(), "affected_cpus"))
 		if err != nil {
 			klog.Errorf("could not read cpufreq policy %s affected_cpus", policy.Name())
 			continue
@@ -91,7 +90,7 @@ func detectPstate() (map[string]string, error) {
 			continue
 		}
 
-		data, err := ioutil.ReadFile(filepath.Join(cpufreqDir, policy.Name(), "scaling_governor"))
+		data, err := os.ReadFile(filepath.Join(cpufreqDir, policy.Name(), "scaling_governor"))
 		if err != nil {
 			klog.Errorf("could not read cpufreq policy %s scaling_governor", policy.Name())
 			continue

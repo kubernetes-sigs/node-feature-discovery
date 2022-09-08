@@ -18,7 +18,6 @@ package cpu
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -52,7 +51,7 @@ func discoverSSTBF() (bool, error) {
 	nominalBaseFrequency := int(freqInfo.EAX)
 
 	// Loop over all CPUs in the system
-	files, err := ioutil.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
+	files, err := os.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
 
 	if err != nil {
 		return false, err
@@ -60,7 +59,7 @@ func discoverSSTBF() (bool, error) {
 	for _, file := range files {
 		// Try to read effective base frequency of each cpu in the system
 		filePath := source.SysfsDir.Path("bus/cpu/devices", file.Name(), "cpufreq/base_frequency")
-		data, err := ioutil.ReadFile(filePath)
+		data, err := os.ReadFile(filePath)
 		if os.IsNotExist(err) {
 			// Ignore missing file and continue to check other CPUs
 			continue

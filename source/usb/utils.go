@@ -18,7 +18,7 @@ package usb
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -40,7 +40,7 @@ var devAttrFileMap = map[string]string{
 }
 
 func readSingleUsbSysfsAttribute(path string) (string, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to read device attribute %s: %v", filepath.Base(path), err)
 	}

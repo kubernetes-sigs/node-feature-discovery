@@ -17,7 +17,7 @@ limitations under the License.
 package kernel
 
 import (
-	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -53,7 +53,7 @@ func parseVersion() (map[string]string, error) {
 }
 
 func getVersion() (string, error) {
-	unameRaw, err := ioutil.ReadFile("/proc/sys/kernel/osrelease")
+	unameRaw, err := os.ReadFile("/proc/sys/kernel/osrelease")
 	if err != nil {
 		return "", err
 	}

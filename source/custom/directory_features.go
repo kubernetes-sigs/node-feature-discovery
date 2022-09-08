@@ -17,7 +17,6 @@ limitations under the License.
 package custom
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +40,7 @@ func readDir(dirName string, recursive bool) []CustomRule {
 	features := make([]CustomRule, 0)
 
 	klog.V(1).Infof("getting files in %s", dirName)
-	files, err := ioutil.ReadDir(dirName)
+	files, err := os.ReadDir(dirName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.V(1).Infof("custom config directory %q does not exist", dirName)
@@ -69,7 +68,7 @@ func readDir(dirName string, recursive bool) []CustomRule {
 		}
 		klog.V(2).Infof("processing file %q", fileName)
 
-		bytes, err := ioutil.ReadFile(fileName)
+		bytes, err := os.ReadFile(fileName)
 		if err != nil {
 			klog.Errorf("could not read custom config file %q, %v", fileName, err)
 			continue

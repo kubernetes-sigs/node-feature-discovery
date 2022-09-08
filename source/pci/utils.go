@@ -18,7 +18,7 @@ package pci
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -34,7 +34,7 @@ var optionalDevAttrs = []string{"sriov_totalvfs", "iommu_group/type", "iommu/int
 // Read a single PCI device attribute
 // A PCI attribute in this context, maps to the corresponding sysfs file
 func readSinglePciAttribute(devPath string, attrName string) (string, error) {
-	data, err := ioutil.ReadFile(filepath.Join(devPath, attrName))
+	data, err := os.ReadFile(filepath.Join(devPath, attrName))
 	if err != nil {
 		return "", fmt.Errorf("failed to read device attribute %s: %v", attrName, err)
 	}
@@ -73,7 +73,7 @@ func readPciDevInfo(devPath string) (*feature.InstanceFeature, error) {
 func detectPci() ([]feature.InstanceFeature, error) {
 	sysfsBasePath := source.SysfsDir.Path("bus/pci/devices")
 
-	devices, err := ioutil.ReadDir(sysfsBasePath)
+	devices, err := os.ReadDir(sysfsBasePath)
 	if err != nil {
 		return nil, err
 	}

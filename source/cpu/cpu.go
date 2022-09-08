@@ -17,7 +17,7 @@ limitations under the License.
 package cpu
 
 import (
-	"io/ioutil"
+	"os"
 	"strconv"
 
 	"k8s.io/klog/v2"
@@ -282,14 +282,14 @@ func discoverTopology() map[string]string {
 // Check if any (online) CPUs have thread siblings
 func haveThreadSiblings() (bool, error) {
 
-	files, err := ioutil.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
+	files, err := os.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
 	if err != nil {
 		return false, err
 	}
 
 	for _, file := range files {
 		// Try to read siblings from topology
-		siblings, err := ioutil.ReadFile(source.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
+		siblings, err := os.ReadFile(source.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
 		if err != nil {
 			return false, err
 		}

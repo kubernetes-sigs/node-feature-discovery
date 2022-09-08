@@ -127,7 +127,10 @@ templates:
 	@rm nfd-worker.conf.tmp
 
 .generator.image.stamp: Dockerfile_generator
-	$(IMAGE_BUILD_CMD) -t nfd-generator -f Dockerfile_generator .
+	$(IMAGE_BUILD_CMD) \
+	    --build-arg BUILDER_IMAGE=$(BUILDER_IMAGE) \
+	    -t nfd-generator \
+	    -f Dockerfile_generator .
 
 generate: .generator.image.stamp
 	$(CONTAINER_RUN_CMD) --rm \

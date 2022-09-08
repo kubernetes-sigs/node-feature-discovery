@@ -18,7 +18,6 @@ package cpu
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -45,7 +44,7 @@ func detectCstate() (map[string]string, error) {
 	}
 
 	// When the intel_idle driver is in use (default), check setting of max_cstates
-	driver, err := ioutil.ReadFile(filepath.Join(cpuidleDir, "current_driver"))
+	driver, err := os.ReadFile(filepath.Join(cpuidleDir, "current_driver"))
 	if err != nil {
 		return cstate, fmt.Errorf("cannot get driver for cpuidle: %w", err)
 	}
@@ -56,7 +55,7 @@ func detectCstate() (map[string]string, error) {
 		return cstate, nil
 	}
 
-	data, err := ioutil.ReadFile(source.SysfsDir.Path("module/intel_idle/parameters/max_cstate"))
+	data, err := os.ReadFile(source.SysfsDir.Path("module/intel_idle/parameters/max_cstate"))
 	if err != nil {
 		return cstate, fmt.Errorf("cannot determine cstate from max_cstates: %w", err)
 	}
