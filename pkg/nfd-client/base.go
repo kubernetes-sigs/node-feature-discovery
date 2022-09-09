@@ -26,6 +26,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -121,7 +122,7 @@ func (w *NfdBaseClient) Connect() error {
 		}
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	} else {
-		dialOpts = append(dialOpts, grpc.WithInsecure())
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	klog.Infof("connecting to nfd-master at %s ...", w.args.Server)
 	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...)
