@@ -40,7 +40,7 @@ import (
 var pullIfNotPresent = flag.Bool("nfd.pull-if-not-present", false, "Pull Images if not present - not always")
 
 const (
-	PauseImage = "k8s.gcr.io/pause"
+	PauseImage = "registry.k8s.io/pause"
 )
 
 // GuarenteedSleeperPod makes a Guaranteed QoS class Pod object which long enough forever but requires `cpuLimit` exclusive CPUs.
