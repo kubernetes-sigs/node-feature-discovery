@@ -9,7 +9,7 @@ IMAGE_REGISTRY = os.getenv('IMAGE_REGISTRY', "gcr.io/k8s-staging-nfd")
 IMAGE_NAME = os.getenv('IMAGE_NAME', "node-feature-discovery")
 
 # Get the image name in the following format
-# k8s.gcr.io/nfd/node-feature-discovery:master
+# registry.k8s.io/nfd/node-feature-discovery:master
 IMAGE = "/".join([IMAGE_REGISTRY, IMAGE_NAME])
 TAGGED_IMAGE = ":".join([IMAGE, IMAGE_TAG_NAME])
 

@@ -73,7 +73,7 @@ architecture image.
 #### Change the job spec to use your custom image (optional)
 
 To use your published image from the step above instead of the
-`k8s.gcr.io/nfd/node-feature-discovery` image, edit `image`
+`registry.k8s.io/nfd/node-feature-discovery` image, edit `image`
 attribute in the spec template(s) to the new location
 (`<registry-name>/<image-name>[:<version>]`).
 
@@ -118,7 +118,7 @@ makefile overrides.
 | IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
 | IMAGE_ALL_PLATFORMS        | Comma seperated list of OS/ARCH tuples for mulit-arch builds    | linux/amd64,linux/arm64
 | IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push
-| IMAGE_REGISTRY             | Container image registry to use                                   | k8s.gcr.io/nfd
+| IMAGE_REGISTRY             | Container image registry to use                                   | registry.k8s.io/nfd
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
 | IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty*
 | K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | node-feature-discovery

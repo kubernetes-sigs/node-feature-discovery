@@ -32,8 +32,8 @@ Please do not remove items from the checklist
       `gcr.io/k8s-staging-nfd/node-feature-discovery:$VERSION`
   - Triggers build of the documentation and publish it at
         https://kubernetes-sigs.github.io/node-feature-discovery/0.$MAJ/
-- [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), updating `k8s.gcr.io/images/k8s-staging-nfd/images.yaml` to promote the container images (both "full" and "minimal" variants) to production
-- [ ] Wait for the PR to be merged and verify that the image (`k8s.gcr.io/nfd/node-feature-discovery:$VERSION`) is available.
+- [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), updating `registry.k8s.io/images/k8s-staging-nfd/images.yaml` to promote the container images (both "full" and "minimal" variants) to production
+- [ ] Wait for the PR to be merged and verify that the image (`registry.k8s.io/nfd/node-feature-discovery:$VERSION`) is available.
 - [ ] Publish the draft release prepared at the [Github releases page](https://github.com/kubernetes-sigs/node-feature-discovery/releases)
       which will also trigger a Helm repo index update to add the latest release
 - [ ] Add a link to the tagged release in this issue.

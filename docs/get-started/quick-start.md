@@ -57,7 +57,7 @@ metadata:
   name: feature-dependent-pod
 spec:
   containers:
-  - image: k8s.gcr.io/pause
+  - image: registry.k8s.io/pause
     name: pause
   nodeSelector:
     # Select a valid feature

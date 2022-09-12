@@ -81,7 +81,7 @@ fi
 release=$1
 shift 1
 
-container_image=k8s.gcr.io/nfd/node-feature-discovery:$release
+container_image=registry.k8s.io/nfd/node-feature-discovery:$release
 
 #
 # Check/parse release number
@@ -113,7 +113,7 @@ if [ -z "$no_patching" ]; then
     echo Patching docs/_config.yml
     sed -e s"/release:.*/release: $release/"  \
         -e s"/version:.*/version: $docs_version/" \
-        -e s"!container_image:.*!container_image: k8s.gcr.io/nfd/node-feature-discovery:$release!" \
+        -e s"!container_image:.*!container_image: registry.k8s.io/nfd/node-feature-discovery:$release!" \
         -i docs/_config.yml
 
     # Patch README
@@ -133,14 +133,14 @@ if [ -z "$no_patching" ]; then
     echo "Patching Helm chart"
     sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/helm/node-feature-discovery/Chart.yaml
     sed -e s"/pullPolicy:.*/pullPolicy: IfNotPresent/" \
-        -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery!k8s.gcr.io/nfd/node-feature-discovery!" \
+        -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery!registry.k8s.io/nfd/node-feature-discovery!" \
         -i deployment/helm/node-feature-discovery/values.yaml
     sed -e s"!kubernetes-sigs.github.io/node-feature-discovery/master!kubernetes-sigs.github.io/node-feature-discovery/$docs_version!" \
         -i deployment/helm/node-feature-discovery/README.md
 
     # Patch e2e test
-    echo Patching test/e2e/node_feature_discovery.go flag defaults to k8s.gcr.io/nfd/node-feature-discovery and $release
-    sed -e s'!"nfd\.repo",.*,!"nfd.repo", "k8s.gcr.io/nfd/node-feature-discovery",!' \
+    echo Patching test/e2e/node_feature_discovery.go flag defaults to registry.k8s.io/nfd/node-feature-discovery and $release
+    sed -e s'!"nfd\.repo",.*,!"nfd.repo", "registry.k8s.io/nfd/node-feature-discovery",!' \
         -e s"!\"nfd\.tag\",.*,!\"nfd.tag\", \"$release\",!" \
       -i test/e2e/node_feature_discovery.go
 fi
