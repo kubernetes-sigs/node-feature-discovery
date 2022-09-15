@@ -11,8 +11,6 @@ CONTAINER_RUN_CMD ?= docker run
 BASE_IMAGE_FULL ?= debian:buster-slim
 BASE_IMAGE_MINIMAL ?= gcr.io/distroless/base
 
-MDL ?= mdl
-
 K8S_CODE_GENERATOR ?= ../code-generator
 
 # Docker base command for working with html documentation.
@@ -160,7 +158,12 @@ lint:
 	golint -set_exit_status ./...
 
 mdlint:
-	find docs/ -path docs/vendor -prune -false -o -name '*.md' | xargs $(MDL) -s docs/mdl-style.rb
+	${CONTAINER_RUN_CMD} \
+	--rm \
+	--volume "${PWD}:/workdir:ro,z" \
+	--workdir /workdir \
+	ruby:slim \
+	/workdir/scripts/test-infra/mdlint.sh
 
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
