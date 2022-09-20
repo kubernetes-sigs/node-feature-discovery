@@ -533,3 +533,16 @@ func sortJsonPatches(p []apihelper.JsonPatch) []apihelper.JsonPatch {
 	sort.Slice(p, func(i, j int) bool { return p[i].Path < p[j].Path })
 	return p
 }
+
+// Remove any labels having the given prefix
+func removeLabelsWithPrefix(n *api.Node, search string) []apihelper.JsonPatch {
+	var p []apihelper.JsonPatch
+
+	for k := range n.Labels {
+		if strings.HasPrefix(k, search) {
+			p = append(p, apihelper.NewJsonPatch("remove", "/metadata/labels", k, ""))
+		}
+	}
+
+	return p
+}
