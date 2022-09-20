@@ -580,10 +580,6 @@ func (m *nfdMaster) updateNodeFeatures(nodeName string, labels Labels, annotatio
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
 	patches = append(patches, createPatches(nil, node.Annotations, annotations, "/metadata/annotations")...)
 
-	// Also, remove all labels with the old prefix, and the old version label
-	patches = append(patches, removeLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/nfd")...)
-	patches = append(patches, removeLabelsWithPrefix(node, "node.alpha.kubernetes-incubator.io/node-feature-discovery")...)
-
 	// Patch the node object in the apiserver
 	err = m.apihelper.PatchNode(cli, node.Name, patches)
 	if err != nil {
@@ -610,19 +606,6 @@ func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
 		m.kubeconfig, err = apihelper.GetKubeconfig(m.args.Kubeconfig)
 	}
 	return m.kubeconfig, err
-}
-
-// Remove any labels having the given prefix
-func removeLabelsWithPrefix(n *api.Node, search string) []apihelper.JsonPatch {
-	var p []apihelper.JsonPatch
-
-	for k := range n.Labels {
-		if strings.HasPrefix(k, search) {
-			p = append(p, apihelper.NewJsonPatch("remove", "/metadata/labels", k, ""))
-		}
-	}
-
-	return p
 }
 
 // createPatches is a generic helper that returns json patch operations to perform
