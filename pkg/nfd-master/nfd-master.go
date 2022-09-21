@@ -516,12 +516,14 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 	// Merge in features
 	//
-	// TODO: support multiple NodeFeature objects. There are two obvious options to implement this:
-	// 1. Merge features of all objects into one joint object
-	// 2. Change the rule api to support handle multiple objects
-	// Of these #2 would probably perform better with lot less data to copy. We
-	// could probably even get rid of the DeepCopy in this scenario.
-	features := objs[0].DeepCopy()
+	// NOTE: changing the rule api to support handle multiple objects instead
+	// of merging would probably perform better with lot less data to copy.
+	features := objs[0].Spec.DeepCopy()
+	for _, o := range objs[1:] {
+		o.Spec.MergeInto(features)
+	}
+
+	utils.KlogDump(4, "Composite NodeFeatureSpec after merge:", "  ", features)
 
 	annotations := Annotations{}
 	if objs[0].Namespace == m.namespace && objs[0].Name == nodeName {
@@ -536,7 +538,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 	if err != nil {
 		return err
 	}
-	if err := m.refreshNodeFeatures(cli, nodeName, annotations, features.Spec.Labels, &features.Spec.Features); err != nil {
+	if err := m.refreshNodeFeatures(cli, nodeName, annotations, features.Labels, &features.Features); err != nil {
 		return err
 	}
 
