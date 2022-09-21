@@ -259,16 +259,34 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 
 // nfdAPIUpdateHandler handles events from the nfd API controller.
 func (m *nfdMaster) nfdAPIUpdateHandler() {
+	updateAll := false
+	updateNodes := make(map[string]struct{})
+	rateLimit := time.After(time.Second)
 	for {
 		select {
 		case <-m.nfdController.updateAllNodesChan:
-			if err := m.nfdAPIUpdateAllNodes(); err != nil {
-				klog.Error(err)
-			}
+			updateAll = true
 		case nodeName := <-m.nfdController.updateOneNodeChan:
-			if err := m.nfdAPIUpdateOneNode(nodeName); err != nil {
-				klog.Error(err)
+			updateNodes[nodeName] = struct{}{}
+		case <-rateLimit:
+			// Check what we need to do
+			// TODO: we might want to update multiple nodes in parallel
+			if updateAll {
+				if err := m.nfdAPIUpdateAllNodes(); err != nil {
+					klog.Error(err)
+				}
+			} else {
+				for nodeName := range updateNodes {
+					if err := m.nfdAPIUpdateOneNode(nodeName); err != nil {
+						klog.Error(err)
+					}
+				}
 			}
+
+			// Reset "work queue" and timer
+			updateAll = false
+			updateNodes = make(map[string]struct{})
+			rateLimit = time.After(time.Second)
 		}
 	}
 }
