@@ -329,6 +329,29 @@ sources:
     configOpts: [NO_HZ, X86, DMI]
 ```
 
+### sources.local
+
+### sources.local.hooksEnabled
+
+Configuration option to disable/enable hooks execution. Enabled by default.
+Hooks are DEPRECATED since v0.12.0 release and support will be removed in a
+future release. Use [feature files](./customization-guide.md#feature-files)
+instead.
+
+Related tracking issues:
+
+1. Config option to disable hooks [#859](https://github.com/kubernetes-sigs/node-feature-discovery/issues/859).
+1. Disable hook support by default [#855](https://github.com/kubernetes-sigs/node-feature-discovery/issues/855).
+1. Drop support for hooks [#856](https://github.com/kubernetes-sigs/node-feature-discovery/issues/856).
+
+Example:
+
+```yaml
+sources:
+  local:
+    hooksEnabled: true  # true by default
+```
+
 ### soures.pci
 
 #### soures.pci.deviceClassWhitelist
