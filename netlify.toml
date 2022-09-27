@@ -1,0 +1,4 @@
+# Netlify settings
+[build]
+    command = "cd docs/ && bundle install && jekyll build"
+    publish = "docs/_site/"
