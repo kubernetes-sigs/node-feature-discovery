@@ -12,6 +12,8 @@ spec:
     kind: NodeFeatureRule
     listKind: NodeFeatureRuleList
     plural: nodefeaturerules
+    shortNames:
+    - nfr
     singular: nodefeaturerule
   scope: Cluster
   versions:
