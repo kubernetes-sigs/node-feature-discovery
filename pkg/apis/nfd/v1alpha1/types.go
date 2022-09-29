@@ -33,7 +33,7 @@ type NodeFeatureRuleList struct {
 // NodeFeatureRule resource specifies a configuration for feature-based
 // customization of node objects, such as node labeling.
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,shortName=nfr
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +genclient
 // +genclient:nonNamespaced
