@@ -501,6 +501,7 @@ The following features are available for matching:
 | **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
 |                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
+|                  |              | **`tdx.enabled`** | bool | `true` if Intel TDX (Trusted Domain Extensions) is available on the host and has been enabled, otherwise does not exist
 | **`cpu.sgx`**    | attribute    |          |            | **DEPRECATED**: replaced by **`cpu.security`** feature
 |                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`sgx.enabled`** from **`cpu.security`** instead
 | **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities
