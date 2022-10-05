@@ -393,7 +393,7 @@ func TestAdvertiseFeatureLabels(t *testing.T) {
 		worker := w.(*nfdWorker)
 
 		mockClient := &labeler.MockLabelerClient{}
-		worker.client = mockClient
+		worker.grpcClient = mockClient
 
 		labels := map[string]string{"feature-1": "value-1"}
 
