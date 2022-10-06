@@ -23,7 +23,8 @@ import (
 	"os"
 
 	"github.com/klauspost/cpuid/v2"
-	"sigs.k8s.io/node-feature-discovery/source"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 func discoverSecurity() map[string]string {
@@ -64,7 +65,7 @@ func tdxEnabled() bool {
 	// If /sys/module/kvm_intel/parameters/tdx is not present, or is present
 	// with a value different than "Y\n" assume TDX to be unavailable or
 	// disabled.
-	protVirtHost := source.SysfsDir.Path("module/kvm_intel/parameters/tdx")
+	protVirtHost := hostpath.SysfsDir.Path("module/kvm_intel/parameters/tdx")
 	if content, err := os.ReadFile(protVirtHost); err == nil {
 		if string(content) == "Y\n" {
 			return true

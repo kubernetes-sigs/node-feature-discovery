@@ -28,11 +28,11 @@ import (
 	"k8s.io/klog/v2"
 	resourcehelper "k8s.io/kubernetes/pkg/apis/core/helper"
 
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 var (
-	sysBusNodeBasepath = source.SysfsDir.Path("bus/node/devices")
+	sysBusNodeBasepath = hostpath.SysfsDir.Path("bus/node/devices")
 )
 
 // NumaMemoryResources contains information of the memory resources per NUMA

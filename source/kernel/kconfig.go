@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 // Read gzipped kernel config
@@ -63,21 +63,21 @@ func parseKconfig(configPath string) (realKconfig, legacyKconfig map[string]stri
 	if err != nil {
 		searchPaths = []string{
 			"/proc/config.gz",
-			source.UsrDir.Path("src/linux/.config"),
+			hostpath.UsrDir.Path("src/linux/.config"),
 		}
 	} else {
 		// from k8s.io/system-validator used by kubeadm
 		// preflight checks
 		searchPaths = []string{
 			"/proc/config.gz",
-			source.UsrDir.Path("src/linux-" + kVer + "/.config"),
-			source.UsrDir.Path("src/linux/.config"),
-			source.UsrDir.Path("lib/modules/" + kVer + "/config"),
-			source.UsrDir.Path("lib/ostree-boot/config-" + kVer),
-			source.UsrDir.Path("lib/kernel/config-" + kVer),
-			source.UsrDir.Path("src/linux-headers-" + kVer + "/.config"),
+			hostpath.UsrDir.Path("src/linux-" + kVer + "/.config"),
+			hostpath.UsrDir.Path("src/linux/.config"),
+			hostpath.UsrDir.Path("lib/modules/" + kVer + "/config"),
+			hostpath.UsrDir.Path("lib/ostree-boot/config-" + kVer),
+			hostpath.UsrDir.Path("lib/kernel/config-" + kVer),
+			hostpath.UsrDir.Path("src/linux-headers-" + kVer + "/.config"),
 			"/lib/modules/" + kVer + "/build/.config",
-			source.BootDir.Path("config-" + kVer),
+			hostpath.BootDir.Path("config-" + kVer),
 		}
 	}
 

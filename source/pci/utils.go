@@ -25,7 +25,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 var mandatoryDevAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
@@ -71,7 +71,7 @@ func readPciDevInfo(devPath string) (*feature.InstanceFeature, error) {
 // detectPci detects available PCI devices and retrieves their device attributes.
 // An error is returned if reading any of the mandatory attributes fails.
 func detectPci() ([]feature.InstanceFeature, error) {
-	sysfsBasePath := source.SysfsDir.Path("bus/pci/devices")
+	sysfsBasePath := hostpath.SysfsDir.Path("bus/pci/devices")
 
 	devices, err := os.ReadDir(sysfsBasePath)
 	if err != nil {

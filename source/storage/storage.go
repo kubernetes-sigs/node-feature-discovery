@@ -26,6 +26,7 @@ import (
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -94,7 +95,7 @@ func (s *storageSource) GetFeatures() *feature.DomainFeatures {
 }
 
 func detectBlock() ([]feature.InstanceFeature, error) {
-	sysfsBasePath := source.SysfsDir.Path("block")
+	sysfsBasePath := hostpath.SysfsDir.Path("block")
 
 	blockdevices, err := os.ReadDir(sysfsBasePath)
 	if err != nil {

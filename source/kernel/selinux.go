@@ -23,12 +23,12 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 // SelinuxEnabled detects if selinux has been enabled in the kernel
 func SelinuxEnabled() (bool, error) {
-	sysfsBase := source.SysfsDir.Path("fs")
+	sysfsBase := hostpath.SysfsDir.Path("fs")
 	if _, err := os.Stat(sysfsBase); err != nil {
 		return false, fmt.Errorf("unable to detect selinux status: %w", err)
 	}

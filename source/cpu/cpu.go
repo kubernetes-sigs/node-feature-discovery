@@ -26,6 +26,7 @@ import (
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -282,14 +283,14 @@ func discoverTopology() map[string]string {
 // Check if any (online) CPUs have thread siblings
 func haveThreadSiblings() (bool, error) {
 
-	files, err := os.ReadDir(source.SysfsDir.Path("bus/cpu/devices"))
+	files, err := os.ReadDir(hostpath.SysfsDir.Path("bus/cpu/devices"))
 	if err != nil {
 		return false, err
 	}
 
 	for _, file := range files {
 		// Try to read siblings from topology
-		siblings, err := os.ReadFile(source.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
+		siblings, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
 		if err != nil {
 			return false, err
 		}

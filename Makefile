@@ -55,7 +55,7 @@ KUBECONFIG ?=
 E2E_TEST_CONFIG ?=
 E2E_PULL_IF_NOT_PRESENT ?= false
 
-LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/source.pathPrefix=$(HOSTMOUNT_PREFIX)"
+LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
 # multi-arch build with buildx
 IMAGE_ALL_PLATFORMS ?= linux/amd64,linux/arm64
