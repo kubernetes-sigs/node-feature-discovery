@@ -24,13 +24,23 @@ package feature;
 // Package-wide variables from generator "generated".
 option go_package = "sigs.k8s.io/node-feature-discovery/pkg/api/feature";
 
+// AttributeFeatureSet is a set of features having string value.
+message AttributeFeatureSet {
+  map<string, string> elements = 1;
+}
+
 // DomainFeatures is the collection of all discovered features of one domain.
 message DomainFeatures {
-  map<string, KeyFeatureSet> keys = 1;
+  map<string, FlagFeatureSet> flags = 1;
 
-  map<string, ValueFeatureSet> values = 2;
+  map<string, AttributeFeatureSet> vattributes = 2;
 
   map<string, InstanceFeatureSet> instances = 3;
+}
+
+// FlagFeatureSet is a set of simple features only containing names without values.
+message FlagFeatureSet {
+  map<string, Nil> elements = 1;
 }
 
 // InstanceFeature represents one instance of a complex features, e.g. a device.
@@ -43,17 +53,7 @@ message InstanceFeatureSet {
   repeated InstanceFeature elements = 1;
 }
 
-// KeyFeatureSet is a set of simple features only containing names without values.
-message KeyFeatureSet {
-  map<string, Nil> elements = 1;
-}
-
 // Nil is a dummy empty struct for protobuf compatibility
 message Nil {
-}
-
-// ValueFeatureSet is a set of features having string value.
-message ValueFeatureSet {
-  map<string, string> elements = 1;
 }
 

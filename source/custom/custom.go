@@ -129,8 +129,8 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 			labels[n] = v
 		}
 		// Feed back rule output to features map for subsequent rules to match
-		feature.InsertFeatureValues(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
-		feature.InsertFeatureValues(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
+		feature.InsertAttributeFeatures(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
+		feature.InsertAttributeFeatures(domainFeatures, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 	}
 	return labels, nil
 }

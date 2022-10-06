@@ -32,7 +32,7 @@ type NodenameRule struct {
 
 // Match checks if node name matches the rule.
 func (r *NodenameRule) Match() (bool, error) {
-	nodeName, ok := source.GetFeatureSource("system").GetFeatures().Values[system.NameFeature].Elements["nodename"]
+	nodeName, ok := source.GetFeatureSource("system").GetFeatures().Attributes[system.NameFeature].Elements["nodename"]
 	if !ok || nodeName == "" {
 		return false, fmt.Errorf("node name not available")
 	}

@@ -178,12 +178,12 @@ func (m *FeatureMatcher) match(features map[string]*feature.DomainFeatures) (boo
 
 		var isMatch bool
 		var err error
-		if f, ok := domainFeatures.Keys[featureName]; ok {
+		if f, ok := domainFeatures.Flags[featureName]; ok {
 			m, v, e := term.MatchExpressions.MatchGetKeys(f.Elements)
 			isMatch = m
 			err = e
 			matches[domain][featureName] = v
-		} else if f, ok := domainFeatures.Values[featureName]; ok {
+		} else if f, ok := domainFeatures.Attributes[featureName]; ok {
 			m, v, e := term.MatchExpressions.MatchGetValues(f.Elements)
 			isMatch = m
 			err = e
