@@ -52,29 +52,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
-const (
-	// FeatureLabelNs is the namespace for feature labels
-	FeatureLabelNs = "feature.node.kubernetes.io"
-
-	// FeatureLabelSubNsSuffix is the suffix for allowed feature label sub-namespaces
-	FeatureLabelSubNsSuffix = "." + FeatureLabelNs
-
-	// ProfileLabelNs is the namespace for profile labels
-	ProfileLabelNs = "profile.node.kubernetes.io"
-
-	// ProfileLabelSubNsSuffix is the suffix for allowed profile label sub-namespaces
-	ProfileLabelSubNsSuffix = "." + ProfileLabelNs
-
-	// AnnotationNsBase namespace for all NFD-related annotations
-	AnnotationNsBase = "nfd.node.kubernetes.io"
-
-	// NFD Annotations
-	extendedResourceAnnotation = "extended-resources"
-	featureLabelAnnotation     = "feature-labels"
-	masterVersionAnnotation    = "master.version"
-	workerVersionAnnotation    = "worker.version"
-)
-
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
@@ -110,14 +87,13 @@ type NfdMaster interface {
 type nfdMaster struct {
 	*nfdController
 
-	args         Args
-	nodeName     string
-	annotationNs string
-	server       *grpc.Server
-	stop         chan struct{}
-	ready        chan bool
-	apihelper    apihelper.APIHelpers
-	kubeconfig   *restclient.Config
+	args       Args
+	nodeName   string
+	server     *grpc.Server
+	stop       chan struct{}
+	ready      chan bool
+	apihelper  apihelper.APIHelpers
+	kubeconfig *restclient.Config
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -128,15 +104,12 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 		stop:     make(chan struct{}, 1),
 	}
 
-	if args.Instance == "" {
-		nfd.annotationNs = AnnotationNsBase
-	} else {
+	if args.Instance != "" {
 		if ok, _ := regexp.MatchString(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`, args.Instance); !ok {
 			return nfd, fmt.Errorf("invalid -instance %q: instance name "+
 				"must start and end with an alphanumeric character and may only contain "+
 				"alphanumerics, `-`, `_` or `.`", args.Instance)
 		}
-		nfd.annotationNs = args.Instance + "." + AnnotationNsBase
 	}
 
 	// Check TLS related args
@@ -311,7 +284,7 @@ func (m *nfdMaster) prune() error {
 			return err
 		}
 		for a := range node.Annotations {
-			if strings.HasPrefix(a, m.annotationNs) {
+			if strings.HasPrefix(a, m.instanceAnnotation(nfdv1alpha1.AnnotationNs)) {
 				delete(node.Annotations, a)
 			}
 		}
@@ -337,7 +310,7 @@ func (m *nfdMaster) updateMasterNode() error {
 	// Advertise NFD version as an annotation
 	p := createPatches(nil,
 		node.Annotations,
-		Annotations{m.annotationName(masterVersionAnnotation): version.Get()},
+		Annotations{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation): version.Get()},
 		"/metadata/annotations")
 	err = m.apihelper.PatchNode(cli, node.Name, p)
 	if err != nil {
@@ -356,13 +329,13 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 
 	for label, value := range labels {
 		// Add possibly missing default ns
-		label := addNs(label, FeatureLabelNs)
+		label := addNs(label, nfdv1alpha1.FeatureLabelNs)
 
 		ns, name := splitNs(label)
 
 		// Check label namespace, filter out if ns is not whitelisted
-		if ns != FeatureLabelNs && ns != ProfileLabelNs &&
-			!strings.HasSuffix(ns, FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, ProfileLabelSubNsSuffix) {
+		if ns != nfdv1alpha1.FeatureLabelNs && ns != nfdv1alpha1.ProfileLabelNs &&
+			!strings.HasSuffix(ns, nfdv1alpha1.FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, nfdv1alpha1.ProfileLabelSubNsSuffix) {
 			if _, ok := extraLabelNs[ns]; !ok {
 				klog.Errorf("Namespace %q is not allowed. Ignoring label %q\n", ns, label)
 				continue
@@ -381,7 +354,7 @@ func filterFeatureLabels(labels Labels, extraLabelNs map[string]struct{}, labelW
 	extendedResources := ExtendedResources{}
 	for extendedResourceName := range extendedResourceNames {
 		// Add possibly missing default ns
-		extendedResourceName = addNs(extendedResourceName, FeatureLabelNs)
+		extendedResourceName = addNs(extendedResourceName, nfdv1alpha1.FeatureLabelNs)
 		if value, ok := outLabels[extendedResourceName]; ok {
 			if _, err := strconv.Atoi(value); err != nil {
 				klog.Errorf("bad label value (%s: %s) encountered for extended resource: %s", extendedResourceName, value, err.Error())
@@ -437,7 +410,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 
 	if !m.args.NoPublish {
 		// Advertise NFD worker version as an annotation
-		annotations := Annotations{m.annotationName(workerVersionAnnotation): r.NfdVersion}
+		annotations := Annotations{m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation): r.NfdVersion}
 
 		err := m.updateNodeFeatures(r.NodeName, labels, annotations, extendedResources)
 		if err != nil {
@@ -561,22 +534,22 @@ func (m *nfdMaster) updateNodeFeatures(nodeName string, labels Labels, annotatio
 	labelKeys := make([]string, 0, len(labels))
 	for key := range labels {
 		// Drop the ns part for labels in the default ns
-		labelKeys = append(labelKeys, strings.TrimPrefix(key, FeatureLabelNs+"/"))
+		labelKeys = append(labelKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
 	}
 	sort.Strings(labelKeys)
-	annotations[m.annotationName(featureLabelAnnotation)] = strings.Join(labelKeys, ",")
+	annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 
 	// Store names of extended resources in an annotation
 	extendedResourceKeys := make([]string, 0, len(extendedResources))
 	for key := range extendedResources {
 		// Drop the ns part if in the default ns
-		extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, FeatureLabelNs+"/"))
+		extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
 	}
 	sort.Strings(extendedResourceKeys)
-	annotations[m.annotationName(extendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
+	annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
 
 	// Create JSON patches for changes in labels and annotations
-	oldLabels := stringToNsNames(node.Annotations[m.annotationName(featureLabelAnnotation)], FeatureLabelNs)
+	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
 	patches = append(patches, createPatches(nil, node.Annotations, annotations, "/metadata/annotations")...)
 
@@ -600,10 +573,6 @@ func (m *nfdMaster) updateNodeFeatures(nodeName string, labels Labels, annotatio
 	}
 
 	return err
-}
-
-func (m *nfdMaster) annotationName(name string) string {
-	return path.Join(m.annotationNs, name)
 }
 
 func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
@@ -647,7 +616,7 @@ func (m *nfdMaster) createExtendedResourcePatches(n *api.Node, extendedResources
 	patches := []apihelper.JsonPatch{}
 
 	// Form a list of namespaced resource names managed by us
-	oldResources := stringToNsNames(n.Annotations[m.annotationName(extendedResourceAnnotation)], FeatureLabelNs)
+	oldResources := stringToNsNames(n.Annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)], nfdv1alpha1.FeatureLabelNs)
 
 	// figure out which resources to remove
 	for _, resource := range oldResources {
@@ -761,4 +730,11 @@ func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZone
 	}
 	utils.KlogDump(2, "CR instance updated resTopo:", "  ", nrtUpdated)
 	return nil
+}
+
+func (m *nfdMaster) instanceAnnotation(name string) string {
+	if m.args.Instance == "" {
+		return name
+	}
+	return m.args.Instance + "." + name
 }

@@ -36,7 +36,7 @@ import (
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 
-	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source/custom"
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 )
@@ -62,7 +62,7 @@ func cleanupNode(cs clientset.Interface) {
 			update := false
 			// Remove labels
 			for key := range node.Labels {
-				if strings.HasPrefix(key, master.FeatureLabelNs) {
+				if strings.HasPrefix(key, nfdv1alpha1.FeatureLabelNs) {
 					delete(node.Labels, key)
 					update = true
 				}
@@ -70,7 +70,7 @@ func cleanupNode(cs clientset.Interface) {
 
 			// Remove annotations
 			for key := range node.Annotations {
-				if strings.HasPrefix(key, master.AnnotationNsBase) {
+				if strings.HasPrefix(key, nfdv1alpha1.AnnotationNs) {
 					delete(node.Annotations, key)
 					update = true
 				}
@@ -126,7 +126,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			// Node running nfd-master should have master version annotation
 			masterPodNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), masterPod.Spec.NodeName, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(masterPodNode.Annotations).To(HaveKey(master.AnnotationNsBase + "/master.version"))
+			Expect(masterPodNode.Annotations).To(HaveKey(nfdv1alpha1.AnnotationNs + "/master.version"))
 
 			By("Waiting for the nfd-master service to be up")
 			Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
@@ -145,9 +145,9 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			It("it should decorate the node with the fake feature labels", func() {
 
 				fakeFeatureLabels := map[string]string{
-					master.FeatureLabelNs + "/fake-fakefeature1": "true",
-					master.FeatureLabelNs + "/fake-fakefeature2": "true",
-					master.FeatureLabelNs + "/fake-fakefeature3": "true",
+					nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature1": "true",
+					nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature2": "true",
+					nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3": "true",
 				}
 
 				// Launch nfd-worker
@@ -171,7 +171,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				// Check that there are no unexpected NFD labels
 				for k := range node.Labels {
-					if strings.HasPrefix(k, master.FeatureLabelNs) {
+					if strings.HasPrefix(k, nfdv1alpha1.FeatureLabelNs) {
 						Expect(fakeFeatureLabels).Should(HaveKey(k))
 					}
 				}
@@ -226,7 +226,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 						Expect(node.Labels).To(HaveKey(k))
 					}
 					for k := range node.Labels {
-						if strings.HasPrefix(k, master.FeatureLabelNs) {
+						if strings.HasPrefix(k, nfdv1alpha1.FeatureLabelNs) {
 							if _, ok := nodeConf.ExpectedLabelValues[k]; ok {
 								continue
 							}
@@ -247,7 +247,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 						Expect(node.Annotations).To(HaveKey(k))
 					}
 					for k := range node.Annotations {
-						if strings.HasPrefix(k, master.AnnotationNsBase) {
+						if strings.HasPrefix(k, nfdv1alpha1.AnnotationNs) {
 							if _, ok := nodeConf.ExpectedAnnotationValues[k]; ok {
 								continue
 							}
