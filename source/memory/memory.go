@@ -27,6 +27,7 @@ import (
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -114,7 +115,7 @@ func (s *memorySource) GetFeatures() *feature.DomainFeatures {
 
 // detectNuma detects NUMA node information
 func detectNuma() (map[string]string, error) {
-	sysfsBasePath := source.SysfsDir.Path("bus/node/devices")
+	sysfsBasePath := hostpath.SysfsDir.Path("bus/node/devices")
 
 	nodes, err := os.ReadDir(sysfsBasePath)
 	if err != nil {
@@ -129,7 +130,7 @@ func detectNuma() (map[string]string, error) {
 
 // detectNv detects NVDIMM devices
 func detectNv() ([]feature.InstanceFeature, error) {
-	sysfsBasePath := source.SysfsDir.Path("bus/nd/devices")
+	sysfsBasePath := hostpath.SysfsDir.Path("bus/nd/devices")
 	info := make([]feature.InstanceFeature, 0)
 
 	devices, err := os.ReadDir(sysfsBasePath)

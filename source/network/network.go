@@ -27,6 +27,7 @@ import (
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -112,7 +113,7 @@ func (s *networkSource) GetFeatures() *feature.DomainFeatures {
 }
 
 func detectNetDevices() ([]feature.InstanceFeature, error) {
-	sysfsBasePath := source.SysfsDir.Path(sysfsBaseDir)
+	sysfsBasePath := hostpath.SysfsDir.Path(sysfsBaseDir)
 
 	ifaces, err := os.ReadDir(sysfsBasePath)
 	if err != nil {

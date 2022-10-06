@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
-	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 const (
@@ -109,9 +109,9 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Time to sleep between CR updates. Non-positive value implies no CR updatation (i.e. infinite sleep). [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",
 		"Namespace to watch pods (for testing/debugging purpose). Use * for all namespaces.")
-	flagset.StringVar(&resourcemonitorArgs.KubeletConfigFile, "kubelet-config-file", source.VarDir.Path("lib/kubelet/config.yaml"),
+	flagset.StringVar(&resourcemonitorArgs.KubeletConfigFile, "kubelet-config-file", hostpath.VarDir.Path("lib/kubelet/config.yaml"),
 		"Kubelet config file path.")
-	flagset.StringVar(&resourcemonitorArgs.PodResourceSocketPath, "podresources-socket", source.VarDir.Path("lib/kubelet/pod-resources/kubelet.sock"),
+	flagset.StringVar(&resourcemonitorArgs.PodResourceSocketPath, "podresources-socket", hostpath.VarDir.Path("lib/kubelet/pod-resources/kubelet.sock"),
 		"Pod Resource Socket path to use.")
 	flagset.StringVar(&args.Server, "server", "localhost:8080",
 		"NFD server address to connecto to.")

@@ -25,7 +25,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 // Discover if c-states are enabled
@@ -33,7 +33,7 @@ func detectCstate() (map[string]string, error) {
 	cstate := make(map[string]string)
 
 	// Check that sysfs is available
-	sysfsBase := source.SysfsDir.Path("devices/system/cpu")
+	sysfsBase := hostpath.SysfsDir.Path("devices/system/cpu")
 	if _, err := os.Stat(sysfsBase); err != nil {
 		return cstate, fmt.Errorf("unable to detect cstate status: %w", err)
 	}
@@ -55,7 +55,7 @@ func detectCstate() (map[string]string, error) {
 		return cstate, nil
 	}
 
-	data, err := os.ReadFile(source.SysfsDir.Path("module/intel_idle/parameters/max_cstate"))
+	data, err := os.ReadFile(hostpath.SysfsDir.Path("module/intel_idle/parameters/max_cstate"))
 	if err != nil {
 		return cstate, fmt.Errorf("cannot determine cstate from max_cstates: %w", err)
 	}

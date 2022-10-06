@@ -31,7 +31,7 @@ import (
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 const (
@@ -58,7 +58,7 @@ func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesLister
 	var err error
 
 	topo, err := ghw.Topology(ghw.WithPathOverrides(ghw.PathOverrides{
-		"/sys": string(source.SysfsDir),
+		"/sys": string(hostpath.SysfsDir),
 	}))
 	if err != nil {
 		return nil, err

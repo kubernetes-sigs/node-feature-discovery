@@ -26,6 +26,7 @@ import (
 
 	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -117,7 +118,7 @@ func (s *systemSource) GetFeatures() *feature.DomainFeatures {
 func parseOSRelease() (map[string]string, error) {
 	release := map[string]string{}
 
-	f, err := os.Open(source.EtcDir.Path("os-release"))
+	f, err := os.Open(hostpath.EtcDir.Path("os-release"))
 	if err != nil {
 		return nil, err
 	}

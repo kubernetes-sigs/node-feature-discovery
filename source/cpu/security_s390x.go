@@ -22,7 +22,7 @@ package cpu
 import (
 	"os"
 
-	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 func discoverSecurity() map[string]string {
@@ -39,7 +39,7 @@ func seEnabled() bool {
 	// This file is available in kernels >=5.12 + backports. Skip specifically
 	// checking facilities and kernel command lines and just assume Secure
 	// Execution to be unavailable or disabled if the file is not present.
-	protVirtHost := source.SysfsDir.Path("firmware/uv/prot_virt_host")
+	protVirtHost := hostpath.SysfsDir.Path("firmware/uv/prot_virt_host")
 	if content, err := os.ReadFile(protVirtHost); err == nil {
 		if string(content) == "1\n" {
 			return true
