@@ -22,8 +22,8 @@ import (
 	"strings"
 	"text/template"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
-
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
@@ -32,6 +32,7 @@ import (
 type RuleOutput struct {
 	Labels map[string]string
 	Vars   map[string]string
+	Taints []corev1.Taint
 }
 
 // Execute the rule against a set of input features.
@@ -94,9 +95,8 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		vars[k] = v
 	}
 
-	ret := RuleOutput{Labels: labels, Vars: vars}
+	ret := RuleOutput{Labels: labels, Vars: vars, Taints: r.Taints}
 	utils.KlogDump(2, fmt.Sprintf("rule %q matched with: ", r.Name), "  ", ret)
-
 	return ret, nil
 }
 
