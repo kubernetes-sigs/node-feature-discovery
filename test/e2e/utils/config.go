@@ -58,7 +58,7 @@ func (conf *E2EConfig) GetKubeletConfig() KubeletConfig {
 		ConfigPath:             DefaultConfigPath,
 		PodResourcesSocketPath: DefaultPodResourcesSocketPath,
 	}
-	if conf.Kubelet == nil {
+	if conf == nil || conf.Kubelet == nil {
 		return kcfg
 	}
 	if conf.Kubelet.ConfigPath != "" {
