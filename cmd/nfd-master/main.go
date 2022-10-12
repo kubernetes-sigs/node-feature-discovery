@@ -94,6 +94,8 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 	flagset.Var(&args.LabelWhiteList, "label-whitelist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
+	flagset.BoolVar(&args.EnableNodeFeatureApi, "-enable-nodefeature-api", false,
+		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication.")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,
 		"Do not publish feature labels")
 	flagset.BoolVar(&args.EnableTaints, "enable-taints", false,

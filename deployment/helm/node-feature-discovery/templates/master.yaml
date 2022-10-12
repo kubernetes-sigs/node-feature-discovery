@@ -78,6 +78,9 @@ spec:
             {{- if .Values.master.instance | empty | not }}
             - "--instance={{ .Values.master.instance }}"
             {{- end }}
+            {{- if .Values.enableNodeFeatureApi }}
+            - "-enable-nodefeature-api"
+            {{- end }}
             {{- if .Values.master.extraLabelNs | empty | not }}
             - "--extra-label-ns={{- join "," .Values.master.extraLabelNs }}"
             {{- end }}

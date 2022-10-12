@@ -149,6 +149,20 @@ nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
     -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
 ```
 
+### -enable-nodefeature-api
+
+The `-enable-nodefeature-api` flag enables the NodeFeature CRD API for
+receiving feature requests. This will also automatically disable the gRPC
+interface.
+
+Default: false
+
+Example:
+
+```bash
+nfd-master -enable-nodefeature-api
+```
+
 ### -no-publish
 
 The `-no-publish` flag disables updates to the Node objects in the Kubernetes
