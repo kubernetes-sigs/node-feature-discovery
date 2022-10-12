@@ -166,27 +166,49 @@ func (m *nfdMaster) Run() error {
 		}
 	}
 
-	// Create server listening for TCP connections
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.Port))
-	if err != nil {
-		return fmt.Errorf("failed to listen: %v", err)
-	}
+	// Run gRPC server
+	grpcErr := make(chan error, 1)
+	go m.runGrpcServer(grpcErr)
+
 	// Notify that we're ready to accept connections
 	m.ready <- true
 	close(m.ready)
+
+	// NFD-Master main event loop
+	for {
+		select {
+		case err := <-grpcErr:
+			return fmt.Errorf("error in serving gRPC: %w", err)
+
+		case <-m.stop:
+			klog.Infof("shutting down nfd-master")
+			return nil
+		}
+	}
+}
+
+func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
+	// Create server listening for TCP connections
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.Port))
+	if err != nil {
+		errChan <- fmt.Errorf("failed to listen: %v", err)
+		return
+	}
 
 	serverOpts := []grpc.ServerOption{}
 	tlsConfig := utils.TlsConfig{}
 	// Create watcher for TLS cert files
 	certWatch, err := utils.CreateFsWatcher(time.Second, m.args.CertFile, m.args.KeyFile, m.args.CaFile)
 	if err != nil {
-		return err
+		errChan <- err
+		return
 	}
 	// Enable mutual TLS authentication if -cert-file, -key-file or -ca-file
 	// is defined
 	if m.args.CertFile != "" || m.args.KeyFile != "" || m.args.CaFile != "" {
 		if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {
-			return err
+			errChan <- err
+			return
 		}
 
 		tlsConfig := &tls.Config{GetConfigForClient: tlsConfig.GetConfig}
@@ -205,25 +227,19 @@ func (m *nfdMaster) Run() error {
 		grpcErr <- m.server.Serve(lis)
 	}()
 
-	// NFD-Master main event loop
 	for {
 		select {
 		case <-certWatch.Events:
 			klog.Infof("reloading TLS certificates")
 			if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {
-				return err
+				errChan <- err
 			}
 
 		case err := <-grpcErr:
 			if err != nil {
-				return fmt.Errorf("gRPC server exited with an error: %v", err)
+				errChan <- fmt.Errorf("gRPC server exited with an error: %v", err)
 			}
 			klog.Infof("gRPC server stopped")
-
-		case <-m.stop:
-			klog.Infof("shutting down nfd-master")
-			certWatch.Close()
-			return nil
 		}
 	}
 }
