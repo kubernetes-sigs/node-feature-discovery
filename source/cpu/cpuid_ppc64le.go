@@ -77,6 +77,8 @@ const (
 	PPC_FEATURE2_DARN           = 0x00200000 /* darn instruction.  */
 	PPC_FEATURE2_SCV            = 0x00100000 /* scv syscall.  */
 	PPC_FEATURE2_HTM_NO_SUSPEND = 0x00080000 /* TM without suspended state.  */
+	PPC_FEATURE2_ARCH_3_1       = 0x00040000 /* ISA 3.1 */
+	PPC_FEATURE2_MMA            = 0x00020000 /* Matrix Multiply Assist */
 )
 
 var flagNames_ppc64le = map[uint64]string{
@@ -124,6 +126,8 @@ var flag2Names_ppc64le = map[uint64]string{
 	PPC_FEATURE2_DARN:           "DARN",
 	PPC_FEATURE2_SCV:            "SCV",
 	PPC_FEATURE2_HTM_NO_SUSPEND: "HTM-NO-SUSPEND",
+	PPC_FEATURE2_ARCH_3_1:       "ARCH_3_1",
+	PPC_FEATURE2_MMA:            "MMA",
 }
 
 func getCpuidFlags() []string {
