@@ -129,6 +129,11 @@ func createClusterRoleMaster(cs clientset.Interface) (*rbacv1.ClusterRole, error
 				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
+				APIGroups: []string{"nfd.k8s-sigs.io"},
+				Resources: []string{"nodefeaturerules"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
 				APIGroups: []string{"topology.node.k8s.io"},
 				Resources: []string{"noderesourcetopologies"},
 				Verbs: []string{

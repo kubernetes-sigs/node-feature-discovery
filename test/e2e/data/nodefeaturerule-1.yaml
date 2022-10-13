@@ -1,0 +1,76 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: e2e-test-1
+spec:
+  rules:
+    #
+    # Simple test rules for flag features
+    #
+    - name: "e2e-flag-test-1"
+      labels:
+        e2e-flag-test-1: "true"
+      vars:
+        e2e-flag-test-1.not: "false"
+      matchFeatures:
+        - feature: "fake.flag"
+          matchExpressions:
+            "flag_1": {op: Exists}
+
+    # Negative test not supposed to create a label
+    - name: "e2e-flag-test-neg-1"
+      labels:
+        e2e-flag-test-neg-1: "true"
+      matchFeatures:
+        - feature: "fake.flag"
+          matchExpressions:
+            "flag_1": {op: DoesNotExist}
+
+    #
+    # Simple test rules for attribute features
+    #
+    - name: "e2e-attribute-test-1"
+      labels:
+        e2e-attribute-test-1: "true"
+      vars:
+        e2e-attribute-test-1.not: "false"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_1": {op: IsTrue}
+            "attr_2": {op: IsFalse}
+
+    # Negative test not supposed to create a label
+    - name: "e2e-attribute-test-neg-1"
+      labels:
+        e2e-attribute-test-neg-1: "true"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_1": {op: IsTrue}
+            "attr_2": {op: IsTrue}
+
+    #
+    # Simple test rules for instnace features
+    #
+    - name: "e2e-instance-test-1"
+      labels:
+        e2e-instance-test-1: "true"
+      vars:
+        e2e-instance-test-1.not: "false"
+        e2e-instance-test-1.123: "123"
+      matchFeatures:
+        - feature: "fake.instance"
+          matchExpressions:
+            "attr_1": {op: In, value: ["true"]}
+            "attr_3": {op: Gt, value: ["10"]}
+
+    # Negative test not supposed to create a label
+    - name: "e2e-instance-test-neg-1"
+      labels:
+        e2e-instance-test-neg-1: "true"
+      matchFeatures:
+        - feature: "fake.instance"
+          matchExpressions:
+            "attr_1": {op: In, value: ["true"]}
+            "attr_3": {op: Lt, value: ["10"]}

@@ -24,10 +24,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	v1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
@@ -35,6 +38,7 @@ import (
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/source/custom"
@@ -419,6 +423,103 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			})
 		})
 
-	})
+		//
+		// Test NodeFeatureRule
+		//
+		Context("and nfd-worker and NodeFeatureRules objects deployed", func() {
+			var extClient *extclient.Clientset
+			var nfdClient *nfdclient.Clientset
+			var crd *apiextensionsv1.CustomResourceDefinition
 
+			BeforeEach(func() {
+				// Create clients for apiextensions and our CRD api
+				extClient = extclient.NewForConfigOrDie(f.ClientConfig())
+				nfdClient = nfdclient.NewForConfigOrDie(f.ClientConfig())
+
+				// Create CRDs
+				By("Creating NodeFeatureRule CRD")
+				var err error
+				crd, err = testutils.CreateNodeFeatureRulesCRD(extClient)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("custom labels from the NodeFeatureRule rules should be created", func() {
+				By("Creating nfd-worker daemonset")
+				workerArgs := []string{"-feature-sources=fake", "-label-sources=", "-sleep-interval=1s"}
+				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), workerArgs)
+				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for daemonset pods to be ready")
+				Expect(testutils.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+
+				expected := map[string]string{
+					"feature.node.kubernetes.io/e2e-flag-test-1":      "true",
+					"feature.node.kubernetes.io/e2e-attribute-test-1": "true",
+					"feature.node.kubernetes.io/e2e-instance-test-1":  "true"}
+
+				By("Creating NodeFeatureRules #1")
+				Expect(testutils.CreateNodeFeatureRuleFromFile(nfdClient, "nodefeaturerule-1.yaml")).NotTo(HaveOccurred())
+
+				By("Verifying node labels from NodeFeatureRules #1")
+				Expect(waitForNfdNodeLabels(f.ClientSet, expected)).NotTo(HaveOccurred())
+
+				By("Creating NodeFeatureRules #2")
+				Expect(testutils.CreateNodeFeatureRuleFromFile(nfdClient, "nodefeaturerule-2.yaml")).NotTo(HaveOccurred())
+
+				// Add features from NodeFeatureRule #2
+				expected["feature.node.kubernetes.io/e2e-matchany-test-1"] = "true"
+				expected["feature.node.kubernetes.io/e2e-template-test-1-instance_1"] = "found"
+				expected["feature.node.kubernetes.io/e2e-template-test-1-instance_2"] = "found"
+
+				By("Verifying node labels from NodeFeatureRules #1 and #2")
+				Expect(waitForNfdNodeLabels(f.ClientSet, expected)).NotTo(HaveOccurred())
+			})
+		})
+	})
 })
+
+// waitForNfdNodeLabels waits for node to be labeled as expected.
+func waitForNfdNodeLabels(cli clientset.Interface, expected map[string]string) error {
+	poll := func() error {
+		nodeList, err := cli.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, node := range nodeList.Items {
+			labels := nfdLabels(node.Labels)
+			if !cmp.Equal(expected, labels) {
+				return fmt.Errorf("node %q labels do not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expected, labels))
+			}
+		}
+		return nil
+	}
+
+	// Simple and stupid re-try loop
+	var err error
+	for retry := 0; retry < 3; retry++ {
+		if err = poll(); err == nil {
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return err
+}
+
+// nfdLabels gets labels that are in the nfd label namespace.
+func nfdLabels(labels map[string]string) map[string]string {
+	ret := map[string]string{}
+
+	for key, val := range labels {
+		if strings.HasPrefix(key, nfdv1alpha1.FeatureLabelNs) {
+			ret[key] = val
+		}
+	}
+	return ret
+
+}

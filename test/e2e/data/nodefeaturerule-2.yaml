@@ -1,0 +1,41 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: e2e-test-2
+spec:
+  rules:
+    #
+    # More complex rule testing backreferencing and matchAny field
+    #
+    - name: "e2e-matchany-test-1"
+      labels:
+        e2e-matchany-test-1: "true"
+      vars:
+        e2e-instance-test-1.not: "false"
+      matchFeatures:
+        - feature: "rule.matched"
+          matchExpressions:
+            "e2e-attribute-test-1": {op: InRegexp, value: ["^tru"]}
+            "e2e-instance-test-1.123": {op: In, value: ["1", "12", "123"]}
+      matchAny:
+        - matchFeatures:
+            - feature: "fake.instance"
+              matchExpressions:
+                "attr_1": {op: In, value: ["nomatch"]}
+        - matchFeatures:
+            - feature: "fake.instance"
+              matchExpressions:
+                "attr_3": {op: In, value: ["100"]}
+
+    #
+    # Simple test for templating
+    #
+    - name: "e2e-template-test-1"
+      labelsTemplate: |
+        {{ range .fake.instance }}e2e-template-test-1-{{ .name }}=found
+        {{ end }}
+      matchFeatures:
+        - feature: "fake.instance"
+          matchExpressions:
+            "attr_1": {op: In, value: ["true"]}
+
