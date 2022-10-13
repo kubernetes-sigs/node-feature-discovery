@@ -2,7 +2,7 @@
 
 BASE_IMAGE_MINIMAL="gcr.io/distroless/base"
 BASE_IMAGE_FULL="debian:buster-slim"
-BUILDER_IMAGE="golang:1.18-buster"
+BUILDER_IMAGE="golang:1.19-bullseye"
 HOSTMOUNT_PREFIX="/host-"
 IMAGE_TAG_NAME = os.getenv('IMAGE_TAG_NAME', "master")
 IMAGE_REGISTRY = os.getenv('IMAGE_REGISTRY', "gcr.io/k8s-staging-nfd")
