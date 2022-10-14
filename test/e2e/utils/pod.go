@@ -52,7 +52,7 @@ func GuaranteedSleeperPod(cpuLimit string) *v1.Pod {
 		Spec: v1.PodSpec{
 			RestartPolicy: v1.RestartPolicyNever,
 			Containers: []v1.Container{
-				v1.Container{
+				{
 					Name:  "sleeper-gu-cnt",
 					Image: PauseImage,
 					Resources: v1.ResourceRequirements{
@@ -78,7 +78,7 @@ func BestEffortSleeperPod() *v1.Pod {
 		Spec: v1.PodSpec{
 			RestartPolicy: v1.RestartPolicyNever,
 			Containers: []v1.Container{
-				v1.Container{
+				{
 					Name:  "sleeper-be-cnt",
 					Image: PauseImage,
 				},

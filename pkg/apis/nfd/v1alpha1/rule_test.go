@@ -175,7 +175,7 @@ func TestRule(t *testing.T) {
 
 	// Test MatchAny
 	r5.MatchAny = []MatchAnyElem{
-		MatchAnyElem{
+		{
 			MatchFeatures: FeatureMatcher{
 				FeatureMatcherTerm{
 					Feature: "domain-1.kf-1",
@@ -209,18 +209,18 @@ func TestRule(t *testing.T) {
 
 func TestTemplating(t *testing.T) {
 	f := map[string]*feature.DomainFeatures{
-		"domain_1": &feature.DomainFeatures{
+		"domain_1": {
 			Flags: map[string]feature.FlagFeatureSet{
-				"kf_1": feature.FlagFeatureSet{
+				"kf_1": {
 					Elements: map[string]feature.Nil{
-						"key-a": feature.Nil{},
-						"key-b": feature.Nil{},
-						"key-c": feature.Nil{},
+						"key-a": {},
+						"key-b": {},
+						"key-c": {},
 					},
 				},
 			},
 			Attributes: map[string]feature.AttributeFeatureSet{
-				"vf_1": feature.AttributeFeatureSet{
+				"vf_1": {
 					Elements: map[string]string{
 						"key-1": "val-1",
 						"keu-2": "val-2",
@@ -229,21 +229,21 @@ func TestTemplating(t *testing.T) {
 				},
 			},
 			Instances: map[string]feature.InstanceFeatureSet{
-				"if_1": feature.InstanceFeatureSet{
+				"if_1": {
 					Elements: []feature.InstanceFeature{
-						feature.InstanceFeature{
+						{
 							Attributes: map[string]string{
 								"attr-1": "1",
 								"attr-2": "val-2",
 							},
 						},
-						feature.InstanceFeature{
+						{
 							Attributes: map[string]string{
 								"attr-1": "10",
 								"attr-2": "val-20",
 							},
 						},
-						feature.InstanceFeature{
+						{
 							Attributes: map[string]string{
 								"attr-1": "100",
 								"attr-2": "val-200",
