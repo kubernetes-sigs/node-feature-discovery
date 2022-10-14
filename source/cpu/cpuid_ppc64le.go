@@ -28,7 +28,10 @@ unsigned long gethwcap2() {
 */
 import "C"
 
-/* all special features for ppc64le should be defined here */
+/*
+all special features for ppc64le should be defined here; canonical list:
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/powerpc/include/uapi/asm/cputable.h
+*/
 const (
 	/* AT_HWCAP features */
 	PPC_FEATURE_32                     = 0x80000000 /* 32-bit mode. */

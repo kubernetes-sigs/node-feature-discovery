@@ -29,7 +29,10 @@ unsigned long gethwcap2() {
 */
 import "C"
 
-/* all special features for arm64 should be defined here */
+/*
+all special features for arm64 should be defined here; canonical list:
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/arm64/include/uapi/asm/hwcap.h
+*/
 const (
 	/* extension instructions */
 	CPU_ARM64_FEATURE_FP = 1 << iota

@@ -26,7 +26,10 @@ unsigned long gethwcap() {
 */
 import "C"
 
-/* all special features for arm should be defined here */
+/*
+all special features for arm should be defined here; canonical list:
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/arm/include/uapi/asm/hwcap.h
+*/
 const (
 	/* extension instructions */
 	CPU_ARM_FEATURE_SWP = 1 << iota

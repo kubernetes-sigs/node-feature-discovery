@@ -25,7 +25,11 @@ unsigned long gethwcap() {
 */
 import "C"
 
-/* all special features for s390x should be defined here */
+/*
+all special features for s390x should be defined here; canonical list:
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/s390/include/asm/elf.h
+http://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/unix/sysv/linux/s390/bits/hwcap.h;hb=HEAD
+*/
 const (
 	/* AT_HWCAP features */
 	HWCAP_S390_ESAN3     = 1
