@@ -18,10 +18,12 @@ package cpu
 
 /*
 #include <sys/auxv.h>
-#define HWCAP_CPUID	(1 << 11)
 
 unsigned long gethwcap() {
 	return getauxval(AT_HWCAP);
+}
+unsigned long gethwcap2() {
+	return getauxval(AT_HWCAP2);
 }
 */
 import "C"
@@ -51,15 +53,17 @@ const (
 	CPU_ARM_FEATURE_VFPv4
 	CPU_ARM_FEATURE_IDIVA
 	CPU_ARM_FEATURE_IDIVT
-	CPU_ARM_FEATURE_IDIV
 	CPU_ARM_FEATURE_VFPD32
 	CPU_ARM_FEATURE_LPAE
 	CPU_ARM_FEATURE_EVTSTRM
-	CPU_ARM_FEATURE_AES
-	CPU_ARM_FEATURE_PMULL
-	CPU_ARM_FEATURE_SHA1
-	CPU_ARM_FEATURE_SHA2
-	CPU_ARM_FEATURE_CRC32
+)
+
+const (
+	CPU_ARM_FEATURE2_AES = 1 << iota
+	CPU_ARM_FEATURE2_PMULL
+	CPU_ARM_FEATURE2_SHA1
+	CPU_ARM_FEATURE2_SHA2
+	CPU_ARM_FEATURE2_CRC32
 )
 
 var flagNames_arm = map[uint64]string{
@@ -82,24 +86,34 @@ var flagNames_arm = map[uint64]string{
 	CPU_ARM_FEATURE_VFPv4:    "VFPv4",
 	CPU_ARM_FEATURE_IDIVA:    "IDIVA",
 	CPU_ARM_FEATURE_IDIVT:    "IDIVT",
-	CPU_ARM_FEATURE_IDIV:     "IDIV",
 	CPU_ARM_FEATURE_VFPD32:   "VFPD32",
 	CPU_ARM_FEATURE_LPAE:     "LPAE",
 	CPU_ARM_FEATURE_EVTSTRM:  "EVTSTRM",
-	CPU_ARM_FEATURE_AES:      "AES",
-	CPU_ARM_FEATURE_PMULL:    "PMULL",
-	CPU_ARM_FEATURE_SHA1:     "SHA1",
-	CPU_ARM_FEATURE_SHA2:     "SHA2",
-	CPU_ARM_FEATURE_CRC32:    "CRC32",
+}
+
+var flag2Names_arm = map[uint64]string{
+	CPU_ARM_FEATURE2_AES:   "AES",
+	CPU_ARM_FEATURE2_PMULL: "PMULL",
+	CPU_ARM_FEATURE2_SHA1:  "SHA1",
+	CPU_ARM_FEATURE2_SHA2:  "SHA2",
+	CPU_ARM_FEATURE2_CRC32: "CRC32",
 }
 
 func getCpuidFlags() []string {
 	r := make([]string, 0, 20)
 	hwcap := uint64(C.gethwcap())
+	hwcap2 := uint64(C.gethwcap2())
 	for i := uint(0); i < 64; i++ {
 		key := uint64(1 << i)
 		val, ok := flagNames_arm[key]
 		if hwcap&key != 0 && ok {
+			r = append(r, val)
+		}
+	}
+	for i := uint(0); i < 64; i++ {
+		key := uint64(1 << i)
+		val, ok := flag2Names_arm[key]
+		if hwcap2&key != 0 && ok {
 			r = append(r, val)
 		}
 	}
