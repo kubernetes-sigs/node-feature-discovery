@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
-	api "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -628,7 +628,7 @@ func createPatches(removeKeys []string, oldItems map[string]string, newItems map
 
 // createExtendedResourcePatches returns a slice of operations to perform on
 // the node status
-func (m *nfdMaster) createExtendedResourcePatches(n *api.Node, extendedResources ExtendedResources) []apihelper.JsonPatch {
+func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources) []apihelper.JsonPatch {
 	patches := []apihelper.JsonPatch{}
 
 	// Form a list of namespaced resource names managed by us
@@ -636,7 +636,7 @@ func (m *nfdMaster) createExtendedResourcePatches(n *api.Node, extendedResources
 
 	// figure out which resources to remove
 	for _, resource := range oldResources {
-		if _, ok := n.Status.Capacity[api.ResourceName(resource)]; ok {
+		if _, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
 			// check if the ext resource is still needed
 			if _, extResNeeded := extendedResources[resource]; !extResNeeded {
 				patches = append(patches, apihelper.NewJsonPatch("remove", "/status/capacity", resource, ""))
@@ -648,7 +648,7 @@ func (m *nfdMaster) createExtendedResourcePatches(n *api.Node, extendedResources
 	// figure out which resources to replace and which to add
 	for resource, value := range extendedResources {
 		// check if the extended resource already exists with the same capacity in the node
-		if quantity, ok := n.Status.Capacity[api.ResourceName(resource)]; ok {
+		if quantity, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
 			val, _ := quantity.AsInt64()
 			if strconv.FormatInt(val, 10) != value {
 				patches = append(patches, apihelper.NewJsonPatch("replace", "/status/capacity", resource, value))

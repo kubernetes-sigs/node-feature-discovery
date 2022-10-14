@@ -20,7 +20,7 @@ package apihelper
 
 import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
-	api "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 )
 
@@ -30,13 +30,13 @@ type APIHelpers interface {
 	GetClient() (*k8sclient.Clientset, error)
 
 	// GetNode returns the Kubernetes node on which this container is running.
-	GetNode(*k8sclient.Clientset, string) (*api.Node, error)
+	GetNode(*k8sclient.Clientset, string) (*corev1.Node, error)
 
 	// GetNodes returns all the nodes in the cluster
-	GetNodes(*k8sclient.Clientset) (*api.NodeList, error)
+	GetNodes(*k8sclient.Clientset) (*corev1.NodeList, error)
 
 	// UpdateNode updates the node via the API server using a client.
-	UpdateNode(*k8sclient.Clientset, *api.Node) error
+	UpdateNode(*k8sclient.Clientset, *corev1.Node) error
 
 	// PatchNode updates the node object via the API server using a client.
 	PatchNode(*k8sclient.Clientset, string, []JsonPatch) error
@@ -48,5 +48,5 @@ type APIHelpers interface {
 	GetTopologyClient() (*topologyclientset.Clientset, error)
 
 	// GetPod returns the Kubernetes pod in a namepace with a name.
-	GetPod(*k8sclient.Clientset, string, string) (*api.Pod, error)
+	GetPod(*k8sclient.Clientset, string, string) (*corev1.Pod, error)
 }

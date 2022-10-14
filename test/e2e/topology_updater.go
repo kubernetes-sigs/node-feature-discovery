@@ -27,7 +27,7 @@ import (
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,8 +45,8 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		extClient           *extclient.Clientset
 		topologyClient      *topologyclientset.Clientset
 		crd                 *apiextensionsv1.CustomResourceDefinition
-		topologyUpdaterNode *v1.Node
-		workerNodes         []v1.Node
+		topologyUpdaterNode *corev1.Node
+		workerNodes         []corev1.Node
 		kubeletConfig       *kubeletconfig.KubeletConfiguration
 	)
 
@@ -124,7 +124,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (best-effort QoS)")
 			sleeperPod := testutils.BestEffortSleeperPod()
 
-			podMap := make(map[string]*v1.Pod)
+			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testutils.DeletePodsAsync(f, podMap)
@@ -164,7 +164,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (guaranteed QoS, nonintegral request)")
 			sleeperPod := testutils.GuaranteedSleeperPod("500m")
 
-			podMap := make(map[string]*v1.Pod)
+			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testutils.DeletePodsAsync(f, podMap)
@@ -210,7 +210,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("creating a pod consuming exclusive CPUs")
 			sleeperPod := testutils.GuaranteedSleeperPod("1000m")
 
-			podMap := make(map[string]*v1.Pod)
+			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testutils.DeletePodsAsync(f, podMap)
@@ -253,7 +253,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 })
 
 // lessAllocatableResources specialize CompareAllocatableResources for this specific e2e use case.
-func lessAllocatableResources(expected, got map[string]v1.ResourceList) (string, string, bool) {
+func lessAllocatableResources(expected, got map[string]corev1.ResourceList) (string, string, bool) {
 	zoneName, resName, cmp, ok := testutils.CompareAllocatableResources(expected, got)
 	if !ok {
 		framework.Logf("-> cmp failed (not ok)")

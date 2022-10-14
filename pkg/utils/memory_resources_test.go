@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -109,11 +109,11 @@ func TestGetMemoryResourceCounters(t *testing.T) {
 	}
 
 	if memoryCounters[0]["memory"] != 32718644*1024 {
-		t.Errorf("found unexpected amount of memory under the NUMA node 0: %d", memoryCounters[0][v1.ResourceMemory])
+		t.Errorf("found unexpected amount of memory under the NUMA node 0: %d", memoryCounters[0][corev1.ResourceMemory])
 	}
 
 	if memoryCounters[1]["memory"] != 32718644*1024 {
-		t.Errorf("found unexpected amount of memory under the NUMA node 1: %d", memoryCounters[0][v1.ResourceMemory])
+		t.Errorf("found unexpected amount of memory under the NUMA node 1: %d", memoryCounters[0][corev1.ResourceMemory])
 	}
 }
 

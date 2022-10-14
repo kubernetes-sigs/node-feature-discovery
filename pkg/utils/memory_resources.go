@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 	resourcehelper "k8s.io/kubernetes/pkg/apis/core/helper"
@@ -40,7 +40,7 @@ var (
 type NumaMemoryResources map[int]MemoryResourceInfo
 
 // MemoryResourceInfo holds information of memory resources per resource type.
-type MemoryResourceInfo map[v1.ResourceName]int64
+type MemoryResourceInfo map[corev1.ResourceName]int64
 
 // GetNumaMemoryResources returns total amount of memory and hugepages under NUMA nodes
 func GetNumaMemoryResources() (NumaMemoryResources, error) {
@@ -64,7 +64,7 @@ func GetNumaMemoryResources() (NumaMemoryResources, error) {
 		if err != nil {
 			return nil, err
 		}
-		info[v1.ResourceMemory] = nodeTotalMemory
+		info[corev1.ResourceMemory] = nodeTotalMemory
 
 		// Get hugepages
 		hugepageBytes, err := getHugepagesBytes(filepath.Join(sysBusNodeBasepath, numaNode, "hugepages"))
@@ -112,7 +112,7 @@ func getHugepagesBytes(path string) (MemoryResourceInfo, error) {
 		}
 
 		size, _ := q.AsInt64()
-		name := v1.ResourceName(resourcehelper.HugePageResourceName(q))
+		name := corev1.ResourceName(resourcehelper.HugePageResourceName(q))
 		hugepagesBytes[name] = nr * size
 	}
 

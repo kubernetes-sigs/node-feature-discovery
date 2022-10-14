@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strconv"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
@@ -75,13 +75,13 @@ func (resMon *PodResourcesScanner) isWatchable(podNamespace string, podName stri
 // hasExclusiveCPUs returns true if a guaranteed pod is allocated exclusive CPUs else returns false.
 // In isWatchable() function we check for the pod QoS and proceed if it is guaranteed (i.e. request == limit)
 // and hence we only check for request in the function below.
-func hasExclusiveCPUs(pod *v1.Pod) bool {
+func hasExclusiveCPUs(pod *corev1.Pod) bool {
 	var totalCPU int64
 	var cpuQuantity resource.Quantity
 	for _, container := range pod.Spec.InitContainers {
 
 		var ok bool
-		if cpuQuantity, ok = container.Resources.Requests[v1.ResourceCPU]; !ok {
+		if cpuQuantity, ok = container.Resources.Requests[corev1.ResourceCPU]; !ok {
 			continue
 		}
 		totalCPU += cpuQuantity.Value()
@@ -92,7 +92,7 @@ func hasExclusiveCPUs(pod *v1.Pod) bool {
 	}
 	for _, container := range pod.Spec.Containers {
 		var ok bool
-		if cpuQuantity, ok = container.Resources.Requests[v1.ResourceCPU]; !ok {
+		if cpuQuantity, ok = container.Resources.Requests[corev1.ResourceCPU]; !ok {
 			continue
 		}
 		totalCPU += cpuQuantity.Value()
@@ -107,8 +107,8 @@ func hasExclusiveCPUs(pod *v1.Pod) bool {
 }
 
 // hasIntegralCPUs returns true if a container in pod is requesting integral CPUs else returns false
-func hasIntegralCPUs(pod *v1.Pod, container *v1.Container) bool {
-	cpuQuantity := container.Resources.Requests[v1.ResourceCPU]
+func hasIntegralCPUs(pod *corev1.Pod, container *corev1.Container) bool {
+	cpuQuantity := container.Resources.Requests[corev1.ResourceCPU]
 	return cpuQuantity.Value()*1000 == cpuQuantity.MilliValue()
 }
 
@@ -155,7 +155,7 @@ func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
 					}
 					contRes.Resources = []ResourceInfo{
 						{
-							Name: v1.ResourceCPU,
+							Name: corev1.ResourceCPU,
 							Data: resCPUs,
 						},
 					}
@@ -165,7 +165,7 @@ func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
 			for _, device := range container.GetDevices() {
 				numaNodesIDs := getNumaNodeIds(device.GetTopology())
 				contRes.Resources = append(contRes.Resources, ResourceInfo{
-					Name:        v1.ResourceName(device.ResourceName),
+					Name:        corev1.ResourceName(device.ResourceName),
 					Data:        device.DeviceIds,
 					NumaNodeIds: numaNodesIDs,
 				})
@@ -178,7 +178,7 @@ func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
 
 				topology := getNumaNodeIds(block.GetTopology())
 				contRes.Resources = append(contRes.Resources, ResourceInfo{
-					Name:        v1.ResourceName(block.MemoryType),
+					Name:        corev1.ResourceName(block.MemoryType),
 					Data:        []string{fmt.Sprintf("%d", block.GetSize_())},
 					NumaNodeIds: topology,
 				})

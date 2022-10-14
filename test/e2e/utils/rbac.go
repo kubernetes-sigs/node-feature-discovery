@@ -20,7 +20,7 @@ import (
 	"context"
 	"flag"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -95,8 +95,8 @@ func DeconfigureRBAC(cs clientset.Interface, ns string) error {
 }
 
 // Configure service account required by NFD Master
-func createServiceAccountMaster(cs clientset.Interface, ns string) (*v1.ServiceAccount, error) {
-	sa := &v1.ServiceAccount{
+func createServiceAccountMaster(cs clientset.Interface, ns string) (*corev1.ServiceAccount, error) {
+	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nfd-master-e2e",
 			Namespace: ns,
@@ -106,8 +106,8 @@ func createServiceAccountMaster(cs clientset.Interface, ns string) (*v1.ServiceA
 }
 
 // Configure service account required by NFD MTopology Updater
-func createServiceAccountTopologyUpdater(cs clientset.Interface, ns string) (*v1.ServiceAccount, error) {
-	sa := &v1.ServiceAccount{
+func createServiceAccountTopologyUpdater(cs clientset.Interface, ns string) (*corev1.ServiceAccount, error) {
+	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nfd-topology-updater-e2e",
 			Namespace: ns,
