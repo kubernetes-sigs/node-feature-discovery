@@ -30,7 +30,7 @@ import (
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -109,15 +109,15 @@ func GetNodeTopology(topologyClient *topologyclientset.Clientset, nodeName strin
 }
 
 // AllocatableResourceListFromNodeResourceTopology extract the map zone:allocatableResources from the given NodeResourceTopology instance.
-func AllocatableResourceListFromNodeResourceTopology(nodeTopo *v1alpha1.NodeResourceTopology) map[string]v1.ResourceList {
-	allocRes := make(map[string]v1.ResourceList)
+func AllocatableResourceListFromNodeResourceTopology(nodeTopo *v1alpha1.NodeResourceTopology) map[string]corev1.ResourceList {
+	allocRes := make(map[string]corev1.ResourceList)
 	for _, zone := range nodeTopo.Zones {
 		if zone.Type != "Node" {
 			continue
 		}
-		resList := make(v1.ResourceList)
+		resList := make(corev1.ResourceList)
 		for _, res := range zone.Resources {
-			resList[v1.ResourceName(res.Name)] = res.Allocatable.DeepCopy()
+			resList[corev1.ResourceName(res.Name)] = res.Allocatable.DeepCopy()
 		}
 		if len(resList) == 0 {
 			continue
@@ -131,7 +131,7 @@ func AllocatableResourceListFromNodeResourceTopology(nodeTopo *v1alpha1.NodeReso
 // and informs the caller if the maps are equal. Here `equal` means the same zoneNames with the same resources, where the resources are equal if they have
 // the same resources with the same quantities. Returns the name of the different zone, the name of the different resources within the zone,
 // the comparison result (same semantic as strings.Compare) and a boolean that reports if the resourceLists are consistent. See `CompareResourceList`.
-func CompareAllocatableResources(expected, got map[string]v1.ResourceList) (string, string, int, bool) {
+func CompareAllocatableResources(expected, got map[string]corev1.ResourceList) (string, string, int, bool) {
 	if len(got) != len(expected) {
 		framework.Logf("-> expected=%v (len=%d) got=%v (len=%d)", expected, len(expected), got, len(got))
 		return "", "", 0, false
@@ -153,7 +153,7 @@ func CompareAllocatableResources(expected, got map[string]v1.ResourceList) (stri
 // the comparison result (same semantic as strings.Compare) and a boolean that reports if the resourceLists are consistent.
 // The ResourceLists are consistent only if the represent the same resource set (all the resources listed in one are
 // also present in the another; no ResourceList is a superset nor a subset of the other)
-func CompareResourceList(expected, got v1.ResourceList) (string, int, bool) {
+func CompareResourceList(expected, got corev1.ResourceList) (string, int, bool) {
 	if len(got) != len(expected) {
 		framework.Logf("-> expected=%v (len=%d) got=%v (len=%d)", expected, len(expected), got, len(got))
 		return "", 0, false

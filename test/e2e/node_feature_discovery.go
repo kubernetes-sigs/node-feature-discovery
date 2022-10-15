@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,7 +58,7 @@ func cleanupNode(cs clientset.Interface) {
 
 	for _, n := range nodeList.Items {
 		var err error
-		var node *v1.Node
+		var node *corev1.Node
 		for retry := 0; retry < 5; retry++ {
 			node, err = cs.CoreV1().Nodes().Get(context.TODO(), n.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
@@ -102,7 +102,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	Context("when deploying a single nfd-master pod", func() {
-		var masterPod *v1.Pod
+		var masterPod *corev1.Pod
 
 		BeforeEach(func() {
 			err := testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
@@ -313,7 +313,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
   - nodename:
     - ` + targetNodeName
 
-				cm1 := &v1.ConfigMap{
+				cm1 := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "custom-config-extra-" + string(uuid.NewUUID()),
 					},
@@ -334,7 +334,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
   - nodename:
     - "thisNameShouldNeverMatch"`
 
-				cm2 := &v1.ConfigMap{
+				cm2 := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "custom-config-extra-" + string(uuid.NewUUID()),
 					},
@@ -350,21 +350,21 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				volumeName1 := "custom-configs-extra1"
 				volumeName2 := "custom-configs-extra2"
 				workerDS.Spec.Template.Spec.Volumes = append(workerDS.Spec.Template.Spec.Volumes,
-					v1.Volume{
+					corev1.Volume{
 						Name: volumeName1,
-						VolumeSource: v1.VolumeSource{
-							ConfigMap: &v1.ConfigMapVolumeSource{
-								LocalObjectReference: v1.LocalObjectReference{
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{
+								LocalObjectReference: corev1.LocalObjectReference{
 									Name: cm1.Name,
 								},
 							},
 						},
 					},
-					v1.Volume{
+					corev1.Volume{
 						Name: volumeName2,
-						VolumeSource: v1.VolumeSource{
-							ConfigMap: &v1.ConfigMapVolumeSource{
-								LocalObjectReference: v1.LocalObjectReference{
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{
+								LocalObjectReference: corev1.LocalObjectReference{
 									Name: cm2.Name,
 								},
 							},
@@ -372,12 +372,12 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					},
 				)
 				workerDS.Spec.Template.Spec.Containers[0].VolumeMounts = append(workerDS.Spec.Template.Spec.Containers[0].VolumeMounts,
-					v1.VolumeMount{
+					corev1.VolumeMount{
 						Name:      volumeName1,
 						ReadOnly:  true,
 						MountPath: filepath.Join(custom.Directory, "cm1"),
 					},
-					v1.VolumeMount{
+					corev1.VolumeMount{
 						Name:      volumeName2,
 						ReadOnly:  true,
 						MountPath: filepath.Join(custom.Directory, "cm2"),

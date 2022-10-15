@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
-	api "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -52,7 +52,7 @@ func (h K8sHelpers) GetTopologyClient() (*topologyclientset.Clientset, error) {
 }
 
 // GetNode retrieves one node object.
-func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Node, error) {
+func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*corev1.Node, error) {
 	// Get the node object using node name
 	node, err := cli.CoreV1().Nodes().Get(context.TODO(), nodeName, meta_v1.GetOptions{})
 	if err != nil {
@@ -63,12 +63,12 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*api.Nod
 }
 
 // GetNodes retrieves all the node objects.
-func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*api.NodeList, error) {
+func (h K8sHelpers) GetNodes(cli *k8sclient.Clientset) (*corev1.NodeList, error) {
 	return cli.CoreV1().Nodes().List(context.TODO(), meta_v1.ListOptions{})
 }
 
 // UpdateNode sends updated node object to the apiserver
-func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *api.Node) error {
+func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *corev1.Node) error {
 	// Send the updated node to the apiserver.
 	_, err := c.CoreV1().Nodes().Update(context.TODO(), n, meta_v1.UpdateOptions{})
 	if err != nil {
@@ -101,7 +101,7 @@ func (h K8sHelpers) PatchNodeStatus(c *k8sclient.Clientset, nodeName string, pat
 
 }
 
-func (h K8sHelpers) GetPod(cli *k8sclient.Clientset, namespace string, podName string) (*api.Pod, error) {
+func (h K8sHelpers) GetPod(cli *k8sclient.Clientset, namespace string, podName string) (*corev1.Pod, error) {
 	// Get the node object using pod name
 	pod, err := cli.CoreV1().Pods(namespace).Get(context.TODO(), podName, meta_v1.GetOptions{})
 	if err != nil {

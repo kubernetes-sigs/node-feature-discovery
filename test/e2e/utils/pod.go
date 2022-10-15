@@ -25,7 +25,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -44,23 +44,23 @@ const (
 )
 
 // GuarenteedSleeperPod makes a Guaranteed QoS class Pod object which long enough forever but requires `cpuLimit` exclusive CPUs.
-func GuaranteedSleeperPod(cpuLimit string) *v1.Pod {
-	return &v1.Pod{
+func GuaranteedSleeperPod(cpuLimit string) *corev1.Pod {
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sleeper-gu-pod",
 		},
-		Spec: v1.PodSpec{
-			RestartPolicy: v1.RestartPolicyNever,
-			Containers: []v1.Container{
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyNever,
+			Containers: []corev1.Container{
 				{
 					Name:  "sleeper-gu-cnt",
 					Image: PauseImage,
-					Resources: v1.ResourceRequirements{
-						Limits: v1.ResourceList{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
 							// we use 1 core because that's the minimal meaningful quantity
-							v1.ResourceName(v1.ResourceCPU): resource.MustParse(cpuLimit),
+							corev1.ResourceName(corev1.ResourceCPU): resource.MustParse(cpuLimit),
 							// any random reasonable amount is fine
-							v1.ResourceName(v1.ResourceMemory): resource.MustParse("100Mi"),
+							corev1.ResourceName(corev1.ResourceMemory): resource.MustParse("100Mi"),
 						},
 					},
 				},
@@ -70,14 +70,14 @@ func GuaranteedSleeperPod(cpuLimit string) *v1.Pod {
 }
 
 // BestEffortSleeperPod makes a Best Effort QoS class Pod object which sleeps long enough
-func BestEffortSleeperPod() *v1.Pod {
-	return &v1.Pod{
+func BestEffortSleeperPod() *corev1.Pod {
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sleeper-be-pod",
 		},
-		Spec: v1.PodSpec{
-			RestartPolicy: v1.RestartPolicyNever,
-			Containers: []v1.Container{
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyNever,
+			Containers: []corev1.Container{
 				{
 					Name:  "sleeper-be-cnt",
 					Image: PauseImage,
@@ -88,7 +88,7 @@ func BestEffortSleeperPod() *v1.Pod {
 }
 
 // DeletePodsAsync concurrently deletes all the pods in the given name:pod_object mapping. Returns when the longer operation ends.
-func DeletePodsAsync(f *framework.Framework, podMap map[string]*v1.Pod) {
+func DeletePodsAsync(f *framework.Framework, podMap map[string]*corev1.Pod) {
 	var wg sync.WaitGroup
 	for _, pod := range podMap {
 		wg.Add(1)
@@ -112,24 +112,24 @@ func DeletePodSyncByName(f *framework.Framework, podName string) {
 }
 
 // NFDMasterPod provide NFD master pod definition
-func NFDMasterPod(image string, onMasterNode bool) *v1.Pod {
-	p := &v1.Pod{
+func NFDMasterPod(image string, onMasterNode bool) *corev1.Pod {
+	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "nfd-master-",
 			Labels:       map[string]string{"name": "nfd-master-e2e"},
 		},
-		Spec: v1.PodSpec{
-			Containers: []v1.Container{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
 				{
 					Name:            "node-feature-discovery",
 					Image:           image,
 					ImagePullPolicy: pullPolicy(),
 					Command:         []string{"nfd-master"},
-					Env: []v1.EnvVar{
+					Env: []corev1.EnvVar{
 						{
 							Name: "NODE_NAME",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
 									FieldPath: "spec.nodeName",
 								},
 							},
@@ -138,17 +138,17 @@ func NFDMasterPod(image string, onMasterNode bool) *v1.Pod {
 				},
 			},
 			ServiceAccountName: "nfd-master-e2e",
-			RestartPolicy:      v1.RestartPolicyNever,
+			RestartPolicy:      corev1.RestartPolicyNever,
 		},
 	}
 	if onMasterNode {
 		p.Spec.NodeSelector = map[string]string{"node-role.kubernetes.io/master": ""}
-		p.Spec.Tolerations = []v1.Toleration{
+		p.Spec.Tolerations = []corev1.Toleration{
 			{
 				Key:      "node-role.kubernetes.io/master",
-				Operator: v1.TolerationOpEqual,
+				Operator: corev1.TolerationOpEqual,
 				Value:    "",
-				Effect:   v1.TaintEffectNoSchedule,
+				Effect:   corev1.TaintEffectNoSchedule,
 			},
 		}
 	}
@@ -156,15 +156,15 @@ func NFDMasterPod(image string, onMasterNode bool) *v1.Pod {
 }
 
 // NFDWorkerPod provides NFD worker pod definition
-func NFDWorkerPod(image string, extraArgs []string) *v1.Pod {
-	p := &v1.Pod{
+func NFDWorkerPod(image string, extraArgs []string) *corev1.Pod {
+	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "nfd-worker-" + string(uuid.NewUUID()),
 		},
 		Spec: *nfdWorkerPodSpec(image, extraArgs),
 	}
 
-	p.Spec.RestartPolicy = v1.RestartPolicyNever
+	p.Spec.RestartPolicy = corev1.RestartPolicyNever
 
 	return p
 }
@@ -182,7 +182,7 @@ func NFDTopologyUpdaterDaemonSet(kc KubeletConfig, image string, extraArgs []str
 }
 
 // newDaemonSet provide the new daemon set
-func newDaemonSet(name string, podSpec *v1.PodSpec) *appsv1.DaemonSet {
+func newDaemonSet(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name + "-" + string(uuid.NewUUID()),
@@ -191,7 +191,7 @@ func newDaemonSet(name string, podSpec *v1.PodSpec) *appsv1.DaemonSet {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"name": name},
 			},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{"name": name},
 				},
@@ -202,26 +202,26 @@ func newDaemonSet(name string, podSpec *v1.PodSpec) *appsv1.DaemonSet {
 	}
 }
 
-func nfdWorkerPodSpec(image string, extraArgs []string) *v1.PodSpec {
-	return &v1.PodSpec{
-		Containers: []v1.Container{
+func nfdWorkerPodSpec(image string, extraArgs []string) *corev1.PodSpec {
+	return &corev1.PodSpec{
+		Containers: []corev1.Container{
 			{
 				Name:            "node-feature-discovery",
 				Image:           image,
 				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-worker"},
 				Args:            append([]string{"-server=nfd-master-e2e:8080"}, extraArgs...),
-				Env: []v1.EnvVar{
+				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",
-						ValueFrom: &v1.EnvVarSource{
-							FieldRef: &v1.ObjectFieldSelector{
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
 								FieldPath: "spec.nodeName",
 							},
 						},
 					},
 				},
-				VolumeMounts: []v1.VolumeMount{
+				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "host-boot",
 						MountPath: "/host-boot",
@@ -251,50 +251,50 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *v1.PodSpec {
 			},
 		},
 		ServiceAccountName: "nfd-master-e2e",
-		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
-		Volumes: []v1.Volume{
+		DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
+		Volumes: []corev1.Volume{
 			{
 				Name: "host-boot",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/boot",
-						Type: newHostPathType(v1.HostPathDirectory),
+						Type: newHostPathType(corev1.HostPathDirectory),
 					},
 				},
 			},
 			{
 				Name: "host-os-release",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/etc/os-release",
-						Type: newHostPathType(v1.HostPathFile),
+						Type: newHostPathType(corev1.HostPathFile),
 					},
 				},
 			},
 			{
 				Name: "host-sys",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/sys",
-						Type: newHostPathType(v1.HostPathDirectory),
+						Type: newHostPathType(corev1.HostPathDirectory),
 					},
 				},
 			},
 			{
 				Name: "host-usr-lib",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/usr/lib",
-						Type: newHostPathType(v1.HostPathDirectory),
+						Type: newHostPathType(corev1.HostPathDirectory),
 					},
 				},
 			},
 			{
 				Name: "host-usr-src",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/usr/src",
-						Type: newHostPathType(v1.HostPathDirectory),
+						Type: newHostPathType(corev1.HostPathDirectory),
 					},
 				},
 			},
@@ -302,9 +302,9 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *v1.PodSpec {
 	}
 }
 
-func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []string) *v1.PodSpec {
-	return &v1.PodSpec{
-		Containers: []v1.Container{
+func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []string) *corev1.PodSpec {
+	return &corev1.PodSpec{
+		Containers: []corev1.Container{
 			{
 				Name:            "node-topology-updater",
 				Image:           image,
@@ -317,25 +317,25 @@ func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []strin
 					"--watch-namespace=rte",
 					"--server=nfd-master-e2e:8080",
 				}, extraArgs...),
-				Env: []v1.EnvVar{
+				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",
-						ValueFrom: &v1.EnvVarSource{
-							FieldRef: &v1.ObjectFieldSelector{
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
 								FieldPath: "spec.nodeName",
 							},
 						},
 					},
 				},
-				SecurityContext: &v1.SecurityContext{
-					Capabilities: &v1.Capabilities{
-						Drop: []v1.Capability{"ALL"},
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{"ALL"},
 					},
 					RunAsUser:                pointer.Int64Ptr(0),
 					ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
 					AllowPrivilegeEscalation: pointer.BoolPtr(false),
 				},
-				VolumeMounts: []v1.VolumeMount{
+				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "kubelet-podresources-conf",
 						MountPath: "/podresources/config.yaml",
@@ -352,32 +352,32 @@ func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []strin
 			},
 		},
 		ServiceAccountName: "nfd-topology-updater-e2e",
-		DNSPolicy:          v1.DNSClusterFirstWithHostNet,
-		Volumes: []v1.Volume{
+		DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
+		Volumes: []corev1.Volume{
 			{
 				Name: "kubelet-podresources-conf",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: kc.ConfigPath,
-						Type: newHostPathType(v1.HostPathFile),
+						Type: newHostPathType(corev1.HostPathFile),
 					},
 				},
 			},
 			{
 				Name: "kubelet-podresources-sock",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: kc.PodResourcesSocketPath,
-						Type: newHostPathType(v1.HostPathSocket),
+						Type: newHostPathType(corev1.HostPathSocket),
 					},
 				},
 			},
 			{
 				Name: "host-sys",
-				VolumeSource: v1.VolumeSource{
-					HostPath: &v1.HostPathVolumeSource{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/sys",
-						Type: newHostPathType(v1.HostPathDirectory),
+						Type: newHostPathType(corev1.HostPathDirectory),
 					},
 				},
 			},
@@ -385,8 +385,8 @@ func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []strin
 	}
 }
 
-func newHostPathType(typ v1.HostPathType) *v1.HostPathType {
-	hostPathType := new(v1.HostPathType)
+func newHostPathType(typ corev1.HostPathType) *corev1.HostPathType {
+	hostPathType := new(corev1.HostPathType)
 	*hostPathType = typ
 	return hostPathType
 }
@@ -412,9 +412,9 @@ func WaitForPodsReady(c clientset.Interface, ns, name string, minReadySeconds in
 	})
 }
 
-func pullPolicy() v1.PullPolicy {
+func pullPolicy() corev1.PullPolicy {
 	if *pullIfNotPresent {
-		return v1.PullIfNotPresent
+		return corev1.PullIfNotPresent
 	}
-	return v1.PullAlways
+	return corev1.PullAlways
 }

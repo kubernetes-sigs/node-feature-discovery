@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
 	"golang.org/x/net/context"
-	api "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -43,12 +43,12 @@ const (
 	mockNodeName = "mock-node"
 )
 
-func newMockNode() *api.Node {
-	n := api.Node{}
+func newMockNode() *corev1.Node {
+	n := corev1.Node{}
 	n.Name = mockNodeName
 	n.Labels = map[string]string{}
 	n.Annotations = map[string]string{}
-	n.Status.Capacity = api.ResourceList{}
+	n.Status.Capacity = corev1.ResourceList{}
 	return &n
 }
 
@@ -238,7 +238,7 @@ func TestAddingExtResources(t *testing.T) {
 
 		Convey("When the resource already exists", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1"}
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldEqual, 0)
@@ -246,7 +246,7 @@ func TestAddingExtResources(t *testing.T) {
 
 		Convey("When the resource already exists but its capacity has changed", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName("feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName("feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{"feature-1": "1"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
@@ -265,8 +265,8 @@ func TestRemovingExtResources(t *testing.T) {
 			mockNode := newMockNode()
 			mockResourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1", nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			mockNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldEqual, 0)
 		})
@@ -274,15 +274,15 @@ func TestRemovingExtResources(t *testing.T) {
 			mockNode := newMockNode()
 			mockResourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-4": "", nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			mockNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-4,feature-2"
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
 			mockNode := newMockNode()
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			mockNode.Status.Capacity[api.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
+			mockNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			mockNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
@@ -475,7 +475,7 @@ func TestCreatePatches(t *testing.T) {
 
 func TestRemoveLabelsWithPrefix(t *testing.T) {
 	Convey("When removing labels", t, func() {
-		n := &api.Node{
+		n := &corev1.Node{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Labels: map[string]string{
 					"single-label": "123",
@@ -531,7 +531,7 @@ func sortJsonPatches(p []apihelper.JsonPatch) []apihelper.JsonPatch {
 }
 
 // Remove any labels having the given prefix
-func removeLabelsWithPrefix(n *api.Node, search string) []apihelper.JsonPatch {
+func removeLabelsWithPrefix(n *corev1.Node, search string) []apihelper.JsonPatch {
 	var p []apihelper.JsonPatch
 
 	for k := range n.Labels {

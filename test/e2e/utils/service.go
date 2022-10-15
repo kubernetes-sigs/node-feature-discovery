@@ -19,26 +19,26 @@ package utils
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
 // CreateService creates nfd-master Service
-func CreateService(cs clientset.Interface, ns string) (*v1.Service, error) {
-	svc := &v1.Service{
+func CreateService(cs clientset.Interface, ns string) (*corev1.Service, error) {
+	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "nfd-master-e2e",
 		},
-		Spec: v1.ServiceSpec{
+		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{"name": "nfd-master-e2e"},
-			Ports: []v1.ServicePort{
+			Ports: []corev1.ServicePort{
 				{
-					Protocol: v1.ProtocolTCP,
+					Protocol: corev1.ProtocolTCP,
 					Port:     8080,
 				},
 			},
-			Type: v1.ServiceTypeClusterIP,
+			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
 	return cs.CoreV1().Services(ns).Create(context.TODO(), svc, metav1.CreateOptions{})
