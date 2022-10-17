@@ -18,8 +18,8 @@ package e2e
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -46,8 +46,10 @@ import (
 )
 
 var (
-	dockerRepo = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag  = flag.String("nfd.tag", "master", "Docker tag to use")
+	imageTag      = os.Getenv("IMAGE_TAG_NAME")
+	imageName     = os.Getenv("IMAGE_NAME")
+	imageRegistry = os.Getenv("IMAGE_REGISTRY")
+	image         = fmt.Sprintf("%s/%s:%s", imageRegistry, imageName, imageTag)
 )
 
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
@@ -113,7 +115,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
-			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 			masterPod = f.PodClient().CreateSync(testutils.NFDMasterPod(image, false))
 
 			// Create nfd-master service
@@ -156,7 +157,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
-				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 				workerPod := testutils.NFDWorkerPod(image, []string{"-oneshot", "-label-sources=fake"})
 				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
@@ -203,7 +203,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				fConf := cfg.DefaultFeatures
 
 				By("Creating nfd-worker daemonset")
-				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+				workerDS := testutils.NFDWorkerDaemonSet(image, []string{})
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -344,7 +344,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating nfd-worker daemonset with configmap mounted")
-				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+				workerDS := testutils.NFDWorkerDaemonSet(image, []string{})
 
 				// add configmap mount config
 				volumeName1 := "custom-configs-extra1"
@@ -451,7 +451,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			It("custom labels from the NodeFeatureRule rules should be created", func() {
 				By("Creating nfd-worker daemonset")
 				workerArgs := []string{"-feature-sources=fake", "-label-sources=", "-sleep-interval=1s"}
-				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), workerArgs)
+				workerDS := testutils.NFDWorkerDaemonSet(image, workerArgs)
 				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 

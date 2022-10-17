@@ -78,7 +78,6 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		err = testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
 		Expect(err).NotTo(HaveOccurred())
 
-		image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 		f.PodClient().CreateSync(testutils.NFDMasterPod(image, false))
 
 		// Create nfd-master service
@@ -89,7 +88,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, masterService.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 
 		By("Creating nfd-topology-updater daemonset")
-		topologyUpdaterDaemonSet := testutils.NFDTopologyUpdaterDaemonSet(kcfg, fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+		topologyUpdaterDaemonSet := testutils.NFDTopologyUpdaterDaemonSet(kcfg, image, []string{})
 		topologyUpdaterDaemonSet, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), topologyUpdaterDaemonSet, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
