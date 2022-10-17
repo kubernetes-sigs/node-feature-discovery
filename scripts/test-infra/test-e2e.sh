@@ -9,12 +9,9 @@ chmod a+x /usr/local/bin/kubectl
 
 
 # Configure environment
-export KUBECONFIG=`pwd`/kubeconfig
-export E2E_TEST_CONFIG=`pwd`/e2e-test-config
-
+source vars.sh
 echo "$KUBECONFIG_DATA" > "$KUBECONFIG"
 echo "$E2E_TEST_CONFIG_DATA" > "$E2E_TEST_CONFIG"
-
 
 # Wait for the image to be built and published
 i=1
