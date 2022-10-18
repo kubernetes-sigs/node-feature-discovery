@@ -31,7 +31,7 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	clientcommon "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -533,8 +533,8 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 }
 
 // getFeatures returns raw features from all feature sources
-func getFeatures() map[string]*feature.DomainFeatures {
-	features := make(map[string]*feature.DomainFeatures)
+func getFeatures() map[string]*nfdv1alpha1.DomainFeatures {
+	features := make(map[string]*nfdv1alpha1.DomainFeatures)
 
 	for name, src := range source.GetAllFeatureSources() {
 		features[name] = src.GetFeatures()

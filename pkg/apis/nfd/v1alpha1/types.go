@@ -20,6 +20,53 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Features is a collection of all features of the system, arranged by domain.
+//
+// +protobuf=true
+type Features map[string]*DomainFeatures
+
+// DomainFeatures is the collection of all discovered features of one domain.
+//
+// +protobuf=true
+type DomainFeatures struct {
+	Flags      map[string]FlagFeatureSet      `json:"flags" protobuf:"bytes,2,rep,name=flags"`
+	Attributes map[string]AttributeFeatureSet `json:"attributes" protobuf:"bytes,3,rep,name=vattributes"`
+	Instances  map[string]InstanceFeatureSet  `json:"instances" protobuf:"bytes,4,rep,name=instances"`
+}
+
+// FlagFeatureSet is a set of simple features only containing names without values.
+//
+// +protobuf=true
+type FlagFeatureSet struct {
+	Elements map[string]Nil `json:"elements" protobuf:"bytes,1,rep,name=elements"`
+}
+
+// AttributeFeatureSet is a set of features having string value.
+//
+// +protobuf=true
+type AttributeFeatureSet struct {
+	Elements map[string]string `json:"elements" protobuf:"bytes,1,rep,name=elements"`
+}
+
+// InstanceFeatureSet is a set of features each of which is an instance having multiple attributes.
+//
+// +protobuf=true
+type InstanceFeatureSet struct {
+	Elements []InstanceFeature `json:"elements" protobuf:"bytes,1,rep,name=elements"`
+}
+
+// InstanceFeature represents one instance of a complex features, e.g. a device.
+//
+// +protobuf=true
+type InstanceFeature struct {
+	Attributes map[string]string `json:"attributes" protobuf:"bytes,1,rep,name=attributes"`
+}
+
+// Nil is a dummy empty struct for protobuf compatibility
+//
+// +protobuf=true
+type Nil struct{}
+
 // NodeFeatureRuleList contains a list of NodeFeatureRule objects.
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

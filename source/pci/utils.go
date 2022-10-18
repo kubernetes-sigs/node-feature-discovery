@@ -24,7 +24,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
@@ -50,7 +50,7 @@ func readSinglePciAttribute(devPath string, attrName string) (string, error) {
 }
 
 // Read information of one PCI device
-func readPciDevInfo(devPath string) (*feature.InstanceFeature, error) {
+func readPciDevInfo(devPath string) (*nfdv1alpha1.InstanceFeature, error) {
 	attrs := make(map[string]string)
 	for _, attr := range mandatoryDevAttrs {
 		attrVal, err := readSinglePciAttribute(devPath, attr)
@@ -65,12 +65,12 @@ func readPciDevInfo(devPath string) (*feature.InstanceFeature, error) {
 			attrs[attr] = attrVal
 		}
 	}
-	return feature.NewInstanceFeature(attrs), nil
+	return nfdv1alpha1.NewInstanceFeature(attrs), nil
 }
 
 // detectPci detects available PCI devices and retrieves their device attributes.
 // An error is returned if reading any of the mandatory attributes fails.
-func detectPci() ([]feature.InstanceFeature, error) {
+func detectPci() ([]nfdv1alpha1.InstanceFeature, error) {
 	sysfsBasePath := hostpath.SysfsDir.Path("bus/pci/devices")
 
 	devices, err := os.ReadDir(sysfsBasePath)
@@ -79,7 +79,7 @@ func detectPci() ([]feature.InstanceFeature, error) {
 	}
 
 	// Iterate over devices
-	devInfo := make([]feature.InstanceFeature, 0, len(devices))
+	devInfo := make([]nfdv1alpha1.InstanceFeature, 0, len(devices))
 	for _, device := range devices {
 		info, err := readPciDevInfo(filepath.Join(sysfsBasePath, device.Name()))
 		if err != nil {

@@ -20,11 +20,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
 func TestRule(t *testing.T) {
-	f := map[string]*feature.DomainFeatures{}
+	f := map[string]*DomainFeatures{}
 	r1 := Rule{Labels: map[string]string{"label-1": "", "label-2": "true"}}
 	r2 := Rule{
 		Labels: map[string]string{"label-1": "label-val-1"},
@@ -48,7 +47,7 @@ func TestRule(t *testing.T) {
 	assert.Error(t, err, "matching against a missing domain should have returned an error")
 
 	// Test empty domain
-	d := feature.NewDomainFeatures()
+	d := NewDomainFeatures()
 	f["domain-1"] = d
 
 	m, err = r1.Execute(f)
@@ -60,9 +59,9 @@ func TestRule(t *testing.T) {
 	assert.Error(t, err, "matching against a missing feature type should have returned an error")
 
 	// Test empty feature sets
-	d.Flags["kf-1"] = feature.NewFlagFeatures()
-	d.Attributes["vf-1"] = feature.NewAttributeFeatures(nil)
-	d.Instances["if-1"] = feature.NewInstanceFeatures(nil)
+	d.Flags["kf-1"] = NewFlagFeatures()
+	d.Attributes["vf-1"] = NewAttributeFeatures(nil)
+	d.Instances["if-1"] = NewInstanceFeatures(nil)
 
 	m, err = r1.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
@@ -73,10 +72,10 @@ func TestRule(t *testing.T) {
 	assert.Nil(t, m.Labels, "unexpected match")
 
 	// Test non-empty feature sets
-	d.Flags["kf-1"].Elements["key-x"] = feature.Nil{}
+	d.Flags["kf-1"].Elements["key-x"] = Nil{}
 	d.Attributes["vf-1"].Elements["key-1"] = "val-x"
-	d.Instances["if-1"] = feature.NewInstanceFeatures([]feature.InstanceFeature{
-		*feature.NewInstanceFeature(map[string]string{"attr-1": "val-x"})})
+	d.Instances["if-1"] = NewInstanceFeatures([]InstanceFeature{
+		*NewInstanceFeature(map[string]string{"attr-1": "val-x"})})
 
 	m, err = r1.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
@@ -98,7 +97,7 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "keys should not have matched")
 
-	d.Flags["kf-1"].Elements["key-1"] = feature.Nil{}
+	d.Flags["kf-1"].Elements["key-1"] = Nil{}
 	m, err = r2.Execute(f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r2.Labels, m.Labels, "keys should have matched")
@@ -208,19 +207,19 @@ func TestRule(t *testing.T) {
 }
 
 func TestTemplating(t *testing.T) {
-	f := map[string]*feature.DomainFeatures{
-		"domain_1": {
-			Flags: map[string]feature.FlagFeatureSet{
-				"kf_1": {
-					Elements: map[string]feature.Nil{
+	f := map[string]*DomainFeatures{
+		"domain_1": &DomainFeatures{
+			Flags: map[string]FlagFeatureSet{
+				"kf_1": FlagFeatureSet{
+					Elements: map[string]Nil{
 						"key-a": {},
 						"key-b": {},
 						"key-c": {},
 					},
 				},
 			},
-			Attributes: map[string]feature.AttributeFeatureSet{
-				"vf_1": {
+			Attributes: map[string]AttributeFeatureSet{
+				"vf_1": AttributeFeatureSet{
 					Elements: map[string]string{
 						"key-1": "val-1",
 						"keu-2": "val-2",
@@ -228,9 +227,9 @@ func TestTemplating(t *testing.T) {
 					},
 				},
 			},
-			Instances: map[string]feature.InstanceFeatureSet{
-				"if_1": {
-					Elements: []feature.InstanceFeature{
+			Instances: map[string]InstanceFeatureSet{
+				"if_1": InstanceFeatureSet{
+					Elements: []InstanceFeature{
 						{
 							Attributes: map[string]string{
 								"attr-1": "1",

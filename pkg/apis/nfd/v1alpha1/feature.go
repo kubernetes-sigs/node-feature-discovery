@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package feature
+package v1alpha1
 
 // NewDomainFeatures creates a new instance of Features, initializing specified
 // features to empty values

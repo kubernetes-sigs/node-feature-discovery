@@ -24,7 +24,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -47,7 +47,7 @@ const (
 
 // systemSource implements the FeatureSource and LabelSource interfaces.
 type systemSource struct {
-	features *feature.DomainFeatures
+	features *nfdv1alpha1.DomainFeatures
 }
 
 // Singleton source instance
@@ -78,10 +78,10 @@ func (s *systemSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *systemSource) Discover() error {
-	s.features = feature.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewDomainFeatures()
 
 	// Get node name
-	s.features.Attributes[NameFeature] = feature.NewAttributeFeatures(nil)
+	s.features.Attributes[NameFeature] = nfdv1alpha1.NewAttributeFeatures(nil)
 	s.features.Attributes[NameFeature].Elements["nodename"] = os.Getenv("NODE_NAME")
 
 	// Get os-release information
@@ -89,7 +89,7 @@ func (s *systemSource) Discover() error {
 	if err != nil {
 		klog.Errorf("failed to get os-release: %s", err)
 	} else {
-		s.features.Attributes[OsReleaseFeature] = feature.NewAttributeFeatures(release)
+		s.features.Attributes[OsReleaseFeature] = nfdv1alpha1.NewAttributeFeatures(release)
 
 		if v, ok := release["VERSION_ID"]; ok {
 			versionComponents := splitVersion(v)
@@ -107,9 +107,9 @@ func (s *systemSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *systemSource) GetFeatures() *feature.DomainFeatures {
+func (s *systemSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
 	if s.features == nil {
-		s.features = feature.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewDomainFeatures()
 	}
 	return s.features
 }

@@ -25,8 +25,6 @@ import (
 	"strings"
 
 	"k8s.io/klog/v2"
-
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
 )
 
 var matchOps = map[MatchOp]struct{}{
@@ -197,7 +195,7 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 }
 
 // MatchKeys evaluates the MatchExpression against a set of keys.
-func (m *MatchExpression) MatchKeys(name string, keys map[string]feature.Nil) (bool, error) {
+func (m *MatchExpression) MatchKeys(name string, keys map[string]Nil) (bool, error) {
 	matched := false
 
 	_, ok := keys[name]
@@ -303,7 +301,7 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 }
 
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
-func (m *MatchExpressionSet) MatchKeys(keys map[string]feature.Nil) (bool, error) {
+func (m *MatchExpressionSet) MatchKeys(keys map[string]Nil) (bool, error) {
 	matched, _, err := m.MatchGetKeys(keys)
 	return matched, err
 }
@@ -318,7 +316,7 @@ type MatchedKey struct {
 // empty MatchExpressionSet returns all existing keys are returned. Note that
 // an empty MatchExpressionSet and an empty set of keys returns an empty slice
 // which is not nil and is treated as a match.
-func (m *MatchExpressionSet) MatchGetKeys(keys map[string]feature.Nil) (bool, []MatchedKey, error) {
+func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedKey, error) {
 	ret := make([]MatchedKey, 0, len(*m))
 
 	for n, e := range *m {
@@ -374,7 +372,7 @@ func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []M
 // MatchInstances evaluates the MatchExpressionSet against a set of instance
 // features, each of which is an individual set of key-value pairs
 // (attributes).
-func (m *MatchExpressionSet) MatchInstances(instances []feature.InstanceFeature) (bool, error) {
+func (m *MatchExpressionSet) MatchInstances(instances []InstanceFeature) (bool, error) {
 	v, err := m.MatchGetInstances(instances)
 	return len(v) > 0, err
 }
@@ -386,7 +384,7 @@ type MatchedInstance map[string]string
 // features, each of which is an individual set of key-value pairs
 // (attributes). A slice containing all matching instances is returned. An
 // empty (non-nil) slice is returned if no matching instances were found.
-func (m *MatchExpressionSet) MatchGetInstances(instances []feature.InstanceFeature) ([]MatchedInstance, error) {
+func (m *MatchExpressionSet) MatchGetInstances(instances []InstanceFeature) ([]MatchedInstance, error) {
 	ret := []MatchedInstance{}
 
 	for _, i := range instances {

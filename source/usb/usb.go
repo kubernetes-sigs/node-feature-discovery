@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/api/feature"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
@@ -53,7 +53,7 @@ func defaultDeviceLabelFields() []string { return []string{"class", "vendor", "d
 // usbSource implements the LabelSource and ConfigurableSource interfaces.
 type usbSource struct {
 	config   *Config
-	features *feature.DomainFeatures
+	features *nfdv1alpha1.DomainFeatures
 }
 
 // Singleton source instance
@@ -139,13 +139,13 @@ func (s *usbSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *usbSource) Discover() error {
-	s.features = feature.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewDomainFeatures()
 
 	devs, err := detectUsb()
 	if err != nil {
 		return fmt.Errorf("failed to detect USB devices: %s", err.Error())
 	}
-	s.features.Instances[DeviceFeature] = feature.NewInstanceFeatures(devs)
+	s.features.Instances[DeviceFeature] = nfdv1alpha1.NewInstanceFeatures(devs)
 
 	utils.KlogDump(3, "discovered usb features:", "  ", s.features)
 
@@ -153,9 +153,9 @@ func (s *usbSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *usbSource) GetFeatures() *feature.DomainFeatures {
+func (s *usbSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
 	if s.features == nil {
-		s.features = feature.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewDomainFeatures()
 	}
 	return s.features
 }
