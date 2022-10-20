@@ -126,15 +126,15 @@ func (w *nfdTopologyUpdater) Run() error {
 		return err
 	}
 
-	crTrigger := time.After(0)
+	crTrigger := time.NewTicker(w.resourcemonitorArgs.SleepInterval)
 	for {
 		select {
-		case <-crTrigger:
-			klog.Infof("Scanning\n")
+		case <-crTrigger.C:
+			klog.Infof("Scanning")
 			podResources, err := resScan.Scan()
 			utils.KlogDump(1, "podResources are", "  ", podResources)
 			if err != nil {
-				klog.Warningf("Scan failed: %v\n", err)
+				klog.Warningf("Scan failed: %v", err)
 				continue
 			}
 			zones = resAggr.Aggregate(podResources)
@@ -145,10 +145,6 @@ func (w *nfdTopologyUpdater) Run() error {
 
 			if w.args.Oneshot {
 				return nil
-			}
-
-			if w.resourcemonitorArgs.SleepInterval > 0 {
-				crTrigger = time.After(w.resourcemonitorArgs.SleepInterval)
 			}
 
 		case <-w.certWatch.Events:
