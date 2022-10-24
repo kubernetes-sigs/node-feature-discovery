@@ -26,6 +26,7 @@ import (
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 var devAttrs = []string{"class", "vendor", "device", "serial"}
@@ -106,7 +107,7 @@ func detectUsb() ([]nfdv1alpha1.InstanceFeature, error) {
 	// Unlike PCI, the USB sysfs interface includes entries not just for
 	// devices. We work around this by globbing anything that includes a
 	// valid product ID.
-	const devPathGlob = "/sys/bus/usb/devices/*/idProduct"
+	devPathGlob := hostpath.SysfsDir.Path("bus/usb/devices/*/idProduct")
 	devPaths, err := filepath.Glob(devPathGlob)
 	if err != nil {
 		return nil, err
