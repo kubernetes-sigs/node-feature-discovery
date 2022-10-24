@@ -42,7 +42,7 @@ const NumaFeature = "numa"
 
 // memorySource implements the FeatureSource and LabelSource interfaces.
 type memorySource struct {
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -84,7 +84,7 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *memorySource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	// Detect NUMA
 	if numa, err := detectNuma(); err != nil {
@@ -106,9 +106,9 @@ func (s *memorySource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface.
-func (s *memorySource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *memorySource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

@@ -16,10 +16,10 @@ limitations under the License.
 
 package v1alpha1
 
-// NewDomainFeatures creates a new instance of Features, initializing specified
-// features to empty values
-func NewDomainFeatures() *DomainFeatures {
-	return &DomainFeatures{
+// NewFeatures creates a new instance of Features, initializing all feature
+// types (flags, attributes and instances) to empty values.
+func NewFeatures() *Features {
+	return &Features{
 		Flags:      make(map[string]FlagFeatureSet),
 		Attributes: make(map[string]AttributeFeatureSet),
 		Instances:  make(map[string]InstanceFeatureSet)}
@@ -56,16 +56,29 @@ func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
 }
 
 // InsertAttributeFeatures inserts new values into a specific feature.
-func InsertAttributeFeatures(f Features, domain, feature string, values map[string]string) {
-	if _, ok := f[domain]; !ok {
-		f[domain] = NewDomainFeatures()
-	}
-	if _, ok := f[domain].Attributes[feature]; !ok {
-		f[domain].Attributes[feature] = NewAttributeFeatures(values)
+func (f *Features) InsertAttributeFeatures(domain, feature string, values map[string]string) {
+	key := domain + "." + feature
+	if _, ok := f.Attributes[key]; !ok {
+		f.Attributes[key] = NewAttributeFeatures(values)
 		return
 	}
 
 	for k, v := range values {
-		f[domain].Attributes[feature].Elements[k] = v
+		f.Attributes[key].Elements[k] = v
 	}
+}
+
+// Exists returns a non-empty string if a feature exists. The return value is
+// the type of the feautre, i.e. "flag", "attribute" or "instance".
+func (f *Features) Exists(name string) string {
+	if _, ok := f.Flags[name]; ok {
+		return "flag"
+	}
+	if _, ok := f.Attributes[name]; ok {
+		return "attribute"
+	}
+	if _, ok := f.Instances[name]; ok {
+		return "instance"
+	}
+	return ""
 }

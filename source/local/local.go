@@ -45,7 +45,7 @@ var (
 
 // localSource implements the FeatureSource and LabelSource interfaces.
 type localSource struct {
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 	config   *Config
 }
 
@@ -103,7 +103,7 @@ func newDefaultConfig() *Config {
 
 // Discover method of the FeatureSource interface
 func (s *localSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	featuresFromFiles, err := getFeaturesFromFiles()
 	if err != nil {
@@ -137,9 +137,9 @@ func (s *localSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *localSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *localSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

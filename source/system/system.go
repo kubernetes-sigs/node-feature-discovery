@@ -47,7 +47,7 @@ const (
 
 // systemSource implements the FeatureSource and LabelSource interfaces.
 type systemSource struct {
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -78,7 +78,7 @@ func (s *systemSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *systemSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	// Get node name
 	s.features.Attributes[NameFeature] = nfdv1alpha1.NewAttributeFeatures(nil)
@@ -107,9 +107,9 @@ func (s *systemSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *systemSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *systemSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

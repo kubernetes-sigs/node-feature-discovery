@@ -20,18 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Features is a collection of all features of the system, arranged by domain.
+// Features is the collection of all discovered features.
 //
 // +protobuf=true
-type Features map[string]*DomainFeatures
-
-// DomainFeatures is the collection of all discovered features of one domain.
-//
-// +protobuf=true
-type DomainFeatures struct {
-	Flags      map[string]FlagFeatureSet      `json:"flags" protobuf:"bytes,2,rep,name=flags"`
-	Attributes map[string]AttributeFeatureSet `json:"attributes" protobuf:"bytes,3,rep,name=vattributes"`
-	Instances  map[string]InstanceFeatureSet  `json:"instances" protobuf:"bytes,4,rep,name=instances"`
+type Features struct {
+	Flags      map[string]FlagFeatureSet      `json:"flags" protobuf:"bytes,1,rep,name=flags"`
+	Attributes map[string]AttributeFeatureSet `json:"attributes" protobuf:"bytes,2,rep,name=vattributes"`
+	Instances  map[string]InstanceFeatureSet  `json:"instances" protobuf:"bytes,3,rep,name=instances"`
 }
 
 // FlagFeatureSet is a set of simple features only containing names without values.

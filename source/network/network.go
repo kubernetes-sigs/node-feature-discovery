@@ -40,7 +40,7 @@ const sysfsBaseDir = "class/net"
 
 // networkSource implements the FeatureSource and LabelSource interfaces.
 type networkSource struct {
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -91,7 +91,7 @@ func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface.
 func (s *networkSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	devs, err := detectNetDevices()
 	if err != nil {
@@ -105,9 +105,9 @@ func (s *networkSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface.
-func (s *networkSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *networkSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

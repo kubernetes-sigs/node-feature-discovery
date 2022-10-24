@@ -501,6 +501,9 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 		return nil
 	}
 
+	// Helper struct for rule processing
+	features := r.GetFeatures()
+
 	// Process all rule CRs
 	for _, spec := range ruleSpecs {
 		switch {
@@ -511,7 +514,7 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 			klog.Infof("executing NodeFeatureRule %q", spec.ObjectMeta.Name)
 		}
 		for _, rule := range spec.Spec.Rules {
-			ruleOut, err := rule.Execute(r.Features)
+			ruleOut, err := rule.Execute(features)
 			if err != nil {
 				klog.Errorf("failed to process Rule %q: %v", rule.Name, err)
 				continue
@@ -522,8 +525,8 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 			}
 
 			// Feed back rule output to features map for subsequent rules to match
-			nfdv1alpha1.InsertAttributeFeatures(r.Features, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
-			nfdv1alpha1.InsertAttributeFeatures(r.Features, nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
+			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
+			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 		}
 	}
 

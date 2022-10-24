@@ -58,7 +58,7 @@ func newDefaultConfig() *Config {
 // kernelSource implements the FeatureSource, LabelSource and ConfigurableSource interfaces.
 type kernelSource struct {
 	config   *Config
-	features *nfdv1alpha1.DomainFeatures
+	features *nfdv1alpha1.Features
 	// legacyKconfig contains mangled kconfig values used for
 	// kernel.config-<flag> labels and legacy kConfig custom rules.
 	legacyKconfig map[string]string
@@ -117,7 +117,7 @@ func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource interface
 func (s *kernelSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	// Read kernel version
 	if version, err := parseVersion(); err != nil {
@@ -153,9 +153,9 @@ func (s *kernelSource) Discover() error {
 	return nil
 }
 
-func (s *kernelSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *kernelSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

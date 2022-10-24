@@ -102,7 +102,7 @@ type keyFilter struct {
 type cpuSource struct {
 	config      *Config
 	cpuidFilter *keyFilter
-	features    *nfdv1alpha1.DomainFeatures
+	features    *nfdv1alpha1.Features
 }
 
 // Singleton source instance
@@ -197,7 +197,7 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 
 // Discover method of the FeatureSource Interface
 func (s *cpuSource) Discover() error {
-	s.features = nfdv1alpha1.NewDomainFeatures()
+	s.features = nfdv1alpha1.NewFeatures()
 
 	// Detect CPUID
 	s.features.Flags[CpuidFeature] = nfdv1alpha1.NewFlagFeatures(getCpuidFlags()...)
@@ -252,9 +252,9 @@ func (s *cpuSource) Discover() error {
 }
 
 // GetFeatures method of the FeatureSource Interface
-func (s *cpuSource) GetFeatures() *nfdv1alpha1.DomainFeatures {
+func (s *cpuSource) GetFeatures() *nfdv1alpha1.Features {
 	if s.features == nil {
-		s.features = nfdv1alpha1.NewDomainFeatures()
+		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
 }

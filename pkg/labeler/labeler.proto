@@ -30,7 +30,7 @@ message SetLabelsRequest {
     string nfd_version = 1;
     string node_name = 2;
     map<string, string> labels = 3;
-    map<string, v1alpha1.DomainFeatures> features = 4;
+    v1alpha1.Features features = 4;
 }
 
 message SetLabelsReply {
