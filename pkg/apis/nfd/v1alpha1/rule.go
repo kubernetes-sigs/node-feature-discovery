@@ -145,7 +145,9 @@ func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) er
 	return nil
 }
 
-type matchedFeatures map[string]interface{}
+type matchedFeatures map[string]domainMatchedFeatures
+
+type domainMatchedFeatures map[string]interface{}
 
 func (e *MatchAnyElem) match(features *Features) (bool, matchedFeatures, error) {
 	return e.MatchFeatures.match(features)
@@ -159,23 +161,33 @@ func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error
 		// Ignore case
 		featureName := strings.ToLower(term.Feature)
 
+		nameSplit := strings.SplitN(term.Feature, ".", 2)
+		if len(nameSplit) != 2 {
+			klog.Warning("feature %q not of format <domain>.<feature>, cannot be used for templating", term.Feature)
+			nameSplit = []string{featureName, ""}
+		}
+
+		if _, ok := matches[nameSplit[0]]; !ok {
+			matches[nameSplit[0]] = make(domainMatchedFeatures)
+		}
+
 		var isMatch bool
 		var err error
 		if f, ok := features.Flags[featureName]; ok {
 			m, v, e := term.MatchExpressions.MatchGetKeys(f.Elements)
 			isMatch = m
 			err = e
-			matches[featureName] = v
+			matches[nameSplit[0]][nameSplit[1]] = v
 		} else if f, ok := features.Attributes[featureName]; ok {
 			m, v, e := term.MatchExpressions.MatchGetValues(f.Elements)
 			isMatch = m
 			err = e
-			matches[featureName] = v
+			matches[nameSplit[0]][nameSplit[1]] = v
 		} else if f, ok := features.Instances[featureName]; ok {
 			v, e := term.MatchExpressions.MatchGetInstances(f.Elements)
 			isMatch = len(v) > 0
 			err = e
-			matches[featureName] = v
+			matches[nameSplit[0]][nameSplit[1]] = v
 		} else {
 			return false, nil, fmt.Errorf("feature %q not available", featureName)
 		}
