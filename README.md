@@ -31,8 +31,8 @@ $ kubectl -n node-feature-discovery get all
 
 $ kubectl get no -o json | jq .items[].metadata.labels
   {
-    "beta.kubernetes.io/arch": "amd64",
-    "beta.kubernetes.io/os": "linux",
+    "kubernetes.io/arch": "amd64",
+    "kubernetes.io/os": "linux",
     "feature.node.kubernetes.io/cpu-cpuid.ADX": "true",
     "feature.node.kubernetes.io/cpu-cpuid.AESNI": "true",
 ...
