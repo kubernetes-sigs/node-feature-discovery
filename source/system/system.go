@@ -180,7 +180,7 @@ func getS390xModelInfo() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	re := regexp.MustCompile(`(?m)^Type:[\\s]*(\\d+)$`)
+	re := regexp.MustCompile(`(?m)^Type:[\s]*(\d+)$`)
 	if match := re.FindStringSubmatch(strings.TrimSpace(string(sysinfo))); match != nil {
 		if len(match) < 2 || len(match[1]) == 0 {
 			return "", errors.New("unsupported machine type format")
@@ -188,6 +188,8 @@ func getS390xModelInfo() (string, error) {
 		machineType := match[1]
 		s390xModels := NewS390xModels()
 		model = s390xModels.LookupModel(machineType)
+	} else {
+		return "", errors.New("unable to get machine type information")
 	}
 	return model, nil
 }
