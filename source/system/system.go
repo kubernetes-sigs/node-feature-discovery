@@ -18,8 +18,11 @@ package system
 
 import (
 	"bufio"
+	"errors"
 	"os"
+	"os/exec"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"k8s.io/klog/v2"
@@ -43,6 +46,7 @@ const Name = "system"
 const (
 	OsReleaseFeature = "osrelease"
 	NameFeature      = "name"
+	ModelFeature     = "model"
 )
 
 // systemSource implements the FeatureSource and LabelSource interfaces.
@@ -101,6 +105,17 @@ func (s *systemSource) Discover() error {
 		}
 	}
 
+	// Get system model information (s390x only)
+	if runtime.GOARCH == "s390x" {
+		model, err := getS390xModelInfo()
+		if err != nil {
+			klog.Errorf("failed to get s390x model information: %s", err)
+		} else {
+			s.features.Attributes[ModelFeature] = nfdv1alpha1.NewAttributeFeatures(nil)
+			s.features.Attributes[ModelFeature].Elements["s390x"] = model
+		}
+	}
+
 	utils.KlogDump(3, "discovered system features:", "  ", s.features)
 
 	return nil
@@ -151,6 +166,25 @@ func splitVersion(version string) map[string]string {
 		}
 	}
 	return components
+}
+
+// Retrieve the IBM z Systems specific hardware model information
+func getS390xModelInfo() (string, error) {
+	model := ""
+	sysinfo, err := exec.Command("cat", "/proc/sysinfo").Output()
+	if err != nil {
+		return "", err
+	}
+	re := regexp.MustCompile(`(?m)^Type:[\\s]*(\\d+)$`)
+	if match := re.FindStringSubmatch(string(sysinfo)); match != nil {
+		if len(match) < 2 || len(match[1]) == 0 {
+			return "", errors.New("unsupported machine type format")
+		}
+		machineType := match[1]
+		s390xModels := NewS390xModels()
+		model = s390xModels.LookupModel(machineType)
+	}
+	return model, nil
 }
 
 func init() {
