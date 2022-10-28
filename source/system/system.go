@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"errors"
 	"os"
-	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
@@ -79,7 +78,7 @@ func (s *systemSource) GetLabels() (source.FeatureLabels, error) {
 	}
 
 	if value, exists := features.Attributes[ModelFeature].Elements["s390x"]; exists {
-		labels["model_s390x"] = value
+		labels["model.s390x"] = value
 	}
 
 	return labels, nil
@@ -176,12 +175,13 @@ func splitVersion(version string) map[string]string {
 // Retrieve the IBM z Systems specific hardware model information
 func getS390xModelInfo() (string, error) {
 	model := ""
-	sysinfo, err := exec.Command("cat", "/proc/sysinfo").Output()
+	// sysinfo, err := exec.Command("cat", "/proc/sysinfo").Output()
+	sysinfo, err := os.ReadFile("/proc/sysinfo")
 	if err != nil {
 		return "", err
 	}
 	re := regexp.MustCompile(`(?m)^Type:[\\s]*(\\d+)$`)
-	if match := re.FindStringSubmatch(string(sysinfo)); match != nil {
+	if match := re.FindStringSubmatch(strings.TrimSpace(string(sysinfo))); match != nil {
 		if len(match) < 2 || len(match[1]) == 0 {
 			return "", errors.New("unsupported machine type format")
 		}
