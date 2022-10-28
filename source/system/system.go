@@ -77,6 +77,11 @@ func (s *systemSource) GetLabels() (source.FeatureLabels, error) {
 			labels[feature] = value
 		}
 	}
+
+	if value, exists := features.Attributes[ModelFeature].Elements["s390x"]; exists {
+		labels["model_s390x"] = value
+	}
+
 	return labels, nil
 }
 
