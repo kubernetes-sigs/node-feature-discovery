@@ -21,7 +21,7 @@ i=1
 while true; do
     if make poll-images; then
         break
-    elif [ $i -ge 27 ]; then
+    elif [ $i -ge 35 ]; then
         echo "ERROR: too many tries when polling for image"
         exit 1
     fi
