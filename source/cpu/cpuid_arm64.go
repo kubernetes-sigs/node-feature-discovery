@@ -85,8 +85,8 @@ func getCpuidFlags() []string {
 	hwcap := uint64(C.gethwcap())
 	for i := uint(0); i < 64; i++ {
 		key := uint64(1 << i)
-		val := flagNames_arm64[key]
-		if hwcap&key != 0 {
+		val, ok := flagNames_arm64[key]
+		if hwcap&key != 0 && ok {
 			r = append(r, val)
 		}
 	}
