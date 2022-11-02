@@ -28,8 +28,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
-	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 
+	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
@@ -46,6 +46,7 @@ type nodeResources struct {
 	topo                           *ghw.TopologyInfo
 	reservedCPUIDPerNUMA           map[int][]string
 	memoryResourcesCapacityPerNUMA utils.NumaMemoryResources
+	excludeList                    ExcludeResourceList
 }
 
 type resourceData struct {
@@ -54,7 +55,7 @@ type resourceData struct {
 	capacity    int64
 }
 
-func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesListerClient) (ResourcesAggregator, error) {
+func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesListerClient, excludeList ExcludeResourceList) (ResourcesAggregator, error) {
 	var err error
 
 	topo, err := ghw.Topology(ghw.WithPathOverrides(ghw.PathOverrides{
@@ -85,11 +86,11 @@ func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesLister
 		return nil, fmt.Errorf("failed to get allocatable resources (ensure that KubeletPodResourcesGetAllocatable feature gate is enabled): %w", err)
 	}
 
-	return NewResourcesAggregatorFromData(topo, resp, memoryResourcesCapacityPerNUMA), nil
+	return NewResourcesAggregatorFromData(topo, resp, memoryResourcesCapacityPerNUMA, excludeList), nil
 }
 
 // NewResourcesAggregatorFromData is used to aggregate resource information based on the received data from underlying hardware and podresource API
-func NewResourcesAggregatorFromData(topo *ghw.TopologyInfo, resp *podresourcesapi.AllocatableResourcesResponse, memoryResourceCapacity utils.NumaMemoryResources) ResourcesAggregator {
+func NewResourcesAggregatorFromData(topo *ghw.TopologyInfo, resp *podresourcesapi.AllocatableResourcesResponse, memoryResourceCapacity utils.NumaMemoryResources, excludeList ExcludeResourceList) ResourcesAggregator {
 	allDevs := getContainerDevicesFromAllocatableResources(resp, topo)
 	return &nodeResources{
 		topo:                           topo,
@@ -97,6 +98,7 @@ func NewResourcesAggregatorFromData(topo *ghw.TopologyInfo, resp *podresourcesap
 		perNUMAAllocatable:             makeNodeAllocatable(allDevs, resp.GetMemory()),
 		reservedCPUIDPerNUMA:           makeReservedCPUMap(topo.Nodes, allDevs),
 		memoryResourcesCapacityPerNUMA: memoryResourceCapacity,
+		excludeList:                    excludeList,
 	}
 }
 
@@ -108,6 +110,9 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 		if ok {
 			perNuma[nodeID] = make(map[corev1.ResourceName]*resourceData)
 			for resName, allocatable := range nodeRes {
+				if noderesourceData.excludeList.IsExcluded(resName) {
+					continue
+				}
 				switch {
 				case resName == "cpu":
 					perNuma[nodeID][resName] = &resourceData{

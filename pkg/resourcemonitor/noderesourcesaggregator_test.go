@@ -178,7 +178,7 @@ func TestResourcesAggregator(t *testing.T) {
 				corev1.ResourceName("hugepages-2Mi"): 2048,
 			},
 		}
-		resAggr = NewResourcesAggregatorFromData(&fakeTopo, availRes, memoryResourcesCapacity)
+		resAggr = NewResourcesAggregatorFromData(&fakeTopo, availRes, memoryResourcesCapacity, NewExcludeResourceList(map[string][]string{}, ""))
 
 		Convey("When aggregating resources", func() {
 			expected := topologyv1alpha1.ZoneList{
@@ -376,7 +376,7 @@ func TestResourcesAggregator(t *testing.T) {
 			},
 		}
 
-		resAggr = NewResourcesAggregatorFromData(&fakeTopo, availRes, memoryResourcesCapacity)
+		resAggr = NewResourcesAggregatorFromData(&fakeTopo, availRes, memoryResourcesCapacity, NewExcludeResourceList(map[string][]string{}, ""))
 
 		Convey("When aggregating resources", func() {
 			podRes := []PodResources{
