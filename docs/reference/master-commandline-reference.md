@@ -1,7 +1,7 @@
 ---
 title: "Master cmdline reference"
 layout: default
-sort: 2
+sort: 1
 ---
 
 # Commandline flags of nfd-master

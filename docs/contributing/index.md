@@ -1,7 +1,7 @@
 ---
 title: "Contributing"
 layout: default
-sort: 3
+sort: 6
 ---
 
 # Contributing

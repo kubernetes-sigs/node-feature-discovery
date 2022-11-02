@@ -1,7 +1,7 @@
 ---
 title: "Worker config reference"
 layout: default
-sort: 4
+sort: 3
 ---
 
 # Configuration file reference of nfd-worker
@@ -335,8 +335,8 @@ sources:
 
 Configuration option to disable/enable hooks execution. Enabled by default.
 Hooks are DEPRECATED since v0.12.0 release and support will be removed in a
-future release. Use [feature files](./customization-guide.md#feature-files)
-instead.
+future release. Use
+[feature files](../usage//customization-guide#feature-files) instead.
 
 Related tracking issues:
 
@@ -431,7 +431,7 @@ With the example config above NFD would publish labels like:
 
 List of rules to process in the custom feature source to create user-specific
 labels. Refer to the documentation of the
-[custom feature source](customization-guide.html#custom-feature-source) for
+[custom feature source](../usage/customization-guide#custom-feature-source) for
 details of the available rules and their configuration.
 
 Default: *empty*

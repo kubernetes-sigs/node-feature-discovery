@@ -1,7 +1,7 @@
 ---
 title: "E2E-test config reference"
 layout: default
-sort: 7
+sort: 5
 published: false
 ---
 
