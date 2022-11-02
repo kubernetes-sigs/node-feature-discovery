@@ -23,10 +23,9 @@ x86_64 and Arm64 architectures.
 
 ### Full
 
-This image is based on
-[debian:buster-slim](https://hub.docker.com/_/debian) and contains a full Linux
-system for running shell-based nfd-worker hooks and doing live debugging and
-diagnosis of the NFD images.
+This image is based on [debian:bullseye-slim](https://hub.docker.com/_/debian)
+and contains a full Linux system for running shell-based nfd-worker hooks and
+doing live debugging and diagnosis of the NFD images.
 
 ### Minimal
 
