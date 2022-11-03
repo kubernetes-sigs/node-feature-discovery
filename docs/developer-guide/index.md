@@ -1,7 +1,7 @@
 ---
 title: "Developer guide"
 layout: default
-sort: 1
+sort: 5
 ---
 
 # Developer guide

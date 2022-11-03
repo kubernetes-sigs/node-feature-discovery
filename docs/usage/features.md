@@ -1,7 +1,7 @@
 ---
 title: "Feature labels"
 layout: default
-sort: 4
+sort: 1
 ---
 
 # Feature labels
@@ -21,9 +21,9 @@ Features are advertised as labels in the Kubernetes Node object.
 
 Label creation in nfd-worker is performed by a set of separate modules called
 label sources. The
-[`core.labelSources`](../advanced/worker-configuration-reference#corelabelsources)
+[`core.labelSources`](../reference/worker-configuration-reference#corelabelsources)
 configuration option (or
-[`-label-sources`](../advanced/worker-commandline-reference#-label-sources)
+[`-label-sources`](../reference/worker-commandline-reference#-label-sources)
 flag) of nfd-worker controls which sources to enable for label generation.
 
 All built-in labels use the `feature.node.kubernetes.io` label namespace and
@@ -60,8 +60,8 @@ such as restricting discovered features with the -label-whitelist option.*
 | **`cpu-model.id`**                | int    | CPU model number.
 
 The CPU label source is configurable, see
-[worker configuration](deployment-and-usage#worker-configuration) and
-[`sources.cpu`](../advanced/worker-configuration-reference#sourcescpu)
+[worker configuration](nfd-worker#worker-configuration) and
+[`sources.cpu`](../reference/worker-configuration-reference#sourcescpu)
 configuration options for details.
 
 #### X86 CPUID flags (partial list)
@@ -101,7 +101,7 @@ configuration options for details.
 By default, the following CPUID flags have been blacklisted: BMI1, BMI2, CLMUL,
 CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED,
 RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42 and SSSE3. See
-[`sources.cpu`](../advanced/worker-configuration-reference#sourcescpu)
+[`sources.cpu`](../reference/worker-configuration-reference#sourcescpu)
 configuration options to change the behavior.
 
 See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
@@ -160,8 +160,8 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | **`kernel-version.revision`** | string | Third component of the kernel version (e.g. '6')
 
 The kernel label source is configurable, see
-[worker configuration](deployment-and-usage#worker-configuration) and
-[`sources.kernel`](../advanced/worker-configuration-reference#sourceskernel)
+[worker configuration](nfd-worker#worker-configuration) and
+[`sources.kernel`](../reference/worker-configuration-reference#sourceskernel)
 configuration options for details.
 
 ### Memory
@@ -188,8 +188,8 @@ configuration options for details.
 
 `<device label>` is format is configurable and set to `<class>_<vendor>` by
 default. For more more details about configuration of the pci labels, see
-[`sources.pci`](../advanced/worker-configuration-reference#sourcespci) options
-and [worker configuration](deployment-and-usage#worker-configuration)
+[`sources.pci`](../reference/worker-configuration-reference#sourcespci) options
+and [worker configuration](nfd-worker#worker-configuration)
 instructions.
 
 ### USB
@@ -201,8 +201,8 @@ instructions.
 `<device label>` is format is configurable and set to
 `<class>_<vendor>_<device>` by default. For more more details about
 configuration of the usb labels, see
-[`sources.usb`](../advanced/worker-configuration-reference#sourcesusb) options
-and [worker configuration](deployment-and-usage#worker-configuration)
+[`sources.usb`](../reference/worker-configuration-reference#sourcesusb) options
+and [worker configuration](nfd-worker#worker-configuration)
 instructions.
 
 ### Storage
@@ -234,7 +234,7 @@ defined built-in labels:
 ## User defined labels
 
 NFD has many extension points for creating vendor and application specific
-labels. See the [customization guide](../advanced/customization-guide.md) for
+labels. See the [customization guide](customization-guide) for
 detailed documentation.
 
 ## Extended resources

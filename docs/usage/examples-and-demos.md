@@ -1,7 +1,7 @@
 ---
 title: "Examples and demos"
 layout: default
-sort: 5
+sort: 7
 ---
 
 # Examples and demos

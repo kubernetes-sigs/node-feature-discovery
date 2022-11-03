@@ -1,7 +1,7 @@
 ---
 title: "Worker cmdline reference"
 layout: default
-sort: 3
+sort: 2
 ---
 
 # Commandline flags of nfd-worker
