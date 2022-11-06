@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 
@@ -288,7 +289,7 @@ func (m *nfdMaster) prune() error {
 		klog.Infof("pruning node %q...", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeFeatures(node.Name, Labels{}, Annotations{}, ExtendedResources{})
+		err := m.updateNodeFeatures(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{})
 		if err != nil {
 			return fmt.Errorf("failed to prune labels from node %q: %v", node.Name, err)
 		}
@@ -398,10 +399,12 @@ func verifyNodeName(cert *x509.Certificate, nodeName string) error {
 
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
+
 	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
 	if err != nil {
 		return &pb.SetLabelsReply{}, err
 	}
+
 	switch {
 	case klog.V(4).Enabled():
 		utils.KlogDump(3, "REQUEST", "  ", r)
@@ -424,10 +427,15 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 	labels, extendedResources := filterFeatureLabels(rawLabels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
 
 	if !m.args.NoPublish {
+		cli, err := m.apihelper.GetClient()
+		if err != nil {
+			return &pb.SetLabelsReply{}, err
+		}
+
 		// Advertise NFD worker version as an annotation
 		annotations := Annotations{m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation): r.NfdVersion}
 
-		err := m.updateNodeFeatures(r.NodeName, labels, annotations, extendedResources)
+		err = m.updateNodeFeatures(cli, r.NodeName, labels, annotations, extendedResources)
 		if err != nil {
 			klog.Errorf("failed to advertise labels: %v", err)
 			return &pb.SetLabelsReply{}, err
@@ -536,10 +544,9 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 // updateNodeFeatures ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeFeatures(nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
-	cli, err := m.apihelper.GetClient()
-	if err != nil {
-		return err
+func (m *nfdMaster) updateNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
+	if cli == nil {
+		return fmt.Errorf("no client is passed, client:  %v", cli)
 	}
 
 	// Get the worker node object
