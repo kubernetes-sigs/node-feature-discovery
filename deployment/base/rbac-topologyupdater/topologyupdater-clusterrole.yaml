@@ -13,6 +13,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes/proxy
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - get

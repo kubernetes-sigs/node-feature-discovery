@@ -169,17 +169,33 @@ Example:
 nfd-topology-updater -watch-namespace=rte
 ```
 
-### -kubelet-config-file
+### -kubelet-config-uri
 
-The `-kubelet-config-file` specifies the path to the Kubelet's configuration
-file.
+The `-kubelet-config-uri` specifies the path to the Kubelet's configuration.
+Note that the URi could either be a local host file or an HTTP endpoint.
 
-Default:  /host-var/lib/kubelet/config.yaml
+Default:  `https://${NODE_NAME}:10250/configz`
 
 Example:
 
 ```bash
-nfd-topology-updater -kubelet-config-file=/var/lib/kubelet/config.yaml
+nfd-topology-updater -kubelet-config-uri=file:///var/lib/kubelet/config.yaml
+```
+
+### -api-auth-token-file
+
+The `-api-auth-token-file` specifies the path to the api auth token file
+which is used to retrieve Kubelet's configuration from Kubelet secure port,
+only taking effect when `-kubelet-config-uri` is https.
+Note that this token file must bind to a role that has the `get` capability to
+`nodes/proxy` resources.
+
+Default:  `/var/run/secrets/kubernetes.io/serviceaccount/token`
+
+Example:
+
+```bash
+nfd-topology-updater -token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
 ```
 
 ### -podresources-socket
