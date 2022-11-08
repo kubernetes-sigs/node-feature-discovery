@@ -44,6 +44,7 @@ const (
 	SgxFeature      = "sgx" // DEPRECATED in v0.12: will be removed in the future
 	SstFeature      = "sst"
 	TopologyFeature = "topology"
+        NXFeature       = "nx"
 )
 
 // Configuration file options
@@ -192,6 +193,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["hardware_multithreading"] = v
 	}
 
+	// NX
+	if v, ok := features.Attributes[NXFeature].Elements["nx_gzip"]; ok {
+		labels["nx_gzip"] = v
+	}
+
 	return labels, nil
 }
 
@@ -245,6 +251,9 @@ func (s *cpuSource) Discover() error {
 
 	// Detect hyper-threading
 	s.features.Attributes[TopologyFeature] = nfdv1alpha1.NewAttributeFeatures(discoverTopology())
+
+	// Detect nx-gzip
+	s.features.Attributes[NXFeature] = nfdv1alpha1.NewAttributeFeatures(discoverNX())
 
 	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
 
@@ -303,6 +312,23 @@ func haveThreadSiblings() (bool, error) {
 	}
 	// No siblings were found
 	return false, nil
+}
+
+// Check if nx-gzip is available
+func discoverNX() map[string]string {
+	features := make(map[string]string)
+
+	// Detect NX
+	const nxGzipPath = "/sys/devices/vio/ibm,compression-v1/nx_gzip_caps"
+
+	_, err := os.Stat(nxGzipPath)
+	if err != nil {
+		klog.Errorf("Failed to detect Nest Accelerator: %v", err)
+	} else {
+		features["nx_gzip"] = strconv.FormatBool(true)
+	}
+
+	return features
 }
 
 func (s *cpuSource) initCpuidFilter() {
