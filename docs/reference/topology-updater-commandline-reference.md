@@ -21,7 +21,8 @@ To quickly view available command line flags execute `nfd-topology-updater -help
 In a docker container:
 
 ```bash
-docker run gcr.io/k8s-staging-nfd/node-feature-discovery:master nfd-topology-updater -help
+docker run {{ site.container_image }} \
+nfd-topology-updater -help
 ```
 
 ### -h, -help
@@ -31,6 +32,19 @@ Print usage and exit.
 ### -version
 
 Print version and exit.
+
+### -config
+
+The `-config` flag specifies the path of the nfd-topology-updater
+configuration file to use.
+
+Default: /etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf
+
+Example:
+
+```bash
+nfd-topology-updater -config=/opt/nfd/nfd-topology-updater.conf
+```
 
 ### -server
 
