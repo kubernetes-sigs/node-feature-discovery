@@ -29,7 +29,7 @@ type testCaseData struct {
 func TestGetKubeletConfigFromLocalFile(t *testing.T) {
 	tCases := []testCaseData{
 		{
-			path:     filepath.Join("..", "..", "test", "data", "kubeletconf.yaml"),
+			path:     filepath.Join("..", "..", "..", "test", "data", "kubeletconf.yaml"),
 			tmPolicy: "single-numa-node",
 		},
 	}

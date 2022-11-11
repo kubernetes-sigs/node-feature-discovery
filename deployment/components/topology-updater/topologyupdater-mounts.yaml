@@ -23,8 +23,4 @@
 
 - op: add
   path: /spec/template/spec/containers/0/args/-
-  value: "-kubelet-config-file=/host-var/lib/kubelet/config.yaml"
-
-- op: add
-  path: /spec/template/spec/containers/0/args/-
   value: "-podresources-socket=/host-var/lib/kubelet/pod-resources/kubelet.sock"

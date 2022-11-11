@@ -19,6 +19,12 @@ rules:
   - update
   - list
 - apiGroups:
+    - ""
+  resources:
+    - nodes/proxy
+  verbs:
+    - get
+- apiGroups:
   - nfd.k8s-sigs.io
   resources:
   - nodefeaturerules

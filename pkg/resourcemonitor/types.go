@@ -29,7 +29,8 @@ type Args struct {
 	PodResourceSocketPath string
 	SleepInterval         time.Duration
 	Namespace             string
-	KubeletConfigFile     string
+	KubeletConfigURI      string
+	APIAuthTokenFile      string
 }
 
 // ResourceInfo stores information of resources and their corresponding IDs obtained from PodResource API
