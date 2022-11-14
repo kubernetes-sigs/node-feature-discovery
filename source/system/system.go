@@ -175,7 +175,6 @@ func splitVersion(version string) map[string]string {
 // Retrieve the IBM z Systems specific hardware model information
 func getS390xModelInfo() (string, error) {
 	model := ""
-	// sysinfo, err := exec.Command("cat", "/proc/sysinfo").Output()
 	sysinfo, err := os.ReadFile("/proc/sysinfo")
 	if err != nil {
 		return "", err
