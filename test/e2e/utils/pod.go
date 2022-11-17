@@ -311,7 +311,7 @@ func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []strin
 				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-topology-updater"},
 				Args: append([]string{
-					"--kubelet-config-file=/podresources/config.yaml",
+					"--kubelet-config-uri=file:///podresources/config.yaml",
 					"--podresources-socket=unix:///podresources/kubelet.sock",
 					"--sleep-interval=3s",
 					"--watch-namespace=rte",
