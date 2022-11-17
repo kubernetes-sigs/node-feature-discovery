@@ -36,6 +36,7 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/kubelet"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 )
@@ -51,7 +52,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 	)
 
 	f := framework.NewDefaultFramework("node-topology-updater")
-
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 	BeforeEach(func() {
 		var err error
 

@@ -203,6 +203,8 @@ func newDaemonSet(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
 }
 
 func nfdWorkerPodSpec(image string, extraArgs []string) *corev1.PodSpec {
+	yes := true
+	no := false
 	return &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -220,6 +222,15 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *corev1.PodSpec {
 							},
 						},
 					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{"ALL"},
+					},
+					Privileged:               &no,
+					RunAsNonRoot:             &yes,
+					ReadOnlyRootFilesystem:   &yes,
+					AllowPrivilegeEscalation: &no,
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
