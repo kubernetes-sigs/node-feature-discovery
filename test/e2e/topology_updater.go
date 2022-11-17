@@ -210,13 +210,17 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming exclusive CPUs")
 			sleeperPod := testutils.GuaranteedSleeperPod("1000m")
+			// in case there is more than a single node in the cluster
+			// we need to set the node name, so we'll have certainty about
+			// which node we need to examine
+			sleeperPod.Spec.NodeName = topologyUpdaterNode.Name
 
 			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testutils.DeletePodsAsync(f, podMap)
 
-			By("getting the updated topology")
+			By("checking the changes in the updated topology")
 			var finalNodeTopo *v1alpha1.NodeResourceTopology
 			Eventually(func() bool {
 				finalNodeTopo, err = topologyClient.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), topologyUpdaterNode.Name, metav1.GetOptions{})
@@ -224,18 +228,23 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 					framework.Logf("failed to get the node topology resource: %v", err)
 					return false
 				}
-				return finalNodeTopo.ObjectMeta.ResourceVersion != initialNodeTopo.ObjectMeta.ResourceVersion
-			}, time.Minute, 5*time.Second).Should(BeTrue(), "didn't get updated node topology info")
-			By("checking the changes in the updated topology")
+				if finalNodeTopo.ObjectMeta.ResourceVersion == initialNodeTopo.ObjectMeta.ResourceVersion {
+					framework.Logf("node topology resource %s was not updated", topologyUpdaterNode.Name)
+				}
 
-			initialAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(initialNodeTopo)
-			finalAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(finalNodeTopo)
-			if len(initialAllocRes) == 0 || len(finalAllocRes) == 0 {
-				Fail(fmt.Sprintf("failed to find allocatable resources from node topology initial=%v final=%v", initialAllocRes, finalAllocRes))
-			}
-			zoneName, resName, isLess := lessAllocatableResources(initialAllocRes, finalAllocRes)
-			framework.Logf("zone=%q resource=%q isLess=%v", zoneName, resName, isLess)
-			Expect(isLess).To(BeTrue(), fmt.Sprintf("final allocatable resources not decreased - initial=%v final=%v", initialAllocRes, finalAllocRes))
+				initialAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(initialNodeTopo)
+				finalAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(finalNodeTopo)
+				if len(initialAllocRes) == 0 || len(finalAllocRes) == 0 {
+					Fail(fmt.Sprintf("failed to find allocatable resources from node topology initial=%v final=%v", initialAllocRes, finalAllocRes))
+				}
+
+				zoneName, resName, isLess := lessAllocatableResources(initialAllocRes, finalAllocRes)
+				framework.Logf("zone=%q resource=%q isLess=%v", zoneName, resName, isLess)
+				if !isLess {
+					framework.Logf("final allocatable resources not decreased - initial=%v final=%v", initialAllocRes, finalAllocRes)
+				}
+				return true
+			}, time.Minute, 5*time.Second).Should(BeTrue(), "didn't get updated node topology info")
 		})
 
 	})
