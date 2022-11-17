@@ -28,7 +28,6 @@ import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,7 +44,6 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 	var (
 		extClient           *extclient.Clientset
 		topologyClient      *topologyclientset.Clientset
-		crd                 *apiextensionsv1.CustomResourceDefinition
 		topologyUpdaterNode *corev1.Node
 		workerNodes         []corev1.Node
 		kubeletConfig       *kubeletconfig.KubeletConfiguration
@@ -73,7 +71,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		By(fmt.Sprintf("Using config (%#v)", kcfg))
 
 		By("Creating the node resource topologies CRD")
-		crd, err = testutils.CreateNodeResourceTopologies(extClient)
+		_, err = testutils.CreateNodeResourceTopologies(extClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
@@ -253,11 +251,6 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
 		if err != nil {
 			framework.Logf("failed to delete RBAC resources: %v", err)
-		}
-
-		err = extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
-		if err != nil {
-			framework.Logf("failed to delete node resources topologies CRD: %v", err)
 		}
 	})
 })
