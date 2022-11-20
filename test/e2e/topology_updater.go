@@ -67,11 +67,9 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		}
 
 		By("Creating the node resource topologies CRD")
-		_, err = testutils.CreateNodeResourceTopologies(extClient)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(testutils.CreateNodeResourceTopologies(extClient)).ToNot(BeNil())
 
-		err = testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
 		image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 		f.PodClient().CreateSync(testutils.NFDMasterPod(image, false))
@@ -103,6 +101,14 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 
 		workerNodes, err = testutils.GetWorkerNodes(f)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	// TODO: replace with regular AfterEach once we have https://github.com/kubernetes/kubernetes/pull/111998 in
+	f.AddAfterEach("Node Feature Discovery topology updater CRD and RBAC removal", func(f *framework.Framework, failed bool) {
+		err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
+		if err != nil {
+			framework.Logf("failed to delete RBAC resources: %v", err)
+		}
 	})
 
 	Context("with single nfd-master pod", func() {
@@ -252,11 +258,50 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 
 	})
 
-	JustAfterEach(func() {
-		err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
-		if err != nil {
-			framework.Logf("failed to delete RBAC resources: %v", err)
-		}
+	When("topology-updater configure to exclude memory", func() {
+		var topologyUpdaterConfigMap *corev1.ConfigMap
+
+		BeforeEach(func() {
+			data := make(map[string]string)
+			data["nfd-topology-updater.conf"] = `excludeList:
+  '*': [memory]
+`
+			topologyUpdaterConfigMap = &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nfd-topology-updater-conf",
+				},
+				Data: data,
+			}
+
+			cm, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), topologyUpdaterConfigMap, metav1.CreateOptions{})
+			Expect(err).ToNot(HaveOccurred())
+
+			cfg, err := testutils.GetConfig()
+			Expect(err).ToNot(HaveOccurred())
+
+			kcfg := cfg.GetKubeletConfig()
+			By(fmt.Sprintf("Using config (%#v)", kcfg))
+
+			opts := testutils.SpecWithConfigMap(cm.Name, cm.Name, "/etc/kubernetes/node-feature-discovery")
+			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{}, opts)
+		})
+
+		It("noderesourcetopology should not advertise the memory resource", func() {
+			Eventually(func() bool {
+				memoryFound := false
+				nodeTopology := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+				for _, zone := range nodeTopology.Zones {
+					for _, res := range zone.Resources {
+						if res.Name == string(corev1.ResourceMemory) {
+							memoryFound = true
+							framework.Logf("resource:%s was found for nodeTopology:%s on zone:%s while it should not", corev1.ResourceMemory, nodeTopology.Name, zone.Name)
+							break
+						}
+					}
+				}
+				return memoryFound
+			}, 1*time.Minute, 10*time.Second).Should(BeFalse())
+		})
 	})
 })
 
