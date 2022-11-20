@@ -27,6 +27,7 @@ import (
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,16 +43,17 @@ import (
 
 var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 	var (
-		extClient           *extclient.Clientset
-		topologyClient      *topologyclientset.Clientset
-		topologyUpdaterNode *corev1.Node
-		workerNodes         []corev1.Node
-		kubeletConfig       *kubeletconfig.KubeletConfiguration
+		extClient                *extclient.Clientset
+		topologyClient           *topologyclientset.Clientset
+		topologyUpdaterNode      *corev1.Node
+		topologyUpdaterDaemonSet *appsv1.DaemonSet
+		workerNodes              []corev1.Node
+		kubeletConfig            *kubeletconfig.KubeletConfiguration
 	)
 
 	f := framework.NewDefaultFramework("node-topology-updater")
 	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
-	BeforeEach(func() {
+	JustBeforeEach(func() {
 		var err error
 
 		if extClient == nil {
@@ -63,12 +65,6 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			topologyClient, err = topologyclientset.NewForConfig(f.ClientConfig())
 			Expect(err).NotTo(HaveOccurred())
 		}
-
-		cfg, err := testutils.GetConfig()
-		Expect(err).ToNot(HaveOccurred())
-
-		kcfg := cfg.GetKubeletConfig()
-		By(fmt.Sprintf("Using config (%#v)", kcfg))
 
 		By("Creating the node resource topologies CRD")
 		_, err = testutils.CreateNodeResourceTopologies(extClient)
@@ -88,7 +84,6 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, masterService.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 
 		By("Creating nfd-topology-updater daemonset")
-		topologyUpdaterDaemonSet := testutils.NFDTopologyUpdaterDaemonSet(kcfg, fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
 		topologyUpdaterDaemonSet, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), topologyUpdaterDaemonSet, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
@@ -111,6 +106,16 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 	})
 
 	Context("with single nfd-master pod", func() {
+		BeforeEach(func() {
+			cfg, err := testutils.GetConfig()
+			Expect(err).ToNot(HaveOccurred())
+
+			kcfg := cfg.GetKubeletConfig()
+			By(fmt.Sprintf("Using config (%#v)", kcfg))
+
+			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+		})
+
 		It("should fill the node resource topologies CR with the data", func() {
 			nodeTopology := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			isValid := testutils.IsValidNodeTopology(nodeTopology, kubeletConfig)
