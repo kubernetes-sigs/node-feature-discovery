@@ -35,6 +35,7 @@ import (
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	"k8s.io/kubernetes/test/e2e/framework"
@@ -81,15 +82,26 @@ func CreateNodeResourceTopologies(extClient extclient.Interface) (*apiextensions
 		return nil, err
 	}
 
-	updatedCrd, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd.Name, metav1.GetOptions{})
+	// Delete existing CRD (if any) with this we also get rid of stale objects
+	err = extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
 	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
+		return nil, fmt.Errorf("failed to delete NodeResourceTopology CRD: %w", err)
 	}
 
-	if err == nil {
-		return updatedCrd, nil
-	}
+	// It takes time for the delete operation, wait until the CRD completely gone
+	if err = wait.PollImmediate(5*time.Second, 1*time.Minute, func() (bool, error) {
+		_, err = extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd.Name, metav1.GetOptions{})
+		if err == nil {
+			return false, nil
+		}
 
+		if errors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to get NodeResourceTopology CRD: %w", err)
+	}
 	return extClient.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
 }
 

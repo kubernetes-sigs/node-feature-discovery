@@ -28,7 +28,6 @@ import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -36,6 +35,7 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/kubelet"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 )
@@ -44,14 +44,13 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 	var (
 		extClient           *extclient.Clientset
 		topologyClient      *topologyclientset.Clientset
-		crd                 *apiextensionsv1.CustomResourceDefinition
 		topologyUpdaterNode *corev1.Node
 		workerNodes         []corev1.Node
 		kubeletConfig       *kubeletconfig.KubeletConfiguration
 	)
 
 	f := framework.NewDefaultFramework("node-topology-updater")
-
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 	BeforeEach(func() {
 		var err error
 
@@ -72,7 +71,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		By(fmt.Sprintf("Using config (%#v)", kcfg))
 
 		By("Creating the node resource topologies CRD")
-		crd, err = testutils.CreateNodeResourceTopologies(extClient)
+		_, err = testutils.CreateNodeResourceTopologies(extClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
@@ -209,13 +208,17 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming exclusive CPUs")
 			sleeperPod := testutils.GuaranteedSleeperPod("1000m")
+			// in case there is more than a single node in the cluster
+			// we need to set the node name, so we'll have certainty about
+			// which node we need to examine
+			sleeperPod.Spec.NodeName = topologyUpdaterNode.Name
 
 			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testutils.DeletePodsAsync(f, podMap)
 
-			By("getting the updated topology")
+			By("checking the changes in the updated topology")
 			var finalNodeTopo *v1alpha1.NodeResourceTopology
 			Eventually(func() bool {
 				finalNodeTopo, err = topologyClient.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), topologyUpdaterNode.Name, metav1.GetOptions{})
@@ -223,18 +226,23 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 					framework.Logf("failed to get the node topology resource: %v", err)
 					return false
 				}
-				return finalNodeTopo.ObjectMeta.ResourceVersion != initialNodeTopo.ObjectMeta.ResourceVersion
-			}, time.Minute, 5*time.Second).Should(BeTrue(), "didn't get updated node topology info")
-			By("checking the changes in the updated topology")
+				if finalNodeTopo.ObjectMeta.ResourceVersion == initialNodeTopo.ObjectMeta.ResourceVersion {
+					framework.Logf("node topology resource %s was not updated", topologyUpdaterNode.Name)
+				}
 
-			initialAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(initialNodeTopo)
-			finalAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(finalNodeTopo)
-			if len(initialAllocRes) == 0 || len(finalAllocRes) == 0 {
-				Fail(fmt.Sprintf("failed to find allocatable resources from node topology initial=%v final=%v", initialAllocRes, finalAllocRes))
-			}
-			zoneName, resName, isLess := lessAllocatableResources(initialAllocRes, finalAllocRes)
-			framework.Logf("zone=%q resource=%q isLess=%v", zoneName, resName, isLess)
-			Expect(isLess).To(BeTrue(), fmt.Sprintf("final allocatable resources not decreased - initial=%v final=%v", initialAllocRes, finalAllocRes))
+				initialAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(initialNodeTopo)
+				finalAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(finalNodeTopo)
+				if len(initialAllocRes) == 0 || len(finalAllocRes) == 0 {
+					Fail(fmt.Sprintf("failed to find allocatable resources from node topology initial=%v final=%v", initialAllocRes, finalAllocRes))
+				}
+
+				zoneName, resName, isLess := lessAllocatableResources(initialAllocRes, finalAllocRes)
+				framework.Logf("zone=%q resource=%q isLess=%v", zoneName, resName, isLess)
+				if !isLess {
+					framework.Logf("final allocatable resources not decreased - initial=%v final=%v", initialAllocRes, finalAllocRes)
+				}
+				return true
+			}, time.Minute, 5*time.Second).Should(BeTrue(), "didn't get updated node topology info")
 		})
 
 	})
@@ -243,11 +251,6 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
 		if err != nil {
 			framework.Logf("failed to delete RBAC resources: %v", err)
-		}
-
-		err = extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
-		if err != nil {
-			framework.Logf("failed to delete node resources topologies CRD: %v", err)
 		}
 	})
 })
