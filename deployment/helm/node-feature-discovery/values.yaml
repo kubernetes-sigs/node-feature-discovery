@@ -17,6 +17,7 @@ master:
   featureApi:
   extraLabelNs: []
   resourceLabels: []
+  crdController: null
   featureRulesController: null
   deploymentAnnotations: {}
   replicaCount: 1

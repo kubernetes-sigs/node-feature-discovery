@@ -50,6 +50,14 @@ func main() {
 		os.Exit(2)
 	}
 
+	// Check deprecated flags
+	flags.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "featurerules-controller":
+			klog.Warningf("-featurerules-controller is deprecated, use '-crd-controller' flag instead")
+		}
+	})
+
 	if *printVersion {
 		fmt.Println(ProgramName, version.Get())
 		os.Exit(0)
@@ -100,8 +108,10 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 		"Do not publish feature labels")
 	flagset.BoolVar(&args.EnableTaints, "enable-taints", false,
 		"Enable node tainting feature")
-	flagset.BoolVar(&args.FeatureRulesController, "featurerules-controller", true,
-		"Enable controller for NodeFeatureRule objects. Generates node labels based on the rules in these CRs.")
+	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
+		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")
+	flagset.BoolVar(&args.CrdController, "crd-controller", true,
+		"Enable NFD CRD API controller for processing NodeFeature and NodeFeatureRule objects.")
 	flagset.IntVar(&args.Port, "port", 8080,
 		"Port on which to listen for connections.")
 	flagset.BoolVar(&args.Prune, "prune", false,
