@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -36,8 +35,6 @@ func TestParseArgs(t *testing.T) {
 			Convey("overrides should be nil", func() {
 				So(args.Oneshot, ShouldBeTrue)
 				So(args.Overrides.NoPublish, ShouldBeNil)
-				So(args.Overrides.LabelWhiteList, ShouldBeNil)
-				So(args.Overrides.SleepInterval, ShouldBeNil)
 				So(args.Overrides.FeatureSources, ShouldBeNil)
 				So(args.Overrides.LabelSources, ShouldBeNil)
 			})
@@ -46,18 +43,14 @@ func TestParseArgs(t *testing.T) {
 		Convey("When all override args are specified", func() {
 			args := parseArgs(flags,
 				"-no-publish",
-				"-label-whitelist=.*rdt.*",
 				"-feature-sources=cpu",
-				"-label-sources=fake1,fake2,fake3",
-				"-sleep-interval=30s")
+				"-label-sources=fake1,fake2,fake3")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.Oneshot, ShouldBeFalse)
 				So(*args.Overrides.NoPublish, ShouldBeTrue)
-				So(*args.Overrides.SleepInterval, ShouldEqual, 30*time.Second)
 				So(*args.Overrides.FeatureSources, ShouldResemble, utils.StringSliceVal{"cpu"})
 				So(*args.Overrides.LabelSources, ShouldResemble, utils.StringSliceVal{"fake1", "fake2", "fake3"})
-				So(args.Overrides.LabelWhiteList.Regexp.String(), ShouldResemble, ".*rdt.*")
 			})
 		})
 	})

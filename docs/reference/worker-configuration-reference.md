@@ -31,9 +31,6 @@ feature (re-)detection, and thus also the interval between node re-labeling. A
 non-positive value implies infinite sleep interval, i.e. no re-detection or
 re-labeling is done.
 
-Note: Overridden by the deprecated `-sleep-interval` command line flag (if
-specified).
-
 Default: `60s`
 
 Example:
@@ -82,8 +79,8 @@ conjunction with `all`. This configuration option affects the generation of
 node labels but not the actual discovery of the underlying feature data that is
 used e.g. in custom/`NodeFeatureRule` rules.
 
-Note: Overridden by the `-label-sources` and `-sources` command line flags and
-the `core.sources` configurations option (if any of them is specified).
+Note: Overridden by the `-label-sources` command line flag and
+the `core.sources` configurations option (if either of them is specified).
 
 Default: `[all]`
 
@@ -121,9 +118,6 @@ labels based on the label name. Non-matching labels are not published.
 Note: The regular expression is only matches against the "basename" part of the
 label, i.e. to the part of the name after '/'. The label prefix (or namespace)
 is omitted.
-
-Note: Overridden by the deprecated `-label-whitelist` command line flag (if
-specified).
 
 Default: `null`
 

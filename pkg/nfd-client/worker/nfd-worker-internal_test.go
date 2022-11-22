@@ -170,18 +170,16 @@ sources:
 		})
 
 		Convey("and a proper config file and overrides are given", func() {
-			sleepIntervalArg := 15 * time.Second
-			worker.args = Args{Overrides: ConfigOverrideArgs{SleepInterval: &sleepIntervalArg}}
+			worker.args = Args{Overrides: ConfigOverrideArgs{FeatureSources: &utils.StringSliceVal{"cpu"}}}
 			overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
 			So(worker.configure(f.Name(), overrides), ShouldBeNil)
 
 			Convey("overrides should take precedence over the config file", func() {
 				// Verify core config
 				So(worker.config.Core.NoPublish, ShouldBeTrue)
-				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"memory", "storage"})
-				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"}) // from overrides
+				So(worker.config.Core.FeatureSources, ShouldResemble, []string{"cpu"}) // from cmdline
+				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"})  // from overrides
 				So(worker.config.Core.LabelWhiteList.String(), ShouldEqual, "foo")
-				So(worker.config.Core.SleepInterval.Duration, ShouldEqual, 15*time.Second) // from cmdline
 
 				// Verify feature source config
 				So(err, ShouldBeNil)
@@ -337,20 +335,6 @@ func TestNewNfdWorker(t *testing.T) {
 				So(len(worker.labelSources), ShouldEqual, 1)
 				So(worker.labelSources[0].Name(), ShouldEqual, "fake")
 				So(worker.config.Core.LabelWhiteList, ShouldResemble, emptyRegexp)
-			})
-		})
-
-		Convey("with valid LabelWhiteListStr arg specified", func() {
-			args := &Args{Overrides: ConfigOverrideArgs{LabelWhiteList: &utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}}}
-			w, err := NewNfdWorker(args)
-			Convey("no error should be returned", func() {
-				So(err, ShouldBeNil)
-			})
-			worker := w.(*nfdWorker)
-			So(worker.configure("", ""), ShouldBeNil)
-			expectRegexp := utils.RegexpVal{Regexp: *regexp.MustCompile(".*rdt.*")}
-			Convey("proper labelWhiteList regexp should be produced", func() {
-				So(worker.config.Core.LabelWhiteList, ShouldResemble, expectRegexp)
 			})
 		})
 	})
