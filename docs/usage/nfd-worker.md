@@ -62,7 +62,7 @@ for more details.
 The (empty-by-default)
 [example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/worker-config/nfd-worker.conf.example)
 contains all available configuration options and can be used as a reference
-for creating creating a configuration.
+for creating a configuration.
 
 Configuration options can also be specified via the `-options` command line
 flag, in which case no mounts need to be used. The same format as in the config

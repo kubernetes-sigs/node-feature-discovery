@@ -176,9 +176,35 @@ func NFDWorkerDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
 }
 
 // NFDTopologyUpdaterDaemonSet provides the NFD daemon set topology updater
-func NFDTopologyUpdaterDaemonSet(kc KubeletConfig, image string, extraArgs []string) *appsv1.DaemonSet {
+func NFDTopologyUpdaterDaemonSet(kc KubeletConfig, image string, extraArgs []string, options ...func(spec *corev1.PodSpec)) *appsv1.DaemonSet {
 	podSpec := nfdTopologyUpdaterPodSpec(kc, image, extraArgs)
+	for _, o := range options {
+		o(podSpec)
+	}
 	return newDaemonSet("nfd-topology-updater", podSpec)
+}
+
+func SpecWithConfigMap(cmName, volumeName, mountPath string) func(spec *corev1.PodSpec) {
+	return func(spec *corev1.PodSpec) {
+		spec.Volumes = append(spec.Volumes,
+			corev1.Volume{
+				Name: volumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cmName,
+						},
+					},
+				},
+			})
+		cnt := &spec.Containers[0]
+		cnt.VolumeMounts = append(cnt.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      volumeName,
+				ReadOnly:  true,
+				MountPath: mountPath,
+			})
+	}
 }
 
 // newDaemonSet provide the new daemon set

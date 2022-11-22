@@ -18,6 +18,8 @@ package topologyupdater
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -32,6 +34,7 @@ import (
 	pb "sigs.k8s.io/node-feature-discovery/pkg/topologyupdater"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
+	"sigs.k8s.io/yaml"
 )
 
 // Args are the command line arguments
@@ -40,6 +43,12 @@ type Args struct {
 	NoPublish      bool
 	Oneshot        bool
 	KubeConfigFile string
+	ConfigFile     string
+}
+
+// NFDConfig contains the configuration settings of NFDTopologyUpdater.
+type NFDConfig struct {
+	ExcludeList map[string][]string
 }
 
 type NfdTopologyUpdater interface {
@@ -59,6 +68,8 @@ type nfdTopologyUpdater struct {
 	certWatch           *utils.FsWatcher
 	client              pb.NodeTopologyClient
 	stop                chan struct{} // channel for signaling stop
+	configFilePath      string
+	config              *NFDConfig
 }
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
@@ -75,7 +86,11 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, pol
 		nodeInfo: &staticNodeInfo{
 			tmPolicy: policy,
 		},
-		stop: make(chan struct{}, 1),
+		stop:   make(chan struct{}, 1),
+		config: &NFDConfig{},
+	}
+	if args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
 	return nfd, nil
 }
@@ -99,6 +114,9 @@ func (w *nfdTopologyUpdater) Run() error {
 		}
 		kubeApihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
 	}
+	if err := w.configure(); err != nil {
+		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
+	}
 
 	var resScan resourcemonitor.ResourcesScanner
 
@@ -113,7 +131,8 @@ func (w *nfdTopologyUpdater) Run() error {
 	// zonesChannel := make(chan v1alpha1.ZoneList)
 	var zones v1alpha1.ZoneList
 
-	resAggr, err := resourcemonitor.NewResourcesAggregator(podResClient)
+	excludeList := resourcemonitor.NewExcludeResourceList(w.config.ExcludeList, nfdclient.NodeName())
+	resAggr, err := resourcemonitor.NewResourcesAggregator(podResClient, excludeList)
 	if err != nil {
 		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
@@ -243,5 +262,29 @@ func advertiseNodeTopology(client pb.NodeTopologyClient, zoneInfo v1alpha1.ZoneL
 		return err
 	}
 
+	return nil
+}
+
+func (w *nfdTopologyUpdater) configure() error {
+	if w.configFilePath == "" {
+		klog.Warningf("file path for nfd-topology-updater conf file is empty")
+		return nil
+	}
+
+	b, err := os.ReadFile(w.configFilePath)
+	if err != nil {
+		// config is optional
+		if os.IsNotExist(err) {
+			klog.Warningf("couldn't find conf file under %v", w.configFilePath)
+			return nil
+		}
+		return err
+	}
+
+	err = yaml.Unmarshal(b, w.config)
+	if err != nil {
+		return fmt.Errorf("failed to parse configuration file %q: %w", w.configFilePath, err)
+	}
+	klog.Infof("configuration file %q parsed:\n %v", w.configFilePath, w.config)
 	return nil
 }

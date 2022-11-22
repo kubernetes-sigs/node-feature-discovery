@@ -19,3 +19,4 @@ components:
 - ../../components/worker-config
 - ../../components/common
 - ../../components/topology-updater
+- ../../components/topology-updater-config

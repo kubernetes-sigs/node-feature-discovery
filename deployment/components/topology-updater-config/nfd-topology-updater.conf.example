@@ -1,0 +1,7 @@
+## key = node name, value = list of resources to be excluded.
+## use * to exclude from all nodes.
+## an example for how the exclude list should looks like
+#excludeList:
+#  node1: [cpu]
+#  node2: [memory, example/deviceA]
+#  *: [hugepages-2Mi]

@@ -68,6 +68,9 @@ spec:
           mountPath: "/etc/kubernetes/node-feature-discovery/certs"
           readOnly: true
         {{- end }}
+        - name: topology-updater-conf
+          mountPath: "/etc/kubernetes/node-feature-discovery"
+          readOnly: true
 
         resources:
       {{- toYaml .Values.topologyUpdater.resources | nindent 12 }}
@@ -91,11 +94,18 @@ spec:
           {{- else }}
           path: /var/lib/kubelet/pod-resources/kubelet.sock
           {{- end }}
+      - name: nfd-topology-updater-conf
+        configMap:
+          name: {{ include "node-feature-discovery.fullname" . }}-topology-updater-conf
+          items:
+            - key: nfd-topology-updater.conf
+              path: nfd-topology-updater.conf
       {{- if .Values.tls.enable }}
       - name: nfd-topology-updater-cert
         secret:
           secretName: nfd-topology-updater-cert
       {{- end }}
+
 
     {{- with .Values.topologyUpdater.nodeSelector }}
       nodeSelector:

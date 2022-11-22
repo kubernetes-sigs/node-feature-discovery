@@ -155,6 +155,8 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"NFD server address to connecto to.")
 	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
 		"Hostname expected from server certificate, useful in testing")
+	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf",
+		"Config file to use.")
 
 	klog.InitFlags(flagset)
 

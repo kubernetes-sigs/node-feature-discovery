@@ -16,3 +16,4 @@ resources:
 components:
 - ../../components/common
 - ../../components/topology-updater
+- ../../components/topology-updater-config

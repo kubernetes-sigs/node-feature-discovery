@@ -34,19 +34,22 @@ func TestArgsParse(t *testing.T) {
 			Convey("noPublish is set and args.sources is set to the default value", func() {
 				So(args.NoPublish, ShouldBeTrue)
 				So(args.Oneshot, ShouldBeTrue)
+				So(args.ConfigFile, ShouldEqual, "/etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf")
 				So(finderArgs.SleepInterval, ShouldEqual, 60*time.Second)
 				So(finderArgs.PodResourceSocketPath, ShouldEqual, "/var/lib/kubelet/pod-resources/kubelet.sock")
 			})
 		})
 
-		Convey("When valid args are specified for -kubelet-config-url and -sleep-interval,", func() {
+		Convey("When valid args are specified for -kubelet-config-url, -sleep-interval and -config,", func() {
 			args, finderArgs := parseArgs(flags,
 				"-kubelet-config-uri=file:///path/testconfig.yaml",
-				"-sleep-interval=30s")
+				"-sleep-interval=30s",
+				"-config=/path/nfd-topology-updater.conf")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.NoPublish, ShouldBeFalse)
 				So(args.Oneshot, ShouldBeFalse)
+				So(args.ConfigFile, ShouldEqual, "/path/nfd-topology-updater.conf")
 				So(finderArgs.SleepInterval, ShouldEqual, 30*time.Second)
 				So(finderArgs.KubeletConfigURI, ShouldEqual, "file:///path/testconfig.yaml")
 				So(finderArgs.PodResourceSocketPath, ShouldEqual, "/var/lib/kubelet/pod-resources/kubelet.sock")
