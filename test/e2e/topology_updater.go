@@ -71,8 +71,8 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 
 		Expect(testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
-		image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
-		f.PodClient().CreateSync(testutils.NFDMasterPod(image, false))
+		imageOpt := testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
+		f.PodClient().CreateSync(testutils.NFDMasterPod(imageOpt))
 
 		// Create nfd-master service
 		masterService, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
@@ -119,7 +119,8 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			kcfg := cfg.GetKubeletConfig()
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
-			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+			podSpecOpts := []testutils.PodSpecOption{testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
+			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, podSpecOpts...)
 		})
 
 		It("should fill the node resource topologies CR with the data", func() {
@@ -282,8 +283,11 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			kcfg := cfg.GetKubeletConfig()
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
-			opts := testutils.SpecWithConfigMap(cm.Name, cm.Name, "/etc/kubernetes/node-feature-discovery")
-			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{}, opts)
+			podSpecOpts := []testutils.PodSpecOption{
+				testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+				testutils.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
+			}
+			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, podSpecOpts...)
 		})
 
 		It("noderesourcetopology should not advertise the memory resource", func() {

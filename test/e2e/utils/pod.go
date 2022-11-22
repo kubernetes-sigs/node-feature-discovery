@@ -111,8 +111,10 @@ func DeletePodSyncByName(f *framework.Framework, podName string) {
 	f.PodClient().DeleteSync(podName, delOpts, framework.DefaultPodDeletionTimeout)
 }
 
+type PodSpecOption func(spec *corev1.PodSpec)
+
 // NFDMasterPod provide NFD master pod definition
-func NFDMasterPod(image string, onMasterNode bool) *corev1.Pod {
+func NFDMasterPod(opts ...PodSpecOption) *corev1.Pod {
 	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "nfd-master-",
@@ -122,7 +124,6 @@ func NFDMasterPod(image string, onMasterNode bool) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:            "node-feature-discovery",
-					Image:           image,
 					ImagePullPolicy: pullPolicy(),
 					Command:         []string{"nfd-master"},
 					Env: []corev1.EnvVar{
@@ -141,27 +142,20 @@ func NFDMasterPod(image string, onMasterNode bool) *corev1.Pod {
 			RestartPolicy:      corev1.RestartPolicyNever,
 		},
 	}
-	if onMasterNode {
-		p.Spec.NodeSelector = map[string]string{"node-role.kubernetes.io/master": ""}
-		p.Spec.Tolerations = []corev1.Toleration{
-			{
-				Key:      "node-role.kubernetes.io/master",
-				Operator: corev1.TolerationOpEqual,
-				Value:    "",
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-		}
+
+	for _, o := range opts {
+		o(&p.Spec)
 	}
 	return p
 }
 
 // NFDWorkerPod provides NFD worker pod definition
-func NFDWorkerPod(image string, extraArgs []string) *corev1.Pod {
+func NFDWorkerPod(opts ...PodSpecOption) *corev1.Pod {
 	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "nfd-worker-" + string(uuid.NewUUID()),
 		},
-		Spec: *nfdWorkerPodSpec(image, extraArgs),
+		Spec: *nfdWorkerPodSpec(opts...),
 	}
 
 	p.Spec.RestartPolicy = corev1.RestartPolicyNever
@@ -170,29 +164,58 @@ func NFDWorkerPod(image string, extraArgs []string) *corev1.Pod {
 }
 
 // NFDWorkerDaemonSet provides the NFD daemon set worker definition
-func NFDWorkerDaemonSet(image string, extraArgs []string) *appsv1.DaemonSet {
-	podSpec := nfdWorkerPodSpec(image, extraArgs)
-	return newDaemonSet("nfd-worker", podSpec)
+func NFDWorkerDaemonSet(opts ...PodSpecOption) *appsv1.DaemonSet {
+	return newDaemonSet("nfd-worker", nfdWorkerPodSpec(opts...))
 }
 
 // NFDTopologyUpdaterDaemonSet provides the NFD daemon set topology updater
-func NFDTopologyUpdaterDaemonSet(kc KubeletConfig, image string, extraArgs []string, options ...func(spec *corev1.PodSpec)) *appsv1.DaemonSet {
-	podSpec := nfdTopologyUpdaterPodSpec(kc, image, extraArgs)
-	for _, o := range options {
-		o(podSpec)
-	}
-	return newDaemonSet("nfd-topology-updater", podSpec)
+func NFDTopologyUpdaterDaemonSet(kc KubeletConfig, opts ...PodSpecOption) *appsv1.DaemonSet {
+	return newDaemonSet("nfd-topology-updater", nfdTopologyUpdaterPodSpec(kc, opts...))
 }
 
-func SpecWithConfigMap(cmName, volumeName, mountPath string) func(spec *corev1.PodSpec) {
+// SpecWithContainerImage returns a PodSpecOption that sets the image used by the first container.
+func SpecWithContainerImage(image string) PodSpecOption {
+	return func(spec *corev1.PodSpec) {
+		// NOTE: we might want to make the container number a parameter
+		cnt := &spec.Containers[0]
+		cnt.Image = image
+	}
+}
+
+// SpecWithContainerExtraArgs returns a PodSpecOption that adds extra args to the first container.
+func SpecWithContainerExtraArgs(args ...string) PodSpecOption {
+	return func(spec *corev1.PodSpec) {
+		// NOTE: we might want to make the container number a parameter
+		cnt := &spec.Containers[0]
+		cnt.Args = append(cnt.Args, args...)
+	}
+}
+
+// SpecWithMasterNodeSelector returns a PodSpecOption that modifies the pod to
+// be run on a control plane node of the cluster.
+func SpecWithMasterNodeSelector(args ...string) PodSpecOption {
+	return func(spec *corev1.PodSpec) {
+		spec.NodeSelector["node-role.kubernetes.io/control-plane"] = ""
+		spec.Tolerations = append(spec.Tolerations,
+			corev1.Toleration{
+				Key:      "node-role.kubernetes.io/control-plane",
+				Operator: corev1.TolerationOpEqual,
+				Value:    "",
+				Effect:   corev1.TaintEffectNoSchedule,
+			})
+	}
+}
+
+// SpecWithConfigMap returns a PodSpecOption that mounts a configmap to the first container.
+func SpecWithConfigMap(name, mountPath string) PodSpecOption {
 	return func(spec *corev1.PodSpec) {
 		spec.Volumes = append(spec.Volumes,
 			corev1.Volume{
-				Name: volumeName,
+				Name: name,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cmName,
+							Name: name,
 						},
 					},
 				},
@@ -200,7 +223,7 @@ func SpecWithConfigMap(cmName, volumeName, mountPath string) func(spec *corev1.P
 		cnt := &spec.Containers[0]
 		cnt.VolumeMounts = append(cnt.VolumeMounts,
 			corev1.VolumeMount{
-				Name:      volumeName,
+				Name:      name,
 				ReadOnly:  true,
 				MountPath: mountPath,
 			})
@@ -228,17 +251,16 @@ func newDaemonSet(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
 	}
 }
 
-func nfdWorkerPodSpec(image string, extraArgs []string) *corev1.PodSpec {
+func nfdWorkerPodSpec(opts ...PodSpecOption) *corev1.PodSpec {
 	yes := true
 	no := false
-	return &corev1.PodSpec{
+	p := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "node-feature-discovery",
-				Image:           image,
 				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-worker"},
-				Args:            append([]string{"-server=nfd-master-e2e:8080"}, extraArgs...),
+				Args:            []string{"-server=nfd-master-e2e:8080"},
 				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",
@@ -337,23 +359,26 @@ func nfdWorkerPodSpec(image string, extraArgs []string) *corev1.PodSpec {
 			},
 		},
 	}
+
+	for _, o := range opts {
+		o(p)
+	}
+	return p
 }
 
-func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []string) *corev1.PodSpec {
-	return &corev1.PodSpec{
+func nfdTopologyUpdaterPodSpec(kc KubeletConfig, opts ...PodSpecOption) *corev1.PodSpec {
+	p := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "node-topology-updater",
-				Image:           image,
 				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-topology-updater"},
-				Args: append([]string{
+				Args: []string{
 					"--kubelet-config-uri=file:///podresources/config.yaml",
 					"--podresources-socket=unix:///podresources/kubelet.sock",
 					"--sleep-interval=3s",
 					"--watch-namespace=rte",
-					"--server=nfd-master-e2e:8080",
-				}, extraArgs...),
+					"--server=nfd-master-e2e:8080"},
 				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",
@@ -420,6 +445,11 @@ func nfdTopologyUpdaterPodSpec(kc KubeletConfig, image string, extraArgs []strin
 			},
 		},
 	}
+
+	for _, o := range opts {
+		o(p)
+	}
+	return p
 }
 
 func newHostPathType(typ corev1.HostPathType) *corev1.HostPathType {
