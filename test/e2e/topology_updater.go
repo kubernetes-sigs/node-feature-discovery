@@ -260,21 +260,12 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 	})
 
 	When("topology-updater configure to exclude memory", func() {
-		var topologyUpdaterConfigMap *corev1.ConfigMap
-
 		BeforeEach(func() {
-			data := make(map[string]string)
-			data["nfd-topology-updater.conf"] = `excludeList:
+			cm := testutils.NewConfigMap("nfd-topology-updater-conf", "nfd-topology-updater.conf", `
+excludeList:
   '*': [memory]
-`
-			topologyUpdaterConfigMap = &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nfd-topology-updater-conf",
-				},
-				Data: data,
-			}
-
-			cm, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), topologyUpdaterConfigMap, metav1.CreateOptions{})
+`)
+			cm, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm, metav1.CreateOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
 			cfg, err := testutils.GetConfig()
