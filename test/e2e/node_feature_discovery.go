@@ -112,8 +112,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
-			image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
-			masterPod = f.PodClient().CreateSync(testutils.NFDMasterPod(image, false))
+			imageOpt := testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
+			masterPod = f.PodClient().CreateSync(testutils.NFDMasterPod(imageOpt))
 
 			// Create nfd-master service
 			nfdSvc, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
@@ -155,8 +155,11 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
-				image := fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
-				workerPod := testutils.NFDWorkerPod(image, []string{"-oneshot", "-label-sources=fake"})
+				podSpecOpts := []testutils.PodSpecOption{
+					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testutils.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
+				}
+				workerPod := testutils.NFDWorkerPod(podSpecOpts...)
 				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -202,7 +205,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				fConf := cfg.DefaultFeatures
 
 				By("Creating nfd-worker daemonset")
-				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
+				podSpecOpts := []testutils.PodSpecOption{testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
+				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -343,45 +347,12 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating nfd-worker daemonset with configmap mounted")
-				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), []string{})
-
-				// add configmap mount config
-				volumeName1 := "custom-configs-extra1"
-				volumeName2 := "custom-configs-extra2"
-				workerDS.Spec.Template.Spec.Volumes = append(workerDS.Spec.Template.Spec.Volumes,
-					corev1.Volume{
-						Name: volumeName1,
-						VolumeSource: corev1.VolumeSource{
-							ConfigMap: &corev1.ConfigMapVolumeSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cm1.Name,
-								},
-							},
-						},
-					},
-					corev1.Volume{
-						Name: volumeName2,
-						VolumeSource: corev1.VolumeSource{
-							ConfigMap: &corev1.ConfigMapVolumeSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cm2.Name,
-								},
-							},
-						},
-					},
-				)
-				workerDS.Spec.Template.Spec.Containers[0].VolumeMounts = append(workerDS.Spec.Template.Spec.Containers[0].VolumeMounts,
-					corev1.VolumeMount{
-						Name:      volumeName1,
-						ReadOnly:  true,
-						MountPath: filepath.Join(custom.Directory, "cm1"),
-					},
-					corev1.VolumeMount{
-						Name:      volumeName2,
-						ReadOnly:  true,
-						MountPath: filepath.Join(custom.Directory, "cm2"),
-					},
-				)
+				podSpecOpts := []testutils.PodSpecOption{
+					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testutils.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
+					testutils.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
+				}
+				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
 
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
@@ -449,8 +420,11 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 			It("custom labels from the NodeFeatureRule rules should be created", func() {
 				By("Creating nfd-worker daemonset")
-				workerArgs := []string{"-feature-sources=fake", "-label-sources=", "-sleep-interval=1s"}
-				workerDS := testutils.NFDWorkerDaemonSet(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag), workerArgs)
+				podSpecOpts := []testutils.PodSpecOption{
+					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testutils.SpecWithContainerExtraArgs("-feature-sources=fake", "-label-sources=", "-sleep-interval=1s"),
+				}
+				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
 				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
