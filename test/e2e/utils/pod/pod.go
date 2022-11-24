@@ -1,5 +1,5 @@
 /*
-Copyright 2018-2022 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package pod
 
 import (
 	"context"
@@ -35,6 +35,8 @@ import (
 	"k8s.io/kubectl/pkg/util/podutils"
 	"k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/utils/pointer"
+
+	"sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 )
 
 var pullIfNotPresent = flag.Bool("nfd.pull-if-not-present", false, "Pull Images if not present - not always")
@@ -43,8 +45,8 @@ const (
 	PauseImage = "registry.k8s.io/pause"
 )
 
-// GuarenteedSleeperPod makes a Guaranteed QoS class Pod object which long enough forever but requires `cpuLimit` exclusive CPUs.
-func GuaranteedSleeperPod(cpuLimit string) *corev1.Pod {
+// GuaranteedSleeper  makes a Guaranteed QoS class Pod object which long enough forever but requires `cpuLimit` exclusive CPUs.
+func GuaranteedSleeper(cpuLimit string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sleeper-gu-pod",
@@ -69,8 +71,8 @@ func GuaranteedSleeperPod(cpuLimit string) *corev1.Pod {
 	}
 }
 
-// BestEffortSleeperPod makes a Best Effort QoS class Pod object which sleeps long enough
-func BestEffortSleeperPod() *corev1.Pod {
+// BestEffortSleeper makes a Best Effort QoS class Pod object which sleeps long enough
+func BestEffortSleeper() *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sleeper-be-pod",
@@ -87,8 +89,8 @@ func BestEffortSleeperPod() *corev1.Pod {
 	}
 }
 
-// DeletePodsAsync concurrently deletes all the pods in the given name:pod_object mapping. Returns when the longer operation ends.
-func DeletePodsAsync(f *framework.Framework, podMap map[string]*corev1.Pod) {
+// DeleteAsync concurrently deletes all the pods in the given name:pod_object mapping. Returns when the longer operation ends.
+func DeleteAsync(f *framework.Framework, podMap map[string]*corev1.Pod) {
 	var wg sync.WaitGroup
 	for _, pod := range podMap {
 		wg.Add(1)
@@ -96,14 +98,14 @@ func DeletePodsAsync(f *framework.Framework, podMap map[string]*corev1.Pod) {
 			defer ginkgo.GinkgoRecover()
 			defer wg.Done()
 
-			DeletePodSyncByName(f, podName)
+			DeleteSyncByName(f, podName)
 		}(pod.Namespace, pod.Name)
 	}
 	wg.Wait()
 }
 
-// DeletePodSyncByName deletes the pod identified by `podName` in the current namespace
-func DeletePodSyncByName(f *framework.Framework, podName string) {
+// DeleteSyncByName deletes the pod identified by `podName` in the current namespace
+func DeleteSyncByName(f *framework.Framework, podName string) {
 	gp := int64(0)
 	delOpts := metav1.DeleteOptions{
 		GracePeriodSeconds: &gp,
@@ -111,10 +113,10 @@ func DeletePodSyncByName(f *framework.Framework, podName string) {
 	f.PodClient().DeleteSync(podName, delOpts, framework.DefaultPodDeletionTimeout)
 }
 
-type PodSpecOption func(spec *corev1.PodSpec)
+type SpecOption func(spec *corev1.PodSpec)
 
-// NFDMasterPod provide NFD master pod definition
-func NFDMasterPod(opts ...PodSpecOption) *corev1.Pod {
+// NFDMaster provide NFD master pod definition
+func NFDMaster(opts ...SpecOption) *corev1.Pod {
 	yes := true
 	no := false
 	p := &corev1.Pod{
@@ -163,13 +165,13 @@ func NFDMasterPod(opts ...PodSpecOption) *corev1.Pod {
 	return p
 }
 
-// NFDWorkerPod provides NFD worker pod definition
-func NFDWorkerPod(opts ...PodSpecOption) *corev1.Pod {
+// NFDWorker provides NFD worker pod definition
+func NFDWorker(opts ...SpecOption) *corev1.Pod {
 	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "nfd-worker-" + string(uuid.NewUUID()),
 		},
-		Spec: *nfdWorkerPodSpec(opts...),
+		Spec: *nfdWorkerSpec(opts...),
 	}
 
 	p.Spec.RestartPolicy = corev1.RestartPolicyNever
@@ -178,17 +180,17 @@ func NFDWorkerPod(opts ...PodSpecOption) *corev1.Pod {
 }
 
 // NFDWorkerDaemonSet provides the NFD daemon set worker definition
-func NFDWorkerDaemonSet(opts ...PodSpecOption) *appsv1.DaemonSet {
-	return newDaemonSet("nfd-worker", nfdWorkerPodSpec(opts...))
+func NFDWorkerDaemonSet(opts ...SpecOption) *appsv1.DaemonSet {
+	return newDaemonSet("nfd-worker", nfdWorkerSpec(opts...))
 }
 
 // NFDTopologyUpdaterDaemonSet provides the NFD daemon set topology updater
-func NFDTopologyUpdaterDaemonSet(kc KubeletConfig, opts ...PodSpecOption) *appsv1.DaemonSet {
-	return newDaemonSet("nfd-topology-updater", nfdTopologyUpdaterPodSpec(kc, opts...))
+func NFDTopologyUpdaterDaemonSet(kc utils.KubeletConfig, opts ...SpecOption) *appsv1.DaemonSet {
+	return newDaemonSet("nfd-topology-updater", nfdTopologyUpdaterSpec(kc, opts...))
 }
 
-// SpecWithContainerImage returns a PodSpecOption that sets the image used by the first container.
-func SpecWithContainerImage(image string) PodSpecOption {
+// SpecWithContainerImage returns a SpecOption that sets the image used by the first container.
+func SpecWithContainerImage(image string) SpecOption {
 	return func(spec *corev1.PodSpec) {
 		// NOTE: we might want to make the container number a parameter
 		cnt := &spec.Containers[0]
@@ -196,8 +198,8 @@ func SpecWithContainerImage(image string) PodSpecOption {
 	}
 }
 
-// SpecWithContainerExtraArgs returns a PodSpecOption that adds extra args to the first container.
-func SpecWithContainerExtraArgs(args ...string) PodSpecOption {
+// SpecWithContainerExtraArgs returns a SpecOption that adds extra args to the first container.
+func SpecWithContainerExtraArgs(args ...string) SpecOption {
 	return func(spec *corev1.PodSpec) {
 		// NOTE: we might want to make the container number a parameter
 		cnt := &spec.Containers[0]
@@ -205,9 +207,9 @@ func SpecWithContainerExtraArgs(args ...string) PodSpecOption {
 	}
 }
 
-// SpecWithMasterNodeSelector returns a PodSpecOption that modifies the pod to
+// SpecWithMasterNodeSelector returns a SpecOption that modifies the pod to
 // be run on a control plane node of the cluster.
-func SpecWithMasterNodeSelector(args ...string) PodSpecOption {
+func SpecWithMasterNodeSelector(args ...string) SpecOption {
 	return func(spec *corev1.PodSpec) {
 		spec.NodeSelector["node-role.kubernetes.io/control-plane"] = ""
 		spec.Tolerations = append(spec.Tolerations,
@@ -220,8 +222,8 @@ func SpecWithMasterNodeSelector(args ...string) PodSpecOption {
 	}
 }
 
-// SpecWithConfigMap returns a PodSpecOption that mounts a configmap to the first container.
-func SpecWithConfigMap(name, mountPath string) PodSpecOption {
+// SpecWithConfigMap returns a SpecOption that mounts a configmap to the first container.
+func SpecWithConfigMap(name, mountPath string) SpecOption {
 	return func(spec *corev1.PodSpec) {
 		spec.Volumes = append(spec.Volumes,
 			corev1.Volume{
@@ -265,7 +267,7 @@ func newDaemonSet(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
 	}
 }
 
-func nfdWorkerPodSpec(opts ...PodSpecOption) *corev1.PodSpec {
+func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 	yes := true
 	no := false
 	p := &corev1.PodSpec{
@@ -380,7 +382,7 @@ func nfdWorkerPodSpec(opts ...PodSpecOption) *corev1.PodSpec {
 	return p
 }
 
-func nfdTopologyUpdaterPodSpec(kc KubeletConfig, opts ...PodSpecOption) *corev1.PodSpec {
+func nfdTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.PodSpec {
 	p := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -472,10 +474,10 @@ func newHostPathType(typ corev1.HostPathType) *corev1.HostPathType {
 	return hostPathType
 }
 
-// WaitForPodsReady waits for the pods to become ready.
+// WaitForReady waits for the pods to become ready.
 // NOTE: copied from k8s v1.22 after which is was removed from there.
 // Convenient for checking that all pods of a daemonset are ready.
-func WaitForPodsReady(c clientset.Interface, ns, name string, minReadySeconds int) error {
+func WaitForReady(c clientset.Interface, ns, name string, minReadySeconds int) error {
 	const poll = 2 * time.Second
 	label := labels.SelectorFromSet(labels.Set(map[string]string{"name": name}))
 	options := metav1.ListOptions{LabelSelector: label.String()}
