@@ -32,7 +32,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
@@ -308,25 +307,18 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				targetLabelNameNegative := "nodename-test-negative"
 
 				// create 2 configmaps
-				data1 := make(map[string]string)
-				data1["custom1.conf"] = `
+				data1 := `
 - name: ` + targetLabelName + `
   matchOn:
   # default value is true
   - nodename:
     - ` + targetNodeName
 
-				cm1 := &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "custom-config-extra-" + string(uuid.NewUUID()),
-					},
-					Data: data1,
-				}
+				cm1 := testutils.NewConfigMap("custom-config-extra-1", "custom.conf", data1)
 				cm1, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm1, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				data2 := make(map[string]string)
-				data2["custom1.conf"] = `
+				data2 := `
 - name: ` + targetLabelNameWildcard + `
   value: ` + targetLabelValueWildcard + `
   matchOn:
@@ -337,12 +329,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
   - nodename:
     - "thisNameShouldNeverMatch"`
 
-				cm2 := &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "custom-config-extra-" + string(uuid.NewUUID()),
-					},
-					Data: data2,
-				}
+				cm2 := testutils.NewConfigMap("custom-config-extra-2", "custom.conf", data2)
 				cm2, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm2, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
