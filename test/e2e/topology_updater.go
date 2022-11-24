@@ -39,6 +39,7 @@ import (
 	admissionapi "k8s.io/pod-security-admission/api"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
+	testds "sigs.k8s.io/node-feature-discovery/test/e2e/utils/daemonset"
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
@@ -121,7 +122,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
 			podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
-			topologyUpdaterDaemonSet = testpod.NFDTopologyUpdaterDaemonSet(kcfg, podSpecOpts...)
+			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
 		It("should fill the node resource topologies CR with the data", func() {
@@ -279,7 +280,7 @@ excludeList:
 				testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
 				testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 			}
-			topologyUpdaterDaemonSet = testpod.NFDTopologyUpdaterDaemonSet(kcfg, podSpecOpts...)
+			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
 		It("noderesourcetopology should not advertise the memory resource", func() {

@@ -42,6 +42,7 @@ import (
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	"sigs.k8s.io/node-feature-discovery/source/custom"
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
+	testds "sigs.k8s.io/node-feature-discovery/test/e2e/utils/daemonset"
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
@@ -207,7 +208,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				By("Creating nfd-worker daemonset")
 				podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
-				workerDS := testpod.NFDWorkerDaemonSet(podSpecOpts...)
+				workerDS := testds.NFDWorker(podSpecOpts...)
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -341,7 +342,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					testpod.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
 					testpod.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
 				}
-				workerDS := testpod.NFDWorkerDaemonSet(podSpecOpts...)
+				workerDS := testds.NFDWorker(podSpecOpts...)
 
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
@@ -423,7 +424,7 @@ core:
 					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
 					testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 				}
-				workerDS := testpod.NFDWorkerDaemonSet(podSpecOpts...)
+				workerDS := testds.NFDWorker(podSpecOpts...)
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 

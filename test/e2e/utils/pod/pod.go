@@ -24,7 +24,6 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -179,16 +178,6 @@ func NFDWorker(opts ...SpecOption) *corev1.Pod {
 	return p
 }
 
-// NFDWorkerDaemonSet provides the NFD daemon set worker definition
-func NFDWorkerDaemonSet(opts ...SpecOption) *appsv1.DaemonSet {
-	return newDaemonSet("nfd-worker", nfdWorkerSpec(opts...))
-}
-
-// NFDTopologyUpdaterDaemonSet provides the NFD daemon set topology updater
-func NFDTopologyUpdaterDaemonSet(kc utils.KubeletConfig, opts ...SpecOption) *appsv1.DaemonSet {
-	return newDaemonSet("nfd-topology-updater", nfdTopologyUpdaterSpec(kc, opts...))
-}
-
 // SpecWithContainerImage returns a SpecOption that sets the image used by the first container.
 func SpecWithContainerImage(image string) SpecOption {
 	return func(spec *corev1.PodSpec) {
@@ -243,27 +232,6 @@ func SpecWithConfigMap(name, mountPath string) SpecOption {
 				ReadOnly:  true,
 				MountPath: mountPath,
 			})
-	}
-}
-
-// newDaemonSet provide the new daemon set
-func newDaemonSet(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
-	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name + "-" + string(uuid.NewUUID()),
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"name": name},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"name": name},
-				},
-				Spec: *podSpec,
-			},
-			MinReadySeconds: 5,
-		},
 	}
 }
 
@@ -382,7 +350,7 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 	return p
 }
 
-func nfdTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.PodSpec {
+func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.PodSpec {
 	p := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
