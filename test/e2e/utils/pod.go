@@ -115,6 +115,8 @@ type PodSpecOption func(spec *corev1.PodSpec)
 
 // NFDMasterPod provide NFD master pod definition
 func NFDMasterPod(opts ...PodSpecOption) *corev1.Pod {
+	yes := true
+	no := false
 	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "nfd-master-",
@@ -134,6 +136,18 @@ func NFDMasterPod(opts ...PodSpecOption) *corev1.Pod {
 									FieldPath: "spec.nodeName",
 								},
 							},
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+						Privileged:               &no,
+						RunAsNonRoot:             &yes,
+						ReadOnlyRootFilesystem:   &yes,
+						AllowPrivilegeEscalation: &no,
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
 				},
