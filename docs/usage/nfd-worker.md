@@ -23,9 +23,7 @@ Worker connects to the nfd-master service to advertise hardware features.
 When run as a daemonset, nodes are re-labeled at an default interval of 60s.
 This can be changed by using the
 [`core.sleepInterval`](../reference/worker-configuration-reference.html#coresleepinterval)
-config option (or
-[`-sleep-interval`](../reference/worker-commandline-reference.html#-sleep-interval)
-command line flag).
+config option.
 
 The worker configuration file is watched and re-read on every change which
 provides a simple mechanism of dynamic run-time reconfiguration. See

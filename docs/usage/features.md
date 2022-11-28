@@ -33,10 +33,14 @@ have the following format.
 feature.node.kubernetes.io/<feature> = <value>
 ```
 
-*Note: Consecutive runs of nfd-worker will update the labels on a
+> NOTE: Consecutive runs of nfd-worker will update the labels on a
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
-such as restricting discovered features with the -label-whitelist option.*
+such as restricting discovered features with the
+[`-label-whitelist`](../reference/master-commandline-reference#-label-whitelist)
+flag of nfd-master or
+[`core.labelWhiteList`](../reference/worker-configuration-reference#corelabelwhitelist)
+option of nfd-worker.
 
 ### CPU
 

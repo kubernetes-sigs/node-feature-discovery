@@ -88,9 +88,6 @@ type Args struct {
 type ConfigOverrideArgs struct {
 	NoPublish *bool
 
-	// Deprecated
-	LabelWhiteList *utils.RegexpVal
-	SleepInterval  *time.Duration
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
 }
@@ -415,14 +412,8 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		return fmt.Errorf("failed to parse -options: %s", err)
 	}
 
-	if w.args.Overrides.LabelWhiteList != nil {
-		c.Core.LabelWhiteList = *w.args.Overrides.LabelWhiteList
-	}
 	if w.args.Overrides.NoPublish != nil {
 		c.Core.NoPublish = *w.args.Overrides.NoPublish
-	}
-	if w.args.Overrides.SleepInterval != nil {
-		c.Core.SleepInterval = duration{*w.args.Overrides.SleepInterval}
 	}
 	if w.args.Overrides.FeatureSources != nil {
 		c.Core.FeatureSources = *w.args.Overrides.FeatureSources

@@ -84,9 +84,7 @@ labels, accordingly.
 is received from nfd-worker. That is, in practice rules are evaluated and
 labels for each node are created on intervals specified by the
 [`core.sleepInterval`](../reference/worker-configuration-reference#coresleepinterval)
-configuration option (or
-[`-sleep-interval`](../reference/worker-commandline-reference#-sleep-interval)
-command line flag) of nfd-worker instances. This means that modification or
+configuration option of nfd-worker instances. This means that modification or
 creation of `NodeFeatureRule` objects does not instantly cause the node labels
 to be updated.  Instead, the changes only come visible in node labels as
 nfd-worker instances send their labelling requests.

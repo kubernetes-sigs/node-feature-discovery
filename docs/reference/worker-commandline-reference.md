@@ -178,10 +178,6 @@ Example:
 nfd-worker -label-sources=kernel,system,local
 ```
 
-### -sources
-
-**DEPRECATED**: use [`-label-sources`](#-label-sources) instead.
-
 ### -no-publish
 
 The `-no-publish` flag disables all communication with the nfd-master, making
@@ -196,29 +192,6 @@ Example:
 nfd-worker -no-publish
 ```
 
-### -label-whitelist
-
-The `-label-whitelist` specifies a regular expression for filtering feature
-labels based on their name. Each label must match against the given reqular
-expression in order to be published.
-
-Note: The regular expression is only matches against the "basename" part of the
-label, i.e. to the part of the name after '/'. The label namespace is omitted.
-
-Note: This flag takes precedence over the `core.labelWhiteList` configuration
-file option.
-
-Default: *empty*
-
-Example:
-
-```bash
-nfd-worker -label-whitelist='.*cpuid\.'
-```
-
-**DEPRECATED**: you should use the `core.labelWhiteList` option in the
-configuration file, instead.
-
 ### -oneshot
 
 The `-oneshot` flag causes nfd-worker to exit after one pass of feature
@@ -231,26 +204,6 @@ Example:
 ```bash
 nfd-worker -oneshot -no-publish
 ```
-
-### -sleep-interval
-
-The `-sleep-interval` specifies the interval between feature re-detection (and
-node re-labeling). A non-positive value implies infinite sleep interval, i.e.
-no re-detection or re-labeling is done.
-
-Note: This flag takes precedence over the `core.sleepInterval` configuration
-file option.
-
-Default: 60s
-
-Example:
-
-```bash
-nfd-worker -sleep-interval=1h
-```
-
-**DEPRECATED**: you should use the `core.sleepInterval` option in the
-configuration file, instead.
 
 ### Logging
 
