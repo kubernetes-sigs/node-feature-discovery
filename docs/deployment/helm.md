@@ -114,7 +114,7 @@ We have introduced the following Chart parameters.
 | `master.serviceAccount.create` | bool | true                                    | Specifies whether a service account should be created
 | `master.serviceAccount.annotations` | dict | {}                                 | Annotations to add to the service account
 | `master.serviceAccount.name` | string |                                         | The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-| `master.rbac.create`        | bool    | true                                    | Specifies whether to create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master
+| `master.rbac.create`        | bool    | true                                    | Specifies whether to create [RBAC][rbac] configuration for nfd-master
 | `master.service.type`       | string  | ClusterIP                               | NFD master service type                                                                                                                  |
 | `master.service.port`       | integer | 8080                                    | NFD master service port                                                                                                                  |
 | `master.resources`          | dict    | {}                                      | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                    |
@@ -150,8 +150,7 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.serviceAccount.create`       | bool   | true    | Specifies whether the service account for topology updater should be created                                                                                                                          |
 | `topologyUpdater.serviceAccount.annotations`  | dict   | {}      | Annotations to add to the service account for topology updater                                                                                                                                        |
 | `topologyUpdater.serviceAccount.name`         | string |         | The name of the service account for topology updater to use. If not set and create is true, a name is generated using the fullname template and `-topology-updater` suffix                            |
-| `topologyUpdater.rbac`                        | dict   |         | RBAC [parameters](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) for the topology updater                                                                                             |
-| `topologyUpdater.rbac.create`                 | bool   | false   | Specifies whether the cluster role and binding for topology updater should be created                                                                                                                 |
+| `topologyUpdater.rbac.create`                 | bool   | false   | Specifies whether to create [RBAC][rbac] configuration for topology updater                                                                                                                           |
 | `topologyUpdater.kubeletConfigPath`           | string | ""      | Specifies the kubelet config host path                                                                                                                                                                |
 | `topologyUpdater.kubeletPodResourcesSockPath` | string | ""      | Specifies the kubelet sock path to read pod resources                                                                                                                                                 |
 | `topologyUpdater.updateInterval`              | string | 60s     | Time to sleep between CR updates. Non-positive value implies no CR update.                                                                                                                            |
@@ -164,3 +163,6 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.annotations`                 | dict   | {}      | Topology updater pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                    |
 | `topologyUpdater.affinity`                    | dict   | {}      | Topology updater pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                                                      |
 | `topologyUpdater.config`                      | dict   |         | [configuration](../reference/topology-updater-configuration-reference)                                                                                                                                |
+
+<!-- Links -->
+[rbac]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
