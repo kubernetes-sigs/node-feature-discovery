@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -175,7 +176,12 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("getting the initial topology information")
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (guaranteed QoS, nonintegral request)")
-			sleeperPod := testpod.GuaranteedSleeper("500m")
+			sleeperPod := testpod.GuaranteedSleeper(testpod.WithLimits(
+				corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("500m"),
+					// any random reasonable amount is fine
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				}))
 
 			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
@@ -221,7 +227,12 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("getting the initial topology information")
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming exclusive CPUs")
-			sleeperPod := testpod.GuaranteedSleeper("1000m")
+			sleeperPod := testpod.GuaranteedSleeper(testpod.WithLimits(
+				corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("1000m"),
+					// any random reasonable amount is fine
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				}))
 			// in case there is more than a single node in the cluster
 			// we need to set the node name, so we'll have certainty about
 			// which node we need to examine

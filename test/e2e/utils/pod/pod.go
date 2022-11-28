@@ -25,7 +25,6 @@ import (
 	"github.com/onsi/ginkgo/v2"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/uuid"
@@ -45,8 +44,8 @@ const (
 )
 
 // GuaranteedSleeper  makes a Guaranteed QoS class Pod object which long enough forever but requires `cpuLimit` exclusive CPUs.
-func GuaranteedSleeper(cpuLimit string) *corev1.Pod {
-	return &corev1.Pod{
+func GuaranteedSleeper(opts ...func(pod *corev1.Pod)) *corev1.Pod {
+	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sleeper-gu-pod",
 		},
@@ -54,19 +53,22 @@ func GuaranteedSleeper(cpuLimit string) *corev1.Pod {
 			RestartPolicy: corev1.RestartPolicyNever,
 			Containers: []corev1.Container{
 				{
-					Name:  "sleeper-gu-cnt",
-					Image: PauseImage,
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							// we use 1 core because that's the minimal meaningful quantity
-							corev1.ResourceName(corev1.ResourceCPU): resource.MustParse(cpuLimit),
-							// any random reasonable amount is fine
-							corev1.ResourceName(corev1.ResourceMemory): resource.MustParse("100Mi"),
-						},
-					},
+					Name:      "sleeper-gu-cnt",
+					Image:     PauseImage,
+					Resources: corev1.ResourceRequirements{},
 				},
 			},
 		},
+	}
+	for _, o := range opts {
+		o(p)
+	}
+	return p
+}
+
+func WithLimits(list corev1.ResourceList) func(p *corev1.Pod) {
+	return func(p *corev1.Pod) {
+		p.Spec.Containers[0].Resources.Limits = list
 	}
 }
 
