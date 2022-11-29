@@ -406,13 +406,23 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			})
 
 			It("custom labels from the NodeFeatureRule rules should be created", func() {
+				By("Creating nfd-worker config")
+				cm := testutils.NewConfigMap("nfd-worker-conf", "nfd-worker.conf", `
+core:
+  sleepInterval: "1s"
+  featureSources: ["fake"]
+  labelSources: []
+`)
+				cm, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating nfd-worker daemonset")
 				podSpecOpts := []testutils.PodSpecOption{
 					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
-					testutils.SpecWithContainerExtraArgs("-feature-sources=fake", "-label-sources=", "-sleep-interval=1s"),
+					testutils.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 				}
 				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
-				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for daemonset pods to be ready")
