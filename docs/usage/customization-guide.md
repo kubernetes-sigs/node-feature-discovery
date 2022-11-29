@@ -30,8 +30,8 @@ labeling:
 ## NodeFeatureRule custom resource
 
 `NodeFeatureRule` objects provide an easy way to create vendor or application
-specific labels. It uses a flexible rule-based mechanism for creating labels
-based on node feature.
+specific labels and taints. It uses a flexible rule-based mechanism for creating
+labels and optionally taints based on node features.
 
 ### A NodeFeatureRule example
 
@@ -76,6 +76,54 @@ re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 
 See [Label rule format](#label-rule-format) for detailed description of
 available fields and how to write labeling rules.
+### NodeFeatureRule tainting feature
+
+This feature is experimental.
+
+In some circumstances it is desirable keep nodes with specialized hardware away from
+running general workload and instead leave them for workloads that need the specialized
+hardware. One way to achieve it is to taint the nodes with the specialized hardware
+and add corresponding toleration to pods that require the special hardware. NFD
+offers node tainting functionality which is disabled by default. User can define
+one or more custom taints via the `taints` field of the NodeFeatureRule CR. The
+same rule-based mechanism is applied here and the NFD taints only rule matching nodes.
+
+To enable the tainting feature, `--enable-taints` flag needs to be set to `true`.
+If the flag `--enable-taints` is set to `false` (i.e. disabled), taints defined in
+the NodeFeatureRule CR have no effect and will be ignored by the NFD master.
+
+**NOTE**: Before enabling any taints, make sure to edit nfd-worker daemonset to
+tolerate the taints to be created. Otherwise, already running pods that do not
+tolerate the taint are evicted immediately from the node including the nfd-worker
+pod.
+
+Example NodeFeatureRule with custom taints:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-rule-object
+spec:
+  rules:
+    - name: "my sample taint rule"
+      taints:
+        - effect: PreferNoSchedule
+          key: "feature.node.kubernetes.io/special-node"
+          value: "true"
+        - effect: NoExecute
+          key: "feature.node.kubernetes.io/dedicated-node"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            dummy: {op: Exists}
+        - feature: kernel.config
+          matchExpressions:
+            X86: {op: In, value: ["y"]}
+```
+
+In this example, if the `my sample taint rule` rule is matched, `feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
+and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
 
 ### NodeFeatureRule controller
 
@@ -364,6 +412,15 @@ details.
 **NOTE** The `labels` field has priority over `labelsTemplate`, i.e.
 labels specified in the `labels` field will override anything
 originating from `labelsTemplate`.
+
+### Taints
+
+*taints* is a list of taint entries and each entry can have `key`, `value` and `effect`,
+where the `value` is optional. Effect could be `NoSchedule`, `PreferNoSchedule`
+or `NoExecute`. To learn more about the meaning of these effects, check out k8s [documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
+
+**NOTE** taints field is not available for the custom rules of nfd-worker and only
+for NodeFeatureRule objects.
 
 #### Vars
 
