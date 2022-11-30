@@ -37,10 +37,13 @@ import (
 	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	"sigs.k8s.io/node-feature-discovery/source/custom"
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
+	testds "sigs.k8s.io/node-feature-discovery/test/e2e/utils/daemonset"
+	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
 var (
@@ -111,8 +114,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
-			imageOpt := testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
-			masterPod = f.PodClient().CreateSync(testutils.NFDMasterPod(imageOpt))
+			imageOpt := testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
+			masterPod = f.PodClient().CreateSync(testpod.NFDMaster(imageOpt))
 
 			// Create nfd-master service
 			nfdSvc, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
@@ -154,11 +157,11 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
-				podSpecOpts := []testutils.PodSpecOption{
-					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
-					testutils.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
+				podSpecOpts := []testpod.SpecOption{
+					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
 				}
-				workerPod := testutils.NFDWorkerPod(podSpecOpts...)
+				workerPod := testpod.NFDWorker(podSpecOpts...)
 				workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -204,13 +207,13 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				fConf := cfg.DefaultFeatures
 
 				By("Creating nfd-worker daemonset")
-				podSpecOpts := []testutils.PodSpecOption{testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
-				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
+				podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
+				workerDS := testds.NFDWorker(podSpecOpts...)
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for daemonset pods to be ready")
-				Expect(testutils.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+				Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 				By("Getting node objects")
 				nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
@@ -334,18 +337,18 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating nfd-worker daemonset with configmap mounted")
-				podSpecOpts := []testutils.PodSpecOption{
-					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
-					testutils.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
-					testutils.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
+				podSpecOpts := []testpod.SpecOption{
+					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testpod.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
+					testpod.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
 				}
-				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
+				workerDS := testds.NFDWorker(podSpecOpts...)
 
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for daemonset pods to be ready")
-				Expect(testutils.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+				Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 				By("Getting target node and checking labels")
 				targetNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), targetNodeName, metav1.GetOptions{})
@@ -417,16 +420,16 @@ core:
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating nfd-worker daemonset")
-				podSpecOpts := []testutils.PodSpecOption{
-					testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
-					testutils.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
+				podSpecOpts := []testpod.SpecOption{
+					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 				}
-				workerDS := testutils.NFDWorkerDaemonSet(podSpecOpts...)
+				workerDS := testds.NFDWorker(podSpecOpts...)
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for daemonset pods to be ready")
-				Expect(testutils.WaitForPodsReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+				Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 				expected := map[string]string{
 					"feature.node.kubernetes.io/e2e-flag-test-1":      "true",

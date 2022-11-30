@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -39,6 +40,8 @@ import (
 	admissionapi "k8s.io/pod-security-admission/api"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
+	testds "sigs.k8s.io/node-feature-discovery/test/e2e/utils/daemonset"
+	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
 var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
@@ -71,8 +74,8 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 
 		Expect(testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
-		imageOpt := testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
-		f.PodClient().CreateSync(testutils.NFDMasterPod(imageOpt))
+		imageOpt := testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
+		f.PodClient().CreateSync(testpod.NFDMaster(imageOpt))
 
 		// Create nfd-master service
 		masterService, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
@@ -86,7 +89,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Waiting for daemonset pods to be ready")
-		Expect(testutils.WaitForPodsReady(f.ClientSet, f.Namespace.Name, topologyUpdaterDaemonSet.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+		Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, topologyUpdaterDaemonSet.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 		label := labels.SelectorFromSet(map[string]string{"name": topologyUpdaterDaemonSet.Spec.Template.Labels["name"]})
 		pods, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: label.String()})
@@ -119,8 +122,8 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			kcfg := cfg.GetKubeletConfig()
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
-			podSpecOpts := []testutils.PodSpecOption{testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
-			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, podSpecOpts...)
+			podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
+			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
 		It("should fill the node resource topologies CR with the data", func() {
@@ -133,12 +136,12 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("getting the initial topology information")
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (best-effort QoS)")
-			sleeperPod := testutils.BestEffortSleeperPod()
+			sleeperPod := testpod.BestEffortSleeper()
 
 			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
-			defer testutils.DeletePodsAsync(f, podMap)
+			defer testpod.DeleteAsync(f, podMap)
 
 			cooldown := 30 * time.Second
 			By(fmt.Sprintf("getting the updated topology - sleeping for %v", cooldown))
@@ -173,12 +176,17 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("getting the initial topology information")
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (guaranteed QoS, nonintegral request)")
-			sleeperPod := testutils.GuaranteedSleeperPod("500m")
+			sleeperPod := testpod.GuaranteedSleeper(testpod.WithLimits(
+				corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("500m"),
+					// any random reasonable amount is fine
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				}))
 
 			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
-			defer testutils.DeletePodsAsync(f, podMap)
+			defer testpod.DeleteAsync(f, podMap)
 
 			cooldown := 30 * time.Second
 			By(fmt.Sprintf("getting the updated topology - sleeping for %v", cooldown))
@@ -219,7 +227,12 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			By("getting the initial topology information")
 			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming exclusive CPUs")
-			sleeperPod := testutils.GuaranteedSleeperPod("1000m")
+			sleeperPod := testpod.GuaranteedSleeper(testpod.WithLimits(
+				corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("1000m"),
+					// any random reasonable amount is fine
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				}))
 			// in case there is more than a single node in the cluster
 			// we need to set the node name, so we'll have certainty about
 			// which node we need to examine
@@ -228,7 +241,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			podMap := make(map[string]*corev1.Pod)
 			pod := f.PodClient().CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
-			defer testutils.DeletePodsAsync(f, podMap)
+			defer testpod.DeleteAsync(f, podMap)
 
 			By("checking the changes in the updated topology")
 			var finalNodeTopo *v1alpha1.NodeResourceTopology
@@ -274,11 +287,11 @@ excludeList:
 			kcfg := cfg.GetKubeletConfig()
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
-			podSpecOpts := []testutils.PodSpecOption{
-				testutils.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
-				testutils.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
+			podSpecOpts := []testpod.SpecOption{
+				testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+				testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 			}
-			topologyUpdaterDaemonSet = testutils.NFDTopologyUpdaterDaemonSet(kcfg, podSpecOpts...)
+			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
 		It("noderesourcetopology should not advertise the memory resource", func() {
