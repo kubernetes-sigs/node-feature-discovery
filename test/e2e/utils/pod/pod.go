@@ -219,6 +219,14 @@ func SpecWithMasterNodeSelector(args ...string) SpecOption {
 	}
 }
 
+// SpecWithTolerations returns a SpecOption that modifies the pod to
+// be run on a node with NodeFeatureRule taints.
+func SpecWithTolerations(tolerations []corev1.Toleration) SpecOption {
+	return func(spec *corev1.PodSpec) {
+		spec.Tolerations = append(spec.Tolerations, tolerations...)
+	}
+}
+
 // SpecWithConfigMap returns a SpecOption that mounts a configmap to the first container.
 func SpecWithConfigMap(name, mountPath string) SpecOption {
 	return func(spec *corev1.PodSpec) {
