@@ -76,30 +76,18 @@ feature-dependent-pod   1/1     Running   0          23s   10.36.0.4   node-2   
 
 ## Additional Optional Installation Steps
 
-In order to deploy nfd-master and nfd-topology-updater daemons
-use `topologyupdater` overlay.
+### Deploy nfd-topology-updater
 
-Deploy with kustomize -- creates a new namespace, service and required RBAC
-rules and nfd-master and nfd-topology-updater daemons.
+In order to deploy nfd-master and nfd-topology-updater daemons
+use `topologyupdater` kustomize overlay.
 
 ```bash
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
 ```
 
-**NOTE:**
+### Verify nfd-topology-updater
 
-[PodResource API][podresource-api] is a prerequisite for nfd-topology-updater.
-
-Preceding Kubernetes v1.23, the `kubelet` must be started with the following flag:
-
-`--feature-gates=KubeletPodResourcesGetAllocatable=true`
-
-Starting Kubernetes v1.23, the `GetAllocatableResources` is enabled by default
-through `KubeletPodResourcesGetAllocatable` [feature gate][feature-gate].
-
-## Verify
-
-Wait until NFD master and NFD topologyupdater are running.
+Wait until NFD topologyupdater (and NFD master) are running.
 
 ```bash
 $ kubectl -n node-feature-discovery get ds,deploy
@@ -111,7 +99,7 @@ deployment.apps/nfd-master   1/1     1            1           17s
 
 ```
 
-Check that the NodeResourceTopology CR instances are created
+Check that the NodeResourceTopology objects are created
 
 ```bash
 $ kubectl get noderesourcetopologies.topology.node.k8s.io
@@ -119,7 +107,3 @@ NAME                 AGE
 kind-control-plane   23s
 kind-worker          23s
 ```
-
-<!-- Links -->
-[podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
-[feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates
