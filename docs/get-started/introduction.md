@@ -106,9 +106,13 @@ only created on nodes running nfd-master.
 
 NFD takes use of some Kubernetes Custom Resources.
 
-NFD-Master uses [NodeFeatureRule](../usage/custom-resources/nodefeaturerule)s
+[NodeFeature](../usage/custom-resources#nodefeature)s (EXPERIMENTAL)
+can be used for representing node features and requesting node labels to be
+generated.
+
+NFD-Master uses [NodeFeatureRule](../usage/custom-resources#nodefeaturerule)s
 for custom labeling of nodes.
 
 NFD-Topology-Updater creates
-[NodeResourceTopology](../usage/custom-resources/noderesourcetopology) objects
+[NodeResourceTopology](../usage/custom-resources#noderesourcetopology) objects
 that describe the hardware topology of node resources.

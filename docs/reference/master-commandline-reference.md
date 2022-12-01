@@ -139,9 +139,9 @@ nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
 
 ### -enable-nodefeature-api
 
-The `-enable-nodefeature-api` flag enables the NodeFeature CRD API for
-receiving feature requests. This will also automatically disable the gRPC
-interface.
+The `-enable-nodefeature-api` flag enables the
+[NodeFeature](../usage/custom-resources#nodefeature) CRD API for receiving
+feature requests. This will also automatically disable the gRPC interface.
 
 Default: false
 
@@ -180,8 +180,9 @@ nfd-master -no-publish
 ### -crd-controller
 
 The `-crd-controller` flag specifies whether the NFD CRD API controller is
-enabled or not. The controller is responsible for processing NodeFeature and
-NodeFeatureRule objects.
+enabled or not. The controller is responsible for processing
+[NodeFeature](../usage/custom-resources#nodefeature) and
+[NodeFeatureRule](../usage/custom-resources#nodefeaturerule) objects.
 
 Default: *true*
 
