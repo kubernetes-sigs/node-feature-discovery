@@ -74,6 +74,9 @@ Now, on X86 platforms the feature label appears after doing `modprobe dummy` on
 a system and correspondingly the label is removed after `rmmod dummy`. Note a
 re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 
+See [Label rule format](#label-rule-format) for detailed description of
+available fields and how to write labeling rules.
+
 ### NodeFeatureRule controller
 
 NFD-Master acts as the controller for `NodeFeatureRule` objects. It applies these
@@ -135,7 +138,7 @@ on the nfd-master command line.
 
 ### Hooks
 
-The `local` source executes hooks found in
+**DEPRECATED** The `local` source executes hooks found in
 `/etc/kubernetes/node-feature-discovery/source.d/`. The hook files must be
 executable and they are supposed to print all discovered features in `stdout`.
 With ELF binaries static linking is recommended as the selection of system
