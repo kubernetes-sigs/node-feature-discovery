@@ -25,6 +25,17 @@ option. The default sleep interval is set to 60s which is the value when no
 In addition, it can avoid examining specific allocated resources
 given a configuration of resources to exclude via [`-excludeList`](../reference/topology-updater-configuration-reference.md#excludelist)
 
+## Deployment Notes
+
+Kubelet [PodResource API][podresource-api] is a prerequisite for
+nfd-topology-updater to be able to run.
+
+Preceding Kubernetes v1.23, the `kubelet` must be started with
+`--feature-gates=KubeletPodResourcesGetAllocatable=true`.
+
+Starting from Kubernetes v1.23, the `KubeletPodResourcesGetAllocatable`
+[feature gate][feature-gate].  is enabled by default
+
 ## Topology-Updater Configuration
 
 NFD-Topology-Updater supports configuration through a configuration file. The
@@ -59,3 +70,7 @@ The (empty-by-default)
 [example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater-config/nfd-topology-updater.conf.example)
 contains all available configuration options and can be used as a reference
 for creating a configuration.
+
+<!-- Links -->
+[podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
+[feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates
