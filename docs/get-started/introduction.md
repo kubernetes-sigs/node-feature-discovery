@@ -102,49 +102,13 @@ command line flag affects the annotation names
 Unapplicable annotations are not created, i.e. for example master.version is
 only created on nodes running nfd-master.
 
-## NodeResourceTopology CR
+## Custom resources
 
-When run with NFD-Topology-Updater, NFD creates CR instances corresponding to
-node resource hardware topology such as:
+NFD takes use of some Kubernetes Custom Resources.
 
- ```yaml
-apiVersion: topology.node.k8s.io/v1alpha1
-kind: NodeResourceTopology
-metadata:
-  name: node1
-topologyPolicies: ["SingleNUMANodeContainerLevel"]
-zones:
-  - name: node-0
-    type: Node
-    resources:
-      - name: cpu
-        capacity: 20
-        allocatable: 16
-        available: 10
-      - name: vendor/nic1
-        capacity: 3
-        allocatable: 3
-        available: 3
-  - name: node-1
-    type: Node
-    resources:
-      - name: cpu
-        capacity: 30
-        allocatable: 30
-        available: 15
-      - name: vendor/nic2
-        capacity: 6
-        allocatable: 6
-        available: 6
-  - name: node-2
-    type: Node
-    resources:
-      - name: cpu
-        capacity: 30
-        allocatable: 30
-        available: 15
-      - name: vendor/nic1
-        capacity: 3
-        allocatable: 3
-        available: 3
- ```
+NFD-Master uses [NodeFeatureRule](../usage/custom-resources/nodefeaturerule)s
+for custom labeling of nodes.
+
+NFD-Topology-Updater creates
+[NodeResourceTopology](../usage/custom-resources/noderesourcetopology) objects
+that describe the hardware topology of node resources.

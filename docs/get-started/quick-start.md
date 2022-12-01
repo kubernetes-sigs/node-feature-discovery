@@ -120,65 +120,6 @@ kind-control-plane   23s
 kind-worker          23s
 ```
 
-## Show the CR instances
-
-```bash
-$ kubectl describe noderesourcetopologies.topology.node.k8s.io kind-control-plane
-Name:         kind-control-plane
-Namespace:    default
-Labels:       <none>
-Annotations:  <none>
-API Version:  topology.node.k8s.io/v1alpha1
-Kind:         NodeResourceTopology
-...
-Topology Policies:
-  SingleNUMANodeContainerLevel
-Zones:
-    Name:             node-0
-    Costs:
-      node-0:  10
-      node-1:  20
-    Resources:
-        Name:         Cpu
-        Allocatable:  3
-        Capacity:     3
-        Available:    3
-        Name:         vendor/nic1
-        Allocatable:  2
-        Capacity:     2
-        Available:    2
-        Name:         vendor/nic2
-        Allocatable:  2
-        Capacity:     2
-        Available:    2
-    Type:             Node
-    Name:             node-1
-    Costs:
-      node-0:  20
-      node-1:  10
-    Resources:
-        Name:         Cpu
-        Allocatable:  4
-        Capacity:     4
-        Available:    4
-        Name:         vendor/nic1
-        Allocatable:  2
-        Capacity:     2
-        Available:    2
-        Name:         vendor/nic2
-        Allocatable:  2
-        Capacity:     2
-        Available:    2
-    Type:             Node
-Events:               <none>
-```
-
-The CR instances created can be used to gain insight into the allocatable
-resources along with the granularity of those resources at a per-zone level
-(represented by node-0 and node-1 in the above example) or can be used by an
-external entity (e.g. topology-aware scheduler plugin) to take an action based
-on the gathered information.
-
 <!-- Links -->
 [podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
 [feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates
