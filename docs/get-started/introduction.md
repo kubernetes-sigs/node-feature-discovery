@@ -42,9 +42,9 @@ instance of nfd-worker is supposed to be running on each node of the cluster,
 NFD-Topology-Updater is a daemon responsible for examining allocated
 resources on a worker node to account for resources available to be allocated
 to new pod on a per-zone basis (where a zone can be a NUMA node). It then
-communicates the information to nfd-master which does the
-[NodeResourceTopology CR](#noderesourcetopology-cr) creation corresponding
-to all the nodes in the cluster. One instance of nfd-topology-updater is
+creates or updates a
+[NodeResourceTopology](../usage/custom-resources#noderesourcetopology) custom
+resource object specific to this node. One instance of nfd-topology-updater is
 supposed to be running on each node of the cluster.
 
 ## Feature Discovery

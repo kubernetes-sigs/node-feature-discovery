@@ -22,3 +22,11 @@ rules:
   - pods
   verbs:
   - get
+- apiGroups:
+  - topology.node.k8s.io
+  resources:
+  - noderesourcetopologies
+  verbs:
+  - create
+  - get
+  - update

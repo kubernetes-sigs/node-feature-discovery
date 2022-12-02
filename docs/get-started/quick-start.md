@@ -78,8 +78,8 @@ feature-dependent-pod   1/1     Running   0          23s   10.36.0.4   node-2   
 
 ### Deploy nfd-topology-updater
 
-In order to deploy nfd-master and nfd-topology-updater daemons
-use `topologyupdater` kustomize overlay.
+In order to deploy nfd-topology-updater use the `topologyupdater` kustomize
+overlay.
 
 ```bash
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
@@ -87,15 +87,12 @@ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deplo
 
 ### Verify nfd-topology-updater
 
-Wait until NFD topologyupdater (and NFD master) are running.
+Wait until nfd-topology-updater is running.
 
 ```bash
-$ kubectl -n node-feature-discovery get ds,deploy
+$ kubectl -n node-feature-discovery get ds
 NAME                                  DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
 daemonset.apps/nfd-topology-updater   2         2         2       2            2           <none>          5s
-
-NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/nfd-master   1/1     1            1           17s
 
 ```
 

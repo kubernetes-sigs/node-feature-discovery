@@ -19,8 +19,9 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,7 +37,6 @@ import (
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	"k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/kubelet"
-	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	admissionapi "k8s.io/pod-security-admission/api"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
@@ -72,17 +72,8 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		By("Creating the node resource topologies CRD")
 		Expect(testutils.CreateNodeResourceTopologies(extClient)).ToNot(BeNil())
 
+		By("Configuring RBAC")
 		Expect(testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
-
-		imageOpt := testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
-		f.PodClient().CreateSync(testpod.NFDMaster(imageOpt))
-
-		// Create nfd-master service
-		masterService, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
-		Expect(err).NotTo(HaveOccurred())
-
-		By("Waiting for the nfd-master service to be up")
-		Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, masterService.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 
 		By("Creating nfd-topology-updater daemonset")
 		topologyUpdaterDaemonSet, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), topologyUpdaterDaemonSet, metav1.CreateOptions{})
@@ -114,7 +105,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		}
 	})
 
-	Context("with single nfd-master pod", func() {
+	Context("with topology-updater daemonset running", func() {
 		BeforeEach(func() {
 			cfg, err := testutils.GetConfig()
 			Expect(err).ToNot(HaveOccurred())

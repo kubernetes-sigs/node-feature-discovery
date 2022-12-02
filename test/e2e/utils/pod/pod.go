@@ -367,8 +367,7 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 					"--kubelet-config-uri=file:///podresources/config.yaml",
 					"--podresources-socket=unix:///podresources/kubelet.sock",
 					"--sleep-interval=3s",
-					"--watch-namespace=rte",
-					"--server=nfd-master-e2e:8080"},
+					"--watch-namespace=rte"},
 				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",

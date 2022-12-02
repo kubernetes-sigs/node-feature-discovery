@@ -133,15 +133,6 @@ func createClusterRoleMaster(cs clientset.Interface) (*rbacv1.ClusterRole, error
 				Resources: []string{"nodefeaturerules"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"topology.node.k8s.io"},
-				Resources: []string{"noderesourcetopologies"},
-				Verbs: []string{
-					"create",
-					"get",
-					"update",
-				},
-			},
 		},
 	}
 	if *openShift {
@@ -171,6 +162,15 @@ func createClusterRoleTopologyUpdater(cs clientset.Interface) (*rbacv1.ClusterRo
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"topology.node.k8s.io"},
+				Resources: []string{"noderesourcetopologies"},
+				Verbs: []string{
+					"create",
+					"get",
+					"update",
+				},
 			},
 		},
 	}
