@@ -68,7 +68,7 @@ spec:
           mountPath: "/etc/kubernetes/node-feature-discovery/certs"
           readOnly: true
         {{- end }}
-        - name: topology-updater-conf
+        - name: nfd-topology-updater-conf
           mountPath: "/etc/kubernetes/node-feature-discovery"
           readOnly: true
 
