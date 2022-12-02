@@ -10,9 +10,6 @@ nameOverride: ""
 fullnameOverride: ""
 namespaceOverride: ""
 
-nodeFeatureRule:
-  createCRD: true
-
 master:
   instance:
   extraLabelNs: []
