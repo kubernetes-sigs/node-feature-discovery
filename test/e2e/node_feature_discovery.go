@@ -158,6 +158,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				// Launch nfd-worker
 				By("Creating a nfd worker pod")
 				podSpecOpts := []testpod.SpecOption{
+					testpod.SpecWithRestartPolicy(corev1.RestartPolicyNever),
 					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
 					testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
 				}

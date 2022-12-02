@@ -174,10 +174,14 @@ func NFDWorker(opts ...SpecOption) *corev1.Pod {
 		},
 		Spec: *nfdWorkerSpec(opts...),
 	}
-
-	p.Spec.RestartPolicy = corev1.RestartPolicyNever
-
 	return p
+}
+
+// SpecWithRestartPolicy returns a SpecOption that sets the pod restart policy
+func SpecWithRestartPolicy(restartpolicy corev1.RestartPolicy) SpecOption {
+	return func(spec *corev1.PodSpec) {
+		spec.RestartPolicy = restartpolicy
+	}
 }
 
 // SpecWithContainerImage returns a SpecOption that sets the image used by the first container.
