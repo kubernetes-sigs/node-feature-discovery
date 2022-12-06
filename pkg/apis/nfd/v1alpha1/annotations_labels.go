@@ -43,4 +43,7 @@ const (
 
 	// WorkerVersionAnnotation is the annotation that holds the version of nfd-worker running on the node
 	WorkerVersionAnnotation = AnnotationNs + "/worker.version"
+
+	// NodeTaintsAnnotation is the annotation that holds the taints that nfd-master set on the node
+	NodeTaintsAnnotation = AnnotationNs + "/taints"
 )

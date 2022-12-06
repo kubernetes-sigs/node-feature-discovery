@@ -39,10 +39,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	label "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+	controller "k8s.io/kubernetes/pkg/controller"
+	taintutils "k8s.io/kubernetes/pkg/util/taints"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
@@ -72,6 +74,7 @@ type Args struct {
 	LabelWhiteList         utils.RegexpVal
 	FeatureRulesController bool
 	NoPublish              bool
+	EnableTaints           bool
 	Port                   int
 	Prune                  bool
 	VerifyNodeName         bool
@@ -294,6 +297,13 @@ func (m *nfdMaster) prune() error {
 			return fmt.Errorf("failed to prune labels from node %q: %v", node.Name, err)
 		}
 
+		// Prune taints
+		err = m.setTaints(cli, []corev1.Taint{}, node.Name)
+
+		if err != nil {
+			return fmt.Errorf("failed to prune taints from node %q: %v", node.Name, err)
+		}
+
 		// Prune annotations
 		node, err := m.apihelper.GetNode(cli, node.Name)
 		if err != nil {
@@ -392,14 +402,13 @@ func verifyNodeName(cert *x509.Certificate, nodeName string) error {
 
 	err := cert.VerifyHostname(nodeName)
 	if err != nil {
-		return fmt.Errorf("Certificate %q not valid for node %q: %v", cert.Subject.CommonName, nodeName, err)
+		return fmt.Errorf("certificate %q not valid for node %q: %v", cert.Subject.CommonName, nodeName, err)
 	}
 	return nil
 }
 
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
-
 	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
 	if err != nil {
 		return &pb.SetLabelsReply{}, err
@@ -420,7 +429,9 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		// NOTE: we effectively mangle the request struct by not creating a deep copy of the map
 		rawLabels = r.Labels
 	}
-	for k, v := range m.crLabels(r) {
+	crLabels, crTaints := m.processNodeFeatureRule(r)
+
+	for k, v := range crLabels {
 		rawLabels[k] = v
 	}
 
@@ -440,8 +451,99 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 			klog.Errorf("failed to advertise labels: %v", err)
 			return &pb.SetLabelsReply{}, err
 		}
+
+		// set taints
+		var taints []corev1.Taint
+		if m.args.EnableTaints {
+			taints = crTaints
+		}
+
+		// Call setTaints even though the feature flag is disabled. This
+		// ensures that we delete NFD owned stale taints when flag got
+		// turned off.
+		err = m.setTaints(cli, taints, r.NodeName)
+		if err != nil {
+			return &pb.SetLabelsReply{}, err
+		}
 	}
 	return &pb.SetLabelsReply{}, nil
+}
+
+// setTaints sets node taints and annotations based on the taints passed via
+// nodeFeatureRule custom resorce. If empty list of taints is passed, currently
+// NFD owned taints and annotations are removed from the node.
+func (m *nfdMaster) setTaints(cli *kubernetes.Clientset, taints []corev1.Taint, nodeName string) error {
+	// Fetch the node object.
+	node, err := m.apihelper.GetNode(cli, nodeName)
+	if err != nil {
+		return err
+	}
+
+	// De-serialize the taints annotation into corev1.Taint type for comparision below.
+	oldTaints := []corev1.Taint{}
+	if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok {
+		sts := strings.Split(val, ",")
+		oldTaints, _, err = taintutils.ParseTaints(sts)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Delete old nfd-managed taints that are not found in the set of new taints.
+	taintsUpdated := false
+	newNode := node.DeepCopy()
+	for _, taintToRemove := range oldTaints {
+		if taintutils.TaintExists(taints, &taintToRemove) {
+			continue
+		}
+
+		newTaints, removed := taintutils.DeleteTaint(newNode.Spec.Taints, &taintToRemove)
+		if !removed {
+			klog.V(1).Infof("taint %q already deleted from node", taintToRemove.ToString())
+		}
+		taintsUpdated = taintsUpdated || removed
+		newNode.Spec.Taints = newTaints
+	}
+
+	// Add new taints found in the set of new taints.
+	for _, taint := range taints {
+		var updated bool
+		newNode, updated, err = taintutils.AddOrUpdateTaint(newNode, &taint)
+		if err != nil {
+			return fmt.Errorf("failed to add %q taint on node %v", taint, node.Name)
+		}
+		taintsUpdated = taintsUpdated || updated
+	}
+
+	if taintsUpdated {
+		err = controller.PatchNodeTaints(context.TODO(), cli, nodeName, node, newNode)
+		if err != nil {
+			return fmt.Errorf("failed to patch the node %v", node.Name)
+		}
+		klog.Infof("updated node %q taints", nodeName)
+	}
+
+	// Update node annotation that holds the taints managed by us
+	newAnnotations := map[string]string{}
+	if len(taints) > 0 {
+		// Serialize the new taints into string and update the annotation
+		// with that string.
+		taintStrs := make([]string, 0, len(taints))
+		for _, taint := range taints {
+			taintStrs = append(taintStrs, taint.ToString())
+		}
+		newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
+	}
+
+	patches := createPatches([]string{nfdv1alpha1.NodeTaintsAnnotation}, node.Annotations, newAnnotations, "/metadata/annotations")
+	if len(patches) > 0 {
+		err = m.apihelper.PatchNode(cli, node.Name, patches)
+		if err != nil {
+			return fmt.Errorf("error while patching node object: %v", err)
+		}
+		klog.V(1).Infof("patched node %q annotations for taints", nodeName)
+	}
+	return nil
 }
 
 func authorizeClient(c context.Context, checkNodeName bool, nodeName string) error {
@@ -493,20 +595,21 @@ func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopo
 	return &topologypb.NodeTopologyResponse{}, nil
 }
 
-func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
+func (m *nfdMaster) processNodeFeatureRule(r *pb.SetLabelsRequest) (map[string]string, []corev1.Taint) {
 	if m.nfdController == nil {
-		return nil
+		return nil, nil
 	}
 
-	l := make(map[string]string)
-	ruleSpecs, err := m.nfdController.ruleLister.List(labels.Everything())
+	labels := make(map[string]string)
+	var taints []corev1.Taint
+	ruleSpecs, err := m.nfdController.ruleLister.List(label.Everything())
 	sort.Slice(ruleSpecs, func(i, j int) bool {
 		return ruleSpecs[i].Name < ruleSpecs[j].Name
 	})
 
 	if err != nil {
 		klog.Errorf("failed to list NodeFeatureRule resources: %v", err)
-		return nil
+		return nil, nil
 	}
 
 	// Helper struct for rule processing
@@ -527,9 +630,9 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 				klog.Errorf("failed to process Rule %q: %v", rule.Name, err)
 				continue
 			}
-
+			taints = append(taints, ruleOut.Taints...)
 			for k, v := range ruleOut.Labels {
-				l[k] = v
+				labels[k] = v
 			}
 
 			// Feed back rule output to features map for subsequent rules to match
@@ -538,7 +641,7 @@ func (m *nfdMaster) crLabels(r *pb.SetLabelsRequest) map[string]string {
 		}
 	}
 
-	return l
+	return labels, taints
 }
 
 // updateNodeFeatures ensures the Kubernetes node object is up to date,

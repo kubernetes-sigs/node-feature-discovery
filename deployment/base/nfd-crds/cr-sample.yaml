@@ -7,6 +7,12 @@ spec:
     # The following feature demonstrates the capabilities of the matchFeatures and
     # matchAny matchers.
     - name: "my feature rule"
+      taints:
+        - effect: PreferNoSchedule
+          key: "feature.node.kubernetes.io/special-node"
+          value: "true"
+        - effect: NoExecute
+          key: "feature.node.kubernetes.io/dedicated-node"
       labels:
         "my-complex-feature": "my-value"
       # matchFeatures implements a logical AND over feature matchers.

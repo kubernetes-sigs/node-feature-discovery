@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -119,6 +120,10 @@ type Rule struct {
 	// optional value (<key>[=<value>]) separated by newlines.
 	// +optional
 	VarsTemplate string `json:"varsTemplate"`
+
+	// Taints to create if the rule matches.
+	// +optional
+	Taints []corev1.Taint `json:"taints,omitempty"`
 
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
