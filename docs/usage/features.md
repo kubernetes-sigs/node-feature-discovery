@@ -79,6 +79,7 @@ configuration options for details.
 | AVXVNNI            | AVX (VEX encoded) VNNI neural network instructions
 | AMXBF16            | Advanced Matrix Extension, tile multiplication operations on BFLOAT16 numbers
 | AMXINT8            | Advanced Matrix Extension, tile multiplication operations on 8-bit integers
+| AMXFP16            | Advanced Matrix Extension, tile multiplication operations on FP16 numbers
 | AMXTILE            | Advanced Matrix Extension, base tile architecture support
 | AVX512BF16         | AVX-512 BFLOAT16 instructions
 | AVX512BITALG       | AVX-512 bit Algorithms
@@ -99,6 +100,7 @@ configuration options for details.
 | ENQCMD             | Enqueue Command
 | GFNI               | Galois Field New Instructions
 | HYPERVISOR         | Running under hypervisor
+| PREFETCHI          | PREFETCHIT0/1 instructions
 | VAES               | AVX-512 vector AES instructions
 | VPCLMULQDQ         | Carry-less multiplication quadword
 
