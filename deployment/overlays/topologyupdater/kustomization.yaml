@@ -4,9 +4,7 @@ kind: Kustomization
 namespace: node-feature-discovery
 
 bases:
-- ../../base/rbac
 - ../../base/rbac-topologyupdater
-- ../../base/master
 - ../../base/noderesourcetopologies-crd
 - ../../base/topologyupdater-daemonset
 

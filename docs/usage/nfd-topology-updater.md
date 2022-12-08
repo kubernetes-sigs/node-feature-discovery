@@ -10,11 +10,11 @@ sort: 5
 ---
 
 NFD-Topology-Updater is preferably run as a Kubernetes DaemonSet. This assures
-re-examination (and CR updates) on regular intervals capturing changes in
-the allocated resources and hence the allocatable resources on a per zone
-basis. It makes sure that more CR instances are created as new nodes get
-added to the cluster. Topology-Updater connects to the nfd-master service
-to create CR instances corresponding to nodes.
+re-examination on regular intervals, capturing changes in the allocated
+resources and hence the allocatable resources on a per zone basis by updating
+[NodeResourceTopology](custom-resources#noderesourcetopology) custom resources.
+It makes sure that new NodeResourceTopology instances are created for each new
+nodes that get added to the cluster.
 
 When run as a daemonset, nodes are re-examined for the allocated resources
 (to determine the information of the allocatable resources on a per zone basis

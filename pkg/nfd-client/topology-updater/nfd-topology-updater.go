@@ -22,16 +22,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 
 	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	"golang.org/x/net/context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
-	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
-	pb "sigs.k8s.io/node-feature-discovery/pkg/topologyupdater"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
@@ -39,11 +39,12 @@ import (
 
 // Args are the command line arguments
 type Args struct {
-	nfdclient.Args
 	NoPublish      bool
 	Oneshot        bool
 	KubeConfigFile string
 	ConfigFile     string
+
+	Klog map[string]*utils.KlogFlagVal
 }
 
 // NFDConfig contains the configuration settings of NFDTopologyUpdater.
@@ -52,38 +53,32 @@ type NFDConfig struct {
 }
 
 type NfdTopologyUpdater interface {
-	nfdclient.NfdClient
-	Update(v1alpha1.ZoneList) error
+	Run() error
+	Stop()
 }
 
 type staticNodeInfo struct {
+	nodeName string
 	tmPolicy string
 }
 
 type nfdTopologyUpdater struct {
-	nfdclient.NfdBaseClient
 	nodeInfo            *staticNodeInfo
 	args                Args
+	apihelper           apihelper.APIHelpers
 	resourcemonitorArgs resourcemonitor.Args
-	certWatch           *utils.FsWatcher
-	client              pb.NodeTopologyClient
 	stop                chan struct{} // channel for signaling stop
 	configFilePath      string
 	config              *NFDConfig
 }
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
-func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy string) (NfdTopologyUpdater, error) {
-	base, err := nfdclient.NewNfdBaseClient(&args.Args)
-	if err != nil {
-		return nil, err
-	}
-
+func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy string) NfdTopologyUpdater {
 	nfd := &nfdTopologyUpdater{
-		NfdBaseClient:       base,
 		args:                args,
 		resourcemonitorArgs: resourcemonitorArgs,
 		nodeInfo: &staticNodeInfo{
+			nodeName: os.Getenv("NODE_NAME"),
 			tmPolicy: policy,
 		},
 		stop:   make(chan struct{}, 1),
@@ -92,27 +87,26 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, pol
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
-	return nfd, nil
+	return nfd
 }
 
-// Run nfdTopologyUpdater client. Returns if a fatal error is encountered, or, after
+// Run nfdTopologyUpdater. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the updater args.
 func (w *nfdTopologyUpdater) Run() error {
 	klog.Infof("Node Feature Discovery Topology Updater %s", version.Get())
-	klog.Infof("NodeName: '%s'", nfdclient.NodeName())
+	klog.Infof("NodeName: '%s'", w.nodeInfo.nodeName)
 
 	podResClient, err := podres.GetPodResClient(w.resourcemonitorArgs.PodResourceSocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to get PodResource Client: %w", err)
 	}
 
-	var kubeApihelper apihelper.K8sHelpers
 	if !w.args.NoPublish {
 		kubeconfig, err := apihelper.GetKubeconfig(w.args.KubeConfigFile)
 		if err != nil {
 			return err
 		}
-		kubeApihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
+		w.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
 	}
 	if err := w.configure(); err != nil {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
@@ -120,7 +114,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	var resScan resourcemonitor.ResourcesScanner
 
-	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, kubeApihelper)
+	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, w.apihelper)
 	if err != nil {
 		return fmt.Errorf("failed to initialize ResourceMonitor instance: %w", err)
 	}
@@ -131,19 +125,13 @@ func (w *nfdTopologyUpdater) Run() error {
 	// zonesChannel := make(chan v1alpha1.ZoneList)
 	var zones v1alpha1.ZoneList
 
-	excludeList := resourcemonitor.NewExcludeResourceList(w.config.ExcludeList, nfdclient.NodeName())
+	excludeList := resourcemonitor.NewExcludeResourceList(w.config.ExcludeList, w.nodeInfo.nodeName)
 	resAggr, err := resourcemonitor.NewResourcesAggregator(podResClient, excludeList)
 	if err != nil {
 		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
 
 	klog.V(2).Infof("resAggr is: %v\n", resAggr)
-
-	// Create watcher for TLS certificates
-	w.certWatch, err = utils.CreateFsWatcher(time.Second, w.args.CaFile, w.args.CertFile, w.args.KeyFile)
-	if err != nil {
-		return err
-	}
 
 	crTrigger := time.NewTicker(w.resourcemonitorArgs.SleepInterval)
 	for {
@@ -158,47 +146,22 @@ func (w *nfdTopologyUpdater) Run() error {
 			}
 			zones = resAggr.Aggregate(podResources)
 			utils.KlogDump(1, "After aggregating resources identified zones are", "  ", zones)
-			if err = w.Update(zones); err != nil {
-				return err
+			if !w.args.NoPublish {
+				if err = w.updateNodeResourceTopology(zones); err != nil {
+					return err
+				}
 			}
 
 			if w.args.Oneshot {
 				return nil
 			}
 
-		case <-w.certWatch.Events:
-			klog.Infof("TLS certificate update, renewing connection to nfd-master")
-			w.Disconnect()
-			if err := w.Connect(); err != nil {
-				return err
-			}
-
 		case <-w.stop:
 			klog.Infof("shutting down nfd-topology-updater")
-			w.certWatch.Close()
 			return nil
 		}
 	}
 
-}
-
-func (w *nfdTopologyUpdater) Update(zones v1alpha1.ZoneList) error {
-	// Connect to NFD master
-	err := w.Connect()
-	if err != nil {
-		return fmt.Errorf("failed to connect: %w", err)
-	}
-	defer w.Disconnect()
-
-	if w.client == nil {
-		return nil
-	}
-
-	err = advertiseNodeTopology(w.client, zones, w.nodeInfo.tmPolicy, nfdclient.NodeName())
-	if err != nil {
-		return fmt.Errorf("failed to advertise node topology: %w", err)
-	}
-	return nil
 }
 
 // Stop NFD Topology Updater
@@ -209,59 +172,39 @@ func (w *nfdTopologyUpdater) Stop() {
 	}
 }
 
-// connect creates a client connection to the NFD master
-func (w *nfdTopologyUpdater) Connect() error {
-	// Return a dummy connection in case of dry-run
-	if w.args.NoPublish {
-		return nil
-	}
-
-	if err := w.NfdBaseClient.Connect(); err != nil {
-		return err
-	}
-	w.client = pb.NewNodeTopologyClient(w.ClientConn())
-
-	return nil
-}
-
-// disconnect closes the connection to NFD master
-func (w *nfdTopologyUpdater) Disconnect() {
-	w.NfdBaseClient.Disconnect()
-	w.client = nil
-}
-
-// advertiseNodeTopology advertises the topology CR to a Kubernetes node
-// via the NFD server.
-func advertiseNodeTopology(client pb.NodeTopologyClient, zoneInfo v1alpha1.ZoneList, tmPolicy string, nodeName string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	zones := make([]*v1alpha1.Zone, len(zoneInfo))
-	// TODO: Avoid copying of data to allow returning the zone info
-	// directly in a compatible data type (i.e. []*v1alpha1.Zone).
-	for i, zone := range zoneInfo {
-		zones[i] = &v1alpha1.Zone{
-			Name:      zone.Name,
-			Type:      zone.Type,
-			Parent:    zone.Parent,
-			Resources: zone.Resources,
-			Costs:     zone.Costs,
-		}
-	}
-
-	topologyReq := &pb.NodeTopologyRequest{
-		Zones:            zones,
-		NfdVersion:       version.Get(),
-		NodeName:         nodeName,
-		TopologyPolicies: []string{tmPolicy},
-	}
-
-	utils.KlogDump(1, "Sending NodeTopologyRequest to nfd-master:", "  ", topologyReq)
-
-	_, err := client.UpdateNodeTopology(ctx, topologyReq)
+func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha1.ZoneList) error {
+	cli, err := w.apihelper.GetTopologyClient()
 	if err != nil {
 		return err
 	}
 
+	nrt, err := cli.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), w.nodeInfo.nodeName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		nrtNew := v1alpha1.NodeResourceTopology{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: w.nodeInfo.nodeName,
+			},
+			Zones:            zoneInfo,
+			TopologyPolicies: []string{w.nodeInfo.tmPolicy},
+		}
+
+		_, err := cli.TopologyV1alpha1().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create NodeResourceTopology: %w", err)
+		}
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	nrtMutated := nrt.DeepCopy()
+	nrtMutated.Zones = zoneInfo
+
+	nrtUpdated, err := cli.TopologyV1alpha1().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update NodeResourceTopology: %w", err)
+	}
+	utils.KlogDump(4, "CR instance updated resTopo:", "  ", nrtUpdated)
 	return nil
 }
 

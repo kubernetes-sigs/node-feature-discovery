@@ -29,7 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -37,8 +36,6 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	label "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -49,7 +46,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
-	topologypb "sigs.k8s.io/node-feature-discovery/pkg/topologyupdater"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
@@ -220,7 +216,6 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 	m.server = grpc.NewServer(serverOpts...)
 	pb.RegisterLabelerServer(m.server, m)
 	grpc_health_v1.RegisterHealthServer(m.server, health.NewServer())
-	topologypb.RegisterNodeTopologyServer(m.server, m)
 	klog.Infof("gRPC server serving on port: %d", m.args.Port)
 
 	// Run gRPC server
@@ -574,27 +569,6 @@ func authorizeClient(c context.Context, checkNodeName bool, nodeName string) err
 	return nil
 }
 
-func (m *nfdMaster) UpdateNodeTopology(c context.Context, r *topologypb.NodeTopologyRequest) (*topologypb.NodeTopologyResponse, error) {
-	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
-	if err != nil {
-		return &topologypb.NodeTopologyResponse{}, err
-	}
-	if klog.V(1).Enabled() {
-		klog.Infof("REQUEST Node: %s NFD-version: %s Topology Policy: %s", r.NodeName, r.NfdVersion, r.TopologyPolicies)
-		utils.KlogDump(1, "Zones received:", "  ", r.Zones)
-	} else {
-		klog.Infof("received CR updation request for node %q", r.NodeName)
-	}
-	if !m.args.NoPublish {
-		err := m.updateCR(r.NodeName, r.TopologyPolicies, r.Zones)
-		if err != nil {
-			klog.Errorf("failed to advertise NodeResourceTopology: %v", err)
-			return &topologypb.NodeTopologyResponse{}, err
-		}
-	}
-	return &topologypb.NodeTopologyResponse{}, nil
-}
-
 func (m *nfdMaster) processNodeFeatureRule(r *pb.SetLabelsRequest) (map[string]string, []corev1.Taint) {
 	if m.nfdController == nil {
 		return nil, nil
@@ -804,60 +778,6 @@ func stringToNsNames(cslist, ns string) []string {
 		}
 	}
 	return names
-}
-
-func modifyCR(topoUpdaterZones []*v1alpha1.Zone) []v1alpha1.Zone {
-	zones := make([]v1alpha1.Zone, len(topoUpdaterZones))
-	// TODO: Avoid copying of data to allow returning the zone info
-	// directly in a compatible data type (i.e. []*v1alpha1.Zone).
-	for i, zone := range topoUpdaterZones {
-		zones[i] = v1alpha1.Zone{
-			Name:      zone.Name,
-			Type:      zone.Type,
-			Parent:    zone.Parent,
-			Costs:     zone.Costs,
-			Resources: zone.Resources,
-		}
-	}
-	return zones
-}
-
-func (m *nfdMaster) updateCR(hostname string, tmpolicy []string, topoUpdaterZones []*v1alpha1.Zone) error {
-	cli, err := m.apihelper.GetTopologyClient()
-	if err != nil {
-		return err
-	}
-
-	zones := modifyCR(topoUpdaterZones)
-
-	nrt, err := cli.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), hostname, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		nrtNew := v1alpha1.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: hostname,
-			},
-			Zones:            zones,
-			TopologyPolicies: tmpolicy,
-		}
-
-		_, err := cli.TopologyV1alpha1().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to create v1alpha1.NodeResourceTopology!:%w", err)
-		}
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	nrtMutated := nrt.DeepCopy()
-	nrtMutated.Zones = zones
-
-	nrtUpdated, err := cli.TopologyV1alpha1().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to update v1alpha1.NodeResourceTopology!:%w", err)
-	}
-	utils.KlogDump(2, "CR instance updated resTopo:", "  ", nrtUpdated)
-	return nil
 }
 
 func (m *nfdMaster) instanceAnnotation(name string) string {

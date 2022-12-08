@@ -21,5 +21,4 @@ spec:
           imagePullPolicy: Always
           command:
             - "nfd-topology-updater"
-          args:
-            - "-server=nfd-master:8080"
+          args: []

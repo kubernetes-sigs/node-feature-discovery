@@ -93,10 +93,7 @@ func main() {
 	klog.Infof("detected kubelet Topology Manager policy %q", tmPolicy)
 
 	// Get new TopologyUpdater instance
-	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, tmPolicy)
-	if err != nil {
-		klog.Exitf("failed to initialize TopologyUpdater instance: %v", err)
-	}
+	instance := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, tmPolicy)
 
 	if err = instance.Run(); err != nil {
 		klog.Exit(err)
@@ -129,12 +126,6 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	args := &topology.Args{}
 	resourcemonitorArgs := &resourcemonitor.Args{}
 
-	flagset.StringVar(&args.CaFile, "ca-file", "",
-		"Root certificate for verifying connections")
-	flagset.StringVar(&args.CertFile, "cert-file", "",
-		"Certificate used for authenticating connections")
-	flagset.StringVar(&args.KeyFile, "key-file", "",
-		"Private key matching -cert-file")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Update once and exit")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,
@@ -151,10 +142,6 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"API auth token file path. It is used to request kubelet configz endpoint, only takes effect when kubelet-config-uri is https. Default to /var/run/secrets/kubernetes.io/serviceaccount/token.")
 	flagset.StringVar(&resourcemonitorArgs.PodResourceSocketPath, "podresources-socket", hostpath.VarDir.Path("lib/kubelet/pod-resources/kubelet.sock"),
 		"Pod Resource Socket path to use.")
-	flagset.StringVar(&args.Server, "server", "localhost:8080",
-		"NFD server address to connecto to.")
-	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
-		"Hostname expected from server certificate, useful in testing")
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf",
 		"Config file to use.")
 

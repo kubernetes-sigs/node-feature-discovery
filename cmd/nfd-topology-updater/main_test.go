@@ -87,16 +87,10 @@ func TestArgsParse(t *testing.T) {
 				"-no-publish",
 				"-sleep-interval=30s",
 				"-kubelet-config-uri=file:///path/testconfig.yaml",
-				"-podresources-socket=/path/testkubelet.sock",
-				"-ca-file=ca",
-				"-cert-file=crt",
-				"-key-file=key")
+				"-podresources-socket=/path/testkubelet.sock")
 
 			Convey("-no-publish is set and args.sources is set to appropriate values", func() {
 				So(args.NoPublish, ShouldBeTrue)
-				So(args.CaFile, ShouldEqual, "ca")
-				So(args.CertFile, ShouldEqual, "crt")
-				So(args.KeyFile, ShouldEqual, "key")
 				So(finderArgs.SleepInterval, ShouldEqual, 30*time.Second)
 				So(finderArgs.KubeletConfigURI, ShouldEqual, "file:///path/testconfig.yaml")
 				So(finderArgs.PodResourceSocketPath, ShouldEqual, "/path/testkubelet.sock")
