@@ -95,14 +95,15 @@ type ConfigOverrideArgs struct {
 type nfdWorker struct {
 	clientcommon.NfdBaseClient
 
-	args           Args
-	certWatch      *utils.FsWatcher
-	configFilePath string
-	config         *NFDConfig
-	grpcClient     pb.LabelerClient
-	stop           chan struct{} // channel for signaling stop
-	featureSources []source.FeatureSource
-	labelSources   []source.LabelSource
+	args                Args
+	certWatch           *utils.FsWatcher
+	configFilePath      string
+	config              *NFDConfig
+	kubernetesNamespace string
+	grpcClient          pb.LabelerClient
+	stop                chan struct{} // channel for signaling stop
+	featureSources      []source.FeatureSource
+	labelSources        []source.LabelSource
 }
 
 type duration struct {
@@ -119,9 +120,10 @@ func NewNfdWorker(args *Args) (clientcommon.NfdClient, error) {
 	nfd := &nfdWorker{
 		NfdBaseClient: base,
 
-		args:   *args,
-		config: &NFDConfig{},
-		stop:   make(chan struct{}, 1),
+		args:                *args,
+		config:              &NFDConfig{},
+		kubernetesNamespace: utils.GetKubernetesNamespace(),
+		stop:                make(chan struct{}, 1),
 	}
 
 	if args.ConfigFile != "" {
