@@ -21,7 +21,7 @@ import (
 	"os"
 	"regexp"
 
-	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
+	e2elog "k8s.io/kubernetes/test/e2e/framework"
 
 	"sigs.k8s.io/yaml"
 )
