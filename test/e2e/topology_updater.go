@@ -23,6 +23,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -39,6 +40,7 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework/kubelet"
 	admissionapi "k8s.io/pod-security-admission/api"
 
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 	testds "sigs.k8s.io/node-feature-discovery/test/e2e/utils/daemonset"
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
@@ -97,16 +99,16 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	// TODO: replace with regular AfterEach once we have https://github.com/kubernetes/kubernetes/pull/111998 in
-	f.AddAfterEach("Node Feature Discovery topology updater CRD and RBAC removal", func(f *framework.Framework, failed bool) {
+	ginkgo.AfterEach(func() {
+		framework.Logf("Node Feature Discovery topology updater CRD and RBAC removal")
 		err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
 		if err != nil {
-			framework.Logf("failed to delete RBAC resources: %v", err)
+			framework.Failf("AfterEach: Failed to delete RBAC resources: %v", err)
 		}
 	})
 
 	Context("with topology-updater daemonset running", func() {
-		BeforeEach(func() {
+		ginkgo.BeforeEach(func() {
 			cfg, err := testutils.GetConfig()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -130,7 +132,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			sleeperPod := testpod.BestEffortSleeper()
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := f.PodClient().CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testpod.DeleteAsync(f, podMap)
 
@@ -175,7 +177,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 				}))
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := f.PodClient().CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testpod.DeleteAsync(f, podMap)
 
@@ -230,7 +232,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			sleeperPod.Spec.NodeName = topologyUpdaterNode.Name
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := f.PodClient().CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
 			podMap[pod.Name] = pod
 			defer testpod.DeleteAsync(f, podMap)
 

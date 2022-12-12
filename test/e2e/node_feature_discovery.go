@@ -115,7 +115,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
 			imageOpt := testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
-			masterPod = f.PodClient().CreateSync(testpod.NFDMaster(imageOpt))
+			masterPod = e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(imageOpt))
 
 			// Create nfd-master service
 			nfdSvc, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
