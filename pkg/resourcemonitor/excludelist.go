@@ -8,12 +8,13 @@ import (
 
 // ExcludeResourceList contains a list of resources to ignore during resources scan
 type ExcludeResourceList struct {
-	excludeList sets.String
+	excludeList sets.Set[string]
 }
 
 // NewExcludeResourceList returns new ExcludeList with values with set.String types
 func NewExcludeResourceList(resMap map[string][]string, nodeName string) ExcludeResourceList {
-	excludeList := make(sets.String)
+	excludeList := make(sets.Set[string])
+
 	for k, v := range resMap {
 		if k == nodeName || k == "*" {
 			excludeList.Insert(v...)

@@ -31,7 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubectl/pkg/util/podutils"
+
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	"k8s.io/utils/pointer"
 
 	"sigs.k8s.io/node-feature-discovery/test/e2e/utils"
@@ -111,7 +113,7 @@ func DeleteSyncByName(f *framework.Framework, podName string) {
 	delOpts := metav1.DeleteOptions{
 		GracePeriodSeconds: &gp,
 	}
-	f.PodClient().DeleteSync(podName, delOpts, framework.DefaultPodDeletionTimeout)
+	e2epod.NewPodClient(f).DeleteSync(podName, delOpts, e2epod.DefaultPodDeletionTimeout)
 }
 
 type SpecOption func(spec *corev1.PodSpec)
@@ -382,9 +384,9 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{"ALL"},
 					},
-					RunAsUser:                pointer.Int64Ptr(0),
-					ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
-					AllowPrivilegeEscalation: pointer.BoolPtr(false),
+					RunAsUser:                pointer.Int64(0),
+					ReadOnlyRootFilesystem:   pointer.Bool(true),
+					AllowPrivilegeEscalation: pointer.Bool(false),
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{

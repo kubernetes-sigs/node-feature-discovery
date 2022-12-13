@@ -46,7 +46,7 @@ func newNfdController(config *restclient.Config) *nfdController {
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 5*time.Minute)
 	ruleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
-	ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v added", key)

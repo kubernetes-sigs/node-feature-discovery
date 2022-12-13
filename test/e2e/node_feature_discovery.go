@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
-	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
+	e2elog "k8s.io/kubernetes/test/e2e/framework"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 
@@ -115,7 +115,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
 			imageOpt := testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
-			masterPod = f.PodClient().CreateSync(testpod.NFDMaster(imageOpt))
+			masterPod = e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(imageOpt))
 
 			// Create nfd-master service
 			nfdSvc, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
