@@ -155,7 +155,10 @@ func (m *nfdMaster) Run() error {
 			return err
 		}
 		klog.Info("starting nfd api controller")
-		m.nfdController = newNfdController(kubeconfig)
+		m.nfdController, err = newNfdController(kubeconfig)
+		if err != nil {
+			return fmt.Errorf("failed to initialize CRD controller: %w", err)
+		}
 	}
 
 	if !m.args.NoPublish {
