@@ -37,7 +37,7 @@ type nfdController struct {
 	stopChan chan struct{}
 }
 
-func newNfdController(config *restclient.Config) *nfdController {
+func newNfdController(config *restclient.Config) (*nfdController, error) {
 	c := &nfdController{
 		stopChan: make(chan struct{}, 1),
 	}
@@ -46,7 +46,7 @@ func newNfdController(config *restclient.Config) *nfdController {
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 5*time.Minute)
 	ruleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
-	_, _ = ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	if _, err := ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v added", key)
@@ -59,14 +59,16 @@ func newNfdController(config *restclient.Config) *nfdController {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v deleted", key)
 		},
-	})
+	}); err != nil {
+		return nil, err
+	}
 	informerFactory.Start(c.stopChan)
 
 	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
 
 	c.ruleLister = ruleInformer.Lister()
 
-	return c
+	return c, nil
 }
 
 func (c *nfdController) stop() {
