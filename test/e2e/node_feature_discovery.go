@@ -112,7 +112,7 @@ func cleanupCRDs(cli *nfdclient.Clientset) {
 }
 
 // Actual test suite
-var _ = SIGDescribe("devel", func() {
+var _ = SIGDescribe("Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	Context("when deploying a single nfd-master pod", Ordered, func() {
