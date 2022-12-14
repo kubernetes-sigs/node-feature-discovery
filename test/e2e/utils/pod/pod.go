@@ -271,6 +271,9 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 					RunAsNonRoot:             &yes,
 					ReadOnlyRootFilesystem:   &yes,
 					AllowPrivilegeEscalation: &no,
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -387,6 +390,9 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 					RunAsUser:                pointer.Int64(0),
 					ReadOnlyRootFilesystem:   pointer.Bool(true),
 					AllowPrivilegeEscalation: pointer.Bool(false),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
