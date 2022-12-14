@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -36,69 +37,104 @@ import (
 
 var packagePath string
 
-// CreateNodeFeatureRulesCRD creates the NodeFeatureRule CRD in the API server.
-func CreateNodeFeatureRulesCRD(cli extclient.Interface) (*apiextensionsv1.CustomResourceDefinition, error) {
-	crd, err := crdFromFile(filepath.Join(packagePath, "..", "..", "..", "deployment", "base", "nfd-crds", "nodefeaturerule-crd.yaml"))
+// CreateNfdCRDs creates the NodeFeatureRule CRD in the API server.
+func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDefinition, error) {
+	crds, err := crdsFromFile(filepath.Join(packagePath, "..", "..", "..", "deployment", "base", "nfd-crds", "nfd-api-crds.yaml"))
 	if err != nil {
 		return nil, err
 	}
 
-	// Delete existing CRD (if any) with this we also get rid of stale objects
-	err = cli.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to delete NodeFeatureRule CRD: %w", err)
+	newCRDs := make([]*apiextensionsv1.CustomResourceDefinition, len(crds))
+	for i, crd := range crds {
+		// Delete existing CRD (if any) with this we also get rid of stale objects
+		err = cli.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+		if err != nil && !errors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to delete NodeFeatureRule CRD: %w", err)
+		}
+		newCRDs[i], err = cli.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	return cli.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
+	return newCRDs, nil
 }
 
 // CreateNodeFeatureRuleFromFile creates a NodeFeatureRule object from a given file located under test data directory.
-func CreateNodeFeatureRuleFromFile(cli nfdclientset.Interface, filename string) error {
-	obj, err := nodeFeatureRuleFromFile(filepath.Join(packagePath, "..", "data", filename))
+func CreateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string) error {
+	objs, err := nodeFeatureRulesFromFile(filepath.Join(packagePath, "..", "data", filename))
 	if err != nil {
 		return err
 	}
-	_, err = cli.NfdV1alpha1().NodeFeatureRules().Create(context.TODO(), obj, metav1.CreateOptions{})
-	return err
+
+	for _, obj := range objs {
+		if _, err = cli.NfdV1alpha1().NodeFeatureRules().Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func apiObjFromFile(path string, decoder apiruntime.Decoder) (apiruntime.Object, error) {
+func apiObjsFromFile(path string, decoder apiruntime.Decoder) ([]apiruntime.Object, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	obj, _, err := decoder.Decode(data, nil, nil)
-	return obj, err
+	// TODO: find out a nicer way to decode multiple api objects from a single
+	// file (K8s must have that somewhere)
+	split := bytes.Split(data, []byte("---"))
+	objs := []apiruntime.Object{}
+
+	for _, slice := range split {
+		if len(slice) == 0 {
+			continue
+		}
+		obj, _, err := decoder.Decode(slice, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, obj)
+	}
+	return objs, err
 }
 
-// crdFromFile creates a CustomResourceDefinition API object from a file.
-func crdFromFile(path string) (*apiextensionsv1.CustomResourceDefinition, error) {
-	obj, err := apiObjFromFile(path, scheme.Codecs.UniversalDeserializer())
+// crdsFromFile creates a CustomResourceDefinition API object from a file.
+func crdsFromFile(path string) ([]*apiextensionsv1.CustomResourceDefinition, error) {
+	objs, err := apiObjsFromFile(path, scheme.Codecs.UniversalDeserializer())
 	if err != nil {
 		return nil, err
 	}
 
-	crd, ok := obj.(*apiextensionsv1.CustomResourceDefinition)
-	if !ok {
-		return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
+	crds := make([]*apiextensionsv1.CustomResourceDefinition, len(objs))
+
+	for i, obj := range objs {
+		var ok bool
+		crds[i], ok = obj.(*apiextensionsv1.CustomResourceDefinition)
+		if !ok {
+			return nil, fmt.Errorf("unexpected type %T when reading %q", obj, path)
+		}
 	}
 
-	return crd, nil
+	return crds, nil
 }
 
-func nodeFeatureRuleFromFile(path string) (*nfdv1alpha1.NodeFeatureRule, error) {
-	obj, err := apiObjFromFile(path, nfdscheme.Codecs.UniversalDeserializer())
+func nodeFeatureRulesFromFile(path string) ([]*nfdv1alpha1.NodeFeatureRule, error) {
+	objs, err := apiObjsFromFile(path, nfdscheme.Codecs.UniversalDeserializer())
 	if err != nil {
 		return nil, err
 	}
 
-	crd, ok := obj.(*nfdv1alpha1.NodeFeatureRule)
-	if !ok {
-		return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
+	crs := make([]*nfdv1alpha1.NodeFeatureRule, len(objs))
+
+	for i, obj := range objs {
+		var ok bool
+		crs[i], ok = obj.(*nfdv1alpha1.NodeFeatureRule)
+		if !ok {
+			return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
+		}
 	}
 
-	return crd, nil
+	return crs, nil
 }
 
 func init() {
