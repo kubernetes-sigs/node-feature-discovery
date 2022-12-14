@@ -259,7 +259,9 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 
 // nfdAPIUpdateHandler handles events from the nfd API controller.
 func (m *nfdMaster) nfdAPIUpdateHandler() {
-	updateAll := false
+	// We want to unconditionally update all nodes at startup if gRPC is
+	// disabled (i.e. NodeFeature API is enabled)
+	updateAll := m.args.EnableNodeFeatureApi
 	updateNodes := make(map[string]struct{})
 	rateLimit := time.After(time.Second)
 	for {
