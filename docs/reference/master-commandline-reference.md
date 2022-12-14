@@ -177,19 +177,23 @@ Example:
 nfd-master -no-publish
 ```
 
-### -featurerules-controller
+### -crd-controller
 
-The `-featurerules-controller` flag controlers the processing of
-NodeFeatureRule objects, effectively enabling/disabling labels from these
-custom labeling rules.
+The `-crd-controller` flag specifies whether the NFD CRD API controller is
+enabled or not. The controller is responsible for processing NodeFeature and
+NodeFeatureRule objects.
 
 Default: *true*
 
 Example:
 
 ```bash
-nfd-master -featurerules-controller=false
+nfd-master -crd-controller=false
 ```
+
+### -featurerules-controller
+
+**DEPRECATED**: use [`-crd-controller`](#-crd-controller) instead.
 
 ### -label-whitelist
 

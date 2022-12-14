@@ -87,11 +87,14 @@ spec:
             {{- if .Values.master.resourceLabels | empty | not }}
             - "--resource-labels={{- join "," .Values.master.resourceLabels }}"
             {{- end }}
+            {{- if .Values.master.crdController | kindIs "invalid" | not }}
+            - "-crd-controller={{ .Values.master.crdController }}"
+            {{- else }}
+            ## By default, disable crd controller for other than the default instances
+            - "-featurerules-controller={{ .Values.master.instance | empty }}"
+            {{- end }}
             {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
             - "-featurerules-controller={{ .Values.master.featureRulesController }}"
-            {{- else }}
-            ## By default, disable NodeFeatureRules controller for other than the default instances
-            - "-featurerules-controller={{ .Values.master.instance | empty }}"
             {{- end }}
     {{- if .Values.tls.enable }}
             - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"

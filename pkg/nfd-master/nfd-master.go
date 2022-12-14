@@ -62,21 +62,21 @@ type Annotations map[string]string
 
 // Args holds command line arguments
 type Args struct {
-	CaFile                 string
-	CertFile               string
-	ExtraLabelNs           utils.StringSetVal
-	Instance               string
-	KeyFile                string
-	Kubeconfig             string
-	LabelWhiteList         utils.RegexpVal
-	FeatureRulesController bool
-	EnableNodeFeatureApi   bool
-	NoPublish              bool
-	EnableTaints           bool
-	Port                   int
-	Prune                  bool
-	VerifyNodeName         bool
-	ResourceLabels         utils.StringSetVal
+	CaFile               string
+	CertFile             string
+	ExtraLabelNs         utils.StringSetVal
+	Instance             string
+	KeyFile              string
+	Kubeconfig           string
+	LabelWhiteList       utils.RegexpVal
+	CrdController        bool
+	EnableNodeFeatureApi bool
+	NoPublish            bool
+	EnableTaints         bool
+	Port                 int
+	Prune                bool
+	VerifyNodeName       bool
+	ResourceLabels       utils.StringSetVal
 }
 
 type NfdMaster interface {
@@ -154,7 +154,7 @@ func (m *nfdMaster) Run() error {
 		return m.prune()
 	}
 
-	if m.args.FeatureRulesController {
+	if m.args.CrdController {
 		kubeconfig, err := m.getKubeconfig()
 		if err != nil {
 			return err
