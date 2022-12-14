@@ -47,8 +47,9 @@ import (
 )
 
 var (
-	dockerRepo = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag  = flag.String("nfd.tag", "master", "Docker tag to use")
+	dockerRepo  = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag   = flag.String("nfd.tag", "master", "Docker tag to use")
+	dockerImage = fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 )
 
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
@@ -114,7 +115,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
-			imageOpt := testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))
+			imageOpt := testpod.SpecWithContainerImage(dockerImage)
 			masterPod = e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(imageOpt))
 
 			// Create nfd-master service
@@ -159,7 +160,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				By("Creating a nfd worker pod")
 				podSpecOpts := []testpod.SpecOption{
 					testpod.SpecWithRestartPolicy(corev1.RestartPolicyNever),
-					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testpod.SpecWithContainerImage(dockerImage),
 					testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
 				}
 				workerPod := testpod.NFDWorker(podSpecOpts...)
@@ -208,7 +209,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				fConf := cfg.DefaultFeatures
 
 				By("Creating nfd-worker daemonset")
-				podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
+				podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(dockerImage)}
 				workerDS := testds.NFDWorker(podSpecOpts...)
 				workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
@@ -339,7 +340,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				By("Creating nfd-worker daemonset with configmap mounted")
 				podSpecOpts := []testpod.SpecOption{
-					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testpod.SpecWithContainerImage(dockerImage),
 					testpod.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
 					testpod.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
 				}
@@ -424,7 +425,7 @@ core:
 
 				By("Creating nfd-worker daemonset")
 				podSpecOpts := []testpod.SpecOption{
-					testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+					testpod.SpecWithContainerImage(dockerImage),
 					testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 				}
 				workerDS := testds.NFDWorker(podSpecOpts...)

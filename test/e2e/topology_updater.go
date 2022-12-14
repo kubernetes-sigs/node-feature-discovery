@@ -115,7 +115,7 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			kcfg := cfg.GetKubeletConfig()
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
-			podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag))}
+			podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(dockerImage)}
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
@@ -281,7 +281,7 @@ excludeList:
 			By(fmt.Sprintf("Using config (%#v)", kcfg))
 
 			podSpecOpts := []testpod.SpecOption{
-				testpod.SpecWithContainerImage(fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)),
+				testpod.SpecWithContainerImage(dockerImage),
 				testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 			}
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
