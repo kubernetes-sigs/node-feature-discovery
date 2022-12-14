@@ -96,21 +96,58 @@ func cleanupNode(cs clientset.Interface) {
 		}
 		Expect(err).NotTo(HaveOccurred())
 	}
+
+}
+
+func cleanupCRDs(cli *nfdclient.Clientset) {
+	// Drop NodeFeatureRule objects
+	nfrs, err := cli.NfdV1alpha1().NodeFeatureRules().List(context.TODO(), metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Deleting NodeFeatureRule objects from the cluster")
+	for _, nfr := range nfrs.Items {
+		err = cli.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), nfr.Name, metav1.DeleteOptions{})
+		Expect(err).NotTo(HaveOccurred())
+	}
 }
 
 // Actual test suite
-var _ = SIGDescribe("Node Feature Discovery", func() {
+var _ = SIGDescribe("devel", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
-	Context("when deploying a single nfd-master pod", func() {
-		var masterPod *corev1.Pod
+	Context("when deploying a single nfd-master pod", Ordered, func() {
+		var (
+			masterPod *corev1.Pod
+			crds      []*apiextensionsv1.CustomResourceDefinition
+			extClient *extclient.Clientset
+			nfdClient *nfdclient.Clientset
+		)
+
+		BeforeAll(func() {
+			// Create clients for apiextensions and our CRD api
+			extClient = extclient.NewForConfigOrDie(f.ClientConfig())
+			nfdClient = nfdclient.NewForConfigOrDie(f.ClientConfig())
+
+			By("Creating NFD CRDs")
+			var err error
+			crds, err = testutils.CreateNfdCRDs(extClient)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterAll(func() {
+			for _, crd := range crds {
+				err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
 
 		BeforeEach(func() {
 			err := testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Remove pre-existing stale annotations and labels
+			// Remove pre-existing stale annotations and labels etc and CRDs
 			cleanupNode(f.ClientSet)
+			cleanupCRDs(nfdClient)
 
 			// Launch nfd-master
 			By("Creating nfd master pod and nfd-master service")
@@ -141,6 +178,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 			Expect(testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
 			cleanupNode(f.ClientSet)
+			cleanupCRDs(nfdClient)
 		})
 
 		//
@@ -388,29 +426,6 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 		// Test NodeFeatureRule
 		//
 		Context("and nfd-worker and NodeFeatureRules objects deployed", func() {
-			var extClient *extclient.Clientset
-			var nfdClient *nfdclient.Clientset
-			var crds []*apiextensionsv1.CustomResourceDefinition
-
-			BeforeEach(func() {
-				// Create clients for apiextensions and our CRD api
-				extClient = extclient.NewForConfigOrDie(f.ClientConfig())
-				nfdClient = nfdclient.NewForConfigOrDie(f.ClientConfig())
-
-				// Create CRDs
-				By("Creating NFD CRDs")
-				var err error
-				crds, err = testutils.CreateNfdCRDs(extClient)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				for _, crd := range crds {
-					err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
-					Expect(err).NotTo(HaveOccurred())
-				}
-			})
-
 			It("custom labels from the NodeFeatureRule rules should be created", func() {
 				By("Creating nfd-worker config")
 				cm := testutils.NewConfigMap("nfd-worker-conf", "nfd-worker.conf", `
