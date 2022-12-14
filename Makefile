@@ -51,7 +51,7 @@ else
 endif
 HOSTMOUNT_PREFIX ?= /
 
-KUBECONFIG ?=
+KUBECONFIG ?= ${HOME}/.kube/config
 E2E_TEST_CONFIG ?=
 E2E_PULL_IF_NOT_PRESENT ?= false
 
