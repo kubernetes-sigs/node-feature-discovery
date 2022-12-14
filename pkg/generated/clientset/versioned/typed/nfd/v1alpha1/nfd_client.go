@@ -28,12 +28,17 @@ import (
 
 type NfdV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	NodeFeaturesGetter
 	NodeFeatureRulesGetter
 }
 
 // NfdV1alpha1Client is used to interact with features provided by the nfd.k8s-sigs.io group.
 type NfdV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *NfdV1alpha1Client) NodeFeatures(namespace string) NodeFeatureInterface {
+	return newNodeFeatures(c, namespace)
 }
 
 func (c *NfdV1alpha1Client) NodeFeatureRules() NodeFeatureRuleInterface {

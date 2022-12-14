@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1alpha1
 
+// NodeFeatureListerExpansion allows custom methods to be added to
+// NodeFeatureLister.
+type NodeFeatureListerExpansion interface{}
+
+// NodeFeatureNamespaceListerExpansion allows custom methods to be added to
+// NodeFeatureNamespaceLister.
+type NodeFeatureNamespaceListerExpansion interface{}
+
 // NodeFeatureRuleListerExpansion allows custom methods to be added to
 // NodeFeatureRuleLister.
 type NodeFeatureRuleListerExpansion interface{}

@@ -15,6 +15,7 @@ rules:
 - apiGroups:
   - nfd.k8s-sigs.io
   resources:
+  - nodefeatures
   - nodefeaturerules
   verbs:
   - get

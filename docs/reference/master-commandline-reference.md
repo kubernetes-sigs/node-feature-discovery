@@ -99,18 +99,6 @@ Example:
 nfd-master -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key -ca-file=/opt/nfd/ca.crt
 ```
 
-### -enable-taints
-
-The `-enable-taints` flag enables/disables node tainting feature of NFD.
-
-Default: *false*
-
-Example:
-
-```bash
-nfd-master -enable-taints=true
-```
-
 ### -key-file
 
 The `-key-file` is one of the three flags (together with `-ca-file` and
@@ -147,6 +135,32 @@ Example:
 ```bash
 nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
     -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
+```
+
+### -enable-nodefeature-api
+
+The `-enable-nodefeature-api` flag enables the NodeFeature CRD API for
+receiving feature requests. This will also automatically disable the gRPC
+interface.
+
+Default: false
+
+Example:
+
+```bash
+nfd-master -enable-nodefeature-api
+```
+
+### -enable-taints
+
+The `-enable-taints` flag enables/disables node tainting feature of NFD.
+
+Default: *false*
+
+Example:
+
+```bash
+nfd-master -enable-taints=true
 ```
 
 ### -no-publish

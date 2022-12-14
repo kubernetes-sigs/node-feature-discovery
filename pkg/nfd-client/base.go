@@ -49,6 +49,7 @@ type Args struct {
 	CaFile             string
 	CertFile           string
 	KeyFile            string
+	Kubeconfig         string
 	Server             string
 	ServerNameOverride string
 

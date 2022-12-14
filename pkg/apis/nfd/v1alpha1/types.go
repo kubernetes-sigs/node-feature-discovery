@@ -21,6 +21,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NodeFeatureList contains a list of NodeFeature objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NodeFeature `json:"items"`
+}
+
+// NodeFeature resource holds the features discovered for one node in the
+// cluster.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient
+type NodeFeature struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec NodeFeatureSpec `json:"spec"`
+}
+
+// NodeFeatureSpec describes a NodeFeature object.
+type NodeFeatureSpec struct {
+	// Features is the full "raw" features data that has been discovered.
+	Features Features `json:"features"`
+	// Labels is the set of node labels that are requested to be created.
+	// +optional
+	Labels map[string]string `json:"labels"`
+}
+
 // Features is the collection of all discovered features.
 //
 // +protobuf=true

@@ -27,10 +27,16 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	clientcommon "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -76,9 +82,10 @@ type Labels map[string]string
 type Args struct {
 	clientcommon.Args
 
-	ConfigFile string
-	Oneshot    bool
-	Options    string
+	ConfigFile           string
+	EnableNodeFeatureApi bool
+	Oneshot              bool
+	Options              string
 
 	Klog      map[string]*utils.KlogFlagVal
 	Overrides ConfigOverrideArgs
@@ -101,6 +108,7 @@ type nfdWorker struct {
 	config              *NFDConfig
 	kubernetesNamespace string
 	grpcClient          pb.LabelerClient
+	nfdClient           *nfdclient.Clientset
 	stop                chan struct{} // channel for signaling stop
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
@@ -150,6 +158,7 @@ func newDefaultConfig() *NFDConfig {
 func (w *nfdWorker) Run() error {
 	klog.Infof("Node Feature Discovery Worker %s", version.Get())
 	klog.Infof("NodeName: '%s'", clientcommon.NodeName())
+	klog.Infof("Kubernetes namespace: '%s'", w.kubernetesNamespace)
 
 	// Create watcher for config file and read initial configuration
 	configWatch, err := utils.CreateFsWatcher(time.Second, w.configFilePath)
@@ -185,9 +194,8 @@ func (w *nfdWorker) Run() error {
 
 			// Update the node with the feature labels.
 			if !w.config.Core.NoPublish {
-				err := w.advertiseFeatureLabels(labels)
-				if err != nil {
-					return fmt.Errorf("failed to advertise labels: %s", err.Error())
+				if err := w.advertiseFeatures(labels); err != nil {
+					return err
 				}
 			}
 
@@ -205,7 +213,7 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 			// Manage connection to master
-			if w.config.Core.NoPublish {
+			if w.config.Core.NoPublish || !w.args.EnableNodeFeatureApi {
 				w.GrpcDisconnect()
 			}
 
@@ -524,6 +532,22 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 	return labels, nil
 }
 
+// advertiseFeatures advertises the features of a Kubernetes node
+func (w *nfdWorker) advertiseFeatures(labels Labels) error {
+	if w.args.EnableNodeFeatureApi {
+		// Create/update NodeFeature CR object
+		if err := w.updateNodeFeatureObject(labels); err != nil {
+			return fmt.Errorf("failed to advertise features (via CRD API): %w", err)
+		}
+	} else {
+		// Create/update feature labels through gRPC connection to nfd-master
+		if err := w.advertiseFeatureLabels(labels); err != nil {
+			return fmt.Errorf("failed to advertise features (via gRPC): %w", err)
+		}
+	}
+	return nil
+}
+
 // advertiseFeatureLabels advertises the feature labels to a Kubernetes node
 // via the NFD server.
 func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
@@ -549,6 +573,85 @@ func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
 	}
 
 	return nil
+}
+
+// updateNodeFeatureObject creates/updates the node-specific NodeFeature custom resource.
+func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
+	cli, err := m.getNfdClient()
+	if err != nil {
+		return err
+	}
+	nodename := clientcommon.NodeName()
+	namespace := m.kubernetesNamespace
+
+	features := source.GetAllFeatures()
+
+	// TODO: we could implement some simple caching of the object, only get it
+	// every 10 minutes or so because nobody else should really be modifying it
+	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
+		klog.Infof("creating NodeFeature object %q", nodename)
+		nfr = &nfdv1alpha1.NodeFeature{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        nodename,
+				Annotations: map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
+				Labels:      map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
+			},
+			Spec: nfdv1alpha1.NodeFeatureSpec{
+				Features: *features,
+				Labels:   labels,
+			},
+		}
+
+		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create NodeFeature object %q: %w", nfr.Name, err)
+		}
+
+		utils.KlogDump(4, "NodeFeature object created:", "  ", nfrCreated)
+	} else if err != nil {
+		return fmt.Errorf("failed to get NodeFeature object: %w", err)
+	} else {
+
+		nfrUpdated := nfr.DeepCopy()
+		nfrUpdated.Annotations = map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()}
+		nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
+		nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
+			Features: *features,
+			Labels:   labels,
+		}
+
+		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
+			klog.Infof("updating NodeFeature object %q", nodename)
+			nfrUpdated, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), nfrUpdated, metav1.UpdateOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to update NodeFeature object %q: %w", nfr.Name, err)
+			}
+			utils.KlogDump(4, "NodeFeature object updated:", "  ", nfrUpdated)
+		} else {
+			klog.V(1).Info("no changes in NodeFeature object, not updating")
+		}
+	}
+	return nil
+}
+
+// getNfdClient returns the clientset for using the nfd CRD api
+func (m *nfdWorker) getNfdClient() (*nfdclient.Clientset, error) {
+	if m.nfdClient != nil {
+		return m.nfdClient, nil
+	}
+
+	kubeconfig, err := apihelper.GetKubeconfig(m.args.Kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := nfdclient.NewForConfig(kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	m.nfdClient = c
+	return c, nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from "encoding/json"

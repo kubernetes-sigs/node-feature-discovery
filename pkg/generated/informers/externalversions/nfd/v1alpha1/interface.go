@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// NodeFeatures returns a NodeFeatureInformer.
+	NodeFeatures() NodeFeatureInformer
 	// NodeFeatureRules returns a NodeFeatureRuleInformer.
 	NodeFeatureRules() NodeFeatureRuleInformer
 }
@@ -37,6 +39,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// NodeFeatures returns a NodeFeatureInformer.
+func (v *version) NodeFeatures() NodeFeatureInformer {
+	return &nodeFeatureInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // NodeFeatureRules returns a NodeFeatureRuleInformer.

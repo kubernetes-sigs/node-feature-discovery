@@ -122,6 +122,22 @@ Example:
 nfd-worker -key-file=/opt/nfd/worker.key -cert-file=/opt/nfd/worker.crt -ca-file=/opt/nfd/ca.crt
 ```
 
+### -kubeconfig
+
+The `-kubeconfig` flag specifies the kubeconfig to use for connecting to the
+Kubernetes API server. It is only needed for manipulating NodeFeature
+objects, and thus the flag only takes effect when
+[`-enable-nodefeature-api`](#-enable-nodefeature-api)) is specified. An empty
+value (which is also the default) implies in-cluster kubeconfig.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-worker -kubeconfig ${HOME}/.kube/config
+```
+
 ### -server-name-override
 
 The `-server-name-override` flag specifies the common name (CN) which to
@@ -178,11 +194,33 @@ Example:
 nfd-worker -label-sources=kernel,system,local
 ```
 
+### -enable-nodefeature-api
+
+The `-enable-nodefeature-api` flag enables the experimental NodeFeature CRD API
+for communicating with nfd-master. This will also automatically disable the
+gRPC communication to nfd-master. When enabled, nfd-worker will create per-node
+NodeFeature objects the contain all discovered node features and the set of
+feature labels to be created.
+
+Default: false
+
+Example:
+
+```bash
+nfd-worker -enable-nodefeature-api
+```
+
 ### -no-publish
 
-The `-no-publish` flag disables all communication with the nfd-master, making
-it a "dry-run" flag for nfd-worker. NFD-Worker runs feature detection normally,
-but no labeling requests are sent to nfd-master.
+The `-no-publish` flag disables all communication with the nfd-master and the
+Kubernetes API server. It is effectively a "dry-run" flag for nfd-worker.
+NFD-Worker runs feature detection normally, but no labeling requests are sent
+to nfd-master and no NodeFeature objects are created or updated in the API
+server.
+
+Note: This flag takes precedence over the
+[`core.noPublish`](worker-configuration-reference#corenopublish)
+configuration file option.
 
 Default: *false*
 

@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	label "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -69,6 +70,7 @@ type Args struct {
 	Kubeconfig             string
 	LabelWhiteList         utils.RegexpVal
 	FeatureRulesController bool
+	EnableNodeFeatureApi   bool
 	NoPublish              bool
 	EnableTaints           bool
 	Port                   int
@@ -87,6 +89,7 @@ type nfdMaster struct {
 	*nfdController
 
 	args       Args
+	namespace  string
 	nodeName   string
 	server     *grpc.Server
 	stop       chan struct{}
@@ -98,9 +101,10 @@ type nfdMaster struct {
 // NewNfdMaster creates a new NfdMaster server instance.
 func NewNfdMaster(args *Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: *args,
-		nodeName: os.Getenv("NODE_NAME"),
-		ready:    make(chan bool, 1),
-		stop:     make(chan struct{}, 1),
+		nodeName:  os.Getenv("NODE_NAME"),
+		namespace: utils.GetKubernetesNamespace(),
+		ready:     make(chan bool, 1),
+		stop:      make(chan struct{}, 1),
 	}
 
 	if args.Instance != "" {
@@ -144,6 +148,7 @@ func (m *nfdMaster) Run() error {
 		klog.Infof("Master instance: %q", m.args.Instance)
 	}
 	klog.Infof("NodeName: %q", m.nodeName)
+	klog.Infof("Kubernetes namespace: %q", m.namespace)
 
 	if m.args.Prune {
 		return m.prune()
@@ -155,7 +160,7 @@ func (m *nfdMaster) Run() error {
 			return err
 		}
 		klog.Info("starting nfd api controller")
-		m.nfdController, err = newNfdController(kubeconfig)
+		m.nfdController, err = newNfdController(kubeconfig, !m.args.EnableNodeFeatureApi)
 		if err != nil {
 			return fmt.Errorf("failed to initialize CRD controller: %w", err)
 		}
@@ -170,7 +175,14 @@ func (m *nfdMaster) Run() error {
 
 	// Run gRPC server
 	grpcErr := make(chan error, 1)
-	go m.runGrpcServer(grpcErr)
+	if !m.args.EnableNodeFeatureApi {
+		go m.runGrpcServer(grpcErr)
+	}
+
+	// Run updater that handles events from the nfd CRD API.
+	if m.nfdController != nil {
+		go m.nfdAPIUpdateHandler()
+	}
 
 	// Notify that we're ready to accept connections
 	m.ready <- true
@@ -245,6 +257,22 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 	}
 }
 
+// nfdAPIUpdateHandler handles events from the nfd API controller.
+func (m *nfdMaster) nfdAPIUpdateHandler() {
+	for {
+		select {
+		case <-m.nfdController.updateAllNodesChan:
+			if err := m.nfdAPIUpdateAllNodes(); err != nil {
+				klog.Error(err)
+			}
+		case nodeName := <-m.nfdController.updateOneNodeChan:
+			if err := m.nfdAPIUpdateOneNode(nodeName); err != nil {
+				klog.Error(err)
+			}
+		}
+	}
+}
+
 // Stop NfdMaster
 func (m *nfdMaster) Stop() {
 	m.server.GracefulStop()
@@ -290,16 +318,9 @@ func (m *nfdMaster) prune() error {
 		klog.Infof("pruning node %q...", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeFeatures(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{})
+		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
-			return fmt.Errorf("failed to prune labels from node %q: %v", node.Name, err)
-		}
-
-		// Prune taints
-		err = m.setTaints(cli, []corev1.Taint{}, node.Name)
-
-		if err != nil {
-			return fmt.Errorf("failed to prune taints from node %q: %v", node.Name, err)
+			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
 		}
 
 		// Prune annotations
@@ -421,20 +442,6 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		klog.Infof("received labeling request for node %q", r.NodeName)
 	}
 
-	// Mix in CR-originated labels
-	rawLabels := make(map[string]string)
-	if r.Labels != nil {
-		// NOTE: we effectively mangle the request struct by not creating a deep copy of the map
-		rawLabels = r.Labels
-	}
-	crLabels, crTaints := m.processNodeFeatureRule(r)
-
-	for k, v := range crLabels {
-		rawLabels[k] = v
-	}
-
-	labels, extendedResources := filterFeatureLabels(rawLabels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
-
 	if !m.args.NoPublish {
 		cli, err := m.apihelper.GetClient()
 		if err != nil {
@@ -444,27 +451,124 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		// Advertise NFD worker version as an annotation
 		annotations := Annotations{m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation): r.NfdVersion}
 
-		err = m.updateNodeFeatures(cli, r.NodeName, labels, annotations, extendedResources)
-		if err != nil {
-			klog.Errorf("failed to advertise labels: %v", err)
-			return &pb.SetLabelsReply{}, err
-		}
-
-		// set taints
-		var taints []corev1.Taint
-		if m.args.EnableTaints {
-			taints = crTaints
-		}
-
-		// Call setTaints even though the feature flag is disabled. This
-		// ensures that we delete NFD owned stale taints when flag got
-		// turned off.
-		err = m.setTaints(cli, taints, r.NodeName)
-		if err != nil {
+		// Create labels et al
+		if err := m.refreshNodeFeatures(cli, r.NodeName, annotations, r.GetLabels(), r.GetFeatures()); err != nil {
 			return &pb.SetLabelsReply{}, err
 		}
 	}
 	return &pb.SetLabelsReply{}, nil
+}
+
+func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
+	klog.Info("will process all nodes in the cluster")
+
+	cli, err := m.apihelper.GetClient()
+	if err != nil {
+		return err
+	}
+
+	nodes, err := m.apihelper.GetNodes(cli)
+	if err != nil {
+		return err
+	}
+
+	for _, node := range nodes.Items {
+		if err := m.nfdAPIUpdateOneNode(node.Name); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
+	sel := labels.SelectorFromSet(labels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
+	objs, err := m.nfdController.featureLister.List(sel)
+	if len(objs) == 0 {
+		klog.Infof("no NodeFeature object exists for node %q, skipping...", nodeName)
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
+	}
+
+	// Sort our objects
+	sort.Slice(objs, func(i, j int) bool {
+		// Objects in our nfd namespace gets into the beginning of the list
+		if objs[i].Namespace == m.namespace && objs[j].Namespace != m.namespace {
+			return true
+		}
+		if objs[i].Namespace != m.namespace && objs[j].Namespace == m.namespace {
+			return false
+		}
+		// After the nfd namespace, sort objects by their name
+		if objs[i].Name != objs[j].Name {
+			return objs[i].Name < objs[j].Name
+		}
+		// Objects with the same name are sorted by their namespace
+		return objs[i].Namespace < objs[j].Namespace
+	})
+
+	if m.args.NoPublish {
+		return nil
+	}
+
+	klog.V(1).Infof("processing node %q, initiated by NodeFeature API", nodeName)
+
+	// Merge in features
+	//
+	// TODO: support multiple NodeFeature objects. There are two obvious options to implement this:
+	// 1. Merge features of all objects into one joint object
+	// 2. Change the rule api to support handle multiple objects
+	// Of these #2 would probably perform better with lot less data to copy. We
+	// could probably even get rid of the DeepCopy in this scenario.
+	features := objs[0].DeepCopy()
+
+	annotations := Annotations{}
+	if objs[0].Namespace == m.namespace && objs[0].Name == nodeName {
+		// This is the one created by nfd-worker
+		if v := objs[0].Annotations[nfdv1alpha1.WorkerVersionAnnotation]; v != "" {
+			annotations[nfdv1alpha1.WorkerVersionAnnotation] = v
+		}
+	}
+
+	// Create labels et al
+	cli, err := m.apihelper.GetClient()
+	if err != nil {
+		return err
+	}
+	if err := m.refreshNodeFeatures(cli, nodeName, annotations, features.Spec.Labels, &features.Spec.Features); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, annotations, labels map[string]string, features *nfdv1alpha1.Features) error {
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	crLabels, crTaints := m.processNodeFeatureRule(features)
+
+	// Mix in CR-originated labels
+	for k, v := range crLabels {
+		labels[k] = v
+	}
+
+	labels, extendedResources := filterFeatureLabels(labels, m.args.ExtraLabelNs, m.args.LabelWhiteList.Regexp, m.args.ResourceLabels)
+
+	var taints []corev1.Taint
+	if m.args.EnableTaints {
+		taints = crTaints
+	}
+
+	err := m.updateNodeObject(cli, nodeName, labels, annotations, extendedResources, taints)
+	if err != nil {
+		klog.Errorf("failed to update node %q: %v", nodeName, err)
+		return err
+	}
+
+	return nil
 }
 
 // setTaints sets node taints and annotations based on the taints passed via
@@ -572,7 +676,7 @@ func authorizeClient(c context.Context, checkNodeName bool, nodeName string) err
 	return nil
 }
 
-func (m *nfdMaster) processNodeFeatureRule(r *pb.SetLabelsRequest) (map[string]string, []corev1.Taint) {
+func (m *nfdMaster) processNodeFeatureRule(features *nfdv1alpha1.Features) (map[string]string, []corev1.Taint) {
 	if m.nfdController == nil {
 		return nil, nil
 	}
@@ -588,9 +692,6 @@ func (m *nfdMaster) processNodeFeatureRule(r *pb.SetLabelsRequest) (map[string]s
 		klog.Errorf("failed to list NodeFeatureRule resources: %v", err)
 		return nil, nil
 	}
-
-	// Helper struct for rule processing
-	features := r.GetFeatures()
 
 	// Process all rule CRs
 	for _, spec := range ruleSpecs {
@@ -621,10 +722,10 @@ func (m *nfdMaster) processNodeFeatureRule(r *pb.SetLabelsRequest) (map[string]s
 	return labels, taints
 }
 
-// updateNodeFeatures ensures the Kubernetes node object is up to date,
+// updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources) error {
+func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
 	if cli == nil {
 		return fmt.Errorf("no client is passed, client:  %v", cli)
 	}
@@ -675,6 +776,12 @@ func (m *nfdMaster) updateNodeFeatures(cli *kubernetes.Clientset, nodeName strin
 		klog.Infof("node %q updated", nodeName)
 	} else {
 		klog.V(1).Infof("no updates to node %q", nodeName)
+	}
+
+	// Set taints
+	err = m.setTaints(cli, taints, node.Name)
+	if err != nil {
+		return err
 	}
 
 	return err
