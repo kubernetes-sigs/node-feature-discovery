@@ -32,17 +32,27 @@ var (
 
 // ConfigureRBAC creates required RBAC configuration
 func ConfigureRBAC(cs clientset.Interface, ns string) error {
-	_, err := createServiceAccountMaster(cs, ns)
+	_, err := createServiceAccount(cs, "nfd-master-e2e", ns)
 	if err != nil {
 		return err
 	}
 
-	_, err = createServiceAccountTopologyUpdater(cs, ns)
+	_, err = createServiceAccount(cs, "nfd-worker-e2e", ns)
+	if err != nil {
+		return err
+	}
+
+	_, err = createServiceAccount(cs, "nfd-topology-updater-e2e", ns)
 	if err != nil {
 		return err
 	}
 
 	_, err = createClusterRoleMaster(cs)
+	if err != nil {
+		return err
+	}
+
+	_, err = createRoleWorker(cs, ns)
 	if err != nil {
 		return err
 	}
@@ -53,6 +63,11 @@ func ConfigureRBAC(cs clientset.Interface, ns string) error {
 	}
 
 	_, err = createClusterRoleBindingMaster(cs, ns)
+	if err != nil {
+		return err
+	}
+
+	_, err = createRoleBindingWorker(cs, ns)
 	if err != nil {
 		return err
 	}
@@ -75,11 +90,19 @@ func DeconfigureRBAC(cs clientset.Interface, ns string) error {
 	if err != nil {
 		return err
 	}
+	err = cs.RbacV1().RoleBindings(ns).Delete(context.TODO(), "nfd-worker-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
 	err = cs.RbacV1().ClusterRoles().Delete(context.TODO(), "nfd-topology-updater-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 	err = cs.RbacV1().ClusterRoles().Delete(context.TODO(), "nfd-master-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	err = cs.RbacV1().Roles(ns).Delete(context.TODO(), "nfd-worker-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -91,25 +114,18 @@ func DeconfigureRBAC(cs clientset.Interface, ns string) error {
 	if err != nil {
 		return err
 	}
+	err = cs.CoreV1().ServiceAccounts(ns).Delete(context.TODO(), "nfd-worker-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-// Configure service account required by NFD Master
-func createServiceAccountMaster(cs clientset.Interface, ns string) (*corev1.ServiceAccount, error) {
+// Configure service account
+func createServiceAccount(cs clientset.Interface, name, ns string) (*corev1.ServiceAccount, error) {
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nfd-master-e2e",
-			Namespace: ns,
-		},
-	}
-	return cs.CoreV1().ServiceAccounts(ns).Create(context.TODO(), sa, metav1.CreateOptions{})
-}
-
-// Configure service account required by NFD MTopology Updater
-func createServiceAccountTopologyUpdater(cs clientset.Interface, ns string) (*corev1.ServiceAccount, error) {
-	sa := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nfd-topology-updater-e2e",
+			Name:      name,
 			Namespace: ns,
 		},
 	}
@@ -126,11 +142,11 @@ func createClusterRoleMaster(cs clientset.Interface) (*rbacv1.ClusterRole, error
 			{
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "patch", "update"},
+				Verbs:     []string{"get", "list", "patch", "update"},
 			},
 			{
 				APIGroups: []string{"nfd.k8s-sigs.io"},
-				Resources: []string{"nodefeaturerules"},
+				Resources: []string{"nodefeatures", "nodefeaturerules"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
@@ -146,6 +162,24 @@ func createClusterRoleMaster(cs clientset.Interface) (*rbacv1.ClusterRole, error
 			})
 	}
 	return cs.RbacV1().ClusterRoles().Update(context.TODO(), cr, metav1.UpdateOptions{})
+}
+
+// Configure role required by NFD Worker
+func createRoleWorker(cs clientset.Interface, ns string) (*rbacv1.Role, error) {
+	cr := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nfd-worker-e2e",
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"nfd.k8s-sigs.io"},
+				Resources: []string{"nodefeatures"},
+				Verbs:     []string{"create", "get", "update"},
+			},
+		},
+	}
+	return cs.RbacV1().Roles(ns).Update(context.TODO(), cr, metav1.UpdateOptions{})
 }
 
 // Configure cluster role required by NFD Topology Updater
@@ -208,6 +242,30 @@ func createClusterRoleBindingMaster(cs clientset.Interface, ns string) (*rbacv1.
 	}
 
 	return cs.RbacV1().ClusterRoleBindings().Update(context.TODO(), crb, metav1.UpdateOptions{})
+}
+
+// Configure role binding required by NFD Master
+func createRoleBindingWorker(cs clientset.Interface, ns string) (*rbacv1.RoleBinding, error) {
+	crb := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nfd-worker-e2e",
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      "nfd-worker-e2e",
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     "nfd-worker-e2e",
+		},
+	}
+
+	return cs.RbacV1().RoleBindings(ns).Update(context.TODO(), crb, metav1.UpdateOptions{})
 }
 
 // Configure cluster role binding required by NFD Topology Updater

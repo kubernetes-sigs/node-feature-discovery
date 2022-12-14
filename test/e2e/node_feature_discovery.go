@@ -154,13 +154,30 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	nfdTestSuite := func(useNodeFeatureApi bool) {
+		createPodSpecOpts := func(opts ...testpod.SpecOption) []testpod.SpecOption {
+			if useNodeFeatureApi {
+				return append(opts, testpod.SpecWithContainerExtraArgs("-enable-nodefeature-api"))
+			}
+			return opts
+		}
+
 		Context("when deploying a single nfd-master pod", Ordered, func() {
 			var (
-				masterPod *corev1.Pod
 				crds      []*apiextensionsv1.CustomResourceDefinition
 				extClient *extclient.Clientset
 				nfdClient *nfdclient.Clientset
 			)
+
+			checkNodeFeatureObject := func(name string) {
+				_, err := nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Get(context.TODO(), name, metav1.GetOptions{})
+				if useNodeFeatureApi {
+					By(fmt.Sprintf("Check that NodeFeature object for the node %q was created", name))
+					Expect(err).NotTo(HaveOccurred())
+				} else {
+					By(fmt.Sprintf("Check that NodeFeature object for the node %q hasn't been created", name))
+					Expect(err).To(HaveOccurred())
+				}
+			}
 
 			BeforeAll(func() {
 				// Create clients for apiextensions and our CRD api
@@ -198,13 +215,12 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
-
-				imageOpt := []testpod.SpecOption{
+				podSpecOpts := createPodSpecOpts(
 					testpod.SpecWithContainerImage(dockerImage),
 					testpod.SpecWithTolerations(testTolerations),
 					testpod.SpecWithContainerExtraArgs("-enable-taints"),
-				}
-				masterPod = e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(imageOpt...))
+				)
+				masterPod := e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(podSpecOpts...))
 
 				// Create nfd-master service
 				nfdSvc, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
@@ -247,12 +263,12 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 					// Launch nfd-worker
 					By("Creating a nfd worker pod")
-					podSpecOpts := []testpod.SpecOption{
+					podSpecOpts := createPodSpecOpts(
 						testpod.SpecWithRestartPolicy(corev1.RestartPolicyNever),
 						testpod.SpecWithContainerImage(dockerImage),
 						testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
 						testpod.SpecWithTolerations(testTolerations),
-					}
+					)
 					workerPod := testpod.NFDWorker(podSpecOpts...)
 					workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -275,6 +291,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 							Expect(fakeFeatureLabels).Should(HaveKey(k))
 						}
 					}
+
+					checkNodeFeatureObject(node.Name)
 
 					By("Deleting the node-feature-discovery worker pod")
 					err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.ObjectMeta.Name, metav1.DeleteOptions{})
@@ -299,10 +317,10 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					fConf := cfg.DefaultFeatures
 
 					By("Creating nfd-worker daemonset")
-					podSpecOpts := []testpod.SpecOption{
+					podSpecOpts := createPodSpecOpts(
 						testpod.SpecWithContainerImage(dockerImage),
 						testpod.SpecWithTolerations(testTolerations),
-					}
+					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -363,6 +381,9 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 								Expect(fConf.AnnotationWhitelist).NotTo(HaveKey(k))
 							}
 						}
+
+						// Check existence of NodeFeature object
+						checkNodeFeatureObject(node.Name)
 
 					}
 
@@ -426,12 +447,12 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Creating nfd-worker daemonset with configmap mounted")
-					podSpecOpts := []testpod.SpecOption{
+					podSpecOpts := createPodSpecOpts(
 						testpod.SpecWithContainerImage(dockerImage),
 						testpod.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
 						testpod.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
 						testpod.SpecWithTolerations(testTolerations),
-					}
+					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
 
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
@@ -489,11 +510,11 @@ core:
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Creating nfd-worker daemonset")
-					podSpecOpts := []testpod.SpecOption{
+					podSpecOpts := createPodSpecOpts(
 						testpod.SpecWithContainerImage(dockerImage),
 						testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 						testpod.SpecWithTolerations(testTolerations),
-					}
+					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -580,6 +601,11 @@ core:
 		nfdTestSuite(false)
 
 	})
+
+	Context("when running NFD with NodeFeature CRD API enabled", func() {
+		nfdTestSuite(true)
+	})
+
 })
 
 // waitForNfdNodeAnnotations waits for node to be annotated as expected.
