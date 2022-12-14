@@ -390,7 +390,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 		Context("and nfd-worker and NodeFeatureRules objects deployed", func() {
 			var extClient *extclient.Clientset
 			var nfdClient *nfdclient.Clientset
-			var crd *apiextensionsv1.CustomResourceDefinition
+			var crds []*apiextensionsv1.CustomResourceDefinition
 
 			BeforeEach(func() {
 				// Create clients for apiextensions and our CRD api
@@ -398,15 +398,17 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				nfdClient = nfdclient.NewForConfigOrDie(f.ClientConfig())
 
 				// Create CRDs
-				By("Creating NodeFeatureRule CRD")
+				By("Creating NFD CRDs")
 				var err error
-				crd, err = testutils.CreateNodeFeatureRulesCRD(extClient)
+				crds, err = testutils.CreateNfdCRDs(extClient)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
-				err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
-				Expect(err).NotTo(HaveOccurred())
+				for _, crd := range crds {
+					err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				}
 			})
 
 			It("custom labels from the NodeFeatureRule rules should be created", func() {
@@ -438,13 +440,13 @@ core:
 					"feature.node.kubernetes.io/e2e-instance-test-1":  "true"}
 
 				By("Creating NodeFeatureRules #1")
-				Expect(testutils.CreateNodeFeatureRuleFromFile(nfdClient, "nodefeaturerule-1.yaml")).NotTo(HaveOccurred())
+				Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-1.yaml")).NotTo(HaveOccurred())
 
 				By("Verifying node labels from NodeFeatureRules #1")
 				Expect(waitForNfdNodeLabels(f.ClientSet, expected)).NotTo(HaveOccurred())
 
 				By("Creating NodeFeatureRules #2")
-				Expect(testutils.CreateNodeFeatureRuleFromFile(nfdClient, "nodefeaturerule-2.yaml")).NotTo(HaveOccurred())
+				Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-2.yaml")).NotTo(HaveOccurred())
 
 				// Add features from NodeFeatureRule #2
 				expected["feature.node.kubernetes.io/e2e-matchany-test-1"] = "true"
