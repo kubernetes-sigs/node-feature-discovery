@@ -125,8 +125,9 @@ nfd-worker -key-file=/opt/nfd/worker.key -cert-file=/opt/nfd/worker.crt -ca-file
 ### -kubeconfig
 
 The `-kubeconfig` flag specifies the kubeconfig to use for connecting to the
-Kubernetes API server. It is only needed for manipulating NodeFeature
-objects, and thus the flag only takes effect when
+Kubernetes API server. It is only needed for manipulating
+[NodeFeature](../usage/custom-resources#nodefeature) objects, and thus the flag
+only takes effect when
 [`-enable-nodefeature-api`](#-enable-nodefeature-api)) is specified. An empty
 value (which is also the default) implies in-cluster kubeconfig.
 
@@ -196,7 +197,8 @@ nfd-worker -label-sources=kernel,system,local
 
 ### -enable-nodefeature-api
 
-The `-enable-nodefeature-api` flag enables the experimental NodeFeature CRD API
+The `-enable-nodefeature-api` flag enables the experimental
+[NodeFeature](../usage/custom-resources#nodefeature) CRD API
 for communicating with nfd-master. This will also automatically disable the
 gRPC communication to nfd-master. When enabled, nfd-worker will create per-node
 NodeFeature objects the contain all discovered node features and the set of

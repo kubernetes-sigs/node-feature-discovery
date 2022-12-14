@@ -97,7 +97,7 @@ We have introduced the following Chart parameters.
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
 | `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
 | `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
-| `enableNodeFeatureApi` | bool  | false | Enable the NodeFeature CRD API for communicating node features. This will automatically disable the gRPC communication.
+| `enableNodeFeatureApi` | bool  | false | Enable the [NodeFeature](../usage/custom-resources#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication.
 
 ### Master pod parameters
 

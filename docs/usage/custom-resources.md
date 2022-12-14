@@ -17,6 +17,39 @@ sort: 6
 
 NFD uses some Kubernetes [custom resources][custom-resources].
 
+## NodeFeature
+
+**EXPERIMENTAL**
+NodeFeatureRule is an NFD-specific custom resource for communicating node
+features and node labeling requests. Support for NodeFeatureRule objects is
+disabled by default. If enabled, nfd-master watches for NodeFeature objects,
+labels nodes accordingly and uses the listed features as input when evaluating
+[NodeFeatureRule](#nodefeaturerule)s.
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeature
+metadata:
+  labels:
+    nfd.node.kubernetes.io/node-name: node-1
+  name: node-1-vendor-features
+spec:
+  features:
+    instances:
+      vendor.device:
+        elements:
+        - attributes:
+            model: "xpu-1"
+            memory: "4000"
+            type: "fast"
+        - attributes:
+            model: "xpu-2"
+            memory: "16000"
+            type: "slow"
+  labels:
+    vendor-xpu-present: "true"
+```
+
 ## NodeFeatureRule
 
 NodeFeatureRule is an NFD-specific custom resource that is designed for

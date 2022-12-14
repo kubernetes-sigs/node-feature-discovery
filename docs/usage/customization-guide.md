@@ -20,12 +20,95 @@ sort: 7
 NFD provides multiple extension points for vendor and application specific
 labeling:
 
+- [`NodeFeature`](#nodefeature-custom-resource) (EXPERIMENTAL) objects can be
+  used to communicate "raw" node features and node labeling requests to
+  nfd-master.
 - [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects provide a way to
   deploy custom labeling rules via the Kubernetes API
 - [`local`](#local-feature-source) feature source of nfd-worker creates
   labels by executing hooks and reading files
 - [`custom`](#custom-feature-source) feature source of nfd-worker creates
   labels based on user-specified rules
+
+## NodeFeature custom resource
+
+**EXPERIMENTAL**
+NodeFeature objects provide a way for 3rd party extensions to advertise custom
+features, both as "raw" features that serve as input to
+[NodeFeatureRule](#nodefeaturerule-custom-resource) objects and as feature
+labels directly.
+
+Note that RBAC rules must be created for each extension for them to be able to
+create and manipulate NodeFeature objects in their namespace.
+
+Support for NodeFeature CRD API is enabled with the `-enable-nodefeature-api`
+command line flag. This flag must be specified for both nfd-master and
+nfd-worker as it will disable the gRPC communication between them.
+
+### A NodeFeature example
+
+Consider the following referential example:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeature
+metadata:
+  labels:
+    nfd.node.kubernetes.io/node-name: node-1
+  name: vendor-features-for-node-1
+spec:
+  # Features for NodeFeatureRule matching
+  features:
+    flags:
+      vendor.flags:
+        elements:
+          feature-x: {}
+          feature-y: {}
+    attributes:
+      vendor.config:
+        elements:
+          setting-a: "auto"
+          knob-b: "123"
+    instances:
+      vendor.devices:
+        elements:
+        - attributes:
+            model: "dev-1000"
+            vendor: "acme"
+        - attributes:
+            model: "dev-2000"
+            vendor: "acme"
+  # Labels to be created
+  labels:
+    vendor-feature.enabled: "true"
+```
+
+The object targets node named `node-1`. It lists two "flag type" features under
+the `vendor.flags` domain, two "attribute type" features and uder the
+`vendor.config` domain and two "instance type" features under the
+`vendor.devices` domain. This features will not be directly affecting the node
+labels but they will be used as input when be
+[`NodeFeatureRule`](#nodefeaturerule-custom-resource) object are evaluated.
+
+In addition the example requests directly the
+`feature.node.kubenernetes.io/vendor-feature.enabled=true` node label to be
+created.
+
+The `nfd.node.kubernetes.io/node-name=<node-name>` must be in place for each
+NodeFeature objectt as NFD uses it to determine the node which it is targeting.
+
+### Feature types
+
+Features are divided into three different types:
+
+- **flag** features: a set of names without any associated values, e.g. CPUID
+  flags or loaded kernel modules
+- **attribute** features: a set of names each of which has a single value
+  associated with it (essentially a map of key-value pairs), e.g. kernel config
+  flags or os release information
+- **instance** features: a list of instances, each of which has multiple
+  attributes (key-value pairs of their own) associated with it, e.g. PCI or USB
+  devices
 
 ## NodeFeatureRule custom resource
 
@@ -124,21 +207,6 @@ spec:
 
 In this example, if the `my sample taint rule` rule is matched, `feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
 and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
-
-### NodeFeatureRule controller
-
-NFD-Master acts as the controller for `NodeFeatureRule` objects. It applies these
-rules on raw feature data received from nfd-worker instances and creates node
-labels, accordingly.
-
-**NOTE** nfd-master is stateless and (re-)labelling only happens when a request
-is received from nfd-worker. That is, in practice rules are evaluated and
-labels for each node are created on intervals specified by the
-[`core.sleepInterval`](../reference/worker-configuration-reference#coresleepinterval)
-configuration option of nfd-worker instances. This means that modification or
-creation of `NodeFeatureRule` objects does not instantly cause the node labels
-to be updated.  Instead, the changes only come visible in node labels as
-nfd-worker instances send their labelling requests.
 
 ## Local feature source
 
@@ -523,24 +591,9 @@ true).
 
 ### Available features
 
-#### Feature types
-
-Features are divided into three different types:
-
-- **flag** features: a set of names without any associated values, e.g. CPUID
-  flags or loaded kernel modules
-- **attribute** features: a set of names each of which has a single value
-  associated with it (essentially a map of key-value pairs), e.g. kernel config
-  flags or os release information
-- **instance** features: a list of instances, each of which has multiple
-  attributes (key-value pairs of their own) associated with it, e.g. PCI or USB
-  devices
-
-#### List of features
-
 The following features are available for matching:
 
-| Feature          | Feature type | Elements | Value type | Description
+| Feature          | [Feature type](#feature-types) | Elements | Value type | Description
 | ---------------- | ------------ | -------- | ---------- | -----------
 | **`cpu.cpuid`**  | flag         |          |            | Supported CPU capabilities
 |                  |              | **`<cpuid-flag>`** |  | CPUID flag is present
