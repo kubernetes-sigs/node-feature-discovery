@@ -37,6 +37,7 @@ import (
 	e2elog "k8s.io/kubernetes/test/e2e/framework"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
@@ -143,6 +144,14 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 		})
 
 		BeforeEach(func() {
+			// Drop the pod security admission label as nfd-worker needs host mounts
+			if _, ok := f.Namespace.Labels[admissionapi.EnforceLevelLabel]; ok {
+				e2elog.Logf("Deleting %s label from the test namespace", admissionapi.EnforceLevelLabel)
+				delete(f.Namespace.Labels, admissionapi.EnforceLevelLabel)
+				_, err := f.ClientSet.CoreV1().Namespaces().Update(context.TODO(), f.Namespace, metav1.UpdateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+			}
+
 			err := testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
 			Expect(err).NotTo(HaveOccurred())
 
