@@ -33,6 +33,7 @@ import (
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
@@ -333,17 +334,10 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				By("Getting a worker node")
 
 				// We need a valid nodename for the configmap
-				nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+				nodes, err := getNonControlPlaneNodes(f.ClientSet)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(nodeList.Items)).ToNot(BeZero())
 
-				targetNodeName := nodeList.Items[0].Name
-				for _, node := range nodeList.Items {
-					if _, ok := node.Labels["node-role.kubernetes.io/master"]; !ok {
-						targetNodeName = node.Name
-						break
-					}
-				}
+				targetNodeName := nodes[0].Name
 				Expect(targetNodeName).ToNot(BeEmpty(), "No worker node found")
 
 				// create a wildcard name as well for this node
@@ -488,11 +482,11 @@ core:
 // waitForNfdNodeLabels waits for node to be labeled as expected.
 func waitForNfdNodeLabels(cli clientset.Interface, expected map[string]string) error {
 	poll := func() error {
-		nodeList, err := cli.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+		nodes, err := getNonControlPlaneNodes(cli)
 		if err != nil {
 			return err
 		}
-		for _, node := range nodeList.Items {
+		for _, node := range nodes {
 			labels := nfdLabels(node.Labels)
 			if !cmp.Equal(expected, labels) {
 				return fmt.Errorf("node %q labels do not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expected, labels))
@@ -510,6 +504,33 @@ func waitForNfdNodeLabels(cli clientset.Interface, expected map[string]string) e
 		time.Sleep(2 * time.Second)
 	}
 	return err
+}
+
+// getNonControlPlaneNodes gets the nodes that are not tainted for exclusive control-plane usage
+func getNonControlPlaneNodes(cli clientset.Interface) ([]corev1.Node, error) {
+	nodeList, err := cli.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(nodeList.Items) == 0 {
+		return nil, fmt.Errorf("no nodes found in the cluster")
+	}
+
+	controlPlaneTaint := corev1.Taint{
+		Effect: corev1.TaintEffectNoSchedule,
+		Key:    "node-role.kubernetes.io/control-plane",
+	}
+	out := []corev1.Node{}
+	for _, node := range nodeList.Items {
+		if !taintutils.TaintExists(node.Spec.Taints, &controlPlaneTaint) {
+			out = append(out, node)
+		}
+	}
+
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no non-control-plane nodes found in the cluster")
+	}
+	return out, nil
 }
 
 // nfdLabels gets labels that are in the nfd label namespace.
