@@ -1,0 +1,35 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: e2e-test-3
+spec:
+  rules:
+    # Positive test expected to set the taints
+    - name: "e2e-taint-test-1"
+      taints:
+        - effect: PreferNoSchedule
+          key: "nfd.node.kubernetes.io/fake-special-node"
+          value: "exists"
+        - effect: NoExecute
+          key: "nfd.node.kubernetes.io/fake-dedicated-node"
+          value: "true"
+        - effect: "NoExecute"
+          key: "nfd.node.kubernetes.io/performance-optimized-node"
+          value: "true"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_1": {op: IsTrue}
+            "attr_2": {op: IsFalse}
+
+    # Negative test not supposed to set the taints
+    - name: "e2e-taint-test-2"
+      taints:
+        - effect: PreferNoSchedule
+          key: "nfd.node.kubernetes.io/fake-special-cpu"
+          value: "true"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_1": {op: IsTrue}
+            "attr_2": {op: IsTrue}

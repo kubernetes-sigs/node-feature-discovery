@@ -74,6 +74,27 @@ func CreateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string)
 	return nil
 }
 
+// UpdateNodeFeatureRulesFromFile updates existing NodeFeatureRule object from a given file located under test data directory.
+func UpdateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string) error {
+	objs, err := nodeFeatureRulesFromFile(filepath.Join(packagePath, "..", "data", filename))
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		var nfr *nfdv1alpha1.NodeFeatureRule
+		if nfr, err = cli.NfdV1alpha1().NodeFeatureRules().Get(context.TODO(), obj.Name, metav1.GetOptions{}); err != nil {
+			return fmt.Errorf("failed to get NodeFeatureRule %w", err)
+		}
+
+		obj.SetResourceVersion(nfr.GetResourceVersion())
+		if _, err = cli.NfdV1alpha1().NodeFeatureRules().Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
+			return fmt.Errorf("failed to update NodeFeatureRule %w", err)
+		}
+	}
+	return nil
+}
+
 func apiObjsFromFile(path string, decoder apiruntime.Decoder) ([]apiruntime.Object, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
