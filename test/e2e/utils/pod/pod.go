@@ -307,7 +307,7 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 				},
 			},
 		},
-		ServiceAccountName: "nfd-master-e2e",
+		ServiceAccountName: "nfd-worker-e2e",
 		DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
 		Volumes: []corev1.Volume{
 			{
