@@ -504,10 +504,7 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 	sel := labels.SelectorFromSet(labels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
 	objs, err := m.nfdController.featureLister.List(sel)
-	if len(objs) == 0 {
-		klog.Infof("no NodeFeature object exists for node %q, skipping...", nodeName)
-		return nil
-	} else if err != nil {
+	if err != nil {
 		return fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
 	}
 
@@ -534,26 +531,32 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 	klog.V(1).Infof("processing node %q, initiated by NodeFeature API", nodeName)
 
-	// Merge in features
-	//
-	// NOTE: changing the rule api to support handle multiple objects instead
-	// of merging would probably perform better with lot less data to copy.
-	features := objs[0].Spec.DeepCopy()
-	for _, o := range objs[1:] {
-		o.Spec.MergeInto(features)
-	}
-
-	utils.KlogDump(4, "Composite NodeFeatureSpec after merge:", "  ", features)
-
+	features := &nfdv1alpha1.NodeFeatureSpec{}
 	annotations := Annotations{}
-	if objs[0].Namespace == m.namespace && objs[0].Name == nodeName {
-		// This is the one created by nfd-worker
-		if v := objs[0].Annotations[nfdv1alpha1.WorkerVersionAnnotation]; v != "" {
-			annotations[nfdv1alpha1.WorkerVersionAnnotation] = v
+
+	if len(objs) > 0 {
+		// Merge in features
+		//
+		// NOTE: changing the rule api to support handle multiple objects instead
+		// of merging would probably perform better with lot less data to copy.
+		features = objs[0].Spec.DeepCopy()
+		for _, o := range objs[1:] {
+			o.Spec.MergeInto(features)
+		}
+
+		utils.KlogDump(4, "Composite NodeFeatureSpec after merge:", "  ", features)
+
+		if objs[0].Namespace == m.namespace && objs[0].Name == nodeName {
+			// This is the one created by nfd-worker
+			if v := objs[0].Annotations[nfdv1alpha1.WorkerVersionAnnotation]; v != "" {
+				annotations[nfdv1alpha1.WorkerVersionAnnotation] = v
+			}
 		}
 	}
 
-	// Create labels et al
+	// Update node labels et al. This may also mean removing all NFD-owned
+	// labels (et al.), for example  in the case no NodeFeature objects are
+	// present.
 	cli, err := m.apihelper.GetClient()
 	if err != nil {
 		return err
