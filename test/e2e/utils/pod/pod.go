@@ -296,11 +296,6 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 						MountPath: "/host-usr/lib",
 						ReadOnly:  true,
 					},
-					{
-						Name:      "host-usr-src",
-						MountPath: "/host-usr/src",
-						ReadOnly:  true,
-					},
 				},
 			},
 		},
@@ -339,15 +334,6 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/usr/lib",
-						Type: newHostPathType(corev1.HostPathDirectory),
-					},
-				},
-			},
-			{
-				Name: "host-usr-src",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/usr/src",
 						Type: newHostPathType(corev1.HostPathDirectory),
 					},
 				},
