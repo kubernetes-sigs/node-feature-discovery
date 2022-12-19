@@ -231,7 +231,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 				By("Verifying the node where nfd-master is running")
 				// Get updated masterPod object (we want to know where it was scheduled)
-				masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), masterPod.ObjectMeta.Name, metav1.GetOptions{})
+				masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), masterPod.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				// Node running nfd-master should have master version annotation
 				masterPodNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), masterPod.Spec.NodeName, metav1.GetOptions{})
@@ -239,7 +239,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				Expect(masterPodNode.Annotations).To(HaveKey(nfdv1alpha1.AnnotationNs + "/master.version"))
 
 				By("Waiting for the nfd-master service to be up")
-				Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.ObjectMeta.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
+				Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
@@ -274,8 +274,8 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for the nfd-worker pod to succeed")
-					Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.ObjectMeta.Name, f.Namespace.Name)).NotTo(HaveOccurred())
-					workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), workerPod.ObjectMeta.Name, metav1.GetOptions{})
+					Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.Name, f.Namespace.Name)).NotTo(HaveOccurred())
+					workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), workerPod.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
@@ -295,7 +295,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					checkNodeFeatureObject(node.Name)
 
 					By("Deleting the node-feature-discovery worker pod")
-					err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.ObjectMeta.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -388,7 +388,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					}
 
 					By("Deleting nfd-worker daemonset")
-					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -489,7 +489,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					Expect(labelNegativeFound).To(BeFalse(), "label for not existing nodename found!")
 
 					By("Deleting nfd-worker daemonset")
-					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.ObjectMeta.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})

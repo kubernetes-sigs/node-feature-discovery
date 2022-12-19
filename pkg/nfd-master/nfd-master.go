@@ -722,10 +722,10 @@ func (m *nfdMaster) processNodeFeatureRule(features *nfdv1alpha1.Features) (map[
 	for _, spec := range ruleSpecs {
 		switch {
 		case klog.V(3).Enabled():
-			h := fmt.Sprintf("executing NodeFeatureRule %q:", spec.ObjectMeta.Name)
+			h := fmt.Sprintf("executing NodeFeatureRule %q:", spec.Name)
 			utils.KlogDump(3, h, "  ", spec.Spec)
 		case klog.V(1).Enabled():
-			klog.Infof("executing NodeFeatureRule %q", spec.ObjectMeta.Name)
+			klog.Infof("executing NodeFeatureRule %q", spec.Name)
 		}
 		for _, rule := range spec.Spec.Rules {
 			ruleOut, err := rule.Execute(features)
