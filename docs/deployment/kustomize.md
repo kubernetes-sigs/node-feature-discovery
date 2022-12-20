@@ -15,9 +15,15 @@ sort: 2
 
 ---
 
-This deployment method requires
+[Kustomize](https://github.com/kubernetes-sigs/kustomize) provides easy
+deployment of NFD. Customization of the deployment is done by maintaining
+declarative overlays on top of the base overlays in NFD.
+
+To follow the deployment instructions here,
 [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) v1.21 or
-later. The kustomize overlays provided in the repo can be used directly:
+later is required.
+
+The kustomize overlays provided in the repo can be used directly:
 
 ```bash
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}

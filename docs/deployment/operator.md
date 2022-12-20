@@ -15,6 +15,11 @@ sort: 4
 
 ---
 
+The [Node Feature Discovery Operator][nfd-operator] automates installation,
+configuration and updates of NFD using a specific NodeFeatureDiscovery custom
+resource. This also provides good support for managing NFD as a dependency of
+other operators.
+
 ## Deployment
 
 Deployment using the
