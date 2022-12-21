@@ -17,6 +17,9 @@ Please do not remove items from the checklist
         `git branch release-0.$MAJ master`
   - [ ] An OWNER pushes the new release branch with
         `git push release-0.$MAJ`
+  - [ ] Create Prow pre-submit job configuration for the new release branch in K8s
+        [test-infra](https://github.com/kubernetes/test-infra), submit a PR
+  - [ ] Wait for the test-infra Prow config PR to be merged
 - [ ] Run `hack/prepare-release.sh $VERSION` to turn references to point to the upcoming release
       (README, deployment templates, docs configuration, test/e2e flags), submit a PR against the release branch
 - An OWNER prepares a draft release
