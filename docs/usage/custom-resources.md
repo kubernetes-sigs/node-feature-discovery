@@ -24,7 +24,10 @@ NodeFeatureRule is an NFD-specific custom resource for communicating node
 features and node labeling requests. Support for NodeFeatureRule objects is
 disabled by default. If enabled, nfd-master watches for NodeFeature objects,
 labels nodes accordingly and uses the listed features as input when evaluating
-[NodeFeatureRule](#nodefeaturerule)s.
+[NodeFeatureRule](#nodefeaturerule)s. NodeFeature objects can be used for
+implementing 3rd party extensions (see
+[customization guide](customization-guide#nodefeature-custom-resource) for more
+details).
 
 ```yaml
 apiVersion: nfd.k8s-sigs.io/v1alpha1
