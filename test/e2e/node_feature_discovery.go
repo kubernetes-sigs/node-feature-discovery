@@ -49,8 +49,8 @@ import (
 )
 
 var (
-	dockerRepo      = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag       = flag.String("nfd.tag", "master", "Docker tag to use")
+	dockerRepo      = flag.String("nfd.repo", "registry.k8s.io/nfd/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag       = flag.String("nfd.tag", "v0.12.0", "Docker tag to use")
 	dockerImage     = fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 	testTolerations = []corev1.Toleration{
 		{
