@@ -41,19 +41,19 @@ spec:
           - "nfd-topology-updater"
         args:
           {{- if .Values.topologyUpdater.updateInterval | empty | not }}
-          - "--sleep-interval={{ .Values.topologyUpdater.updateInterval }}"
+          - "-sleep-interval={{ .Values.topologyUpdater.updateInterval }}"
           {{- else }}
-          - "--sleep-interval=3s"
+          - "-sleep-interval=3s"
           {{- end }}
           {{- if .Values.topologyUpdater.watchNamespace | empty | not }}
-          - "--watch-namespace={{ .Values.topologyUpdater.watchNamespace }}"
+          - "-watch-namespace={{ .Values.topologyUpdater.watchNamespace }}"
           {{- else }}
-          - "--watch-namespace=*"
+          - "-watch-namespace=*"
           {{- end }}
           {{- if .Values.tls.enable }}
-          - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-          - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-          - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+          - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+          - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+          - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
           {{- end }}
         volumeMounts:
         - name: kubelet-config
