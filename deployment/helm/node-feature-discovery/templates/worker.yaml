@@ -45,14 +45,14 @@ spec:
         command:
         - "nfd-worker"
         args:
-        - "--server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
+        - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
         {{- if .Values.enableNodeFeatureApi }}
         - "-enable-nodefeature-api"
         {{- end }}
 {{- if .Values.tls.enable }}
-        - "--ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-        - "--key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-        - "--cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+        - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
+        - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+        - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
 {{- end }}
         volumeMounts:
         - name: host-boot

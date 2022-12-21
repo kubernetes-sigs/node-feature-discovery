@@ -20,6 +20,6 @@ spec:
           command:
             - "nfd-master"
           args:
-            - "--prune"
+            - "-prune"
       restartPolicy: Never
 

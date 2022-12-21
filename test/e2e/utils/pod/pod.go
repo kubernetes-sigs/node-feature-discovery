@@ -363,10 +363,10 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-topology-updater"},
 				Args: []string{
-					"--kubelet-config-uri=file:///podresources/config.yaml",
-					"--podresources-socket=unix:///podresources/kubelet.sock",
-					"--sleep-interval=3s",
-					"--watch-namespace=rte"},
+					"-kubelet-config-uri=file:///podresources/config.yaml",
+					"-podresources-socket=unix:///podresources/kubelet.sock",
+					"-sleep-interval=3s",
+					"-watch-namespace=rte"},
 				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",
