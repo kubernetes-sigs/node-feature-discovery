@@ -35,10 +35,16 @@ message AttributeFeatureSet {
 //
 // +protobuf=true
 message Features {
+  // Flags contains all the flag-type features of the node.
+  // +optional
   map<string, FlagFeatureSet> flags = 1;
 
+  // Attributes contains all the attribute-type features of the node.
+  // +optional
   map<string, AttributeFeatureSet> vattributes = 2;
 
+  // Instances contains all the instance-type features of the node.
+  // +optional
   map<string, InstanceFeatureSet> instances = 3;
 }
 
