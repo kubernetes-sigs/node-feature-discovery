@@ -46,6 +46,7 @@ type NodeFeature struct {
 // NodeFeatureSpec describes a NodeFeature object.
 type NodeFeatureSpec struct {
 	// Features is the full "raw" features data that has been discovered.
+	// +optional
 	Features Features `json:"features"`
 	// Labels is the set of node labels that are requested to be created.
 	// +optional
@@ -56,9 +57,15 @@ type NodeFeatureSpec struct {
 //
 // +protobuf=true
 type Features struct {
-	Flags      map[string]FlagFeatureSet      `json:"flags" protobuf:"bytes,1,rep,name=flags"`
+	// Flags contains all the flag-type features of the node.
+	// +optional
+	Flags map[string]FlagFeatureSet `json:"flags" protobuf:"bytes,1,rep,name=flags"`
+	// Attributes contains all the attribute-type features of the node.
+	// +optional
 	Attributes map[string]AttributeFeatureSet `json:"attributes" protobuf:"bytes,2,rep,name=vattributes"`
-	Instances  map[string]InstanceFeatureSet  `json:"instances" protobuf:"bytes,3,rep,name=instances"`
+	// Instances contains all the instance-type features of the node.
+	// +optional
+	Instances map[string]InstanceFeatureSet `json:"instances" protobuf:"bytes,3,rep,name=instances"`
 }
 
 // FlagFeatureSet is a set of simple features only containing names without values.
