@@ -59,6 +59,38 @@ func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDe
 	return newCRDs, nil
 }
 
+// CreateOrUpdateNodeFeaturesFromFile creates/updates a NodeFeature object from a given file located under test data directory.
+func CreateOrUpdateNodeFeaturesFromFile(cli nfdclientset.Interface, filename, namespace, nodename string) ([]string, error) {
+	objs, err := nodeFeaturesFromFile(filepath.Join(packagePath, "..", "data", filename))
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, len(objs))
+	for i, obj := range objs {
+		obj.Namespace = namespace
+		if obj.Labels == nil {
+			obj.Labels = map[string]string{}
+		}
+		obj.Labels[nfdv1alpha1.NodeFeatureObjNodeNameLabel] = nodename
+
+		if oldObj, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), obj.Name, metav1.GetOptions{}); errors.IsNotFound(err) {
+			if _, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
+				return names, fmt.Errorf("failed to create NodeFeature %w", err)
+			}
+		} else if err == nil {
+			obj.SetResourceVersion(oldObj.GetResourceVersion())
+			if _, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
+				return names, fmt.Errorf("failed to update NodeFeature object: %w", err)
+			}
+		} else {
+			return names, fmt.Errorf("failed to get NodeFeature %w", err)
+		}
+		names[i] = obj.Name
+	}
+	return names, nil
+}
+
 // CreateNodeFeatureRuleFromFile creates a NodeFeatureRule object from a given file located under test data directory.
 func CreateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string) error {
 	objs, err := nodeFeatureRulesFromFile(filepath.Join(packagePath, "..", "data", filename))
@@ -137,6 +169,25 @@ func crdsFromFile(path string) ([]*apiextensionsv1.CustomResourceDefinition, err
 	}
 
 	return crds, nil
+}
+
+func nodeFeaturesFromFile(path string) ([]*nfdv1alpha1.NodeFeature, error) {
+	objs, err := apiObjsFromFile(path, nfdscheme.Codecs.UniversalDeserializer())
+	if err != nil {
+		return nil, err
+	}
+
+	crs := make([]*nfdv1alpha1.NodeFeature, len(objs))
+
+	for i, obj := range objs {
+		var ok bool
+		crs[i], ok = obj.(*nfdv1alpha1.NodeFeature)
+		if !ok {
+			return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
+		}
+	}
+
+	return crs, nil
 }
 
 func nodeFeatureRulesFromFile(path string) ([]*nfdv1alpha1.NodeFeatureRule, error) {
