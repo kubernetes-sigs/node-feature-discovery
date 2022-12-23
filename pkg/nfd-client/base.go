@@ -56,15 +56,6 @@ type Args struct {
 	Klog map[string]*utils.KlogFlagVal
 }
 
-var nodeName string
-
-func init() {
-	nodeName = os.Getenv("NODE_NAME")
-}
-
-// NodeName returns the name of the k8s node we're running on.
-func NodeName() string { return nodeName }
-
 // NewNfdBaseClient creates a new NfdBaseClient instance.
 func NewNfdBaseClient(args *Args) (NfdBaseClient, error) {
 	nfd := NfdBaseClient{args: *args}

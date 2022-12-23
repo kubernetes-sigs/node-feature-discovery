@@ -21,7 +21,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net"
-	"os"
 	"path"
 	"regexp"
 	"sort"
@@ -101,7 +100,7 @@ type nfdMaster struct {
 // NewNfdMaster creates a new NfdMaster server instance.
 func NewNfdMaster(args *Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: *args,
-		nodeName:  os.Getenv("NODE_NAME"),
+		nodeName:  utils.NodeName(),
 		namespace: utils.GetKubernetesNamespace(),
 		ready:     make(chan bool, 1),
 		stop:      make(chan struct{}, 1),

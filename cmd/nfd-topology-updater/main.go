@@ -26,7 +26,6 @@ import (
 	"k8s.io/klog/v2"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
-	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
 	topology "sigs.k8s.io/node-feature-discovery/pkg/nfd-client/topology-updater"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
@@ -111,12 +110,12 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) (*topology.Args, *resource
 	}
 
 	if len(resourcemonitorArgs.KubeletConfigURI) == 0 {
-		if len(nfdclient.NodeName()) == 0 {
+		if len(utils.NodeName()) == 0 {
 			fmt.Fprintf(flags.Output(), "unable to determine the default kubelet config endpoint 'https://${NODE_NAME}:%d/configz' due to empty NODE_NAME environment, "+
 				"please either define the NODE_NAME environment variable or specify endpoint with the -kubelet-config-uri flag\n", kubeletSecurePort)
 			os.Exit(1)
 		}
-		resourcemonitorArgs.KubeletConfigURI = fmt.Sprintf("https://%s:%d/configz", nfdclient.NodeName(), kubeletSecurePort)
+		resourcemonitorArgs.KubeletConfigURI = fmt.Sprintf("https://%s:%d/configz", utils.NodeName(), kubeletSecurePort)
 	}
 
 	return args, resourcemonitorArgs

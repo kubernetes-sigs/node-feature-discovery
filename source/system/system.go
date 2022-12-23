@@ -82,7 +82,7 @@ func (s *systemSource) Discover() error {
 
 	// Get node name
 	s.features.Attributes[NameFeature] = nfdv1alpha1.NewAttributeFeatures(nil)
-	s.features.Attributes[NameFeature].Elements["nodename"] = os.Getenv("NODE_NAME")
+	s.features.Attributes[NameFeature].Elements["nodename"] = utils.NodeName()
 
 	// Get os-release information
 	release, err := parseOSRelease()
