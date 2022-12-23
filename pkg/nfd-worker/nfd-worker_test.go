@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package worker_test
+package nfdworker_test
 
 import (
 	"fmt"
@@ -25,9 +25,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/nfd-client"
-	"sigs.k8s.io/node-feature-discovery/pkg/nfd-client/worker"
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
+	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/test/data"
 )
@@ -76,9 +75,9 @@ func teardownTest(ctx testContext) {
 func TestNewNfdWorker(t *testing.T) {
 	Convey("When initializing new NfdWorker instance", t, func() {
 		Convey("When one of -cert-file, -key-file or -ca-file is missing", func() {
-			_, err := worker.NewNfdWorker(&worker.Args{Args: nfdclient.Args{CertFile: "crt", KeyFile: "key"}})
-			_, err2 := worker.NewNfdWorker(&worker.Args{Args: nfdclient.Args{KeyFile: "key", CaFile: "ca"}})
-			_, err3 := worker.NewNfdWorker(&worker.Args{Args: nfdclient.Args{CertFile: "crt", CaFile: "ca"}})
+			_, err := worker.NewNfdWorker(&worker.Args{CertFile: "crt", KeyFile: "key"})
+			_, err2 := worker.NewNfdWorker(&worker.Args{KeyFile: "key", CaFile: "ca"})
+			_, err3 := worker.NewNfdWorker(&worker.Args{CertFile: "crt", CaFile: "ca"})
 			Convey("An error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err2, ShouldNotBeNil)
@@ -94,8 +93,7 @@ func TestRun(t *testing.T) {
 	Convey("When running nfd-worker against nfd-master", t, func() {
 		Convey("When publishing features from fake source", func() {
 			args := &worker.Args{
-				Args: nfdclient.Args{
-					Server: "localhost:8192"},
+				Server:    "localhost:8192",
 				Oneshot:   true,
 				Overrides: worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
 			}
@@ -120,15 +118,13 @@ func TestRunTls(t *testing.T) {
 	Convey("When running nfd-worker against nfd-master with mutual TLS auth enabled", t, func() {
 		Convey("When publishing features from fake source", func() {
 			workerArgs := worker.Args{
-				Args: nfdclient.Args{
-					CaFile:             data.FilePath("ca.crt"),
-					CertFile:           data.FilePath("nfd-test-worker.crt"),
-					KeyFile:            data.FilePath("nfd-test-worker.key"),
-					Server:             "localhost:8192",
-					ServerNameOverride: "nfd-test-master",
-				},
-				Oneshot:   true,
-				Overrides: worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
+				CaFile:             data.FilePath("ca.crt"),
+				CertFile:           data.FilePath("nfd-test-worker.crt"),
+				KeyFile:            data.FilePath("nfd-test-worker.key"),
+				Server:             "localhost:8192",
+				ServerNameOverride: "nfd-test-master",
+				Oneshot:            true,
+				Overrides:          worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
 			}
 			w, _ := worker.NewNfdWorker(&workerArgs)
 			err := w.Run()
