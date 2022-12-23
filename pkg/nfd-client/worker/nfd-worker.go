@@ -157,7 +157,7 @@ func newDefaultConfig() *NFDConfig {
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
 	klog.Infof("Node Feature Discovery Worker %s", version.Get())
-	klog.Infof("NodeName: '%s'", clientcommon.NodeName())
+	klog.Infof("NodeName: '%s'", utils.NodeName())
 	klog.Infof("Kubernetes namespace: '%s'", w.kubernetesNamespace)
 
 	// Create watcher for config file and read initial configuration
@@ -559,7 +559,7 @@ func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		Features:   source.GetAllFeatures(),
 		NfdVersion: version.Get(),
-		NodeName:   clientcommon.NodeName()}
+		NodeName:   utils.NodeName()}
 
 	cli, err := w.getGrpcClient()
 	if err != nil {
@@ -581,7 +581,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 	if err != nil {
 		return err
 	}
-	nodename := clientcommon.NodeName()
+	nodename := utils.NodeName()
 	namespace := m.kubernetesNamespace
 
 	features := source.GetAllFeatures()

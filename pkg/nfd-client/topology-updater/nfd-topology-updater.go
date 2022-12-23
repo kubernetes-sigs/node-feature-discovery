@@ -78,7 +78,7 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, pol
 		args:                args,
 		resourcemonitorArgs: resourcemonitorArgs,
 		nodeInfo: &staticNodeInfo{
-			nodeName: os.Getenv("NODE_NAME"),
+			nodeName: utils.NodeName(),
 			tmPolicy: policy,
 		},
 		stop:   make(chan struct{}, 1),
