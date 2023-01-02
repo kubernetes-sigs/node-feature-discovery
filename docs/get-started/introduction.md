@@ -17,7 +17,7 @@ sort: 1
 
 This software enables node feature discovery for Kubernetes. It detects
 hardware features available on each node in a Kubernetes cluster, and
-advertises those features using node labels.
+advertises those features using node labels and optionally node taints.
 
 NFD consists of three software components:
 
