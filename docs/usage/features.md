@@ -97,6 +97,10 @@ configuration options for details.
 | AVX512VNNI         | AVX-512 vector neural network instructions
 | AVX512VP2INTERSECT | AVX-512 intersect for D/Q
 | AVX512VPOPCNTDQ    | AVX-512 vector population count doubleword and quadword
+| AVXIFMA            | AVX-IFMA instructions
+| AVXNECONVERT       | AVX-NE-CONVERT instructions
+| AVXVNNIINT8        | AVX-VNNI-INT8 instructions
+| CMPCCXADD          | CMPCCXADD instructions
 | ENQCMD             | Enqueue Command
 | GFNI               | Galois Field New Instructions
 | HYPERVISOR         | Running under hypervisor
