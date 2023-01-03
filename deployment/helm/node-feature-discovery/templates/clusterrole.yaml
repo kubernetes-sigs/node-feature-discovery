@@ -66,3 +66,34 @@ rules:
   - get
   - update
 {{- end }}
+
+---
+{{- if and .Values.topologyGC.enable .Values.topologyGC.rbac.create .Values.topologyUpdater.enable }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "node-feature-discovery.fullname" . }}-topology-gc
+  labels:
+    {{- include "node-feature-discovery.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  verbs:
+  - get
+- apiGroups:
+  - topology.node.k8s.io
+  resources:
+  - noderesourcetopologies
+  verbs:
+  - delete
+  - list
+{{- end }}
