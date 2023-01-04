@@ -1,0 +1,31 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeature
+metadata:
+  # This name should ensure that it's processed later than that from nfd-worker
+  name: zzz-e2e-features-1
+spec:
+  # Features for NodeFeatureRule matching
+  features:
+    flags:
+      e2e.flags:
+        elements:
+          flag_1: {}
+          flag_2: {}
+    attributes:
+      # Override features from the fake sources
+      fake.attribute:
+        elements:
+          attr_2: "true"
+    instances:
+      # Append to features from the fake sources
+      fake.instance:
+        elements:
+        - attributes:
+            attr_1: "true"
+            attr_2: "9"
+  # Labels to be created
+  labels:
+    e2e-nodefeature-test-1: "obj-1"
+    e2e-nodefeature-test-2: "obj-1"
+    # Override feature from nfd-worker
+    fake-fakefeature3: "overridden"
