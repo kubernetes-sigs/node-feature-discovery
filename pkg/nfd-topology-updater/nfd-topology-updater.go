@@ -47,10 +47,11 @@ const (
 
 // Args are the command line arguments
 type Args struct {
-	NoPublish      bool
-	Oneshot        bool
-	KubeConfigFile string
-	ConfigFile     string
+	NoPublish       bool
+	Oneshot         bool
+	KubeConfigFile  string
+	ConfigFile      string
+	KubeletStateDir string
 
 	Klog map[string]*utils.KlogFlagVal
 }

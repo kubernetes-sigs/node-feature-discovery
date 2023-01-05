@@ -33,7 +33,6 @@ const (
 	FSUpdate      EventType = "fsUpdate"
 )
 
-// TODO make path configurable
 var stateFiles = sets.NewString(
 	"cpu_manager_state",
 	"memory_manager_state",
