@@ -160,16 +160,16 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	for {
 		select {
-		case <-w.eventSource:
-			klog.Infof("Scanning")
+		case info := <-w.eventSource:
+			klog.V(4).Infof("got %q event. scanning...", info.Event)
 			scanResponse, err := resScan.Scan()
 			utils.KlogDump(1, "podResources are", "  ", scanResponse.PodResources)
 			if err != nil {
-				klog.Warningf("Scan failed: %v", err)
+				klog.Warningf("scan failed: %v", err)
 				continue
 			}
 			zones = resAggr.Aggregate(scanResponse.PodResources)
-			utils.KlogDump(1, "After aggregating resources identified zones are", "  ", zones)
+			utils.KlogDump(1, "after aggregating resources identified zones are", "  ", zones)
 			if !w.args.NoPublish {
 				if err = w.updateNodeResourceTopology(zones, scanResponse); err != nil {
 					return err
