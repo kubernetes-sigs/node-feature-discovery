@@ -50,8 +50,8 @@ type Info struct {
 	Event EventType
 }
 
-func New(sleepInterval time.Duration, dest chan<- Info, kubeletDirPath string) (*Notifier, error) {
-	ch, err := createFSWatcherEvent([]string{kubeletDirPath})
+func New(sleepInterval time.Duration, dest chan<- Info, kubeletStateDir string) (*Notifier, error) {
+	ch, err := createFSWatcherEvent([]string{kubeletStateDir})
 	if err != nil {
 		return nil, err
 	}

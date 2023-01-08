@@ -91,7 +91,10 @@ func main() {
 	}
 
 	// Get new TopologyUpdater instance
-	instance := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope)
+	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope)
+	if err != nil {
+		klog.Exit(err)
+	}
 
 	if err = instance.Run(); err != nil {
 		klog.Exit(err)
