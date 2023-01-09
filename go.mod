@@ -9,7 +9,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.9
 	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.12
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.13
 	github.com/klauspost/cpuid/v2 v2.2.3
 	github.com/onsi/ginkgo/v2 v2.4.0
 	github.com/onsi/gomega v1.23.0
