@@ -10,7 +10,7 @@ IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
 BUILDER_IMAGE ?= golang:1.20-bullseye
 BASE_IMAGE_FULL ?= debian:bullseye-slim
-BASE_IMAGE_MINIMAL ?= gcr.io/distroless/base
+BASE_IMAGE_MINIMAL ?= scratch
 
 # Docker base command for working with html documentation.
 # Use host networking because 'jekyll serve' is stupid enough to use the
@@ -57,7 +57,8 @@ KUBECONFIG ?= ${HOME}/.kube/config
 E2E_TEST_CONFIG ?=
 E2E_PULL_IF_NOT_PRESENT ?= false
 
-LDFLAGS = -ldflags "-s -w -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath.pathPrefix=$(HOSTMOUNT_PREFIX)"
+BUILD_FLAGS = -tags osusergo,netgo \
+              -ldflags "-s -w -extldflags=-static -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
 # multi-arch build with buildx
 IMAGE_ALL_PLATFORMS ?= linux/amd64,linux/arm64
@@ -89,10 +90,10 @@ all: image
 
 build:
 	@mkdir -p bin
-	$(GO_CMD) build -v -o bin $(LDFLAGS) ./cmd/...
+	$(GO_CMD) build -v -o bin $(BUILD_FLAGS) ./cmd/...
 
 install:
-	$(GO_CMD) install -v $(LDFLAGS) ./cmd/...
+	$(GO_CMD) install -v $(BUILD_FLAGS) ./cmd/...
 
 image: yamls
 	$(IMAGE_BUILD_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)

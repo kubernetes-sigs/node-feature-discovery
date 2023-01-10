@@ -16,7 +16,7 @@ x86_64 and Arm64 architectures.
 ## Minimal
 
 This is a minimal image based on
-[gcr.io/distroless/base](https://github.com/GoogleContainerTools/distroless/blob/master/base/README.md)
+[scratch](https://hub.docker.com/_/scratch)
 and only supports running statically linked binaries.
 
 For backwards compatibility a container image tag with suffix `-minimal`
