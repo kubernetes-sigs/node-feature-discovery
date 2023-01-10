@@ -73,14 +73,15 @@ IMAGE_BUILD_ARGS = --build-arg VERSION=$(VERSION) \
                 --build-arg BASE_IMAGE_MINIMAL=$(BASE_IMAGE_MINIMAL)
 
 IMAGE_BUILD_ARGS_FULL = --target full \
-                	-t $(IMAGE_TAG) \
-	    		$(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)) \
-	    		$(IMAGE_BUILD_EXTRA_OPTS) ./
+                        -t $(IMAGE_TAG)-full \
+                        $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-full) \
+                        $(IMAGE_BUILD_EXTRA_OPTS) ./
 
 IMAGE_BUILD_ARGS_MINIMAL = --target minimal \
-                	   -t $(IMAGE_TAG)-minimal \
-	            	   $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag)-minimal) \
-	            	   $(IMAGE_BUILD_EXTRA_OPTS) ./
+                           -t $(IMAGE_TAG) \
+                           -t $(IMAGE_TAG)-minimal \
+                           $(foreach tag,$(IMAGE_EXTRA_TAGS),-t $(tag) -t $(tag)-minimal) \
+                           $(IMAGE_BUILD_EXTRA_OPTS) ./
 
 all: image
 
@@ -187,7 +188,7 @@ e2e-test:
 	    -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
 	    -ginkgo.focus="\[kubernetes-sigs\]" \
 	    $(if $(OPENSHIFT),-nfd.openshift,)
-	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME)-minimal \
+	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME)-full \
 	    -kubeconfig=$(KUBECONFIG) \
 	    -nfd.e2e-config=$(E2E_TEST_CONFIG) \
 	    -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
@@ -197,7 +198,12 @@ e2e-test:
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)-minimal
-	for tag in $(IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; $(IMAGE_PUSH_CMD) $$tag-minimal; done
+	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)-full
+	for tag in $(IMAGE_EXTRA_TAGS); do \
+	    $(IMAGE_PUSH_CMD) $$tag; \
+	    $(IMAGE_PUSH_CMD) $$tag-minimal; \
+	    $(IMAGE_PUSH_CMD) $$tag-full; \
+	done
 
 push-all: ensure-buildx yamls
 	$(IMAGE_BUILDX_CMD) --push $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)
@@ -205,7 +211,7 @@ push-all: ensure-buildx yamls
 
 poll-images:
 	set -e; \
-	tags="$(foreach tag,$(IMAGE_TAG_NAME) $(IMAGE_EXTRA_TAG_NAMES),$(tag) $(tag)-minimal)" \
+	tags="$(foreach tag,$(IMAGE_TAG_NAME) $(IMAGE_EXTRA_TAG_NAMES),$(tag) $(tag)-minimal $(tag)-full)" \
 	base_url=`echo $(IMAGE_REPO) | sed -e s'!\([^/]*\)!\1/v2!'`; \
 	for tag in $$tags; do \
 	    image=$(IMAGE_REPO):$$tag \
