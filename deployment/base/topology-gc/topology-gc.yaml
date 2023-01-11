@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nfd
+  name: nfd-topology-gc
+spec:
+  selector:
+    matchLabels:
+      app: nfd-topology-gc
+  template:
+    metadata:
+      labels:
+        app: nfd-topology-gc
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccount: nfd-topology-gc
+      containers:
+        - name: nfd-topology-gc
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
+          command:
+            - "nfd-topology-gc"

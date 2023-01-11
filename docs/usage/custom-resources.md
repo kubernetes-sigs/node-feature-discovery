@@ -1,7 +1,7 @@
 ---
 title: "CRDs"
 layout: default
-sort: 6
+sort: 7
 ---
 
 # Custom Resources

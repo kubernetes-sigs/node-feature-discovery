@@ -1,7 +1,7 @@
 ---
 title: "Customization guide"
 layout: default
-sort: 7
+sort: 8
 ---
 
 # Customization guide

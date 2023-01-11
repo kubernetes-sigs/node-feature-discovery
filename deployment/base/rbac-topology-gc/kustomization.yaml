@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: node-feature-discovery
+
+resources:
+- topology-gc-clusterrole.yaml
+- topology-gc-clusterrolebinding.yaml
+- topology-gc-serviceaccount.yaml

@@ -47,6 +47,14 @@ creates or updates a
 resource object specific to this node. One instance of nfd-topology-updater is
 supposed to be running on each node of the cluster.
 
+## NFD-Topology-Garbage-Collector
+
+NFD-Topology-Garbage-Collector is a daemon responsible for cleaning obsolete
+[NodeResourceTopology](../usage/custom-resources#noderesourcetopology) objects,
+obsolete means that there is no corresponding worker node.
+
+One instance of nfd-topology-gc is supposed to be running in the cluster.
+
 ## Feature Discovery
 
 Feature discovery is divided into domain-specific feature sources:
