@@ -18,7 +18,6 @@ package e2e
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -49,9 +48,6 @@ import (
 )
 
 var (
-	dockerRepo      = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag       = flag.String("nfd.tag", "master", "Docker tag to use")
-	dockerImage     = fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 	testTolerations = []corev1.Toleration{
 		{
 			Key:    "nfd.node.kubernetes.io/fake-special-node",
@@ -216,7 +212,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
 				podSpecOpts := createPodSpecOpts(
-					testpod.SpecWithContainerImage(dockerImage),
+					testpod.SpecWithContainerImage(dockerImage()),
 					testpod.SpecWithTolerations(testTolerations),
 					testpod.SpecWithContainerExtraArgs("-enable-taints"),
 				)
@@ -265,7 +261,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 					By("Creating a nfd worker pod")
 					podSpecOpts := createPodSpecOpts(
 						testpod.SpecWithRestartPolicy(corev1.RestartPolicyNever),
-						testpod.SpecWithContainerImage(dockerImage),
+						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
 						testpod.SpecWithTolerations(testTolerations),
 					)
@@ -318,7 +314,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 					By("Creating nfd-worker daemonset")
 					podSpecOpts := createPodSpecOpts(
-						testpod.SpecWithContainerImage(dockerImage),
+						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithTolerations(testTolerations),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
@@ -448,7 +444,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 					By("Creating nfd-worker daemonset with configmap mounted")
 					podSpecOpts := createPodSpecOpts(
-						testpod.SpecWithContainerImage(dockerImage),
+						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
 						testpod.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
 						testpod.SpecWithTolerations(testTolerations),
@@ -533,7 +529,7 @@ var _ = SIGDescribe("Node Feature Discovery", func() {
 
 					By("Creating nfd-worker daemonset")
 					podSpecOpts := createPodSpecOpts(
-						testpod.SpecWithContainerImage(dockerImage),
+						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithContainerExtraArgs("-label-sources=fake"),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
@@ -599,7 +595,7 @@ core:
 
 					By("Creating nfd-worker daemonset")
 					podSpecOpts := createPodSpecOpts(
-						testpod.SpecWithContainerImage(dockerImage),
+						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 						testpod.SpecWithTolerations(testTolerations),
 					)

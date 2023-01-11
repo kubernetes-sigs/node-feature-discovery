@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"flag"
+	"fmt"
 	"math/rand"
 	"os"
 	"testing"
@@ -29,12 +30,22 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework/testfiles"
 )
 
+var (
+	dockerRepo = flag.String("nfd.repo", "gcr.io/k8s-staging-nfd/node-feature-discovery", "Docker repository to fetch image from")
+	dockerTag  = flag.String("nfd.tag", "master", "Docker tag to use")
+)
+
 // handleFlags sets up all flags and parses the command line.
 func handleFlags() {
 	config.CopyFlags(config.Flags, flag.CommandLine)
 	framework.RegisterCommonFlags(flag.CommandLine)
 	framework.RegisterClusterFlags(flag.CommandLine)
 	flag.Parse()
+}
+
+// must be called after flags are parsed
+func dockerImage() string {
+	return fmt.Sprintf("%s:%s", *dockerRepo, *dockerTag)
 }
 
 func TestMain(m *testing.M) {
