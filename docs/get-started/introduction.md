@@ -43,14 +43,14 @@ NFD-Topology-Updater is a daemon responsible for examining allocated
 resources on a worker node to account for resources available to be allocated
 to new pod on a per-zone basis (where a zone can be a NUMA node). It then
 creates or updates a
-[NodeResourceTopology](../usage/custom-resources#noderesourcetopology) custom
+[NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology) custom
 resource object specific to this node. One instance of nfd-topology-updater is
 supposed to be running on each node of the cluster.
 
 ## NFD-Topology-Garbage-Collector
 
 NFD-Topology-Garbage-Collector is a daemon responsible for cleaning obsolete
-[NodeResourceTopology](../usage/custom-resources#noderesourcetopology) objects,
+[NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology) objects,
 obsolete means that there is no corresponding worker node.
 
 One instance of nfd-topology-gc is supposed to be running in the cluster.
@@ -104,7 +104,7 @@ NFD also annotates nodes it is running on:
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-labels     | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users.
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users.
 
-NOTE: the [`-instance`](../reference/master-commandline-reference#instance)
+NOTE: the [`-instance`](../reference/master-commandline-reference.md#instance)
 command line flag affects the annotation names
 
 Unapplicable annotations are not created, i.e. for example master.version is
@@ -114,13 +114,13 @@ only created on nodes running nfd-master.
 
 NFD takes use of some Kubernetes Custom Resources.
 
-[NodeFeature](../usage/custom-resources#nodefeature)s (EXPERIMENTAL)
+[NodeFeature](../usage/custom-resources.md#nodefeature)s (EXPERIMENTAL)
 can be used for representing node features and requesting node labels to be
 generated.
 
-NFD-Master uses [NodeFeatureRule](../usage/custom-resources#nodefeaturerule)s
+NFD-Master uses [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)s
 for custom labeling of nodes.
 
 NFD-Topology-Updater creates
-[NodeResourceTopology](../usage/custom-resources#noderesourcetopology) objects
+[NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology) objects
 that describe the hardware topology of node resources.

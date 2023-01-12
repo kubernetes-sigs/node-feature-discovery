@@ -59,7 +59,7 @@ is recommended to be done via
    EOF
    ```
 
-In order to deploy the [minimal](image-variants#minimal) image you need to use
+In order to deploy the [minimal](image-variants.md#minimal) image you need to use
 
 ```yaml
   image: {{ site.container_image }}-minimal

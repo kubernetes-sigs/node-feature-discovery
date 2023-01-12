@@ -16,9 +16,9 @@ sort: 6
 ---
 
 Follow the uninstallation instructions of the deployment method used
-([kustomize](kustomize#uninstallation),
-[helm](helm#uninstalling-the-chart) or
-[operator](operator#uninstallation)).
+([kustomize](kustomize.md#uninstallation),
+[helm](helm.md#uninstalling-the-chart) or
+[operator](operator.md#uninstallation)).
 
 ## Removing feature labels
 

@@ -12,14 +12,14 @@ sort: 5
 NFD-Topology-Updater is preferably run as a Kubernetes DaemonSet. This assures
 re-examination on regular intervals, capturing changes in the allocated
 resources and hence the allocatable resources on a per zone basis by updating
-[NodeResourceTopology](custom-resources#noderesourcetopology) custom resources.
+[NodeResourceTopology](custom-resources.md#noderesourcetopology) custom resources.
 It makes sure that new NodeResourceTopology instances are created for each new
 nodes that get added to the cluster.
 
 When run as a daemonset, nodes are re-examined for the allocated resources
 (to determine the information of the allocatable resources on a per zone basis
 where a zone can be a NUMA node) at an interval specified using the
-[`-sleep-interval`](../reference/topology-updater-commandline-reference.html#-sleep-interval)
+[`-sleep-interval`](../reference/topology-updater-commandline-reference.html.md#-sleep-interval)
 option. The default sleep interval is set to 60s which is the value when no
 -sleep-interval is specified.
 In addition, it can avoid examining specific allocated resources

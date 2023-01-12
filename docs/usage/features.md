@@ -21,9 +21,9 @@ Features are advertised as labels in the Kubernetes Node object.
 
 Label creation in nfd-worker is performed by a set of separate modules called
 label sources. The
-[`core.labelSources`](../reference/worker-configuration-reference#corelabelsources)
+[`core.labelSources`](../reference/worker-configuration-reference.md#corelabelsources)
 configuration option (or
-[`-label-sources`](../reference/worker-commandline-reference#-label-sources)
+[`-label-sources`](../reference/worker-commandline-reference.md#-label-sources)
 flag) of nfd-worker controls which sources to enable for label generation.
 
 All built-in labels use the `feature.node.kubernetes.io` label namespace and
@@ -37,9 +37,9 @@ feature.node.kubernetes.io/<feature> = <value>
 given node. If features are not discovered on a consecutive run, the corresponding
 label will be removed. This includes any restrictions placed on the consecutive run,
 such as restricting discovered features with the
-[`-label-whitelist`](../reference/master-commandline-reference#-label-whitelist)
+[`-label-whitelist`](../reference/master-commandline-reference.md#-label-whitelist)
 flag of nfd-master or
-[`core.labelWhiteList`](../reference/worker-configuration-reference#corelabelwhitelist)
+[`core.labelWhiteList`](../reference/worker-configuration-reference.md#corelabelwhitelist)
 option of nfd-worker.
 
 ### CPU
@@ -64,8 +64,8 @@ option of nfd-worker.
 | **`cpu-model.id`**                | int    | CPU model number.
 
 The CPU label source is configurable, see
-[worker configuration](nfd-worker#worker-configuration) and
-[`sources.cpu`](../reference/worker-configuration-reference#sourcescpu)
+[worker configuration](nfd-worker.md#worker-configuration) and
+[`sources.cpu`](../reference/worker-configuration-reference.md#sourcescpu)
 configuration options for details.
 
 #### X86 CPUID flags (partial list)
@@ -111,7 +111,7 @@ configuration options for details.
 By default, the following CPUID flags have been blacklisted: BMI1, BMI2, CLMUL,
 CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED,
 RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42 and SSSE3. See
-[`sources.cpu`](../reference/worker-configuration-reference#sourcescpu)
+[`sources.cpu`](../reference/worker-configuration-reference.md#sourcescpu)
 configuration options to change the behavior.
 
 See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
@@ -170,8 +170,8 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | **`kernel-version.revision`** | string | Third component of the kernel version (e.g. '6')
 
 The kernel label source is configurable, see
-[worker configuration](nfd-worker#worker-configuration) and
-[`sources.kernel`](../reference/worker-configuration-reference#sourceskernel)
+[worker configuration](nfd-worker.md#worker-configuration) and
+[`sources.kernel`](../reference/worker-configuration-reference.md#sourceskernel)
 configuration options for details.
 
 ### Memory
@@ -198,8 +198,8 @@ configuration options for details.
 
 `<device label>` is format is configurable and set to `<class>_<vendor>` by
 default. For more more details about configuration of the pci labels, see
-[`sources.pci`](../reference/worker-configuration-reference#sourcespci) options
-and [worker configuration](nfd-worker#worker-configuration)
+[`sources.pci`](../reference/worker-configuration-reference.md#sourcespci) options
+and [worker configuration](nfd-worker.md#worker-configuration)
 instructions.
 
 ### USB
@@ -211,8 +211,8 @@ instructions.
 `<device label>` is format is configurable and set to
 `<class>_<vendor>_<device>` by default. For more more details about
 configuration of the usb labels, see
-[`sources.usb`](../reference/worker-configuration-reference#sourcesusb) options
-and [worker configuration](nfd-worker#worker-configuration)
+[`sources.usb`](../reference/worker-configuration-reference.md#sourcesusb) options
+and [worker configuration](nfd-worker.md#worker-configuration)
 instructions.
 
 ### Storage

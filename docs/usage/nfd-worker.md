@@ -22,7 +22,7 @@ Worker connects to the nfd-master service to advertise hardware features.
 
 When run as a daemonset, nodes are re-labeled at an default interval of 60s.
 This can be changed by using the
-[`core.sleepInterval`](../reference/worker-configuration-reference.html#coresleepinterval)
+[`core.sleepInterval`](../reference/worker-configuration-reference.md#coresleepinterval)
 config option.
 
 The worker configuration file is watched and re-read on every change which
@@ -51,7 +51,7 @@ kubectl -n ${NFD_NS} edit configmap nfd-worker-conf
 ```
 
 In Helm deployments,
-[Worker pod parameter](../deployment/helm#worker-pod-parameters)
+[Worker pod parameter](../deployment/helm.md#worker-pod-parameters)
 `worker.config` can be used to edit the respective configuration.
 
 See

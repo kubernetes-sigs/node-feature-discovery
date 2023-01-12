@@ -65,8 +65,8 @@ To make use of the helm chart, override `values.yaml` to enable both the
 deployment will wait until certificates are manually created, as demonstrated
 below.
 
-See the sample installation commands in the Helm [Deployment](helm#deployment)
-and [Configuration](helm#configuration) sections above for how to either override
+See the sample installation commands in the Helm [Deployment](helm.md#deployment)
+and [Configuration](helm.md#configuration) sections above for how to either override
 individual values, or provide a yaml file with which to override default
 values.
 

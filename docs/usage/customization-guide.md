@@ -284,7 +284,7 @@ sources:
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
 
-**NOTE:** The [minimal](../deployment/image-variants#minimal) image
+**NOTE:** The [minimal](../deployment/image-variants.md#minimal) image
 variant only supports running statically linked binaries.
 
 ### Feature files
@@ -334,7 +334,7 @@ label creation, similar to the
 that the rules are specified in the worker configuration instead of a
 Kubernetes API object.
 
-See [worker configuration](nfd-worker#worker-configuration)
+See [worker configuration](nfd-worker.md#worker-configuration)
 for instructions how to set-up and manage the worker configuration.
 
 ### An example custom feature source configuration
@@ -419,7 +419,7 @@ The namespace part (i.e. prefix) of the labels is controlled by nfd:
     sub-namespaces (e.g. `vendor.profile.node.kubernetes.io` and
     `sub.ns.profile.node.kubernetes.io`) by default
   - Additional namespaces may be enabled with the
-    [`-extra-label-ns`](../reference/master-commandline-reference#-extra-label-ns)
+    [`-extra-label-ns`](../reference/master-commandline-reference.md#-extra-label-ns)
     command line flag of nfd-master
 
 ## Label rule format
@@ -608,7 +608,7 @@ The following features are available for matching:
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false'
 |                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'.
 | **`cpu.rdt`**    | flag         |          |            | Intel RDT capabilities supported by the system
-|                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](features#intel-rdt-flags) for details
+|                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](features.md#intel-rdt-flags) for details
 | **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
 |                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
