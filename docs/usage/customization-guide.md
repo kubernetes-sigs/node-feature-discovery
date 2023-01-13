@@ -621,6 +621,8 @@ The following features are available for matching:
 |                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`se.enabled`** from **`cpu.security`** instead
 | **`cpu.topology`** | attribute  |          |            | CPU topology related features
 | | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled
+| **`cpu.coprocessor`** | attribute |        |            | CPU Coprocessor related features
+| | |          **`nx_gzip`**                 | bool       | Nest Accelerator GZIP support is enabled
 | **`kernel.config`** | attribute |          |            | Kernel configuration options
 |                  |              | **`<config-flag>`** | string | Value of the kconfig option
 | **`kernel.loadedmodule`** | flag |         |            | Loaded kernel modules
