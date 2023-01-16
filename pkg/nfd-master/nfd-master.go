@@ -174,9 +174,7 @@ func (m *nfdMaster) Run() error {
 
 	// Run gRPC server
 	grpcErr := make(chan error, 1)
-	if !m.args.EnableNodeFeatureApi {
-		go m.runGrpcServer(grpcErr)
-	}
+	go m.runGrpcServer(grpcErr)
 
 	// Run updater that handles events from the nfd CRD API.
 	if m.nfdController != nil {
@@ -228,7 +226,13 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 	m.server = grpc.NewServer(serverOpts...)
-	pb.RegisterLabelerServer(m.server, m)
+
+	// If the NodeFeature API is enabled, don'tregister the labeler API
+	// server. Otherwise, register the labeler server.
+	if !m.args.EnableNodeFeatureApi {
+		pb.RegisterLabelerServer(m.server, m)
+	}
+
 	grpc_health_v1.RegisterHealthServer(m.server, health.NewServer())
 	klog.Infof("gRPC server serving on port: %d", m.args.Port)
 
