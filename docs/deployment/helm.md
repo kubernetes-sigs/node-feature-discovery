@@ -49,7 +49,7 @@ helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_N
 See the [configuration](#configuration) section below for instructions how to
 alter the deployment parameters.
 
-In order to deploy the [minimal](image-variants#minimal) image you need to
+In order to deploy the [minimal](image-variants.md#minimal) image you need to
 override the image tag:
 
 ```bash
@@ -101,7 +101,7 @@ We have introduced the following Chart parameters.
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
 | `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
 | `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
-| `enableNodeFeatureApi` | bool  | false | Enable the [NodeFeature](../usage/custom-resources#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication.
+| `enableNodeFeatureApi` | bool  | false | Enable the [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication.
 
 ### Master pod parameters
 

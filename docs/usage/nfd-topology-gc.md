@@ -11,7 +11,7 @@ sort: 6
 
 NFD-Topology-Garbage-Collector is preferably run as a Kubernetes deployment
 with one replica. It makes sure that all
-[NodeResourceTopology](custom-resources#noderesourcetopology)
+[NodeResourceTopology](custom-resources.md#noderesourcetopology)
 have corresponding worker nodes and removes stale objects for worker nodes
 which are no longer part of Kubernetes cluster.
 
