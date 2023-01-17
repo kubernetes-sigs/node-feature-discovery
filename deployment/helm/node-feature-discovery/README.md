@@ -6,5 +6,5 @@ labels. NFD provides flexible configuration and extension points for a wide
 range of vendor and application specific node labeling needs.
 
 See
-[NFD documentation](https://kubernetes-sigs.github.io/node-feature-discovery/master/get-started/deployment-and-usage.html#deployment-with-helm)
+[NFD documentation](https://kubernetes-sigs.github.io/node-feature-discovery/master/deployment/helm.html)
 for deployment instructions.
