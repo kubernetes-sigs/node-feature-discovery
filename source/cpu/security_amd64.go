@@ -20,7 +20,11 @@ limitations under the License.
 package cpu
 
 import (
+	"bufio"
+	"io"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/klauspost/cpuid/v2"
 
@@ -36,6 +40,11 @@ func discoverSecurity() map[string]string {
 
 	if tdxEnabled() {
 		elems["tdx.enabled"] = "true"
+
+		tdxTotalKeys := getCgroupMiscCapacity("tdx")
+		if tdxTotalKeys > -1 {
+			elems["tdx.total_keys"] = strconv.FormatInt(int64(tdxTotalKeys), 10)
+		}
 	}
 
 	if sevParameterEnabled("sev") {
@@ -96,4 +105,41 @@ func sevParameterEnabled(parameter string) bool {
 		}
 	}
 	return false
+}
+
+func getCgroupMiscCapacity(resource string) int64 {
+	var totalResources int64 = -1
+
+	miscCgroups := hostpath.SysfsDir.Path("fs/cgroup/misc.capacity")
+	f, err := os.Open(miscCgroups)
+	if err != nil {
+		return totalResources
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	for {
+		line, _, err := r.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return totalResources
+		}
+
+		if !strings.HasPrefix(string(line), resource) {
+			continue
+		}
+
+		s := strings.Split(string(line), " ")
+		resources, err := strconv.ParseInt(s[1], 10, 64)
+		if err != nil {
+			return totalResources
+		}
+
+		totalResources = resources
+		break
+	}
+
+	return totalResources
 }
