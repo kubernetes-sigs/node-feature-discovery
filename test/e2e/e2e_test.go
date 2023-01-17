@@ -32,7 +32,7 @@ import (
 
 var (
 	dockerRepo = flag.String("nfd.repo", "registry.k8s.io/nfd/node-feature-discovery", "Docker repository to fetch image from")
-	dockerTag  = flag.String("nfd.tag", "v0.12.0", "Docker tag to use")
+	dockerTag  = flag.String("nfd.tag", "v0.12.1", "Docker tag to use")
 )
 
 // handleFlags sets up all flags and parses the command line.
