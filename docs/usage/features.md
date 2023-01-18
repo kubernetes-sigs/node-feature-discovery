@@ -48,6 +48,7 @@ option of nfd-worker.
 | ----------------------- | ------------ | -----------
 | **`cpu-cpuid.<cpuid-flag>`**      | true   | CPU capability is supported. **NOTE:** the capability might be supported but not enabled.
 | **`cpu-hardware_multithreading`** | true   | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs)
+| **`cpu-coprocessor.nx_gzip`**     | true   | Nest Accelerator for GZIP is supported(Power).
 | **`cpu-power.sst_bf.enabled`**    | true   | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled
 | **`cpu-pstate.status`**           | string | The status of the [Intel pstate][intel-pstate] driver when in use and enabled, either 'active' or 'passive'.
 | **`cpu-pstate.turbo`**            | bool   | Set to 'true' if turbo frequencies are enabled in Intel pstate driver, set to 'false' if they have been disabled.

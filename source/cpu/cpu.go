@@ -34,16 +34,17 @@ import (
 const Name = "cpu"
 
 const (
-	CpuidFeature    = "cpuid"
-	Cpumodel        = "model"
-	CstateFeature   = "cstate"
-	PstateFeature   = "pstate"
-	RdtFeature      = "rdt"
-	SeFeature       = "se" // DEPRECATED in v0.12: will be removed in the future
-	SecurityFeature = "security"
-	SgxFeature      = "sgx" // DEPRECATED in v0.12: will be removed in the future
-	SstFeature      = "sst"
-	TopologyFeature = "topology"
+	CpuidFeature       = "cpuid"
+	Cpumodel           = "model"
+	CstateFeature      = "cstate"
+	PstateFeature      = "pstate"
+	RdtFeature         = "rdt"
+	SeFeature          = "se" // DEPRECATED in v0.12: will be removed in the future
+	SecurityFeature    = "security"
+	SgxFeature         = "sgx" // DEPRECATED in v0.12: will be removed in the future
+	SstFeature         = "sst"
+	TopologyFeature    = "topology"
+	CoprocessorFeature = "coprocessor"
 )
 
 // Configuration file options
@@ -192,6 +193,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["hardware_multithreading"] = v
 	}
 
+	// NX
+	if v, ok := features.Attributes[CoprocessorFeature].Elements["nx_gzip"]; ok {
+		labels["coprocessor.nx_gzip"] = v
+	}
+
 	return labels, nil
 }
 
@@ -245,6 +251,9 @@ func (s *cpuSource) Discover() error {
 
 	// Detect hyper-threading
 	s.features.Attributes[TopologyFeature] = nfdv1alpha1.NewAttributeFeatures(discoverTopology())
+
+	// Detect Coprocessor features
+	s.features.Attributes[CoprocessorFeature] = nfdv1alpha1.NewAttributeFeatures(discoverCoprocessor())
 
 	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
 
