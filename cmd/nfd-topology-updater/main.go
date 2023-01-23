@@ -134,7 +134,7 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
 		"Kube config file.")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
-		"Time to sleep between CR updates. Non-positive value implies no CR updatation (i.e. infinite sleep). [Default: 60s]")
+		"Time to sleep between CR updates. zero means no CR updates on interval basis. [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",
 		"Namespace to watch pods (for testing/debugging purpose). Use * for all namespaces.")
 	flagset.StringVar(&resourcemonitorArgs.KubeletConfigURI, "kubelet-config-uri", "",

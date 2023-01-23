@@ -77,8 +77,7 @@ nfd-topology-updater -oneshot -no-publish
 ### -sleep-interval
 
 The `-sleep-interval` specifies the interval between resource hardware
-topology re-examination (and CR updates). A non-positive value implies
-infinite sleep interval, i.e. no re-detection is done.
+topology re-examination (and CR updates). zero means no CR updates on interval basis.
 
 Default: 60s
 

@@ -63,10 +63,15 @@ func New(sleepInterval time.Duration, dest chan<- Info, kubeletStateDir string) 
 }
 
 func (n *Notifier) Run() {
-	t := time.Tick(n.sleepInterval)
+	timeEvents := make(<-chan time.Time)
+	if n.sleepInterval > 0 {
+		ticker := time.NewTicker(n.sleepInterval)
+		timeEvents = ticker.C
+	}
+
 	for {
 		select {
-		case <-t:
+		case <-timeEvents:
 			klog.V(5).Infof("timer update received")
 			i := Info{Event: IntervalBased}
 			n.dest <- i
