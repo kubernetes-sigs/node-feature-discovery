@@ -70,6 +70,11 @@ spec:
           mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
         - name: host-sys
           mountPath: /host-sys
+        {{- if .Values.topologyUpdater.kubeletStateDir | empty | not }}
+        - name: kubelet-state-files
+          mountPath: /host-var/lib/kubelet
+          readOnly: true
+        {{- end }}
         {{- if .Values.tls.enable }}
         - name: nfd-topology-updater-cert
           mountPath: "/etc/kubernetes/node-feature-discovery/certs"
@@ -99,6 +104,11 @@ spec:
           {{- else }}
           path: /var/lib/kubelet/pod-resources/kubelet.sock
           {{- end }}
+      {{- if .Values.topologyUpdater.kubeletStateDir | empty | not }}
+      - name: kubelet-state-files
+        hostPath:
+          path: {{ .Values.topologyUpdater.kubeletStateDir }}
+      {{- end }}
       - name: nfd-topology-updater-conf
         configMap:
           name: {{ include "node-feature-discovery.fullname" . }}-topology-updater-conf
