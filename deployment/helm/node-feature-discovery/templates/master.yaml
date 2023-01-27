@@ -27,6 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       serviceAccountName: {{ include "node-feature-discovery.master.serviceAccountName" . }}
+      enableServiceLinks: false
       securityContext:
         {{- toYaml .Values.master.podSecurityContext | nindent 8 }}
       containers:
