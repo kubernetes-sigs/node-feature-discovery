@@ -22,13 +22,13 @@ spec:
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           imagePullPolicy: Always
           livenessProbe:
-            exec:
-              command: ["/usr/bin/grpc_health_probe", "-addr=:8080"]
+            grpc:
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
-            exec:
-              command: ["/usr/bin/grpc_health_probe", "-addr=:8080"]
+            grpc:
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 10

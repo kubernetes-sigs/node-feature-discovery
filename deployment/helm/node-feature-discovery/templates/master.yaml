@@ -41,29 +41,13 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
-            exec:
-              command:
-              - "/usr/bin/grpc_health_probe"
-              - "-addr=:{{ .Values.master.port | default "8080" }}"
-              {{- if .Values.tls.enable }}
-              - "-tls"
-              - "-tls-ca-cert=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-              - "-tls-client-key=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-              - "-tls-client-cert=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
-              {{- end }}
+            grpc:
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
-            exec:
-              command:
-              - "/usr/bin/grpc_health_probe"
-              - "-addr=:{{ .Values.master.port | default "8080" }}"
-              {{- if .Values.tls.enable }}
-              - "-tls"
-              - "-tls-ca-cert=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-              - "-tls-client-key=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-              - "-tls-client-cert=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
-              {{- end }}
+            grpc:
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 10
