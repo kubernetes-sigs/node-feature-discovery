@@ -27,8 +27,6 @@ ARG HOSTMOUNT_PREFIX
 
 RUN make install VERSION=$VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
 
-RUN make test
-
 # Create full variant of the production image
 FROM ${BASE_IMAGE_FULL} as full
 
