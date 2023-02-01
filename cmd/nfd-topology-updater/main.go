@@ -139,6 +139,7 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Pod Resource Socket path to use.")
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf",
 		"Config file to use.")
+	flagset.BoolVar(&resourcemonitorArgs.PodSetFingerprint, "pods-fingerprint", false, "Compute and report the pod set fingerprint")
 
 	klog.InitFlags(flagset)
 

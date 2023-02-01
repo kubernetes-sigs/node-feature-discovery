@@ -27,20 +27,25 @@ import (
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
+
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
+	"github.com/k8stopologyawareschedwg/podfingerprint"
 )
 
 type PodResourcesScanner struct {
 	namespace         string
 	podResourceClient podresourcesapi.PodResourcesListerClient
 	apihelper         apihelper.APIHelpers
+	podFingerprint    bool
 }
 
 // NewPodResourcesScanner creates a new ResourcesScanner instance
-func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, kubeApihelper apihelper.APIHelpers) (ResourcesScanner, error) {
+func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, kubeApihelper apihelper.APIHelpers, podFingerprint bool) (ResourcesScanner, error) {
 	resourcemonitorInstance := &PodResourcesScanner{
 		namespace:         namespace,
 		podResourceClient: podResourceClient,
 		apihelper:         kubeApihelper,
+		podFingerprint:    podFingerprint,
 	}
 	if resourcemonitorInstance.namespace != "*" {
 		klog.Infof("watching namespace %q", resourcemonitorInstance.namespace)
@@ -123,9 +128,28 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 		return ScanResponse{}, fmt.Errorf("can't receive response: %v.Get(_) = _, %w", resMon.podResourceClient, err)
 	}
 
+	respPodResources := resp.GetPodResources()
+	retVal := ScanResponse{
+		Attributes: v1alpha2.AttributeList{},
+	}
+
+	if resMon.podFingerprint && len(respPodResources) > 0 {
+		var status podfingerprint.Status
+		podFingerprintSign, err := computePodFingerprint(respPodResources, &status)
+		if err != nil {
+			klog.Errorf("podFingerprint: Unable to compute fingerprint %v", err)
+		} else {
+			klog.Info("podFingerprint: " + status.Repr())
+
+			retVal.Attributes = append(retVal.Attributes, v1alpha2.AttributeInfo{
+				Name:  podfingerprint.Attribute,
+				Value: podFingerprintSign,
+			})
+		}
+	}
 	var podResData []PodResources
 
-	for _, podResource := range resp.GetPodResources() {
+	for _, podResource := range respPodResources {
 		klog.Infof("podresource iter: %s", podResource.GetName())
 		hasDevice := hasDevice(podResource)
 		isWatchable, isIntegralGuaranteed, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
@@ -198,7 +222,9 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 
 	}
 
-	return ScanResponse{PodResources: podResData}, nil
+	retVal.PodResources = podResData
+
+	return retVal, nil
 }
 
 func hasDevice(podResource *podresourcesapi.PodResources) bool {
@@ -224,4 +250,15 @@ func getNumaNodeIds(topologyInfo *podresourcesapi.TopologyInfo) []int {
 	}
 
 	return topology
+}
+
+func computePodFingerprint(podResources []*podresourcesapi.PodResources, status *podfingerprint.Status) (string, error) {
+	fingerprint := podfingerprint.NewTracingFingerprint(len(podResources), status)
+	for _, podResource := range podResources {
+		err := fingerprint.Add(podResource.Namespace, podResource.Name)
+		if err != nil {
+			return "", err
+		}
+	}
+	return fingerprint.Sign(), nil
 }

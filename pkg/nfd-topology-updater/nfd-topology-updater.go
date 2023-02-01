@@ -130,7 +130,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	var resScan resourcemonitor.ResourcesScanner
 
-	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, w.apihelper)
+	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, w.apihelper, w.resourcemonitorArgs.PodSetFingerprint)
 	if err != nil {
 		return fmt.Errorf("failed to initialize ResourceMonitor instance: %w", err)
 	}
@@ -163,7 +163,7 @@ func (w *nfdTopologyUpdater) Run() error {
 			zones = resAggr.Aggregate(scanResponse.PodResources)
 			utils.KlogDump(1, "After aggregating resources identified zones are", "  ", zones)
 			if !w.args.NoPublish {
-				if err = w.updateNodeResourceTopology(zones); err != nil {
+				if err = w.updateNodeResourceTopology(zones, scanResponse); err != nil {
 					return err
 				}
 			}
@@ -188,7 +188,7 @@ func (w *nfdTopologyUpdater) Stop() {
 	}
 }
 
-func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList) error {
+func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList, scanResponse resourcemonitor.ScanResponse) error {
 	cli, err := w.apihelper.GetTopologyClient()
 	if err != nil {
 		return err
@@ -205,6 +205,8 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 			Attributes:       createTopologyAttributes(w.nodeInfo.tmPolicy, w.nodeInfo.tmScope),
 		}
 
+		updateAttributes(&nrtNew.Attributes, scanResponse.Attributes)
+
 		_, err := cli.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to create NodeResourceTopology: %w", err)
@@ -216,6 +218,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 
 	nrtMutated := nrt.DeepCopy()
 	nrtMutated.Zones = zoneInfo
+	updateAttributes(&nrtMutated.Attributes, scanResponse.Attributes)
 
 	nrtUpdated, err := cli.TopologyV1alpha2().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
 	if err != nil {
@@ -259,5 +262,24 @@ func createTopologyAttributes(policy string, scope string) v1alpha2.AttributeLis
 			Name:  TopologyManagerScopeAttributeName,
 			Value: scope,
 		},
+	}
+}
+
+func updateAttribute(attrList *v1alpha2.AttributeList, attrInfo v1alpha2.AttributeInfo) {
+	if attrList == nil {
+		return
+	}
+
+	for idx := range *attrList {
+		if (*attrList)[idx].Name == attrInfo.Name {
+			(*attrList)[idx].Value = attrInfo.Value
+			return
+		}
+	}
+	*attrList = append(*attrList, attrInfo)
+}
+func updateAttributes(lhs *v1alpha2.AttributeList, rhs v1alpha2.AttributeList) {
+	for _, attr := range rhs {
+		updateAttribute(lhs, attr)
 	}
 }

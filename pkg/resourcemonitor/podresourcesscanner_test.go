@@ -22,6 +22,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/k8stopologyawareschedwg/podfingerprint"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 
@@ -40,11 +41,24 @@ func TestPodScanner(t *testing.T) {
 	var resScan ResourcesScanner
 	var err error
 
+	// PodFingerprint only depends on Name/Namespace of the pods running on a Node
+	// so we can precalculate the expected value
+	expectedFingerprintCompute := func(pods []*corev1.Pod) (string, error) {
+		pf := podfingerprint.NewFingerprint(len(pods))
+		for _, pr := range pods {
+			if err := pf.Add(pr.Namespace, pr.Name); err != nil {
+				return "", err
+			}
+		}
+		return pf.Sign(), nil
+	}
+
 	Convey("When I scan for pod resources using fake client and no namespace", t, func() {
 		mockPodResClient := new(podres.MockPodResourcesListerClient)
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
 		mockClient := &k8sclient.Clientset{}
-		resScan, err = NewPodResourcesScanner("*", mockPodResClient, mockAPIHelper)
+		computePodFingerprint := true
+		resScan, err = NewPodResourcesScanner("*", mockPodResClient, mockAPIHelper, computePodFingerprint)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)
@@ -60,6 +74,9 @@ func TestPodScanner(t *testing.T) {
 			Convey("Return PodResources should be nil", func() {
 				So(res.PodResources, ShouldBeNil)
 			})
+			Convey("Return Attributes should be empty", func() {
+				So(res.Attributes, ShouldBeEmpty)
+			})
 		})
 
 		Convey("When I successfully get empty response", func() {
@@ -71,6 +88,9 @@ func TestPodScanner(t *testing.T) {
 			})
 			Convey("Return PodResources should be zero", func() {
 				So(len(res.PodResources), ShouldEqual, 0)
+			})
+			Convey("Return Attributes should be empty", func() {
+				So(res.Attributes, ShouldBeEmpty)
 			})
 		})
 
@@ -203,6 +223,14 @@ func TestPodScanner(t *testing.T) {
 				}
 				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
+			Convey("Return Attributes should have pod fingerprint attribute with proper value", func() {
+				So(len(res.Attributes), ShouldEqual, 1)
+				// can compute expected fringerprint only with the list of pods in the node.
+				expectedFingerprint, err := expectedFingerprintCompute([]*corev1.Pod{pod})
+				So(err, ShouldBeNil)
+				So(res.Attributes[0].Name, ShouldEqual, podfingerprint.Attribute)
+				So(res.Attributes[0].Value, ShouldEqual, expectedFingerprint)
+			})
 		})
 
 		Convey("When I successfully get valid response without topology", func() {
@@ -292,6 +320,14 @@ func TestPodScanner(t *testing.T) {
 
 				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
+			Convey("Return Attributes should have pod fingerprint attribute with proper value", func() {
+				So(len(res.Attributes), ShouldEqual, 1)
+				// can compute expected fringerprint only with the list of pods in the node.
+				expectedFingerprint, err := expectedFingerprintCompute([]*corev1.Pod{pod})
+				So(err, ShouldBeNil)
+				So(res.Attributes[0].Name, ShouldEqual, podfingerprint.Attribute)
+				So(res.Attributes[0].Value, ShouldEqual, expectedFingerprint)
+			})
 		})
 
 		Convey("When I successfully get valid response without devices", func() {
@@ -366,6 +402,14 @@ func TestPodScanner(t *testing.T) {
 				}
 
 				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
+			})
+			Convey("Return Attributes should have pod fingerprint attribute with proper value", func() {
+				So(len(res.Attributes), ShouldEqual, 1)
+				// can compute expected fringerprint only with the list of pods in the node.
+				expectedFingerprint, err := expectedFingerprintCompute([]*corev1.Pod{pod})
+				So(err, ShouldBeNil)
+				So(res.Attributes[0].Name, ShouldEqual, podfingerprint.Attribute)
+				So(res.Attributes[0].Value, ShouldEqual, expectedFingerprint)
 			})
 		})
 
@@ -507,6 +551,14 @@ func TestPodScanner(t *testing.T) {
 			Convey("Return PodResources should have values", func() {
 				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 			})
+			Convey("Return Attributes should have pod fingerprint attribute with proper value", func() {
+				So(len(res.Attributes), ShouldEqual, 1)
+				// can compute expected fringerprint only with the list of pods in the node.
+				expectedFingerprint, err := expectedFingerprintCompute([]*corev1.Pod{pod})
+				So(err, ShouldBeNil)
+				So(res.Attributes[0].Name, ShouldEqual, podfingerprint.Attribute)
+				So(res.Attributes[0].Value, ShouldEqual, expectedFingerprint)
+			})
 
 			expected := []PodResources{
 				{
@@ -610,15 +662,25 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 			So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
-		})
 
+			Convey("Return Attributes should have pod fingerprint attribute with proper value", func() {
+				So(len(res.Attributes), ShouldEqual, 1)
+
+				// can compute expected fringerprint only with the list of pods in the node.
+				expectedFingerprint, err := expectedFingerprintCompute([]*corev1.Pod{pod})
+				So(err, ShouldBeNil)
+				So(res.Attributes[0].Name, ShouldEqual, podfingerprint.Attribute)
+				So(res.Attributes[0].Value, ShouldEqual, expectedFingerprint)
+			})
+		})
 	})
 
 	Convey("When I scan for pod resources using fake client and given namespace", t, func() {
 		mockPodResClient := new(podres.MockPodResourcesListerClient)
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
 		mockClient := &k8sclient.Clientset{}
-		resScan, err = NewPodResourcesScanner("pod-res-test", mockPodResClient, mockAPIHelper)
+		computePodFingerprint := false
+		resScan, err = NewPodResourcesScanner("pod-res-test", mockPodResClient, mockAPIHelper, computePodFingerprint)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)

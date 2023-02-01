@@ -424,6 +424,7 @@ topologyUpdater:
   tolerations: []
   annotations: {}
   affinity: {}
+  podSetFingerprint: true
 
 topologyGC:
   enable: true
