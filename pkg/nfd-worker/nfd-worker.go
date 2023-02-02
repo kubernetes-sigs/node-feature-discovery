@@ -131,6 +131,11 @@ type duration struct {
 	time.Duration
 }
 
+// This ticker can represent infinite and normal intervals.
+type infiniteTicker struct {
+	*time.Ticker
+}
+
 // NewNfdWorker creates new NfdWorker instance.
 func NewNfdWorker(args *Args) (NfdWorker, error) {
 	nfd := &nfdWorker{
@@ -172,6 +177,37 @@ func newDefaultConfig() *NFDConfig {
 	}
 }
 
+func (i *infiniteTicker) Reset(d time.Duration) {
+	switch {
+	case d > 0:
+		i.Ticker.Reset(d)
+	default:
+		// If the sleep interval is not a positive number the ticker will act
+		// as if it was set to an infinite duration by not ticking.
+		i.Ticker.Stop()
+	}
+}
+
+// Run feature discovery.
+func (w *nfdWorker) runFeatureDiscovery() error {
+	for _, s := range w.featureSources {
+		klog.V(2).Infof("running discovery for %q source", s.Name())
+		if err := s.Discover(); err != nil {
+			klog.Errorf("feature discovery of %q source failed: %v", s.Name(), err)
+		}
+	}
+
+	// Get the set of feature labels.
+	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+
+	// Update the node with the feature labels.
+	if !w.config.Core.NoPublish {
+		return w.advertiseFeatures(labels)
+	}
+
+	return nil
+}
+
 // Run NfdWorker client. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
@@ -196,34 +232,27 @@ func (w *nfdWorker) Run() error {
 
 	defer w.grpcDisconnect()
 
-	labelTrigger := time.After(0)
+	// Create ticker for feature discovery and run feature discovery once before the loop.
+	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
+	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
+	defer labelTrigger.Stop()
+
+	err = w.runFeatureDiscovery()
+	if err != nil {
+		return err
+	}
+
+	// Only run feature disovery once if Oneshot is set to 'true'.
+	if w.args.Oneshot {
+		return nil
+	}
+
 	for {
 		select {
-		case <-labelTrigger:
-			// Run feature discovery
-			for _, s := range w.featureSources {
-				klog.V(2).Infof("running discovery for %q source", s.Name())
-				if err := s.Discover(); err != nil {
-					klog.Errorf("feature discovery of %q source failed: %v", s.Name(), err)
-				}
-			}
-
-			// Get the set of feature labels.
-			labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
-
-			// Update the node with the feature labels.
-			if !w.config.Core.NoPublish {
-				if err := w.advertiseFeatures(labels); err != nil {
-					return err
-				}
-			}
-
-			if w.args.Oneshot {
-				return nil
-			}
-
-			if w.config.Core.SleepInterval.Duration > 0 {
-				labelTrigger = time.After(w.config.Core.SleepInterval.Duration)
+		case <-labelTrigger.C:
+			err = w.runFeatureDiscovery()
+			if err != nil {
+				return err
 			}
 
 		case <-configWatch.Events:
@@ -238,7 +267,11 @@ func (w *nfdWorker) Run() error {
 
 			// Always re-label after a re-config event. This way the new config
 			// comes into effect even if the sleep interval is long (or infinite)
-			labelTrigger = time.After(0)
+			labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
+			err = w.runFeatureDiscovery()
+			if err != nil {
+				return err
+			}
 
 		case <-w.certWatch.Events:
 			klog.Infof("TLS certificate update, renewing connection to nfd-master")
