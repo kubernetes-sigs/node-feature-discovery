@@ -21,6 +21,9 @@ make ci-lint
 echo "Running Helm lint"
 make helm-lint
 
+echo "Running unit tests"
+make test
+
 # Check that repo is clean
 if ! git diff --quiet; then
     echo "Repository is dirty!"
