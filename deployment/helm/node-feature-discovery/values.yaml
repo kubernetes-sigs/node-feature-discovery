@@ -17,6 +17,7 @@ master:
   port: 8080
   instance:
   featureApi:
+  denyLabelNs: []
   extraLabelNs: []
   resourceLabels: []
   crdController: null

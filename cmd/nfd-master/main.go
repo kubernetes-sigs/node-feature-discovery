@@ -85,12 +85,15 @@ func main() {
 func initFlags(flagset *flag.FlagSet) *master.Args {
 	args := &master.Args{
 		LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+		DenyLabelNs:    map[string]struct{}{"*.kubernetes.io": {}},
 	}
 
 	flagset.StringVar(&args.CaFile, "ca-file", "",
 		"Root certificate for verifying connections")
 	flagset.StringVar(&args.CertFile, "cert-file", "",
 		"Certificate used for authenticating connections")
+	flagset.Var(&args.DenyLabelNs, "deny-label-ns",
+		"Comma separated list of denied label namespaces")
 	flagset.Var(&args.ExtraLabelNs, "extra-label-ns",
 		"Comma separated list of allowed extra label namespaces")
 	flagset.StringVar(&args.Instance, "instance", "",

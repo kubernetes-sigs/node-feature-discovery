@@ -216,12 +216,10 @@ nfd-master -label-whitelist='.*cpuid\.'
 ### -extra-label-ns
 
 The `-extra-label-ns` flag specifies a comma-separated list of allowed feature
-label namespaces. By default, nfd-master only allows creating labels in the
-default `feature.node.kubernetes.io` and `profile.node.kubernetes.io` label
-namespaces and their sub-namespaces (e.g. `vendor.feature.node.kubernetes.io`
-and `sub.ns.profile.node.kubernetes.io`). This option can be used to allow
+label namespaces. This option can be used to allow
 other vendor or application specific namespaces for custom labels from the
-local and custom feature sources.
+local and custom feature sources, even though these labels were denied using
+the `deny-label-ns` flag.
 
 The same namespace control and this flag applies Extended Resources (created
 with `-resource-labels`), too.
@@ -232,6 +230,28 @@ Example:
 
 ```bash
 nfd-master -extra-label-ns=vendor-1.com,vendor-2.io
+```
+
+### -deny-label-ns
+
+The `-deny-label-ns` flag specifies a comma-separated list of excluded
+label namespaces. By default, nfd-master allows creating labels in all
+namespaces, excluding `kubernetes.io` namespace and its sub-namespaces
+(i.e. `*.kubernetes.io`). However, you should note that
+`kubernetes.io` and its sub-namespaces are always denied.
+For example, `nfd-master -deny-label-ns=""` would still disallow
+`kubernetes.io` and `*.kubernetes.io`.
+This option can be used to exclude some vendors or application specific
+namespaces.
+Note that the namespaces `feature.node.kubernetes.io` and `profile.node.kubernetes.io`
+and their sub-namespaces are always allowed and cannot be denied.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-master -deny-label-ns=*.vendor.com,vendor-2.io
 ```
 
 ### -resource-labels
