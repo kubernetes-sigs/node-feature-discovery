@@ -17,49 +17,49 @@ limitations under the License.
 package topologypolicy
 
 import (
-	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	"k8s.io/kubernetes/pkg/kubelet/apis/config"
 )
 
 // DetectTopologyPolicy returns string type which present
 // both Topology manager policy and scope
-func DetectTopologyPolicy(policy string, scope string) v1alpha1.TopologyManagerPolicy {
+func DetectTopologyPolicy(policy string, scope string) v1alpha2.TopologyManagerPolicy {
 	switch scope {
 	case config.PodTopologyManagerScope:
 		return detectPolicyPodScope(policy)
 	case config.ContainerTopologyManagerScope:
 		return detectPolicyContainerScope(policy)
 	default:
-		return v1alpha1.None
+		return v1alpha2.None
 	}
 }
 
-func detectPolicyPodScope(policy string) v1alpha1.TopologyManagerPolicy {
+func detectPolicyPodScope(policy string) v1alpha2.TopologyManagerPolicy {
 	switch policy {
 	case config.SingleNumaNodeTopologyManagerPolicy:
-		return v1alpha1.SingleNUMANodePodLevel
+		return v1alpha2.SingleNUMANodePodLevel
 	case config.RestrictedTopologyManagerPolicy:
-		return v1alpha1.RestrictedPodLevel
+		return v1alpha2.RestrictedPodLevel
 	case config.BestEffortTopologyManagerPolicy:
-		return v1alpha1.BestEffortPodLevel
+		return v1alpha2.BestEffortPodLevel
 	case config.NoneTopologyManagerPolicy:
-		return v1alpha1.None
+		return v1alpha2.None
 	default:
-		return v1alpha1.None
+		return v1alpha2.None
 	}
 }
 
-func detectPolicyContainerScope(policy string) v1alpha1.TopologyManagerPolicy {
+func detectPolicyContainerScope(policy string) v1alpha2.TopologyManagerPolicy {
 	switch policy {
 	case config.SingleNumaNodeTopologyManagerPolicy:
-		return v1alpha1.SingleNUMANodeContainerLevel
+		return v1alpha2.SingleNUMANodeContainerLevel
 	case config.RestrictedTopologyManagerPolicy:
-		return v1alpha1.RestrictedContainerLevel
+		return v1alpha2.RestrictedContainerLevel
 	case config.BestEffortTopologyManagerPolicy:
-		return v1alpha1.BestEffortContainerLevel
+		return v1alpha2.BestEffortContainerLevel
 	case config.NoneTopologyManagerPolicy:
-		return v1alpha1.None
+		return v1alpha2.None
 	default:
-		return v1alpha1.None
+		return v1alpha2.None
 	}
 }

@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/jaypipes/ghw"
-	topologyv1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	topologyv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
@@ -103,7 +103,7 @@ func NewResourcesAggregatorFromData(topo *ghw.TopologyInfo, resp *podresourcesap
 }
 
 // Aggregate provides the mapping (numa zone name) -> Zone from the given PodResources.
-func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topologyv1alpha1.ZoneList {
+func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topologyv1alpha2.ZoneList {
 	perNuma := make(map[int]map[corev1.ResourceName]*resourceData)
 	for nodeID := range noderesourceData.topo.Nodes {
 		nodeRes, ok := noderesourceData.perNUMAAllocatable[nodeID]
@@ -168,12 +168,12 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 		}
 	}
 
-	zones := make(topologyv1alpha1.ZoneList, 0)
+	zones := make(topologyv1alpha2.ZoneList, 0)
 	for nodeID, resList := range perNuma {
-		zone := topologyv1alpha1.Zone{
+		zone := topologyv1alpha2.Zone{
 			Name:      makeZoneName(nodeID),
 			Type:      "Node",
-			Resources: make(topologyv1alpha1.ResourceInfoList, 0),
+			Resources: make(topologyv1alpha2.ResourceInfoList, 0),
 		}
 
 		costs, err := makeCostsPerNumaNode(noderesourceData.topo.Nodes, nodeID)
@@ -187,7 +187,7 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 			allocatableQty := *resource.NewQuantity(resData.allocatable, resource.DecimalSI)
 			capacityQty := *resource.NewQuantity(resData.capacity, resource.DecimalSI)
 			availableQty := *resource.NewQuantity(resData.available, resource.DecimalSI)
-			zone.Resources = append(zone.Resources, topologyv1alpha1.ResourceInfo{
+			zone.Resources = append(zone.Resources, topologyv1alpha2.ResourceInfo{
 				Name:        name.String(),
 				Available:   availableQty,
 				Allocatable: allocatableQty,
@@ -345,15 +345,15 @@ func makeResourceMap(numaNodes int, devices []*podresourcesapi.ContainerDevices)
 }
 
 // makeCostsPerNumaNode builds the cost map to reach all the known NUMA zones (mapping (numa zone) -> cost) starting from the given NUMA zone.
-func makeCostsPerNumaNode(nodes []*ghw.TopologyNode, nodeIDSrc int) ([]topologyv1alpha1.CostInfo, error) {
+func makeCostsPerNumaNode(nodes []*ghw.TopologyNode, nodeIDSrc int) ([]topologyv1alpha2.CostInfo, error) {
 	nodeSrc := findNodeByID(nodes, nodeIDSrc)
 	if nodeSrc == nil {
 		return nil, fmt.Errorf("unknown node: %d", nodeIDSrc)
 	}
-	nodeCosts := make([]topologyv1alpha1.CostInfo, 0)
+	nodeCosts := make([]topologyv1alpha2.CostInfo, 0)
 	for nodeIDDst, dist := range nodeSrc.Distances {
 		// TODO: this assumes there are no holes (= no offline node) in the distance vector
-		nodeCosts = append(nodeCosts, topologyv1alpha1.CostInfo{
+		nodeCosts = append(nodeCosts, topologyv1alpha2.CostInfo{
 			Name:  makeZoneName(nodeIDDst),
 			Value: int64(dist),
 		})
