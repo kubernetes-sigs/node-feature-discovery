@@ -64,7 +64,7 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Integration & Delivery
-    containerImage: k8s.gcr.io/nfd/node-feature-discovery-operator:master
+    containerImage: registry.k8s.io/nfd/node-feature-discovery-operator:master
     createdAt: "2023-01-17T14:52:07Z"
     description: |-
       The Node Feature Discovery Operator manages the detection of hardware features and configuration in a Kubernetes cluster by labeling the nodes with hardware-specific information. The Node Feature Discovery (NFD) will label the host with node-specific attributes, like PCI cards, kernel, or OS version, and many more.
@@ -404,7 +404,7 @@ spec:
                   value: cluster-nfd-operator
                 - name: NODE_FEATURE_DISCOVERY_IMAGE
                   value: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-                image: k8s.gcr.io/nfd/node-feature-discovery-operator:0.5.0-minimal
+                image: registry.k8s.io/nfd/node-feature-discovery-operator:0.5.0-minimal
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
