@@ -113,14 +113,14 @@ func hasIntegralCPUs(pod *corev1.Pod, container *corev1.Container) bool {
 }
 
 // Scan gathers all the PodResources from the system, using the podresources API client.
-func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
+func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultPodResourcesTimeout)
 	defer cancel()
 
 	// Pod Resource API client
 	resp, err := resMon.podResourceClient.List(ctx, &podresourcesapi.ListPodResourcesRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("can't receive response: %v.Get(_) = _, %w", resMon.podResourceClient, err)
+		return ScanResponse{}, fmt.Errorf("can't receive response: %v.Get(_) = _, %w", resMon.podResourceClient, err)
 	}
 
 	var podResData []PodResources
@@ -130,7 +130,7 @@ func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
 		hasDevice := hasDevice(podResource)
 		isWatchable, isIntegralGuaranteed, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
 		if err != nil {
-			return nil, fmt.Errorf("checking if pod in a namespace is watchable, namespace:%v, pod name %v: %v", podResource.GetNamespace(), podResource.GetName(), err)
+			return ScanResponse{}, fmt.Errorf("checking if pod in a namespace is watchable, namespace:%v, pod name %v: %v", podResource.GetNamespace(), podResource.GetName(), err)
 		}
 		if !isWatchable {
 			continue
@@ -198,7 +198,7 @@ func (resMon *PodResourcesScanner) Scan() ([]PodResources, error) {
 
 	}
 
-	return podResData, nil
+	return ScanResponse{PodResources: podResData}, nil
 }
 
 func hasDevice(podResource *podresourcesapi.PodResources) bool {

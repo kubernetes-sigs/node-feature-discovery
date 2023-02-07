@@ -154,13 +154,13 @@ func (w *nfdTopologyUpdater) Run() error {
 		select {
 		case <-crTrigger.C:
 			klog.Infof("Scanning")
-			podResources, err := resScan.Scan()
-			utils.KlogDump(1, "podResources are", "  ", podResources)
+			scanResponse, err := resScan.Scan()
+			utils.KlogDump(1, "podResources are", "  ", scanResponse.PodResources)
 			if err != nil {
 				klog.Warningf("Scan failed: %v", err)
 				continue
 			}
-			zones = resAggr.Aggregate(podResources)
+			zones = resAggr.Aggregate(scanResponse.PodResources)
 			utils.KlogDump(1, "After aggregating resources identified zones are", "  ", zones)
 			if !w.args.NoPublish {
 				if err = w.updateNodeResourceTopology(zones); err != nil {

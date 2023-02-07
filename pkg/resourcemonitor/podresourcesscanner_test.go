@@ -58,7 +58,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldNotBeNil)
 			})
 			Convey("Return PodResources should be nil", func() {
-				So(res, ShouldBeNil)
+				So(res.PodResources, ShouldBeNil)
 			})
 		})
 
@@ -70,7 +70,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should be zero", func() {
-				So(len(res), ShouldEqual, 0)
+				So(len(res.PodResources), ShouldEqual, 0)
 			})
 		})
 
@@ -160,7 +160,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
 					{
@@ -194,14 +194,14 @@ func TestPodScanner(t *testing.T) {
 						},
 					},
 				}
-				for _, podresource := range res {
+				for _, podresource := range res.PodResources {
 					for _, container := range podresource.Containers {
-						sort.Slice(res, func(i, j int) bool {
+						sort.Slice(res.PodResources, func(i, j int) bool {
 							return container.Resources[i].Name < container.Resources[j].Name
 						})
 					}
 				}
-				So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
 		})
 
@@ -266,7 +266,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
 					{
@@ -290,7 +290,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				}
 
-				So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
 		})
 
@@ -345,7 +345,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
 					{
@@ -365,7 +365,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				}
 
-				So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
 		})
 
@@ -427,7 +427,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
 					{
@@ -447,7 +447,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				}
 
-				So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
 		})
 
@@ -505,7 +505,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 			})
 
 			expected := []PodResources{
@@ -526,7 +526,7 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 
-			So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+			So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 		})
 
 		Convey("When I successfully get valid response for (non-guaranteed) pods with devices with cpus", func() {
@@ -589,7 +589,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 			})
 
 			expected := []PodResources{
@@ -609,7 +609,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+			So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 		})
 
 	})
@@ -632,7 +632,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldNotBeNil)
 			})
 			Convey("Return PodResources should be nil", func() {
-				So(res, ShouldBeNil)
+				So(res.PodResources, ShouldBeNil)
 			})
 		})
 
@@ -644,7 +644,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should be zero", func() {
-				So(len(res), ShouldEqual, 0)
+				So(len(res.PodResources), ShouldEqual, 0)
 			})
 		})
 
@@ -712,7 +712,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should be zero", func() {
-				So(len(res), ShouldEqual, 0)
+				So(len(res.PodResources), ShouldEqual, 0)
 			})
 		})
 
@@ -778,7 +778,7 @@ func TestPodScanner(t *testing.T) {
 			})
 
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 
 				expected := []PodResources{
 					{
@@ -802,7 +802,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				}
 
-				So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+				So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 			})
 		})
 
@@ -858,7 +858,7 @@ func TestPodScanner(t *testing.T) {
 			})
 			Convey("Return PodResources should have values", func() {
 				Convey("Return PodResources should be zero", func() {
-					So(len(res), ShouldEqual, 0)
+					So(len(res.PodResources), ShouldEqual, 0)
 				})
 			})
 		})
@@ -923,7 +923,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldEqual, 0)
+				So(len(res.PodResources), ShouldEqual, 0)
 			})
 		})
 
@@ -981,7 +981,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 			})
 
 			expected := []PodResources{
@@ -1002,7 +1002,7 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 
-			So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+			So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 		})
 
 		Convey("When I successfully get valid response for (non-guaranteed) pods with devices with cpus", func() {
@@ -1065,7 +1065,7 @@ func TestPodScanner(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("Return PodResources should have values", func() {
-				So(len(res), ShouldBeGreaterThan, 0)
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
 			})
 
 			expected := []PodResources{
@@ -1085,7 +1085,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			So(reflect.DeepEqual(res, expected), ShouldBeTrue)
+			So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
 		})
 
 	})
