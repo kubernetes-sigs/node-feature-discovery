@@ -69,7 +69,7 @@ type NodeFeatureDiscoverySpec struct {
 type OperandSpec struct {
 	// Image defines the image to pull for the
 	// NFD operand
-	// [defaults to k8s.gcr.io/nfd/node-feature-discovery]
+	// [defaults to registry.k8s.io/nfd/node-feature-discovery]
 	// +kubebuilder:validation:Pattern=[a-zA-Z0-9\-]+
 	Image string `json:"image,omitempty"`
 

@@ -59,7 +59,7 @@ spec:
                 properties:
                   image:
                     description: Image defines the image to pull for the NFD operand
-                      [defaults to k8s.gcr.io/nfd/node-feature-discovery]
+                      [defaults to registry.k8s.io/nfd/node-feature-discovery]
                     pattern: '[a-zA-Z0-9\-]+'
                     type: string
                   imagePullPolicy:
