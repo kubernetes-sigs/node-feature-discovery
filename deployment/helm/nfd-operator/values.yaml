@@ -1,0 +1,22 @@
+# Default values for node-feature-discovery-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+namespace: node-feature-discovery-operator
+image:
+  repository: gcr.io/k8s-staging-nfd/node-feature-discovery-operator
+  # This should be set to 'IfNotPresent' for released version
+  pullPolicy: Always
+  # tag, if defined will use the given image tag, else Chart.AppVersion will be used
+  # tag
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+enableNodeFeatureApi: false
+
+nfd:
+  image: 
+    repository: gcr.io/k8s-staging-nfd/node-feature-discovery
+    tag: master
