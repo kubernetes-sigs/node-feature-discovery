@@ -19,74 +19,74 @@ package topologypolicy
 import (
 	"testing"
 
-	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 )
 
 func TestDetectTopologyPolicy(t *testing.T) {
 	testCases := []struct {
 		scope    string
 		policy   string
-		expected v1alpha1.TopologyManagerPolicy
+		expected v1alpha2.TopologyManagerPolicy
 	}{
 		{
 			policy:   "best-effort",
 			scope:    "pod",
-			expected: v1alpha1.BestEffortPodLevel,
+			expected: v1alpha2.BestEffortPodLevel,
 		},
 		{
 			policy:   "best-effort",
 			scope:    "container",
-			expected: v1alpha1.BestEffortContainerLevel,
+			expected: v1alpha2.BestEffortContainerLevel,
 		},
 		{
 			policy:   "restricted",
 			scope:    "container",
-			expected: v1alpha1.RestrictedContainerLevel,
+			expected: v1alpha2.RestrictedContainerLevel,
 		},
 		{
 			policy:   "restricted",
 			scope:    "pod",
-			expected: v1alpha1.RestrictedPodLevel,
+			expected: v1alpha2.RestrictedPodLevel,
 		},
 		{
 			policy:   "single-numa-node",
 			scope:    "pod",
-			expected: v1alpha1.SingleNUMANodePodLevel,
+			expected: v1alpha2.SingleNUMANodePodLevel,
 		},
 		{
 			policy:   "single-numa-node",
 			scope:    "container",
-			expected: v1alpha1.SingleNUMANodeContainerLevel,
+			expected: v1alpha2.SingleNUMANodeContainerLevel,
 		},
 		{
 			policy:   "none",
 			scope:    "container",
-			expected: v1alpha1.None,
+			expected: v1alpha2.None,
 		},
 		{
 			policy:   "none",
 			scope:    "pod",
-			expected: v1alpha1.None,
+			expected: v1alpha2.None,
 		},
 		{
 			policy:   "non-existent",
 			scope:    "pod",
-			expected: v1alpha1.None,
+			expected: v1alpha2.None,
 		},
 		{
 			policy:   "non-existent",
 			scope:    "container",
-			expected: v1alpha1.None,
+			expected: v1alpha2.None,
 		},
 		{
 			policy:   "single-numa-node",
 			scope:    "non-existent",
-			expected: v1alpha1.None,
+			expected: v1alpha2.None,
 		},
 		{
 			policy:   "single-numa-node",
 			scope:    "non-existent",
-			expected: v1alpha1.None,
+			expected: v1alpha2.None,
 		},
 	}
 

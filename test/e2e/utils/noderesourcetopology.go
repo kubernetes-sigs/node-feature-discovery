@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
@@ -106,11 +106,11 @@ func CreateNodeResourceTopologies(extClient extclient.Interface) (*apiextensions
 }
 
 // GetNodeTopology returns the NodeResourceTopology data for the node identified by `nodeName`.
-func GetNodeTopology(topologyClient *topologyclientset.Clientset, nodeName string) *v1alpha1.NodeResourceTopology {
-	var nodeTopology *v1alpha1.NodeResourceTopology
+func GetNodeTopology(topologyClient *topologyclientset.Clientset, nodeName string) *v1alpha2.NodeResourceTopology {
+	var nodeTopology *v1alpha2.NodeResourceTopology
 	var err error
 	gomega.EventuallyWithOffset(1, func() bool {
-		nodeTopology, err = topologyClient.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), nodeName, metav1.GetOptions{})
+		nodeTopology, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), nodeName, metav1.GetOptions{})
 		if err != nil {
 			framework.Logf("failed to get the node topology resource: %v", err)
 			return false
@@ -121,7 +121,7 @@ func GetNodeTopology(topologyClient *topologyclientset.Clientset, nodeName strin
 }
 
 // AllocatableResourceListFromNodeResourceTopology extract the map zone:allocatableResources from the given NodeResourceTopology instance.
-func AllocatableResourceListFromNodeResourceTopology(nodeTopo *v1alpha1.NodeResourceTopology) map[string]corev1.ResourceList {
+func AllocatableResourceListFromNodeResourceTopology(nodeTopo *v1alpha2.NodeResourceTopology) map[string]corev1.ResourceList {
 	allocRes := make(map[string]corev1.ResourceList)
 	for _, zone := range nodeTopo.Zones {
 		if zone.Type != "Node" {
@@ -186,7 +186,7 @@ func CompareResourceList(expected, got corev1.ResourceList) (string, int, bool) 
 // IsValidNodeTopology checks the provided NodeResourceTopology object if it is well-formad, internally consistent and
 // consistent with the given kubelet config object. Returns true if the NodeResourceTopology object is consistent and well
 // formet, false otherwise; if return false, logs the failure reason.
-func IsValidNodeTopology(nodeTopology *v1alpha1.NodeResourceTopology, kubeletConfig *kubeletconfig.KubeletConfiguration) bool {
+func IsValidNodeTopology(nodeTopology *v1alpha2.NodeResourceTopology, kubeletConfig *kubeletconfig.KubeletConfiguration) bool {
 	if nodeTopology == nil || len(nodeTopology.TopologyPolicies) == 0 {
 		framework.Logf("failed to get topology policy from the node topology resource")
 		return false
@@ -224,7 +224,7 @@ func IsValidNodeTopology(nodeTopology *v1alpha1.NodeResourceTopology, kubeletCon
 	return foundNodes > 0
 }
 
-func isValidCostList(zoneName string, costs v1alpha1.CostList) bool {
+func isValidCostList(zoneName string, costs v1alpha2.CostList) bool {
 	if len(costs) == 0 {
 		framework.Logf("failed to get topology costs for zone %q from the node topology resource", zoneName)
 		return false
@@ -239,7 +239,7 @@ func isValidCostList(zoneName string, costs v1alpha1.CostList) bool {
 	return true
 }
 
-func isValidResourceList(zoneName string, resources v1alpha1.ResourceInfoList) bool {
+func isValidResourceList(zoneName string, resources v1alpha2.ResourceInfoList) bool {
 	if len(resources) == 0 {
 		framework.Logf("failed to get topology resources for zone %q from the node topology resource", zoneName)
 		return false

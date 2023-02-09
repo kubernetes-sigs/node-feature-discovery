@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -237,9 +237,9 @@ var _ = SIGDescribe("Node Feature Discovery topology updater", func() {
 			defer testpod.DeleteAsync(f, podMap)
 
 			By("checking the changes in the updated topology")
-			var finalNodeTopo *v1alpha1.NodeResourceTopology
+			var finalNodeTopo *v1alpha2.NodeResourceTopology
 			Eventually(func() bool {
-				finalNodeTopo, err = topologyClient.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), topologyUpdaterNode.Name, metav1.GetOptions{})
+				finalNodeTopo, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), topologyUpdaterNode.Name, metav1.GetOptions{})
 				if err != nil {
 					framework.Logf("failed to get the node topology resource: %v", err)
 					return false

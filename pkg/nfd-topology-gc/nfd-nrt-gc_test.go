@@ -21,9 +21,8 @@ import (
 	"testing"
 	"time"
 
-	nrtapi "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
-	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
-	faketopologyv1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned/fake"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
+	faketopologyv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -36,7 +35,7 @@ func TestNRTGC(t *testing.T) {
 	Convey("When theres is old NRT ", t, func() {
 		k8sClient := fakek8sclientset.NewSimpleClientset()
 
-		fakeClient := faketopologyv1alpha1.NewSimpleClientset(&nrtapi.NodeResourceTopology{
+		fakeClient := faketopologyv1alpha2.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "node1",
 			},
@@ -55,7 +54,7 @@ func TestNRTGC(t *testing.T) {
 		err := gc.run()
 		So(err, ShouldBeNil)
 
-		nrts, err := fakeClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 		So(err, ShouldBeNil)
 		So(nrts.Items, ShouldHaveLength, 0)
 
@@ -68,12 +67,12 @@ func TestNRTGC(t *testing.T) {
 			},
 		})
 
-		fakeClient := faketopologyv1alpha1.NewSimpleClientset(&nrtapi.NodeResourceTopology{
+		fakeClient := faketopologyv1alpha2.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "node1",
 			},
 		},
-			&nrtapi.NodeResourceTopology{
+			&v1alpha2.NodeResourceTopology{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "node2",
 				},
@@ -94,7 +93,7 @@ func TestNRTGC(t *testing.T) {
 		err := gc.run()
 		So(err, ShouldBeNil)
 
-		nrts, err := fakeClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 		So(err, ShouldBeNil)
 		So(nrts.Items, ShouldHaveLength, 1)
 		So(nrts.Items[0].GetName(), ShouldEqual, "node1")
@@ -114,13 +113,13 @@ func TestNRTGC(t *testing.T) {
 			},
 		)
 
-		fakeClient := faketopologyv1alpha1.NewSimpleClientset(
-			&nrtapi.NodeResourceTopology{
+		fakeClient := faketopologyv1alpha2.NewSimpleClientset(
+			&v1alpha2.NodeResourceTopology{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "node1",
 				},
 			},
-			&nrtapi.NodeResourceTopology{
+			&v1alpha2.NodeResourceTopology{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "node2",
 				},
@@ -140,7 +139,7 @@ func TestNRTGC(t *testing.T) {
 		err := gc.run()
 		So(err, ShouldBeNil)
 
-		nrts, err := fakeClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 		So(err, ShouldBeNil)
 
 		So(nrts.Items, ShouldHaveLength, 2)
@@ -150,7 +149,7 @@ func TestNRTGC(t *testing.T) {
 		// simple sleep with retry loop to make sure indexer will pick up event and trigger deleteNode Function
 		deleted := false
 		for i := 0; i < 5; i++ {
-			nrts, err := fakeClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+			nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 			So(err, ShouldBeNil)
 
 			if len(nrts.Items) == 1 {
@@ -175,13 +174,13 @@ func TestNRTGC(t *testing.T) {
 			},
 		)
 
-		fakeClient := faketopologyv1alpha1.NewSimpleClientset(
-			&nrtapi.NodeResourceTopology{
+		fakeClient := faketopologyv1alpha2.NewSimpleClientset(
+			&v1alpha2.NodeResourceTopology{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "node1",
 				},
 			},
-			&nrtapi.NodeResourceTopology{
+			&v1alpha2.NodeResourceTopology{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "node2",
 				},
@@ -201,12 +200,12 @@ func TestNRTGC(t *testing.T) {
 		err := gc.run()
 		So(err, ShouldBeNil)
 
-		nrts, err := fakeClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 		So(err, ShouldBeNil)
 
 		So(nrts.Items, ShouldHaveLength, 2)
 
-		nrt := v1alpha1.NodeResourceTopology{
+		nrt := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "not-existing",
 			},
@@ -214,12 +213,12 @@ func TestNRTGC(t *testing.T) {
 
 		go gc.periodicGC(time.Second)
 
-		_, err = fakeClient.TopologyV1alpha1().NodeResourceTopologies().Create(context.TODO(), &nrt, metav1.CreateOptions{})
+		_, err = fakeClient.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrt, metav1.CreateOptions{})
 		So(err, ShouldBeNil)
 		// simple sleep with retry loop to make sure GC was triggered
 		deleted := false
 		for i := 0; i < 5; i++ {
-			nrts, err := fakeClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+			nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 			So(err, ShouldBeNil)
 
 			if len(nrts.Items) == 2 {

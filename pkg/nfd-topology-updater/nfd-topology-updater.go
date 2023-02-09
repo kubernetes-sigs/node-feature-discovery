@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 
-	v1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -123,7 +123,7 @@ func (w *nfdTopologyUpdater) Run() error {
 	// So we are intentionally do this once during the process lifecycle.
 	// TODO: Obtain node resources dynamically from the podresource API
 	// zonesChannel := make(chan v1alpha1.ZoneList)
-	var zones v1alpha1.ZoneList
+	var zones v1alpha2.ZoneList
 
 	excludeList := resourcemonitor.NewExcludeResourceList(w.config.ExcludeList, w.nodeInfo.nodeName)
 	resAggr, err := resourcemonitor.NewResourcesAggregator(podResClient, excludeList)
@@ -172,15 +172,15 @@ func (w *nfdTopologyUpdater) Stop() {
 	}
 }
 
-func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha1.ZoneList) error {
+func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList) error {
 	cli, err := w.apihelper.GetTopologyClient()
 	if err != nil {
 		return err
 	}
 
-	nrt, err := cli.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), w.nodeInfo.nodeName, metav1.GetOptions{})
+	nrt, err := cli.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), w.nodeInfo.nodeName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
-		nrtNew := v1alpha1.NodeResourceTopology{
+		nrtNew := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: w.nodeInfo.nodeName,
 			},
@@ -188,7 +188,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha1.ZoneLi
 			TopologyPolicies: []string{w.nodeInfo.tmPolicy},
 		}
 
-		_, err := cli.TopologyV1alpha1().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
+		_, err := cli.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to create NodeResourceTopology: %w", err)
 		}
@@ -200,7 +200,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha1.ZoneLi
 	nrtMutated := nrt.DeepCopy()
 	nrtMutated.Zones = zoneInfo
 
-	nrtUpdated, err := cli.TopologyV1alpha1().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
+	nrtUpdated, err := cli.TopologyV1alpha2().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update NodeResourceTopology: %w", err)
 	}

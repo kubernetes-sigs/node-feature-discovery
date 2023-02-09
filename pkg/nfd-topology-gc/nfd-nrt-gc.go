@@ -83,7 +83,7 @@ func newTopologyGC(config *restclient.Config, stop chan struct{}, gcPeriod time.
 }
 
 func (n *topologyGC) deleteNRT(nodeName string) {
-	if err := n.topoClient.TopologyV1alpha1().NodeResourceTopologies().Delete(context.TODO(), nodeName, metav1.DeleteOptions{}); err != nil {
+	if err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().Delete(context.TODO(), nodeName, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			klog.V(2).Infof("NodeResourceTopology for node %s not found, omitting deletion", nodeName)
 			return
@@ -125,7 +125,7 @@ func (n *topologyGC) runGC() {
 		nodes.Insert(key)
 	}
 
-	nrts, err := n.topoClient.TopologyV1alpha1().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+	nrts, err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Warningf("cannot list NRTs %s", err.Error())
 		return

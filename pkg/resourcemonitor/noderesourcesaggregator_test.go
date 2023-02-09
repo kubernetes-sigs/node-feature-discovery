@@ -30,7 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
 
-	topologyv1alpha1 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	topologyv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
@@ -181,34 +181,34 @@ func TestResourcesAggregator(t *testing.T) {
 		resAggr = NewResourcesAggregatorFromData(&fakeTopo, availRes, memoryResourcesCapacity, NewExcludeResourceList(map[string][]string{}, ""))
 
 		Convey("When aggregating resources", func() {
-			expected := topologyv1alpha1.ZoneList{
-				topologyv1alpha1.Zone{
+			expected := topologyv1alpha2.ZoneList{
+				topologyv1alpha2.Zone{
 					Name: "node-0",
 					Type: "Node",
-					Costs: topologyv1alpha1.CostList{
-						topologyv1alpha1.CostInfo{
+					Costs: topologyv1alpha2.CostList{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-0",
 							Value: 10,
 						},
-						topologyv1alpha1.CostInfo{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-1",
 							Value: 20,
 						},
 					},
-					Resources: topologyv1alpha1.ResourceInfoList{
-						topologyv1alpha1.ResourceInfo{
+					Resources: topologyv1alpha2.ResourceInfoList{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "cpu",
 							Available:   *resource.NewQuantity(11, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(11, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(12, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "fake.io/net",
 							Available:   *resource.NewQuantity(4, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(4, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(4, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "memory",
 							Available:   *resource.NewQuantity(1024, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1024, resource.DecimalSI),
@@ -216,45 +216,45 @@ func TestResourcesAggregator(t *testing.T) {
 						},
 					},
 				},
-				topologyv1alpha1.Zone{
+				topologyv1alpha2.Zone{
 					Name: "node-1",
 					Type: "Node",
-					Costs: topologyv1alpha1.CostList{
-						topologyv1alpha1.CostInfo{
+					Costs: topologyv1alpha2.CostList{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-0",
 							Value: 20,
 						},
-						topologyv1alpha1.CostInfo{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-1",
 							Value: 10,
 						},
 					},
-					Resources: topologyv1alpha1.ResourceInfoList{
-						topologyv1alpha1.ResourceInfo{
+					Resources: topologyv1alpha2.ResourceInfoList{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "cpu",
 							Available:   *resource.NewQuantity(11, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(11, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(12, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "fake.io/gpu",
 							Available:   *resource.NewQuantity(1, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(1, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "fake.io/net",
 							Available:   *resource.NewQuantity(2, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(2, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(2, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "hugepages-2Mi",
 							Available:   *resource.NewQuantity(1024, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1024, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(2048, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "memory",
 							Available:   *resource.NewQuantity(1024, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1024, resource.DecimalSI),
@@ -411,34 +411,34 @@ func TestResourcesAggregator(t *testing.T) {
 				},
 			}
 
-			expected := topologyv1alpha1.ZoneList{
-				topologyv1alpha1.Zone{
+			expected := topologyv1alpha2.ZoneList{
+				topologyv1alpha2.Zone{
 					Name: "node-0",
 					Type: "Node",
-					Costs: topologyv1alpha1.CostList{
-						topologyv1alpha1.CostInfo{
+					Costs: topologyv1alpha2.CostList{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-0",
 							Value: 10,
 						},
-						topologyv1alpha1.CostInfo{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-1",
 							Value: 20,
 						},
 					},
-					Resources: topologyv1alpha1.ResourceInfoList{
-						topologyv1alpha1.ResourceInfo{
+					Resources: topologyv1alpha2.ResourceInfoList{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "cpu",
 							Available:   *resource.NewQuantity(11, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(11, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(12, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "fake.io/net",
 							Available:   *resource.NewQuantity(1, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(1, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "memory",
 							Available:   *resource.NewQuantity(1024, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1024, resource.DecimalSI),
@@ -446,45 +446,45 @@ func TestResourcesAggregator(t *testing.T) {
 						},
 					},
 				},
-				topologyv1alpha1.Zone{
+				topologyv1alpha2.Zone{
 					Name: "node-1",
 					Type: "Node",
-					Costs: topologyv1alpha1.CostList{
-						topologyv1alpha1.CostInfo{
+					Costs: topologyv1alpha2.CostList{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-0",
 							Value: 20,
 						},
-						topologyv1alpha1.CostInfo{
+						topologyv1alpha2.CostInfo{
 							Name:  "node-1",
 							Value: 10,
 						},
 					},
-					Resources: topologyv1alpha1.ResourceInfoList{
-						topologyv1alpha1.ResourceInfo{
+					Resources: topologyv1alpha2.ResourceInfoList{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "cpu",
 							Available:   resource.MustParse("10"),
 							Allocatable: *resource.NewQuantity(12, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(12, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "fake.io/gpu",
 							Available:   *resource.NewQuantity(1, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(1, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "fake.io/net",
 							Available:   *resource.NewQuantity(0, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(1, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "hugepages-2Mi",
 							Available:   *resource.NewQuantity(512, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1024, resource.DecimalSI),
 							Capacity:    *resource.NewQuantity(2048, resource.DecimalSI),
 						},
-						topologyv1alpha1.ResourceInfo{
+						topologyv1alpha2.ResourceInfo{
 							Name:        "memory",
 							Available:   *resource.NewQuantity(512, resource.DecimalSI),
 							Allocatable: *resource.NewQuantity(1024, resource.DecimalSI),
