@@ -32,9 +32,17 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
+	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
+)
+
+const (
+	// TopologyManagerPolicyAttributeName represents an attribute which defines Topology Manager Policy
+	TopologyManagerPolicyAttributeName = "topologyManagerPolicy"
+	// TopologyManagerScopeAttributeName represents an attribute which defines Topology Manager Policy Scope
+	TopologyManagerScopeAttributeName = "topologyManagerScope"
 )
 
 // Args are the command line arguments
@@ -60,10 +68,21 @@ type NfdTopologyUpdater interface {
 type staticNodeInfo struct {
 	nodeName string
 	tmPolicy string
+	tmScope  string
+}
+
+func newStaticNodeInfo(policy, scope string) staticNodeInfo {
+	nodeName := utils.NodeName()
+	klog.InfoS("detected kubelet Topology Manager configuration", "policy", policy, "scope", scope, "nodeName", nodeName)
+	return staticNodeInfo{
+		nodeName: nodeName,
+		tmPolicy: policy,
+		tmScope:  scope,
+	}
 }
 
 type nfdTopologyUpdater struct {
-	nodeInfo            *staticNodeInfo
+	nodeInfo            staticNodeInfo
 	args                Args
 	apihelper           apihelper.APIHelpers
 	resourcemonitorArgs resourcemonitor.Args
@@ -73,16 +92,13 @@ type nfdTopologyUpdater struct {
 }
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
-func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy string) NfdTopologyUpdater {
+func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy, scope string) NfdTopologyUpdater {
 	nfd := &nfdTopologyUpdater{
 		args:                args,
 		resourcemonitorArgs: resourcemonitorArgs,
-		nodeInfo: &staticNodeInfo{
-			nodeName: utils.NodeName(),
-			tmPolicy: policy,
-		},
-		stop:   make(chan struct{}, 1),
-		config: &NFDConfig{},
+		nodeInfo:            newStaticNodeInfo(policy, scope),
+		stop:                make(chan struct{}, 1),
+		config:              &NFDConfig{},
 	}
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
@@ -185,7 +201,8 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 				Name: w.nodeInfo.nodeName,
 			},
 			Zones:            zoneInfo,
-			TopologyPolicies: []string{w.nodeInfo.tmPolicy},
+			TopologyPolicies: []string{string(topologypolicy.DetectTopologyPolicy(w.nodeInfo.tmPolicy, w.nodeInfo.tmScope))},
+			Attributes:       createTopologyAttributes(w.nodeInfo.tmPolicy, w.nodeInfo.tmScope),
 		}
 
 		_, err := cli.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{})
@@ -230,4 +247,17 @@ func (w *nfdTopologyUpdater) configure() error {
 	}
 	klog.Infof("configuration file %q parsed:\n %v", w.configFilePath, w.config)
 	return nil
+}
+
+func createTopologyAttributes(policy string, scope string) v1alpha2.AttributeList {
+	return v1alpha2.AttributeList{
+		{
+			Name:  TopologyManagerPolicyAttributeName,
+			Value: policy,
+		},
+		{
+			Name:  TopologyManagerScopeAttributeName,
+			Value: scope,
+		},
+	}
 }
