@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	"github.com/onsi/gomega"
+	nfdtopologyupdater "sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 
 	corev1 "k8s.io/api/core/v1"
@@ -198,6 +200,24 @@ func IsValidNodeTopology(nodeTopology *v1alpha2.NodeResourceTopology, kubeletCon
 		return false
 	}
 
+	expectedPolicyAttribute := v1alpha2.AttributeInfo{
+		Name:  nfdtopologyupdater.TopologyManagerPolicyAttributeName,
+		Value: kubeletConfig.TopologyManagerPolicy,
+	}
+	if !containsAttribute(nodeTopology.Attributes, expectedPolicyAttribute) {
+		framework.Logf("topology policy attributes don't have correct topologyManagerPolicy attribute expected %v attributeList %v", expectedPolicyAttribute, nodeTopology.Attributes)
+		return false
+	}
+
+	expectedScopeAttribute := v1alpha2.AttributeInfo{
+		Name:  nfdtopologyupdater.TopologyManagerScopeAttributeName,
+		Value: kubeletConfig.TopologyManagerScope,
+	}
+	if !containsAttribute(nodeTopology.Attributes, expectedScopeAttribute) {
+		framework.Logf("topology policy attributes don't have correct topologyManagerScope attribute expected %v attributeList %v", expectedScopeAttribute, nodeTopology.Attributes)
+		return false
+	}
+
 	if nodeTopology.Zones == nil || len(nodeTopology.Zones) == 0 {
 		framework.Logf("failed to get topology zones from the node topology resource")
 		return false
@@ -258,4 +278,13 @@ func isValidResourceList(zoneName string, resources v1alpha2.ResourceInfoList) b
 		}
 	}
 	return foundCpu
+}
+
+func containsAttribute(attributes v1alpha2.AttributeList, attribute v1alpha2.AttributeInfo) bool {
+	for _, attr := range attributes {
+		if reflect.DeepEqual(attr, attribute) {
+			return true
+		}
+	}
+	return false
 }
