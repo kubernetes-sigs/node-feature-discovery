@@ -336,6 +336,11 @@ Hooks are DEPRECATED since v0.12.0 release and support will be removed in a
 future release. Use
 [feature files](../usage//customization-guide.md#feature-files) instead.
 
+Note: The default NFD container image only supports statically linked binaries.
+Use the [full](../deployment/image-variants.md#full) image variant for a
+slightly more extensive environment that additionally supports bash and perl
+runtimes.
+
 Related tracking issues:
 
 1. Config option to disable hooks [#859](https://github.com/kubernetes-sigs/node-feature-discovery/issues/859).

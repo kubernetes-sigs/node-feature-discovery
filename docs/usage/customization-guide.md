@@ -257,9 +257,8 @@ on the nfd-master command line.
 **DEPRECATED** The `local` source executes hooks found in
 `/etc/kubernetes/node-feature-discovery/source.d/`. The hook files must be
 executable and they are supposed to print all discovered features in `stdout`.
-With ELF binaries static linking is recommended as the selection of system
-libraries available in the NFD release image is very limited. Other runtimes
-currently supported by the NFD image are bash and perl.
+Since NFD v0.13 the default container image only supports statically linked ELF
+binaries.
 
 `stderr` output of hooks is propagated to NFD log so it can be used for
 debugging and logging.
@@ -284,8 +283,9 @@ sources:
 directory. It is the user's responsibility to review the hooks for e.g.
 possible security implications.
 
-**NOTE:** The [minimal](../deployment/image-variants.md#minimal) image
-variant only supports running statically linked binaries.
+**NOTE:** The [full](../deployment/image-variants.md#full) image variant
+provides backwards-compatibility with older NFD versions by including a more
+expanded environment, supporting bash and perl runtimes.
 
 ### Feature files
 
