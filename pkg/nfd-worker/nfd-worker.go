@@ -190,11 +190,19 @@ func (i *infiniteTicker) Reset(d time.Duration) {
 
 // Run feature discovery.
 func (w *nfdWorker) runFeatureDiscovery() error {
+	discoveryStart := time.Now()
 	for _, s := range w.featureSources {
-		klog.V(2).Infof("running discovery for %q source", s.Name())
+		currentSourceStart := time.Now()
 		if err := s.Discover(); err != nil {
 			klog.Errorf("feature discovery of %q source failed: %v", s.Name(), err)
 		}
+		klog.V(3).Infof("discovery duration for %q source: %v", s.Name(), time.Since(currentSourceStart))
+	}
+
+	discoveryDuration := time.Since(discoveryStart)
+	klog.V(2).Infof("feature discovery for %d sources lasted for: %v", len(w.featureSources), discoveryDuration)
+	if w.config.Core.SleepInterval.Duration > 0 && discoveryDuration > w.config.Core.SleepInterval.Duration/2 {
+		klog.Warningf("feature discovery sources took over half (%v) of sleep interval (%v)", discoveryDuration, w.config.Core.SleepInterval.Duration)
 	}
 
 	// Get the set of feature labels.
@@ -359,7 +367,7 @@ func (w *nfdWorker) grpcDisconnect() {
 }
 func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
-		klog.Warningf("too short sleep-intervall specified (%s), forcing to 1s",
+		klog.Warningf("too short sleep interval specified (%s), forcing to 1s",
 			c.SleepInterval.Duration.String())
 		c.SleepInterval = duration{time.Second}
 	}
