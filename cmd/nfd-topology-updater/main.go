@@ -28,7 +28,6 @@ import (
 
 	topology "sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
-	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/kubeconf"
@@ -88,11 +87,8 @@ func main() {
 		klog.Exitf("unsupported URI scheme: %v", u.Scheme)
 	}
 
-	tmPolicy := string(topologypolicy.DetectTopologyPolicy(klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope))
-	klog.Infof("detected kubelet Topology Manager policy %q", tmPolicy)
-
 	// Get new TopologyUpdater instance
-	instance := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, tmPolicy)
+	instance := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope)
 
 	if err = instance.Run(); err != nil {
 		klog.Exit(err)
