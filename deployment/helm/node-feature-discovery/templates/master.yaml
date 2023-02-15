@@ -86,6 +86,9 @@ spec:
             {{- if .Values.master.extraLabelNs | empty | not }}
             - "-extra-label-ns={{- join "," .Values.master.extraLabelNs }}"
             {{- end }}
+            {{- if .Values.master.denyLabelNs | empty | not }}
+            - "-deny-label-ns={{- join "," .Values.master.denyLabelNs }}"
+            {{- end }}
             {{- if .Values.master.resourceLabels | empty | not }}
             - "-resource-labels={{- join "," .Values.master.resourceLabels }}"
             {{- end }}

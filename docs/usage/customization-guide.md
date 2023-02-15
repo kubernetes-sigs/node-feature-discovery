@@ -249,9 +249,6 @@ feature.node.kubernetes.io/my-feature.2: "myvalue"
 my.namespace/my-feature.3: "456"
 ```
 
-Note that in the example above `-extra-label-ns=my.namespace` must be specified
-on the nfd-master command line.
-
 ### Hooks
 
 **DEPRECATED** The `local` source executes hooks found in
@@ -303,11 +300,7 @@ key-value pairs, separated by newlines:
 
 The label value defaults to `true`, if not specified.
 
-Label namespace may be specified with `<namespace>/<name>[=<value>]`. The
-namespace must be explicitly allowed with the `-extra-label-ns` command line
-flag of nfd-master if using something else than
-`[<sub-ns>.]feature.node.kubernetes.io` or
-`[<sub-ns>.]profile.node.kubernetes.io`.
+Label namespace may be specified with `<namespace>/<name>[=<value>]`.
 
 ### Mounts
 
@@ -414,13 +407,13 @@ The namespace part (i.e. prefix) of the labels is controlled by nfd:
 
 - All built-in labels use `feature.node.kubernetes.io`. This is also
   the default for user defined features that don't specify any namespace.
-- User-defined labels are allowed to use:
-  - `feature.node.kubernetes.io` and `profile.node.kubernetes.io` plus their
-    sub-namespaces (e.g. `vendor.profile.node.kubernetes.io` and
-    `sub.ns.profile.node.kubernetes.io`) by default
-  - Additional namespaces may be enabled with the
+- Namespaces may be excluded with the
+  [`-deny-label-ns`](../reference/master-commandline-reference.md#-deny-label-ns)
+  command line flag of nfd-master
+  - To allow specific namespaces that were denied, you can use
     [`-extra-label-ns`](../reference/master-commandline-reference.md#-extra-label-ns)
-    command line flag of nfd-master
+    command line flag of nfd-master.
+    e.g: `nfd-master -deny-label-ns="*" -extra-label-ns=example.com`
 
 ## Label rule format
 

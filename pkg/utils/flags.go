@@ -76,8 +76,7 @@ func (a *StringSetVal) String() string {
 	if *a == nil {
 		return ""
 	}
-
-	vals := make([]string, len(*a), 0)
+	vals := make([]string, 0, len(*a))
 	for val := range *a {
 		vals = append(vals, val)
 	}

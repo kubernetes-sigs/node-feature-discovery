@@ -352,16 +352,18 @@ func TestSetLabels(t *testing.T) {
 			})
 		})
 
-		Convey("When -extra-label-ns and -instance are specified", func() {
+		Convey("When -extra-label-ns, -deny-label-ns and -instance are specified", func() {
 			// In the gRPC request the label names may omit the default ns
 			instance := "foo"
 			vendorFeatureLabel := "vendor." + nfdv1alpha1.FeatureLabelNs + "/feature-4"
 			vendorProfileLabel := "vendor." + nfdv1alpha1.ProfileLabelNs + "/feature-5"
 			mockLabels := map[string]string{"feature-1": "val-1",
-				"valid.ns/feature-2":   "val-2",
-				"invalid.ns/feature-3": "val-3",
-				vendorFeatureLabel:     " val-4",
-				vendorProfileLabel:     " val-5"}
+				"valid.ns/feature-2":             "val-2",
+				"random.denied.ns/feature-3":     "val-3",
+				"kubernetes.io/feature-4":        "val-4",
+				"sub.ns.kubernetes.io/feature-5": "val-5",
+				vendorFeatureLabel:               " val-6",
+				vendorProfileLabel:               " val-7"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations",
@@ -374,6 +376,8 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
 			}
 
+			mockMaster.deniedNs.normal = map[string]struct{}{"random.denied.ns": {}}
+			mockMaster.deniedNs.wildcard = map[string]struct{}{"kubernetes.io": {}}
 			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
 			mockMaster.args.Instance = instance
 			mockHelper.On("GetClient").Return(mockClient, nil)
