@@ -116,7 +116,7 @@ makefile overrides.
 | IMAGE_BUILD_CMD            | Command to build the image                                        | docker build
 | IMAGE_BUILD_EXTRA_OPTS     | Extra options to pass to build command                            | *empty*
 | IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
-| IMAGE_ALL_PLATFORMS        | Comma seperated list of OS/ARCH tuples for mulit-arch builds    | linux/amd64,linux/arm64
+| IMAGE_ALL_PLATFORMS        | Comma separated list of OS/ARCH tuples for mulit-arch builds    | linux/amd64,linux/arm64
 | IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push
 | IMAGE_REGISTRY             | Container image registry to use                                   | registry.k8s.io/nfd
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
@@ -239,7 +239,7 @@ Another option for building NFD locally is via Tilt tool, which can build contai
 images, push them to a local registry and reload your Kubernetes pods automatically.
 When using Tilt, you don't have to build container images and re-deploy your pods
 manually but instead let the Tilt take care of it. Tiltfile is a configuration file
-for the Tilt and is located at the root direcotry. To develop NFD with Tilt, follow
+for the Tilt and is located at the root directory. To develop NFD with Tilt, follow
 the steps below.
 
 ### Prerequisites
