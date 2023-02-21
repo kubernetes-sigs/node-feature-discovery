@@ -146,7 +146,7 @@ func cleanupCRDs(cli *nfdclient.Clientset) {
 }
 
 // Actual test suite
-var _ = SIGDescribe("Node Feature Discovery", func() {
+var _ = SIGDescribe("NFD master and worker", func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	nfdTestSuite := func(useNodeFeatureApi bool) {
