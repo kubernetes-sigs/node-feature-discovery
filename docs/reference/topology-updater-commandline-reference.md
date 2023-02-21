@@ -149,7 +149,7 @@ nfd-topology-updater -podresources-socket=/var/lib/kubelet/pod-resources/kubelet
 
 ### -pods-fingerprint
 
-Enbles the compute and report the pod set fingerprint in the NRT.
+Enables compute and report the pod set fingerprint in the NRT.
 A pod fingerprint is a compact representation of the "node state" regarding resources.
 
 Default: `false`
@@ -158,4 +158,18 @@ Example:
 
 ```bash
 nfd-topology-updater -pods-fingerprint
+```
+
+### -kubelet-state-dir
+
+The `-kubelet-state-dir` specifies the path to the Kubelet state directory,
+where state and checkpoint files are stored.
+The files are mount as read-only and cannot be change by the updater.
+
+Default:  /host-var/lib/kubelet
+
+Example:
+
+```bash
+nfd-topology-updater -kubelet-state-dir=/var/lib/kubelet
 ```
