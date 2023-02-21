@@ -105,9 +105,11 @@ configuration options for details.
 | ENQCMD             | Enqueue Command
 | GFNI               | Galois Field New Instructions
 | HYPERVISOR         | Running under hypervisor
+| MSRLIST            | Read/Write List of Model Specific Registers
 | PREFETCHI          | PREFETCHIT0/1 instructions
 | VAES               | AVX-512 vector AES instructions
 | VPCLMULQDQ         | Carry-less multiplication quadword
+| WRMSRNS            | Non-Serializing Write to Model Specific Register
 
 By default, the following CPUID flags have been blacklisted: BMI1, BMI2, CLMUL,
 CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED,
