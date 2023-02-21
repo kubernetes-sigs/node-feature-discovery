@@ -19,11 +19,12 @@ This software enables node feature discovery for Kubernetes. It detects
 hardware features available on each node in a Kubernetes cluster, and
 advertises those features using node labels and optionally node taints.
 
-NFD consists of three software components:
+NFD consists of four software components:
 
 1. nfd-master
 1. nfd-worker
 1. nfd-topology-updater
+1. nfd-topology-gc
 
 ## NFD-Master
 
@@ -47,9 +48,9 @@ creates or updates a
 resource object specific to this node. One instance of nfd-topology-updater is
 supposed to be running on each node of the cluster.
 
-## NFD-Topology-Garbage-Collector
+## NFD-Topology-GC
 
-NFD-Topology-Garbage-Collector is a daemon responsible for cleaning obsolete
+NFD-Topology-GC is a daemon responsible for cleaning obsolete
 [NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology) objects,
 obsolete means that there is no corresponding worker node.
 
