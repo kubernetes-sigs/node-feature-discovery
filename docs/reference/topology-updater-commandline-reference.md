@@ -165,6 +165,8 @@ nfd-topology-updater -pods-fingerprint
 The `-kubelet-state-dir` specifies the path to the Kubelet state directory,
 where state and checkpoint files are stored.
 The files are mount as read-only and cannot be change by the updater.
+Enabled by default.
+Passing an empty string will disable the watching.
 
 Default:  /host-var/lib/kubelet
 
