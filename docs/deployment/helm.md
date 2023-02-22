@@ -173,6 +173,7 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.annotations`                 | dict   | {}      | Topology updater pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                    |
 | `topologyUpdater.affinity`                    | dict   | {}      | Topology updater pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                                                      |
 | `topologyUpdater.config`                      | dict   |         | [configuration](../reference/topology-updater-configuration-reference)                                                                                                                                |
+| `topologyUpdater.podSetFingerprint`           | bool   | false   | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
 
 ### Topology garbage collector parameters
 

@@ -31,6 +31,7 @@ type Args struct {
 	Namespace             string
 	KubeletConfigURI      string
 	APIAuthTokenFile      string
+	PodSetFingerprint     bool
 }
 
 // ResourceInfo stores information of resources and their corresponding IDs obtained from PodResource API
@@ -53,9 +54,14 @@ type PodResources struct {
 	Containers []ContainerResources
 }
 
+type ScanResponse struct {
+	PodResources []PodResources
+	Attributes   topologyv1alpha2.AttributeList
+}
+
 // ResourcesScanner gathers all the PodResources from the system, using the podresources API client
 type ResourcesScanner interface {
-	Scan() ([]PodResources, error)
+	Scan() (ScanResponse, error)
 }
 
 // ResourcesAggregator aggregates resource information based on the received data from underlying hardware and podresource API

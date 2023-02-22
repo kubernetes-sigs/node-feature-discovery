@@ -55,6 +55,9 @@ spec:
           - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
           - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
           {{- end }}
+          {{- if .Values.topologyUpdater.podSetFingerprint }}
+          - "-pods-fingerprint"
+          {{- end }}
         volumeMounts:
         - name: kubelet-config
           mountPath: /host-var/lib/kubelet/config.yaml
