@@ -1,7 +1,7 @@
 ---
 title: "Worker config reference"
 layout: default
-sort: 3
+sort: 4
 ---
 
 # Configuration file reference of nfd-worker

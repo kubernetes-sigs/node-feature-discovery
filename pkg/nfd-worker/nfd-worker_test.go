@@ -38,9 +38,12 @@ type testContext struct {
 
 func setupTest(args *master.Args) testContext {
 	// Fixed port and no-publish, for convenience
-	args.NoPublish = true
+	publish := true
+	args.Overrides = master.ConfigOverrideArgs{
+		NoPublish:      &publish,
+		LabelWhiteList: &utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+	}
 	args.Port = 8192
-	args.LabelWhiteList.Regexp = *regexp.MustCompile("")
 	m, err := master.NewNfdMaster(args)
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)

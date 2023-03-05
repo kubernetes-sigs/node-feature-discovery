@@ -34,6 +34,3 @@ spec:
             failureThreshold: 10
           command:
             - "nfd-master"
-          args: []
-          volumeMounts: []
-      volumes: []

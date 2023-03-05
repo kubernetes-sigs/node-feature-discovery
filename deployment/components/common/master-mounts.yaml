@@ -1,0 +1,13 @@
+- op: add
+  path: /spec/template/spec/volumes
+  value:
+  - name: nfd-master-conf
+    configMap:
+      name: nfd-master-conf
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts
+  value:
+  - name: nfd-master-conf
+    mountPath: "/etc/kubernetes/node-feature-discovery"
+    readOnly: true

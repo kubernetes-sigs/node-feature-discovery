@@ -52,6 +52,39 @@ enabled.
 > present when gRPC interface is disabled
 > and [NodeFeature](custom-resources.md#nodefeature-custom-resource) API is used.
 
+## Master configuration
+
+NFD-Master supports dynamic configuration through a configuration file. The
+default location is `/etc/kubernetes/node-feature-discovery/nfd-master.conf`,
+but, this can be changed by specifying the`-config` command line flag.
+Configuration file is re-read whenever it is modified which makes run-time
+re-configuration of nfd-master straightforward.
+
+Master configuration file is read inside the container, and thus, Volumes and
+VolumeMounts are needed to make your configuration available for NFD. The
+preferred method is to use a ConfigMap which provides easy deployment and
+re-configurability.
+
+The provided nfd-master deployment templates create an empty configmap and
+mount it inside the nfd-master containers. In kustomize deployments,
+configuration can be edited with:
+
+```bash
+kubectl -n ${NFD_NS} edit configmap nfd-master-conf
+```
+
+In Helm deployments,
+[Master pod parameter](../deployment/helm.md#master-pod-parameters)
+`master.config` can be used to edit the respective configuration.
+
+See
+[nfd-master configuration file reference](../reference/master-configuration-reference.md)
+for more details.
+The (empty-by-default)
+[example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/master-config/nfd-master.conf.example)
+contains all available configuration options and can be used as a reference
+for creating a configuration.
+
 ## Deployment notes
 
 NFD-Master runs as a deployment, by default

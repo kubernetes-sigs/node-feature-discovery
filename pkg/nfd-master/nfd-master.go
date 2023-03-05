@@ -21,7 +21,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -42,6 +44,7 @@ import (
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
@@ -59,24 +62,42 @@ type ExtendedResources map[string]string
 // Annotations are used for NFD-related node metadata
 type Annotations map[string]string
 
+// NFDConfig contains the configuration settings of NfdMaster.
+type NFDConfig struct {
+	DenyLabelNs    utils.StringSetVal
+	ExtraLabelNs   utils.StringSetVal
+	LabelWhiteList utils.RegexpVal
+	NoPublish      bool
+	ResourceLabels utils.StringSetVal
+	EnableTaints   bool
+}
+
+// ConfigOverrideArgs are args that override config file options
+type ConfigOverrideArgs struct {
+	DenyLabelNs    *utils.StringSetVal
+	ExtraLabelNs   *utils.StringSetVal
+	LabelWhiteList *utils.RegexpVal
+	ResourceLabels *utils.StringSetVal
+	EnableTaints   *bool
+	NoPublish      *bool
+}
+
 // Args holds command line arguments
 type Args struct {
 	CaFile               string
 	CertFile             string
-	DenyLabelNs          utils.StringSetVal
-	ExtraLabelNs         utils.StringSetVal
+	ConfigFile           string
 	Instance             string
 	KeyFile              string
 	Kubeconfig           string
-	LabelWhiteList       utils.RegexpVal
 	CrdController        bool
 	EnableNodeFeatureApi bool
-	NoPublish            bool
-	EnableTaints         bool
 	Port                 int
 	Prune                bool
 	VerifyNodeName       bool
-	ResourceLabels       utils.StringSetVal
+	Options              string
+
+	Overrides ConfigOverrideArgs
 }
 
 type deniedNs struct {
@@ -93,15 +114,17 @@ type NfdMaster interface {
 type nfdMaster struct {
 	*nfdController
 
-	args       Args
-	namespace  string
-	nodeName   string
-	server     *grpc.Server
-	stop       chan struct{}
-	ready      chan bool
-	apihelper  apihelper.APIHelpers
-	kubeconfig *restclient.Config
+	args           Args
+	namespace      string
+	nodeName       string
+	configFilePath string
+	server         *grpc.Server
+	stop           chan struct{}
+	ready          chan bool
+	apihelper      apihelper.APIHelpers
+	kubeconfig     *restclient.Config
 	deniedNs
+	config *NFDConfig
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -133,27 +156,23 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 			return nfd, fmt.Errorf("-ca-file needs to be specified alongside -cert-file and -key-file")
 		}
 	}
-	if args.DenyLabelNs == nil {
-		args.DenyLabelNs = make(utils.StringSetVal)
-	}
-	// Pre-process DenyLabelNS into 2 lists: one for normal ns, and the other for wildcard ns
-	normalDeniedNs, wildcardDeniedNs := preProcessDeniedNamespaces(args.DenyLabelNs)
-	nfd.deniedNs.normal = normalDeniedNs
-	nfd.deniedNs.wildcard = wildcardDeniedNs
-	// We forcibly deny kubernetes.io
-	nfd.deniedNs.normal["kubernetes.io"] = struct{}{}
-	nfd.deniedNs.wildcard[".kubernetes.io"] = struct{}{}
 
-	// Initialize Kubernetes API helpers
-	if !args.NoPublish {
-		kubeconfig, err := nfd.getKubeconfig()
-		if err != nil {
-			return nfd, err
-		}
-		nfd.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
+	if args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
 
 	return nfd, nil
+}
+
+func newDefaultConfig() *NFDConfig {
+	return &NFDConfig{
+		LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+		DenyLabelNs:    utils.StringSetVal{},
+		ExtraLabelNs:   utils.StringSetVal{},
+		NoPublish:      false,
+		ResourceLabels: utils.StringSetVal{},
+		EnableTaints:   false,
+	}
 }
 
 // Run NfdMaster server. The method returns in case of fatal errors or if Stop()
@@ -182,13 +201,21 @@ func (m *nfdMaster) Run() error {
 		}
 	}
 
-	if !m.args.NoPublish {
+	// Create watcher for config file and read initial configuration
+	configWatch, err := utils.CreateFsWatcher(time.Second, m.configFilePath)
+	if err != nil {
+		return err
+	}
+	if err := m.configure(m.configFilePath, m.args.Options); err != nil {
+		return err
+	}
+
+	if !m.config.NoPublish {
 		err := m.updateMasterNode()
 		if err != nil {
 			return fmt.Errorf("failed to update master node: %v", err)
 		}
 	}
-
 	// Run gRPC server
 	grpcErr := make(chan error, 1)
 	go m.runGrpcServer(grpcErr)
@@ -208,6 +235,15 @@ func (m *nfdMaster) Run() error {
 		case err := <-grpcErr:
 			return fmt.Errorf("error in serving gRPC: %w", err)
 
+		case <-configWatch.Events:
+			klog.Infof("reloading configuration")
+			if err := m.configure(m.configFilePath, m.args.Options); err != nil {
+				return err
+			}
+			// Update all nodes when the configuration changes
+			if m.nfdController != nil {
+				m.nfdController.updateAllNodesChan <- struct{}{}
+			}
 		case <-m.stop:
 			klog.Infof("shutting down nfd-master")
 			return nil
@@ -423,7 +459,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 			!strings.HasSuffix(ns, nfdv1alpha1.FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, nfdv1alpha1.ProfileLabelSubNsSuffix) {
 			// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
 			if isNamespaceDenied(ns, m.deniedNs.wildcard, m.deniedNs.normal) {
-				if _, ok := m.args.ExtraLabelNs[ns]; !ok {
+				if _, ok := m.config.ExtraLabelNs[ns]; !ok {
 					klog.Errorf("Namespace %q is not allowed. Ignoring label %q\n", ns, label)
 					continue
 				}
@@ -431,8 +467,8 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 		}
 
 		// Skip if label doesn't match labelWhiteList
-		if !m.args.LabelWhiteList.Regexp.MatchString(name) {
-			klog.Errorf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, m.args.LabelWhiteList.Regexp.String())
+		if !m.config.LabelWhiteList.Regexp.MatchString(name) {
+			klog.Errorf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, m.config.LabelWhiteList.Regexp.String())
 			continue
 		}
 		outLabels[label] = value
@@ -440,7 +476,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 
 	// Remove labels which are intended to be extended resources
 	extendedResources := ExtendedResources{}
-	for extendedResourceName := range m.args.ResourceLabels {
+	for extendedResourceName := range m.config.ResourceLabels {
 		// Add possibly missing default ns
 		extendedResourceName = addNs(extendedResourceName, nfdv1alpha1.FeatureLabelNs)
 		if value, ok := outLabels[extendedResourceName]; ok {
@@ -498,8 +534,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 	default:
 		klog.Infof("received labeling request for node %q", r.NodeName)
 	}
-
-	if !m.args.NoPublish {
+	if !m.config.NoPublish {
 		cli, err := m.apihelper.GetClient()
 		if err != nil {
 			return &pb.SetLabelsReply{}, err
@@ -562,7 +597,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		return objs[i].Namespace < objs[j].Namespace
 	})
 
-	if m.args.NoPublish {
+	if m.config.NoPublish {
 		return nil
 	}
 
@@ -620,7 +655,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	labels, extendedResources := m.filterFeatureLabels(labels)
 
 	var taints []corev1.Taint
-	if m.args.EnableTaints {
+	if m.config.EnableTaints {
 		taints = crTaints
 	}
 
@@ -919,6 +954,75 @@ func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResour
 	}
 
 	return patches
+}
+
+// Parse configuration options
+func (m *nfdMaster) configure(filepath string, overrides string) error {
+	// Create a new default config
+	c := newDefaultConfig()
+
+	// Try to read and parse config file
+	if filepath != "" {
+		data, err := os.ReadFile(filepath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				klog.Infof("config file %q not found, using defaults", filepath)
+			} else {
+				return fmt.Errorf("error reading config file: %s", err)
+			}
+		} else {
+			err = yaml.Unmarshal(data, c)
+			if err != nil {
+				return fmt.Errorf("failed to parse config file: %s", err)
+			}
+
+			klog.Infof("configuration file %q parsed", filepath)
+		}
+	}
+
+	// Parse config overrides
+	if err := yaml.Unmarshal([]byte(overrides), c); err != nil {
+		return fmt.Errorf("failed to parse -options: %s", err)
+	}
+	if m.args.Overrides.NoPublish != nil {
+		c.NoPublish = *m.args.Overrides.NoPublish
+	}
+	if m.args.Overrides.DenyLabelNs != nil {
+		c.DenyLabelNs = *m.args.Overrides.DenyLabelNs
+	}
+	if m.args.Overrides.ExtraLabelNs != nil {
+		c.ExtraLabelNs = *m.args.Overrides.ExtraLabelNs
+	}
+	if m.args.Overrides.ResourceLabels != nil {
+		c.ResourceLabels = *m.args.Overrides.ResourceLabels
+	}
+	if m.args.Overrides.EnableTaints != nil {
+		c.EnableTaints = *m.args.Overrides.EnableTaints
+	}
+	if m.args.Overrides.LabelWhiteList != nil {
+		c.LabelWhiteList = *m.args.Overrides.LabelWhiteList
+	}
+
+	m.config = c
+	if !c.NoPublish {
+		kubeconfig, err := m.getKubeconfig()
+		if err != nil {
+			return err
+		}
+		m.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
+	}
+	// Pre-process DenyLabelNS into 2 lists: one for normal ns, and the other for wildcard ns
+	normalDeniedNs, wildcardDeniedNs := preProcessDeniedNamespaces(c.DenyLabelNs)
+	m.deniedNs.normal = normalDeniedNs
+	m.deniedNs.wildcard = wildcardDeniedNs
+	// We forcibly deny kubernetes.io
+	m.deniedNs.normal["kubernetes.io"] = struct{}{}
+	m.deniedNs.wildcard[".kubernetes.io"] = struct{}{}
+
+	utils.KlogDump(1, "effective configuration:", "  ", m.config)
+	klog.Infof("master (re-)configuration successfully completed")
+
+	return nil
 }
 
 // addNs adds a namespace if one isn't already found from src string

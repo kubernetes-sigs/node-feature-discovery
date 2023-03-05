@@ -268,6 +268,34 @@ Example:
 nfd-master -resource-labels=vendor-1.com/feature-1,vendor-2.io/feature-2
 ```
 
+### -config
+
+The `-config` flag specifies the path of the nfd-master configuration file to
+use.
+
+Default: /etc/kubernetes/node-feature-discovery/nfd-master.conf
+
+Example:
+
+```bash
+nfd-master -config=/opt/nfd/master.conf
+```
+
+### -options
+
+The `-options` flag may be used to specify and override configuration file
+options directly from the command line. The required format is the same as in
+the config file i.e. JSON or YAML. Configuration options specified via this
+flag will override those from the configuration file:
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-master -options='{"noPublish": true}'
+```
+
 ### Logging
 
 The following logging-related flags are inherited from the

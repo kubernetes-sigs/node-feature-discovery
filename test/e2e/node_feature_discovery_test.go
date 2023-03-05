@@ -169,9 +169,10 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 		Context("when deploying a single nfd-master pod", Ordered, func() {
 			var (
-				crds      []*apiextensionsv1.CustomResourceDefinition
-				extClient *extclient.Clientset
-				nfdClient *nfdclient.Clientset
+				crds                    []*apiextensionsv1.CustomResourceDefinition
+				extClient               *extclient.Clientset
+				nfdClient               *nfdclient.Clientset
+				customMasterPodSpecOpts *[]testpod.SpecOption
 			)
 
 			checkNodeFeatureObject := func(name string) {
@@ -203,7 +204,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				}
 			})
 
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				// Drop the pod security admission label as nfd-worker needs host mounts
 				if _, ok := f.Namespace.Labels[admissionapi.EnforceLevelLabel]; ok {
 					e2elog.Logf("Deleting %s label from the test namespace", admissionapi.EnforceLevelLabel)
@@ -221,15 +222,21 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
-				podSpecOpts := createPodSpecOpts(
-					testpod.SpecWithContainerImage(dockerImage()),
-					testpod.SpecWithTolerations(testTolerations),
-					testpod.SpecWithContainerExtraArgs("-enable-taints"),
-					testpod.SpecWithContainerExtraArgs(
-						"-deny-label-ns=*.denied.ns,random.unwanted.ns,*.vendor.io",
-						"-extra-label-ns=custom.vendor.io",
-					),
-				)
+				var podSpecOpts []testpod.SpecOption
+				if customMasterPodSpecOpts == nil {
+					podSpecOpts = createPodSpecOpts(
+						testpod.SpecWithContainerImage(dockerImage()),
+						testpod.SpecWithTolerations(testTolerations),
+						testpod.SpecWithContainerExtraArgs("-enable-taints"),
+						testpod.SpecWithContainerExtraArgs(
+							"-deny-label-ns=*.denied.ns,random.unwanted.ns,*.vendor.io",
+							"-extra-label-ns=custom.vendor.io",
+						),
+					)
+				} else {
+					podSpecOpts = createPodSpecOpts(*customMasterPodSpecOpts...)
+				}
+
 				masterPod := e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(podSpecOpts...))
 
 				// Create nfd-master service
@@ -257,6 +264,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				cleanupNode(f.ClientSet)
 				cleanupCRs(nfdClient, f.Namespace.Name)
+				customMasterPodSpecOpts = nil
 			})
 
 			//
@@ -264,7 +272,6 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			//
 			Context("and a single worker pod with fake source enabled", func() {
 				It("it should decorate the node with the fake feature labels", func() {
-
 					fakeFeatureLabels := map[string]string{
 						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature1": "true",
 						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature2": "true",
@@ -769,6 +776,77 @@ core:
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("and check whether master config passed successfully or not", func() {
+				BeforeEach(func() {
+					customMasterPodSpecOpts = &[]testpod.SpecOption{
+						testpod.SpecWithContainerImage(dockerImage()),
+						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
+						testpod.SpecWithTolerations(testTolerations),
+					}
+					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
+denyLabelNs: ["*.denied.ns","random.unwanted.ns"]
+`)
+					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("master configuration should take place", func() {
+					// deploy node feature object
+					if !useNodeFeatureApi {
+						Skip("NodeFeature API not enabled")
+					}
+
+					nodes, err := getNonControlPlaneNodes(f.ClientSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					targetNodeName := nodes[0].Name
+					Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
+
+					// Apply Node Feature object
+					By("Create NodeFeature object")
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-3.yaml", f.Namespace.Name, targetNodeName)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Verify that denied label was not added
+					By("Verifying that denied labels were not added")
+					expectedLabels := map[string]k8sLabels{
+						targetNodeName: {
+							nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-4": "obj-4",
+							"custom.vendor.io/e2e-nodefeature-test-3":              "vendor-ns",
+						},
+					}
+					Expect(checkForNodeLabels(
+						f.ClientSet,
+						expectedLabels,
+						nodes,
+					)).NotTo(HaveOccurred())
+					By("Deleting NodeFeature object")
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(context.TODO(), nodeFeatures[0], metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					// TODO: Find a better way to handle the timeout that happens to reflect the configmap changes
+					Skip("Testing the master dynamic configuration")
+					// Verify that config changes were applied
+					By("Updating the master config")
+					Expect(testutils.UpdateConfigMap(f.ClientSet, "nfd-master-conf", f.Namespace.Name, "nfd-master.conf", `
+denyLabelNs: []
+`))
+					By("Verifying that denied labels were removed")
+					expectedLabels = map[string]k8sLabels{
+						targetNodeName: {
+							nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-4": "obj-4",
+							"custom.vendor.io/e2e-nodefeature-test-3":              "vendor-ns",
+							"random.denied.ns/e2e-nodefeature-test-1":              "denied-ns",
+							"random.unwanted.ns/e2e-nodefeature-test-2":            "unwanted-ns",
+						},
+					}
+					Expect(checkForNodeLabels(
+						f.ClientSet,
+						expectedLabels,
+						nodes,
+					)).NotTo(HaveOccurred())
 				})
 			})
 		})
