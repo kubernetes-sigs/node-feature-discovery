@@ -24,11 +24,11 @@ labeling:
   used to communicate "raw" node features and node labeling requests to
   nfd-master.
 - [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects provide a way to
-  deploy custom labeling rules via the Kubernetes API
+  deploy custom labeling rules via the Kubernetes API.
 - [`local`](#local-feature-source) feature source of nfd-worker creates
-  labels by executing hooks and reading files
+  labels by executing hooks and reading files.
 - [`custom`](#custom-feature-source) feature source of nfd-worker creates
-  labels based on user-specified rules
+  labels based on user-specified rules.
 
 ## NodeFeature custom resource
 
@@ -84,18 +84,18 @@ spec:
 ```
 
 The object targets node named `node-1`. It lists two "flag type" features under
-the `vendor.flags` domain, two "attribute type" features and uder the
+the `vendor.flags` domain, two "attribute type" features and under the
 `vendor.config` domain and two "instance type" features under the
-`vendor.devices` domain. This features will not be directly affecting the node
-labels but they will be used as input when be
-[`NodeFeatureRule`](#nodefeaturerule-custom-resource) object are evaluated.
+`vendor.devices` domain. These features will not be directly affecting the node
+labels but they will be used as input when the
+[`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects are evaluated.
 
-In addition the example requests directly the
+In addition, the example requests directly the
 `feature.node.kubenernetes.io/vendor-feature.enabled=true` node label to be
 created.
 
 The `nfd.node.kubernetes.io/node-name=<node-name>` must be in place for each
-NodeFeature objectt as NFD uses it to determine the node which it is targeting.
+NodeFeature object as NFD uses it to determine the node which it is targeting.
 
 ### Feature types
 
@@ -163,13 +163,14 @@ available fields and how to write labeling rules.
 
 This feature is experimental.
 
-In some circumstances it is desirable keep nodes with specialized hardware away from
-running general workload and instead leave them for workloads that need the specialized
-hardware. One way to achieve it is to taint the nodes with the specialized hardware
-and add corresponding toleration to pods that require the special hardware. NFD
-offers node tainting functionality which is disabled by default. User can define
-one or more custom taints via the `taints` field of the NodeFeatureRule CR. The
-same rule-based mechanism is applied here and the NFD taints only rule matching nodes.
+In some circumstances, it is desirable to keep nodes with specialized hardware
+away from running general workload and instead leave them for workloads that
+need the specialized hardware. One way to achieve it is to taint the nodes with
+the specialized hardware and add corresponding toleration to pods that require
+the special hardware. NFD offers node tainting functionality which is disabled
+by default. User can define one or more custom taints via the `taints` field of
+the NodeFeatureRule CR. The same rule-based mechanism is applied here and the
+NFD taints only rule matching nodes.
 
 To enable the tainting feature, `--enable-taints` flag needs to be set to `true`.
 If the flag `--enable-taints` is set to `false` (i.e. disabled), taints defined in
