@@ -133,7 +133,7 @@ func cleanupNode(cs clientset.Interface) {
 
 }
 
-func cleanupCRDs(cli *nfdclient.Clientset) {
+func cleanupCRs(cli *nfdclient.Clientset, namespace string) {
 	// Drop NodeFeatureRule objects
 	nfrs, err := cli.NfdV1alpha1().NodeFeatureRules().List(context.TODO(), metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
@@ -141,6 +141,15 @@ func cleanupCRDs(cli *nfdclient.Clientset) {
 	By("Deleting NodeFeatureRule objects from the cluster")
 	for _, nfr := range nfrs.Items {
 		err = cli.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), nfr.Name, metav1.DeleteOptions{})
+		Expect(err).NotTo(HaveOccurred())
+	}
+
+	nfs, err := cli.NfdV1alpha1().NodeFeatures(namespace).List(context.TODO(), metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Deleting NodeFeature objects from namespace " + namespace)
+	for _, nf := range nfs.Items {
+		err = cli.NfdV1alpha1().NodeFeatures(namespace).Delete(context.TODO(), nf.Name, metav1.DeleteOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -207,7 +216,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				// Remove pre-existing stale annotations and labels etc and CRDs
 				cleanupNode(f.ClientSet)
-				cleanupCRDs(nfdClient)
+				cleanupCRs(nfdClient, f.Namespace.Name)
 
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
@@ -242,7 +251,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				Expect(testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
 				cleanupNode(f.ClientSet)
-				cleanupCRDs(nfdClient)
+				cleanupCRs(nfdClient, f.Namespace.Name)
 			})
 
 			//
@@ -568,12 +577,21 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Create NodeFeature object in the extra namespace")
-					_, err = testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-2.yaml", extraNs.Name, targetNodeName)
+					nodeFeatures, err = testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-2.yaml", extraNs.Name, targetNodeName)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object #2 are created")
 					expectedLabels[targetNodeName][nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-1"] = "overridden-from-obj-2"
 					expectedLabels[targetNodeName][nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-3"] = "obj-2"
+					Expect(waitForNfdNodeLabels(f.ClientSet, expectedLabels)).NotTo(HaveOccurred())
+
+					By("Deleting NodeFeature object from the extra namespace")
+					err = nfdClient.NfdV1alpha1().NodeFeatures(extraNs.Name).Delete(context.TODO(), nodeFeatures[0], metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying node labels from NodeFeature object were removed")
+					expectedLabels[targetNodeName][nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-1"] = "obj-1"
+					delete(expectedLabels[targetNodeName], nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-3")
 					Expect(waitForNfdNodeLabels(f.ClientSet, expectedLabels)).NotTo(HaveOccurred())
 				})
 			})
@@ -678,6 +696,10 @@ core:
 					By("Verifying updated node taints and annotation from NodeFeatureRules #3")
 					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaintsUpdated)).NotTo(HaveOccurred())
 					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedAnnotationUpdated)).NotTo(HaveOccurred())
+
+					By("Deleting nfd-worker daemonset")
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
