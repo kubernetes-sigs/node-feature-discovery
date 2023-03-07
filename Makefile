@@ -178,7 +178,7 @@ helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
 
 test:
-	$(GO_CMD) test ./cmd/... ./pkg/... ./source/...
+	$(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
 
 e2e-test:
 	@if [ -z ${KUBECONFIG} ]; then echo "[ERR] KUBECONFIG missing, must be defined"; exit 1; fi
