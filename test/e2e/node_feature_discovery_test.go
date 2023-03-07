@@ -321,8 +321,8 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Waiting for daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+					By("Waiting for worker daemonset pods to be ready")
+					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					By("Getting node objects")
 					nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
@@ -454,8 +454,8 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Waiting for daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+					By("Waiting for worker daemonset pods to be ready")
+					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					By("Getting target node and checking labels")
 					targetNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), targetNodeName, metav1.GetOptions{})
@@ -537,7 +537,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for worker daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					By("Verifying node labels from nfd-worker")
 					expectedLabels = map[string]k8sLabels{
@@ -603,8 +603,8 @@ core:
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Waiting for daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+					By("Waiting for worker daemonset pods to be ready")
+					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					expected := map[string]k8sLabels{
 						"*": {
