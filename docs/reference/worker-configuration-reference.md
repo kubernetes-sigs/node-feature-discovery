@@ -355,7 +355,7 @@ sources:
     hooksEnabled: true  # true by default
 ```
 
-### soures.pci
+### sources.pci
 
 #### soures.pci.deviceClassWhitelist
 
