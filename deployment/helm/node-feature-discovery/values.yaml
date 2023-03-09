@@ -390,7 +390,7 @@ topologyUpdater:
     annotations: {}
     name:
   rbac:
-    create: false
+    create: true
 
   kubeletConfigPath:
   kubeletPodResourcesSockPath:
