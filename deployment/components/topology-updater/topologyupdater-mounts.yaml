@@ -4,9 +4,6 @@
   - name: host-sys
     hostPath:
       path: "/sys"
-  - name: kubelet-podresources-conf
-    hostPath:
-      path: /var/lib/kubelet/config.yaml
   - name: kubelet-podresources-sock
     hostPath:
       path: /var/lib/kubelet/pod-resources/kubelet.sock
@@ -17,8 +14,6 @@
 - op: add
   path: /spec/template/spec/containers/0/volumeMounts
   value:
-  - name: kubelet-podresources-conf
-    mountPath: /host-var/lib/kubelet/config.yaml
   - name: kubelet-podresources-sock
     mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
   - name: host-sys
