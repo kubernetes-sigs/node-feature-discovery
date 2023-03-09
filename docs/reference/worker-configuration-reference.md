@@ -355,15 +355,15 @@ sources:
     hooksEnabled: true  # true by default
 ```
 
-### soures.pci
+### sources.pci
 
-#### soures.pci.deviceClassWhitelist
+#### sources.pci.deviceClassWhitelist
 
 List of PCI [device class](https://pci-ids.ucw.cz/read/PD) IDs for which to
 publish a label. Can be specified as a main class only (e.g. `03`) or full
 class-subclass combination (e.g. `0300`) - the former implies that all
 subclasses are accepted.  The format of the labels can be further configured
-with [deviceLabelFields](#soures.pci.deviceLabelFields).
+with [deviceLabelFields](#sources.pci.deviceLabelFields).
 
 Default: `["03", "0b40", "12"]`
 
@@ -375,7 +375,7 @@ sources:
     deviceClassWhitelist: ["0200", "03"]
 ```
 
-#### soures.pci.deviceLabelFields
+#### sources.pci.deviceLabelFields
 
 The set of PCI ID fields to use when constructing the name of the feature
 label. Valid fields are `class`, `vendor`, `device`, `subsystem_vendor` and
@@ -396,11 +396,11 @@ With the example config above NFD would publish labels like:
 
 ### sources.usb
 
-#### soures.usb.deviceClassWhitelist
+#### sources.usb.deviceClassWhitelist
 
 List of USB [device class](https://www.usb.org/defined-class-codes) IDs for
 which to publish a feature label. The format of the labels can be further
-configured with [deviceLabelFields](#soures.usb.deviceLabelFields).
+configured with [deviceLabelFields](#sources.usb.deviceLabelFields).
 
 Default: `["0e", "ef", "fe", "ff"]`
 
@@ -412,7 +412,7 @@ sources:
     deviceClassWhitelist: ["ef", "ff"]
 ```
 
-#### soures.usb.deviceLabelFields
+#### sources.usb.deviceLabelFields
 
 The set of USB ID fields from which to compose the name of the feature label.
 Valid fields are `class`, `vendor`, `device` and `serial`.
