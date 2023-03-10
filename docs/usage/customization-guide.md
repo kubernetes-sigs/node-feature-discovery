@@ -485,7 +485,7 @@ details.
 labels specified in the `labels` field will override anything
 originating from `labelsTemplate`.
 
-### Taints
+#### Taints
 
 *taints* is a list of taint entries and each entry can have `key`, `value` and `effect`,
 where the `value` is optional. Effect could be `NoSchedule`, `PreferNoSchedule`
@@ -500,6 +500,65 @@ The `.vars` field is a map of values (key-value pairs) to store for subsequent
 rules to use. In other words, these are variables that are not advertised as
 node labels. See [backreferences](#backreferences) for more details on the
 usage of vars.
+
+#### Extended resources
+
+The `.extendedResources` field is a list of extended resources to advertise.
+See [extended resources](#extended-resources) for more details.
+
+Take this rule as a referential example:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-extended-resource-rule
+spec:
+  rules:
+    - name: "my extended resource rule"
+      extendedResources:
+        vendor.io/dynamic: "@kernel.version.major"
+        vendor.io/static: "123"
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: Exists}
+```
+
+The extended resource `vendor.io/dynamic` is defined in the form `@feature.attribute`.
+The value of the extended resource will be the value of the attribute `major`
+of the feature `kernel.version`.
+
+The `@<feature-name>.<element-name>` format can be used to inject values of
+detected features to the extended resource. See
+[available features](#available-features) for possible values to use. Note that
+the value must be eligible as a
+Kubernetes resource quantity.
+
+This will yield into the following node status:
+
+```yaml
+  allocatable:
+    ...
+    vendor.io/dynamic: "5"
+    vendor.io/static: "123"
+    ...
+  capacity:
+    ...
+    vendor.io/dynamic: "5"
+    vendor.io/static: "123"
+    ...
+```
+
+There are some limitations to the namespace part (i.e. prefix)/ of the Extended
+Resources names:
+
+- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
+  generally be used
+- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
+  (like `sub.ns.feature.node.kubernetes.io`)
+- unprefixed names will get prefixed with `feature.node.kubernetes.io/`
+  automatically (e.g. `foo` becomes `feature.node.kubernetes.io/foo`)
 
 #### Vars template
 

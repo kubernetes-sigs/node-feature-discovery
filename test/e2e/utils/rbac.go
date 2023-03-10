@@ -141,7 +141,7 @@ func createClusterRoleMaster(cs clientset.Interface) (*rbacv1.ClusterRole, error
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
-				Resources: []string{"nodes"},
+				Resources: []string{"nodes", "nodes/status"},
 				Verbs:     []string{"get", "list", "patch", "update"},
 			},
 			{

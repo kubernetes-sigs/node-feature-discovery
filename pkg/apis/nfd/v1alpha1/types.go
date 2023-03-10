@@ -163,6 +163,10 @@ type Rule struct {
 	// +optional
 	Taints []corev1.Taint `json:"taints,omitempty"`
 
+	// ExtendedResources to create if the rule matches.
+	// +optional
+	ExtendedResources map[string]string `json:"extendedResources"`
+
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`

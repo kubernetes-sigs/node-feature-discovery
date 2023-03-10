@@ -1,0 +1,32 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: e2e-extened-resource-test
+spec:
+  rules:
+    - name: "e2e no ns rule"
+      extendedResources:
+        nons: "123"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_1": {op: IsTrue}
+            "attr_2": {op: IsFalse}
+
+    - name: "e2e Dynamic rule"
+      extendedResources:
+        vendor.io/dynamic: "@fake.attribute.attr_3"
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            "attr_3": {op: Exists}
+
+    - name: "e2e static rule"
+      extendedResources:
+        vendor.io/static: "123"
+      matchFeatures:
+
+    - name: "e2e not allowed rule"
+      extendedResources:
+        bad.kubernetes.io/malo: "999"
+      matchFeatures:
