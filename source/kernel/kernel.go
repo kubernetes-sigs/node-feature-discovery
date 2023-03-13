@@ -30,10 +30,11 @@ import (
 const Name = "kernel"
 
 const (
-	ConfigFeature       = "config"
-	LoadedModuleFeature = "loadedmodule"
-	SelinuxFeature      = "selinux"
-	VersionFeature      = "version"
+	ConfigFeature        = "config"
+	LoadedModuleFeature  = "loadedmodule"
+	SelinuxFeature       = "selinux"
+	VersionFeature       = "version"
+	EnabledModuleFeature = "enabledmodule"
 )
 
 // Configuration file options
@@ -135,10 +136,19 @@ func (s *kernelSource) Discover() error {
 		s.legacyKconfig = legacyKconfig
 	}
 
+	var enabledModules []string
 	if kmods, err := getLoadedModules(); err != nil {
 		klog.Errorf("failed to get loaded kernel modules: %v", err)
 	} else {
+		enabledModules = append(enabledModules, kmods...)
 		s.features.Flags[LoadedModuleFeature] = nfdv1alpha1.NewFlagFeatures(kmods...)
+	}
+
+	if builtinMods, err := getBuiltinModules(); err != nil {
+		klog.Errorf("failed to get builtin kernel modules: %v", err)
+	} else {
+		enabledModules = append(enabledModules, builtinMods...)
+		s.features.Flags[EnabledModuleFeature] = nfdv1alpha1.NewFlagFeatures(enabledModules...)
 	}
 
 	if selinux, err := SelinuxEnabled(); err != nil {

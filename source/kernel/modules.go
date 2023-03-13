@@ -19,7 +19,10 @@ package kernel
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 )
 
 const kmodProcfsPath = "/proc/modules"
@@ -31,7 +34,7 @@ func getLoadedModules() ([]string, error) {
 	}
 
 	lines := strings.Split(string(out), "\n")
-	loadedMods := make([]string, len(lines))
+	loadedMods := make([]string, 0, len(lines))
 	for _, line := range lines {
 		// skip empty lines
 		if len(line) == 0 {
@@ -41,4 +44,31 @@ func getLoadedModules() ([]string, error) {
 		loadedMods = append(loadedMods, strings.Fields(line)[0])
 	}
 	return loadedMods, nil
+}
+
+func getBuiltinModules() ([]string, error) {
+	kVersion, err := getVersion()
+	if err != nil {
+		return []string{}, err
+	}
+
+	kBuiltinModPath := hostpath.LibDir.Path("modules/" + kVersion + "/modules.builtin")
+	out, err := os.ReadFile(kBuiltinModPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %s", kBuiltinModPath, err.Error())
+	}
+
+	lines := strings.Split(string(out), "\n")
+	builtinMods := make([]string, 0, len(lines))
+	for _, line := range lines {
+		// skip empty lines
+		line = strings.TrimSpace(line)
+		if !strings.HasSuffix(line, ".ko") {
+			continue
+		}
+
+		// append loaded module
+		builtinMods = append(builtinMods, strings.TrimSuffix(path.Base(line), ".ko"))
+	}
+	return builtinMods, nil
 }
