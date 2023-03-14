@@ -4,6 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
+    api-approved.kubernetes.io: unapproved, experimental-only
   creationTimestamp: null
   name: nodefeaturediscoveries.nfd.kubernetes.io
 spec:
@@ -71,6 +72,13 @@ spec:
                       listens for incoming requests.
                     type: integer
                 type: object
+              prunerOnDelete:
+                description: PruneOnDelete defines whether the NFD-master prune should
+                  be enabled or not. If enabled, the Operator will deploy an NFD-Master
+                  prune job that will remove all NFD labels (and other NFD-managed
+                  assets such as annotations, extended resources and taints) from
+                  the cluster nodes.
+                type: boolean
               resourceLabels:
                 description: ResourceLabels defines the list of features to be advertised
                   as extended resources instead of labels.
