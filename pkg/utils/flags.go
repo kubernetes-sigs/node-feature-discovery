@@ -84,6 +84,18 @@ func (a *StringSetVal) String() string {
 	return strings.Join(vals, ",")
 }
 
+// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
+func (a *StringSetVal) UnmarshalJSON(data []byte) error {
+	var tmp []string
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	for _, v := range tmp {
+		(*a)[v] = struct{}{}
+	}
+	return nil
+}
+
 // StringSliceVal is a Value encapsulating a slice of comma-separated strings
 type StringSliceVal []string
 
