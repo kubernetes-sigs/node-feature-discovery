@@ -3,6 +3,9 @@ set -o pipefail
 
 # Default path for code-generator repo
 K8S_CODE_GENERATOR=${K8S_CODE_GENERATOR:-../code-generator}
+# Omit version control information (buildvcs)
+export GOENV="/go/env"
+go env -w GOFLAGS="-buildvcs=false"
 
 go mod vendor
 

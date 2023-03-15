@@ -2,7 +2,7 @@ ARG BUILDER_IMAGE
 FROM ${BUILDER_IMAGE} as builder
 
 # Install tools
-RUN go install github.com/vektra/mockery/v2@v2.13.0 && \
+RUN go install github.com/vektra/mockery/v2@v2.20.0 && \
     go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2 && \
     git clone https://github.com/kubernetes/code-generator -b v0.24.3 --depth 1 && \
     go install k8s.io/code-generator/cmd/...@v0.24.3 && \
