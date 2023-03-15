@@ -63,6 +63,13 @@ type NodeFeatureDiscoverySpec struct {
 	// worker.
 	// +optional
 	WorkerConfig ConfigMap `json:"workerConfig"`
+
+	// PruneOnDelete defines whether the NFD-master prune should be
+	// enabled or not. If enabled, the Operator will deploy an NFD-Master prune
+	// job that will remove all NFD labels (and other NFD-managed assets such
+	// as annotations, extended resources and taints) from the cluster nodes.
+	// +optional
+	PruneOnDelete bool `json:"prunerOnDelete"`
 }
 
 // OperandSpec describes configuration options for the operand
