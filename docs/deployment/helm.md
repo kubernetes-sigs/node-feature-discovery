@@ -112,6 +112,7 @@ We have introduced the following Chart parameters.
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
 | `master.extraLabelNs`       | array   | []                                      | List of allowed extra label namespaces                                                                                                   |
 | `master.resourceLabels`     | array   | []                                      | List of labels to be registered as extended resources                                                                                          |
+| `master.enableTaints`       | bool    | false                                   | Specifies whether to enable or disable node tainting                                                                                           |
 | `master.crdController`      | bool    | null                                    | Specifies whether the NFD CRD API controller is enabled. If not set, controller will be enabled if `master.instance` is empty. |
 | `master.featureRulesController` | bool | null                                   | DEPRECATED: use `master.crdController` instead |
 | `master.replicaCount`       | integer | 1                                       | Number of desired pods. This is a pointer to distinguish between explicit zero and not specified                                         |
