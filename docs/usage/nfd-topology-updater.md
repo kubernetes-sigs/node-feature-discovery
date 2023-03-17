@@ -9,19 +9,28 @@ sort: 5
 
 ---
 
-NFD-Topology-Updater is preferably run as a Kubernetes DaemonSet. This assures
-re-examination on regular intervals, capturing changes in the allocated
-resources and hence the allocatable resources on a per zone basis by updating
+NFD-Topology-Updater is preferably run as a Kubernetes DaemonSet.
+This assures re-examination on regular intervals
+and/or per pod life-cycle events, capturing changes in the allocated
+resources and hence the allocatable resources on a per-zone basis by updating
 [NodeResourceTopology](custom-resources.md#noderesourcetopology) custom resources.
 It makes sure that new NodeResourceTopology instances are created for each new
 nodes that get added to the cluster.
 
 When run as a daemonset, nodes are re-examined for the allocated resources
-(to determine the information of the allocatable resources on a per zone basis
+(to determine the information of the allocatable resources on a per-zone basis
 where a zone can be a NUMA node) at an interval specified using the
 [`-sleep-interval`](../reference/topology-updater-commandline-reference.html.md#-sleep-interval)
-option. The default sleep interval is set to 60s which is the value when no
--sleep-interval is specified.
+option. The default sleep interval is set to 60s
+which is the value when no -sleep-interval is specified.
+The re-examination can be disabled by setting the sleep-interval to 0.
+
+Another option is to configure the updater to update
+the allocated resources per pod life-cycle events.
+The updater will monitor the checkpoint file stated in
+[`-kubelet-state-dir`](../reference/topology-updater-commandline-reference.md#-kubelet-state-dir)
+and triggers an update for every change occurs in the files.
+
 In addition, it can avoid examining specific allocated resources
 given a configuration of resources to exclude via [`-excludeList`](../reference/topology-updater-configuration-reference.md#excludelist)
 

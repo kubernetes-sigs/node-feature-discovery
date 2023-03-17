@@ -77,8 +77,7 @@ nfd-topology-updater -oneshot -no-publish
 ### -sleep-interval
 
 The `-sleep-interval` specifies the interval between resource hardware
-topology re-examination (and CR updates). A non-positive value implies
-infinite sleep interval, i.e. no re-detection is done.
+topology re-examination (and CR updates). zero means no CR updates on interval basis.
 
 Default: 60s
 
@@ -150,7 +149,7 @@ nfd-topology-updater -podresources-socket=/var/lib/kubelet/pod-resources/kubelet
 
 ### -pods-fingerprint
 
-Enbles the compute and report the pod set fingerprint in the NRT.
+Enables compute and report the pod set fingerprint in the NRT.
 A pod fingerprint is a compact representation of the "node state" regarding resources.
 
 Default: `false`
@@ -159,4 +158,20 @@ Example:
 
 ```bash
 nfd-topology-updater -pods-fingerprint
+```
+
+### -kubelet-state-dir
+
+The `-kubelet-state-dir` specifies the path to the Kubelet state directory,
+where state and checkpoint files are stored.
+The files are mount as read-only and cannot be change by the updater.
+Enabled by default.
+Passing an empty string will disable the watching.
+
+Default:  /host-var/lib/kubelet
+
+Example:
+
+```bash
+nfd-topology-updater -kubelet-state-dir=/var/lib/kubelet
 ```

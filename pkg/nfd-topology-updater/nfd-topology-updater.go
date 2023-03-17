@@ -20,16 +20,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+
+	"golang.org/x/net/context"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
-	"golang.org/x/net/context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
+	"sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater/kubeletnotifier"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
@@ -47,10 +47,11 @@ const (
 
 // Args are the command line arguments
 type Args struct {
-	NoPublish      bool
-	Oneshot        bool
-	KubeConfigFile string
-	ConfigFile     string
+	NoPublish       bool
+	Oneshot         bool
+	KubeConfigFile  string
+	ConfigFile      string
+	KubeletStateDir string
 
 	Klog map[string]*utils.KlogFlagVal
 }
@@ -87,23 +88,33 @@ type nfdTopologyUpdater struct {
 	apihelper           apihelper.APIHelpers
 	resourcemonitorArgs resourcemonitor.Args
 	stop                chan struct{} // channel for signaling stop
+	eventSource         <-chan kubeletnotifier.Info
 	configFilePath      string
 	config              *NFDConfig
 }
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
-func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy, scope string) NfdTopologyUpdater {
+func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, policy, scope string) (NfdTopologyUpdater, error) {
+	eventSource := make(chan kubeletnotifier.Info)
+	if args.KubeletStateDir != "" {
+		ntf, err := kubeletnotifier.New(resourcemonitorArgs.SleepInterval, eventSource, args.KubeletStateDir)
+		if err != nil {
+			return nil, err
+		}
+		go ntf.Run()
+	}
 	nfd := &nfdTopologyUpdater{
 		args:                args,
 		resourcemonitorArgs: resourcemonitorArgs,
 		nodeInfo:            newStaticNodeInfo(policy, scope),
 		stop:                make(chan struct{}, 1),
+		eventSource:         eventSource,
 		config:              &NFDConfig{},
 	}
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
-	return nfd
+	return nfd, nil
 }
 
 // Run nfdTopologyUpdater. Returns if a fatal error is encountered, or, after
@@ -149,19 +160,18 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	klog.V(2).Infof("resAggr is: %v\n", resAggr)
 
-	crTrigger := time.NewTicker(w.resourcemonitorArgs.SleepInterval)
 	for {
 		select {
-		case <-crTrigger.C:
-			klog.Infof("Scanning")
+		case info := <-w.eventSource:
+			klog.V(4).Infof("got %q event. scanning...", info.Event)
 			scanResponse, err := resScan.Scan()
 			utils.KlogDump(1, "podResources are", "  ", scanResponse.PodResources)
 			if err != nil {
-				klog.Warningf("Scan failed: %v", err)
+				klog.Warningf("scan failed: %v", err)
 				continue
 			}
 			zones = resAggr.Aggregate(scanResponse.PodResources)
-			utils.KlogDump(1, "After aggregating resources identified zones are", "  ", zones)
+			utils.KlogDump(1, "after aggregating resources identified zones are", "  ", zones)
 			if !w.args.NoPublish {
 				if err = w.updateNodeResourceTopology(zones, scanResponse); err != nil {
 					return err

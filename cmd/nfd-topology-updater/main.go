@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -39,6 +40,8 @@ const (
 	ProgramName       = "nfd-topology-updater"
 	kubeletSecurePort = 10250
 )
+
+var DefaultKubeletStateDir = path.Join(string(hostpath.VarDir), "lib", "kubelet")
 
 func main() {
 	flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
@@ -88,7 +91,10 @@ func main() {
 	}
 
 	// Get new TopologyUpdater instance
-	instance := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope)
+	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope)
+	if err != nil {
+		klog.Exit(err)
+	}
 
 	if err = instance.Run(); err != nil {
 		klog.Exit(err)
@@ -128,7 +134,7 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
 		"Kube config file.")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
-		"Time to sleep between CR updates. Non-positive value implies no CR updatation (i.e. infinite sleep). [Default: 60s]")
+		"Time to sleep between CR updates. zero means no CR updates on interval basis. [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",
 		"Namespace to watch pods (for testing/debugging purpose). Use * for all namespaces.")
 	flagset.StringVar(&resourcemonitorArgs.KubeletConfigURI, "kubelet-config-uri", "",
@@ -140,6 +146,7 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf",
 		"Config file to use.")
 	flagset.BoolVar(&resourcemonitorArgs.PodSetFingerprint, "pods-fingerprint", false, "Compute and report the pod set fingerprint")
+	flagset.StringVar(&args.KubeletStateDir, "kubelet-state-dir", DefaultKubeletStateDir, "Kubelet state directory path for watching state and checkpoint files")
 
 	klog.InitFlags(flagset)
 

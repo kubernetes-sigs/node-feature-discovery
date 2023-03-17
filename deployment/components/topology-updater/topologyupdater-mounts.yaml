@@ -10,6 +10,9 @@
   - name: nfd-topology-updater-conf
     configMap:
       name: nfd-topology-updater-conf
+  - name: kubelet-state-files
+    hostPath:
+      path: /var/lib/kubelet
 
 - op: add
   path: /spec/template/spec/containers/0/volumeMounts
@@ -20,6 +23,9 @@
     mountPath: /host-sys
   - name: nfd-topology-updater-conf
     mountPath: "/etc/kubernetes/node-feature-discovery"
+    readOnly: true
+  - name: kubelet-state-files
+    mountPath: /host-var/lib/kubelet
     readOnly: true
 
 - op: add

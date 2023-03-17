@@ -364,8 +364,7 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 				Command:         []string{"nfd-topology-updater"},
 				Args: []string{
 					"-kubelet-config-uri=file:///podresources/config.yaml",
-					"-podresources-socket=unix:///podresources/kubelet.sock",
-					"-sleep-interval=3s",
+					"-podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
 					"-watch-namespace=rte"},
 				Env: []corev1.EnvVar{
 					{
@@ -390,12 +389,16 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
+						Name:      "kubelet-state-files",
+						MountPath: "/host-var/lib/kubelet",
+					},
+					{
 						Name:      "kubelet-podresources-conf",
 						MountPath: "/podresources/config.yaml",
 					},
 					{
 						Name:      "kubelet-podresources-sock",
-						MountPath: "/podresources/kubelet.sock",
+						MountPath: "/host-var/lib/kubelet/pod-resources/kubelet.sock",
 					},
 					{
 						Name:      "host-sys",
@@ -407,6 +410,15 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 		ServiceAccountName: "nfd-topology-updater-e2e",
 		DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
 		Volumes: []corev1.Volume{
+			{
+				Name: "kubelet-state-files",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet",
+						Type: newHostPathType(corev1.HostPathDirectory),
+					},
+				},
+			},
 			{
 				Name: "kubelet-podresources-conf",
 				VolumeSource: corev1.VolumeSource{
