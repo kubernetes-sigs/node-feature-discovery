@@ -17,6 +17,7 @@ master:
   featureApi:
   extraLabelNs: []
   resourceLabels: []
+  enableTaints: false
   crdController: null
   featureRulesController: null
   deploymentAnnotations: {}
