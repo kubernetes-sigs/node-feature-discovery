@@ -16,7 +16,7 @@ namespaceOverride: ""
 
 enableNodeFeatureApi: false
 
-controller:
+nfd:
   image: 
     repository: gcr.io/k8s-staging-nfd/node-feature-discovery
     tag: master
