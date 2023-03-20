@@ -53,7 +53,7 @@ spec:
         - name: OPERATOR_NAME
           value: node-feature-discovery-operator
         - name: NODE_FEATURE_DISCOVERY_IMAGE
-          value: "{{ .Values.nfd.image.repository }}:{{ .Values.nfd.image.tag | default "master" }}"
+          value: "{{ .Values.nfd.image.repository }}:{{ .Values.nfd.image.tag | default "master-minimal" }}"
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:

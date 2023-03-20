@@ -14,7 +14,7 @@ metadata:
           "spec": {
             "instance": "",
             "operand": {
-              "image": "gcr.io/k8s-staging-nfd/node-feature-discovery:master",
+              "image": "gcr.io/k8s-staging-nfd/node-feature-discovery-operator:master-minimal",
               "imagePullPolicy": "Always",
               "servicePort": 12000
             },
@@ -64,7 +64,7 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Integration & Delivery
-    containerImage: registry.k8s.io/nfd/node-feature-discovery-operator:master
+    containerImage: gcr.io/k8s-staging-nfd/node-feature-discovery-operator:master-minimal
     createdAt: "2023-01-17T14:52:07Z"
     description: |-
       The Node Feature Discovery Operator manages the detection of hardware features and configuration in a Kubernetes cluster by labeling the nodes with hardware-specific information. The Node Feature Discovery (NFD) will label the host with node-specific attributes, like PCI cards, kernel, or OS version, and many more.
@@ -84,7 +84,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.26.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/kubernetes-sigs/node-feature-discovery-operator
-  name: nfd-operator.v0.5.0
+  name: nfd-operator.master
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -403,8 +403,8 @@ spec:
                 - name: OPERATOR_NAME
                   value: cluster-nfd-operator
                 - name: NODE_FEATURE_DISCOVERY_IMAGE
-                  value: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-                image: registry.k8s.io/nfd/node-feature-discovery-operator:0.5.0-minimal
+                  value: gcr.io/k8s-staging-nfd/node-feature-discovery:master-minimal
+                image: gcr.io/k8s-staging-nfd/node-feature-discovery-operator:master-minimal
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -427,6 +427,7 @@ spec:
                     - ALL
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 65534
                   seccompProfile:
                     type: RuntimeDefault
               terminationGracePeriodSeconds: 10
@@ -514,11 +515,11 @@ spec:
   - discovery
   links:
   - name: Documentation operator
-    url: https://kubernetes-sigs.github.io/node-feature-discovery-operator/v0.4
+    url: https://kubernetes-sigs.github.io/node-feature-discovery-operator/master
   - name: Documentation operand
     url: https://kubernetes-sigs.github.io/node-feature-discovery
   maintainers:
-  - email: carangog@redhat.com
+  - email: eduardoa@nvidia.com
     name: Eduardo Arango
   - email: zkaiser@nvidia.com
     name: Zvonko Kaiser
@@ -527,4 +528,5 @@ spec:
   maturity: stable
   provider:
     name: kubernetes-sigs
-  version: 0.5.0
+  version: master
+  replaces: v0.6.0

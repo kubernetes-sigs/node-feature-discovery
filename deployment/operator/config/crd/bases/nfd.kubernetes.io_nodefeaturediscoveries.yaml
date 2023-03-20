@@ -90,7 +90,7 @@ spec:
                 description: Deploy the NFD-Topology-Updater NFD-Topology-Updater
                   is a daemon responsible for examining allocated resources on a worker
                   node to account for resources available to be allocated to new pod
-                  on a per-zone basis https://kubernetes-sigs.github.io/node-feature-discovery/v0.10/get-started/introduction.html#nfd-topology-updater
+                  on a per-zone basis https://kubernetes-sigs.github.io/node-feature-discovery/master/get-started/introduction.html#nfd-topology-updater
                 type: boolean
               workerConfig:
                 description: WorkerConfig describes configuration options for the

@@ -31,7 +31,7 @@ type NodeFeatureDiscoverySpec struct {
 	// NFD-Topology-Updater is a daemon responsible for examining allocated
 	// resources on a worker node to account for resources available to be
 	// allocated to new pod on a per-zone basis
-	// https://kubernetes-sigs.github.io/node-feature-discovery/v0.10/get-started/introduction.html#nfd-topology-updater
+	// https://kubernetes-sigs.github.io/node-feature-discovery/master/get-started/introduction.html#nfd-topology-updater
 	// +optional
 	TopologyUpdater bool `json:"topologyUpdater"`
 
