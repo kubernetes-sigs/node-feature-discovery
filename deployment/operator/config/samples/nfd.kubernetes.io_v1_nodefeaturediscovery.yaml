@@ -11,7 +11,7 @@ spec:
   #resourceLabels:
   #  - "example.com/resource"
   operand:
-    image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+    image: gcr.io/k8s-staging-nfd/node-feature-discovery:master-minimal
     imagePullPolicy: Always
     servicePort: 12000
   workerConfig:

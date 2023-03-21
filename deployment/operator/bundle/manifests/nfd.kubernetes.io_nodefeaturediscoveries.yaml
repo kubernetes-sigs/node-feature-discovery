@@ -1,9 +1,10 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved, experimental-only
     controller-gen.kubebuilder.io/version: v0.8.0
+    api-approved.kubernetes.io: unapproved, experimental-only
   creationTimestamp: null
   name: nodefeaturediscoveries.nfd.kubernetes.io
 spec:
@@ -71,6 +72,13 @@ spec:
                       listens for incoming requests.
                     type: integer
                 type: object
+              prunerOnDelete:
+                description: PruneOnDelete defines whether the NFD-master prune should
+                  be enabled or not. If enabled, the Operator will deploy an NFD-Master
+                  prune job that will remove all NFD labels (and other NFD-managed
+                  assets such as annotations, extended resources and taints) from
+                  the cluster nodes.
+                type: boolean
               resourceLabels:
                 description: ResourceLabels defines the list of features to be advertised
                   as extended resources instead of labels.
@@ -82,7 +90,7 @@ spec:
                 description: Deploy the NFD-Topology-Updater NFD-Topology-Updater
                   is a daemon responsible for examining allocated resources on a worker
                   node to account for resources available to be allocated to new pod
-                  on a per-zone basis https://kubernetes-sigs.github.io/node-feature-discovery/v0.10/get-started/introduction.html#nfd-topology-updater
+                  on a per-zone basis https://kubernetes-sigs.github.io/node-feature-discovery/master/get-started/introduction.html#nfd-topology-updater
                 type: boolean
               workerConfig:
                 description: WorkerConfig describes configuration options for the
