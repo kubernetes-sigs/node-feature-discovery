@@ -92,6 +92,9 @@ spec:
             {{- if .Values.master.resourceLabels | empty | not }}
             - "-resource-labels={{- join "," .Values.master.resourceLabels }}"
             {{- end }}
+            {{- if .Values.master.enableTaints }}
+            - "-enable-taints"
+            {{- end }}
             {{- if .Values.master.crdController | kindIs "invalid" | not }}
             - "-crd-controller={{ .Values.master.crdController }}"
             {{- else }}
