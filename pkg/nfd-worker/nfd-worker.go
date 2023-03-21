@@ -548,7 +548,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	}
 
 	klog.Infof("worker (re-)configuration successfully completed")
-
+	utils.KlogDump(1, "effective configuration:", "  ", w.config)
 	return nil
 }
 
