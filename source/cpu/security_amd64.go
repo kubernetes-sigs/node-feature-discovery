@@ -38,6 +38,18 @@ func discoverSecurity() map[string]string {
 		elems["tdx.enabled"] = "true"
 	}
 
+	if sevParameterEnabled("sev") {
+		elems["sev.enabled"] = "true"
+	}
+
+	if sevParameterEnabled("sev_es") {
+		elems["sev.es.enabled"] = "true"
+	}
+
+	if sevParameterEnabled("sev_snp") {
+		elems["sev.snp.enabled"] = "true"
+	}
+
 	return elems
 }
 
@@ -68,6 +80,18 @@ func tdxEnabled() bool {
 	protVirtHost := hostpath.SysfsDir.Path("module/kvm_intel/parameters/tdx")
 	if content, err := os.ReadFile(protVirtHost); err == nil {
 		if string(content) == "Y\n" {
+			return true
+		}
+	}
+	return false
+}
+
+func sevParameterEnabled(parameter string) bool {
+	// SEV-SNP is supported and enabled when the kvm module `sev_snp` parameter is set to `Y`
+	// SEV-SNP support infers SEV (-ES) support
+	sevKvmParameterPath := hostpath.SysfsDir.Path("module/kvm_amd/parameters/", parameter)
+	if _, err := os.Stat(sevKvmParameterPath); err == nil {
+		if c, err := os.ReadFile(sevKvmParameterPath); err == nil && len(c) > 0 && (c[0] == '1' || c[0] == 'Y') {
 			return true
 		}
 	}
