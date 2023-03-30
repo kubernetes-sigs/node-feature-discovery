@@ -607,6 +607,9 @@ The following features are available for matching:
 |                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
 |                  |              | **`tdx.enabled`** | bool | `true` if Intel TDX (Trusted Domain Extensions) is available on the host and has been enabled, otherwise does not exist
+|                  |              | **`sev.enabled`** | bool | `true` if AMD SEV (Secure Encrypted Virtualization) is available on the host and has been enabled, otherwise does not exist
+|                  |              | **`sev.es.enabled`** | bool | `true` if AMD SEV-ES (Encrypted State supported) is available on the host and has been enabled, otherwise does not exist
+|                  |              | **`sev.snp.enabled`** | bool | `true` if AMD SEV-SNP (Secure Nested Paging supported) is available on the host and has been enabled, otherwise does not exist
 | **`cpu.sgx`**    | attribute    |          |            | **DEPRECATED**: replaced by **`cpu.security`** feature
 |                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`sgx.enabled`** from **`cpu.security`** instead
 | **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities

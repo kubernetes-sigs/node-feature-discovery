@@ -229,7 +229,7 @@ func (s *cpuSource) Discover() error {
 	// Detect RDT features
 	s.features.Flags[RdtFeature] = nfdv1alpha1.NewFlagFeatures(discoverRDT()...)
 
-	// Detect SGX features
+	// Detect available guest protection(SGX,TDX,SEV) features
 	s.features.Attributes[SecurityFeature] = nfdv1alpha1.NewAttributeFeatures(discoverSecurity())
 
 	// Detect SGX features
