@@ -58,6 +58,7 @@ option of nfd-worker.
 | **`cpu-security.sgx.enabled`**    | true   | Set to 'true' if Intel SGX is enabled in BIOS (based a non-zero sum value of SGX EPC section sizes).
 | **`cpu-security.se.enabled`**     | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility)
 | **`cpu-security.tdx.enabled`**    | true   | Set to 'true' if Intel TDX is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/tdx`).
+| **`cpu-security.tdx.total_keys`** | int    | The total amount of keys an Intel TDX enabled host can provide, based on the `/sys/fs/cgroup/misc.capacity` information.
 | **`cpu-security.sev.enabled`**    | true   | Set to 'true' if ADM SEV is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/sev`).
 | **`cpu-security.sev.es.enabled`** | true   | Set to 'true' if ADM SEV-ES is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/sev_es`).
 | **`cpu-security.sev.snp.enabled`**| true   | Set to 'true' if ADM SEV-SNP is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/sev_snp`).
