@@ -1,7 +1,7 @@
 ---
 title: "Topology Garbage Collector Cmdline Reference"
 layout: default
-sort: 6
+sort: 7
 ---
 
 # NFD-Topology-Garbage-Collector Commandline Flags

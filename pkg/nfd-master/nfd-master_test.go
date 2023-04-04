@@ -35,5 +35,11 @@ func TestNewNfdMaster(t *testing.T) {
 				So(err3, ShouldNotBeNil)
 			})
 		})
+		Convey("When -config is supplied", func() {
+			_, err := m.NewNfdMaster(&m.Args{CertFile: "crt", KeyFile: "key", CaFile: "ca", ConfigFile: "master-config.yaml"})
+			Convey("An error should not be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
 	})
 }

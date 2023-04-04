@@ -112,10 +112,20 @@ spec:
             - name: nfd-master-cert
               mountPath: "/etc/kubernetes/node-feature-discovery/certs"
               readOnly: true
+            - name: nfd-master-conf
+              mountPath: "/etc/kubernetes/node-feature-discovery"
+              readOnly: true
       volumes:
         - name: nfd-master-cert
           secret:
             secretName: nfd-master-cert
+        - name: nfd-master-conf
+          configMap:
+            name: {{ include "node-feature-discovery.fullname" . }}-master-conf
+            items:
+              - key: nfd-master.conf
+                path: nfd-master.conf
+
     ## /TLS ##
     {{- end }}
     {{- with .Values.master.nodeSelector }}

@@ -35,3 +35,7 @@ patches:
   target:
     labelSelector: app=nfd
     name: nfd
+- path: master-mounts.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-master

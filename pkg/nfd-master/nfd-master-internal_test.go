@@ -18,10 +18,13 @@ package nfdmaster
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/smartystreets/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -56,7 +59,7 @@ func newMockNode() *corev1.Node {
 func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
 	return &nfdMaster{
 		nodeName:  mockNodeName,
-		args:      Args{LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")}},
+		config:    &NFDConfig{LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")}},
 		apihelper: apihelper,
 	}
 }
@@ -341,7 +344,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
 
-			mockMaster.args.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
+			mockMaster.config.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
@@ -378,7 +381,7 @@ func TestSetLabels(t *testing.T) {
 
 			mockMaster.deniedNs.normal = map[string]struct{}{"random.denied.ns": {}}
 			mockMaster.deniedNs.wildcard = map[string]struct{}{"kubernetes.io": {}}
-			mockMaster.args.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
+			mockMaster.config.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
 			mockMaster.args.Instance = instance
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
@@ -404,7 +407,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/status/capacity", nfdv1alpha1.FeatureLabelNs+"/feature-3", mockLabels["feature-3"]),
 			}
 
-			mockMaster.args.ResourceLabels = map[string]struct{}{"feature-3": {}, "feature-1": {}}
+			mockMaster.config.ResourceLabels = map[string]struct{}{"feature-3": {}, "feature-1": {}}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
@@ -424,7 +427,7 @@ func TestSetLabels(t *testing.T) {
 			})
 		})
 
-		mockMaster.args.NoPublish = true
+		mockMaster.config.NoPublish = true
 		Convey("With '-no-publish'", func() {
 			_, err := mockMaster.SetLabels(mockCtx, mockReq)
 			Convey("Operation should succeed", func() {
@@ -511,6 +514,182 @@ func TestRemoveLabelsWithPrefix(t *testing.T) {
 			So(len(n.Labels), ShouldEqual, 3)
 		})
 	})
+}
+
+func TestConfigParse(t *testing.T) {
+	Convey("When parsing configuration", t, func() {
+		m, err := NewNfdMaster(&Args{})
+		So(err, ShouldBeNil)
+		master := m.(*nfdMaster)
+		overrides := `{"noPublish": true, "enableTaints": true, "extraLabelNs": ["added.ns.io","added.kubernetes.io"], "denyLabelNs": ["denied.ns.io","denied.kubernetes.io"], "resourceLabels": ["vendor-1.com/feature-1","vendor-2.io/feature-2"], "labelWhiteList": "foo"}`
+
+		Convey("and no core cmdline flags have been specified", func() {
+			So(master.configure("non-existing-file", overrides), ShouldBeNil)
+			Convey("overrides should be in effect", func() {
+				So(master.config.NoPublish, ShouldResemble, true)
+				So(master.config.EnableTaints, ShouldResemble, true)
+				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"added.ns.io": struct{}{}, "added.kubernetes.io": struct{}{}})
+				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}, "denied.kubernetes.io": struct{}{}})
+				So(master.config.ResourceLabels, ShouldResemble, utils.StringSetVal{"vendor-1.com/feature-1": struct{}{}, "vendor-2.io/feature-2": struct{}{}})
+				So(master.config.LabelWhiteList.String(), ShouldEqual, "foo")
+			})
+		})
+		Convey("and a non-accessible file, but cmdline flags and some overrides are specified", func() {
+			master.args = Args{Overrides: ConfigOverrideArgs{
+				ExtraLabelNs: &utils.StringSetVal{"override.added.ns.io": struct{}{}},
+				DenyLabelNs:  &utils.StringSetVal{"override.denied.ns.io": struct{}{}}}}
+			So(master.configure("non-existing-file", overrides), ShouldBeNil)
+
+			Convey("cmdline flags should be in effect instead overrides", func() {
+				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"override.added.ns.io": struct{}{}})
+				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"override.denied.ns.io": struct{}{}})
+			})
+			Convey("overrides should take effect", func() {
+				So(master.config.NoPublish, ShouldBeTrue)
+				So(master.config.EnableTaints, ShouldBeTrue)
+			})
+		})
+		// Create a temporary config file
+		f, err := os.CreateTemp("", "nfd-test-")
+		defer os.Remove(f.Name())
+		So(err, ShouldBeNil)
+		_, err = f.WriteString(`
+noPublish: true
+denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
+resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
+enableTaints: false
+labelWhiteList: "foo"
+`)
+		f.Close()
+		So(err, ShouldBeNil)
+
+		Convey("and a proper config file is specified", func() {
+			master.args = Args{Overrides: ConfigOverrideArgs{ExtraLabelNs: &utils.StringSetVal{"override.added.ns.io": struct{}{}}}}
+			So(master.configure(f.Name(), ""), ShouldBeNil)
+			Convey("specified configuration should take effect", func() {
+				// Verify core config
+				So(master.config.NoPublish, ShouldBeTrue)
+				So(master.config.EnableTaints, ShouldBeFalse)
+				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"override.added.ns.io": struct{}{}})
+				So(master.config.ResourceLabels, ShouldResemble, utils.StringSetVal{"vendor-1.com/feature-1": struct{}{}, "vendor-2.io/feature-2": struct{}{}}) // from cmdline
+				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}, "denied.kubernetes.io": struct{}{}})
+				So(master.config.LabelWhiteList.String(), ShouldEqual, "foo")
+			})
+		})
+
+		Convey("and a proper config file and overrides are given", func() {
+			master.args = Args{Overrides: ConfigOverrideArgs{DenyLabelNs: &utils.StringSetVal{"denied.ns.io": struct{}{}}}}
+			overrides := `{"extraLabelNs": ["added.ns.io"], "noPublish": true}`
+			So(master.configure(f.Name(), overrides), ShouldBeNil)
+
+			Convey("overrides should take precedence over the config file", func() {
+				// Verify core config
+				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"added.ns.io": struct{}{}}) // from overrides
+				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}}) // from cmdline
+			})
+		})
+	})
+}
+
+func TestDynamicConfig(t *testing.T) {
+	Convey("When running nfd-master", t, func() {
+		tmpDir, err := os.MkdirTemp("", "*.nfd-test")
+		So(err, ShouldBeNil)
+		defer os.RemoveAll(tmpDir)
+
+		// Create (temporary) dir for config
+		configDir := filepath.Join(tmpDir, "subdir-1", "subdir-2", "master.conf")
+		err = os.MkdirAll(configDir, 0755)
+		So(err, ShouldBeNil)
+
+		// Create config file
+		configFile := filepath.Join(configDir, "master.conf")
+
+		writeConfig := func(data string) {
+			f, err := os.Create(configFile)
+			So(err, ShouldBeNil)
+			_, err = f.WriteString(data)
+			So(err, ShouldBeNil)
+			err = f.Close()
+			So(err, ShouldBeNil)
+		}
+		writeConfig(`
+extraLabelNs: ["added.ns.io"]
+`)
+
+		noPublish := true
+		m, err := NewNfdMaster(&Args{
+			ConfigFile: configFile,
+			Overrides: ConfigOverrideArgs{
+				NoPublish: &noPublish,
+			},
+		})
+		So(err, ShouldBeNil)
+		master := m.(*nfdMaster)
+
+		Convey("config file updates should take effect", func() {
+			go func() { _ = m.Run() }()
+			defer m.Stop()
+			// Check initial config
+			time.Sleep(10 * time.Second)
+			So(func() interface{} { return master.config.ExtraLabelNs },
+				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"added.ns.io": struct{}{}})
+
+			// Update config and verify the effect
+			writeConfig(`
+extraLabelNs: ["override.ns.io"]
+`)
+			So(func() interface{} { return master.config.ExtraLabelNs },
+				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"override.ns.io": struct{}{}})
+
+			// Removing config file should get back our defaults
+			err = os.RemoveAll(tmpDir)
+			So(err, ShouldBeNil)
+			So(func() interface{} { return master.config.ExtraLabelNs },
+				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{})
+
+			// Re-creating config dir and file should change the config
+			err = os.MkdirAll(configDir, 0755)
+			So(err, ShouldBeNil)
+			writeConfig(`
+extraLabelNs: ["another.override.ns"]
+`)
+			So(func() interface{} { return master.config.ExtraLabelNs },
+				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"another.override.ns": struct{}{}})
+		})
+	})
+}
+
+// withTimeout is a custom assertion for polling a value asynchronously
+// actual is a function for getting the actual value
+// expected[0] is a time.Duration value specifying the timeout
+// expected[1] is  the "real" assertion function to be called
+// expected[2:] are the arguments for the "real" assertion function
+func withTimeout(actual interface{}, expected ...interface{}) string {
+	getter, ok := actual.(func() interface{})
+	if !ok {
+		return "not getterFunc"
+	}
+	t, ok := expected[0].(time.Duration)
+	if !ok {
+		return "not time.Duration"
+	}
+	f, ok := expected[1].(func(interface{}, ...interface{}) string)
+	if !ok {
+		return "not an assert func"
+	}
+	timeout := time.After(t)
+	for {
+		result := f(getter(), expected[2:]...)
+		if result == "" {
+			return ""
+		}
+		select {
+		case <-timeout:
+			return result
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
 }
 
 func jsonPatchMatcher(expected []apihelper.JsonPatch) func([]apihelper.JsonPatch) bool {

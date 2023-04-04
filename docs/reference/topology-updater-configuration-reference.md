@@ -1,7 +1,7 @@
 ---
 title: "Topology-Updater config reference"
 layout: default
-sort: 5
+sort: 6
 ---
 
 # Configuration file reference of nfd-topology-updater

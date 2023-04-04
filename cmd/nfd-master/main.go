@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"regexp"
 
 	"k8s.io/klog/v2"
 
@@ -39,7 +38,7 @@ func main() {
 
 	printVersion := flags.Bool("version", false, "Print version and exit.")
 
-	args := initFlags(flags)
+	args, overrides := initFlags(flags)
 	// Inject klog flags
 	klog.InitFlags(flags)
 
@@ -55,6 +54,18 @@ func main() {
 		switch f.Name {
 		case "featurerules-controller":
 			klog.Warningf("-featurerules-controller is deprecated, use '-crd-controller' flag instead")
+		case "extra-label-ns":
+			args.Overrides.ExtraLabelNs = overrides.ExtraLabelNs
+		case "deny-label-ns":
+			args.Overrides.DenyLabelNs = overrides.DenyLabelNs
+		case "label-whitelist":
+			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
+		case "resource-labels":
+			args.Overrides.ResourceLabels = overrides.ResourceLabels
+		case "enable-taints":
+			args.Overrides.EnableTaints = overrides.EnableTaints
+		case "no-publish":
+			args.Overrides.NoPublish = overrides.NoPublish
 		}
 	})
 
@@ -82,35 +93,23 @@ func main() {
 	}
 }
 
-func initFlags(flagset *flag.FlagSet) *master.Args {
-	args := &master.Args{
-		LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
-		DenyLabelNs:    map[string]struct{}{"*.kubernetes.io": {}},
-	}
+func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs) {
+	args := &master.Args{}
 
 	flagset.StringVar(&args.CaFile, "ca-file", "",
 		"Root certificate for verifying connections")
 	flagset.StringVar(&args.CertFile, "cert-file", "",
 		"Certificate used for authenticating connections")
-	flagset.Var(&args.DenyLabelNs, "deny-label-ns",
-		"Comma separated list of denied label namespaces")
-	flagset.Var(&args.ExtraLabelNs, "extra-label-ns",
-		"Comma separated list of allowed extra label namespaces")
 	flagset.StringVar(&args.Instance, "instance", "",
 		"Instance name. Used to separate annotation namespaces for multiple parallel deployments.")
 	flagset.StringVar(&args.KeyFile, "key-file", "",
 		"Private key matching -cert-file")
+	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-master.conf",
+		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
-	flagset.Var(&args.LabelWhiteList, "label-whitelist",
-		"Regular expression to filter label names to publish to the Kubernetes API server. "+
-			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
 	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", false,
 		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication.")
-	flagset.BoolVar(&args.NoPublish, "no-publish", false,
-		"Do not publish feature labels")
-	flagset.BoolVar(&args.EnableTaints, "enable-taints", false,
-		"Enable node tainting feature")
 	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
 		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")
 	flagset.BoolVar(&args.CrdController, "crd-controller", true,
@@ -119,11 +118,32 @@ func initFlags(flagset *flag.FlagSet) *master.Args {
 		"Port on which to listen for connections.")
 	flagset.BoolVar(&args.Prune, "prune", false,
 		"Prune all NFD related attributes from all nodes of the cluaster and exit.")
-	flagset.Var(&args.ResourceLabels, "resource-labels",
-		"Comma separated list of labels to be exposed as extended resources.")
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
 		"Verify worker node name against the worker's TLS certificate. "+
 			"Only takes effect when TLS authentication has been enabled.")
+	flagset.StringVar(&args.Options, "options", "",
+		"Specify config options from command line. Config options are specified "+
+			"in the same format as in the config file (i.e. json or yaml). These options")
 
-	return args
+	overrides := &master.ConfigOverrideArgs{
+		LabelWhiteList: &utils.RegexpVal{},
+		DenyLabelNs:    &utils.StringSetVal{},
+		ExtraLabelNs:   &utils.StringSetVal{},
+		ResourceLabels: &utils.StringSetVal{},
+	}
+	flagset.Var(overrides.ExtraLabelNs, "extra-label-ns",
+		"Comma separated list of allowed extra label namespaces")
+	flagset.Var(overrides.LabelWhiteList, "label-whitelist",
+		"Regular expression to filter label names to publish to the Kubernetes API server. "+
+			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
+	overrides.EnableTaints = flagset.Bool("enable-taints", false,
+		"Enable node tainting feature")
+	overrides.NoPublish = flagset.Bool("no-publish", false,
+		"Do not publish feature labels")
+	flagset.Var(overrides.DenyLabelNs, "deny-label-ns",
+		"Comma separated list of denied label namespaces")
+	flagset.Var(overrides.ResourceLabels, "resource-labels",
+		"Comma separated list of labels to be exposed as extended resources.")
+
+	return args, overrides
 }
