@@ -8,11 +8,18 @@ spec:
     - name: "e2e-taint-test-1"
       taints:
         - effect: PreferNoSchedule
-          key: "nfd.node.kubernetes.io/fake-special-node"
+          key: "feature.node.kubernetes.io/fake-special-node"
           value: "exists"
         - effect: NoExecute
-          key: "nfd.node.kubernetes.io/foo"
+          key: "feature.node.kubernetes.io/foo"
           value: "true"
+        # The following taints should be filtered out by nfd-master
+        - effect: PreferNoSchedule
+          key: "kubernetes.io/denied-1"
+        - effect: PreferNoSchedule
+          key: "node.kubernetes.io/denied-2"
+        - effect: PreferNoSchedule
+          key: "unprefixed-taint"
       matchFeatures:
         - feature: "fake.attribute"
           matchExpressions:
@@ -23,7 +30,7 @@ spec:
     - name: "e2e-taint-test-2"
       taints:
         - effect: PreferNoSchedule
-          key: "nfd.node.kubernetes.io/fake-cpu"
+          key: "feature.node.kubernetes.io/fake-cpu"
           value: "true"
       matchFeatures:
         - feature: "fake.attribute"

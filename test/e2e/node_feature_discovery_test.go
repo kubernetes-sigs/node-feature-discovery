@@ -48,8 +48,6 @@ import (
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
-const TestTaintNs = "nfd.node.kubernetes.io"
-
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
 // labels and annotations
 func cleanupNode(cs clientset.Interface) {
@@ -93,7 +91,7 @@ func cleanupNode(cs clientset.Interface) {
 
 		// Remove taints
 		for _, taint := range node.Spec.Taints {
-			if strings.HasPrefix(taint.Key, TestTaintNs) {
+			if strings.HasPrefix(taint.Key, nfdv1alpha1.TaintNs) {
 				newTaints, removed := taintutils.DeleteTaint(node.Spec.Taints, &taint)
 				if removed {
 					node.Spec.Taints = newTaints
@@ -671,22 +669,22 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			Context("and nfd-worker and NodeFeatureRules objects deployed", func() {
 				testTolerations := []corev1.Toleration{
 					{
-						Key:    "nfd.node.kubernetes.io/fake-special-node",
+						Key:    "feature.node.kubernetes.io/fake-special-node",
 						Value:  "exists",
 						Effect: "NoExecute",
 					},
 					{
-						Key:    "nfd.node.kubernetes.io/fake-dedicated-node",
+						Key:    "feature.node.kubernetes.io/fake-dedicated-node",
 						Value:  "true",
 						Effect: "NoExecute",
 					},
 					{
-						Key:    "nfd.node.kubernetes.io/performance-optimized-node",
+						Key:    "feature.node.kubernetes.io/performance-optimized-node",
 						Value:  "true",
 						Effect: "NoExecute",
 					},
 					{
-						Key:    "nfd.node.kubernetes.io/foo",
+						Key:    "feature.node.kubernetes.io/foo",
 						Value:  "true",
 						Effect: "NoExecute",
 					},
@@ -766,45 +764,45 @@ core:
 					By("Verifying node taints and annotation from NodeFeatureRules #3")
 					expectedTaints := []corev1.Taint{
 						{
-							Key:    "nfd.node.kubernetes.io/fake-special-node",
+							Key:    "feature.node.kubernetes.io/fake-special-node",
 							Value:  "exists",
 							Effect: "PreferNoSchedule",
 						},
 						{
-							Key:    "nfd.node.kubernetes.io/fake-dedicated-node",
+							Key:    "feature.node.kubernetes.io/fake-dedicated-node",
 							Value:  "true",
 							Effect: "NoExecute",
 						},
 						{
-							Key:    "nfd.node.kubernetes.io/performance-optimized-node",
+							Key:    "feature.node.kubernetes.io/performance-optimized-node",
 							Value:  "true",
 							Effect: "NoExecute",
 						},
 					}
 					expectedAnnotation := map[string]string{
-						"nfd.node.kubernetes.io/taints": "nfd.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,nfd.node.kubernetes.io/fake-dedicated-node=true:NoExecute,nfd.node.kubernetes.io/performance-optimized-node=true:NoExecute"}
-					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaints)).NotTo(HaveOccurred())
+						"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"}
+					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaints, nodes)).NotTo(HaveOccurred())
 					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedAnnotation)).NotTo(HaveOccurred())
 
 					By("Re-applying NodeFeatureRules #3 with updated taints")
 					Expect(testutils.UpdateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-3-updated.yaml")).NotTo(HaveOccurred())
 					expectedTaintsUpdated := []corev1.Taint{
 						{
-							Key:    "nfd.node.kubernetes.io/fake-special-node",
+							Key:    "feature.node.kubernetes.io/fake-special-node",
 							Value:  "exists",
 							Effect: "PreferNoSchedule",
 						},
 						{
-							Key:    "nfd.node.kubernetes.io/foo",
+							Key:    "feature.node.kubernetes.io/foo",
 							Value:  "true",
 							Effect: "NoExecute",
 						},
 					}
 					expectedAnnotationUpdated := map[string]string{
-						"nfd.node.kubernetes.io/taints": "nfd.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,nfd.node.kubernetes.io/foo=true:NoExecute"}
+						"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/foo=true:NoExecute"}
 
 					By("Verifying updated node taints and annotation from NodeFeatureRules #3")
-					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaintsUpdated)).NotTo(HaveOccurred())
+					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaintsUpdated, nodes)).NotTo(HaveOccurred())
 					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedAnnotationUpdated)).NotTo(HaveOccurred())
 
 					By("Deleting nfd-worker daemonset")
@@ -942,7 +940,7 @@ func checkForNodeLabels(cli clientset.Interface, expectedNewLabels map[string]k8
 				}
 			}
 
-			oldLabels := getNodeLabels(oldNodes, node.Name)
+			oldLabels := getNode(oldNodes, node.Name).Labels
 			expectedNewLabels := maps.Clone(oldLabels)
 			maps.Copy(expectedNewLabels, nodeExpected)
 
@@ -965,17 +963,17 @@ func checkForNodeLabels(cli clientset.Interface, expectedNewLabels map[string]k8
 }
 
 // waitForNfdNodeTaints waits for node to be tainted as expected.
-func waitForNfdNodeTaints(cli clientset.Interface, expected []corev1.Taint) error {
+func waitForNfdNodeTaints(cli clientset.Interface, expectedNewTaints []corev1.Taint, oldNodes []corev1.Node) error {
 	poll := func() error {
 		nodes, err := getNonControlPlaneNodes(cli)
 		if err != nil {
 			return err
 		}
 		for _, node := range nodes {
-			taints := nfdTaints(node.Spec.Taints)
-			if err != nil {
-				return fmt.Errorf("failed to fetch nfd owned taints for node: %s", node.Name)
-			}
+			oldNode := getNode(oldNodes, node.Name)
+			expected := oldNode.Spec.DeepCopy().Taints
+			expected = append(expected, expectedNewTaints...)
+			taints := node.Spec.Taints
 			if !cmp.Equal(expected, taints) {
 				return fmt.Errorf("node %q taints do not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expected, taints))
 			}
@@ -992,18 +990,6 @@ func waitForNfdNodeTaints(cli clientset.Interface, expected []corev1.Taint) erro
 		time.Sleep(10 * time.Second)
 	}
 	return err
-}
-
-// nfdTaints returns taints that are owned by the nfd.
-func nfdTaints(taints []corev1.Taint) []corev1.Taint {
-	nfdTaints := []corev1.Taint{}
-	for _, taint := range taints {
-		if strings.HasPrefix(taint.Key, TestTaintNs) {
-			nfdTaints = append(nfdTaints, taint)
-		}
-	}
-
-	return nfdTaints
 }
 
 // getNonControlPlaneNodes gets the nodes that are not tainted for exclusive control-plane usage
@@ -1033,11 +1019,11 @@ func getNonControlPlaneNodes(cli clientset.Interface) ([]corev1.Node, error) {
 	return out, nil
 }
 
-func getNodeLabels(nodes []corev1.Node, nodeName string) map[string]string {
+func getNode(nodes []corev1.Node, nodeName string) corev1.Node {
 	for _, node := range nodes {
 		if node.Name == nodeName {
-			return node.Labels
+			return node
 		}
 	}
-	return nil
+	return corev1.Node{}
 }

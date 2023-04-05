@@ -29,6 +29,12 @@ const (
 	// ProfileLabelSubNsSuffix is the suffix for allowed profile label sub-namespaces.
 	ProfileLabelSubNsSuffix = "." + ProfileLabelNs
 
+	// TaintNs is the k8s.io namespace that can be used for NFD-managed taints.
+	TaintNs = "feature.node.kubernetes.io"
+
+	// TaintSubNsSuffix is the suffix for allowed sub-namespaces for NFD-managed taints.
+	TaintSubNsSuffix = "." + TaintNs
+
 	// AnnotationNs namespace for all NFD-related annotations.
 	AnnotationNs = "nfd.node.kubernetes.io"
 
