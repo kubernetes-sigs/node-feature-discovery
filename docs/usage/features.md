@@ -54,7 +54,7 @@ option of nfd-worker.
 | **`cpu-pstate.turbo`**            | bool   | Set to 'true' if turbo frequencies are enabled in Intel pstate driver, set to 'false' if they have been disabled.
 | **`cpu-pstate.scaling_governor`** | string | The value of the Intel pstate scaling_governor when in use, either 'powersave' or 'performance'.
 | **`cpu-cstate.enabled`**          | bool   | Set to 'true' if cstates are set in the intel_idle driver, otherwise set to 'false'. Unset if intel_idle cpuidle driver is not active.
-| **`cpu-rdt.<rdt-flag>`**          | true   | [Intel RDT][intel-rdt] capability is supported. See [RDT flags](#intel-rdt-flags) for details.
+| **`cpu-rdt.<rdt-flag>`**          | true   | **DEPRECATED** [Intel RDT][intel-rdt] capability is supported. See [RDT flags](customization-guide.md#intel-rdt-flags) for details.
 | **`cpu-security.sgx.enabled`**    | true   | Set to 'true' if Intel SGX is enabled in BIOS (based a non-zero sum value of SGX EPC section sizes).
 | **`cpu-security.se.enabled`**     | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility)
 | **`cpu-security.tdx.enabled`**    | true   | Set to 'true' if Intel TDX is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/tdx`).
@@ -67,6 +67,12 @@ option of nfd-worker.
 | **`cpu-model.vendor_id`**         | string | Comparable CPU vendor ID.
 | **`cpu-model.family`**            | int    | CPU family.
 | **`cpu-model.id`**                | int    | CPU model number.
+
+> NOTE: the `cpu-rdt.<rdt-flag>` labels are deprecated and will be removed in a
+> future release. They will remain to be available as features
+> for [NodeFeatureRule](custom-resources.md#nodefeaturerule) to consume.
+> See [customization guide](customization-guide.md#nodefeaturerule-custom-resource)
+> for details how to use NodeFeatureRule objects to create labels.
 
 The CPU label source is configurable, see
 [worker configuration](nfd-worker.md#worker-configuration) and
@@ -153,17 +159,6 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | PMULL     | Optional Cryptographic and CRC32 Instructions
 | JSCVT     | Perform Conversion to Match Javascript
 | DCPOP     | Persistent Memory Support
-
-#### Intel RDT flags
-
-| Flag      | Description                                                      |
-| --------- | ---------------------------------------------------------------- |
-| RDTMON    | Intel RDT Monitoring Technology
-| RDTCMT    | Intel Cache Monitoring (CMT)
-| RDTMBM    | Intel Memory Bandwidth Monitoring (MBM)
-| RDTL3CA   | Intel L3 Cache Allocation Technology
-| RDTl2CA   | Intel L2 Cache Allocation Technology
-| RDTMBA    | Intel Memory Bandwidth Allocation (MBA) Technology
 
 ### Kernel
 

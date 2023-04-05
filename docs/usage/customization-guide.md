@@ -602,7 +602,7 @@ The following features are available for matching:
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false'
 |                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'.
 | **`cpu.rdt`**    | flag         |          |            | Intel RDT capabilities supported by the system
-|                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](features.md#intel-rdt-flags) for details
+|                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](#intel-rdt-flags) for details
 | **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
 |                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
@@ -655,6 +655,17 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `serial`
 | **`rule.matched`** | attribute  |          |            | Previously matched rules
 |                  |              | **`<label-or-var>`** | string | Label or var from a preceding rule that matched
+
+#### Intel RDT flags
+
+| Flag      | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| RDTMON    | Intel RDT Monitoring Technology
+| RDTCMT    | Intel Cache Monitoring (CMT)
+| RDTMBM    | Intel Memory Bandwidth Monitoring (MBM)
+| RDTL3CA   | Intel L3 Cache Allocation Technology
+| RDTl2CA   | Intel L2 Cache Allocation Technology
+| RDTMBA    | Intel Memory Bandwidth Allocation (MBA) Technology
 
 ### Templating
 
