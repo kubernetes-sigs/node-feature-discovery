@@ -23,12 +23,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
@@ -49,8 +51,23 @@ func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDe
 		// Delete existing CRD (if any) with this we also get rid of stale objects
 		err = cli.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
 		if err != nil && !errors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to delete NodeFeatureRule CRD: %w", err)
+			return nil, fmt.Errorf("failed to delete %q CRD: %w", crd.Name, err)
+		} else if err == nil {
+			// Wait for CRD deletion to complete before trying to re-create it
+			err = wait.Poll(1*time.Second, 1*time.Minute, func() (bool, error) {
+				_, err = cli.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd.Name, metav1.GetOptions{})
+				if err == nil {
+					return false, nil
+				} else if errors.IsNotFound(err) {
+					return true, nil
+				}
+				return false, err
+			})
+			if err != nil {
+				return nil, fmt.Errorf("timed out waiting for %q CRD to be deleted: %w", crd.Name, err)
+			}
 		}
+
 		newCRDs[i], err = cli.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
