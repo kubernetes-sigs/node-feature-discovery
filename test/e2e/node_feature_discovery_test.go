@@ -78,60 +78,96 @@ const TestTaintNs = "nfd.node.kubernetes.io"
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
 // labels and annotations
 func cleanupNode(cs clientset.Interface) {
+	// Per-node cleanup function
+	cleanup := func(nodeName string) error {
+		node, err := cs.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		update := false
+		updateStatus := false
+		// Gather info about all NFD-managed node assets outside the default prefix
+		nfdLabels := map[string]struct{}{}
+		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.FeatureLabelsAnnotation], ",") {
+			if strings.Contains(name, "/") {
+				nfdLabels[name] = struct{}{}
+			}
+		}
+		nfdERs := map[string]struct{}{}
+		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.ExtendedResourceAnnotation], ",") {
+			if strings.Contains(name, "/") {
+				nfdERs[name] = struct{}{}
+			}
+		}
+
+		// Remove labels
+		for key := range node.Labels {
+			_, ok := nfdLabels[key]
+			if ok || strings.HasPrefix(key, nfdv1alpha1.FeatureLabelNs) {
+				delete(node.Labels, key)
+				update = true
+			}
+		}
+
+		// Remove annotations
+		for key := range node.Annotations {
+			if strings.HasPrefix(key, nfdv1alpha1.AnnotationNs) {
+				delete(node.Annotations, key)
+				update = true
+			}
+		}
+
+		// Remove taints
+		for _, taint := range node.Spec.Taints {
+			if strings.HasPrefix(taint.Key, TestTaintNs) {
+				newTaints, removed := taintutils.DeleteTaint(node.Spec.Taints, &taint)
+				if removed {
+					node.Spec.Taints = newTaints
+					update = true
+				}
+			}
+		}
+
+		// Remove extended resources
+		for key := range node.Status.Capacity {
+			// We check for FeatureLabelNs as -resource-labels can create ERs there
+			_, ok := nfdERs[string(key)]
+			if ok || strings.HasPrefix(string(key), nfdv1alpha1.FeatureLabelNs) {
+				delete(node.Status.Capacity, key)
+				delete(node.Status.Allocatable, key)
+				updateStatus = true
+			}
+		}
+
+		if updateStatus {
+			By("Deleting NFD extended resources from node " + nodeName)
+			if _, err := cs.CoreV1().Nodes().UpdateStatus(context.TODO(), node, metav1.UpdateOptions{}); err != nil {
+				return err
+			}
+		}
+
+		if update {
+			By("Deleting NFD labels, annotations and taints from node " + node.Name)
+			if _, err := cs.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// Cleanup all nodes
 	nodeList, err := cs.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, n := range nodeList.Items {
 		var err error
-		var node *corev1.Node
 		for retry := 0; retry < 5; retry++ {
-			node, err = cs.CoreV1().Nodes().Get(context.TODO(), n.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-
-			update := false
-			// Remove labels
-			for key := range node.Labels {
-				if strings.HasPrefix(key, nfdv1alpha1.FeatureLabelNs) {
-					delete(node.Labels, key)
-					update = true
-				}
-			}
-
-			// Remove annotations
-			for key := range node.Annotations {
-				if strings.HasPrefix(key, nfdv1alpha1.AnnotationNs) {
-					delete(node.Annotations, key)
-					update = true
-				}
-			}
-
-			// Remove taints
-			for _, taint := range node.Spec.Taints {
-				if strings.HasPrefix(taint.Key, TestTaintNs) {
-					newTaints, removed := taintutils.DeleteTaint(node.Spec.Taints, &taint)
-					if removed {
-						node.Spec.Taints = newTaints
-						update = true
-					}
-				}
-			}
-
-			if !update {
+			if err = cleanup(n.Name); err == nil {
 				break
 			}
-
-			By("Deleting NFD labels, annotations and taints from node " + node.Name)
-			_, err = cs.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
-			if err != nil {
-				time.Sleep(100 * time.Millisecond)
-			} else {
-				break
-			}
-
+			time.Sleep(100 * time.Millisecond)
 		}
 		Expect(err).NotTo(HaveOccurred())
 	}
-
 }
 
 func cleanupCRs(cli *nfdclient.Clientset, namespace string) {
@@ -217,8 +253,8 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Remove pre-existing stale annotations and labels etc and CRDs
-				cleanupNode(f.ClientSet)
 				cleanupCRs(nfdClient, f.Namespace.Name)
+				cleanupNode(f.ClientSet)
 
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
