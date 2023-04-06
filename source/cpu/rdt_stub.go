@@ -19,6 +19,6 @@ limitations under the License.
 
 package cpu
 
-func discoverRDT() []string {
-	return []string{}
+func discoverRDT() map[string]string {
+	return map[string]string{}
 }

@@ -20,6 +20,14 @@ limitations under the License.
 package cpu
 
 import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"strconv"
+
+	"github.com/opencontainers/runc/libcontainer/intelrdt"
+	"k8s.io/klog/v2"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/cpuid"
 )
 
@@ -44,8 +52,8 @@ const (
 	RDT_ALLOCATION_EBX_MEMORY_BANDWIDTH_ALLOCATION              = 1 << 3
 )
 
-func discoverRDT() []string {
-	features := []string{}
+func discoverRDT() map[string]string {
+	attributes := map[string]string{}
 
 	// Read cpuid information
 	extFeatures := cpuid.Cpuid(LEAF_EXT_FEATURE_FLAGS, 0)
@@ -57,16 +65,16 @@ func discoverRDT() []string {
 	if extFeatures.EBX&EXT_FEATURE_FLAGS_EBX_RDT_M != 0 {
 		if rdtMonitoring.EDX&RDT_MONITORING_EDX_L3_MONITORING != 0 {
 			// Monitoring is supported
-			features = append(features, "RDTMON")
+			attributes["RDTMON"] = "true"
 
 			// Cache Monitoring Technology (L3 occupancy monitoring)
 			if rdtL3Monitoring.EDX&RDT_MONITORING_SUBLEAF_L3_EDX_L3_OCCUPANCY_MONITORING != 0 {
-				features = append(features, "RDTCMT")
+				attributes["RDTCMT"] = "true"
 			}
 			// Memore Bandwidth Monitoring (L3 local&total bandwidth monitoring)
 			if rdtL3Monitoring.EDX&RDT_MONITORING_SUBLEAF_L3_EDX_L3_TOTAL_BANDWIDTH_MONITORING != 0 &&
 				rdtL3Monitoring.EDX&RDT_MONITORING_SUBLEAF_L3_EDX_L3_LOCAL_BANDWIDTH_MONITORING != 0 {
-				features = append(features, "RDTMBM")
+				attributes["RDTMBM"] = "true"
 			}
 		}
 	}
@@ -75,17 +83,51 @@ func discoverRDT() []string {
 	if extFeatures.EBX&EXT_FEATURE_FLAGS_EBX_RDT_A != 0 {
 		// L3 Cache Allocation
 		if rdtAllocation.EBX&RDT_ALLOCATION_EBX_L3_CACHE_ALLOCATION != 0 {
-			features = append(features, "RDTL3CA")
+			attributes["RDTL3CA"] = "true"
+			numClosID := getNumClosID("L3")
+			if numClosID > -1 {
+				attributes["RDTL3CA_NUM_CLOSID"] = strconv.FormatInt(int64(numClosID), 10)
+			}
 		}
 		// L2 Cache Allocation
 		if rdtAllocation.EBX&RDT_ALLOCATION_EBX_L2_CACHE_ALLOCATION != 0 {
-			features = append(features, "RDTL2CA")
+			attributes["RDTL2CA"] = "true"
 		}
 		// Memory Bandwidth Allocation
 		if rdtAllocation.EBX&RDT_ALLOCATION_EBX_MEMORY_BANDWIDTH_ALLOCATION != 0 {
-			features = append(features, "RDTMBA")
+			attributes["RDTMBA"] = "true"
 		}
 	}
 
-	return features
+	return attributes
+}
+
+func getNumClosID(level string) int64 {
+	resctrlRootDir, err := intelrdt.Root()
+	if err != nil {
+		klog.V(4).ErrorS(err, "can't find resctrl filesystem")
+		return -1
+	}
+
+	closidFile := filepath.Join(resctrlRootDir, "info", level, "num_closids")
+
+	if _, err := os.Stat(closidFile); err != nil {
+		klog.V(4).ErrorS(err, "failed to stat file", "fileName", closidFile)
+		return -1
+	}
+
+	closidsBytes, err := os.ReadFile(filepath.Join(resctrlRootDir, "info", level, "num_closids"))
+	if err != nil {
+		klog.V(4).ErrorS(err, "failed to read file", "fileName", closidFile)
+		return -1
+	}
+
+	numClosIDs, err := strconv.ParseInt(string(bytes.TrimSpace(closidsBytes)), 10, 64)
+	if err != nil {
+		klog.V(4).ErrorS(err, "failed to ParseInt", "num_closids", string(bytes.TrimSpace(closidsBytes)))
+		return -1
+	}
+
+	// subtract 1 for default control group
+	return numClosIDs - 1
 }

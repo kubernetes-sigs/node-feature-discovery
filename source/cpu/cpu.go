@@ -164,8 +164,12 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 	}
 
 	// RDT
-	for k := range features.Flags[RdtFeature].Elements {
-		labels["rdt."+k] = true
+	for k, v := range features.Attributes[RdtFeature].Elements {
+		if k == "RDTL3CA_NUM_CLOSID" {
+			continue
+		}
+
+		labels["rdt."+k] = v
 	}
 
 	// Security
@@ -227,7 +231,7 @@ func (s *cpuSource) Discover() error {
 	s.features.Attributes[PstateFeature] = nfdv1alpha1.NewAttributeFeatures(pstate)
 
 	// Detect RDT features
-	s.features.Flags[RdtFeature] = nfdv1alpha1.NewFlagFeatures(discoverRDT()...)
+	s.features.Attributes[RdtFeature] = nfdv1alpha1.NewAttributeFeatures(discoverRDT())
 
 	// Detect available guest protection(SGX,TDX,SEV) features
 	s.features.Attributes[SecurityFeature] = nfdv1alpha1.NewAttributeFeatures(discoverSecurity())
