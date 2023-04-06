@@ -159,6 +159,7 @@ re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 
 See [Label rule format](#label-rule-format) for detailed description of
 available fields and how to write labeling rules.
+
 ### NodeFeatureRule tainting feature
 
 This feature is experimental.
@@ -208,6 +209,15 @@ spec:
 
 In this example, if the `my sample taint rule` rule is matched, `feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
 and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
+
+There are some limitations to the namespace part (i.e. prefix/) of the taint
+key:
+
+- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
+  generally be used
+- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
+  (like `sub.ns.feature.node.kubernetes.io`)
+- unprefixed keys (like `foo`) keys are disallowed
 
 ## Local feature source
 

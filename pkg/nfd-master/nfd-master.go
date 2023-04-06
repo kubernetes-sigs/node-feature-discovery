@@ -493,6 +493,28 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 	return outLabels, extendedResources
 }
 
+func filterTaints(taints []corev1.Taint) []corev1.Taint {
+	outTaints := []corev1.Taint{}
+
+	for _, taint := range taints {
+		ns, _ := splitNs(taint.Key)
+
+		// Check prefix of the key, filter out disallowed ones
+		if ns == "" {
+			klog.Errorf("taint keys without namespace (prefix/) are not allowed. Ignoring taint %v", ns, taint)
+			continue
+		}
+		if ns != nfdv1alpha1.TaintNs && !strings.HasSuffix(ns, nfdv1alpha1.TaintSubNsSuffix) &&
+			(ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io")) {
+			klog.Errorf("Prefix %q is not allowed for taint key. Ignoring taint %v", ns, taint)
+			continue
+		}
+		outTaints = append(outTaints, taint)
+	}
+
+	return outTaints
+}
+
 func verifyNodeName(cert *x509.Certificate, nodeName string) error {
 	if cert.Subject.CommonName == nodeName {
 		return nil
@@ -656,7 +678,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 
 	var taints []corev1.Taint
 	if m.config.EnableTaints {
-		taints = crTaints
+		taints = filterTaints(crTaints)
 	}
 
 	err := m.updateNodeObject(cli, nodeName, labels, annotations, extendedResources, taints)

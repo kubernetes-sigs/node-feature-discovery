@@ -8,13 +8,13 @@ spec:
     - name: "e2e-taint-test-1"
       taints:
         - effect: PreferNoSchedule
-          key: "nfd.node.kubernetes.io/fake-special-node"
+          key: "feature.node.kubernetes.io/fake-special-node"
           value: "exists"
         - effect: NoExecute
-          key: "nfd.node.kubernetes.io/fake-dedicated-node"
+          key: "feature.node.kubernetes.io/fake-dedicated-node"
           value: "true"
         - effect: "NoExecute"
-          key: "nfd.node.kubernetes.io/performance-optimized-node"
+          key: "feature.node.kubernetes.io/performance-optimized-node"
           value: "true"
       matchFeatures:
         - feature: "fake.attribute"
@@ -26,7 +26,7 @@ spec:
     - name: "e2e-taint-test-2"
       taints:
         - effect: PreferNoSchedule
-          key: "nfd.node.kubernetes.io/fake-special-cpu"
+          key: "feature.node.kubernetes.io/fake-special-cpu"
           value: "true"
       matchFeatures:
         - feature: "fake.attribute"
