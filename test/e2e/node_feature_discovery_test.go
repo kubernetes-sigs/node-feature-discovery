@@ -48,31 +48,6 @@ import (
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
-var (
-	testTolerations = []corev1.Toleration{
-		{
-			Key:    "nfd.node.kubernetes.io/fake-special-node",
-			Value:  "exists",
-			Effect: "NoExecute",
-		},
-		{
-			Key:    "nfd.node.kubernetes.io/fake-dedicated-node",
-			Value:  "true",
-			Effect: "NoExecute",
-		},
-		{
-			Key:    "nfd.node.kubernetes.io/performance-optimized-node",
-			Value:  "true",
-			Effect: "NoExecute",
-		},
-		{
-			Key:    "nfd.node.kubernetes.io/foo",
-			Value:  "true",
-			Effect: "NoExecute",
-		},
-	}
-)
-
 const TestTaintNs = "nfd.node.kubernetes.io"
 
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
@@ -205,10 +180,10 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 		Context("when deploying a single nfd-master pod", Ordered, func() {
 			var (
-				crds                    []*apiextensionsv1.CustomResourceDefinition
-				extClient               *extclient.Clientset
-				nfdClient               *nfdclient.Clientset
-				customMasterPodSpecOpts *[]testpod.SpecOption
+				crds                   []*apiextensionsv1.CustomResourceDefinition
+				extClient              *extclient.Clientset
+				nfdClient              *nfdclient.Clientset
+				extraMasterPodSpecOpts []testpod.SpecOption
 			)
 
 			checkNodeFeatureObject := func(name string) {
@@ -258,20 +233,10 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
-				var podSpecOpts []testpod.SpecOption
-				if customMasterPodSpecOpts == nil {
-					podSpecOpts = createPodSpecOpts(
+				podSpecOpts := createPodSpecOpts(
+					append(extraMasterPodSpecOpts,
 						testpod.SpecWithContainerImage(dockerImage()),
-						testpod.SpecWithTolerations(testTolerations),
-						testpod.SpecWithContainerExtraArgs("-enable-taints"),
-						testpod.SpecWithContainerExtraArgs(
-							"-deny-label-ns=*.denied.ns,random.unwanted.ns,*.vendor.io",
-							"-extra-label-ns=custom.vendor.io",
-						),
-					)
-				} else {
-					podSpecOpts = createPodSpecOpts(*customMasterPodSpecOpts...)
-				}
+					)...)
 
 				masterPod := e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(podSpecOpts...))
 
@@ -300,7 +265,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				cleanupNode(f.ClientSet)
 				cleanupCRs(nfdClient, f.Namespace.Name)
-				customMasterPodSpecOpts = nil
+				extraMasterPodSpecOpts = nil
 			})
 
 			//
@@ -320,7 +285,6 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithRestartPolicy(corev1.RestartPolicyNever),
 						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
-						testpod.SpecWithTolerations(testTolerations),
 					)
 					workerPod := testpod.NFDWorker(podSpecOpts...)
 					workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
@@ -372,7 +336,6 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					By("Creating nfd-worker daemonset")
 					podSpecOpts := createPodSpecOpts(
 						testpod.SpecWithContainerImage(dockerImage()),
-						testpod.SpecWithTolerations(testTolerations),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
 					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
@@ -504,7 +467,6 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithContainerImage(dockerImage()),
 						testpod.SpecWithConfigMap(cm1.Name, filepath.Join(custom.Directory, "cm1")),
 						testpod.SpecWithConfigMap(cm2.Name, filepath.Join(custom.Directory, "cm2")),
-						testpod.SpecWithTolerations(testTolerations),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
 
@@ -551,6 +513,14 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Test NodeFeature
 			//
 			Context("and NodeFeature objects deployed", func() {
+				BeforeEach(func() {
+					extraMasterPodSpecOpts = []testpod.SpecOption{
+						testpod.SpecWithContainerExtraArgs(
+							"-deny-label-ns=*.denied.ns,random.unwanted.ns,*.vendor.io",
+							"-extra-label-ns=custom.vendor.io",
+						),
+					}
+				})
 				It("labels from the NodeFeature objects should be created", func() {
 					if !useNodeFeatureApi {
 						Skip("NodeFeature API not enabled")
@@ -699,6 +669,34 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Test NodeFeatureRule
 			//
 			Context("and nfd-worker and NodeFeatureRules objects deployed", func() {
+				testTolerations := []corev1.Toleration{
+					{
+						Key:    "nfd.node.kubernetes.io/fake-special-node",
+						Value:  "exists",
+						Effect: "NoExecute",
+					},
+					{
+						Key:    "nfd.node.kubernetes.io/fake-dedicated-node",
+						Value:  "true",
+						Effect: "NoExecute",
+					},
+					{
+						Key:    "nfd.node.kubernetes.io/performance-optimized-node",
+						Value:  "true",
+						Effect: "NoExecute",
+					},
+					{
+						Key:    "nfd.node.kubernetes.io/foo",
+						Value:  "true",
+						Effect: "NoExecute",
+					},
+				}
+				BeforeEach(func() {
+					extraMasterPodSpecOpts = []testpod.SpecOption{
+						testpod.SpecWithContainerExtraArgs("-enable-taints"),
+						testpod.SpecWithTolerations(testTolerations),
+					}
+				})
 				It("custom labels from the NodeFeatureRule rules should be created", func() {
 					nodes, err := getNonControlPlaneNodes(f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
@@ -817,10 +815,8 @@ core:
 
 			Context("and check whether master config passed successfully or not", func() {
 				BeforeEach(func() {
-					customMasterPodSpecOpts = &[]testpod.SpecOption{
-						testpod.SpecWithContainerImage(dockerImage()),
+					extraMasterPodSpecOpts = []testpod.SpecOption{
 						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
-						testpod.SpecWithTolerations(testTolerations),
 					}
 					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
 denyLabelNs: ["*.denied.ns","random.unwanted.ns"]
