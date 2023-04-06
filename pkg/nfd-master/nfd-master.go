@@ -878,17 +878,17 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
 	patches = append(patches, createPatches(nil, node.Annotations, annotations, "/metadata/annotations")...)
 
-	// Patch the node object in the apiserver
-	err = m.apihelper.PatchNode(cli, node.Name, patches)
-	if err != nil {
-		return fmt.Errorf("error while patching node object: %v", err)
-	}
-
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
 	err = m.apihelper.PatchNodeStatus(cli, node.Name, statusPatches)
 	if err != nil {
 		return fmt.Errorf("error while patching extended resources: %v", err)
+	}
+
+	// Patch the node object in the apiserver
+	err = m.apihelper.PatchNode(cli, node.Name, patches)
+	if err != nil {
+		return fmt.Errorf("error while patching node object: %v", err)
 	}
 
 	if len(patches) > 0 || len(statusPatches) > 0 {
