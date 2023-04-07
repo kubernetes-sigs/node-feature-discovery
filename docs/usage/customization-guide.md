@@ -611,8 +611,9 @@ The following features are available for matching:
 |                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive'
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false'
 |                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'.
-| **`cpu.rdt`**    | flag         |          |            | Intel RDT capabilities supported by the system
+| **`cpu.rdt`**    | attribute    |          |            | Intel RDT capabilities supported by the system
 |                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](#intel-rdt-flags) for details
+|                  |              | **`RDTL3CA_NUM_CLOSID`** | int  | The number or available CLOSID (Class of service ID) for Intel L3 Cache Allocation Technology
 | **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
 |                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
