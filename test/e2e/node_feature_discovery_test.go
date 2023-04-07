@@ -31,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	resourcev1 "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
@@ -805,6 +806,35 @@ core:
 					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaintsUpdated, nodes)).NotTo(HaveOccurred())
 					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedAnnotationUpdated)).NotTo(HaveOccurred())
 
+					By("Deleting NodeFeatureRule object")
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), "e2e-test-3", metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					expectedERAnnotation := map[string]string{
+						"nfd.node.kubernetes.io/extended-resources": "nons,vendor.io/dynamic,vendor.io/static"}
+
+					expectedCapacity := corev1.ResourceList{
+						"feature.node.kubernetes.io/nons": resourcev1.MustParse("123"),
+						"vendor.io/dynamic":               resourcev1.MustParse("10"),
+						"vendor.io/static":                resourcev1.MustParse("123"),
+					}
+
+					By("Creating NodeFeatureRules #4")
+					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-4.yaml")).NotTo(HaveOccurred())
+
+					By("Verifying node annotations from NodeFeatureRules #4")
+					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedERAnnotation)).NotTo(HaveOccurred())
+
+					By("Verfiying node status capacity from NodeFeatureRules #4")
+					Expect(waitForCapacity(f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
+
+					By("Deleting NodeFeatureRule object")
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), "e2e-extened-resource-test", metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verfiying node status capacity from NodeFeatureRules #4")
+					Expect(waitForCapacity(f.ClientSet, nil, nodes)).NotTo(HaveOccurred())
+
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -893,6 +923,42 @@ denyLabelNs: []
 
 })
 
+// simplePoll is a simple and stupid re-try loop
+func simplePoll(poll func() error, wait time.Duration) error {
+	var err error
+	for retry := 0; retry < 3; retry++ {
+		if err = poll(); err == nil {
+			return nil
+		}
+		time.Sleep(wait * time.Second)
+	}
+	return err
+}
+
+// waitForCapacity waits for the capacity to be updated in the node status
+func waitForCapacity(cli clientset.Interface, expectedNewERs corev1.ResourceList, oldNodes []corev1.Node) error {
+	poll := func() error {
+		nodes, err := getNonControlPlaneNodes(cli)
+		if err != nil {
+			return err
+		}
+		for _, node := range nodes {
+			oldNode := getNode(oldNodes, node.Name)
+			expected := oldNode.Status.DeepCopy().Capacity
+			for k, v := range expectedNewERs {
+				expected[k] = v
+			}
+			capacity := node.Status.Capacity
+			if !cmp.Equal(expected, capacity) {
+				return fmt.Errorf("node %q capacity does not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expected, capacity))
+			}
+		}
+		return nil
+	}
+
+	return simplePoll(poll, 10)
+}
+
 // waitForNfdNodeAnnotations waits for node to be annotated as expected.
 func waitForNfdNodeAnnotations(cli clientset.Interface, expected map[string]string) error {
 	poll := func() error {
@@ -910,15 +976,7 @@ func waitForNfdNodeAnnotations(cli clientset.Interface, expected map[string]stri
 		return nil
 	}
 
-	// Simple and stupid re-try loop
-	var err error
-	for retry := 0; retry < 3; retry++ {
-		if err = poll(); err == nil {
-			return nil
-		}
-		time.Sleep(2 * time.Second)
-	}
-	return err
+	return simplePoll(poll, 2)
 }
 
 type k8sLabels map[string]string
@@ -951,15 +1009,7 @@ func checkForNodeLabels(cli clientset.Interface, expectedNewLabels map[string]k8
 		return nil
 	}
 
-	// Simple and stupid re-try loop
-	var err error
-	for retry := 0; retry < 3; retry++ {
-		if err = poll(); err == nil {
-			return nil
-		}
-		time.Sleep(2 * time.Second)
-	}
-	return err
+	return simplePoll(poll, 3)
 }
 
 // waitForNfdNodeTaints waits for node to be tainted as expected.
@@ -981,15 +1031,7 @@ func waitForNfdNodeTaints(cli clientset.Interface, expectedNewTaints []corev1.Ta
 		return nil
 	}
 
-	// Simple and stupid re-try loop
-	var err error
-	for retry := 0; retry < 3; retry++ {
-		if err = poll(); err == nil {
-			return nil
-		}
-		time.Sleep(10 * time.Second)
-	}
-	return err
+	return simplePoll(poll, 10)
 }
 
 // getNonControlPlaneNodes gets the nodes that are not tainted for exclusive control-plane usage

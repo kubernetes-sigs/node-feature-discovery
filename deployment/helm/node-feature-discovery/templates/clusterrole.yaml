@@ -10,9 +10,7 @@ rules:
   - ""
   resources:
   - nodes
-{{- if .Values.master.resourceLabels | empty | not }}
   - nodes/status
-{{- end }}
   verbs:
   - get
   - patch

@@ -361,7 +361,8 @@ func TestSetLabels(t *testing.T) {
 			instance := "foo"
 			vendorFeatureLabel := "vendor." + nfdv1alpha1.FeatureLabelNs + "/feature-4"
 			vendorProfileLabel := "vendor." + nfdv1alpha1.ProfileLabelNs + "/feature-5"
-			mockLabels := map[string]string{"feature-1": "val-1",
+			mockLabels := map[string]string{
+				"feature-1":                      "val-1",
 				"valid.ns/feature-2":             "val-2",
 				"random.denied.ns/feature-3":     "val-3",
 				"kubernetes.io/feature-4":        "val-4",

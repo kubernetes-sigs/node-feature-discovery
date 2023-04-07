@@ -30,13 +30,15 @@ import (
 // RuleOutput contains the output out rule execution.
 // +k8s:deepcopy-gen=false
 type RuleOutput struct {
-	Labels map[string]string
-	Vars   map[string]string
-	Taints []corev1.Taint
+	ExtendedResources map[string]string
+	Labels            map[string]string
+	Vars              map[string]string
+	Taints            []corev1.Taint
 }
 
 // Execute the rule against a set of input features.
 func (r *Rule) Execute(features *Features) (RuleOutput, error) {
+	extendedResources := make(map[string]string)
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
@@ -88,6 +90,10 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		}
 	}
 
+	for k, v := range r.ExtendedResources {
+		extendedResources[k] = v
+	}
+
 	for k, v := range r.Labels {
 		labels[k] = v
 	}
@@ -95,7 +101,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		vars[k] = v
 	}
 
-	ret := RuleOutput{Labels: labels, Vars: vars, Taints: r.Taints}
+	ret := RuleOutput{ExtendedResources: extendedResources, Labels: labels, Vars: vars, Taints: r.Taints}
 	utils.KlogDump(2, fmt.Sprintf("rule %q matched with: ", r.Name), "  ", ret)
 	return ret, nil
 }
