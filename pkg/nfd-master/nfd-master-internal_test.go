@@ -35,12 +35,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
-	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -80,6 +81,12 @@ func TestUpdateNodeObject(t *testing.T) {
 		}
 		sort.Strings(fakeFeatureLabelNames)
 
+		fakeFeatureAnnotationsNames := make([]string, 0, len(fakeFeatureLabels))
+		for k := range fakeAnnotations {
+			fakeFeatureAnnotationsNames = append(fakeFeatureAnnotationsNames, strings.TrimPrefix(k, nfdv1alpha1.FeatureAnnotationNs+"/"))
+		}
+		sort.Strings(fakeFeatureLabelNames)
+
 		fakeExtResourceNames := make([]string, 0, len(fakeExtResources))
 		for k := range fakeExtResources {
 			fakeExtResourceNames = append(fakeExtResourceNames, strings.TrimPrefix(k, nfdv1alpha1.FeatureLabelNs+"/"))
@@ -104,6 +111,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			// Create a list of expected node metadata patches
 			metadataPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, strings.Join(fakeFeatureAnnotationsNames, ",")),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
 				apihelper.NewJsonPatch("remove", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/old-feature", ""),
 			}
@@ -118,7 +126,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Twice()
 			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(metadataPatches))).Return(nil)
-			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
@@ -128,7 +136,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		Convey("When I fail to update the node with feature labels", func() {
 			expectedError := fmt.Errorf("no client is passed, client:  <nil>")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldResemble, expectedError)
@@ -138,7 +146,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		Convey("When I fail to get a mock client while updating feature labels", func() {
 			expectedError := fmt.Errorf("no client is passed, client:  <nil>")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldResemble, expectedError)
@@ -149,7 +157,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(nil, expectedError).Twice()
-			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -162,7 +170,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Twice()
 			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.Anything).Return(expectedError).Twice()
-			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err.Error(), ShouldEndWith, expectedError.Error())
@@ -321,6 +329,7 @@ func TestSetLabels(t *testing.T) {
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, ""),
 			}
 			for k, v := range mockLabels {
 				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/"+k, v))
@@ -341,6 +350,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, ""),
 			}
 
 			mockMaster.config.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
@@ -376,6 +386,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.NodeFeatureAnnotation, ""),
 			}
 
 			mockMaster.deniedNs.normal = map[string]struct{}{"random.denied.ns": {}}
@@ -400,6 +411,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, ""),
 			}
 			expectedStatusPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/status/capacity", nfdv1alpha1.FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),

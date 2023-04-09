@@ -829,7 +829,7 @@ core:
 					Expect(waitForCapacity(ctx, f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
 
 					By("Creating NodeFeatureRules #5")
-					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-5.yaml")).NotTo(HaveOccurred())
+					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-5.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeatureRules #5")
 					expectedAnnotations := map[string]k8sAnnotations{
@@ -839,7 +839,7 @@ core:
 							"vendor.example/feature":                              "baz",
 						},
 					}
-					Expect(checkForNodeAnnotations(
+					Expect(checkForNodeAnnotations(ctx,
 						f.ClientSet,
 						expectedAnnotations,
 						nodes,
@@ -1032,10 +1032,10 @@ func checkForNodeLabels(ctx context.Context, cli clientset.Interface, expectedNe
 type k8sAnnotations map[string]string
 
 // checkForNodeAnnotations waits and checks that node is annotated as expected.
-func checkForNodeAnnotations(cli clientset.Interface, expectedNewAnnotations map[string]k8sAnnotations, oldNodes []corev1.Node) error {
+func checkForNodeAnnotations(ctx context.Context, cli clientset.Interface, expectedNewAnnotations map[string]k8sAnnotations, oldNodes []corev1.Node) error {
 
 	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(cli)
+		nodes, err := getNonControlPlaneNodes(ctx, cli)
 		if err != nil {
 			return err
 		}
