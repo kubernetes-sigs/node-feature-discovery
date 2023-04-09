@@ -24,6 +24,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
+
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
@@ -32,6 +33,7 @@ import (
 type RuleOutput struct {
 	ExtendedResources map[string]string
 	Labels            map[string]string
+	Annotations       map[string]string
 	Vars              map[string]string
 	Taints            []corev1.Taint
 }
@@ -101,7 +103,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		vars[k] = v
 	}
 
-	ret := RuleOutput{ExtendedResources: extendedResources, Labels: labels, Vars: vars, Taints: r.Taints}
+	ret := RuleOutput{ExtendedResources: extendedResources, Labels: labels, Vars: vars, Taints: r.Taints, Annotations: r.Annotations}
 	utils.KlogDump(2, fmt.Sprintf("rule %q matched with: ", r.Name), "  ", ret)
 	return ret, nil
 }
