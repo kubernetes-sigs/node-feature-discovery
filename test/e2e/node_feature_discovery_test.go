@@ -828,6 +828,23 @@ core:
 					By("Verfiying node status capacity from NodeFeatureRules #4")
 					Expect(waitForCapacity(ctx, f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
 
+					By("Creating NodeFeatureRules #5")
+					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-5.yaml")).NotTo(HaveOccurred())
+
+					By("Verifying node labels from NodeFeatureRules #5")
+					expectedAnnotations := map[string]k8sAnnotations{
+						"*": {
+							nfdv1alpha1.FeatureLabelNs + "defaul-ns-annotation":   "foo",
+							nfdv1alpha1.FeatureLabelNs + "defaul-ns-annotation-2": "bar",
+							"vendor.example/feature":                              "baz",
+						},
+					}
+					Expect(checkForNodeAnnotations(
+						f.ClientSet,
+						expectedAnnotations,
+						nodes,
+					)).NotTo(HaveOccurred())
+
 					By("Deleting NodeFeatureRule object")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-extened-resource-test", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -1012,6 +1029,47 @@ func checkForNodeLabels(ctx context.Context, cli clientset.Interface, expectedNe
 	return simplePoll(poll, 3)
 }
 
+type k8sAnnotations map[string]string
+
+// checkForNodeAnnotations waits and checks that node is annotated as expected.
+func checkForNodeAnnotations(cli clientset.Interface, expectedNewAnnotations map[string]k8sAnnotations, oldNodes []corev1.Node) error {
+
+	poll := func() error {
+		nodes, err := getNonControlPlaneNodes(cli)
+		if err != nil {
+			return err
+		}
+		for _, node := range nodes {
+			nodeExpected, ok := expectedNewAnnotations[node.Name]
+			if !ok {
+				nodeExpected = k8sAnnotations{}
+				if defaultExpected, ok := expectedNewAnnotations["*"]; ok {
+					nodeExpected = defaultExpected
+				}
+			}
+
+			oldAnnotations := getNodeAnnotations(oldNodes, node.Name)
+			expectedNewAnnotations := maps.Clone(oldAnnotations)
+			maps.Copy(expectedNewAnnotations, nodeExpected)
+
+			if !cmp.Equal(node.Annotations, expectedNewAnnotations) {
+				return fmt.Errorf("node %q annotations do not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expectedNewAnnotations, node.Annotations))
+			}
+		}
+		return nil
+	}
+
+	// Simple and stupid re-try loop
+	var err error
+	for retry := 0; retry < 3; retry++ {
+		if err = poll(); err == nil {
+			return nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return err
+}
+
 // waitForNfdNodeTaints waits for node to be tainted as expected.
 func waitForNfdNodeTaints(ctx context.Context, cli clientset.Interface, expectedNewTaints []corev1.Taint, oldNodes []corev1.Node) error {
 	poll := func() error {
@@ -1068,4 +1126,13 @@ func getNode(nodes []corev1.Node, nodeName string) corev1.Node {
 		}
 	}
 	return corev1.Node{}
+}
+
+func getNodeAnnotations(nodes []corev1.Node, nodeName string) map[string]string {
+	for _, node := range nodes {
+		if node.Name == nodeName {
+			return node.Annotations
+		}
+	}
+	return nil
 }
