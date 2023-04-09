@@ -16,8 +16,8 @@ sort: 1
 ---
 
 This software enables node feature discovery for Kubernetes. It detects
-hardware features available on each node in a Kubernetes cluster, and
-advertises those features using node labels and optionally node taints.
+hardware features available on each node in a Kubernetes cluster, and advertises
+those features using node labels,annotations and optionally node taints.
 
 NFD consists of four software components:
 
@@ -104,6 +104,7 @@ NFD also annotates nodes it is running on:
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/worker.version     | Version of the nfd-worker instance running on the node. Informative use only.
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-labels     | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users.
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users.
+| [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-annotations | Comma-separated list of node annotations managed by NFD. NFD uses this internally so must not be edited by users.
 
 NOTE: the [`-instance`](../reference/master-commandline-reference.md#instance)
 command line flag affects the annotation names

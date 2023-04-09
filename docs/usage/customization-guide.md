@@ -160,6 +160,37 @@ re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 See [Label rule format](#label-rule-format) for detailed description of
 available fields and how to write labeling rules.
 
+### NodeFeatureRule annotation feature
+
+Consider the following referential example:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-rule-object
+spec:
+  rules:
+    - name: "my sample annotation rule "
+      annotations:
+        "my-sample-feature-annotation": "test"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            dummy: {op: Exists}
+        - feature: kernel.config
+          matchExpressions:
+            X86: {op: In, value: ["y"]}
+```
+
+In this example, `feature.node.kubenernetes.io/my-sample-feature-annotation=test`
+annotation are set on the node if both of
+the following conditions are true (`matchFeatures` implements a logical AND over the
+matchers):
+
+- The `dummy` network driver module has been loaded
+- X86 option in kernel config is set to `=y`
+
 ### NodeFeatureRule tainting feature
 
 This feature is experimental.
@@ -484,6 +515,10 @@ details.
 **NOTE** The `labels` field has priority over `labelsTemplate`, i.e.
 labels specified in the `labels` field will override anything
 originating from `labelsTemplate`.
+
+#### Annotations
+
+The `.annotations` is a map of the node annotations to create if the rule matches.
 
 #### Taints
 
