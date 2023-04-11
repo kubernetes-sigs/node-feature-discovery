@@ -23,7 +23,8 @@ Follow the uninstallation instructions of the deployment method used
 ## Removing feature labels
 
 NFD-Master has a special `-prune` command line flag for removing all
-nfd-related node labels, annotations and extended resources from the cluster.
+nfd-related node labels, annotations, extended resources and taints from the
+cluster.
 
 ```bash
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prune?ref={{ site.release }}
