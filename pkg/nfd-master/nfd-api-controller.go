@@ -50,7 +50,7 @@ func newNfdController(config *restclient.Config, disableNodeFeature bool) (*nfdC
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
 
-	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 5*time.Minute)
+	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 1*time.Hour)
 
 	// Add informer for NodeFeature objects
 	if !disableNodeFeature {
