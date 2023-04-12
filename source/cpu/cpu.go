@@ -176,7 +176,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 	// Security
 	// skipLabel lists features that will not have labels created but are only made available for
 	// NodeFeatureRules (e.g. to be published via extended resources instead)
-	skipLabel := sets.NewString("tdx.total_keys", "sgx.epc")
+	skipLabel := sets.NewString(
+		"tdx.total_keys",
+		"sgx.epc",
+		"sev.encrypted_state_ids",
+		"sev.asids")
 	for k, v := range features.Attributes[SecurityFeature].Elements {
 		if !skipLabel.Has(k) {
 			labels["security."+k] = v
