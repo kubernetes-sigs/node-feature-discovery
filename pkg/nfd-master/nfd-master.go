@@ -329,21 +329,25 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 		case <-rateLimit:
 			// Check what we need to do
 			// TODO: we might want to update multiple nodes in parallel
+			errUpdateAll := false
+			errNodes := make(map[string]struct{})
 			if updateAll {
 				if err := m.nfdAPIUpdateAllNodes(); err != nil {
 					klog.Error(err)
+					errUpdateAll = true
 				}
 			} else {
 				for nodeName := range updateNodes {
 					if err := m.nfdAPIUpdateOneNode(nodeName); err != nil {
 						klog.Error(err)
+						errNodes[nodeName] = struct{}{}
 					}
 				}
 			}
 
-			// Reset "work queue" and timer
-			updateAll = false
-			updateNodes = make(map[string]struct{})
+			// Reset "work queue" and timer, will cause re-try if errors happened
+			updateAll = errUpdateAll
+			updateNodes = errNodes
 			rateLimit = time.After(time.Second)
 		}
 	}
