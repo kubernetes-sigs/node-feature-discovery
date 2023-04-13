@@ -256,6 +256,9 @@ nfd-master -deny-label-ns=*.vendor.com,vendor-2.io
 
 ### -resource-labels
 
+**DEPRECATED**: [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)
+should be used for managing extended resources in NFD.
+
 The `-resource-labels` flag specifies a comma-separated list of features to be
 advertised as extended resources instead of labels. Features that have integer
 values can be published as Extended Resources by listing them in this flag.
