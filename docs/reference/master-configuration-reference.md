@@ -71,6 +71,10 @@ denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
 ```
 
 ## resourceLabels
+
+**DEPRECATED**: [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)
+should be used for managing extended resources in NFD.
+
 The `resourceLabels` option specifies a list of features to be
 advertised as extended resources instead of labels. Features that have integer
 values can be published as Extended Resources by listing them in this option.

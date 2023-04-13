@@ -61,6 +61,7 @@ func main() {
 		case "label-whitelist":
 			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
 		case "resource-labels":
+			klog.Warningf("-resource-labels is deprecated, extended resources should be managed with NodeFeatureRule objects")
 			args.Overrides.ResourceLabels = overrides.ResourceLabels
 		case "enable-taints":
 			args.Overrides.EnableTaints = overrides.EnableTaints
@@ -143,7 +144,7 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.Var(overrides.DenyLabelNs, "deny-label-ns",
 		"Comma separated list of denied label namespaces")
 	flagset.Var(overrides.ResourceLabels, "resource-labels",
-		"Comma separated list of labels to be exposed as extended resources.")
+		"Comma separated list of labels to be exposed as extended resources. DEPRECATED: use NodeFeatureRule objects instead")
 
 	return args, overrides
 }
