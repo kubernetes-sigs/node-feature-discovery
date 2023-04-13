@@ -32,6 +32,8 @@ var (
 	UsrDir = HostDir(pathPrefix + "usr")
 	// VarDir is where the /var directory of the system to be inspected is located
 	VarDir = HostDir(pathPrefix + "var")
+	// LibDir is where the /lib directory of the system to be inspected is located
+	LibDir = HostDir(pathPrefix + "lib")
 )
 
 // HostDir is a helper for handling host system directories

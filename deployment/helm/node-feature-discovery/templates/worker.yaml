@@ -67,6 +67,9 @@ spec:
         - name: host-usr-lib
           mountPath: "/host-usr/lib"
           readOnly: true
+        - name: host-lib
+          mountPath: "/host-lib"
+          readOnly: true
         {{- if .Values.worker.mountUsrSrc }}
         - name: host-usr-src
           mountPath: "/host-usr/src"
@@ -99,6 +102,9 @@ spec:
         - name: host-usr-lib
           hostPath:
             path: "/usr/lib"
+        - name: host-lib
+          hostPath:
+            path: "/lib"
         {{- if .Values.worker.mountUsrSrc }}
         - name: host-usr-src
           hostPath:
