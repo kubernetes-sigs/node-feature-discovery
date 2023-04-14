@@ -20,6 +20,7 @@ import (
 	"os"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 
 	"github.com/klauspost/cpuid/v2"
@@ -173,8 +174,13 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 	}
 
 	// Security
+	// skipLabel lists features that will not have labels created but are only made available for
+	// NodeFeatureRules (e.g. to be published via extended resources instead)
+	skipLabel := sets.NewString("tdx.total_keys")
 	for k, v := range features.Attributes[SecurityFeature].Elements {
-		labels["security."+k] = v
+		if !skipLabel.Has(k) {
+			labels["security."+k] = v
+		}
 	}
 
 	// SGX
