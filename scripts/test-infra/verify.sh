@@ -11,6 +11,10 @@ kubectl="$gobinpath/kubectl"
 curl -L https://dl.k8s.io/release/v1.22.1/bin/linux/amd64/kubectl -o "$kubectl"
 chmod 755 "$kubectl"
 
+curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+curl -Os https://uploader.codecov.io/latest/linux/codecov
+chmod +x codecov
+
 # Run verify steps
 echo "Checking gofmt"
 make gofmt-verify
@@ -23,6 +27,9 @@ make helm-lint
 
 echo "Running unit tests"
 make test
+
+# Upload coverage report
+./codecov -t ${CODECOV_TOKEN}
 
 # Check that repo is clean
 if ! git diff --quiet; then
