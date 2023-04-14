@@ -34,8 +34,14 @@ import (
 func discoverSecurity() map[string]string {
 	elems := make(map[string]string)
 
-	if sgxEnabled() {
+	// Set to 'true' based a non-zero sum value of SGX EPC section sizes. The
+	// kernel checks for IA32_FEATURE_CONTROL.SGX_ENABLE MSR bit but we can't
+	// do that as a normal user. Typically the BIOS, when enabling SGX,
+	// allocates "Processor Reserved Memory" for SGX EPC so we rely on > 0
+	// size here to set "SGX = enabled".
+	if epcSize := sgxEnabled(); epcSize > 0 {
 		elems["sgx.enabled"] = "true"
+		elems["sgx.epc"] = strconv.FormatUint(uint64(epcSize), 10)
 	}
 
 	if tdxEnabled() {
@@ -62,7 +68,7 @@ func discoverSecurity() map[string]string {
 	return elems
 }
 
-func sgxEnabled() bool {
+func sgxEnabled() uint64 {
 	var epcSize uint64
 	if cpuid.CPU.SGX.Available {
 		for _, s := range cpuid.CPU.SGX.EPCSections {
@@ -70,16 +76,7 @@ func sgxEnabled() bool {
 		}
 	}
 
-	// Set to 'true' based a non-zero sum value of SGX EPC section sizes. The
-	// kernel checks for IA32_FEATURE_CONTROL.SGX_ENABLE MSR bit but we can't
-	// do that as a normal user. Typically the BIOS, when enabling SGX,
-	// allocates "Processor Reserved Memory" for SGX EPC so we rely on > 0
-	// size here to set "SGX = enabled".
-	if epcSize > 0 {
-		return true
-	}
-
-	return false
+	return epcSize
 }
 
 func tdxEnabled() bool {

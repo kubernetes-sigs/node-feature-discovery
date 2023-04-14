@@ -55,7 +55,7 @@ option of nfd-worker.
 | **`cpu-pstate.scaling_governor`** | string | The value of the Intel pstate scaling_governor when in use, either 'powersave' or 'performance'.
 | **`cpu-cstate.enabled`**          | bool   | Set to 'true' if cstates are set in the intel_idle driver, otherwise set to 'false'. Unset if intel_idle cpuidle driver is not active.
 | **`cpu-rdt.<rdt-flag>`**          | true   | **DEPRECATED** [Intel RDT][intel-rdt] capability is supported. See [RDT flags](customization-guide.md#intel-rdt-flags) for details.
-| **`cpu-security.sgx.enabled`**    | true   | Set to 'true' if Intel SGX is enabled in BIOS (based a non-zero sum value of SGX EPC section sizes).
+| **`cpu-security.sgx.enabled`**    | true   | Set to 'true' if Intel SGX is enabled in BIOS (based on a non-zero sum value of SGX EPC section sizes).
 | **`cpu-security.se.enabled`**     | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility)
 | **`cpu-security.tdx.enabled`**    | true   | Set to 'true' if Intel TDX is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/tdx`).
 | **`cpu-security.sev.enabled`**    | true   | Set to 'true' if ADM SEV is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/sev`).

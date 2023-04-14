@@ -675,6 +675,7 @@ The following features are available for matching:
 |                  |              | **`RDTL3CA_NUM_CLOSID`** | int  | The number or available CLOSID (Class of service ID) for Intel L3 Cache Allocation Technology
 | **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
 |                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
+|                  |              | **`sgx.epc`** | int | The total amount Intel SGX Encrypted Page Cache memory in bytes. It's only present if `sgx.enabled` is `true`.
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
 |                  |              | **`tdx.enabled`** | bool | `true` if Intel TDX (Trusted Domain Extensions) is available on the host and has been enabled, otherwise does not exist
 |                  |              | **`tdx.total_keys`** | int | The total amount of keys an Intel TDX (Trusted Domain Extensions) host can provide.  It's only present if `tdx.enabled` is `true`.
