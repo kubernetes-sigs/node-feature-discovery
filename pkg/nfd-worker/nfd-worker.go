@@ -80,7 +80,7 @@ type coreConfig struct {
 	FeatureSources []string
 	Sources        *[]string
 	LabelSources   []string
-	SleepInterval  duration
+	SleepInterval  utils.DurationVal
 }
 
 type sourcesConfig map[string]source.Config
@@ -127,10 +127,6 @@ type nfdWorker struct {
 	labelSources        []source.LabelSource
 }
 
-type duration struct {
-	time.Duration
-}
-
 // This ticker can represent infinite and normal intervals.
 type infiniteTicker struct {
 	*time.Ticker
@@ -169,7 +165,7 @@ func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
 		Core: coreConfig{
 			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
-			SleepInterval:  duration{60 * time.Second},
+			SleepInterval:  utils.DurationVal{Duration: 60 * time.Second},
 			FeatureSources: []string{"all"},
 			LabelSources:   []string{"all"},
 			Klog:           make(map[string]string),
@@ -369,7 +365,7 @@ func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
 		klog.Warningf("too short sleep interval specified (%s), forcing to 1s",
 			c.SleepInterval.Duration.String())
-		c.SleepInterval = duration{time.Second}
+		c.SleepInterval = utils.DurationVal{Duration: time.Second}
 	}
 }
 
@@ -754,27 +750,6 @@ func (m *nfdWorker) getNfdClient() (*nfdclient.Clientset, error) {
 
 	m.nfdClient = c
 	return c, nil
-}
-
-// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
-func (d *duration) UnmarshalJSON(data []byte) error {
-	var v interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	switch val := v.(type) {
-	case float64:
-		d.Duration = time.Duration(val)
-	case string:
-		var err error
-		d.Duration, err = time.ParseDuration(val)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("invalid duration %s", data)
-	}
-	return nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from "encoding/json"

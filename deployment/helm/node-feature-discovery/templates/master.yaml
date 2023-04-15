@@ -104,6 +104,9 @@ spec:
             {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
             - "-featurerules-controller={{ .Values.master.featureRulesController }}"
             {{- end }}
+            {{- if .Values.master.resyncPeriod }}
+            - "-resync-period={{ .Values.master.resyncPeriod }}"
+            {{- end }}
     {{- if .Values.tls.enable }}
             - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
             - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"

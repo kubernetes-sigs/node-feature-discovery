@@ -41,7 +41,12 @@ type nfdController struct {
 	updateOneNodeChan  chan string
 }
 
-func newNfdController(config *restclient.Config, disableNodeFeature bool) (*nfdController, error) {
+type nfdApiControllerOptions struct {
+	disableNodeFeature bool
+	resyncPeriod       time.Duration
+}
+
+func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
 	c := &nfdController{
 		stopChan:           make(chan struct{}, 1),
 		updateAllNodesChan: make(chan struct{}, 1),
@@ -49,11 +54,10 @@ func newNfdController(config *restclient.Config, disableNodeFeature bool) (*nfdC
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
-
-	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 1*time.Hour)
+	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.resyncPeriod)
 
 	// Add informer for NodeFeature objects
-	if !disableNodeFeature {
+	if !nfdApiControllerOptions.disableNodeFeature {
 		featureInformer := informerFactory.Nfd().V1alpha1().NodeFeatures()
 		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
@@ -83,7 +87,7 @@ func newNfdController(config *restclient.Config, disableNodeFeature bool) (*nfdC
 		AddFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v added", key)
-			if !disableNodeFeature {
+			if !nfdApiControllerOptions.disableNodeFeature {
 				c.updateAllNodes()
 			}
 			// else: rules will be processed only when gRPC requests are received
@@ -91,7 +95,7 @@ func newNfdController(config *restclient.Config, disableNodeFeature bool) (*nfdC
 		UpdateFunc: func(oldObject, newObject interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(newObject)
 			klog.V(2).Infof("NodeFeatureRule %v updated", key)
-			if !disableNodeFeature {
+			if !nfdApiControllerOptions.disableNodeFeature {
 				c.updateAllNodes()
 			}
 			// else: rules will be processed only when gRPC requests are received
@@ -99,7 +103,7 @@ func newNfdController(config *restclient.Config, disableNodeFeature bool) (*nfdC
 		DeleteFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v deleted", key)
-			if !disableNodeFeature {
+			if !nfdApiControllerOptions.disableNodeFeature {
 				c.updateAllNodes()
 			}
 			// else: rules will be processed only when gRPC requests are received

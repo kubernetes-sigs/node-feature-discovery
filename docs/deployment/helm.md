@@ -110,6 +110,7 @@ We have introduced the following Chart parameters.
 | `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
 | `master.port`               | integer |                                         | Specifies the TCP port that nfd-master listens for incoming requests.                                                      |
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
+| `master.resyncPeriod`       | string  |                                         | NFD API controller resync period.                                                  |
 | `master.extraLabelNs`       | array   | []                                      | List of allowed extra label namespaces                                                                                                   |
 | `master.resourceLabels`     | array   | []                                      | List of labels to be registered as extended resources                                                                                          |
 | `master.enableTaints`       | bool    | false                                   | Specifies whether to enable or disable node tainting                                                                                           |
