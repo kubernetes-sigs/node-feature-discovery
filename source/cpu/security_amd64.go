@@ -55,10 +55,20 @@ func discoverSecurity() map[string]string {
 
 	if sevParameterEnabled("sev") {
 		elems["sev.enabled"] = "true"
+
+		sevAddressSpaceIdentifiers := getCgroupMiscCapacity("sev")
+		if sevAddressSpaceIdentifiers > -1 {
+			elems["sev.asids"] = strconv.FormatInt(int64(sevAddressSpaceIdentifiers), 10)
+		}
 	}
 
 	if sevParameterEnabled("sev_es") {
 		elems["sev.es.enabled"] = "true"
+
+		sevEncryptedStateIDs := getCgroupMiscCapacity("sev_es")
+		if sevEncryptedStateIDs > -1 {
+			elems["sev.encrypted_state_ids"] = strconv.FormatInt(int64(sevEncryptedStateIDs), 10)
+		}
 	}
 
 	if sevParameterEnabled("sev_snp") {
