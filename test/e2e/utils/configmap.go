@@ -36,13 +36,13 @@ func NewConfigMap(name, key, data string) *corev1.ConfigMap {
 }
 
 // UpdateConfigMap is a helper for updating a ConfigMap object.
-func UpdateConfigMap(c clientset.Interface, name, namespace, key, data string) error {
-	cm, err := c.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+func UpdateConfigMap(ctx context.Context, c clientset.Interface, name, namespace, key, data string) error {
+	cm, err := c.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("configmap %s is not found", name)
 	}
 	cm.Data[key] = data
-	_, err = c.CoreV1().ConfigMaps(namespace).Update(context.TODO(), cm, metav1.UpdateOptions{})
+	_, err = c.CoreV1().ConfigMaps(namespace).Update(ctx, cm, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("error while updating configmap with name %s", name)
 	}

@@ -464,12 +464,12 @@ func newHostPathType(typ corev1.HostPathType) *corev1.HostPathType {
 // WaitForReady waits for the pods to become ready.
 // NOTE: copied from k8s v1.22 after which is was removed from there.
 // Convenient for checking that all pods of a daemonset are ready.
-func WaitForReady(c clientset.Interface, ns, name string, minReadySeconds int) error {
+func WaitForReady(ctx context.Context, c clientset.Interface, ns, name string, minReadySeconds int) error {
 	const poll = 2 * time.Second
 	label := labels.SelectorFromSet(labels.Set(map[string]string{"name": name}))
 	options := metav1.ListOptions{LabelSelector: label.String()}
 	return wait.Poll(poll, 5*time.Minute, func() (bool, error) {
-		pods, err := c.CoreV1().Pods(ns).List(context.TODO(), options)
+		pods, err := c.CoreV1().Pods(ns).List(ctx, options)
 		if err != nil {
 			return false, nil
 		}
