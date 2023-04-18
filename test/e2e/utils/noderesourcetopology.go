@@ -78,21 +78,21 @@ func NewNodeResourceTopologies() (*apiextensionsv1.CustomResourceDefinition, err
 
 // CreateNodeResourceTopologies creates the NodeResourceTopology in the cluster if the CRD doesn't exists already.
 // Returns the CRD golang object present in the cluster.
-func CreateNodeResourceTopologies(extClient extclient.Interface) (*apiextensionsv1.CustomResourceDefinition, error) {
+func CreateNodeResourceTopologies(ctx context.Context, extClient extclient.Interface) (*apiextensionsv1.CustomResourceDefinition, error) {
 	crd, err := NewNodeResourceTopologies()
 	if err != nil {
 		return nil, err
 	}
 
 	// Delete existing CRD (if any) with this we also get rid of stale objects
-	err = extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+	err = extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, crd.Name, metav1.DeleteOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to delete NodeResourceTopology CRD: %w", err)
 	}
 
 	// It takes time for the delete operation, wait until the CRD completely gone
 	if err = wait.PollImmediate(5*time.Second, 1*time.Minute, func() (bool, error) {
-		_, err = extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd.Name, metav1.GetOptions{})
+		_, err = extClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crd.Name, metav1.GetOptions{})
 		if err == nil {
 			return false, nil
 		}
@@ -104,15 +104,15 @@ func CreateNodeResourceTopologies(extClient extclient.Interface) (*apiextensions
 	}); err != nil {
 		return nil, fmt.Errorf("failed to get NodeResourceTopology CRD: %w", err)
 	}
-	return extClient.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
+	return extClient.ApiextensionsV1().CustomResourceDefinitions().Create(ctx, crd, metav1.CreateOptions{})
 }
 
 // GetNodeTopology returns the NodeResourceTopology data for the node identified by `nodeName`.
-func GetNodeTopology(topologyClient *topologyclientset.Clientset, nodeName string) *v1alpha2.NodeResourceTopology {
+func GetNodeTopology(ctx context.Context, topologyClient *topologyclientset.Clientset, nodeName string) *v1alpha2.NodeResourceTopology {
 	var nodeTopology *v1alpha2.NodeResourceTopology
 	var err error
 	gomega.EventuallyWithOffset(1, func() bool {
-		nodeTopology, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), nodeName, metav1.GetOptions{})
+		nodeTopology, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(ctx, nodeName, metav1.GetOptions{})
 		if err != nil {
 			framework.Logf("failed to get the node topology resource: %v", err)
 			return false

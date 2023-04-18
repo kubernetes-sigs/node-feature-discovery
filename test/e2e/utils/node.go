@@ -40,22 +40,22 @@ const (
 )
 
 // GetWorkerNodes returns all nodes labeled as worker
-func GetWorkerNodes(f *framework.Framework) ([]corev1.Node, error) {
-	return GetNodesByRole(f, RoleWorker)
+func GetWorkerNodes(ctx context.Context, f *framework.Framework) ([]corev1.Node, error) {
+	return GetNodesByRole(ctx, f, RoleWorker)
 }
 
 // GetByRole returns all nodes with the specified role
-func GetNodesByRole(f *framework.Framework, role string) ([]corev1.Node, error) {
+func GetNodesByRole(ctx context.Context, f *framework.Framework, role string) ([]corev1.Node, error) {
 	selector, err := labels.Parse(fmt.Sprintf("%s/%s=", LabelRole, role))
 	if err != nil {
 		return nil, err
 	}
-	return GetNodesBySelector(f, selector)
+	return GetNodesBySelector(ctx, f, selector)
 }
 
 // GetBySelector returns all nodes with the specified selector
-func GetNodesBySelector(f *framework.Framework, selector labels.Selector) ([]corev1.Node, error) {
-	nodes, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: selector.String()})
+func GetNodesBySelector(ctx context.Context, f *framework.Framework, selector labels.Selector) ([]corev1.Node, error) {
+	nodes, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
 	if err != nil {
 		return nil, err
 	}

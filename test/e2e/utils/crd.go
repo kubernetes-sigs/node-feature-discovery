@@ -40,7 +40,7 @@ import (
 var packagePath string
 
 // CreateNfdCRDs creates the NodeFeatureRule CRD in the API server.
-func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDefinition, error) {
+func CreateNfdCRDs(ctx context.Context, cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDefinition, error) {
 	crds, err := crdsFromFile(filepath.Join(packagePath, "..", "..", "..", "deployment", "base", "nfd-crds", "nfd-api-crds.yaml"))
 	if err != nil {
 		return nil, err
@@ -49,13 +49,13 @@ func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDe
 	newCRDs := make([]*apiextensionsv1.CustomResourceDefinition, len(crds))
 	for i, crd := range crds {
 		// Delete existing CRD (if any) with this we also get rid of stale objects
-		err = cli.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+		err = cli.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, crd.Name, metav1.DeleteOptions{})
 		if err != nil && !errors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to delete %q CRD: %w", crd.Name, err)
 		} else if err == nil {
 			// Wait for CRD deletion to complete before trying to re-create it
 			err = wait.Poll(1*time.Second, 1*time.Minute, func() (bool, error) {
-				_, err = cli.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), crd.Name, metav1.GetOptions{})
+				_, err = cli.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crd.Name, metav1.GetOptions{})
 				if err == nil {
 					return false, nil
 				} else if errors.IsNotFound(err) {
@@ -68,7 +68,7 @@ func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDe
 			}
 		}
 
-		newCRDs[i], err = cli.ApiextensionsV1().CustomResourceDefinitions().Create(context.TODO(), crd, metav1.CreateOptions{})
+		newCRDs[i], err = cli.ApiextensionsV1().CustomResourceDefinitions().Create(ctx, crd, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func CreateNfdCRDs(cli extclient.Interface) ([]*apiextensionsv1.CustomResourceDe
 }
 
 // CreateOrUpdateNodeFeaturesFromFile creates/updates a NodeFeature object from a given file located under test data directory.
-func CreateOrUpdateNodeFeaturesFromFile(cli nfdclientset.Interface, filename, namespace, nodename string) ([]string, error) {
+func CreateOrUpdateNodeFeaturesFromFile(ctx context.Context, cli nfdclientset.Interface, filename, namespace, nodename string) ([]string, error) {
 	objs, err := nodeFeaturesFromFile(filepath.Join(packagePath, "..", "data", filename))
 	if err != nil {
 		return nil, err
@@ -91,13 +91,13 @@ func CreateOrUpdateNodeFeaturesFromFile(cli nfdclientset.Interface, filename, na
 		}
 		obj.Labels[nfdv1alpha1.NodeFeatureObjNodeNameLabel] = nodename
 
-		if oldObj, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), obj.Name, metav1.GetOptions{}); errors.IsNotFound(err) {
-			if _, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
+		if oldObj, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(ctx, obj.Name, metav1.GetOptions{}); errors.IsNotFound(err) {
+			if _, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 				return names, fmt.Errorf("failed to create NodeFeature %w", err)
 			}
 		} else if err == nil {
 			obj.SetResourceVersion(oldObj.GetResourceVersion())
-			if _, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
+			if _, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(ctx, obj, metav1.UpdateOptions{}); err != nil {
 				return names, fmt.Errorf("failed to update NodeFeature object: %w", err)
 			}
 		} else {
@@ -109,14 +109,14 @@ func CreateOrUpdateNodeFeaturesFromFile(cli nfdclientset.Interface, filename, na
 }
 
 // CreateNodeFeatureRuleFromFile creates a NodeFeatureRule object from a given file located under test data directory.
-func CreateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string) error {
+func CreateNodeFeatureRulesFromFile(ctx context.Context, cli nfdclientset.Interface, filename string) error {
 	objs, err := nodeFeatureRulesFromFile(filepath.Join(packagePath, "..", "data", filename))
 	if err != nil {
 		return err
 	}
 
 	for _, obj := range objs {
-		if _, err = cli.NfdV1alpha1().NodeFeatureRules().Create(context.TODO(), obj, metav1.CreateOptions{}); err != nil {
+		if _, err = cli.NfdV1alpha1().NodeFeatureRules().Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -124,7 +124,7 @@ func CreateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string)
 }
 
 // UpdateNodeFeatureRulesFromFile updates existing NodeFeatureRule object from a given file located under test data directory.
-func UpdateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string) error {
+func UpdateNodeFeatureRulesFromFile(ctx context.Context, cli nfdclientset.Interface, filename string) error {
 	objs, err := nodeFeatureRulesFromFile(filepath.Join(packagePath, "..", "data", filename))
 	if err != nil {
 		return err
@@ -132,12 +132,12 @@ func UpdateNodeFeatureRulesFromFile(cli nfdclientset.Interface, filename string)
 
 	for _, obj := range objs {
 		var nfr *nfdv1alpha1.NodeFeatureRule
-		if nfr, err = cli.NfdV1alpha1().NodeFeatureRules().Get(context.TODO(), obj.Name, metav1.GetOptions{}); err != nil {
+		if nfr, err = cli.NfdV1alpha1().NodeFeatureRules().Get(ctx, obj.Name, metav1.GetOptions{}); err != nil {
 			return fmt.Errorf("failed to get NodeFeatureRule %w", err)
 		}
 
 		obj.SetResourceVersion(nfr.GetResourceVersion())
-		if _, err = cli.NfdV1alpha1().NodeFeatureRules().Update(context.TODO(), obj, metav1.UpdateOptions{}); err != nil {
+		if _, err = cli.NfdV1alpha1().NodeFeatureRules().Update(ctx, obj, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("failed to update NodeFeatureRule %w", err)
 		}
 	}
