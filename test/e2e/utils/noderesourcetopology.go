@@ -91,7 +91,7 @@ func CreateNodeResourceTopologies(ctx context.Context, extClient extclient.Inter
 	}
 
 	// It takes time for the delete operation, wait until the CRD completely gone
-	if err = wait.PollImmediate(5*time.Second, 1*time.Minute, func() (bool, error) {
+	if err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
 		_, err = extClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crd.Name, metav1.GetOptions{})
 		if err == nil {
 			return false, nil
