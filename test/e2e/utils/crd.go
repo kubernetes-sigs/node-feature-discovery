@@ -54,7 +54,7 @@ func CreateNfdCRDs(ctx context.Context, cli extclient.Interface) ([]*apiextensio
 			return nil, fmt.Errorf("failed to delete %q CRD: %w", crd.Name, err)
 		} else if err == nil {
 			// Wait for CRD deletion to complete before trying to re-create it
-			err = wait.Poll(1*time.Second, 1*time.Minute, func() (bool, error) {
+			err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, false, func(ctx context.Context) (bool, error) {
 				_, err = cli.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crd.Name, metav1.GetOptions{})
 				if err == nil {
 					return false, nil
