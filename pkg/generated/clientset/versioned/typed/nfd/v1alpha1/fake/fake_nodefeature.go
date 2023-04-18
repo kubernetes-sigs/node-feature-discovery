@@ -23,7 +23,6 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -36,9 +35,9 @@ type FakeNodeFeatures struct {
 	ns   string
 }
 
-var nodefeaturesResource = schema.GroupVersionResource{Group: "nfd.k8s-sigs.io", Version: "v1alpha1", Resource: "nodefeatures"}
+var nodefeaturesResource = v1alpha1.SchemeGroupVersion.WithResource("nodefeatures")
 
-var nodefeaturesKind = schema.GroupVersionKind{Group: "nfd.k8s-sigs.io", Version: "v1alpha1", Kind: "NodeFeature"}
+var nodefeaturesKind = v1alpha1.SchemeGroupVersion.WithKind("NodeFeature")
 
 // Get takes name of the nodeFeature, and returns the corresponding nodeFeature object, and an error if there is any.
 func (c *FakeNodeFeatures) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NodeFeature, err error) {
