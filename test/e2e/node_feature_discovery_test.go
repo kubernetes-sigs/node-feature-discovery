@@ -51,10 +51,10 @@ import (
 
 // cleanupNode deletes all NFD-related metadata from the Node object, i.e.
 // labels and annotations
-func cleanupNode(cs clientset.Interface) {
+func cleanupNode(ctx context.Context, cs clientset.Interface) {
 	// Per-node cleanup function
 	cleanup := func(nodeName string) error {
-		node, err := cs.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+		node, err := cs.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		update := false
@@ -114,14 +114,14 @@ func cleanupNode(cs clientset.Interface) {
 
 		if updateStatus {
 			By("Deleting NFD extended resources from node " + nodeName)
-			if _, err := cs.CoreV1().Nodes().UpdateStatus(context.TODO(), node, metav1.UpdateOptions{}); err != nil {
+			if _, err := cs.CoreV1().Nodes().UpdateStatus(ctx, node, metav1.UpdateOptions{}); err != nil {
 				return err
 			}
 		}
 
 		if update {
 			By("Deleting NFD labels, annotations and taints from node " + node.Name)
-			if _, err := cs.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{}); err != nil {
+			if _, err := cs.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{}); err != nil {
 				return err
 			}
 		}
@@ -129,7 +129,7 @@ func cleanupNode(cs clientset.Interface) {
 	}
 
 	// Cleanup all nodes
-	nodeList, err := cs.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodeList, err := cs.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, n := range nodeList.Items {
@@ -144,23 +144,23 @@ func cleanupNode(cs clientset.Interface) {
 	}
 }
 
-func cleanupCRs(cli *nfdclient.Clientset, namespace string) {
+func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string) {
 	// Drop NodeFeatureRule objects
-	nfrs, err := cli.NfdV1alpha1().NodeFeatureRules().List(context.TODO(), metav1.ListOptions{})
+	nfrs, err := cli.NfdV1alpha1().NodeFeatureRules().List(ctx, metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Deleting NodeFeatureRule objects from the cluster")
 	for _, nfr := range nfrs.Items {
-		err = cli.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), nfr.Name, metav1.DeleteOptions{})
+		err = cli.NfdV1alpha1().NodeFeatureRules().Delete(ctx, nfr.Name, metav1.DeleteOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	}
 
-	nfs, err := cli.NfdV1alpha1().NodeFeatures(namespace).List(context.TODO(), metav1.ListOptions{})
+	nfs, err := cli.NfdV1alpha1().NodeFeatures(namespace).List(ctx, metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Deleting NodeFeature objects from namespace " + namespace)
 	for _, nf := range nfs.Items {
-		err = cli.NfdV1alpha1().NodeFeatures(namespace).Delete(context.TODO(), nf.Name, metav1.DeleteOptions{})
+		err = cli.NfdV1alpha1().NodeFeatures(namespace).Delete(ctx, nf.Name, metav1.DeleteOptions{})
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -185,8 +185,8 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				extraMasterPodSpecOpts []testpod.SpecOption
 			)
 
-			checkNodeFeatureObject := func(name string) {
-				_, err := nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Get(context.TODO(), name, metav1.GetOptions{})
+			checkNodeFeatureObject := func(ctx context.Context, name string) {
+				_, err := nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Get(ctx, name, metav1.GetOptions{})
 				if useNodeFeatureApi {
 					By(fmt.Sprintf("Check that NodeFeature object for the node %q was created", name))
 					Expect(err).NotTo(HaveOccurred())
@@ -196,39 +196,39 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				}
 			}
 
-			BeforeAll(func() {
+			BeforeAll(func(ctx context.Context) {
 				// Create clients for apiextensions and our CRD api
 				extClient = extclient.NewForConfigOrDie(f.ClientConfig())
 				nfdClient = nfdclient.NewForConfigOrDie(f.ClientConfig())
 
 				By("Creating NFD CRDs")
 				var err error
-				crds, err = testutils.CreateNfdCRDs(extClient)
+				crds, err = testutils.CreateNfdCRDs(ctx, extClient)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			AfterAll(func() {
+			AfterAll(func(ctx context.Context) {
 				for _, crd := range crds {
-					err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.TODO(), crd.Name, metav1.DeleteOptions{})
+					err := extClient.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, crd.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				}
 			})
 
-			JustBeforeEach(func() {
+			JustBeforeEach(func(ctx context.Context) {
 				// Drop the pod security admission label as nfd-worker needs host mounts
 				if _, ok := f.Namespace.Labels[admissionapi.EnforceLevelLabel]; ok {
 					e2elog.Logf("Deleting %s label from the test namespace", admissionapi.EnforceLevelLabel)
 					delete(f.Namespace.Labels, admissionapi.EnforceLevelLabel)
-					_, err := f.ClientSet.CoreV1().Namespaces().Update(context.TODO(), f.Namespace, metav1.UpdateOptions{})
+					_, err := f.ClientSet.CoreV1().Namespaces().Update(ctx, f.Namespace, metav1.UpdateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				err := testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)
+				err := testutils.ConfigureRBAC(ctx, f.ClientSet, f.Namespace.Name)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Remove pre-existing stale annotations and labels etc and CRDs
-				cleanupCRs(nfdClient, f.Namespace.Name)
-				cleanupNode(f.ClientSet)
+				cleanupCRs(ctx, nfdClient, f.Namespace.Name)
+				cleanupNode(ctx, f.ClientSet)
 
 				// Launch nfd-master
 				By("Creating nfd master pod and nfd-master service")
@@ -240,7 +240,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				masterPod := e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(podSpecOpts...))
 
 				// Create nfd-master service
-				nfdSvc, err := testutils.CreateService(f.ClientSet, f.Namespace.Name)
+				nfdSvc, err := testutils.CreateService(ctx, f.ClientSet, f.Namespace.Name)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for the nfd-master pod to be running")
@@ -248,10 +248,10 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				By("Verifying the node where nfd-master is running")
 				// Get updated masterPod object (we want to know where it was scheduled)
-				masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), masterPod.Name, metav1.GetOptions{})
+				masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(ctx, masterPod.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				// Node running nfd-master should have master version annotation
-				masterPodNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), masterPod.Spec.NodeName, metav1.GetOptions{})
+				masterPodNode, err := f.ClientSet.CoreV1().Nodes().Get(ctx, masterPod.Spec.NodeName, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(masterPodNode.Annotations).To(HaveKey(nfdv1alpha1.AnnotationNs + "/master.version"))
 
@@ -259,11 +259,11 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 			})
 
-			AfterEach(func() {
-				Expect(testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
+			AfterEach(func(ctx context.Context) {
+				Expect(testutils.DeconfigureRBAC(ctx, f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
-				cleanupNode(f.ClientSet)
-				cleanupCRs(nfdClient, f.Namespace.Name)
+				cleanupNode(ctx, f.ClientSet)
+				cleanupCRs(ctx, nfdClient, f.Namespace.Name)
 				extraMasterPodSpecOpts = nil
 			})
 
@@ -271,7 +271,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Simple test with only the fake source enabled
 			//
 			Context("and a single worker pod with fake source enabled", func() {
-				It("it should decorate the node with the fake feature labels", func() {
+				It("it should decorate the node with the fake feature labels", func(ctx context.Context) {
 					fakeFeatureLabels := map[string]string{
 						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature1": "true",
 						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature2": "true",
@@ -286,16 +286,16 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithContainerExtraArgs("-oneshot", "-label-sources=fake"),
 					)
 					workerPod := testpod.NFDWorker(podSpecOpts...)
-					workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.TODO(), workerPod, metav1.CreateOptions{})
+					workerPod, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(ctx, workerPod, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for the nfd-worker pod to succeed")
 					Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.Name, f.Namespace.Name)).NotTo(HaveOccurred())
-					workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(context.TODO(), workerPod.Name, metav1.GetOptions{})
+					workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(ctx, workerPod.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By(fmt.Sprintf("Making sure '%s' was decorated with the fake feature labels", workerPod.Spec.NodeName))
-					node, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), workerPod.Spec.NodeName, metav1.GetOptions{})
+					node, err := f.ClientSet.CoreV1().Nodes().Get(ctx, workerPod.Spec.NodeName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					for k, v := range fakeFeatureLabels {
 						Expect(node.Labels[k]).To(Equal(v))
@@ -308,10 +308,10 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						}
 					}
 
-					checkNodeFeatureObject(node.Name)
+					checkNodeFeatureObject(ctx, node.Name)
 
 					By("Deleting the node-feature-discovery worker pod")
-					err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.TODO(), workerPod.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(ctx, workerPod.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -320,7 +320,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// More comprehensive test when --e2e-node-config is enabled
 			//
 			Context("and nfd-workers as a daemonset with default sources enabled", func() {
-				It("the node labels and annotations listed in the e2e config should be present", func() {
+				It("the node labels and annotations listed in the e2e config should be present", func(ctx context.Context) {
 					cfg, err := testutils.GetConfig()
 					Expect(err).ToNot(HaveOccurred())
 
@@ -337,14 +337,14 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithContainerImage(dockerImage()),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
-					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for worker daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					By("Getting node objects")
-					nodeList, err := f.ClientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+					nodeList, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(len(nodeList.Items)).ToNot(BeZero())
 
@@ -398,12 +398,12 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						}
 
 						// Check existence of NodeFeature object
-						checkNodeFeatureObject(node.Name)
+						checkNodeFeatureObject(ctx, node.Name)
 
 					}
 
 					By("Deleting nfd-worker daemonset")
-					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -412,11 +412,11 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Test custom nodename source configured in 2 additional ConfigMaps
 			//
 			Context("and nfd-workers as a daemonset with 2 additional configmaps for the custom source configured", func() {
-				It("the nodename matching features listed in the configmaps should be present", func() {
+				It("the nodename matching features listed in the configmaps should be present", func(ctx context.Context) {
 					By("Getting a worker node")
 
 					// We need a valid nodename for the configmap
-					nodes, err := getNonControlPlaneNodes(f.ClientSet)
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					targetNodeName := nodes[0].Name
@@ -443,7 +443,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
     - ` + targetNodeName
 
 					cm1 := testutils.NewConfigMap("custom-config-extra-1", "custom.conf", data1)
-					cm1, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm1, metav1.CreateOptions{})
+					cm1, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm1, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					data2 := `
@@ -458,7 +458,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
     - "thisNameShouldNeverMatch"`
 
 					cm2 := testutils.NewConfigMap("custom-config-extra-2", "custom.conf", data2)
-					cm2, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm2, metav1.CreateOptions{})
+					cm2, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm2, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Creating nfd-worker daemonset with configmap mounted")
@@ -469,14 +469,14 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
 
-					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for worker daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					By("Getting target node and checking labels")
-					targetNode, err := f.ClientSet.CoreV1().Nodes().Get(context.TODO(), targetNodeName, metav1.GetOptions{})
+					targetNode, err := f.ClientSet.CoreV1().Nodes().Get(ctx, targetNodeName, metav1.GetOptions{})
 					Expect(err).ToNot(HaveOccurred())
 
 					labelFound := false
@@ -503,7 +503,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					Expect(labelNegativeFound).To(BeFalse(), "label for not existing nodename found!")
 
 					By("Deleting nfd-worker daemonset")
-					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -512,7 +512,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Test NodeFeature
 			//
 			Context("and NodeFeature objects deployed", func() {
-				BeforeEach(func() {
+				BeforeEach(func(ctx context.Context) {
 					extraMasterPodSpecOpts = []testpod.SpecOption{
 						testpod.SpecWithContainerExtraArgs(
 							"-deny-label-ns=*.denied.ns,random.unwanted.ns,*.vendor.io",
@@ -520,20 +520,20 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						),
 					}
 				})
-				It("labels from the NodeFeature objects should be created", func() {
+				It("labels from the NodeFeature objects should be created", func(ctx context.Context) {
 					if !useNodeFeatureApi {
 						Skip("NodeFeature API not enabled")
 					}
 
 					// We pick one node targeted for our NodeFeature objects
-					nodes, err := getNonControlPlaneNodes(f.ClientSet)
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					targetNodeName := nodes[0].Name
 					Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
 
 					By("Creating NodeFeature object")
-					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object #1")
@@ -544,15 +544,15 @@ var _ = SIGDescribe("NFD master and worker", func() {
 							nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3":      "overridden",
 						},
 					}
-					Expect(checkForNodeLabels(f.ClientSet,
+					Expect(checkForNodeLabels(ctx, f.ClientSet,
 						expectedLabels, nodes,
 					)).NotTo(HaveOccurred())
 					By("Deleting NodeFeature object")
-					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(context.TODO(), nodeFeatures[0], metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object were removed")
-					Expect(checkForNodeLabels(f.ClientSet,
+					Expect(checkForNodeLabels(ctx, f.ClientSet,
 						nil, nodes,
 					)).NotTo(HaveOccurred())
 
@@ -562,11 +562,11 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithContainerExtraArgs("-label-sources=fake"),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
-					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for worker daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					By("Verifying node labels from nfd-worker")
 					expectedLabels = map[string]k8sLabels{
@@ -576,12 +576,12 @@ var _ = SIGDescribe("NFD master and worker", func() {
 							nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3": "true",
 						},
 					}
-					Expect(checkForNodeLabels(f.ClientSet,
+					Expect(checkForNodeLabels(ctx, f.ClientSet,
 						expectedLabels, nodes,
 					)).NotTo(HaveOccurred())
 
 					By("Re-creating NodeFeature object")
-					_, err = testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+					_, err = testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object #1 are created")
@@ -592,7 +592,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature2":      "true",
 						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3":      "overridden",
 					}
-					Expect(checkForNodeLabels(f.ClientSet,
+					Expect(checkForNodeLabels(ctx, f.ClientSet,
 						expectedLabels, nodes,
 					)).NotTo(HaveOccurred())
 
@@ -601,34 +601,34 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Create NodeFeature object in the extra namespace")
-					nodeFeatures, err = testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-2.yaml", extraNs.Name, targetNodeName)
+					nodeFeatures, err = testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-2.yaml", extraNs.Name, targetNodeName)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object #2 are created")
 					expectedLabels[targetNodeName][nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-1"] = "overridden-from-obj-2"
 					expectedLabels[targetNodeName][nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-3"] = "obj-2"
-					Expect(checkForNodeLabels(f.ClientSet, expectedLabels, nodes)).NotTo(HaveOccurred())
+					Expect(checkForNodeLabels(ctx, f.ClientSet, expectedLabels, nodes)).NotTo(HaveOccurred())
 
 					By("Deleting NodeFeature object from the extra namespace")
-					err = nfdClient.NfdV1alpha1().NodeFeatures(extraNs.Name).Delete(context.TODO(), nodeFeatures[0], metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatures(extraNs.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object were removed")
 					expectedLabels[targetNodeName][nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-1"] = "obj-1"
 					delete(expectedLabels[targetNodeName], nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-3")
-					Expect(checkForNodeLabels(f.ClientSet, expectedLabels, nodes)).NotTo(HaveOccurred())
-					Expect(checkForNodeLabels(f.ClientSet,
+					Expect(checkForNodeLabels(ctx, f.ClientSet, expectedLabels, nodes)).NotTo(HaveOccurred())
+					Expect(checkForNodeLabels(ctx, f.ClientSet,
 						expectedLabels,
 						nodes,
 					)).NotTo(HaveOccurred())
 				})
 
-				It("denied labels should not be created by the NodeFeature object", func() {
+				It("denied labels should not be created by the NodeFeature object", func(ctx context.Context) {
 					if !useNodeFeatureApi {
 						Skip("NodeFeature API not enabled")
 					}
 
-					nodes, err := getNonControlPlaneNodes(f.ClientSet)
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					targetNodeName := nodes[0].Name
@@ -636,7 +636,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 					// Apply Node Feature object
 					By("Create NodeFeature object")
-					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-3.yaml", f.Namespace.Name, targetNodeName)
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-3.yaml", f.Namespace.Name, targetNodeName)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Verify that denied label was not added
@@ -647,17 +647,17 @@ var _ = SIGDescribe("NFD master and worker", func() {
 							"custom.vendor.io/e2e-nodefeature-test-3":              "vendor-ns",
 						},
 					}
-					Expect(checkForNodeLabels(
+					Expect(checkForNodeLabels(ctx,
 						f.ClientSet,
 						expectedLabels,
 						nodes,
 					)).NotTo(HaveOccurred())
 
 					By("Deleting NodeFeature object")
-					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(context.TODO(), nodeFeatures[0], metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(checkForNodeLabels(
+					Expect(checkForNodeLabels(ctx,
 						f.ClientSet,
 						nil,
 						nodes,
@@ -690,14 +690,14 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						Effect: "NoExecute",
 					},
 				}
-				BeforeEach(func() {
+				BeforeEach(func(ctx context.Context) {
 					extraMasterPodSpecOpts = []testpod.SpecOption{
 						testpod.SpecWithContainerExtraArgs("-enable-taints"),
 						testpod.SpecWithTolerations(testTolerations),
 					}
 				})
-				It("custom labels from the NodeFeatureRule rules should be created", func() {
-					nodes, err := getNonControlPlaneNodes(f.ClientSet)
+				It("custom labels from the NodeFeatureRule rules should be created", func(ctx context.Context) {
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					targetNodeName := nodes[0].Name
@@ -710,7 +710,7 @@ core:
   featureSources: ["fake"]
   labelSources: []
 `)
-					cm, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm, metav1.CreateOptions{})
+					cm, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					By("Creating nfd-worker daemonset")
 					podSpecOpts := createPodSpecOpts(
@@ -719,11 +719,11 @@ core:
 						testpod.SpecWithTolerations(testTolerations),
 					)
 					workerDS := testds.NFDWorker(podSpecOpts...)
-					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), workerDS, metav1.CreateOptions{})
+					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for worker daemonset pods to be ready")
-					Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					expected := map[string]k8sLabels{
 						"*": {
@@ -734,17 +734,17 @@ core:
 					}
 
 					By("Creating NodeFeatureRules #1")
-					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-1.yaml")).NotTo(HaveOccurred())
+					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-1.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeatureRules #1")
-					Expect(checkForNodeLabels(
+					Expect(checkForNodeLabels(ctx,
 						f.ClientSet,
 						expected,
 						nodes,
 					)).NotTo(HaveOccurred())
 
 					By("Creating NodeFeatureRules #2")
-					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-2.yaml")).NotTo(HaveOccurred())
+					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-2.yaml")).NotTo(HaveOccurred())
 
 					// Add features from NodeFeatureRule #2
 					expected["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-matchany-test-1"] = "true"
@@ -752,7 +752,7 @@ core:
 					expected["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_2"] = "found"
 
 					By("Verifying node labels from NodeFeatureRules #1 and #2")
-					Expect(checkForNodeLabels(
+					Expect(checkForNodeLabels(ctx,
 						f.ClientSet,
 						expected,
 						nodes,
@@ -760,7 +760,7 @@ core:
 
 					// Add features from NodeFeatureRule #3
 					By("Creating NodeFeatureRules #3")
-					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-3.yaml")).NotTo(HaveOccurred())
+					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node taints and annotation from NodeFeatureRules #3")
 					expectedTaints := []corev1.Taint{
@@ -782,11 +782,11 @@ core:
 					}
 					expectedAnnotation := map[string]string{
 						"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"}
-					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaints, nodes)).NotTo(HaveOccurred())
-					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedAnnotation)).NotTo(HaveOccurred())
+					Expect(waitForNfdNodeTaints(ctx, f.ClientSet, expectedTaints, nodes)).NotTo(HaveOccurred())
+					Expect(waitForNfdNodeAnnotations(ctx, f.ClientSet, expectedAnnotation)).NotTo(HaveOccurred())
 
 					By("Re-applying NodeFeatureRules #3 with updated taints")
-					Expect(testutils.UpdateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-3-updated.yaml")).NotTo(HaveOccurred())
+					Expect(testutils.UpdateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3-updated.yaml")).NotTo(HaveOccurred())
 					expectedTaintsUpdated := []corev1.Taint{
 						{
 							Key:    "feature.node.kubernetes.io/fake-special-node",
@@ -803,11 +803,11 @@ core:
 						"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/foo=true:NoExecute"}
 
 					By("Verifying updated node taints and annotation from NodeFeatureRules #3")
-					Expect(waitForNfdNodeTaints(f.ClientSet, expectedTaintsUpdated, nodes)).NotTo(HaveOccurred())
-					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedAnnotationUpdated)).NotTo(HaveOccurred())
+					Expect(waitForNfdNodeTaints(ctx, f.ClientSet, expectedTaintsUpdated, nodes)).NotTo(HaveOccurred())
+					Expect(waitForNfdNodeAnnotations(ctx, f.ClientSet, expectedAnnotationUpdated)).NotTo(HaveOccurred())
 
 					By("Deleting NodeFeatureRule object")
-					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), "e2e-test-3", metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-test-3", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					expectedERAnnotation := map[string]string{
@@ -820,45 +820,45 @@ core:
 					}
 
 					By("Creating NodeFeatureRules #4")
-					Expect(testutils.CreateNodeFeatureRulesFromFile(nfdClient, "nodefeaturerule-4.yaml")).NotTo(HaveOccurred())
+					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-4.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node annotations from NodeFeatureRules #4")
-					Expect(waitForNfdNodeAnnotations(f.ClientSet, expectedERAnnotation)).NotTo(HaveOccurred())
+					Expect(waitForNfdNodeAnnotations(ctx, f.ClientSet, expectedERAnnotation)).NotTo(HaveOccurred())
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
-					Expect(waitForCapacity(f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
+					Expect(waitForCapacity(ctx, f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
 
 					By("Deleting NodeFeatureRule object")
-					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(context.TODO(), "e2e-extened-resource-test", metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-extened-resource-test", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
-					Expect(waitForCapacity(f.ClientSet, nil, nodes)).NotTo(HaveOccurred())
+					Expect(waitForCapacity(ctx, f.ClientSet, nil, nodes)).NotTo(HaveOccurred())
 
 					By("Deleting nfd-worker daemonset")
-					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(context.TODO(), workerDS.Name, metav1.DeleteOptions{})
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 
 			Context("and check whether master config passed successfully or not", func() {
-				BeforeEach(func() {
+				BeforeEach(func(ctx context.Context) {
 					extraMasterPodSpecOpts = []testpod.SpecOption{
 						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
 					}
 					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
 denyLabelNs: ["*.denied.ns","random.unwanted.ns"]
 `)
-					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm, metav1.CreateOptions{})
+					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
-				It("master configuration should take place", func() {
+				It("master configuration should take place", func(ctx context.Context) {
 					// deploy node feature object
 					if !useNodeFeatureApi {
 						Skip("NodeFeature API not enabled")
 					}
 
-					nodes, err := getNonControlPlaneNodes(f.ClientSet)
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					targetNodeName := nodes[0].Name
@@ -866,7 +866,7 @@ denyLabelNs: ["*.denied.ns","random.unwanted.ns"]
 
 					// Apply Node Feature object
 					By("Create NodeFeature object")
-					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(nfdClient, "nodefeature-3.yaml", f.Namespace.Name, targetNodeName)
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-3.yaml", f.Namespace.Name, targetNodeName)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Verify that denied label was not added
@@ -877,20 +877,20 @@ denyLabelNs: ["*.denied.ns","random.unwanted.ns"]
 							"custom.vendor.io/e2e-nodefeature-test-3":              "vendor-ns",
 						},
 					}
-					Expect(checkForNodeLabels(
+					Expect(checkForNodeLabels(ctx,
 						f.ClientSet,
 						expectedLabels,
 						nodes,
 					)).NotTo(HaveOccurred())
 					By("Deleting NodeFeature object")
-					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(context.TODO(), nodeFeatures[0], metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					// TODO: Find a better way to handle the timeout that happens to reflect the configmap changes
 					Skip("Testing the master dynamic configuration")
 					// Verify that config changes were applied
 					By("Updating the master config")
-					Expect(testutils.UpdateConfigMap(f.ClientSet, "nfd-master-conf", f.Namespace.Name, "nfd-master.conf", `
+					Expect(testutils.UpdateConfigMap(ctx, f.ClientSet, "nfd-master-conf", f.Namespace.Name, "nfd-master.conf", `
 denyLabelNs: []
 `))
 					By("Verifying that denied labels were removed")
@@ -902,7 +902,7 @@ denyLabelNs: []
 							"random.unwanted.ns/e2e-nodefeature-test-2":            "unwanted-ns",
 						},
 					}
-					Expect(checkForNodeLabels(
+					Expect(checkForNodeLabels(ctx,
 						f.ClientSet,
 						expectedLabels,
 						nodes,
@@ -936,9 +936,9 @@ func simplePoll(poll func() error, wait time.Duration) error {
 }
 
 // waitForCapacity waits for the capacity to be updated in the node status
-func waitForCapacity(cli clientset.Interface, expectedNewERs corev1.ResourceList, oldNodes []corev1.Node) error {
+func waitForCapacity(ctx context.Context, cli clientset.Interface, expectedNewERs corev1.ResourceList, oldNodes []corev1.Node) error {
 	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(cli)
+		nodes, err := getNonControlPlaneNodes(ctx, cli)
 		if err != nil {
 			return err
 		}
@@ -960,9 +960,9 @@ func waitForCapacity(cli clientset.Interface, expectedNewERs corev1.ResourceList
 }
 
 // waitForNfdNodeAnnotations waits for node to be annotated as expected.
-func waitForNfdNodeAnnotations(cli clientset.Interface, expected map[string]string) error {
+func waitForNfdNodeAnnotations(ctx context.Context, cli clientset.Interface, expected map[string]string) error {
 	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(cli)
+		nodes, err := getNonControlPlaneNodes(ctx, cli)
 		if err != nil {
 			return err
 		}
@@ -982,10 +982,10 @@ func waitForNfdNodeAnnotations(cli clientset.Interface, expected map[string]stri
 type k8sLabels map[string]string
 
 // checkForNfdNodeLabels waits and checks that node is labeled as expected.
-func checkForNodeLabels(cli clientset.Interface, expectedNewLabels map[string]k8sLabels, oldNodes []corev1.Node) error {
+func checkForNodeLabels(ctx context.Context, cli clientset.Interface, expectedNewLabels map[string]k8sLabels, oldNodes []corev1.Node) error {
 
 	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(cli)
+		nodes, err := getNonControlPlaneNodes(ctx, cli)
 		if err != nil {
 			return err
 		}
@@ -1013,9 +1013,9 @@ func checkForNodeLabels(cli clientset.Interface, expectedNewLabels map[string]k8
 }
 
 // waitForNfdNodeTaints waits for node to be tainted as expected.
-func waitForNfdNodeTaints(cli clientset.Interface, expectedNewTaints []corev1.Taint, oldNodes []corev1.Node) error {
+func waitForNfdNodeTaints(ctx context.Context, cli clientset.Interface, expectedNewTaints []corev1.Taint, oldNodes []corev1.Node) error {
 	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(cli)
+		nodes, err := getNonControlPlaneNodes(ctx, cli)
 		if err != nil {
 			return err
 		}
@@ -1035,8 +1035,8 @@ func waitForNfdNodeTaints(cli clientset.Interface, expectedNewTaints []corev1.Ta
 }
 
 // getNonControlPlaneNodes gets the nodes that are not tainted for exclusive control-plane usage
-func getNonControlPlaneNodes(cli clientset.Interface) ([]corev1.Node, error) {
-	nodeList, err := cli.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+func getNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) ([]corev1.Node, error) {
+	nodeList, err := cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

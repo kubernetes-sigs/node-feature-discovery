@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -58,7 +57,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 
 	f := framework.NewDefaultFramework("node-topology-updater")
 	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
-	JustBeforeEach(func() {
+	JustBeforeEach(func(ctx context.Context) {
 		var err error
 
 		if extClient == nil {
@@ -72,43 +71,43 @@ var _ = SIGDescribe("NFD topology updater", func() {
 		}
 
 		By("Creating the node resource topologies CRD")
-		Expect(testutils.CreateNodeResourceTopologies(extClient)).ToNot(BeNil())
+		Expect(testutils.CreateNodeResourceTopologies(ctx, extClient)).ToNot(BeNil())
 
 		By("Configuring RBAC")
-		Expect(testutils.ConfigureRBAC(f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
+		Expect(testutils.ConfigureRBAC(ctx, f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
 
 		By("Creating nfd-topology-updater daemonset")
-		topologyUpdaterDaemonSet, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(context.TODO(), topologyUpdaterDaemonSet, metav1.CreateOptions{})
+		topologyUpdaterDaemonSet, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, topologyUpdaterDaemonSet, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Waiting for daemonset pods to be ready")
-		Expect(testpod.WaitForReady(f.ClientSet, f.Namespace.Name, topologyUpdaterDaemonSet.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
+		Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, topologyUpdaterDaemonSet.Spec.Template.Labels["name"], 5)).NotTo(HaveOccurred())
 
 		label := labels.SelectorFromSet(map[string]string{"name": topologyUpdaterDaemonSet.Spec.Template.Labels["name"]})
-		pods, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: label.String()})
+		pods, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).List(ctx, metav1.ListOptions{LabelSelector: label.String()})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(pods.Items).ToNot(BeEmpty())
 
-		topologyUpdaterNode, err = f.ClientSet.CoreV1().Nodes().Get(context.TODO(), pods.Items[0].Spec.NodeName, metav1.GetOptions{})
+		topologyUpdaterNode, err = f.ClientSet.CoreV1().Nodes().Get(ctx, pods.Items[0].Spec.NodeName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		kubeletConfig, err = kubelet.GetCurrentKubeletConfig(topologyUpdaterNode.Name, "", true)
 		Expect(err).NotTo(HaveOccurred())
 
-		workerNodes, err = testutils.GetWorkerNodes(f)
+		workerNodes, err = testutils.GetWorkerNodes(ctx, f)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	ginkgo.AfterEach(func() {
+	AfterEach(func(ctx context.Context) {
 		framework.Logf("Node Feature Discovery topology updater CRD and RBAC removal")
-		err := testutils.DeconfigureRBAC(f.ClientSet, f.Namespace.Name)
+		err := testutils.DeconfigureRBAC(ctx, f.ClientSet, f.Namespace.Name)
 		if err != nil {
 			framework.Failf("AfterEach: Failed to delete RBAC resources: %v", err)
 		}
 	})
 
 	Context("with topology-updater daemonset running", func() {
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func(ctx context.Context) {
 			cfg, err := testutils.GetConfig()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -118,15 +117,15 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
-		It("should fill the node resource topologies CR with the data", func() {
-			nodeTopology := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+		It("should fill the node resource topologies CR with the data", func(ctx context.Context) {
+			nodeTopology := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 			isValid := testutils.IsValidNodeTopology(nodeTopology, kubeletConfig)
 			Expect(isValid).To(BeTrue(), "received invalid topology: %v", nodeTopology)
 		})
 
-		It("it should not account for any cpus if a container doesn't request exclusive cpus (best effort QOS)", func() {
+		It("it should not account for any cpus if a container doesn't request exclusive cpus (best effort QOS)", func(ctx context.Context) {
 			By("getting the initial topology information")
-			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+			initialNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (best-effort QoS)")
 			sleeperPod := testpod.BestEffortSleeper()
 
@@ -140,7 +139,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			// the object, hance the resource version must NOT change, so we can only sleep
 			time.Sleep(cooldown)
 			By("checking the changes in the updated topology - expecting none")
-			finalNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+			finalNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 
 			initialAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(initialNodeTopo)
 			finalAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(finalNodeTopo)
@@ -164,9 +163,9 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			Expect(isGreaterEqual).To(BeTrue(), fmt.Sprintf("final allocatable resources not restored - cmp=%d initial=%v final=%v", cmp, initialAllocRes, finalAllocRes))
 		})
 
-		It("it should not account for any cpus if a container doesn't request exclusive cpus (guaranteed QOS, nonintegral cpu request)", func() {
+		It("it should not account for any cpus if a container doesn't request exclusive cpus (guaranteed QOS, nonintegral cpu request)", func(ctx context.Context) {
 			By("getting the initial topology information")
-			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+			initialNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming resources from the shared, non-exclusive CPU pool (guaranteed QoS, nonintegral request)")
 			sleeperPod := testpod.GuaranteedSleeper(testpod.WithLimits(
 				corev1.ResourceList{
@@ -185,7 +184,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			// the object, hence the resource version must NOT change, so we can only sleep
 			time.Sleep(cooldown)
 			By("checking the changes in the updated topology - expecting none")
-			finalNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+			finalNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 
 			initialAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(initialNodeTopo)
 			finalAllocRes := testutils.AllocatableResourceListFromNodeResourceTopology(finalNodeTopo)
@@ -209,7 +208,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			Expect(isGreaterEqual).To(BeTrue(), fmt.Sprintf("final allocatable resources not restored - cmp=%d initial=%v final=%v", cmp, initialAllocRes, finalAllocRes))
 		})
 
-		It("it should account for containers requesting exclusive cpus", func() {
+		It("it should account for containers requesting exclusive cpus", func(ctx context.Context) {
 			nodes, err := testutils.FilterNodesWithEnoughCores(workerNodes, "1000m")
 			Expect(err).NotTo(HaveOccurred())
 			if len(nodes) < 1 {
@@ -217,7 +216,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			}
 
 			By("getting the initial topology information")
-			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+			initialNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 			By("creating a pod consuming exclusive CPUs")
 			sleeperPod := testpod.GuaranteedSleeper(testpod.WithLimits(
 				corev1.ResourceList{
@@ -238,7 +237,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			By("checking the changes in the updated topology")
 			var finalNodeTopo *v1alpha2.NodeResourceTopology
 			Eventually(func() bool {
-				finalNodeTopo, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), topologyUpdaterNode.Name, metav1.GetOptions{})
+				finalNodeTopo, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(ctx, topologyUpdaterNode.Name, metav1.GetOptions{})
 				if err != nil {
 					framework.Logf("failed to get the node topology resource: %v", err)
 					return false
@@ -264,7 +263,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 	})
 
 	When("sleep interval disabled", func() {
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func(ctx context.Context) {
 			cfg, err := testutils.GetConfig()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -273,7 +272,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(dockerImage()), testpod.SpecWithContainerExtraArgs("-sleep-interval=0s")}
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
-		It("should still create CRs using a reactive updates", func() {
+		It("should still create CRs using a reactive updates", func(ctx context.Context) {
 			nodes, err := testutils.FilterNodesWithEnoughCores(workerNodes, "1000m")
 			Expect(err).NotTo(HaveOccurred())
 			if len(nodes) < 1 {
@@ -298,7 +297,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			defer testpod.DeleteAsync(f, podMap)
 
 			By("checking initial CR created")
-			initialNodeTopo := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+			initialNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 
 			By("creating additional pod consuming exclusive CPUs")
 			sleeperPod2 := testpod.GuaranteedSleeper(testpod.WithLimits(
@@ -319,7 +318,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			By("checking the changes in the updated topology")
 			var finalNodeTopo *v1alpha2.NodeResourceTopology
 			Eventually(func() bool {
-				finalNodeTopo, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), topologyUpdaterNode.Name, metav1.GetOptions{})
+				finalNodeTopo, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(ctx, topologyUpdaterNode.Name, metav1.GetOptions{})
 				if err != nil {
 					framework.Logf("failed to get the node topology resource: %v", err)
 					return false
@@ -348,12 +347,12 @@ var _ = SIGDescribe("NFD topology updater", func() {
 	})
 
 	When("topology-updater configure to exclude memory", func() {
-		BeforeEach(func() {
+		BeforeEach(func(ctx context.Context) {
 			cm := testutils.NewConfigMap("nfd-topology-updater-conf", "nfd-topology-updater.conf", `
 excludeList:
   '*': [memory]
 `)
-			cm, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(context.TODO(), cm, metav1.CreateOptions{})
+			cm, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
 			cfg, err := testutils.GetConfig()
@@ -369,10 +368,10 @@ excludeList:
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
 
-		It("noderesourcetopology should not advertise the memory resource", func() {
+		It("noderesourcetopology should not advertise the memory resource", func(ctx context.Context) {
 			Eventually(func() bool {
 				memoryFound := false
-				nodeTopology := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+				nodeTopology := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 				for _, zone := range nodeTopology.Zones {
 					for _, res := range zone.Resources {
 						if res.Name == string(corev1.ResourceMemory) {
@@ -387,7 +386,7 @@ excludeList:
 		})
 	})
 	When("topology-updater configure to compute pod fingerprint", func() {
-		BeforeEach(func() {
+		BeforeEach(func(ctx context.Context) {
 			cfg, err := testutils.GetConfig()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -400,10 +399,10 @@ excludeList:
 			}
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
-		It("noderesourcetopology should advertise pod fingerprint in top-level attribute", func() {
+		It("noderesourcetopology should advertise pod fingerprint in top-level attribute", func(ctx context.Context) {
 			Eventually(func() bool {
 				// get node topology
-				nodeTopology := testutils.GetNodeTopology(topologyClient, topologyUpdaterNode.Name)
+				nodeTopology := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
 
 				// look for attribute
 				podFingerprintAttribute, err := findAttribute(nodeTopology.Attributes, podfingerprint.Attribute)
@@ -412,7 +411,7 @@ excludeList:
 					return false
 				}
 				// get pods in node
-				pods, err := f.ClientSet.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{FieldSelector: "spec.nodeName=" + topologyUpdaterNode.Name})
+				pods, err := f.ClientSet.CoreV1().Pods("").List(ctx, metav1.ListOptions{FieldSelector: "spec.nodeName=" + topologyUpdaterNode.Name})
 				if err != nil {
 					framework.Logf("podFingerprint error while recovering %q node pods: %v", topologyUpdaterNode.Name, err)
 					return false
