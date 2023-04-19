@@ -384,6 +384,11 @@ func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
 
 // Prune erases all NFD related properties from the node objects of the cluster.
 func (m *nfdMaster) prune() error {
+	if m.config.NoPublish {
+		klog.Info("skipping pruning of nodes as noPublish config option is set")
+		return nil
+	}
+
 	cli, err := m.apihelper.GetClient()
 	if err != nil {
 		return err
