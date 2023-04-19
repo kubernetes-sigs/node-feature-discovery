@@ -91,7 +91,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 		topologyUpdaterNode, err = f.ClientSet.CoreV1().Nodes().Get(ctx, pods.Items[0].Spec.NodeName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
-		kubeletConfig, err = kubelet.GetCurrentKubeletConfig(topologyUpdaterNode.Name, "", true)
+		kubeletConfig, err = kubelet.GetCurrentKubeletConfig(ctx, topologyUpdaterNode.Name, "", true, false)
 		Expect(err).NotTo(HaveOccurred())
 
 		workerNodes, err = testutils.GetWorkerNodes(ctx, f)
@@ -130,9 +130,9 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			sleeperPod := testpod.BestEffortSleeper()
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(ctx, sleeperPod)
 			podMap[pod.Name] = pod
-			defer testpod.DeleteAsync(f, podMap)
+			defer testpod.DeleteAsync(ctx, f, podMap)
 
 			cooldown := 30 * time.Second
 			By(fmt.Sprintf("getting the updated topology - sleeping for %v", cooldown))
@@ -175,9 +175,9 @@ var _ = SIGDescribe("NFD topology updater", func() {
 				}))
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(ctx, sleeperPod)
 			podMap[pod.Name] = pod
-			defer testpod.DeleteAsync(f, podMap)
+			defer testpod.DeleteAsync(ctx, f, podMap)
 
 			cooldown := 30 * time.Second
 			By(fmt.Sprintf("getting the updated topology - sleeping for %v", cooldown))
@@ -230,9 +230,9 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			sleeperPod.Spec.NodeName = topologyUpdaterNode.Name
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(ctx, sleeperPod)
 			podMap[pod.Name] = pod
-			defer testpod.DeleteAsync(f, podMap)
+			defer testpod.DeleteAsync(ctx, f, podMap)
 
 			By("checking the changes in the updated topology")
 			var finalNodeTopo *v1alpha2.NodeResourceTopology
@@ -292,9 +292,9 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			sleeperPod.Spec.NodeName = topologyUpdaterNode.Name
 
 			podMap := make(map[string]*corev1.Pod)
-			pod := e2epod.NewPodClient(f).CreateSync(sleeperPod)
+			pod := e2epod.NewPodClient(f).CreateSync(ctx, sleeperPod)
 			podMap[pod.Name] = pod
-			defer testpod.DeleteAsync(f, podMap)
+			defer testpod.DeleteAsync(ctx, f, podMap)
 
 			By("checking initial CR created")
 			initialNodeTopo := testutils.GetNodeTopology(ctx, topologyClient, topologyUpdaterNode.Name)
@@ -312,7 +312,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 			// which node we need to examine
 			sleeperPod2.Spec.NodeName = topologyUpdaterNode.Name
 			sleeperPod2.Name = sleeperPod2.Name + "2"
-			pod2 := e2epod.NewPodClient(f).CreateSync(sleeperPod2)
+			pod2 := e2epod.NewPodClient(f).CreateSync(ctx, sleeperPod2)
 			podMap[pod.Name] = pod2
 
 			By("checking the changes in the updated topology")

@@ -16,6 +16,8 @@ limitations under the License.
 
 package podres
 
+//go:generate mockery --srcpkg=k8s.io/kubelet/pkg/apis/podresources/v1 --name PodResourcesListerClient
+
 import (
 	"fmt"
 	"log"

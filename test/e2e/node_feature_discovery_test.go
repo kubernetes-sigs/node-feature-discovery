@@ -237,14 +237,14 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithContainerImage(dockerImage()),
 					)...)
 
-				masterPod := e2epod.NewPodClient(f).CreateSync(testpod.NFDMaster(podSpecOpts...))
+				masterPod := e2epod.NewPodClient(f).CreateSync(ctx, testpod.NFDMaster(podSpecOpts...))
 
 				// Create nfd-master service
 				nfdSvc, err := testutils.CreateService(ctx, f.ClientSet, f.Namespace.Name)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for the nfd-master pod to be running")
-				Expect(e2epod.WaitTimeoutForPodRunningInNamespace(f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(HaveOccurred())
+				Expect(e2epod.WaitTimeoutForPodRunningInNamespace(ctx, f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(HaveOccurred())
 
 				By("Verifying the node where nfd-master is running")
 				// Get updated masterPod object (we want to know where it was scheduled)
@@ -256,7 +256,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 				Expect(masterPodNode.Annotations).To(HaveKey(nfdv1alpha1.AnnotationNs + "/master.version"))
 
 				By("Waiting for the nfd-master service to be up")
-				Expect(e2enetwork.WaitForService(f.ClientSet, f.Namespace.Name, nfdSvc.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
+				Expect(e2enetwork.WaitForService(ctx, f.ClientSet, f.Namespace.Name, nfdSvc.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func(ctx context.Context) {
@@ -290,7 +290,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Waiting for the nfd-worker pod to succeed")
-					Expect(e2epod.WaitForPodSuccessInNamespace(f.ClientSet, workerPod.Name, f.Namespace.Name)).NotTo(HaveOccurred())
+					Expect(e2epod.WaitForPodSuccessInNamespace(ctx, f.ClientSet, workerPod.Name, f.Namespace.Name)).NotTo(HaveOccurred())
 					workerPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(ctx, workerPod.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -597,7 +597,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					)).NotTo(HaveOccurred())
 
 					By("Creating extra namespace")
-					extraNs, err := f.CreateNamespace("node-feature-discvery-extra-ns", nil)
+					extraNs, err := f.CreateNamespace(ctx, "node-feature-discvery-extra-ns", nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Create NodeFeature object in the extra namespace")

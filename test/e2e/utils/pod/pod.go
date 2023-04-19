@@ -93,7 +93,7 @@ func BestEffortSleeper() *corev1.Pod {
 }
 
 // DeleteAsync concurrently deletes all the pods in the given name:pod_object mapping. Returns when the longer operation ends.
-func DeleteAsync(f *framework.Framework, podMap map[string]*corev1.Pod) {
+func DeleteAsync(ctx context.Context, f *framework.Framework, podMap map[string]*corev1.Pod) {
 	var wg sync.WaitGroup
 	for _, pod := range podMap {
 		wg.Add(1)
@@ -101,19 +101,19 @@ func DeleteAsync(f *framework.Framework, podMap map[string]*corev1.Pod) {
 			defer ginkgo.GinkgoRecover()
 			defer wg.Done()
 
-			DeleteSyncByName(f, podName)
+			DeleteSyncByName(ctx, f, podName)
 		}(pod.Namespace, pod.Name)
 	}
 	wg.Wait()
 }
 
 // DeleteSyncByName deletes the pod identified by `podName` in the current namespace
-func DeleteSyncByName(f *framework.Framework, podName string) {
+func DeleteSyncByName(ctx context.Context, f *framework.Framework, podName string) {
 	gp := int64(0)
 	delOpts := metav1.DeleteOptions{
 		GracePeriodSeconds: &gp,
 	}
-	e2epod.NewPodClient(f).DeleteSync(podName, delOpts, e2epod.DefaultPodDeletionTimeout)
+	e2epod.NewPodClient(f).DeleteSync(ctx, podName, delOpts, e2epod.DefaultPodDeletionTimeout)
 }
 
 type SpecOption func(spec *corev1.PodSpec)
@@ -468,7 +468,7 @@ func WaitForReady(ctx context.Context, c clientset.Interface, ns, name string, m
 	const poll = 2 * time.Second
 	label := labels.SelectorFromSet(labels.Set(map[string]string{"name": name}))
 	options := metav1.ListOptions{LabelSelector: label.String()}
-	return wait.Poll(poll, 5*time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, poll, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		pods, err := c.CoreV1().Pods(ns).List(ctx, options)
 		if err != nil {
 			return false, nil

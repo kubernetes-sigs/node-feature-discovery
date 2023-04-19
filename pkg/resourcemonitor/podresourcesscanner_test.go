@@ -33,7 +33,7 @@ import (
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
-	"sigs.k8s.io/node-feature-discovery/pkg/podres"
+	mockv1 "sigs.k8s.io/node-feature-discovery/pkg/podres/mocks"
 )
 
 func TestPodScanner(t *testing.T) {
@@ -54,7 +54,7 @@ func TestPodScanner(t *testing.T) {
 	}
 
 	Convey("When I scan for pod resources using fake client and no namespace", t, func() {
-		mockPodResClient := new(podres.MockPodResourcesListerClient)
+		mockPodResClient := new(mockv1.PodResourcesListerClient)
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
 		mockClient := &k8sclient.Clientset{}
 		computePodFingerprint := true
@@ -676,7 +676,7 @@ func TestPodScanner(t *testing.T) {
 	})
 
 	Convey("When I scan for pod resources using fake client and given namespace", t, func() {
-		mockPodResClient := new(podres.MockPodResourcesListerClient)
+		mockPodResClient := new(mockv1.PodResourcesListerClient)
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
 		mockClient := &k8sclient.Clientset{}
 		computePodFingerprint := false
