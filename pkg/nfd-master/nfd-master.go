@@ -185,6 +185,11 @@ func (m *nfdMaster) Run() error {
 	klog.Infof("NodeName: %q", m.nodeName)
 	klog.Infof("Kubernetes namespace: %q", m.namespace)
 
+	// Read initial configuration
+	if err := m.configure(m.configFilePath, m.args.Options); err != nil {
+		return err
+	}
+
 	if m.args.Prune {
 		return m.prune()
 	}
@@ -201,12 +206,9 @@ func (m *nfdMaster) Run() error {
 		}
 	}
 
-	// Create watcher for config file and read initial configuration
+	// Create watcher for config file
 	configWatch, err := utils.CreateFsWatcher(time.Second, m.configFilePath)
 	if err != nil {
-		return err
-	}
-	if err := m.configure(m.configFilePath, m.args.Options); err != nil {
 		return err
 	}
 
