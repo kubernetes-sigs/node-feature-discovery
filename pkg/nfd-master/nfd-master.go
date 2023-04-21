@@ -649,7 +649,8 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 	klog.V(1).Infof("processing node %q, initiated by NodeFeature API", nodeName)
 
-	features := &nfdv1alpha1.NodeFeatureSpec{}
+	features := nfdv1alpha1.NewNodeFeatureSpec()
+
 	annotations := Annotations{}
 
 	if len(objs) > 0 {
