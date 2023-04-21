@@ -951,27 +951,36 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	}
 
 	// Store names of labels in an annotation
-	labelKeys := make([]string, 0, len(labels))
-	for key := range labels {
-		// Drop the ns part for labels in the default ns
-		labelKeys = append(labelKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
+	if len(labels) > 0 {
+		labelKeys := make([]string, 0, len(labels))
+		for key := range labels {
+			// Drop the ns part for labels in the default ns
+			labelKeys = append(labelKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
+		}
+		sort.Strings(labelKeys)
+		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 	}
-	sort.Strings(labelKeys)
-	annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 
 	// Store names of extended resources in an annotation
-	extendedResourceKeys := make([]string, 0, len(extendedResources))
-	for key := range extendedResources {
-		// Drop the ns part if in the default ns
-		extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
+	if len(extendedResources) > 0 {
+		extendedResourceKeys := make([]string, 0, len(extendedResources))
+		for key := range extendedResources {
+			// Drop the ns part if in the default ns
+			extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
+		}
+		sort.Strings(extendedResourceKeys)
+		annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
 	}
-	sort.Strings(extendedResourceKeys)
-	annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
 
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
-	patches = append(patches, createPatches(nil, node.Annotations, annotations, "/metadata/annotations")...)
+	patches = append(patches,
+		createPatches(
+			[]string{nfdv1alpha1.FeatureLabelsAnnotation, nfdv1alpha1.ExtendedResourceAnnotation},
+			node.Annotations,
+			annotations,
+			"/metadata/annotations")...)
 
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
