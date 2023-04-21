@@ -733,10 +733,12 @@ core:
 							Effect: "NoExecute",
 						},
 					}
-					expectedAnnotation := map[string]string{
-						"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"}
+					expectedAnnotations := map[string]k8sAnnotations{
+						"*": {
+							"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"},
+					}
 					Expect(waitForNfdNodeTaints(ctx, f.ClientSet, expectedTaints, nodes)).NotTo(HaveOccurred())
-					Expect(waitForNfdNodeAnnotations(ctx, f.ClientSet, expectedAnnotation)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
 
 					By("Re-applying NodeFeatureRules #3 with updated taints")
 					Expect(testutils.UpdateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3-updated.yaml")).NotTo(HaveOccurred())
@@ -752,19 +754,17 @@ core:
 							Effect: "NoExecute",
 						},
 					}
-					expectedAnnotationUpdated := map[string]string{
-						"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/foo=true:NoExecute"}
+					expectedAnnotations["*"]["nfd.node.kubernetes.io/taints"] = "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/foo=true:NoExecute"
 
 					By("Verifying updated node taints and annotation from NodeFeatureRules #3")
 					Expect(waitForNfdNodeTaints(ctx, f.ClientSet, expectedTaintsUpdated, nodes)).NotTo(HaveOccurred())
-					Expect(waitForNfdNodeAnnotations(ctx, f.ClientSet, expectedAnnotationUpdated)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
 
 					By("Deleting NodeFeatureRule object")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-test-3", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					expectedERAnnotation := map[string]string{
-						"nfd.node.kubernetes.io/extended-resources": "nons,vendor.io/dynamic,vendor.io/static"}
+					expectedAnnotations["*"] = k8sAnnotations{"nfd.node.kubernetes.io/extended-resources": "nons,vendor.io/dynamic,vendor.io/static"}
 
 					expectedCapacity := corev1.ResourceList{
 						"feature.node.kubernetes.io/nons": resourcev1.MustParse("123"),
@@ -776,7 +776,7 @@ core:
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-4.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node annotations from NodeFeatureRules #4")
-					Expect(waitForNfdNodeAnnotations(ctx, f.ClientSet, expectedERAnnotation)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
 					Expect(waitForCapacity(ctx, f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
@@ -964,26 +964,6 @@ func waitForCapacity(ctx context.Context, cli clientset.Interface, expectedNewER
 	}
 
 	return simplePoll(poll, 10)
-}
-
-// waitForNfdNodeAnnotations waits for node to be annotated as expected.
-func waitForNfdNodeAnnotations(ctx context.Context, cli clientset.Interface, expected map[string]string) error {
-	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(ctx, cli)
-		if err != nil {
-			return err
-		}
-		for _, node := range nodes {
-			for k, v := range expected {
-				if diff := cmp.Diff(v, node.Annotations[k]); diff != "" {
-					return fmt.Errorf("node %q annotation does not match expected, diff (expected vs. received): %s", node.Name, diff)
-				}
-			}
-		}
-		return nil
-	}
-
-	return simplePoll(poll, 2)
 }
 
 // waitForNfdNodeTaints waits for node to be tainted as expected.

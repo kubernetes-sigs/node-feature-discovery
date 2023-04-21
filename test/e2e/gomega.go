@@ -32,6 +32,7 @@ import (
 )
 
 type k8sLabels map[string]string
+type k8sAnnotations map[string]string
 
 // eventuallyNonControlPlaneNodes is a helper for asserting node properties
 func eventuallyNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) AsyncAssertion {
@@ -54,6 +55,26 @@ func MatchLabels(expectedNew map[string]k8sLabels, oldNodes []corev1.Node, ignor
 	}
 
 	return &nodeListPropertyMatcher[k8sLabels]{
+		expected: expectedNew,
+		oldNodes: oldNodes,
+		matcher:  matcher,
+	}
+}
+
+// MatchAnnotations returns a specialized Gomega matcher for checking if a list of
+// nodes are annotated as expected.
+func MatchAnnotations(expectedNew map[string]k8sAnnotations, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+	matcher := &nodeIterablePropertyMatcher[k8sAnnotations]{
+		propertyName:     "annotations",
+		ignoreUnexpected: ignoreUnexpected,
+		matchFunc: func(newNode, oldNode corev1.Node, expected k8sAnnotations) ([]string, []string, []string) {
+			expectedAll := maps.Clone(oldNode.Annotations)
+			maps.Copy(expectedAll, expected)
+			return matchMap(newNode.Annotations, expectedAll)
+		},
+	}
+
+	return &nodeListPropertyMatcher[k8sAnnotations]{
 		expected: expectedNew,
 		oldNodes: oldNodes,
 		matcher:  matcher,
