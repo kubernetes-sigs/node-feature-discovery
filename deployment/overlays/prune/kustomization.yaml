@@ -12,6 +12,7 @@ resources:
 
 components:
 - ../../components/common
+- ../../components/master-config
 
 patches:
 - path: master-clusterrole.yaml
