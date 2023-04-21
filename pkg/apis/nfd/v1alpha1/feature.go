@@ -16,6 +16,15 @@ limitations under the License.
 
 package v1alpha1
 
+// NewNodeFeatureSpec creates a new emprty instance of NodeFeatureSpec type,
+// initializing all fields to proper empty values.
+func NewNodeFeatureSpec() *NodeFeatureSpec {
+	return &NodeFeatureSpec{
+		Features: *NewFeatures(),
+		Labels:   make(map[string]string),
+	}
+}
+
 // NewFeatures creates a new instance of Features, initializing all feature
 // types (flags, attributes and instances) to empty values.
 func NewFeatures() *Features {
@@ -56,7 +65,11 @@ func NewInstanceFeature(attrs map[string]string) *InstanceFeature {
 }
 
 // InsertAttributeFeatures inserts new values into a specific feature.
+// TODO: add unit tests
 func (f *Features) InsertAttributeFeatures(domain, feature string, values map[string]string) {
+	if f.Attributes == nil {
+		f.Attributes = make(map[string]AttributeFeatureSet)
+	}
 	key := domain + "." + feature
 	if _, ok := f.Attributes[key]; !ok {
 		f.Attributes[key] = NewAttributeFeatures(values)
@@ -70,6 +83,7 @@ func (f *Features) InsertAttributeFeatures(domain, feature string, values map[st
 
 // Exists returns a non-empty string if a feature exists. The return value is
 // the type of the feautre, i.e. "flag", "attribute" or "instance".
+// TODO: add unit tests
 func (f *Features) Exists(name string) string {
 	if _, ok := f.Flags[name]; ok {
 		return "flag"
@@ -85,6 +99,7 @@ func (f *Features) Exists(name string) string {
 
 // MergeInto merges two FeatureSpecs into one. Data in the input object takes
 // precedence (overwrite) over data of the existing object we're merging into.
+// TODO: add unit tests
 func (in *NodeFeatureSpec) MergeInto(out *NodeFeatureSpec) {
 	in.Features.MergeInto(&out.Features)
 	if in.Labels != nil {
@@ -100,6 +115,7 @@ func (in *NodeFeatureSpec) MergeInto(out *NodeFeatureSpec) {
 // MergeInto merges two sets of features into one. Features from the input set
 // take precedence (overwrite) features from the existing features of the set
 // we're merging into.
+// TODO: add unit tests
 func (in *Features) MergeInto(out *Features) {
 	if in.Flags != nil {
 		if out.Flags == nil {
@@ -134,6 +150,7 @@ func (in *Features) MergeInto(out *Features) {
 }
 
 // MergeInto merges two sets of flag featues.
+// TODO: add unit tests
 func (in *FlagFeatureSet) MergeInto(out *FlagFeatureSet) {
 	if in.Elements != nil {
 		if out.Elements == nil {
@@ -146,6 +163,7 @@ func (in *FlagFeatureSet) MergeInto(out *FlagFeatureSet) {
 }
 
 // MergeInto merges two sets of attribute featues.
+// TODO: add unit tests
 func (in *AttributeFeatureSet) MergeInto(out *AttributeFeatureSet) {
 	if in.Elements != nil {
 		if out.Elements == nil {
@@ -158,6 +176,7 @@ func (in *AttributeFeatureSet) MergeInto(out *AttributeFeatureSet) {
 }
 
 // MergeInto merges two sets of instance featues.
+// TODO: add unit tests
 func (in *InstanceFeatureSet) MergeInto(out *InstanceFeatureSet) {
 	if in.Elements != nil {
 		if out.Elements == nil {
