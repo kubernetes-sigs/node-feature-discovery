@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"golang.org/x/exp/maps"
+	taintutils "k8s.io/kubernetes/pkg/util/taints"
 
 	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -99,6 +100,53 @@ func MatchCapacity(expectedNew map[string]corev1.ResourceList, oldNodes []corev1
 		oldNodes: oldNodes,
 		matcher:  matcher,
 	}
+}
+
+// MatchTaints returns a specialized Gomega matcher for checking if a list of
+// nodes are tainted as expected.
+func MatchTaints(expectedNew map[string][]corev1.Taint, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+	matcher := &nodeIterablePropertyMatcher[[]corev1.Taint]{
+		propertyName:     "taints",
+		ignoreUnexpected: ignoreUnexpected,
+		matchFunc: func(newNode, oldNode corev1.Node, expected []corev1.Taint) (missing, invalid, unexpected []string) {
+			expectedAll := oldNode.Spec.DeepCopy().Taints
+			expectedAll = append(expectedAll, expected...)
+			taints := newNode.Spec.Taints
+
+			for _, expectedTaint := range expectedAll {
+				if !taintutils.TaintExists(taints, &expectedTaint) {
+					missing = append(missing, expectedTaint.ToString())
+				} else if ok, matched := taintWithValueExists(taints, &expectedTaint); !ok {
+					invalid = append(invalid, fmt.Sprintf("%s, expected value %s", matched.ToString(), expectedTaint.Value))
+				}
+			}
+
+			for _, taint := range taints {
+				if !taintutils.TaintExists(expectedAll, &taint) {
+					unexpected = append(unexpected, taint.ToString())
+				}
+			}
+			return missing, invalid, unexpected
+		},
+	}
+
+	return &nodeListPropertyMatcher[[]corev1.Taint]{
+		expected: expectedNew,
+		oldNodes: oldNodes,
+		matcher:  matcher,
+	}
+}
+
+func taintWithValueExists(taints []corev1.Taint, taintToFind *corev1.Taint) (found bool, matched corev1.Taint) {
+	for _, taint := range taints {
+		if taint.Key == taintToFind.Key && taint.Effect == taintToFind.Effect {
+			matched = taint
+			if taint.Value == taintToFind.Value {
+				return true, matched
+			}
+		}
+	}
+	return false, matched
 }
 
 // nodeListPropertyMatcher is a generic Gomega matcher for asserting one property a group of nodes.

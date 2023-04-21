@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -716,33 +715,35 @@ core:
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node taints and annotation from NodeFeatureRules #3")
-					expectedTaints := []corev1.Taint{
-						{
-							Key:    "feature.node.kubernetes.io/fake-special-node",
-							Value:  "exists",
-							Effect: "PreferNoSchedule",
-						},
-						{
-							Key:    "feature.node.kubernetes.io/fake-dedicated-node",
-							Value:  "true",
-							Effect: "NoExecute",
-						},
-						{
-							Key:    "feature.node.kubernetes.io/performance-optimized-node",
-							Value:  "true",
-							Effect: "NoExecute",
+					expectedTaints := map[string][]corev1.Taint{
+						"*": {
+							{
+								Key:    "feature.node.kubernetes.io/fake-special-node",
+								Value:  "exists",
+								Effect: "PreferNoSchedule",
+							},
+							{
+								Key:    "feature.node.kubernetes.io/fake-dedicated-node",
+								Value:  "true",
+								Effect: "NoExecute",
+							},
+							{
+								Key:    "feature.node.kubernetes.io/performance-optimized-node",
+								Value:  "true",
+								Effect: "NoExecute",
+							},
 						},
 					}
 					expectedAnnotations := map[string]k8sAnnotations{
 						"*": {
 							"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"},
 					}
-					Expect(waitForNfdNodeTaints(ctx, f.ClientSet, expectedTaints, nodes)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
 
 					By("Re-applying NodeFeatureRules #3 with updated taints")
 					Expect(testutils.UpdateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3-updated.yaml")).NotTo(HaveOccurred())
-					expectedTaintsUpdated := []corev1.Taint{
+					expectedTaints["*"] = []corev1.Taint{
 						{
 							Key:    "feature.node.kubernetes.io/fake-special-node",
 							Value:  "exists",
@@ -757,12 +758,14 @@ core:
 					expectedAnnotations["*"]["nfd.node.kubernetes.io/taints"] = "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/foo=true:NoExecute"
 
 					By("Verifying updated node taints and annotation from NodeFeatureRules #3")
-					Expect(waitForNfdNodeTaints(ctx, f.ClientSet, expectedTaintsUpdated, nodes)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
 
 					By("Deleting NodeFeatureRule object")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-test-3", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
+					expectedTaints["*"] = []corev1.Taint{}
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
 
 					expectedAnnotations["*"] = k8sAnnotations{"nfd.node.kubernetes.io/extended-resources": "nons,vendor.io/dynamic,vendor.io/static"}
 
@@ -931,40 +934,6 @@ resyncPeriod: "1s"
 	})
 
 })
-
-// simplePoll is a simple and stupid re-try loop
-func simplePoll(poll func() error, wait time.Duration) error {
-	var err error
-	for retry := 0; retry < 3; retry++ {
-		if err = poll(); err == nil {
-			return nil
-		}
-		time.Sleep(wait * time.Second)
-	}
-	return err
-}
-
-// waitForNfdNodeTaints waits for node to be tainted as expected.
-func waitForNfdNodeTaints(ctx context.Context, cli clientset.Interface, expectedNewTaints []corev1.Taint, oldNodes []corev1.Node) error {
-	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(ctx, cli)
-		if err != nil {
-			return err
-		}
-		for _, node := range nodes {
-			oldNode := getNode(oldNodes, node.Name)
-			expected := oldNode.Spec.DeepCopy().Taints
-			expected = append(expected, expectedNewTaints...)
-			taints := node.Spec.Taints
-			if !cmp.Equal(expected, taints) {
-				return fmt.Errorf("node %q taints do not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expected, taints))
-			}
-		}
-		return nil
-	}
-
-	return simplePoll(poll, 10)
-}
 
 // getNonControlPlaneNodes gets the nodes that are not tainted for exclusive control-plane usage
 func getNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) ([]corev1.Node, error) {
