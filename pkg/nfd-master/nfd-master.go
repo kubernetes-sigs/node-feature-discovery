@@ -722,7 +722,7 @@ func (m *nfdMaster) filterExtendedResources(features *nfdv1alpha1.Features, exte
 			}
 			element, ok := attrFeatureSet.Elements[elementName]
 			if !ok {
-				klog.Errorf("element %s not foundon feature %s. Ignoring Extended Resource %q", elementName, featureName, extendedResource)
+				klog.Errorf("element %s not found on feature %s. Ignoring Extended Resource %q", elementName, featureName, extendedResource)
 				continue
 			}
 			q, err := k8sQuantity.ParseQuantity(element)
