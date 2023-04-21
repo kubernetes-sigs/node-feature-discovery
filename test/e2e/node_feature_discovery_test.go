@@ -766,10 +766,12 @@ core:
 
 					expectedAnnotations["*"] = k8sAnnotations{"nfd.node.kubernetes.io/extended-resources": "nons,vendor.io/dynamic,vendor.io/static"}
 
-					expectedCapacity := corev1.ResourceList{
-						"feature.node.kubernetes.io/nons": resourcev1.MustParse("123"),
-						"vendor.io/dynamic":               resourcev1.MustParse("10"),
-						"vendor.io/static":                resourcev1.MustParse("123"),
+					expectedCapacity := map[string]corev1.ResourceList{
+						"*": {
+							"feature.node.kubernetes.io/nons": resourcev1.MustParse("123"),
+							"vendor.io/dynamic":               resourcev1.MustParse("10"),
+							"vendor.io/static":                resourcev1.MustParse("123"),
+						},
 					}
 
 					By("Creating NodeFeatureRules #4")
@@ -779,14 +781,14 @@ core:
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
-					Expect(waitForCapacity(ctx, f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes, false))
 
 					By("Deleting NodeFeatureRule object")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-extened-resource-test", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
-					Expect(waitForCapacity(ctx, f.ClientSet, nil, nodes)).NotTo(HaveOccurred())
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes, false))
 
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
@@ -940,30 +942,6 @@ func simplePoll(poll func() error, wait time.Duration) error {
 		time.Sleep(wait * time.Second)
 	}
 	return err
-}
-
-// waitForCapacity waits for the capacity to be updated in the node status
-func waitForCapacity(ctx context.Context, cli clientset.Interface, expectedNewERs corev1.ResourceList, oldNodes []corev1.Node) error {
-	poll := func() error {
-		nodes, err := getNonControlPlaneNodes(ctx, cli)
-		if err != nil {
-			return err
-		}
-		for _, node := range nodes {
-			oldNode := getNode(oldNodes, node.Name)
-			expected := oldNode.Status.DeepCopy().Capacity
-			for k, v := range expectedNewERs {
-				expected[k] = v
-			}
-			capacity := node.Status.Capacity
-			if !cmp.Equal(expected, capacity) {
-				return fmt.Errorf("node %q capacity does not match expected, diff (expected vs. received): %s", node.Name, cmp.Diff(expected, capacity))
-			}
-		}
-		return nil
-	}
-
-	return simplePoll(poll, 10)
 }
 
 // waitForNfdNodeTaints waits for node to be tainted as expected.

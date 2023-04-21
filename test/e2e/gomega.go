@@ -81,6 +81,26 @@ func MatchAnnotations(expectedNew map[string]k8sAnnotations, oldNodes []corev1.N
 	}
 }
 
+// MatchCapacity returns a specialized Gomega matcher for checking if a list of
+// nodes have resource capacity as expected.
+func MatchCapacity(expectedNew map[string]corev1.ResourceList, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+	matcher := &nodeIterablePropertyMatcher[corev1.ResourceList]{
+		propertyName:     "resource capacity",
+		ignoreUnexpected: ignoreUnexpected,
+		matchFunc: func(newNode, oldNode corev1.Node, expected corev1.ResourceList) ([]string, []string, []string) {
+			expectedAll := oldNode.Status.DeepCopy().Capacity
+			maps.Copy(expectedAll, expected)
+			return matchMap(newNode.Status.Capacity, expectedAll)
+		},
+	}
+
+	return &nodeListPropertyMatcher[corev1.ResourceList]{
+		expected: expectedNew,
+		oldNodes: oldNodes,
+		matcher:  matcher,
+	}
+}
+
 // nodeListPropertyMatcher is a generic Gomega matcher for asserting one property a group of nodes.
 type nodeListPropertyMatcher[T any] struct {
 	expected map[string]T
