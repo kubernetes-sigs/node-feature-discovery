@@ -637,24 +637,32 @@ extraLabelNs: ["added.ns.io"]
 			// Update config and verify the effect
 			writeConfig(`
 extraLabelNs: ["override.ns.io"]
+resyncPeriod: '2h'
 `)
 			So(func() interface{} { return master.config.ExtraLabelNs },
 				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"override.ns.io": struct{}{}})
+			So(func() interface{} { return master.config.ResyncPeriod.Duration },
+				withTimeout, 2*time.Second, ShouldResemble, time.Duration(2)*time.Hour)
 
 			// Removing config file should get back our defaults
 			err = os.RemoveAll(tmpDir)
 			So(err, ShouldBeNil)
 			So(func() interface{} { return master.config.ExtraLabelNs },
 				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{})
+			So(func() interface{} { return master.config.ResyncPeriod.Duration },
+				withTimeout, 2*time.Second, ShouldResemble, time.Duration(1)*time.Hour)
 
 			// Re-creating config dir and file should change the config
 			err = os.MkdirAll(configDir, 0755)
 			So(err, ShouldBeNil)
 			writeConfig(`
 extraLabelNs: ["another.override.ns"]
+resyncPeriod: '3m'
 `)
 			So(func() interface{} { return master.config.ExtraLabelNs },
 				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"another.override.ns": struct{}{}})
+			So(func() interface{} { return master.config.ResyncPeriod.Duration },
+				withTimeout, 2*time.Second, ShouldResemble, time.Duration(3)*time.Minute)
 		})
 	})
 }

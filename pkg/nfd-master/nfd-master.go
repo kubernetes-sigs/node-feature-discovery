@@ -70,6 +70,7 @@ type NFDConfig struct {
 	NoPublish      bool
 	ResourceLabels utils.StringSetVal
 	EnableTaints   bool
+	ResyncPeriod   utils.DurationVal
 }
 
 // ConfigOverrideArgs are args that override config file options
@@ -80,6 +81,7 @@ type ConfigOverrideArgs struct {
 	ResourceLabels *utils.StringSetVal
 	EnableTaints   *bool
 	NoPublish      *bool
+	ResyncPeriod   *utils.DurationVal
 }
 
 // Args holds command line arguments
@@ -96,6 +98,7 @@ type Args struct {
 	Prune                bool
 	VerifyNodeName       bool
 	Options              string
+	ResyncPeriod         utils.DurationVal
 
 	Overrides ConfigOverrideArgs
 }
@@ -172,6 +175,7 @@ func newDefaultConfig() *NFDConfig {
 		NoPublish:      false,
 		ResourceLabels: utils.StringSetVal{},
 		EnableTaints:   false,
+		ResyncPeriod:   utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 	}
 }
 
@@ -200,7 +204,10 @@ func (m *nfdMaster) Run() error {
 			return err
 		}
 		klog.Info("starting nfd api controller")
-		m.nfdController, err = newNfdController(kubeconfig, !m.args.EnableNodeFeatureApi)
+		m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
+			disableNodeFeature: !m.args.EnableNodeFeatureApi,
+			resyncPeriod:       m.args.ResyncPeriod.Duration,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to initialize CRD controller: %w", err)
 		}
@@ -1132,6 +1139,9 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	}
 	if m.args.Overrides.LabelWhiteList != nil {
 		c.LabelWhiteList = *m.args.Overrides.LabelWhiteList
+	}
+	if m.args.Overrides.ResyncPeriod != nil {
+		c.ResyncPeriod = *m.args.Overrides.ResyncPeriod
 	}
 
 	m.config = c

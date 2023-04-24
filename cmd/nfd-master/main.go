@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"k8s.io/klog/v2"
 
@@ -67,6 +68,8 @@ func main() {
 			args.Overrides.EnableTaints = overrides.EnableTaints
 		case "no-publish":
 			args.Overrides.NoPublish = overrides.NoPublish
+		case "-resync-period":
+			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		}
 	})
 
@@ -131,6 +134,7 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		DenyLabelNs:    &utils.StringSetVal{},
 		ExtraLabelNs:   &utils.StringSetVal{},
 		ResourceLabels: &utils.StringSetVal{},
+		ResyncPeriod:   &utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 	}
 	flagset.Var(overrides.ExtraLabelNs, "extra-label-ns",
 		"Comma separated list of allowed extra label namespaces")
@@ -145,6 +149,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Comma separated list of denied label namespaces")
 	flagset.Var(overrides.ResourceLabels, "resource-labels",
 		"Comma separated list of labels to be exposed as extended resources. DEPRECATED: use NodeFeatureRule objects instead")
-
+	flagset.Var(overrides.ResyncPeriod, "resync-period",
+		"Specify the NFD API controller resync period."+
+			"It has an effect when the NodeFeature API has been enabled (with -enable-nodefeature-api).")
 	return args, overrides
 }

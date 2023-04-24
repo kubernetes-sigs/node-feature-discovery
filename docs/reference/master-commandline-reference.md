@@ -376,3 +376,20 @@ Default: 0
 Comma-separated list of `pattern=N` settings for file-filtered logging.
 
 Default: *empty*
+
+### -resync-period
+
+The `-resync-period` flag specifies the NFD API controller resync period.
+The resync means nfd-master replaying all NodeFeature and NodeFeatureRule objects,
+thus effectively re-syncing all nodes in the cluster (i.e. ensuring labels, annotations,
+extended resources and taints are in place).
+Only has effect when the [NodeFeature](../usage/custom-resources.md#nodefeature)
+CRD API has been enabled with [`-enable-nodefeature-api`](master-commandline-reference.md#-enable-nodefeature-api).
+
+Default: 1 hour.
+
+Example:
+
+```bash
+nfd-master -resync-period=2h
+```

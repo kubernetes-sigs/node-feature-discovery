@@ -113,3 +113,20 @@ Example:
 ```yaml
 labelWhiteList: "foo"
 ```
+
+### resyncPeriod
+
+The `resyncPeriod` option specifies the NFD API controller resync period.
+The resync means nfd-master replaying all NodeFeature and NodeFeatureRule objects,
+thus effectively re-syncing all nodes in the cluster (i.e. ensuring labels, annotations,
+extended resources and taints are in place).
+Only has effect when the [NodeFeature](../usage/custom-resources.md#nodefeature)
+CRD API has been enabled with [`-enable-nodefeature-api`](master-commandline-reference.md#-enable-nodefeature-api).
+
+Default: 1 hour.
+
+Example:
+
+```yaml
+resyncPeriod=2h
+```
