@@ -3,12 +3,14 @@
 #
 
 approvers:
+  - ArangoGutierrez
   - marquiz
 reviewers:
   - ArangoGutierrez
   - jjacobelli
   - fmuyassarov
   - kad
+  - marquiz
   - PiotrProkop
   - zvonkok
   - adrianchiris
