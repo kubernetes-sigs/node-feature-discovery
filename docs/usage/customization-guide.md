@@ -278,8 +278,8 @@ trying to execute them. A subdirectory under the hooks directory can be used,
 for example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 
 **NOTE:** Hooks are being DEPRECATED and will be removed in a future release.
-For backward compatibility, currently hooks are enabled by default and can be
-disabled via `sources.local.hooksEnabled` field in the worker configuration.
+Starting from release v0.14 hooks are disabled by default and can be enabled
+via `sources.local.hooksEnabled` field in the worker configuration.
 
 ```yaml
 sources:

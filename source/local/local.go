@@ -97,7 +97,7 @@ func (s *localSource) GetLabels() (source.FeatureLabels, error) {
 // newDefaultConfig returns a new config with pre-populated defaults
 func newDefaultConfig() *Config {
 	return &Config{
-		HooksEnabled: true,
+		HooksEnabled: false,
 	}
 }
 
@@ -113,6 +113,7 @@ func (s *localSource) Discover() error {
 	if s.config.HooksEnabled {
 
 		klog.InfoS("starting hooks...")
+		klog.InfoS("NOTE: hooks are deprecated and will be completely removed in a future release.")
 
 		featuresFromHooks, err := getFeaturesFromHooks()
 		if err != nil {

@@ -347,12 +347,14 @@ Related tracking issues:
 1. Disable hook support by default [#855](https://github.com/kubernetes-sigs/node-feature-discovery/issues/855).
 1. Drop support for hooks [#856](https://github.com/kubernetes-sigs/node-feature-discovery/issues/856).
 
+Default: false
+
 Example:
 
 ```yaml
 sources:
   local:
-    hooksEnabled: true  # true by default
+    hooksEnabled: true
 ```
 
 ### sources.pci
