@@ -18,6 +18,7 @@ package kubeletnotifier
 
 import (
 	"fmt"
+	"path"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -31,6 +32,8 @@ type EventType string
 const (
 	IntervalBased EventType = "intervalBased"
 	FSUpdate      EventType = "fsUpdate"
+
+	devicePluginsDirName = "device-plugins"
 )
 
 var stateFiles = sets.NewString(
@@ -51,7 +54,8 @@ type Info struct {
 }
 
 func New(sleepInterval time.Duration, dest chan<- Info, kubeletStateDir string) (*Notifier, error) {
-	ch, err := createFSWatcherEvent([]string{kubeletStateDir})
+	devicePluginsDir := path.Join(kubeletStateDir, devicePluginsDirName)
+	ch, err := createFSWatcherEvent([]string{kubeletStateDir, devicePluginsDir})
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +81,9 @@ func (n *Notifier) Run() {
 			n.dest <- i
 
 		case e := <-n.fsEvent:
-			klog.V(5).Infof("fsnotify event from file %q: %q received", e.Name, e.Op)
-			if stateFiles.Has(e.Name) {
+			basename := path.Base(e.Name)
+			klog.V(5).Infof("fsnotify event from file %q: %q received", basename, e.Op)
+			if stateFiles.Has(basename) {
 				i := Info{Event: FSUpdate}
 				n.dest <- i
 			}
