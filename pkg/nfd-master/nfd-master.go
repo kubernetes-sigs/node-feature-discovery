@@ -714,6 +714,10 @@ func (m *nfdMaster) filterExtendedResources(features *nfdv1alpha1.Features, exte
 		if strings.HasPrefix(capacity, "@") {
 			// capacity is a string in the form of attribute.featureset.elements
 			split := strings.SplitN(capacity[1:], ".", 3)
+			if len(split) != 3 {
+				klog.Errorf("capacity %s is not in the form of '@domain.feature.element',. Ignoring Extended Resource %q", capacity, extendedResource)
+				continue
+			}
 			featureName := split[0] + "." + split[1]
 			elementName := split[2]
 			attrFeatureSet, ok := features.Attributes[featureName]
