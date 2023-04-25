@@ -31,6 +31,7 @@ import (
 	nfdscheme "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/pkg/generated/informers/externalversions"
 	nfdlisters "sigs.k8s.io/node-feature-discovery/pkg/generated/listers/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 type nfdController struct {
@@ -44,8 +45,8 @@ type nfdController struct {
 }
 
 type nfdApiControllerOptions struct {
-	disableNodeFeature bool
-	resyncPeriod       time.Duration
+	DisableNodeFeature bool
+	ResyncPeriod       time.Duration
 }
 
 func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
@@ -56,10 +57,12 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
-	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.resyncPeriod)
+	utils.KlogDump(2, "NFD API controller options:", "  ", nfdApiControllerOptions)
+
+	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.ResyncPeriod)
 
 	// Add informer for NodeFeature objects
-	if !nfdApiControllerOptions.disableNodeFeature {
+	if !nfdApiControllerOptions.DisableNodeFeature {
 		featureInformer := informerFactory.Nfd().V1alpha1().NodeFeatures()
 		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
@@ -89,7 +92,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		AddFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v added", key)
-			if !nfdApiControllerOptions.disableNodeFeature {
+			if !nfdApiControllerOptions.DisableNodeFeature {
 				c.updateAllNodes()
 			}
 			// else: rules will be processed only when gRPC requests are received
@@ -97,7 +100,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		UpdateFunc: func(oldObject, newObject interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(newObject)
 			klog.V(2).Infof("NodeFeatureRule %v updated", key)
-			if !nfdApiControllerOptions.disableNodeFeature {
+			if !nfdApiControllerOptions.DisableNodeFeature {
 				c.updateAllNodes()
 			}
 			// else: rules will be processed only when gRPC requests are received
@@ -105,7 +108,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		DeleteFunc: func(object interface{}) {
 			key, _ := cache.MetaNamespaceKeyFunc(object)
 			klog.V(2).Infof("NodeFeatureRule %v deleted", key)
-			if !nfdApiControllerOptions.disableNodeFeature {
+			if !nfdApiControllerOptions.DisableNodeFeature {
 				c.updateAllNodes()
 			}
 			// else: rules will be processed only when gRPC requests are received
@@ -119,7 +122,6 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	informerFactory.Start(c.stopChan)
 
 	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
-
 	return c, nil
 }
 
