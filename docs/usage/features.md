@@ -247,7 +247,7 @@ defined built-in labels:
 ## User defined labels
 
 NFD has many extension points for creating vendor and application specific
-labels. See the [customization guide](customization-guide) for
+labels. See the [customization guide](customization-guide.md) for
 detailed documentation.
 
 ## Extended resources
