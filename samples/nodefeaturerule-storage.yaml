@@ -1,0 +1,18 @@
+#
+# This NodeFeatureRule replicates all built-in storage feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-storage-features
+spec:
+  rules:
+    - name: "nfd built-in storage-nonrotationaldisk label"
+      labels:
+        "storage-nonrotationaldisk": "true"
+      matchFeatures:
+        - feature: storage.block
+          matchExpressions:
+            "rotational":
+              op: In
+              value: ["0"]

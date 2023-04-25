@@ -1,0 +1,34 @@
+#
+# This NodeFeatureRule replicates all built-in memory feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-memory-features
+spec:
+  rules:
+    - name: "nfd built-in memory-numa labels"
+      labels:
+        "memory-numa": "true"
+      matchFeatures:
+        - feature: memory.numa
+          matchExpressions:
+            "is_numa":
+              op: IsTrue
+
+    - name: "nfd built-in memory-nv.present label"
+      labelsTemplate: "{{ if gt (len .memory.nv ) 0 }}memory-nv.present=true{{ end }}"
+      matchFeatures:
+        - feature: memory.nv
+          matchName:
+            op: Exists
+
+    - name: "nfd built-in memory-nv.dax label"
+      labels:
+        "memory.nv.dax": "true"
+      matchFeatures:
+        - feature: memory.nv
+          matchExpressions:
+            "devtype":
+              op: In
+              value: ["nd_dax"]

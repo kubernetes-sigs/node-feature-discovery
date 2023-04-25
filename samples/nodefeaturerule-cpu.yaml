@@ -1,0 +1,112 @@
+#
+# This NodeFeatureRule replicates all built-in cpu feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-cpu-features
+spec:
+  rules:
+    - name: "nfd built-in cpu-cpuid labels"
+      labelsTemplate: |
+        {{ range .cpu.cpuid }}cpu-cpuid.{{ .Name }}=true
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.cpuid
+          matchName:
+            op: NotIn
+            value:
+              - "BMI1"
+              - "BMI2"
+              - "CLMUL"
+              - "CMOV"
+              - "CX16"
+              - "ERMS"
+              - "F16C"
+              - "HTT"
+              - "LZCNT"
+              - "MMX"
+              - "MMXEXT"
+              - "NX"
+              - "POPCNT"
+              - "RDRAND"
+              - "RDSEED"
+              - "RDTSCP"
+              - "SGX"
+              - "SGXLC"
+              - "SSE"
+              - "SSE2"
+              - "SSE3"
+              - "SSE4"
+              - "SSE42"
+              - "SSSE3"
+
+    - name: "nfd built-in cpu-hardware_multithreading label"
+      labelsTemplate: |
+        {{ range .cpu.topology }}cpu-{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.topology
+          matchName:
+            op: In
+            value:
+              - "hardware_multithreading"
+
+    - name: "nfd built-in cpu-cstate and cpu-pstate labels"
+      labelsTemplate: |
+        {{ range .cpu.cstate }}cpu-cstate.{{ .Name }}={{ .Value }}
+        {{ end }}
+        {{ range .cpu.pstate }}cpu-pstate.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchAny:
+        - matchFeatures:
+          - feature: cpu.cstate
+            matchName:
+              op: Exists
+        - matchFeatures:
+          - feature: cpu.pstate
+            matchName:
+              op: Exists
+
+    - name: "nfd built-in cpu-model labels"
+      labelsTemplate: |
+        {{ range .cpu.model }}cpu-model.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.model
+          matchName:
+            op: Exists
+
+    - name: "nfd built-in cpu-security labels"
+      labelsTemplate: |
+        {{ range .cpu.security }}cpu-security.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.security
+          matchName:
+            op: NotIn
+            value:
+              - "tdx.total_keys"
+              - "sgx.epc"
+              - "sev.encrypted_state_ids"
+              - "sev.asids"
+
+    - name: "nfd built-in cpu-sst labels"
+      labelsTemplate: |
+        {{ range .cpu.sst }}cpu-power.sst_{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.sst
+          matchName:
+            op: Exists
+
+    - name: "nfd built-in cpu-coprocessor labels"
+      labelsTemplate: |
+        {{ range .cpu.sst }}cpu-coprocessor.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.coprocessor
+          matchName:
+            op: In
+            value:
+              - "nx_gzip"

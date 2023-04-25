@@ -1,0 +1,38 @@
+#
+# This NodeFeatureRule replicates all built-in kernel feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-kernel-features
+spec:
+  rules:
+    - name: "nfd built-in kernel-version labels"
+      labelsTemplate: |
+        {{ range .kernel.version }}kernel-version.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: kernel.version
+          matchName:
+            op: Exists
+
+    - name: "nfd built-in kernel-config labels"
+      labelsTemplate: |
+        {{ range .kernel.config }}kernel-config.{{ .Name }}=true
+        {{ end }}
+      matchFeatures:
+        - feature: kernel.config
+          matchExpressions:
+            "NO_HZ": {op: In, value: ["y"]}
+            "NO_HZ_IDLE": {op: In, value: ["y"]}
+            "NO_HZ_FULL": {op: In, value: ["y"]}
+            "PREEMPT": {op: In, value: ["y"]}
+
+    - name: "nfd built-in kernel-selinux labels"
+      labels:
+        "kernel-selinux.enabled": "true"
+      matchFeatures:
+        - feature: kernel.selinux
+          matchExpressions:
+            "enabled":
+              op: IsTrue

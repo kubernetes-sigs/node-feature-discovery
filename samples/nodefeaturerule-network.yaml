@@ -1,0 +1,28 @@
+#
+# This NodeFeatureRule replicates all built-in networkfeature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-network-features
+spec:
+  rules:
+    - name: "nfd built-in network-sriov.capable label"
+      labels:
+        "network-sriov.capable": "true"
+      matchFeatures:
+        - feature: network.device
+          matchExpressions:
+            "sriov_totalvfs":
+              op: Gt
+              value: ["0"]
+
+    - name: "nfd built-in network-sriov.configured label"
+      labels:
+        "network-sriov.configured": "true"
+      matchFeatures:
+        - feature: network.device
+          matchExpressions:
+            "network-sriov_numvfs":
+              op: Gt
+              value: ["0"]
