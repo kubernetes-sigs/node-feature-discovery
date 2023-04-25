@@ -62,7 +62,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				key, _ := cache.MetaNamespaceKeyFunc(obj)
-				klog.V(2).Infof("NodeFeature %v added", key)
+				klog.V(2).Infof("NodeFeature %v added #", key)
 				c.updateOneNode(obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
