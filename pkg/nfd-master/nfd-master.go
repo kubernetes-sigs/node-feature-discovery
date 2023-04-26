@@ -762,7 +762,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		labels = make(map[string]string)
 	}
 
-	crLabels, crExtendedResources, crTaints := m.processNodeFeatureRule(features)
+	crLabels, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
 
 	// Mix in CR-originated labels
 	for k, v := range crLabels {
@@ -898,7 +898,7 @@ func authorizeClient(c context.Context, checkNodeName bool, nodeName string) err
 	return nil
 }
 
-func (m *nfdMaster) processNodeFeatureRule(features *nfdv1alpha1.Features) (Labels, ExtendedResources, []corev1.Taint) {
+func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, ExtendedResources, []corev1.Taint) {
 	if m.nfdController == nil {
 		return nil, nil, nil
 	}
@@ -920,15 +920,15 @@ func (m *nfdMaster) processNodeFeatureRule(features *nfdv1alpha1.Features) (Labe
 	for _, spec := range ruleSpecs {
 		switch {
 		case klog.V(3).Enabled():
-			h := fmt.Sprintf("executing NodeFeatureRule %q:", spec.Name)
+			h := fmt.Sprintf("executing NodeFeatureRule %q on node %q:", spec.Name, nodeName)
 			utils.KlogDump(3, h, "  ", spec.Spec)
 		case klog.V(1).Enabled():
-			klog.Infof("executing NodeFeatureRule %q", spec.Name)
+			klog.Infof("executing NodeFeatureRule %q on node %q", spec.Name, nodeName)
 		}
 		for _, rule := range spec.Spec.Rules {
 			ruleOut, err := rule.Execute(features)
 			if err != nil {
-				klog.Errorf("failed to process Rule %q: %v", rule.Name, err)
+				klog.Errorf("failed to process Rule %q on node %q: %v", rule.Name, nodeName, err)
 				continue
 			}
 			taints = append(taints, ruleOut.Taints...)
