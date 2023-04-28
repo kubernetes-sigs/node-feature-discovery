@@ -54,7 +54,7 @@ func main() {
 	flags.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case "featurerules-controller":
-			klog.Warningf("-featurerules-controller is deprecated, use '-crd-controller' flag instead")
+			klog.InfoS("-featurerules-controller is deprecated, use '-crd-controller' flag instead")
 		case "extra-label-ns":
 			args.Overrides.ExtraLabelNs = overrides.ExtraLabelNs
 		case "deny-label-ns":
@@ -62,7 +62,7 @@ func main() {
 		case "label-whitelist":
 			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
 		case "resource-labels":
-			klog.Warningf("-resource-labels is deprecated, extended resources should be managed with NodeFeatureRule objects")
+			klog.InfoS("-resource-labels is deprecated, extended resources should be managed with NodeFeatureRule objects")
 			args.Overrides.ResourceLabels = overrides.ResourceLabels
 		case "enable-taints":
 			args.Overrides.EnableTaints = overrides.EnableTaints
@@ -80,7 +80,7 @@ func main() {
 
 	// Assert that the version is known
 	if version.Undefined() {
-		klog.Warningf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
+		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	// Plug klog into grpc logging infrastructure
@@ -89,11 +89,13 @@ func main() {
 	// Get new NfdMaster instance
 	instance, err := master.NewNfdMaster(args)
 	if err != nil {
-		klog.Exitf("failed to initialize NfdMaster instance: %v", err)
+		klog.ErrorS(err, "failed to initialize NfdMaster instance")
+		os.Exit(1)
 	}
 
 	if err = instance.Run(); err != nil {
-		klog.Exit(err)
+		klog.ErrorS(err, "error while running")
+		os.Exit(1)
 	}
 }
 
