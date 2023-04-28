@@ -465,30 +465,15 @@ func (m *nfdMaster) updateMasterNode() error {
 // arriving through the gRPC API.
 func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResources) {
 	outLabels := Labels{}
-	for label, value := range labels {
+	for name, value := range labels {
 		// Add possibly missing default ns
-		label := addNs(label, nfdv1alpha1.FeatureLabelNs)
+		name := addNs(name, nfdv1alpha1.FeatureLabelNs)
 
-		ns, name := splitNs(label)
-
-		// Check label namespace, filter out if ns is not whitelisted
-		if ns != nfdv1alpha1.FeatureLabelNs && ns != nfdv1alpha1.ProfileLabelNs &&
-			!strings.HasSuffix(ns, nfdv1alpha1.FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, nfdv1alpha1.ProfileLabelSubNsSuffix) {
-			// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
-			if isNamespaceDenied(ns, m.deniedNs.wildcard, m.deniedNs.normal) {
-				if _, ok := m.config.ExtraLabelNs[ns]; !ok {
-					klog.Errorf("Namespace %q is not allowed. Ignoring label %q\n", ns, label)
-					continue
-				}
-			}
+		if err := m.filterFeatureLabel(name); err != nil {
+			klog.Errorf("ignoring label %s=%v: %v", name, value, err)
+		} else {
+			outLabels[name] = value
 		}
-
-		// Skip if label doesn't match labelWhiteList
-		if !m.config.LabelWhiteList.Regexp.MatchString(name) {
-			klog.Errorf("%s (%s) does not match the whitelist (%s) and will not be published.", name, label, m.config.LabelWhiteList.Regexp.String())
-			continue
-		}
-		outLabels[label] = value
 	}
 
 	// Remove labels which are intended to be extended resources
@@ -508,6 +493,26 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 	}
 
 	return outLabels, extendedResources
+}
+
+func (m *nfdMaster) filterFeatureLabel(name string) error {
+	// Check label namespace, filter out if ns is not whitelisted
+	ns, base := splitNs(name)
+	if ns != nfdv1alpha1.FeatureLabelNs && ns != nfdv1alpha1.ProfileLabelNs &&
+		!strings.HasSuffix(ns, nfdv1alpha1.FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, nfdv1alpha1.ProfileLabelSubNsSuffix) {
+		// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
+		if isNamespaceDenied(ns, m.deniedNs.wildcard, m.deniedNs.normal) {
+			if _, ok := m.config.ExtraLabelNs[ns]; !ok {
+				return fmt.Errorf("namespace %q is not allowed", ns)
+			}
+		}
+	}
+
+	// Skip if label doesn't match labelWhiteList
+	if !m.config.LabelWhiteList.Regexp.MatchString(base) {
+		return fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.Regexp.String())
+	}
+	return nil
 }
 
 func filterTaints(taints []corev1.Taint) []corev1.Taint {
@@ -699,7 +704,6 @@ func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources E
 }
 
 func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) (string, error) {
-
 	// Check if given NS is allowed
 	ns, _ := splitNs(name)
 	if ns != nfdv1alpha1.ExtendedResourceNs && !strings.HasPrefix(ns, nfdv1alpha1.ExtendedResourceSubNsSuffix) {
@@ -1140,6 +1144,7 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	m.deniedNs.normal = normalDeniedNs
 	m.deniedNs.wildcard = wildcardDeniedNs
 	// We forcibly deny kubernetes.io
+	m.deniedNs.normal[""] = struct{}{}
 	m.deniedNs.normal["kubernetes.io"] = struct{}{}
 	m.deniedNs.wildcard[".kubernetes.io"] = struct{}{}
 
