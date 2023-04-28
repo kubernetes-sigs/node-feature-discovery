@@ -558,20 +558,6 @@ func isNamespaceDenied(labelNs string, wildcardDeniedNs map[string]struct{}, nor
 	return false
 }
 
-func isNamespaceAllowed(labelNs string, wildcardAllowedNs map[string]struct{}, normalAllowedNs map[string]struct{}) bool {
-	for allowedNs := range normalAllowedNs {
-		if labelNs == allowedNs {
-			return true
-		}
-	}
-	for allowedNs := range wildcardAllowedNs {
-		if strings.HasSuffix(labelNs, allowedNs) {
-			return true
-		}
-	}
-	return false
-}
-
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
 	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
@@ -696,64 +682,61 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 // filterExtendedResources filters extended resources and returns a map
 // of valid extended resources.
-func (m *nfdMaster) filterExtendedResources(features *nfdv1alpha1.Features, extendedResources ExtendedResources) ExtendedResources {
+func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources ExtendedResources) ExtendedResources {
 	outExtendedResources := ExtendedResources{}
-	deniedNs := map[string]struct{}{"kubernetes.io": {}}
-	deniedWildCarNs := map[string]struct{}{".kubernetes.io": {}}
-	allowedNs := map[string]struct{}{nfdv1alpha1.ExtendedResourceNs: {}}
-	allowedWildCardNs := map[string]struct{}{nfdv1alpha1.ExtendedResourceSubNsSuffix: {}}
-	for extendedResource, capacity := range extendedResources {
-		if strings.Contains(extendedResource, "/") {
-			// Check if given NS is allowed
-			ns, _ := splitNs(extendedResource)
-			if isNamespaceDenied(ns, deniedWildCarNs, deniedNs) {
-				if !isNamespaceAllowed(ns, allowedWildCardNs, allowedNs) {
-					klog.Errorf("namespace %q is not allowed. Ignoring Extended Resource  %q", ns, extendedResource)
-					continue
-				}
-			}
-		} else {
-			// Add possibly missing default ns
-			extendedResource = path.Join(nfdv1alpha1.ExtendedResourceNs, extendedResource)
-		}
+	for name, value := range extendedResources {
+		// Add possibly missing default ns
+		name = addNs(name, nfdv1alpha1.ExtendedResourceNs)
 
-		// Dynamic Value
-		if strings.HasPrefix(capacity, "@") {
-			// capacity is a string in the form of attribute.featureset.elements
-			split := strings.SplitN(capacity[1:], ".", 3)
-			if len(split) != 3 {
-				klog.Errorf("capacity %s is not in the form of '@domain.feature.element',. Ignoring Extended Resource %q", capacity, extendedResource)
-				continue
-			}
-			featureName := split[0] + "." + split[1]
-			elementName := split[2]
-			attrFeatureSet, ok := features.Attributes[featureName]
-			if !ok {
-				klog.Errorf("feature %s not found. Ignoring Extended Resource %q", featureName, extendedResource)
-				continue
-			}
-			element, ok := attrFeatureSet.Elements[elementName]
-			if !ok {
-				klog.Errorf("element %s not found on feature %s. Ignoring Extended Resource %q", elementName, featureName, extendedResource)
-				continue
-			}
-			q, err := k8sQuantity.ParseQuantity(element)
-			if err != nil {
-				klog.Errorf("bad label value %s encountered for extended resource: %s", q.String(), extendedResource, err)
-				continue
-			}
-			outExtendedResources[extendedResource] = q.String()
-			continue
-		}
-		// Static Value (Pre-Defined at the NodeFeatureRule)
-		q, err := k8sQuantity.ParseQuantity(capacity)
+		capacity, err := filterExtendedResource(name, value, features)
 		if err != nil {
-			klog.Errorf("bad label value %s encountered for extended resource: %s", capacity, extendedResource, err)
-			continue
+			klog.Errorf("failed to create extended resources %s=%s: %v", name, value, err)
+		} else {
+			outExtendedResources[name] = capacity
 		}
-		outExtendedResources[extendedResource] = q.String()
 	}
 	return outExtendedResources
+}
+
+func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) (string, error) {
+
+	// Check if given NS is allowed
+	ns, _ := splitNs(name)
+	if ns != nfdv1alpha1.ExtendedResourceNs && !strings.HasPrefix(ns, nfdv1alpha1.ExtendedResourceSubNsSuffix) {
+		if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") {
+			return "", fmt.Errorf("namespace %q is not allowed", ns)
+		}
+	}
+
+	// Dynamic Value
+	if strings.HasPrefix(value, "@") {
+		// value is a string in the form of attribute.featureset.elements
+		split := strings.SplitN(value[1:], ".", 3)
+		if len(split) != 3 {
+			return "", fmt.Errorf("value %s is not in the form of '@domain.feature.element'", value)
+		}
+		featureName := split[0] + "." + split[1]
+		elementName := split[2]
+		attrFeatureSet, ok := features.Attributes[featureName]
+		if !ok {
+			return "", fmt.Errorf("feature %s not found", featureName)
+		}
+		element, ok := attrFeatureSet.Elements[elementName]
+		if !ok {
+			return "", fmt.Errorf("element %s not found on feature %s", elementName, featureName)
+		}
+		q, err := k8sQuantity.ParseQuantity(element)
+		if err != nil {
+			return "", fmt.Errorf("invalid value %s (from %s): %w", element, value, err)
+		}
+		return q.String(), nil
+	}
+	// Static Value (Pre-Defined at the NodeFeatureRule)
+	q, err := k8sQuantity.ParseQuantity(value)
+	if err != nil {
+		return "", fmt.Errorf("invalid value %s: %w", value, err)
+	}
+	return q.String(), nil
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, annotations Annotations, labels map[string]string, features *nfdv1alpha1.Features) error {
@@ -777,7 +760,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	for k, v := range crExtendedResources {
 		extendedResources[k] = v
 	}
-	extendedResources = m.filterExtendedResources(features, extendedResources)
+	extendedResources = filterExtendedResources(features, extendedResources)
 
 	var taints []corev1.Taint
 	if m.config.EnableTaints {
