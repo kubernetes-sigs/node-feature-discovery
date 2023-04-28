@@ -29,12 +29,13 @@ echo "Running unit tests"
 make test
 
 # Upload coverage report
-./codecov -t ${CODECOV_TOKEN} \
-          -C ${PULL_PULL_SHA} \
-          -r ${REPO_OWNER}/${REPO_NAME} \
-          -P ${PULL_NUMBER} \
-          -b ${BUILD_ID} \
-          -B ${PULL_BASE_REF}
+./codecov -t "${CODECOV_TOKEN}" \
+          -C "${PULL_PULL_SHA}" \
+          -r "${REPO_OWNER}/${REPO_NAME}" \
+          -P "${PULL_NUMBER}" \
+          -b "${BUILD_ID}" \
+          -B "${PULL_BASE_REF}" \
+          -N "${PULL_BASE_SHA}"
 
 # Check that repo is clean
 if ! git diff --quiet; then
