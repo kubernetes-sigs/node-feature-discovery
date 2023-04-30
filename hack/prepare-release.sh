@@ -17,7 +17,7 @@ Options:
 
 Example:
 
-  $this v0.1.2 -k "Jane Doe <jane.doe@example.com>"
+  $this -k "Jane Doe <jane.doe@example.com>" v0.13.1
 
 
 NOTE: The GPG key should be associated with the signer's Github account.

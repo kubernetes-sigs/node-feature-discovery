@@ -2,3 +2,11 @@ comment:
   layout: "reach, diff, flags, files"
   behavior: new
   require_changes: false
+coverage:
+  status:
+    project:
+      default:
+        target: 0%
+    patch:
+      default:
+        target: 0%

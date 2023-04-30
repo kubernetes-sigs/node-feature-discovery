@@ -11,10 +11,10 @@ features and system configuration!
 
 Continue to:
 
-- **[Introduction](introduction)** for more details on the
+- **[Introduction](introduction.md)** for more details on the
   project.
 
-- **[Quick start](quick-start)** for quick step-by-step
+- **[Quick start](quick-start.md)** for quick step-by-step
   instructions on how to get NFD running on your cluster.
 
 ## Quick-start -- the short-short version
