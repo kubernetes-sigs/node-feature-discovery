@@ -762,8 +762,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		labels = make(map[string]string)
 	}
 
-
-	crLabels, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
+	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
 
 	// Mix in CR-originated labels
 	for k, v := range crLabels {
@@ -901,8 +900,7 @@ func authorizeClient(c context.Context, checkNodeName bool, nodeName string) err
 	return nil
 }
 
-
-func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, ExtendedResources, []corev1.Taint) {
+func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, Annotations, ExtendedResources, []corev1.Taint) {
 
 	if m.nfdController == nil {
 		return nil, nil, nil, nil
