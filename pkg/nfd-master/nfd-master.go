@@ -53,11 +53,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
-const (
-	defaultDenyNs    = "kubernetes.io"
-	defaultDenySubNs = ".kubernetes.io"
-)
-
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
 
@@ -991,7 +986,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 		annotationKeys = append(annotationKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureAnnotationNs+"/"))
 	}
 	sort.Strings(annotationKeys)
-	nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.NodeFeatureAnnotation)] = strings.Join(annotationKeys, ",")
+	nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTracingAnnotation)] = strings.Join(annotationKeys, ",")
 
 	annotations := make(Annotations)
 	for k, v := range nfdAnnotations {
@@ -1003,14 +998,9 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
-	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.NodeFeatureAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
+	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTracingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
-	//patches = append(patches,
-	//	createPatches(
-	//		[]string{nfdv1alpha1.FeatureLabelsAnnotation, nfdv1alpha1.ExtendedResourceAnnotation},
-	//		node.Annotations,
-	//		annotations,
-	//		"/metadata/annotations")...)
+	oldAnnotations = append(oldAnnotations, []string{nfdv1alpha1.FeatureLabelsAnnotation, nfdv1alpha1.ExtendedResourceAnnotation}...)
 	patches = append(patches, createPatches(oldAnnotations, node.Annotations, annotations, "/metadata/annotations")...)
 
 	// patch node status with extended resource changes
@@ -1249,7 +1239,7 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 		// Check annotation namespace, filter out if ns is not whitelisted
 		if ns != nfdv1alpha1.FeatureAnnotationNs && !strings.HasSuffix(ns, nfdv1alpha1.FeatureAnnotationSubNsSuffix) {
 			// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
-			if ns == defaultDenyNs || strings.HasSuffix(ns, defaultDenySubNs) || ns == nfdv1alpha1.AnnotationNs {
+			if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") || ns == nfdv1alpha1.AnnotationNs {
 				klog.Errorf("Namespace %q is not allowed. Ignoring label %q\n", ns, annotation)
 				continue
 			}

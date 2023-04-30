@@ -111,7 +111,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			// Create a list of expected node metadata patches
 			metadataPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, strings.Join(fakeFeatureAnnotationsNames, ",")),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTracingAnnotation, strings.Join(fakeFeatureAnnotationsNames, ",")),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
 				apihelper.NewJsonPatch("remove", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/old-feature", ""),
 			}
@@ -329,7 +329,7 @@ func TestSetLabels(t *testing.T) {
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, ""),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTracingAnnotation, ""),
 			}
 			for k, v := range mockLabels {
 				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/"+k, v))
@@ -350,7 +350,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, ""),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTracingAnnotation, ""),
 			}
 
 			mockMaster.config.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
@@ -386,7 +386,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.NodeFeatureAnnotation, ""),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.FeatureAnnotationsTracingAnnotation, ""),
 			}
 
 			mockMaster.deniedNs.normal = map[string]struct{}{"random.denied.ns": {}}
@@ -411,7 +411,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.NodeFeatureAnnotation, ""),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTracingAnnotation, ""),
 			}
 			expectedStatusPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/status/capacity", nfdv1alpha1.FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),

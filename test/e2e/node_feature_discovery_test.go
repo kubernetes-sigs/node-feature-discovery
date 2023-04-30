@@ -828,15 +828,22 @@ core:
 					By("Verfiying node status capacity from NodeFeatureRules #4")
 					Expect(waitForCapacity(ctx, f.ClientSet, expectedCapacity, nodes)).NotTo(HaveOccurred())
 
+					By("Deleting NodeFeatureRule object")
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-extened-resource-test", metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verfiying node status capacity from NodeFeatureRules #4")
+					Expect(waitForCapacity(ctx, f.ClientSet, nil, nodes)).NotTo(HaveOccurred())
+
 					By("Creating NodeFeatureRules #5")
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-5.yaml")).NotTo(HaveOccurred())
 
-					By("Verifying node labels from NodeFeatureRules #5")
+					By("Verifying node annotations from NodeFeatureRules #5")
 					expectedAnnotations := map[string]k8sAnnotations{
 						"*": {
 							nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation":   "foo",
 							nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation-2": "bar",
-							"vendor.example/feature":                              "baz",
+							"vendor.example/feature":                               "baz",
 						},
 					}
 					Expect(checkForNodeAnnotations(ctx,
@@ -846,11 +853,15 @@ core:
 					)).NotTo(HaveOccurred())
 
 					By("Deleting NodeFeatureRule object")
-					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-extened-resource-test", metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, " e2e-feature-annotations-test", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Verfiying node status capacity from NodeFeatureRules #4")
-					Expect(waitForCapacity(ctx, f.ClientSet, nil, nodes)).NotTo(HaveOccurred())
+					By("Verifying node annotations from NodeFeatureRules #5")
+					Expect(checkForNodeAnnotations(ctx,
+						f.ClientSet,
+						map[string]k8sAnnotations{"*": {}},
+						nodes,
+					)).NotTo(HaveOccurred())
 
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
