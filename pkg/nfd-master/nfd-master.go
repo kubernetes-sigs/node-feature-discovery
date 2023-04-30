@@ -756,10 +756,6 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		labels = make(map[string]string)
 	}
 
-	if nfdAnnotations == nil {
-		nfdAnnotations = make(map[string]string)
-	}
-
 	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(features)
 
 	// Mix in CR-originated labels
@@ -988,7 +984,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
 	}
 
-	// Store names of annotations in an annotation
+	// Store names of feature annotations in an annotation
 	annotationKeys := make([]string, 0, len(featureAnnotations))
 	for key := range featureAnnotations {
 		// Drop the ns part for annotations in the default ns

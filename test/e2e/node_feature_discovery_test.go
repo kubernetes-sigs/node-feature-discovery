@@ -834,8 +834,8 @@ core:
 					By("Verifying node labels from NodeFeatureRules #5")
 					expectedAnnotations := map[string]k8sAnnotations{
 						"*": {
-							nfdv1alpha1.FeatureLabelNs + "defaul-ns-annotation":   "foo",
-							nfdv1alpha1.FeatureLabelNs + "defaul-ns-annotation-2": "bar",
+							nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation":   "foo",
+							nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation-2": "bar",
 							"vendor.example/feature":                              "baz",
 						},
 					}

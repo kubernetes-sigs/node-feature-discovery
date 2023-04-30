@@ -184,7 +184,7 @@ spec:
 ```
 
 In this example, `feature.node.kubenernetes.io/my-sample-feature-annotation=test`
-annotation are set on the node if both of
+annotation is set on the node if both of
 the following conditions are true (`matchFeatures` implements a logical AND over
 the matchers):
 
