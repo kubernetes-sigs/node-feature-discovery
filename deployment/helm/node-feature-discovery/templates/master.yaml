@@ -104,21 +104,26 @@ spec:
             {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
             - "-featurerules-controller={{ .Values.master.featureRulesController }}"
             {{- end }}
-    {{- if .Values.tls.enable }}
+            {{- if .Values.tls.enable }}
             - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
             - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
             - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+            {{- end }}
           volumeMounts:
+            {{- if .Values.tls.enable }}
             - name: nfd-master-cert
               mountPath: "/etc/kubernetes/node-feature-discovery/certs"
               readOnly: true
+            {{- end }}
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
       volumes:
+        {{- if .Values.tls.enable }}
         - name: nfd-master-cert
           secret:
             secretName: nfd-master-cert
+        {{- end }}
         - name: nfd-master-conf
           configMap:
             name: {{ include "node-feature-discovery.fullname" . }}-master-conf
@@ -126,8 +131,6 @@ spec:
               - key: nfd-master.conf
                 path: nfd-master.conf
 
-    ## /TLS ##
-    {{- end }}
     {{- with .Values.master.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
