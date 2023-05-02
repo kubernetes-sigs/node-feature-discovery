@@ -98,7 +98,6 @@ type Args struct {
 	Prune                bool
 	VerifyNodeName       bool
 	Options              string
-	ResyncPeriod         utils.DurationVal
 
 	Overrides ConfigOverrideArgs
 }
@@ -163,7 +162,6 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
-
 	return nfd, nil
 }
 
@@ -199,17 +197,9 @@ func (m *nfdMaster) Run() error {
 	}
 
 	if m.args.CrdController {
-		kubeconfig, err := m.getKubeconfig()
+		err := m.startNfdApiController()
 		if err != nil {
 			return err
-		}
-		klog.Info("starting nfd api controller")
-		m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-			disableNodeFeature: !m.args.EnableNodeFeatureApi,
-			resyncPeriod:       m.args.ResyncPeriod.Duration,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to initialize CRD controller: %w", err)
 		}
 	}
 
@@ -249,8 +239,20 @@ func (m *nfdMaster) Run() error {
 			if err := m.configure(m.configFilePath, m.args.Options); err != nil {
 				return err
 			}
-			// Update all nodes when the configuration changes
+
+			// restart NFD API controller
 			if m.nfdController != nil {
+				klog.Info("stopping the nfd api controller")
+				m.nfdController.stop()
+			}
+			if m.args.CrdController {
+				err := m.startNfdApiController()
+				if err != nil {
+					return nil
+				}
+			}
+			// Update all nodes when the configuration changes
+			if m.nfdController != nil && m.args.EnableNodeFeatureApi {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
 		case <-m.stop:
@@ -1143,6 +1145,7 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 		}
 		m.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
 	}
+
 	// Pre-process DenyLabelNS into 2 lists: one for normal ns, and the other for wildcard ns
 	normalDeniedNs, wildcardDeniedNs := preProcessDeniedNamespaces(c.DenyLabelNs)
 	m.deniedNs.normal = normalDeniedNs
@@ -1210,4 +1213,20 @@ func (m *nfdMaster) instanceAnnotation(name string) string {
 		return name
 	}
 	return m.args.Instance + "." + name
+}
+
+func (m *nfdMaster) startNfdApiController() error {
+	kubeconfig, err := m.getKubeconfig()
+	if err != nil {
+		return err
+	}
+	klog.Info("starting nfd api controller")
+	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
+		DisableNodeFeature: !m.args.EnableNodeFeatureApi,
+		ResyncPeriod:       m.config.ResyncPeriod.Duration,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to initialize CRD controller: %w", err)
+	}
+	return nil
 }

@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -33,6 +34,7 @@ import (
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	resourcev1 "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"k8s.io/kubernetes/test/e2e/framework"
@@ -41,6 +43,7 @@ import (
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	admissionapi "k8s.io/pod-security-admission/api"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	"sigs.k8s.io/node-feature-discovery/source/custom"
@@ -907,6 +910,73 @@ denyLabelNs: []
 						expectedLabels,
 						nodes,
 					)).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("and test whether resyncPeriod is passed successfully or not", func() {
+				BeforeEach(func(ctx context.Context) {
+					extraMasterPodSpecOpts = []testpod.SpecOption{
+						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
+					}
+					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
+resyncPeriod: "1s"
+`)
+					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("labels should be restored to the original ones", func(ctx context.Context) {
+					// deploy node feature object
+					if !useNodeFeatureApi {
+						Skip("NodeFeature API not enabled")
+					}
+
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					targetNodeName := nodes[0].Name
+					Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
+
+					// Apply Node Feature object
+					By("Creating NodeFeature object")
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying node labels from NodeFeature object #1")
+					expectedLabels := map[string]k8sLabels{
+						targetNodeName: {
+							nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-1": "obj-1",
+							nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-2": "obj-1",
+							nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3":      "overridden",
+						},
+					}
+					Expect(checkForNodeLabels(ctx, f.ClientSet,
+						expectedLabels, nodes,
+					)).NotTo(HaveOccurred())
+
+					patches, err := json.Marshal(
+						[]apihelper.JsonPatch{
+							apihelper.NewJsonPatch(
+								"replace",
+								"/metadata/labels",
+								nfdv1alpha1.FeatureLabelNs+"/e2e-nodefeature-test-1",
+								"randomValue",
+							),
+						},
+					)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = f.ClientSet.CoreV1().Nodes().Patch(ctx, targetNodeName, types.JSONPatchType, patches, metav1.PatchOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(checkForNodeLabels(ctx,
+						f.ClientSet,
+						expectedLabels,
+						nodes,
+					)).NotTo(HaveOccurred())
+
+					By("Deleting NodeFeature object")
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
