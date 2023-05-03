@@ -57,47 +57,28 @@ func main() {
 
 	// Assert that the version is known
 	if version.Undefined() {
-		klog.Warningf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
+		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	// Plug klog into grpc logging infrastructure
 	utils.ConfigureGrpcKlog()
 
-	u, err := url.ParseRequestURI(resourcemonitorArgs.KubeletConfigURI)
+	klConfig, err := getKubeletConfig(resourcemonitorArgs.KubeletConfigURI, resourcemonitorArgs.APIAuthTokenFile)
 	if err != nil {
-		klog.Exitf("failed to parse args for kubelet-config-uri: %v", err)
-	}
-
-	// init kubelet API client
-	var klConfig *kubeletconfigv1beta1.KubeletConfiguration
-	switch u.Scheme {
-	case "file":
-		klConfig, err = kubeconf.GetKubeletConfigFromLocalFile(u.Path)
-		if err != nil {
-			klog.Exitf("failed to read kubelet config: %v", err)
-		}
-	case "https":
-		restConfig, err := kubeconf.InsecureConfig(u.String(), resourcemonitorArgs.APIAuthTokenFile)
-		if err != nil {
-			klog.Exitf("failed to initialize rest config for kubelet config uri: %v", err)
-		}
-
-		klConfig, err = kubeconf.GetKubeletConfiguration(restConfig)
-		if err != nil {
-			klog.Exitf("failed to get kubelet config from configz endpoint: %v", err)
-		}
-	default:
-		klog.Exitf("unsupported URI scheme: %v", u.Scheme)
+		klog.ErrorS(err, "failed to get kubelet configuration")
+		os.Exit(1)
 	}
 
 	// Get new TopologyUpdater instance
 	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs, klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope)
 	if err != nil {
-		klog.Exit(err)
+		klog.ErrorS(err, "failed to initialize topology updater instance")
+		os.Exit(1)
 	}
 
 	if err = instance.Run(); err != nil {
-		klog.Exit(err)
+		klog.ErrorS(err, "error while running")
+		os.Exit(1)
 	}
 }
 
@@ -152,4 +133,35 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	klog.InitFlags(flagset)
 
 	return args, resourcemonitorArgs
+}
+
+func getKubeletConfig(uri, apiAuthTokenFile string) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+	u, err := url.ParseRequestURI(uri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse -kubelet-config-uri: %w", err)
+	}
+
+	// init kubelet API client
+	var klConfig *kubeletconfigv1beta1.KubeletConfiguration
+	switch u.Scheme {
+	case "file":
+		klConfig, err = kubeconf.GetKubeletConfigFromLocalFile(u.Path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read kubelet config: %w", err)
+		}
+		return klConfig, err
+	case "https":
+		restConfig, err := kubeconf.InsecureConfig(u.String(), apiAuthTokenFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
+		}
+
+		klConfig, err = kubeconf.GetKubeletConfiguration(restConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubelet config from configz endpoint: %w", err)
+		}
+		return klConfig, nil
+	}
+
+	return nil, fmt.Errorf("unsupported URI scheme: %v", u.Scheme)
 }

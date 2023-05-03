@@ -120,8 +120,7 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args, pol
 // Run nfdTopologyUpdater. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the updater args.
 func (w *nfdTopologyUpdater) Run() error {
-	klog.Infof("Node Feature Discovery Topology Updater %s", version.Get())
-	klog.Infof("NodeName: '%s'", w.nodeInfo.nodeName)
+	klog.InfoS("Node Feature Discovery Topology Updater", "version", version.Get(), "nodeName", w.nodeInfo.nodeName)
 
 	podResClient, err := podres.GetPodResClient(w.resourcemonitorArgs.PodResourceSocketPath)
 	if err != nil {
@@ -158,16 +157,14 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
 
-	klog.V(2).Infof("resAggr is: %v\n", resAggr)
-
 	for {
 		select {
 		case info := <-w.eventSource:
-			klog.V(4).Infof("got %q event. scanning...", info.Event)
+			klog.V(4).InfoS("event received, scanning...", "event", info.Event)
 			scanResponse, err := resScan.Scan()
 			utils.KlogDump(1, "podResources are", "  ", scanResponse.PodResources)
 			if err != nil {
-				klog.Warningf("scan failed: %v", err)
+				klog.ErrorS(err, "scan failed")
 				continue
 			}
 			zones = resAggr.Aggregate(scanResponse.PodResources)
@@ -183,7 +180,7 @@ func (w *nfdTopologyUpdater) Run() error {
 			}
 
 		case <-w.stop:
-			klog.Infof("shutting down nfd-topology-updater")
+			klog.InfoS("shutting down nfd-topology-updater")
 			return nil
 		}
 	}
@@ -240,7 +237,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 
 func (w *nfdTopologyUpdater) configure() error {
 	if w.configFilePath == "" {
-		klog.Warningf("file path for nfd-topology-updater conf file is empty")
+		klog.InfoS("no configuration file specified")
 		return nil
 	}
 
@@ -248,7 +245,7 @@ func (w *nfdTopologyUpdater) configure() error {
 	if err != nil {
 		// config is optional
 		if os.IsNotExist(err) {
-			klog.Warningf("couldn't find conf file under %v", w.configFilePath)
+			klog.InfoS("configuration file not found", "path", w.configFilePath)
 			return nil
 		}
 		return err
@@ -258,7 +255,7 @@ func (w *nfdTopologyUpdater) configure() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse configuration file %q: %w", w.configFilePath, err)
 	}
-	klog.Infof("configuration file %q parsed:\n %v", w.configFilePath, w.config)
+	klog.InfoS("configuration file parsed", "path", w.configFilePath, "config", w.config)
 	return nil
 }
 
