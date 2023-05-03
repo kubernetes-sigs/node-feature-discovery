@@ -68,7 +68,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 			}
 		}
 		if !matched {
-			klog.V(2).Infof("rule %q did not match", r.Name)
+			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{}, nil
 		}
 	}
@@ -77,7 +77,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		if isMatch, matches, err := r.MatchFeatures.match(features); err != nil {
 			return RuleOutput{}, err
 		} else if !isMatch {
-			klog.V(2).Infof("rule %q did not match", r.Name)
+			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{}, nil
 		} else {
 			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", matches)
@@ -169,7 +169,7 @@ func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error
 
 		nameSplit := strings.SplitN(term.Feature, ".", 2)
 		if len(nameSplit) != 2 {
-			klog.Warning("feature %q not of format <domain>.<feature>, cannot be used for templating", term.Feature)
+			klog.InfoS("invalid feature name (not <domain>.<feature>), cannot be used for templating", "featureName", term.Feature)
 			nameSplit = []string{featureName, ""}
 		}
 
