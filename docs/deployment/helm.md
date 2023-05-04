@@ -177,7 +177,7 @@ We have introduced the following Chart parameters.
 | `topologyUpdater.affinity`                    | dict   | {}                      | Topology updater pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                                                      |
 | `topologyUpdater.config`                      | dict   |                         | [configuration](../reference/topology-updater-configuration-reference)                                                                                                                                |
 | `topologyUpdater.podSetFingerprint`           | bool   | false                   | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
-| `topologyUpdater.kubeletStateDir`             | string | "/host-var/lib/kubelet" | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                          |
+| `topologyUpdater.kubeletStateDir`             | string | /var/lib/kubelet | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                          |
 
 ### Topology garbage collector parameters
 
