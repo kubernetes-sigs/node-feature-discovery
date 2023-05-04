@@ -410,7 +410,7 @@ topologyUpdater:
   kubeletPodResourcesSockPath:
   updateInterval: 60s
   watchNamespace: "*"
-  kubeletStateDir: /host-var/lib/kubelet
+  kubeletStateDir: /var/lib/kubelet
 
   podSecurityContext: {}
   securityContext:
