@@ -37,6 +37,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: NODE_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         command:
           - "nfd-topology-updater"
         args:
