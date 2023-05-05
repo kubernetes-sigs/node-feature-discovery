@@ -62,6 +62,10 @@ spec:
           {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
           - "-kubelet-config-uri=file:///host-var/kubelet-config"
           {{- end }}
+          {{- if .Values.topologyUpdater.kubeletStateDir | empty }}
+          # Disable kubelet state tracking by giving an empty path
+          - "-kubelet-state-dir="
+          {{- end }}
         volumeMounts:
         {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
         - name: kubelet-config
