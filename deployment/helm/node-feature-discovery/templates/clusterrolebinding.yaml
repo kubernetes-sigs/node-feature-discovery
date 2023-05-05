@@ -16,7 +16,7 @@ subjects:
 {{- end }}
 
 ---
-{{- if .Values.topologyUpdater.rbac.create }}
+{{- if and .Values.topologyUpdater.enable .Values.topologyUpdater.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
