@@ -400,7 +400,7 @@ topologyUpdater:
   createCRDs: false
 
   serviceAccount:
-    create: false
+    create: true
     annotations: {}
     name:
   rbac:
