@@ -40,6 +40,7 @@ spec:
         command:
           - "nfd-topology-updater"
         args:
+          - "-podresources-socket=/host-var/lib/kubelet-podresources/kubelet.sock"
           {{- if .Values.topologyUpdater.updateInterval | empty | not }}
           - "-sleep-interval={{ .Values.topologyUpdater.updateInterval }}"
           {{- else }}
@@ -67,7 +68,7 @@ spec:
           mountPath: /host-var/kubelet-config
         {{- end }}
         - name: kubelet-podresources-sock
-          mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
+          mountPath: /host-var/lib/kubelet-podresources/kubelet.sock
         - name: host-sys
           mountPath: /host-sys
         {{- if .Values.topologyUpdater.kubeletStateDir | empty | not }}
