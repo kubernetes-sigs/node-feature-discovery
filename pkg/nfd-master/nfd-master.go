@@ -30,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -38,9 +39,12 @@ import (
 	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
 	k8sQuantity "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
@@ -71,6 +75,14 @@ type NFDConfig struct {
 	ResourceLabels utils.StringSetVal
 	EnableTaints   bool
 	ResyncPeriod   utils.DurationVal
+	LeaderElection LeaderElectionConfig
+}
+
+// LeaderElectionConfig contains the configuration for leader election
+type LeaderElectionConfig struct {
+	LeaseDuration utils.DurationVal
+	RenewDeadline utils.DurationVal
+	RetryPeriod   utils.DurationVal
 }
 
 // ConfigOverrideArgs are args that override config file options
@@ -98,6 +110,7 @@ type Args struct {
 	Prune                bool
 	VerifyNodeName       bool
 	Options              string
+	EnableLeaderElection bool
 
 	Overrides ConfigOverrideArgs
 }
@@ -174,6 +187,11 @@ func newDefaultConfig() *NFDConfig {
 		ResourceLabels: utils.StringSetVal{},
 		EnableTaints:   false,
 		ResyncPeriod:   utils.DurationVal{Duration: time.Duration(1) * time.Hour},
+		LeaderElection: LeaderElectionConfig{
+			LeaseDuration: utils.DurationVal{Duration: time.Duration(15) * time.Second},
+			RetryPeriod:   utils.DurationVal{Duration: time.Duration(2) * time.Second},
+			RenewDeadline: utils.DurationVal{Duration: time.Duration(10) * time.Second},
+		},
 	}
 }
 
@@ -221,7 +239,11 @@ func (m *nfdMaster) Run() error {
 
 	// Run updater that handles events from the nfd CRD API.
 	if m.nfdController != nil {
-		go m.nfdAPIUpdateHandler()
+		if m.args.EnableLeaderElection {
+			go m.nfdAPIUpdateHandlerWithLeaderElection()
+		} else {
+			go m.nfdAPIUpdateHandler()
+		}
 	}
 
 	// Notify that we're ready to accept connections
@@ -1229,4 +1251,48 @@ func (m *nfdMaster) startNfdApiController() error {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
 	}
 	return nil
+}
+
+func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
+	ctx := context.Background()
+	client, err := m.apihelper.GetClient()
+	if err != nil {
+		klog.ErrorS(err, "failed to get Kubernetes client")
+		m.Stop()
+	}
+	lock := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      "nfd-master.nfd.kubernetes.io",
+			Namespace: m.namespace,
+		},
+		Client: client.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			// add uuid to prevent situation where 2 nfd-master nodes run on same node
+			Identity: m.nodeName + "_" + uuid.NewString(),
+		},
+	}
+	config := leaderelection.LeaderElectionConfig{
+		Lock: lock,
+		// make it configurable?
+		LeaseDuration: m.config.LeaderElection.LeaseDuration.Duration,
+		RetryPeriod:   m.config.LeaderElection.RetryPeriod.Duration,
+		RenewDeadline: m.config.LeaderElection.RenewDeadline.Duration,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(_ context.Context) {
+				m.nfdAPIUpdateHandler()
+			},
+			OnStoppedLeading: func() {
+				// We lost the lock.
+				klog.ErrorS(err, "leaderelection lock was lost")
+				m.Stop()
+			},
+		},
+	}
+	leaderElector, err := leaderelection.NewLeaderElector(config)
+	if err != nil {
+		klog.ErrorS(err, "couldn't create leader elector")
+		m.Stop()
+	}
+
+	leaderElector.Run(ctx)
 }

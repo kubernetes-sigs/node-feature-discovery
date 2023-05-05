@@ -29,6 +29,11 @@ are created on the node (note the allowed
 > its [`-enable-nodefeature-api`](../reference/worker-commandline-reference.md#-enable-nodefeature-api)
 > flag.
 
+When `-enable-nodefeature-api` option is enabled and NFD-Master is intended to run
+with more than one replica, it is advised to use `-enable-leader-election` flag.
+This flag turns on leader election for NFD-Master and let only one replica
+to act on changes in NodeFeature and NodeFeatureRule objects.
+
 ## NodeFeatureRule controller
 
 NFD-Master acts as the controller for

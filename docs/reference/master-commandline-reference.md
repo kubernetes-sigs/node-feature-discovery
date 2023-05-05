@@ -151,6 +151,20 @@ Example:
 nfd-master -enable-nodefeature-api
 ```
 
+### -enable-leader-election
+
+The `-enable-leader-election` flag enables leader election for NFD-Master.
+It is advised to turn on this flag when running more than one instance of
+NFD-Master.
+
+This flag takes effect only when combined with `-enable-nodefeature-api` flag.
+
+Default: false
+
+```bash
+nfd-master -enable-nodefeature-api -enable-leader-election
+```
+
 ### -enable-taints
 
 The `-enable-taints` flag enables/disables node tainting feature of NFD.

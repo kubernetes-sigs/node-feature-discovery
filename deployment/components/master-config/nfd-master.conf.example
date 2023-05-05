@@ -5,3 +5,9 @@
 # enableTaints: false
 # labelWhiteList: "foo"
 # resyncPeriod: "2h"
+# leaderElection:
+#   leaseDuration: 15s
+#   # this value has to be lower than leaseDuration and greater than retryPeriod*1.2
+#   renewDeadline: 10s
+#   # this value has to be greater than 0
+#   retryPeriod: 2s

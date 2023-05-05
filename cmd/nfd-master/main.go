@@ -128,6 +128,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
+	flagset.BoolVar(&args.EnableLeaderElection, "enable-leader-election", false,
+		"Enables a leader election. Enable this when running more than one replica on nfd master.")
 
 	overrides := &master.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},

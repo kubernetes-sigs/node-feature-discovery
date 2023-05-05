@@ -82,6 +82,9 @@ spec:
             - "-port={{ .Values.master.port | default "8080" }}"
             {{- if .Values.enableNodeFeatureApi }}
             - "-enable-nodefeature-api"
+            {{- if  gt (int .Values.master.replicaCount) 1 }}
+            - "-enable-leader-election"
+            {{- end }}
             {{- end }}
             {{- if .Values.master.extraLabelNs | empty | not }}
             - "-extra-label-ns={{- join "," .Values.master.extraLabelNs }}"
