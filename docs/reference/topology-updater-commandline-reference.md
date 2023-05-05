@@ -109,7 +109,7 @@ nfd-topology-updater -watch-namespace=rte
 The `-kubelet-config-uri` specifies the path to the Kubelet's configuration.
 Note that the URi could either be a local host file or an HTTP endpoint.
 
-Default:  `https://${NODE_NAME}:10250/configz`
+Default:  `https://${NODE_ADDRESS}:10250/configz`
 
 Example:
 

@@ -14,3 +14,7 @@ patches:
   target:
     labelSelector: app=nfd
     name: nfd-topology-updater
+- path: env.yaml
+  target:
+    labelSelector: app=nfd
+    name: nfd-topology-updater
