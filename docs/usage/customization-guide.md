@@ -175,9 +175,6 @@ spec:
       annotations:
         "my-sample-feature-annotation": "test"
       matchFeatures:
-        - feature: kernel.loadedmodule
-          matchExpressions:
-            dummy: {op: Exists}
         - feature: kernel.config
           matchExpressions:
             X86: {op: In, value: ["y"]}

@@ -60,7 +60,7 @@ const (
 	NodeTaintsAnnotation = AnnotationNs + "/taints"
 
 	// NodeFeatureAnnotation is the annotation that holds all feature annotations that nfd-master set on the node
-	FeatureAnnotationsTracingAnnotation = AnnotationNs + "/feature-annotations"
+	FeatureAnnotationsTrackingAnnotation = AnnotationNs + "/feature-annotations"
 
 	// NodeFeatureObjNodeNameLabel is the label that specifies which node the
 	// NodeFeature object is targeting. Creators of NodeFeature objects must
