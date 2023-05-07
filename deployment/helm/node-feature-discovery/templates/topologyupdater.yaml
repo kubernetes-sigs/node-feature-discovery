@@ -37,9 +37,14 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: NODE_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         command:
           - "nfd-topology-updater"
         args:
+          - "-podresources-socket=/host-var/lib/kubelet-podresources/kubelet.sock"
           {{- if .Values.topologyUpdater.updateInterval | empty | not }}
           - "-sleep-interval={{ .Values.topologyUpdater.updateInterval }}"
           {{- else }}
@@ -61,13 +66,17 @@ spec:
           {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
           - "-kubelet-config-uri=file:///host-var/kubelet-config"
           {{- end }}
+          {{- if .Values.topologyUpdater.kubeletStateDir | empty }}
+          # Disable kubelet state tracking by giving an empty path
+          - "-kubelet-state-dir="
+          {{- end }}
         volumeMounts:
         {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
         - name: kubelet-config
           mountPath: /host-var/kubelet-config
         {{- end }}
         - name: kubelet-podresources-sock
-          mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
+          mountPath: /host-var/lib/kubelet-podresources/kubelet.sock
         - name: host-sys
           mountPath: /host-sys
         {{- if .Values.topologyUpdater.kubeletStateDir | empty | not }}

@@ -112,12 +112,13 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) (*topology.Args, *resource
 	}
 
 	if len(resourcemonitorArgs.KubeletConfigURI) == 0 {
-		if len(utils.NodeName()) == 0 {
-			fmt.Fprintf(flags.Output(), "unable to determine the default kubelet config endpoint 'https://${NODE_NAME}:%d/configz' due to empty NODE_NAME environment, "+
-				"please either define the NODE_NAME environment variable or specify endpoint with the -kubelet-config-uri flag\n", kubeletSecurePort)
+		nodeAddress := os.Getenv("NODE_ADDRESS")
+		if len(nodeAddress) == 0 {
+			fmt.Fprintf(flags.Output(), "unable to determine the default kubelet config endpoint 'https://${NODE_ADDRESS}:%d/configz' due to empty NODE_ADDRESS environment, "+
+				"please either define the NODE_ADDRESS environment variable or specify endpoint with the -kubelet-config-uri flag\n", kubeletSecurePort)
 			os.Exit(1)
 		}
-		resourcemonitorArgs.KubeletConfigURI = fmt.Sprintf("https://%s:%d/configz", utils.NodeName(), kubeletSecurePort)
+		resourcemonitorArgs.KubeletConfigURI = fmt.Sprintf("https://%s:%d/configz", nodeAddress, kubeletSecurePort)
 	}
 
 	return args, resourcemonitorArgs

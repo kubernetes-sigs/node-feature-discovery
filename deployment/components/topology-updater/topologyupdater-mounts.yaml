@@ -4,9 +4,6 @@
   - name: host-sys
     hostPath:
       path: "/sys"
-  - name: kubelet-podresources-sock
-    hostPath:
-      path: /var/lib/kubelet/pod-resources/kubelet.sock
   - name: nfd-topology-updater-conf
     configMap:
       name: nfd-topology-updater-conf
@@ -17,8 +14,6 @@
 - op: add
   path: /spec/template/spec/containers/0/volumeMounts
   value:
-  - name: kubelet-podresources-sock
-    mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
   - name: host-sys
     mountPath: /host-sys
   - name: nfd-topology-updater-conf
