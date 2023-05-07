@@ -982,28 +982,32 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
 	}
 
-	// Store names of feature annotations in an annotation
-	annotationKeys := make([]string, 0, len(featureAnnotations))
-	for key := range featureAnnotations {
-		// Drop the ns part for annotations in the default ns
-		annotationKeys = append(annotationKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureAnnotationNs+"/"))
-	}
-	sort.Strings(annotationKeys)
-	nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTracingAnnotation)] = strings.Join(annotationKeys, ",")
-
 	annotations := make(Annotations)
-	for k, v := range nfdAnnotations {
-		annotations[k] = v
+	if len(featureAnnotations) > 0 {
+		// Store names of feature annotations in an annotation
+		annotationKeys := make([]string, 0, len(featureAnnotations))
+		for key := range featureAnnotations {
+			// Drop the ns part for annotations in the default ns
+			annotationKeys = append(annotationKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureAnnotationNs+"/"))
+		}
+		sort.Strings(annotationKeys)
+		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)] = strings.Join(annotationKeys, ",")
+		for k, v := range featureAnnotations {
+			annotations[k] = v
+		}
 	}
-	for k, v := range featureAnnotations {
-		annotations[k] = v
+
+	if len(nfdAnnotations) > 0 {
+		for k, v := range nfdAnnotations {
+			annotations[k] = v
+		}
 	}
 
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
-	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTracingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
+	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
-	oldAnnotations = append(oldAnnotations, []string{nfdv1alpha1.FeatureLabelsAnnotation, nfdv1alpha1.ExtendedResourceAnnotation}...)
+	oldAnnotations = append(oldAnnotations, []string{nfdv1alpha1.FeatureLabelsAnnotation, nfdv1alpha1.ExtendedResourceAnnotation, nfdv1alpha1.FeatureAnnotationsTrackingAnnotation}...)
 	patches = append(patches, createPatches(oldAnnotations, node.Annotations, annotations, "/metadata/annotations")...)
 
 	// patch node status with extended resource changes
