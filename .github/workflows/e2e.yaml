@@ -1,0 +1,24 @@
+name: End to end verification
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    paths-ignore:
+      - 'docs/**'
+      - 'demo/**'
+      - 'examples/**'
+      - 'README.md'
+      - 'codecov.yaml'
+      - 'OWNERS'
+      - 'SECURITY_CONTACTS'
+      - 'Tiltfile'
+      - 'code-of-conduct.md'
+      - 'CONTRIBUTING.md'
+      - 'netlify.yml'
+jobs:
+  e2e:
+    runs-on: [self-hosted, Linux, X64, nfd01]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Execute E2E script
+        run: ./scripts/test-infra/test-e2e-presubmit.sh
+        shell: bash
