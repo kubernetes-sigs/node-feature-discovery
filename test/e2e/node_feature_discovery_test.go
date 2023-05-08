@@ -150,19 +150,23 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 	nfrs, err := cli.NfdV1alpha1().NodeFeatureRules().List(ctx, metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Deleting NodeFeatureRule objects from the cluster")
-	for _, nfr := range nfrs.Items {
-		err = cli.NfdV1alpha1().NodeFeatureRules().Delete(ctx, nfr.Name, metav1.DeleteOptions{})
-		Expect(err).NotTo(HaveOccurred())
+	if len(nfrs.Items) != 0 {
+		By("Deleting NodeFeatureRule objects from the cluster")
+		for _, nfr := range nfrs.Items {
+			err = cli.NfdV1alpha1().NodeFeatureRules().Delete(ctx, nfr.Name, metav1.DeleteOptions{})
+			Expect(err).NotTo(HaveOccurred())
+		}
 	}
 
 	nfs, err := cli.NfdV1alpha1().NodeFeatures(namespace).List(ctx, metav1.ListOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Deleting NodeFeature objects from namespace " + namespace)
-	for _, nf := range nfs.Items {
-		err = cli.NfdV1alpha1().NodeFeatures(namespace).Delete(ctx, nf.Name, metav1.DeleteOptions{})
-		Expect(err).NotTo(HaveOccurred())
+	if len(nfs.Items) != 0 {
+		By("Deleting NodeFeature objects from namespace " + namespace)
+		for _, nf := range nfs.Items {
+			err = cli.NfdV1alpha1().NodeFeatures(namespace).Delete(ctx, nf.Name, metav1.DeleteOptions{})
+			Expect(err).NotTo(HaveOccurred())
+		}
 	}
 }
 
