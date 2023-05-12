@@ -91,7 +91,7 @@ func getHugepagesBytes(path string) (MemoryResourceInfo, error) {
 	for _, entry := range entries {
 		split := strings.SplitN(entry.Name(), "-", 2)
 		if len(split) != 2 || split[0] != "hugepages" {
-			klog.Warningf("malformed hugepages entry %q", entry.Name())
+			klog.InfoS("malformed hugepages entry", "hugepagesEntry", entry.Name())
 			continue
 		}
 
