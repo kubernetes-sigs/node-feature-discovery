@@ -131,6 +131,7 @@ We have introduced the following Chart parameters.
 | `master.annotations`        | dict    | {}                                      | NFD master pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                |
 | `master.affinity`           | dict    |                                         | NFD master pod required [node affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/) |
 | `master.deploymentAnnotations` | dict | {}                                      | NFD master deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
+| `master.nfdApiParallelism`  | integer | 10                                      | Specifies the maximum number of concurrent node updates. |
 | `master.config`             | dict    |                                         | NFD master [configuration](../reference/master-configuration-reference) |
 
 ### Worker pod parameters

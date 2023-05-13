@@ -313,6 +313,21 @@ Example:
 nfd-master -options='{"noPublish": true}'
 ```
 
+### -nfd-api-parallelism
+
+The `-nfd-api-parallelism` flag can be used to specify the maximum
+number of concurrent node updates.
+
+It takes effect only when `-enable-nodefeature-api` has been set.
+
+Default: 10
+
+Example:
+
+```bash
+nfd-master -nfd-api-parallelism=1
+```
+
 ### Logging
 
 The following logging-related flags are inherited from the

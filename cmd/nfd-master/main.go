@@ -70,6 +70,8 @@ func main() {
 			args.Overrides.NoPublish = overrides.NoPublish
 		case "resync-period":
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
+		case "nfd-api-parallelism":
+			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
 		}
 	})
 
@@ -156,5 +158,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.Var(overrides.ResyncPeriod, "resync-period",
 		"Specify the NFD API controller resync period."+
 			"It has an effect when the NodeFeature API has been enabled (with -enable-nodefeature-api).")
+	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
+		"Can be used for the throttling mechanism. It has effect only when -enable-nodefeature-api has been set.")
+
 	return args, overrides
 }
