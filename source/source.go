@@ -21,8 +21,6 @@ package source
 import (
 	"fmt"
 
-	"k8s.io/klog/v2"
-
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 )
 
@@ -167,7 +165,7 @@ func GetAllFeatures() *nfdv1alpha1.Features {
 			// Prefix feature with the name of the source
 			k = n + "." + k
 			if typ := features.Exists(k); typ != "" {
-				klog.Exitf("feature source %q returned flag feature %q which already exists (type %q)", n, k, typ)
+				panic(fmt.Sprintf("feature source %q returned flag feature %q which already exists (type %q)", n, k, typ))
 			}
 			features.Flags[k] = v
 		}
@@ -175,7 +173,7 @@ func GetAllFeatures() *nfdv1alpha1.Features {
 			// Prefix feature with the name of the source
 			k = n + "." + k
 			if typ := features.Exists(k); typ != "" {
-				klog.Exitf("feature source %q returned attribute feature %q which already exists (type %q)", n, k, typ)
+				panic(fmt.Sprintf("feature source %q returned attribute feature %q which already exists (type %q)", n, k, typ))
 			}
 			features.Attributes[k] = v
 		}
@@ -183,7 +181,7 @@ func GetAllFeatures() *nfdv1alpha1.Features {
 			// Prefix feature with the name of the source
 			k = n + "." + k
 			if typ := features.Exists(k); typ != "" {
-				klog.Exitf("feature source %q returned instance feature %q which already exists (type %q)", n, k, typ)
+				panic(fmt.Sprintf("feature source %q returned instance feature %q which already exists (type %q)", n, k, typ))
 			}
 			features.Instances[k] = v
 		}

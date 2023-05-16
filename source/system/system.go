@@ -87,7 +87,7 @@ func (s *systemSource) Discover() error {
 	// Get os-release information
 	release, err := parseOSRelease()
 	if err != nil {
-		klog.Errorf("failed to get os-release: %s", err)
+		klog.ErrorS(err, "failed to get os-release")
 	} else {
 		s.features.Attributes[OsReleaseFeature] = nfdv1alpha1.NewAttributeFeatures(release)
 

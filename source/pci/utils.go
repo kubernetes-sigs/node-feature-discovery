@@ -83,7 +83,7 @@ func detectPci() ([]nfdv1alpha1.InstanceFeature, error) {
 	for _, device := range devices {
 		info, err := readPciDevInfo(filepath.Join(sysfsBasePath, device.Name()))
 		if err != nil {
-			klog.Error(err)
+			klog.ErrorS(err, "failed to read PCI device info")
 			continue
 		}
 		devInfo = append(devInfo, *info)

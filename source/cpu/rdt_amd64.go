@@ -112,19 +112,19 @@ func getNumClosID(level string) int64 {
 	closidFile := filepath.Join(resctrlRootDir, "info", level, "num_closids")
 
 	if _, err := os.Stat(closidFile); err != nil {
-		klog.V(4).ErrorS(err, "failed to stat file", "fileName", closidFile)
+		klog.V(4).ErrorS(err, "failed to stat file", "path", closidFile)
 		return -1
 	}
 
 	closidsBytes, err := os.ReadFile(filepath.Join(resctrlRootDir, "info", level, "num_closids"))
 	if err != nil {
-		klog.V(4).ErrorS(err, "failed to read file", "fileName", closidFile)
+		klog.V(4).ErrorS(err, "failed to read file", "path", closidFile)
 		return -1
 	}
 
 	numClosIDs, err := strconv.ParseInt(string(bytes.TrimSpace(closidsBytes)), 10, 64)
 	if err != nil {
-		klog.V(4).ErrorS(err, "failed to ParseInt", "num_closids", string(bytes.TrimSpace(closidsBytes)))
+		klog.V(4).ErrorS(err, "failed to parse num_closids", "value", string(bytes.TrimSpace(closidsBytes)))
 		return -1
 	}
 

@@ -17,7 +17,6 @@ limitations under the License.
 package cpu
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,23 +31,23 @@ func detectPstate() (map[string]string, error) {
 	// Check that sysfs is available
 	sysfsBase := hostpath.SysfsDir.Path("devices/system/cpu")
 	if _, err := os.Stat(sysfsBase); err != nil {
-		return nil, fmt.Errorf("unable to detect pstate status: %w", err)
+		return nil, err
 	}
 	pstateDir := filepath.Join(sysfsBase, "intel_pstate")
 	if _, err := os.Stat(pstateDir); os.IsNotExist(err) {
-		klog.V(1).Info("intel pstate driver not enabled")
+		klog.V(1).InfoS("intel pstate driver not enabled")
 		return nil, nil
 	}
 
 	// Get global pstate status
 	data, err := os.ReadFile(filepath.Join(pstateDir, "status"))
 	if err != nil {
-		return nil, fmt.Errorf("could not read pstate status: %w", err)
+		return nil, err
 	}
 	status := strings.TrimSpace(string(data))
 	if status == "off" {
 		// No need to check other pstate features
-		klog.Infof("intel_pstate driver is not in use")
+		klog.InfoS("intel_pstate driver is not in use")
 		return nil, nil
 	}
 	features := map[string]string{"status": status}
@@ -56,7 +55,7 @@ func detectPstate() (map[string]string, error) {
 	// Check turbo boost
 	bytes, err := os.ReadFile(filepath.Join(pstateDir, "no_turbo"))
 	if err != nil {
-		klog.Errorf("can't detect whether turbo boost is enabled: %s", err.Error())
+		klog.ErrorS(err, "can't detect whether turbo boost is enabled")
 	} else {
 		features["turbo"] = "false"
 		if bytes[0] == byte('0') {
@@ -73,7 +72,7 @@ func detectPstate() (map[string]string, error) {
 	cpufreqDir := filepath.Join(sysfsBase, "cpufreq")
 	policies, err := os.ReadDir(cpufreqDir)
 	if err != nil {
-		klog.Errorf("failed to read cpufreq directory: %s", err.Error())
+		klog.ErrorS(err, "failed to read cpufreq directory")
 		return features, nil
 	}
 
@@ -82,23 +81,23 @@ func detectPstate() (map[string]string, error) {
 		// Ensure at least one cpu is using this policy
 		cpus, err := os.ReadFile(filepath.Join(cpufreqDir, policy.Name(), "affected_cpus"))
 		if err != nil {
-			klog.Errorf("could not read cpufreq policy %s affected_cpus", policy.Name())
+			klog.InfoS("could not read cpufreq affected_cpus", "cpufreqPolicyName", policy.Name())
 			continue
 		}
 		if strings.TrimSpace(string(cpus)) == "" {
-			klog.Infof("policy %s has no associated cpus", policy.Name())
+			klog.InfoS("cpufreq policy has no associated cpus", "cpufreqPolicyName", policy.Name())
 			continue
 		}
 
 		data, err := os.ReadFile(filepath.Join(cpufreqDir, policy.Name(), "scaling_governor"))
 		if err != nil {
-			klog.Errorf("could not read cpufreq policy %s scaling_governor", policy.Name())
+			klog.InfoS("could not read cpufreq scaling_governor", "cpufreqPolicyName", policy.Name())
 			continue
 		}
 		policy_scaling := strings.TrimSpace(string(data))
 		// Check that all of the policies have the same scaling governor, if not don't set feature
 		if scaling != "" && scaling != policy_scaling {
-			klog.Infof("scaling_governor for policy %s doesn't match prior policy", policy.Name())
+			klog.InfoS("scaling_governor for cpufreq policy doesn't match prior policy", "cpufreqPolicyName", policy.Name())
 			scaling = ""
 			break
 		}

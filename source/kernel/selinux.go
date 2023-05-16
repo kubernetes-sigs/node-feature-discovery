@@ -17,7 +17,6 @@ limitations under the License.
 package kernel
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -30,18 +29,18 @@ import (
 func SelinuxEnabled() (bool, error) {
 	sysfsBase := hostpath.SysfsDir.Path("fs")
 	if _, err := os.Stat(sysfsBase); err != nil {
-		return false, fmt.Errorf("unable to detect selinux status: %w", err)
+		return false, err
 	}
 
 	selinuxBase := filepath.Join(sysfsBase, "selinux")
 	if _, err := os.Stat(selinuxBase); os.IsNotExist(err) {
-		klog.V(1).Info("selinux not available on the system")
+		klog.V(1).InfoS("selinux not available on the system")
 		return false, nil
 	}
 
 	status, err := os.ReadFile(filepath.Join(selinuxBase, "enforce"))
 	if err != nil {
-		return false, fmt.Errorf("failed to detect the status of selinux: %w", err)
+		return false, err
 	}
 	if status[0] == byte('1') {
 		// selinux is enabled.

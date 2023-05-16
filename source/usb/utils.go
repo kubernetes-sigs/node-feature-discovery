@@ -118,7 +118,7 @@ func detectUsb() ([]nfdv1alpha1.InstanceFeature, error) {
 	for _, devPath := range devPaths {
 		devs, err := readUsbDevInfo(filepath.Dir(devPath))
 		if err != nil {
-			klog.Error(err)
+			klog.ErrorS(err, "failed to read USB device info")
 			continue
 		}
 

@@ -97,7 +97,7 @@ func (s *customSource) SetConfig(conf source.Config) {
 	case *config:
 		s.config = v
 	default:
-		klog.Fatalf("invalid config type: %T", conf)
+		panic(fmt.Sprintf("invalid config type: %T", conf))
 	}
 }
 
@@ -117,7 +117,7 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	for _, rule := range allFeatureConfig {
 		ruleOut, err := rule.execute(features)
 		if err != nil {
-			klog.Error(err)
+			klog.ErrorS(err, "failed to execute rule")
 			continue
 		}
 
