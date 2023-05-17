@@ -162,13 +162,13 @@ func (w *nfdTopologyUpdater) Run() error {
 		case info := <-w.eventSource:
 			klog.V(4).InfoS("event received, scanning...", "event", info.Event)
 			scanResponse, err := resScan.Scan()
-			utils.KlogDump(1, "podResources are", "  ", scanResponse.PodResources)
+			klog.V(1).InfoS("received updated pod resources", "podResources", utils.DelayedDumper(scanResponse.PodResources))
 			if err != nil {
 				klog.ErrorS(err, "scan failed")
 				continue
 			}
 			zones = resAggr.Aggregate(scanResponse.PodResources)
-			utils.KlogDump(1, "after aggregating resources identified zones are", "  ", zones)
+			klog.V(1).InfoS("aggregated resources identified", "resourceZones", utils.DelayedDumper(zones))
 			if !w.args.NoPublish {
 				if err = w.updateNodeResourceTopology(zones, scanResponse); err != nil {
 					return err
@@ -231,7 +231,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 	if err != nil {
 		return fmt.Errorf("failed to update NodeResourceTopology: %w", err)
 	}
-	utils.KlogDump(4, "CR instance updated resTopo:", "  ", nrtUpdated)
+	klog.V(4).InfoS("NodeResourceTopology object updated", "nodeResourceTopology", utils.DelayedDumper(nrtUpdated))
 	return nil
 }
 

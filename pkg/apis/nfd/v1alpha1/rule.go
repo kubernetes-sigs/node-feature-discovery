@@ -50,7 +50,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 				return RuleOutput{}, err
 			} else if isMatch {
 				matched = true
-				utils.KlogDump(4, "matches for matchAny "+r.Name, "  ", matches)
+				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
 
 				if r.LabelsTemplate == "" && r.VarsTemplate == "" {
 					// there's no need to evaluate other matchers in MatchAny
@@ -80,7 +80,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{}, nil
 		} else {
-			utils.KlogDump(4, "matches for matchFeatures "+r.Name, "  ", matches)
+			klog.V(4).InfoS("matchFeatures matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
 			if err := r.executeLabelsTemplate(matches, labels); err != nil {
 				return RuleOutput{}, err
 			}
@@ -102,7 +102,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 	}
 
 	ret := RuleOutput{ExtendedResources: extendedResources, Labels: labels, Vars: vars, Taints: r.Taints}
-	utils.KlogDump(2, fmt.Sprintf("rule %q matched with: ", r.Name), "  ", ret)
+	klog.V(2).InfoS("rule matched", "ruleName", r.Name, "ruleOutput", utils.DelayedDumper(ret))
 	return ret, nil
 }
 

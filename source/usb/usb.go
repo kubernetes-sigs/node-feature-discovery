@@ -147,7 +147,7 @@ func (s *usbSource) Discover() error {
 	}
 	s.features.Instances[DeviceFeature] = nfdv1alpha1.NewInstanceFeatures(devs)
 
-	utils.KlogDump(3, "discovered usb features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }

@@ -563,8 +563,11 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 			labels[name] = value
 		}
 	}
-	klog.InfoS("feature discovery completed")
-	utils.KlogDump(1, "labels discovered by feature sources:", "  ", labels)
+	if klogV := klog.V(1); klogV.Enabled() {
+		klogV.InfoS("feature discovery completed", "labels", utils.DelayedDumper(labels))
+	} else {
+		klog.InfoS("feature discovery completed")
+	}
 	return labels
 }
 
@@ -702,7 +705,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			return fmt.Errorf("failed to create NodeFeature object %q: %w", nfr.Name, err)
 		}
 
-		utils.KlogDump(4, "NodeFeature object created:", "  ", nfrCreated)
+		klog.V(4).InfoS("NodeFeature object created", "nodeFeature", utils.DelayedDumper(nfrCreated))
 	} else if err != nil {
 		return fmt.Errorf("failed to get NodeFeature object: %w", err)
 	} else {
@@ -720,7 +723,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			if err != nil {
 				return fmt.Errorf("failed to update NodeFeature object %q: %w", nfr.Name, err)
 			}
-			utils.KlogDump(4, "NodeFeature object updated:", "  ", nfrUpdated)
+			klog.V(4).InfoS("NodeFeature object updated", "nodeFeature", utils.DelayedDumper(nfrUpdated))
 		} else {
 			klog.V(1).InfoS("no changes in NodeFeature object, not updating", "nodefeature", klog.KObj(nfr))
 		}

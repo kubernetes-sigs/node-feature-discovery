@@ -81,7 +81,7 @@ func (s *storageSource) Discover() error {
 	}
 	s.features.Instances[BlockFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: devs}
 
-	utils.KlogDump(3, "discovered storage features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }

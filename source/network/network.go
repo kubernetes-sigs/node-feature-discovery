@@ -99,7 +99,7 @@ func (s *networkSource) Discover() error {
 	}
 	s.features.Instances[DeviceFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: devs}
 
-	utils.KlogDump(3, "discovered network features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }

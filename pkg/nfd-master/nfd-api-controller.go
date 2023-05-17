@@ -57,7 +57,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
-	utils.KlogDump(2, "NFD API controller options:", "  ", nfdApiControllerOptions)
+	klog.V(2).InfoS("initializing new NFD API controller", "options", utils.DelayedDumper(nfdApiControllerOptions))
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.ResyncPeriod)
 

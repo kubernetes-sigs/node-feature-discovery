@@ -159,7 +159,7 @@ func (s *kernelSource) Discover() error {
 		s.features.Attributes[SelinuxFeature].Elements["enabled"] = strconv.FormatBool(selinux)
 	}
 
-	utils.KlogDump(3, "discovered kernel features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }

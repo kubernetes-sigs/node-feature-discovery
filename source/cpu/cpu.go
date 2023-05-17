@@ -270,7 +270,7 @@ func (s *cpuSource) Discover() error {
 	// Detect Coprocessor features
 	s.features.Attributes[CoprocessorFeature] = nfdv1alpha1.NewAttributeFeatures(discoverCoprocessor())
 
-	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }

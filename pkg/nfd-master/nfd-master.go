@@ -608,7 +608,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 
 	switch {
 	case klog.V(4).Enabled():
-		utils.KlogDump(3, "gRPC SetLabels request received", "  ", r)
+		klog.InfoS("gRPC SetLabels request received", "setLabelsRequest", utils.DelayedDumper(r))
 	case klog.V(1).Enabled():
 		klog.InfoS("gRPC SetLabels request received", "nodeName", r.NodeName, "nfdVersion", r.NfdVersion, "labels", r.Labels)
 	default:
@@ -697,7 +697,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 			o.Spec.MergeInto(features)
 		}
 
-		utils.KlogDump(4, "Composite NodeFeatureSpec after merge:", "  ", features)
+		klog.V(4).InfoS("merged nodeFeatureSpecs", "newNodeFeatureSpec", utils.DelayedDumper(features))
 
 		if objs[0].Namespace == m.namespace && objs[0].Name == nodeName {
 			// This is the one created by nfd-worker
@@ -939,8 +939,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 	for _, spec := range ruleSpecs {
 		switch {
 		case klog.V(3).Enabled():
-			h := fmt.Sprintf("executing NodeFeatureRule %q on node %q:", spec.Name, nodeName)
-			utils.KlogDump(3, h, "  ", spec.Spec)
+			klog.InfoS("executing NodeFeatureRule", "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName, "nodeFeatureRuleSpec", utils.DelayedDumper(spec.Spec))
 		case klog.V(1).Enabled():
 			klog.InfoS("executing NodeFeatureRule", "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName)
 		}
@@ -1181,8 +1180,7 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	m.deniedNs.normal["kubernetes.io"] = struct{}{}
 	m.deniedNs.wildcard[".kubernetes.io"] = struct{}{}
 
-	utils.KlogDump(1, "effective configuration:", "  ", m.config)
-	klog.InfoS("configuration successfully updated")
+	klog.InfoS("configuration successfully updated", "configuration", utils.DelayedDumper(m.config))
 
 	return nil
 }

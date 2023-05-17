@@ -101,7 +101,7 @@ func (s *systemSource) Discover() error {
 		}
 	}
 
-	utils.KlogDump(3, "discovered system features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }
