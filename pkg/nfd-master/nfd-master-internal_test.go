@@ -558,6 +558,10 @@ denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
 resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
 enableTaints: false
 labelWhiteList: "foo"
+leaderElection:
+  leaseDuration: 20s
+  renewDeadline: 4s
+  retryPeriod: 30s
 `)
 		f.Close()
 		So(err, ShouldBeNil)
@@ -573,6 +577,9 @@ labelWhiteList: "foo"
 				So(master.config.ResourceLabels, ShouldResemble, utils.StringSetVal{"vendor-1.com/feature-1": struct{}{}, "vendor-2.io/feature-2": struct{}{}}) // from cmdline
 				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}, "denied.kubernetes.io": struct{}{}})
 				So(master.config.LabelWhiteList.String(), ShouldEqual, "foo")
+				So(master.config.LeaderElection.LeaseDuration.Seconds(), ShouldEqual, float64(20))
+				So(master.config.LeaderElection.RenewDeadline.Seconds(), ShouldEqual, float64(4))
+				So(master.config.LeaderElection.RetryPeriod.Seconds(), ShouldEqual, float64(30))
 			})
 		})
 
