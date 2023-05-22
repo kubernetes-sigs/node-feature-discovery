@@ -4,7 +4,7 @@ layout: default
 sort: 2
 ---
 
-# Deploymenet with Kustomize
+# Deployment with Kustomize
 {: .no_toc}
 
 ## Table of contents
