@@ -394,10 +394,7 @@ func (m *nfdMaster) Stop() {
 		m.nfdController.stop()
 	}
 
-	select {
-	case m.stop <- struct{}{}:
-	default:
-	}
+	close(m.stop)
 }
 
 // Wait until NfdMaster is able able to accept connections.
