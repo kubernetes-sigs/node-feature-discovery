@@ -710,6 +710,7 @@ core:
 					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-matchany-test-1"] = "true"
 					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_1"] = "found"
 					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_2"] = "found"
+					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/dynamic-label"] = "true"
 
 					By("Verifying node labels from NodeFeatureRules #1 and #2")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes, false))

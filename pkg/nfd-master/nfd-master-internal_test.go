@@ -36,6 +36,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -434,6 +435,34 @@ func TestSetLabels(t *testing.T) {
 			Convey("Operation should succeed", func() {
 				So(err, ShouldBeNil)
 			})
+		})
+	})
+}
+
+func TestFilterLabels(t *testing.T) {
+	mockHelper := &apihelper.MockAPIHelpers{}
+	mockMaster := newMockMaster(mockHelper)
+
+	Convey("When using dynamic values", t, func() {
+		labelName := "testLabel"
+		labelValue := "@test.feature.LSM"
+		features := nfdv1alpha1.Features{
+			Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
+				"test.feature": v1alpha1.AttributeFeatureSet{
+					Elements: map[string]string{
+						"LSM": "123",
+					},
+				},
+			},
+		}
+		labelValue, err := mockMaster.filterFeatureLabel(labelName, labelValue, &features)
+
+		Convey("Operation should succeed", func() {
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Label value should change", func() {
+			So(labelValue, ShouldEqual, "123")
 		})
 	})
 }

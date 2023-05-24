@@ -483,13 +483,13 @@ func (m *nfdMaster) updateMasterNode() error {
 // into extended resources. This function also handles proper namespacing of
 // labels and ERs, i.e. adds the possibly missing default namespace for labels
 // arriving through the gRPC API.
-func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResources) {
+func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) (Labels, ExtendedResources) {
 	outLabels := Labels{}
 	for name, value := range labels {
 		// Add possibly missing default ns
 		name := addNs(name, nfdv1alpha1.FeatureLabelNs)
 
-		if err := m.filterFeatureLabel(name, value); err != nil {
+		if value, err := m.filterFeatureLabel(name, value, features); err != nil {
 			klog.ErrorS(err, "ignoring label", "labelKey", name, "labelValue", value)
 		} else {
 			outLabels[name] = value
@@ -515,10 +515,11 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 	return outLabels, extendedResources
 }
 
-func (m *nfdMaster) filterFeatureLabel(name, value string) error {
+func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1.Features) (string, error) {
+
 	//Validate label name
 	if errs := k8svalidation.IsQualifiedName(name); len(errs) > 0 {
-		return fmt.Errorf("invalid name %q: %s", name, strings.Join(errs, "; "))
+		return "", fmt.Errorf("invalid name %q: %s", name, strings.Join(errs, "; "))
 	}
 
 	// Check label namespace, filter out if ns is not whitelisted
@@ -528,22 +529,53 @@ func (m *nfdMaster) filterFeatureLabel(name, value string) error {
 		// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
 		if isNamespaceDenied(ns, m.deniedNs.wildcard, m.deniedNs.normal) {
 			if _, ok := m.config.ExtraLabelNs[ns]; !ok {
-				return fmt.Errorf("namespace %q is not allowed", ns)
+				return "", fmt.Errorf("namespace %q is not allowed", ns)
 			}
 		}
 	}
 
 	// Skip if label doesn't match labelWhiteList
 	if !m.config.LabelWhiteList.Regexp.MatchString(base) {
-		return fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.Regexp.String())
+		return "", fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.Regexp.String())
+	}
+
+	var filteredLabel string
+
+	// Dynamic Value
+	if strings.HasPrefix(value, "@") {
+		dynamicValue, err := getDynamicValue(value, features)
+		if err != nil {
+			return "", err
+		}
+		filteredLabel = dynamicValue
+	} else {
+		filteredLabel = value
 	}
 
 	// Validate the label value
-	if errs := k8svalidation.IsValidLabelValue(value); len(errs) > 0 {
-		return fmt.Errorf("invalid value %q: %s", value, strings.Join(errs, "; "))
+	if errs := k8svalidation.IsValidLabelValue(filteredLabel); len(errs) > 0 {
+		return "", fmt.Errorf("invalid value %q: %s", filteredLabel, strings.Join(errs, "; "))
 	}
+	return filteredLabel, nil
+}
 
-	return nil
+func getDynamicValue(value string, features *nfdv1alpha1.Features) (string, error) {
+	// value is a string in the form of attribute.featureset.elements
+	split := strings.SplitN(value[1:], ".", 3)
+	if len(split) != 3 {
+		return "", fmt.Errorf("value %s is not in the form of '@domain.feature.element'", value)
+	}
+	featureName := split[0] + "." + split[1]
+	elementName := split[2]
+	attrFeatureSet, ok := features.Attributes[featureName]
+	if !ok {
+		return "", fmt.Errorf("feature %s not found", featureName)
+	}
+	element, ok := attrFeatureSet.Elements[elementName]
+	if !ok {
+		return "", fmt.Errorf("element %s not found on feature %s", elementName, featureName)
+	}
+	return element, nil
 }
 
 func filterTaints(taints []corev1.Taint) []corev1.Taint {
@@ -750,26 +782,15 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 
 	// Dynamic Value
 	if strings.HasPrefix(value, "@") {
-		// value is a string in the form of attribute.featureset.elements
-		split := strings.SplitN(value[1:], ".", 3)
-		if len(split) != 3 {
-			return "", fmt.Errorf("value %s is not in the form of '@domain.feature.element'", value)
+		if element, err := getDynamicValue(value, features); err != nil {
+			return "", err
+		} else {
+			q, err := k8sQuantity.ParseQuantity(element)
+			if err != nil {
+				return "", fmt.Errorf("invalid value %s (from %s): %w", element, value, err)
+			}
+			return q.String(), nil
 		}
-		featureName := split[0] + "." + split[1]
-		elementName := split[2]
-		attrFeatureSet, ok := features.Attributes[featureName]
-		if !ok {
-			return "", fmt.Errorf("feature %s not found", featureName)
-		}
-		element, ok := attrFeatureSet.Elements[elementName]
-		if !ok {
-			return "", fmt.Errorf("element %s not found on feature %s", elementName, featureName)
-		}
-		q, err := k8sQuantity.ParseQuantity(element)
-		if err != nil {
-			return "", fmt.Errorf("invalid value %s (from %s): %w", element, value, err)
-		}
-		return q.String(), nil
 	}
 	// Static Value (Pre-Defined at the NodeFeatureRule)
 	q, err := k8sQuantity.ParseQuantity(value)
@@ -794,7 +815,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 
 	// Remove labels which are intended to be extended resources via
 	// -resource-labels or their NS is not whitelisted
-	labels, extendedResources := m.filterFeatureLabels(labels)
+	labels, extendedResources := m.filterFeatureLabels(labels, features)
 
 	// Mix in CR-originated extended resources with -resource-labels
 	for k, v := range crExtendedResources {
