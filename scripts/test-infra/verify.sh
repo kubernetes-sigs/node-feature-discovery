@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+this_dir=`dirname $0`
+
 # Install deps
 gobinpath="$(go env GOPATH)/bin"
 curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" v1.52.2
@@ -15,6 +17,8 @@ curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring 
 curl -Os https://uploader.codecov.io/latest/linux/codecov
 chmod +x codecov
 
+go install sigs.k8s.io/logtools/logcheck@v0.5.0
+
 # Run verify steps
 echo "Checking gofmt"
 make gofmt-verify
@@ -24,6 +28,9 @@ make ci-lint
 
 echo "Running Helm lint"
 make helm-lint
+
+echo "Running logcheck"
+logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./pkg/...  ./source/...
 
 echo "Running unit tests"
 make test
