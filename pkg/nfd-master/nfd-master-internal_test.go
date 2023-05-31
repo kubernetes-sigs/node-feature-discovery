@@ -365,8 +365,10 @@ func TestSetLabels(t *testing.T) {
 				"random.denied.ns/feature-3":     "val-3",
 				"kubernetes.io/feature-4":        "val-4",
 				"sub.ns.kubernetes.io/feature-5": "val-5",
-				vendorFeatureLabel:               " val-6",
-				vendorProfileLabel:               " val-7"}
+				vendorFeatureLabel:               "val-6",
+				vendorProfileLabel:               "val-7",
+				"--invalid-name--":               "valid-val",
+				"valid-name":                     "--invalid-val--"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations",

@@ -41,6 +41,7 @@ import (
 	k8sQuantity "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
@@ -490,7 +491,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 		// Add possibly missing default ns
 		name := addNs(name, nfdv1alpha1.FeatureLabelNs)
 
-		if err := m.filterFeatureLabel(name); err != nil {
+		if err := m.filterFeatureLabel(name, value); err != nil {
 			klog.Errorf("ignoring label %s=%v: %v", name, value, err)
 		} else {
 			outLabels[name] = value
@@ -516,7 +517,12 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels) (Labels, ExtendedResource
 	return outLabels, extendedResources
 }
 
-func (m *nfdMaster) filterFeatureLabel(name string) error {
+func (m *nfdMaster) filterFeatureLabel(name, value string) error {
+	//Validate label name
+	if errs := k8svalidation.IsQualifiedName(name); len(errs) > 0 {
+		return fmt.Errorf("invalid name %q: %s", name, strings.Join(errs, "; "))
+	}
+
 	// Check label namespace, filter out if ns is not whitelisted
 	ns, base := splitNs(name)
 	if ns != nfdv1alpha1.FeatureLabelNs && ns != nfdv1alpha1.ProfileLabelNs &&
@@ -533,6 +539,12 @@ func (m *nfdMaster) filterFeatureLabel(name string) error {
 	if !m.config.LabelWhiteList.Regexp.MatchString(base) {
 		return fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.Regexp.String())
 	}
+
+	// Validate the label value
+	if errs := k8svalidation.IsValidLabelValue(value); len(errs) > 0 {
+		return fmt.Errorf("invalid value %q: %s", value, strings.Join(errs, "; "))
+	}
+
 	return nil
 }
 
