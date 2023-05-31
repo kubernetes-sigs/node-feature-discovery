@@ -85,27 +85,27 @@ func newTopologyGC(config *restclient.Config, stop chan struct{}, gcPeriod time.
 func (n *topologyGC) deleteNRT(nodeName string) {
 	if err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().Delete(context.TODO(), nodeName, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
-			klog.V(2).Infof("NodeResourceTopology for node %s not found, omitting deletion", nodeName)
+			klog.V(2).InfoS("NodeResourceTopology not found, omitting deletion", "nodeName", nodeName)
 			return
 		} else {
-			klog.Warningf("failed to delete NodeResourceTopology for node %s: %s", nodeName, err.Error())
+			klog.ErrorS(err, "failed to delete NodeResourceTopology object", "nodeName", nodeName)
 			return
 		}
 	}
-	klog.Infof("NodeResourceTopology for node %s has been deleted", nodeName)
+	klog.InfoS("NodeResourceTopology object has been deleted", "nodeName", nodeName)
 }
 
 func (n *topologyGC) deleteNodeHandler(object interface{}) {
 	// handle a case when we are starting up and need to clear stale NRT resources
 	obj := object
 	if deletedFinalStateUnknown, ok := object.(cache.DeletedFinalStateUnknown); ok {
-		klog.V(2).Infof("found stale NodeResourceTopology for node: %s ", object)
+		klog.V(2).InfoS("found stale NodeResourceTopology object", "object", object)
 		obj = deletedFinalStateUnknown.Obj
 	}
 
 	node, ok := obj.(*corev1.Node)
 	if !ok {
-		klog.Errorf("cannot convert %v to v1.Node", object)
+		klog.InfoS("cannot convert object to v1.Node", "object", object)
 		return
 	}
 
@@ -113,13 +113,13 @@ func (n *topologyGC) deleteNodeHandler(object interface{}) {
 }
 
 func (n *topologyGC) runGC() {
-	klog.Infof("Running GC")
+	klog.InfoS("Running GC")
 	objects := n.factory.Core().V1().Nodes().Informer().GetIndexer().List()
 	nodes := sets.NewString()
 	for _, object := range objects {
 		key, err := cache.MetaNamespaceKeyFunc(object)
 		if err != nil {
-			klog.Warningf("cannot create key for %v: %s", object, err.Error())
+			klog.ErrorS(err, "failed to create key", "object", object)
 			continue
 		}
 		nodes.Insert(key)
@@ -127,14 +127,14 @@ func (n *topologyGC) runGC() {
 
 	nrts, err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		klog.Warningf("cannot list NRTs %s", err.Error())
+		klog.ErrorS(err, "failed to list NodeResourceTopology objects")
 		return
 	}
 
 	for _, nrt := range nrts.Items {
 		key, err := cache.MetaNamespaceKeyFunc(&nrt)
 		if err != nil {
-			klog.Warningf("cannot create key for %v: %s", nrt, err.Error())
+			klog.ErrorS(err, "failed to create key", "noderesourcetopology", klog.KObj(&nrt))
 			continue
 		}
 		if !nodes.Has(key) {
@@ -151,7 +151,7 @@ func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
 		case <-gcTrigger.C:
 			n.runGC()
 		case <-n.stopChan:
-			klog.Infof("shutting down periodic Garbage Collector")
+			klog.InfoS("shutting down periodic Garbage Collector")
 			return
 		}
 	}

@@ -97,7 +97,7 @@ func (s *customSource) SetConfig(conf source.Config) {
 	case *config:
 		s.config = v
 	default:
-		klog.Fatalf("invalid config type: %T", conf)
+		panic(fmt.Sprintf("invalid config type: %T", conf))
 	}
 }
 
@@ -112,12 +112,12 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	labels := source.FeatureLabels{}
 	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
 	allFeatureConfig = append(allFeatureConfig, getDirectoryFeatureConfig()...)
-	utils.KlogDump(2, "custom features configuration:", "  ", allFeatureConfig)
+	klog.V(2).InfoS("resolving custom features", "configuration", utils.DelayedDumper(allFeatureConfig))
 	// Iterate over features
 	for _, rule := range allFeatureConfig {
 		ruleOut, err := rule.execute(features)
 		if err != nil {
-			klog.Error(err)
+			klog.ErrorS(err, "failed to execute rule")
 			continue
 		}
 
@@ -128,6 +128,7 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 		features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
 		features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 	}
+
 	return labels, nil
 }
 

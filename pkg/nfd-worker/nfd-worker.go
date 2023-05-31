@@ -190,15 +190,15 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	for _, s := range w.featureSources {
 		currentSourceStart := time.Now()
 		if err := s.Discover(); err != nil {
-			klog.Errorf("feature discovery of %q source failed: %v", s.Name(), err)
+			klog.ErrorS(err, "feature discovery failed", "source", s.Name())
 		}
-		klog.V(3).Infof("discovery duration for %q source: %v", s.Name(), time.Since(currentSourceStart))
+		klog.V(3).InfoS("feature discovery completed", "featureSource", s.Name(), "duration", time.Since(currentSourceStart))
 	}
 
 	discoveryDuration := time.Since(discoveryStart)
-	klog.V(2).Infof("feature discovery for %d sources lasted for: %v", len(w.featureSources), discoveryDuration)
+	klog.V(2).InfoS("feature discovery of all sources completed", "duration", discoveryDuration)
 	if w.config.Core.SleepInterval.Duration > 0 && discoveryDuration > w.config.Core.SleepInterval.Duration/2 {
-		klog.Warningf("feature discovery sources took over half (%v) of sleep interval (%v)", discoveryDuration, w.config.Core.SleepInterval.Duration)
+		klog.InfoS("feature discovery sources took over half of sleep interval ", "duration", discoveryDuration, "sleepInterval", w.config.Core.SleepInterval.Duration)
 	}
 
 	// Get the set of feature labels.
@@ -215,9 +215,7 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 // Run NfdWorker client. Returns if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
-	klog.Infof("Node Feature Discovery Worker %s", version.Get())
-	klog.Infof("NodeName: '%s'", utils.NodeName())
-	klog.Infof("Kubernetes namespace: '%s'", w.kubernetesNamespace)
+	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
 
 	// Create watcher for config file and read initial configuration
 	configWatch, err := utils.CreateFsWatcher(time.Second, w.configFilePath)
@@ -260,7 +258,7 @@ func (w *nfdWorker) Run() error {
 			}
 
 		case <-configWatch.Events:
-			klog.Infof("reloading configuration")
+			klog.InfoS("reloading configuration")
 			if err := w.configure(w.configFilePath, w.args.Options); err != nil {
 				return err
 			}
@@ -278,11 +276,11 @@ func (w *nfdWorker) Run() error {
 			}
 
 		case <-w.certWatch.Events:
-			klog.Infof("TLS certificate update, renewing connection to nfd-master")
+			klog.InfoS("TLS certificate update, renewing connection to nfd-master")
 			w.grpcDisconnect()
 
 		case <-w.stop:
-			klog.Infof("shutting down nfd-worker")
+			klog.InfoS("shutting down nfd-worker")
 			configWatch.Close()
 			w.certWatch.Close()
 			return nil
@@ -340,7 +338,7 @@ func (w *nfdWorker) getGrpcClient() (pb.LabelerClient, error) {
 	} else {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
-	klog.Infof("connecting to nfd-master at %s ...", w.args.Server)
+	klog.InfoS("connecting to nfd-master", "address", w.args.Server)
 	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...)
 	if err != nil {
 		return nil, err
@@ -355,7 +353,7 @@ func (w *nfdWorker) getGrpcClient() (pb.LabelerClient, error) {
 // grpcDisconnect closes the gRPC connection to NFD master
 func (w *nfdWorker) grpcDisconnect() {
 	if w.clientConn != nil {
-		klog.Infof("closing connection to nfd-master ...")
+		klog.InfoS("closing connection to nfd-master")
 		w.clientConn.Close()
 	}
 	w.clientConn = nil
@@ -363,8 +361,8 @@ func (w *nfdWorker) grpcDisconnect() {
 }
 func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
-		klog.Warningf("too short sleep interval specified (%s), forcing to 1s",
-			c.SleepInterval.Duration.String())
+		klog.InfoS("too short sleep interval specified, forcing to 1s",
+			"sleepInterval", c.SleepInterval.Duration.String())
 		c.SleepInterval = utils.DurationVal{Duration: time.Second}
 	}
 }
@@ -384,7 +382,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 	}
 	for k := range c.Klog {
 		if _, ok := w.args.Klog[k]; !ok {
-			klog.Warningf("unknown logger option in config: %q", k)
+			klog.InfoS("unknown logger option in config", "optionName", k)
 		}
 	}
 
@@ -411,7 +409,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 					delete(featureSources, strippedName)
 				}
 			} else {
-				klog.Warningf("skipping unknown feature source %q specified in core.featureSources", name)
+				klog.InfoS("skipping unknown source specified in core.featureSources", "featureSource", name)
 			}
 		}
 	}
@@ -446,7 +444,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 					delete(labelSources, strippedName)
 				}
 			} else {
-				klog.Warningf("skipping unknown source %q specified in core.sources (or -sources)", name)
+				klog.InfoS("skipping unknown source specified in core.labelSources (or -label-sources)", "labelSource", name)
 			}
 		}
 	}
@@ -464,18 +462,18 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		return w.labelSources[i].Name() < w.labelSources[j].Name()
 	})
 
-	if klog.V(1).Enabled() {
+	if klogV := klog.V(1); klogV.Enabled() {
 		n := make([]string, len(w.featureSources))
 		for i, s := range w.featureSources {
 			n[i] = s.Name()
 		}
-		klog.Infof("enabled feature sources: %s", strings.Join(n, ", "))
+		klogV.InfoS("enabled feature sources", "featureSources", n)
 
 		n = make([]string, len(w.labelSources))
 		for i, s := range w.labelSources {
 			n[i] = s.Name()
 		}
-		klog.Infof("enabled label sources: %s", strings.Join(n, ", "))
+		klogV.InfoS("enabled label sources", "labelSources", n)
 	}
 
 	return nil
@@ -496,7 +494,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		data, err := os.ReadFile(filepath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				klog.Infof("config file %q not found, using defaults", filepath)
+				klog.InfoS("config file not found, using defaults", "path", filepath)
 			} else {
 				return fmt.Errorf("error reading config file: %s", err)
 			}
@@ -507,11 +505,11 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 			}
 
 			if c.Core.Sources != nil {
-				klog.Warningf("found deprecated 'core.sources' config file option, please use 'core.labelSources' instead")
+				klog.InfoS("usage of deprecated 'core.sources' config file option, please use 'core.labelSources' instead")
 				c.Core.LabelSources = *c.Core.Sources
 			}
 
-			klog.Infof("configuration file %q parsed", filepath)
+			klog.InfoS("configuration file parsed", "path", filepath)
 		}
 	}
 
@@ -543,8 +541,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 		s.SetConfig(c.Sources[s.Name()])
 	}
 
-	klog.Infof("worker (re-)configuration successfully completed")
-	utils.KlogDump(1, "effective configuration:", "  ", w.config)
+	klog.InfoS("configuration successfully updated", "configuration", w.config)
 	return nil
 }
 
@@ -554,11 +551,11 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 	labels = Labels{}
 
 	// Get labels from all enabled label sources
-	klog.Info("starting feature discovery...")
+	klog.InfoS("starting feature discovery...")
 	for _, source := range sources {
 		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
 		if err != nil {
-			klog.Errorf("discovery failed for source %q: %v", source.Name(), err)
+			klog.ErrorS(err, "discovery failed", "source", source.Name())
 			continue
 		}
 
@@ -566,8 +563,11 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 			labels[name] = value
 		}
 	}
-	klog.Info("feature discovery completed")
-	utils.KlogDump(1, "labels discovered by feature sources:", "  ", labels)
+	if klogV := klog.V(1); klogV.Enabled() {
+		klogV.InfoS("feature discovery completed", "labels", utils.DelayedDumper(labels))
+	} else {
+		klog.InfoS("feature discovery completed")
+	}
 	return labels
 }
 
@@ -607,7 +607,7 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 		// Validate label name.
 		errs := validation.IsQualifiedName(nameForValidation)
 		if len(errs) > 0 {
-			klog.Warningf("ignoring invalid feature name '%s': %s", label, errs)
+			klog.InfoS("ignoring label with invalid name", "lableKey", label, "errors", errs)
 			continue
 		}
 
@@ -615,13 +615,13 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 		// Validate label value
 		errs = validation.IsValidLabelValue(value)
 		if len(errs) > 0 {
-			klog.Warningf("ignoring invalid feature value %s=%s: %s", label, value, errs)
+			klog.InfoS("ignoring label with invalide value", "labelKey", label, "labelValue", value, "errors", errs)
 			continue
 		}
 
 		// Skip if label doesn't match labelWhiteList
 		if !labelWhiteList.MatchString(nameForWhiteListing) {
-			klog.Infof("%q does not match the whitelist (%s) and will not be published.", nameForWhiteListing, labelWhiteList.String())
+			klog.InfoS("label does not match the whitelist and will not be published.", "labelKey", nameForWhiteListing, "regexp", labelWhiteList.String())
 			continue
 		}
 
@@ -652,7 +652,7 @@ func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	klog.Infof("sending labeling request to nfd-master")
+	klog.InfoS("sending labeling request to nfd-master")
 
 	labelReq := pb.SetLabelsRequest{Labels: labels,
 		Features:   source.GetAllFeatures(),
@@ -666,7 +666,7 @@ func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
 
 	_, err = cli.SetLabels(ctx, &labelReq)
 	if err != nil {
-		klog.Errorf("failed to set node labels: %v", err)
+		klog.ErrorS(err, "failed to label node")
 		return err
 	}
 
@@ -687,7 +687,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 	// TODO: we could implement some simple caching of the object, only get it
 	// every 10 minutes or so because nobody else should really be modifying it
 	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
-		klog.Infof("creating NodeFeature object %q", nodename)
+		klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
 		nfr = &nfdv1alpha1.NodeFeature{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        nodename,
@@ -705,11 +705,10 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			return fmt.Errorf("failed to create NodeFeature object %q: %w", nfr.Name, err)
 		}
 
-		utils.KlogDump(4, "NodeFeature object created:", "  ", nfrCreated)
+		klog.V(4).InfoS("NodeFeature object created", "nodeFeature", utils.DelayedDumper(nfrCreated))
 	} else if err != nil {
 		return fmt.Errorf("failed to get NodeFeature object: %w", err)
 	} else {
-
 		nfrUpdated := nfr.DeepCopy()
 		nfrUpdated.Annotations = map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()}
 		nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
@@ -719,14 +718,14 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		}
 
 		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
-			klog.Infof("updating NodeFeature object %q", nodename)
+			klog.InfoS("updating NodeFeature object", "nodefeature", klog.KObj(nfr))
 			nfrUpdated, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), nfrUpdated, metav1.UpdateOptions{})
 			if err != nil {
 				return fmt.Errorf("failed to update NodeFeature object %q: %w", nfr.Name, err)
 			}
-			utils.KlogDump(4, "NodeFeature object updated:", "  ", nfrUpdated)
+			klog.V(4).InfoS("NodeFeature object updated", "nodeFeature", utils.DelayedDumper(nfrUpdated))
 		} else {
-			klog.V(1).Info("no changes in NodeFeature object, not updating")
+			klog.V(1).InfoS("no changes in NodeFeature object, not updating", "nodefeature", klog.KObj(nfr))
 		}
 	}
 	return nil

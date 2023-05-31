@@ -77,9 +77,9 @@ func NewResourcesAggregator(podResourceClient podresourcesapi.PodResourcesLister
 	resp, err := podResourceClient.GetAllocatableResources(ctx, &podresourcesapi.AllocatableResourcesRequest{})
 	if err != nil {
 		if strings.Contains(err.Error(), "API GetAllocatableResources disabled") {
-			klog.Error("Kubelet's pod resources 'GetAllocatableResources' functionality is disabled. " +
-				"Ensure feature flag 'KubeletPodResourcesGetAllocatable' is set to true. " +
-				"You can find more about the feature gates from the following URL - " +
+			klog.ErrorS(err, "Kubelet's pod resources 'GetAllocatableResources' functionality is disabled. "+
+				"Ensure feature flag 'KubeletPodResourcesGetAllocatable' is set to true. "+
+				"You can find more about the feature gates from the following URL - "+
 				"https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/")
 		}
 
@@ -178,7 +178,7 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 
 		costs, err := makeCostsPerNumaNode(noderesourceData.topo.Nodes, nodeID)
 		if err != nil {
-			klog.Infof("cannot find costs for NUMA node %d: %v", nodeID, err)
+			klog.ErrorS(err, "failed to calculate costs for NUMA node", "nodeID", nodeID)
 		} else {
 			zone.Costs = costs
 		}
@@ -212,7 +212,7 @@ func getContainerDevicesFromAllocatableResources(availRes *podresourcesapi.Alloc
 	for _, cpuID := range availRes.GetCpuIds() {
 		nodeID, ok := cpuIDToNodeIDMap[int(cpuID)]
 		if !ok {
-			klog.Infof("cannot find the NUMA node for CPU %d", cpuID)
+			klog.InfoS("failed to find the NUMA node for CPU", "cpuID", cpuID)
 			continue
 		}
 
@@ -243,16 +243,16 @@ func (noderesourceData *nodeResources) updateAvailable(numaData map[int]map[core
 		resName := string(ri.Name)
 		resMap, ok := noderesourceData.resourceID2NUMAID[resName]
 		if !ok {
-			klog.Infof("unknown resource %q", ri.Name)
+			klog.InfoS("unknown resource", "resourceName", ri.Name)
 			continue
 		}
 		nodeID, ok := resMap[resID]
 		if !ok {
-			klog.Infof("unknown resource %q: %q", resName, resID)
+			klog.InfoS("unknown resource", "resourceName", resName, "resourceID", resID)
 			continue
 		}
 		if _, ok := numaData[nodeID]; !ok {
-			klog.Infof("unknown node id: %q", nodeID)
+			klog.InfoS("unknown NUMA node id", "numaID", nodeID)
 			continue
 		}
 
@@ -409,18 +409,18 @@ func getCPUs(devices []*podresourcesapi.ContainerDevices) map[string]int {
 // This function assumes the available resources are initialized to be equal to the capacity.
 func (noderesourceData *nodeResources) updateMemoryAvailable(numaData map[int]map[corev1.ResourceName]*resourceData, ri ResourceInfo) {
 	if len(ri.NumaNodeIds) == 0 {
-		klog.Warningf("no NUMA nodes information is available for device %q", ri.Name)
+		klog.InfoS("no NUMA nodes information is available", "resourceName", ri.Name)
 		return
 	}
 
 	if len(ri.Data) != 1 {
-		klog.Warningf("no size information is available for the device %q", ri.Name)
+		klog.InfoS("no size information is available", "resourceName", ri.Name)
 		return
 	}
 
 	requestedSize, err := strconv.ParseInt(ri.Data[0], 10, 64)
 	if err != nil {
-		klog.Errorf("failed to parse resource requested size: %v", err)
+		klog.ErrorS(err, "failed to parse resource requested size")
 		return
 	}
 
@@ -430,17 +430,17 @@ func (noderesourceData *nodeResources) updateMemoryAvailable(numaData map[int]ma
 		}
 
 		if _, ok := numaData[numaNodeID]; !ok {
-			klog.Warningf("failed to find NUMA node ID %d under the node topology", numaNodeID)
+			klog.InfoS("failed to find NUMA node ID under the node topology", "numaID", numaNodeID)
 			continue
 		}
 
 		if _, ok := numaData[numaNodeID][ri.Name]; !ok {
-			klog.Warningf("failed to find resource %q under the node topology", ri.Name)
+			klog.InfoS("failed to find resource under the node topology", "resourceName", ri.Name)
 			return
 		}
 
 		if numaData[numaNodeID][ri.Name].available == 0 {
-			klog.V(4).Infof("no available memory on the node %d for the resource %q", numaNodeID, ri.Name)
+			klog.V(4).InfoS("no available memory", "numaID", numaNodeID, "resourceName", ri.Name)
 			continue
 		}
 
@@ -461,7 +461,7 @@ func (noderesourceData *nodeResources) updateMemoryAvailable(numaData map[int]ma
 	}
 
 	if requestedSize > 0 {
-		klog.Warningf("the resource %q requested size was not fully satisfied by NUMA nodes", ri.Name)
+		klog.InfoS("requested size was not fully satisfied by NUMA nodes", "resourceName", ri.Name)
 	}
 }
 

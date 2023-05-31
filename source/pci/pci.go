@@ -76,7 +76,7 @@ func (s *pciSource) SetConfig(conf source.Config) {
 	case *Config:
 		s.config = v
 	default:
-		klog.Fatalf("invalid config type: %T", conf)
+		panic(fmt.Sprintf("invalid config type: %T", conf))
 	}
 }
 
@@ -106,11 +106,11 @@ func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
 		for key := range configLabelFields {
 			keys = append(keys, key)
 		}
-		klog.Warningf("invalid fields (%s) in deviceLabelFields, ignoring...", strings.Join(keys, ", "))
+		klog.InfoS("ignoring invalid fields in deviceLabelFields", "invalidFieldNames", keys)
 	}
 	if len(deviceLabelFields) == 0 {
-		klog.Warningf("no valid fields in deviceLabelFields defined, using the defaults")
 		deviceLabelFields = []string{"class", "vendor"}
+		klog.InfoS("no valid fields in deviceLabelFields defined, using the defaults", "defaultFieldNames", deviceLabelFields)
 	}
 
 	// Iterate over all device classes
@@ -148,7 +148,7 @@ func (s *pciSource) Discover() error {
 	}
 	s.features.Instances[DeviceFeature] = nfdv1alpha1.NewInstanceFeatures(devs)
 
-	utils.KlogDump(3, "discovered pci features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }

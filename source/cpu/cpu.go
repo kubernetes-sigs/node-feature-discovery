@@ -17,6 +17,7 @@ limitations under the License.
 package cpu
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -130,7 +131,7 @@ func (s *cpuSource) SetConfig(conf source.Config) {
 		s.config = v
 		s.initCpuidFilter()
 	default:
-		klog.Fatalf("invalid config type: %T", conf)
+		panic(fmt.Sprintf("invalid config type: %T", conf))
 	}
 }
 
@@ -228,7 +229,7 @@ func (s *cpuSource) Discover() error {
 	// Detect cstate configuration
 	cstate, err := detectCstate()
 	if err != nil {
-		klog.Errorf("failed to detect cstate: %v", err)
+		klog.ErrorS(err, "failed to detect cstate")
 	} else {
 		s.features.Attributes[CstateFeature] = nfdv1alpha1.NewAttributeFeatures(cstate)
 	}
@@ -236,7 +237,7 @@ func (s *cpuSource) Discover() error {
 	// Detect pstate features
 	pstate, err := detectPstate()
 	if err != nil {
-		klog.Error(err)
+		klog.ErrorS(err, "failed to detect pstate")
 	}
 	s.features.Attributes[PstateFeature] = nfdv1alpha1.NewAttributeFeatures(pstate)
 
@@ -269,7 +270,7 @@ func (s *cpuSource) Discover() error {
 	// Detect Coprocessor features
 	s.features.Attributes[CoprocessorFeature] = nfdv1alpha1.NewAttributeFeatures(discoverCoprocessor())
 
-	utils.KlogDump(3, "discovered cpu features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }
@@ -295,7 +296,7 @@ func discoverTopology() map[string]string {
 	features := make(map[string]string)
 
 	if ht, err := haveThreadSiblings(); err != nil {
-		klog.Errorf("failed to detect hyper-threading: %v", err)
+		klog.ErrorS(err, "failed to detect hyper-threading")
 	} else {
 		features["hardware_multithreading"] = strconv.FormatBool(ht)
 	}

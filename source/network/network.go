@@ -77,7 +77,7 @@ func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 			if v, ok := attrs[attr]; ok {
 				t, err := strconv.Atoi(v)
 				if err != nil {
-					klog.Errorf("failed to parse %s of %s: %v", attr, attrs["name"])
+					klog.ErrorS(err, "failed to parse sriov attribute", "attributeName", attr, "deviceName", attrs["name"])
 					continue
 				}
 				if t > 0 {
@@ -99,7 +99,7 @@ func (s *networkSource) Discover() error {
 	}
 	s.features.Instances[DeviceFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: devs}
 
-	utils.KlogDump(3, "discovered network features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }
@@ -126,8 +126,8 @@ func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, error) {
 		name := iface.Name()
 		if _, err := os.Stat(filepath.Join(sysfsBasePath, name, "device")); err == nil {
 			info = append(info, readIfaceInfo(filepath.Join(sysfsBasePath, name)))
-		} else if klog.V(3).Enabled() {
-			klog.Infof("skipping non-device iface %q", name)
+		} else if klogV := klog.V(3); klogV.Enabled() {
+			klogV.InfoS("skipping non-device iface", "interfaceName", name)
 		}
 	}
 
@@ -140,7 +140,7 @@ func readIfaceInfo(path string) nfdv1alpha1.InstanceFeature {
 		data, err := os.ReadFile(filepath.Join(path, attrName))
 		if err != nil {
 			if !os.IsNotExist(err) {
-				klog.Errorf("failed to read net iface attribute %s: %v", attrName, err)
+				klog.ErrorS(err, "failed to read net iface attribute", "attributeName", attrName)
 			}
 			continue
 		}
@@ -151,7 +151,7 @@ func readIfaceInfo(path string) nfdv1alpha1.InstanceFeature {
 		data, err := os.ReadFile(filepath.Join(path, "device", attrName))
 		if err != nil {
 			if !os.IsNotExist(err) {
-				klog.Errorf("failed to read net device attribute %s: %v", attrName, err)
+				klog.ErrorS(err, "failed to read net device attribute", "attributeName", attrName)
 			}
 			continue
 		}

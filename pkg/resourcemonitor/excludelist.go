@@ -27,7 +27,7 @@ func NewExcludeResourceList(resMap map[string][]string, nodeName string) Exclude
 
 func (rl *ExcludeResourceList) IsExcluded(resource corev1.ResourceName) bool {
 	if rl.excludeList.Has(string(resource)) {
-		klog.V(5).InfoS("resource excluded", "resource", resource)
+		klog.V(5).InfoS("resource excluded", "resourceName", resource)
 		return true
 	}
 	return false

@@ -76,13 +76,13 @@ func (n *Notifier) Run() {
 	for {
 		select {
 		case <-timeEvents:
-			klog.V(5).Infof("timer update received")
+			klog.V(5).InfoS("timer update received")
 			i := Info{Event: IntervalBased}
 			n.dest <- i
 
 		case e := <-n.fsEvent:
 			basename := path.Base(e.Name)
-			klog.V(5).Infof("fsnotify event from file %q: %q received", basename, e.Op)
+			klog.V(5).InfoS("fsnotify event received", "filename", basename, "op", e.Op)
 			if stateFiles.Has(basename) {
 				i := Info{Event: FSUpdate}
 				n.dest <- i

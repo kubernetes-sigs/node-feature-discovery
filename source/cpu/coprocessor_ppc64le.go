@@ -34,7 +34,7 @@ func discoverCoprocessor() map[string]string {
 
 	_, err := os.Stat(nxGzipPath)
 	if err != nil {
-		klog.V(5).Infof("Failed to detect nx_gzip for Nest Accelerator: %v", err)
+		klog.V(5).ErrorS(err, "Failed to detect nx_gzip for Nest Accelerator")
 	} else {
 		features["nx_gzip"] = strconv.FormatBool(true)
 	}

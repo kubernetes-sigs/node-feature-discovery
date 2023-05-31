@@ -48,9 +48,9 @@ func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.
 		podFingerprint:    podFingerprint,
 	}
 	if resourcemonitorInstance.namespace != "*" {
-		klog.Infof("watching namespace %q", resourcemonitorInstance.namespace)
+		klog.InfoS("watching one namespace", "namespace", resourcemonitorInstance.namespace)
 	} else {
-		klog.Infof("watching all namespaces")
+		klog.InfoS("watching all namespaces")
 	}
 
 	return resourcemonitorInstance, nil
@@ -67,7 +67,6 @@ func (resMon *PodResourcesScanner) isWatchable(podNamespace string, podName stri
 		return false, false, err
 	}
 
-	klog.Infof("podresource: %s", podName)
 	isIntegralGuaranteed := hasExclusiveCPUs(pod)
 
 	if resMon.namespace == "*" && (isIntegralGuaranteed || hasDevice) {
@@ -137,9 +136,9 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 		var status podfingerprint.Status
 		podFingerprintSign, err := computePodFingerprint(respPodResources, &status)
 		if err != nil {
-			klog.Errorf("podFingerprint: Unable to compute fingerprint %v", err)
+			klog.ErrorS(err, "failed to calculate fingerprint")
 		} else {
-			klog.Info("podFingerprint: " + status.Repr())
+			klog.InfoS("podFingerprint calculated", "status", status.Repr())
 
 			retVal.Attributes = append(retVal.Attributes, v1alpha2.AttributeInfo{
 				Name:  podfingerprint.Attribute,
@@ -150,7 +149,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 	var podResData []PodResources
 
 	for _, podResource := range respPodResources {
-		klog.Infof("podresource iter: %s", podResource.GetName())
+		klog.InfoS("scanning pod", "podName", podResource.GetName())
 		hasDevice := hasDevice(podResource)
 		isWatchable, isIntegralGuaranteed, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
 		if err != nil {
@@ -233,7 +232,7 @@ func hasDevice(podResource *podresourcesapi.PodResources) bool {
 			return true
 		}
 	}
-	klog.Infof("pod:%s doesn't have devices", podResource.GetName())
+	klog.InfoS("pod doesn't have devices", "podName", podResource.GetName())
 	return false
 }
 

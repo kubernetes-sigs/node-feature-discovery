@@ -37,7 +37,7 @@ func discoverSST() map[string]string {
 	features := make(map[string]string)
 
 	if bf, err := discoverSSTBF(); err != nil {
-		klog.Errorf("failed to detect SST-BF: %v", err)
+		klog.ErrorS(err, "failed to detect SST-BF")
 	} else if bf {
 		features["bf.enabled"] = strconv.FormatBool(bf)
 	}

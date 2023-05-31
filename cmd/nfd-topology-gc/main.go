@@ -47,17 +47,19 @@ func main() {
 
 	// Assert that the version is known
 	if version.Undefined() {
-		klog.Warningf("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
+		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
 	// Get new TopologyGC instance
 	gc, err := nfdtopologygarbagecollector.New(args)
 	if err != nil {
-		klog.Exit(err)
+		klog.ErrorS(err, "failed to initialize topology garbage collector instance")
+		os.Exit(1)
 	}
 
 	if err = gc.Run(); err != nil {
-		klog.Exit(err)
+		klog.ErrorS(err, "error while running")
+		os.Exit(1)
 	}
 }
 

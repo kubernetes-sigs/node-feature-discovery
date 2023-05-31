@@ -88,19 +88,19 @@ func (s *memorySource) Discover() error {
 
 	// Detect NUMA
 	if numa, err := detectNuma(); err != nil {
-		klog.Errorf("failed to detect NUMA nodes: %v", err)
+		klog.ErrorS(err, "failed to detect NUMA nodes")
 	} else {
 		s.features.Attributes[NumaFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: numa}
 	}
 
 	// Detect NVDIMM
 	if nv, err := detectNv(); err != nil {
-		klog.Errorf("failed to detect nvdimm devices: %v", err)
+		klog.ErrorS(err, "failed to detect nvdimm devices")
 	} else {
 		s.features.Instances[NvFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: nv}
 	}
 
-	utils.KlogDump(3, "discovered memory features:", "  ", s.features)
+	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
 }
@@ -135,7 +135,7 @@ func detectNv() ([]nfdv1alpha1.InstanceFeature, error) {
 
 	devices, err := os.ReadDir(sysfsBasePath)
 	if os.IsNotExist(err) {
-		klog.V(1).Info("No NVDIMM devices present")
+		klog.V(1).InfoS("No NVDIMM devices present")
 		return info, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to list nvdimm devices: %w", err)
@@ -158,7 +158,7 @@ func readNdDeviceInfo(path string) nfdv1alpha1.InstanceFeature {
 	for _, attrName := range ndDevAttrs {
 		data, err := os.ReadFile(filepath.Join(path, attrName))
 		if err != nil {
-			klog.V(3).Infof("failed to read nd device attribute %s: %w", attrName, err)
+			klog.V(3).ErrorS(err, "failed to read nd device attribute", "attributeName", attrName)
 			continue
 		}
 		attrs[attrName] = strings.TrimSpace(string(data))
