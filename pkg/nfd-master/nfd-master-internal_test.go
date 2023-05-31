@@ -361,8 +361,10 @@ func TestSetLabels(t *testing.T) {
 			mockLabels := map[string]string{"feature-1": "val-1",
 				"valid.ns/feature-2":   "val-2",
 				"invalid.ns/feature-3": "val-3",
-				vendorFeatureLabel:     " val-4",
-				vendorProfileLabel:     " val-5"}
+				vendorFeatureLabel:     "val-4",
+				vendorProfileLabel:     "val-5",
+				"--invalid-name--":     "valid-val",
+				"valid-name":           "--invalid-val--"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations",
