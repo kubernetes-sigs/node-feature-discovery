@@ -40,8 +40,9 @@ Please do not remove items from the checklist
 - [ ] Publish the draft release prepared at the [Github releases page](https://github.com/kubernetes-sigs/node-feature-discovery/releases)
       which will also trigger a Helm repo index update to add the latest release
 - [ ] Add a link to the tagged release in this issue.
-- [ ] Send an announcement email to `dev@kubernetes.io` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
-- [ ] Add a link to the release announcement in this issue
+- [ ] For a major release
+  - [ ] Send an announcement email to `dev@kubernetes.io` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
+  - [ ] Add a link to the release announcement in this issue
 - [ ] For a major release (or a point release of the latest major release), update README in master branch
   - [ ] Update references e.g. by running `hack/prepare-release.sh $VERSION` but **only** committing README.md, and,
         submit a PR
