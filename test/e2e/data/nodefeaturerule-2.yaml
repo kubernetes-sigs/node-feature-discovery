@@ -10,6 +10,7 @@ spec:
     - name: "e2e-matchany-test-1"
       labels:
         e2e-matchany-test-1: "true"
+        dynamic-label: "@rule.matched.e2e-attribute-test-1"
       vars:
         e2e-instance-test-1.not: "false"
       matchFeatures:

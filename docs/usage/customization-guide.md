@@ -475,6 +475,38 @@ The `.name` field is required and used as an identifier of the rule.
 
 The `.labels` is a map of the node labels to create if the rule matches.
 
+Take this rule as a referential example:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-rule-object
+spec:
+  rules:
+    - name: "my dynamic label value rule"
+      labels:
+        linux-lsm-enabled: "@kernel.config.LSM"
+        custom-label: "customlabel"
+```
+
+Label `linux-lsm-enabled` uses the `@` notation for dynamic values.
+The value of the label will be the value of the attribute `LSM`
+of the feature `kernel.config`.
+
+The `@<feature-name>.<element-name>` format can be used to inject values of
+detected features to the label. See
+[available features](#available-features) for possible values to use.
+
+This will yield into the following node label:
+
+```yaml
+  labels:
+    ...
+    feature.node.kubernetes.io/linux-lsm-enabled: apparmor
+    feature.node.kubernetes.io/custom-label: "customlabel"
+```
+
 #### Labels template
 
 The `.labelsTemplate` field specifies a text template for dynamically creating
