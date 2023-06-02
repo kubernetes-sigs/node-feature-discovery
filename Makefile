@@ -239,3 +239,6 @@ site-build:
 site-serve:
 	@mkdir -p docs/vendor/bundle
 	$(SITE_BUILD_CMD) sh -c "bundle install && jekyll serve $(JEKYLL_OPTS) -H 127.0.0.1"
+
+benchmark:
+	go test -bench=./pkg/nfd-master -run=^# ./pkg/nfd-master

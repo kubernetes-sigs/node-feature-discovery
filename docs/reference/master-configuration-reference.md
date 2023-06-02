@@ -189,3 +189,18 @@ Example:
 leaderElection:
   retryPeriod: 2s
 ```
+
+### nfdApiParallelism
+
+The `nfdApiParallelism` option can be used to specify the maximum
+number of concurrent node updates.
+
+It takes effect only when `-enable-nodefeature-api` has been set.
+
+Default: 10
+
+Example:
+
+```yaml
+nfdApiParallelism: 1
+```

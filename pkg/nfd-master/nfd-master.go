@@ -69,14 +69,15 @@ type Annotations map[string]string
 
 // NFDConfig contains the configuration settings of NfdMaster.
 type NFDConfig struct {
-	DenyLabelNs    utils.StringSetVal
-	ExtraLabelNs   utils.StringSetVal
-	LabelWhiteList utils.RegexpVal
-	NoPublish      bool
-	ResourceLabels utils.StringSetVal
-	EnableTaints   bool
-	ResyncPeriod   utils.DurationVal
-	LeaderElection LeaderElectionConfig
+	DenyLabelNs       utils.StringSetVal
+	ExtraLabelNs      utils.StringSetVal
+	LabelWhiteList    utils.RegexpVal
+	NoPublish         bool
+	ResourceLabels    utils.StringSetVal
+	EnableTaints      bool
+	ResyncPeriod      utils.DurationVal
+	LeaderElection    LeaderElectionConfig
+	NfdApiParallelism int
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -88,13 +89,14 @@ type LeaderElectionConfig struct {
 
 // ConfigOverrideArgs are args that override config file options
 type ConfigOverrideArgs struct {
-	DenyLabelNs    *utils.StringSetVal
-	ExtraLabelNs   *utils.StringSetVal
-	LabelWhiteList *utils.RegexpVal
-	ResourceLabels *utils.StringSetVal
-	EnableTaints   *bool
-	NoPublish      *bool
-	ResyncPeriod   *utils.DurationVal
+	DenyLabelNs       *utils.StringSetVal
+	ExtraLabelNs      *utils.StringSetVal
+	LabelWhiteList    *utils.RegexpVal
+	ResourceLabels    *utils.StringSetVal
+	EnableTaints      *bool
+	NoPublish         *bool
+	ResyncPeriod      *utils.DurationVal
+	NfdApiParallelism *int
 }
 
 // Args holds command line arguments
@@ -130,15 +132,16 @@ type NfdMaster interface {
 type nfdMaster struct {
 	*nfdController
 
-	args           Args
-	namespace      string
-	nodeName       string
-	configFilePath string
-	server         *grpc.Server
-	stop           chan struct{}
-	ready          chan bool
-	apihelper      apihelper.APIHelpers
-	kubeconfig     *restclient.Config
+	args            Args
+	namespace       string
+	nodeName        string
+	configFilePath  string
+	server          *grpc.Server
+	stop            chan struct{}
+	ready           chan bool
+	apihelper       apihelper.APIHelpers
+	kubeconfig      *restclient.Config
+	nodeUpdaterPool *nodeUpdaterPool
 	deniedNs
 	config *NFDConfig
 }
@@ -176,18 +179,22 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
+
+	nfd.nodeUpdaterPool = newNodeUpdaterPool(nfd)
+
 	return nfd, nil
 }
 
 func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
-		LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
-		DenyLabelNs:    utils.StringSetVal{},
-		ExtraLabelNs:   utils.StringSetVal{},
-		NoPublish:      false,
-		ResourceLabels: utils.StringSetVal{},
-		EnableTaints:   false,
-		ResyncPeriod:   utils.DurationVal{Duration: time.Duration(1) * time.Hour},
+		LabelWhiteList:    utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+		DenyLabelNs:       utils.StringSetVal{},
+		ExtraLabelNs:      utils.StringSetVal{},
+		NoPublish:         false,
+		NfdApiParallelism: 10,
+		ResourceLabels:    utils.StringSetVal{},
+		EnableTaints:      false,
+		ResyncPeriod:      utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 		LeaderElection: LeaderElectionConfig{
 			LeaseDuration: utils.DurationVal{Duration: time.Duration(15) * time.Second},
 			RetryPeriod:   utils.DurationVal{Duration: time.Duration(2) * time.Second},
@@ -219,6 +226,8 @@ func (m *nfdMaster) Run() error {
 			return err
 		}
 	}
+
+	m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
 
 	// Create watcher for config file
 	configWatch, err := utils.CreateFsWatcher(time.Second, m.configFilePath)
@@ -276,6 +285,10 @@ func (m *nfdMaster) Run() error {
 			if m.nfdController != nil && m.args.EnableNodeFeatureApi {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
+			// Restart the node updater pool
+			m.nodeUpdaterPool.stop()
+			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
+
 		case <-m.stop:
 			klog.InfoS("shutting down nfd-master")
 			return nil
@@ -359,10 +372,7 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 		case nodeName := <-m.nfdController.updateOneNodeChan:
 			updateNodes[nodeName] = struct{}{}
 		case <-rateLimit:
-			// Check what we need to do
-			// TODO: we might want to update multiple nodes in parallel
 			errUpdateAll := false
-			errNodes := make(map[string]struct{})
 			if updateAll {
 				if err := m.nfdAPIUpdateAllNodes(); err != nil {
 					klog.ErrorS(err, "failed to update nodes")
@@ -370,16 +380,13 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 				}
 			} else {
 				for nodeName := range updateNodes {
-					if err := m.nfdAPIUpdateOneNode(nodeName); err != nil {
-						klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
-						errNodes[nodeName] = struct{}{}
-					}
+					m.nodeUpdaterPool.queue.Add(nodeName)
 				}
 			}
 
-			// Reset "work queue" and timer, will cause re-try if errors happened
+			// Reset "work queue" and timer
 			updateAll = errUpdateAll
-			updateNodes = errNodes
+			updateNodes = map[string]struct{}{}
 			rateLimit = time.After(time.Second)
 		}
 	}
@@ -392,6 +399,8 @@ func (m *nfdMaster) Stop() {
 	if m.nfdController != nil {
 		m.nfdController.stop()
 	}
+
+	m.nodeUpdaterPool.stop()
 
 	close(m.stop)
 }
@@ -677,9 +686,7 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 	}
 
 	for _, node := range nodes.Items {
-		if err := m.nfdAPIUpdateOneNode(node.Name); err != nil {
-			return err
-		}
+		m.nodeUpdaterPool.queue.Add(node.Name)
 	}
 
 	return nil
@@ -1181,6 +1188,13 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	}
 	if m.args.Overrides.ResyncPeriod != nil {
 		c.ResyncPeriod = *m.args.Overrides.ResyncPeriod
+	}
+	if m.args.Overrides.NfdApiParallelism != nil {
+		c.NfdApiParallelism = *m.args.Overrides.NfdApiParallelism
+	}
+
+	if c.NfdApiParallelism <= 0 {
+		return fmt.Errorf("the maximum number of concurrent labelers should be a non-zero positive number")
 	}
 
 	m.config = c

@@ -11,3 +11,4 @@
 #   renewDeadline: 10s
 #   # this value has to be greater than 0
 #   retryPeriod: 2s
+# nfdApiParallelism: 10

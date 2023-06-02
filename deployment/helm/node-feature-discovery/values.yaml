@@ -27,6 +27,7 @@ master:
     #   renewDeadline: 10s
     #   # this value has to be greater than 0
     #   retryPeriod: 2s
+    # nfdApiParallelism: 10
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   # The TCP port that nfd-master listens for incoming requests. Default: 8080
   port: 8080
@@ -39,6 +40,7 @@ master:
   enableTaints: false
   crdController: null
   featureRulesController: null
+  nfdApiParallelism: null
   deploymentAnnotations: {}
   replicaCount: 1
 

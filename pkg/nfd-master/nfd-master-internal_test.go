@@ -34,10 +34,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
+	nfdscheme "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/scheme"
+	nfdinformers "sigs.k8s.io/node-feature-discovery/pkg/generated/informers/externalversions"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -55,6 +60,60 @@ func newMockNode() *corev1.Node {
 	n.Annotations = map[string]string{}
 	n.Status.Capacity = corev1.ResourceList{}
 	return &n
+}
+
+func mockNodeList() *corev1.NodeList {
+	l := corev1.NodeList{}
+
+	for i := 0; i < 1000; i++ {
+		n := corev1.Node{}
+		n.Name = fmt.Sprintf("node %v", i)
+		n.Labels = map[string]string{}
+		n.Annotations = map[string]string{}
+		n.Status.Capacity = corev1.ResourceList{}
+
+		l.Items = append(l.Items, n)
+	}
+	return &l
+}
+
+func newMockNfdAPIController(client *fake.Clientset) *nfdController {
+	c := &nfdController{
+		stopChan:           make(chan struct{}, 1),
+		updateAllNodesChan: make(chan struct{}, 1),
+		updateOneNodeChan:  make(chan string),
+	}
+
+	informerFactory := nfdinformers.NewSharedInformerFactory(client, 1*time.Hour)
+
+	// Add informer for NodeFeature objects
+	featureInformer := informerFactory.Nfd().V1alpha1().NodeFeatures()
+	if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) {},
+		UpdateFunc: func(oldObj, newObj interface{}) {},
+		DeleteFunc: func(obj interface{}) {},
+	}); err != nil {
+		return nil
+	}
+	c.featureLister = featureInformer.Lister()
+
+	// Add informer for NodeFeatureRule objects
+	ruleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
+	if _, err := ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(object interface{}) {},
+		UpdateFunc: func(oldObject, newObject interface{}) {},
+		DeleteFunc: func(object interface{}) {},
+	}); err != nil {
+		return nil
+	}
+	c.ruleLister = ruleInformer.Lister()
+
+	// Start informers
+	informerFactory.Start(c.stopChan)
+
+	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
+
+	return c
 }
 
 func newMockMaster(apihelper apihelper.APIHelpers) *nfdMaster {
@@ -676,11 +735,14 @@ extraLabelNs: ["added.ns.io"]
 			writeConfig(`
 extraLabelNs: ["override.ns.io"]
 resyncPeriod: '2h'
+nfdApiParallelism: 300
 `)
 			So(func() interface{} { return master.config.ExtraLabelNs },
 				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"override.ns.io": struct{}{}})
 			So(func() interface{} { return master.config.ResyncPeriod.Duration },
 				withTimeout, 2*time.Second, ShouldResemble, time.Duration(2)*time.Hour)
+			So(func() interface{} { return master.config.NfdApiParallelism },
+				withTimeout, 2*time.Second, ShouldResemble, 300)
 
 			// Removing config file should get back our defaults
 			err = os.RemoveAll(tmpDir)
@@ -689,6 +751,8 @@ resyncPeriod: '2h'
 				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{})
 			So(func() interface{} { return master.config.ResyncPeriod.Duration },
 				withTimeout, 2*time.Second, ShouldResemble, time.Duration(1)*time.Hour)
+			So(func() interface{} { return master.config.NfdApiParallelism },
+				withTimeout, 2*time.Second, ShouldResemble, 10)
 
 			// Re-creating config dir and file should change the config
 			err = os.MkdirAll(configDir, 0755)
@@ -696,13 +760,54 @@ resyncPeriod: '2h'
 			writeConfig(`
 extraLabelNs: ["another.override.ns"]
 resyncPeriod: '3m'
+nfdApiParallelism: 100
 `)
 			So(func() interface{} { return master.config.ExtraLabelNs },
 				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"another.override.ns": struct{}{}})
 			So(func() interface{} { return master.config.ResyncPeriod.Duration },
 				withTimeout, 2*time.Second, ShouldResemble, time.Duration(3)*time.Minute)
+			So(func() interface{} { return master.config.NfdApiParallelism },
+				withTimeout, 2*time.Second, ShouldResemble, 100)
 		})
 	})
+}
+
+func BenchmarkNfdAPIUpdateAllNodes(b *testing.B) {
+	mockAPIHelper := new(apihelper.MockAPIHelpers)
+
+	mockMaster := newMockMaster(mockAPIHelper)
+	mockMaster.nfdController = newMockNfdAPIController(fake.NewSimpleClientset())
+	mockMaster.config.NoPublish = true
+
+	mockNodeUpdaterPool := newNodeUpdaterPool(mockMaster)
+	mockMaster.nodeUpdaterPool = mockNodeUpdaterPool
+
+	mockClient := &k8sclient.Clientset{}
+
+	statusPatches := []apihelper.JsonPatch{}
+	metadataPatches := []apihelper.JsonPatch{
+		{Op: "add", Path: "/metadata/annotations/nfd.node.kubernetes.io~1feature-labels", Value: ""}, {Op: "add", Path: "/metadata/annotations/nfd.node.kubernetes.io~1extended-resources", Value: ""},
+	}
+
+	mockAPIHelper.On("GetClient").Return(mockClient, nil)
+	mockAPIHelper.On("GetNodes", mockClient).Return(mockNodeList(), nil)
+
+	mockNodeUpdaterPool.start(10)
+
+	for i := 0; i < 1000; i++ {
+		nodeName := fmt.Sprintf("node %v", i)
+		node := corev1.Node{}
+		node.Name = nodeName
+		mockAPIHelper.On("GetNode", mockClient, nodeName).Return(&node, nil)
+		mockAPIHelper.On("PatchNodeStatus", mockClient, nodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
+		mockAPIHelper.On("PatchNode", mockClient, nodeName, mock.MatchedBy(jsonPatchMatcher(metadataPatches))).Return(nil)
+	}
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_ = mockMaster.nfdAPIUpdateAllNodes()
+	}
+	fmt.Println(b.Elapsed())
 }
 
 // withTimeout is a custom assertion for polling a value asynchronously
