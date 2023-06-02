@@ -47,6 +47,7 @@
 #        - "SSE4"
 #        - "SSE42"
 #        - "SSSE3"
+#        - "TDX_GUEST"
 #      attributeWhitelist:
 #  kernel:
 #    kconfigFile: "/path/to/kconfig"

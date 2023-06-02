@@ -711,6 +711,7 @@ The following features are available for matching:
 |                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
 |                  |              | **`tdx.enabled`** | bool | `true` if Intel TDX (Trusted Domain Extensions) is available on the host and has been enabled, otherwise does not exist
 |                  |              | **`tdx.total_keys`** | int | The total amount of keys an Intel TDX (Trusted Domain Extensions) host can provide.  It's only present if `tdx.enabled` is `true`.
+|                  |              | **`tdx.protected`** | bool | `true` if a guest VM was started using Intel TDX (Trusted Domain Extensions), otherwise does not exist.
 |                  |              | **`sev.enabled`** | bool | `true` if AMD SEV (Secure Encrypted Virtualization) is available on the host and has been enabled, otherwise does not exist
 |                  |              | **`sev.es.enabled`** | bool | `true` if AMD SEV-ES (Encrypted State supported) is available on the host and has been enabled, otherwise does not exist
 |                  |              | **`sev.snp.enabled`** | bool | `true` if AMD SEV-SNP (Secure Nested Paging supported) is available on the host and has been enabled, otherwise does not exist
