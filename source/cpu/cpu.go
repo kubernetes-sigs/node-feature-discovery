@@ -89,6 +89,7 @@ func newDefaultConfig() *Config {
 				"SSE4",
 				"SSE42",
 				"SSSE3",
+				"TDX_GUEST",
 			},
 			AttributeWhitelist: []string{},
 		},

@@ -53,6 +53,10 @@ func discoverSecurity() map[string]string {
 		}
 	}
 
+	if tdxProtected() {
+		elems["tdx.protected"] = "true"
+	}
+
 	if sevParameterEnabled("sev") {
 		elems["sev.enabled"] = "true"
 
@@ -100,6 +104,10 @@ func tdxEnabled() bool {
 		}
 	}
 	return false
+}
+
+func tdxProtected() bool {
+	return cpuid.CPU.Has(cpuid.TDX_GUEST)
 }
 
 func sevParameterEnabled(parameter string) bool {

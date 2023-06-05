@@ -7,10 +7,11 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
+	github.com/google/uuid v1.3.0
 	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.0
 	github.com/k8stopologyawareschedwg/podfingerprint v0.1.2
-	github.com/klauspost/cpuid/v2 v2.2.4
+	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.4
 	github.com/opencontainers/runc v1.1.6
@@ -96,7 +97,6 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
