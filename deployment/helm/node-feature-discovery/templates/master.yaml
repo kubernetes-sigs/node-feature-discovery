@@ -66,6 +66,8 @@ spec:
           ports:
           - containerPort: {{ .Values.master.port | default "8080" }}
             name: grpc
+          - containerPort: {{ .Values.master.metricsPort | default "8081" }}
+            name: metrics
           env:
           - name: NODE_NAME
             valueFrom:
@@ -118,6 +120,7 @@ spec:
             - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
             - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
             {{- end }}
+            - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
           volumeMounts:
             {{- if .Values.tls.enable }}
             - name: nfd-master-cert
@@ -139,7 +142,6 @@ spec:
             items:
               - key: nfd-master.conf
                 path: nfd-master.conf
-
     {{- with .Values.master.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

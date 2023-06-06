@@ -54,6 +54,10 @@ spec:
         - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
         - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
 {{- end }}
+        - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
+        ports:
+          - name: metrics
+            containerPort: {{ .Values.worker.metricsPort | default "8081"}}
         volumeMounts:
         - name: host-boot
           mountPath: "/host-boot"

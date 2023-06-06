@@ -101,6 +101,7 @@ type Args struct {
 	Options              string
 	Server               string
 	ServerNameOverride   string
+	MetricsPort          int
 
 	Overrides ConfigOverrideArgs
 }
@@ -197,10 +198,10 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 
 	discoveryDuration := time.Since(discoveryStart)
 	klog.V(2).InfoS("feature discovery of all sources completed", "duration", discoveryDuration)
+	featureDiscoveryDuration.WithLabelValues(utils.NodeName()).Observe(discoveryDuration.Seconds())
 	if w.config.Core.SleepInterval.Duration > 0 && discoveryDuration > w.config.Core.SleepInterval.Duration/2 {
 		klog.InfoS("feature discovery sources took over half of sleep interval ", "duration", discoveryDuration, "sleepInterval", w.config.Core.SleepInterval.Duration)
 	}
-
 	// Get the set of feature labels.
 	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
 
@@ -238,6 +239,13 @@ func (w *nfdWorker) Run() error {
 	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
+
+	// Register to metrics server
+	if w.args.MetricsPort > 0 {
+		go runMetricsServer(w.args.MetricsPort)
+		registerVersion(version.Get())
+		defer stopMetricsServer()
+	}
 
 	err = w.runFeatureDiscovery()
 	if err != nil {

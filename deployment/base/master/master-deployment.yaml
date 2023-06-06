@@ -35,5 +35,7 @@ spec:
           command:
             - "nfd-master"
           ports:
+            - name: metrics
+              containerPort: 8081
             - name: grpc
               containerPort: 8080
