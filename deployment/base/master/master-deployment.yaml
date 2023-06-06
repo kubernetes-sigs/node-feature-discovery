@@ -34,3 +34,6 @@ spec:
             failureThreshold: 10
           command:
             - "nfd-master"
+          ports:
+            - name: grpc
+              containerPort: 8080
