@@ -125,7 +125,7 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.IntVar(&args.Port, "port", 8080,
 		"Port on which to listen for connections.")
 	flagset.BoolVar(&args.Prune, "prune", false,
-		"Prune all NFD related attributes from all nodes of the cluaster and exit.")
+		"Prune all NFD related attributes from all nodes of the cluster and exit.")
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
 		"Verify worker node name against the worker's TLS certificate. "+
 			"Only takes effect when TLS authentication has been enabled.")
