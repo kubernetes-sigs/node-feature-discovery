@@ -34,7 +34,7 @@ deployment.apps/nfd-master   1/1     1            1           17s
 Check that NFD feature labels have been created
 
 ```bash
-$ kubectl get no -o json | jq .items[].metadata.labels
+$ kubectl get no -o json | jq '.items[].metadata.labels'
 {
   "kubernetes.io/arch": "amd64",
   "kubernetes.io/os": "linux",
