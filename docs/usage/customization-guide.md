@@ -929,7 +929,7 @@ Consider the following configuration:
           nolabel-feature: {op: IsTrue}
 ```
 
-The `feature.node.kubernetes.io/high-level-feature = true` label depends on thw
+The `feature.node.kubernetes.io/high-level-feature = true` label depends on the
 two previous rules.
 
 Note that when referencing rules across multiple
