@@ -3,10 +3,8 @@ kind: Kustomization
 
 namespace: node-feature-discovery
 
-bases:
-- ../../base/rbac
-
 resources:
+- ../../base/rbac
 - namespace.yaml
 - master-job.yaml
 
