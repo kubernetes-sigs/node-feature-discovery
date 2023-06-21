@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
-	"k8s.io/kubernetes/test/e2e/framework"
 	e2elog "k8s.io/kubernetes/test/e2e/framework"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
@@ -172,7 +171,7 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 
 // Actual test suite
 var _ = SIGDescribe("NFD master and worker", func() {
-	f := framework.NewDefaultFramework("node-feature-discovery")
+	f := e2elog.NewDefaultFramework("node-feature-discovery")
 
 	nfdTestSuite := func(useNodeFeatureApi bool) {
 		createPodSpecOpts := func(opts ...testpod.SpecOption) []testpod.SpecOption {
