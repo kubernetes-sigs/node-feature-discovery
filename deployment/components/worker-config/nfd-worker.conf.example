@@ -77,7 +77,7 @@
 #      - "vendor"
 #      - "device"
 #  local:
-#    hooksEnabled: true
+#    hooksEnabled: false
 #  custom:
 #    # The following feature demonstrates the capabilities of the matchFeatures
 #    - name: "my custom rule"
