@@ -35,7 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
-	e2elog "k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/kubernetes/test/e2e/framework"
 	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	admissionapi "k8s.io/pod-security-admission/api"
@@ -171,7 +171,7 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 
 // Actual test suite
 var _ = SIGDescribe("NFD master and worker", func() {
-	f := e2elog.NewDefaultFramework("node-feature-discovery")
+	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	nfdTestSuite := func(useNodeFeatureApi bool) {
 		createPodSpecOpts := func(opts ...testpod.SpecOption) []testpod.SpecOption {
@@ -221,7 +221,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			JustBeforeEach(func(ctx context.Context) {
 				// Drop the pod security admission label as nfd-worker needs host mounts
 				if _, ok := f.Namespace.Labels[admissionapi.EnforceLevelLabel]; ok {
-					e2elog.Logf("Deleting %s label from the test namespace", admissionapi.EnforceLevelLabel)
+					framework.Logf("Deleting %s label from the test namespace", admissionapi.EnforceLevelLabel)
 					delete(f.Namespace.Labels, admissionapi.EnforceLevelLabel)
 					_, err := f.ClientSet.CoreV1().Namespaces().Update(ctx, f.Namespace, metav1.UpdateOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -349,12 +349,12 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					for _, node := range nodeList.Items {
 						nodeConf := testutils.FindNodeConfig(cfg, node.Name)
 						if nodeConf == nil {
-							e2elog.Logf("node %q has no matching rule in e2e-config, skipping...", node.Name)
+							framework.Logf("node %q has no matching rule in e2e-config, skipping...", node.Name)
 							continue
 						}
 
 						// Check labels
-						e2elog.Logf("verifying labels of node %q...", node.Name)
+						framework.Logf("verifying labels of node %q...", node.Name)
 						for k, v := range nodeConf.ExpectedLabelValues {
 							Expect(node.Labels).To(HaveKeyWithValue(k, v))
 						}
@@ -375,7 +375,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						}
 
 						// Check annotations
-						e2elog.Logf("verifying annotations of node %q...", node.Name)
+						framework.Logf("verifying annotations of node %q...", node.Name)
 						for k, v := range nodeConf.ExpectedAnnotationValues {
 							Expect(node.Annotations).To(HaveKeyWithValue(k, v))
 						}
