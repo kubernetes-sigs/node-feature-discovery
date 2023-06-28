@@ -38,7 +38,6 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
-	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/scheme"
@@ -507,7 +506,7 @@ func TestFilterLabels(t *testing.T) {
 		labelValue := "@test.feature.LSM"
 		features := nfdv1alpha1.Features{
 			Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
-				"test.feature": v1alpha1.AttributeFeatureSet{
+				"test.feature": nfdv1alpha1.AttributeFeatureSet{
 					Elements: map[string]string{
 						"LSM": "123",
 					},
