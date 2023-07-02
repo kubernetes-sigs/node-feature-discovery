@@ -102,7 +102,7 @@ spec:
             - "-crd-controller={{ .Values.master.crdController }}"
             {{- else }}
             ## By default, disable crd controller for other than the default instances
-            - "-featurerules-controller={{ .Values.master.instance | empty }}"
+            - "-crd-controller={{ .Values.master.instance | empty }}"
             {{- end }}
             {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
             - "-featurerules-controller={{ .Values.master.featureRulesController }}"
