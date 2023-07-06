@@ -146,6 +146,7 @@ func (n *topologyGC) runGC() {
 // periodicGC runs garbage collector at every gcPeriod to make sure we haven't missed any node
 func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
 	gcTrigger := time.NewTicker(gcPeriod)
+	defer gcTrigger.Stop()
 	for {
 		select {
 		case <-gcTrigger.C:

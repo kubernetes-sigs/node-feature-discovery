@@ -70,6 +70,7 @@ func (n *Notifier) Run() {
 	timeEvents := make(<-chan time.Time)
 	if n.sleepInterval > 0 {
 		ticker := time.NewTicker(n.sleepInterval)
+		defer ticker.Stop()
 		timeEvents = ticker.C
 	}
 
