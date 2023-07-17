@@ -244,7 +244,7 @@ func (m *nfdMaster) Run() error {
 				return err
 			}
 			// Update all nodes when the configuration changes
-			if m.nfdController != nil {
+			if m.nfdController != nil && m.args.EnableNodeFeatureApi {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
 		case <-m.stop:
