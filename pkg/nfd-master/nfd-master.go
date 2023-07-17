@@ -693,6 +693,10 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 }
 
 func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
+	if m.nfdController == nil || m.nfdController.featureLister == nil {
+		return nil
+	}
+
 	sel := k8sLabels.SelectorFromSet(k8sLabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
 	objs, err := m.nfdController.featureLister.List(sel)
 	if err != nil {
