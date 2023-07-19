@@ -116,13 +116,22 @@ func sevParameterEnabled(parameter string) bool {
 
 func getCgroupMiscCapacity(resource string) int64 {
 	var totalResources int64 = -1
+	var err error = nil
+	var f *os.File = nil
 
-	miscCgroups := hostpath.SysfsDir.Path("fs/cgroup/misc.capacity")
-	f, err := os.Open(miscCgroups)
+	miscCgroupsPaths := []string{"fs/cgroup/misc.capacity", "fs/cgroup/misc/misc.capacity"}
+	for _, miscCgroupsPath := range miscCgroupsPaths {
+		miscCgroups := hostpath.SysfsDir.Path(miscCgroupsPath)
+		f, err = os.Open(miscCgroups)
+		if err == nil {
+			defer f.Close()
+			break
+		}
+	}
+
 	if err != nil {
 		return totalResources
 	}
-	defer f.Close()
 
 	r := bufio.NewReader(f)
 	for {
