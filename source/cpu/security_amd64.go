@@ -114,26 +114,10 @@ func sevParameterEnabled(parameter string) bool {
 	return false
 }
 
-func getCgroupMiscCapacity(resource string) int64 {
+func retrieveCgroupMiscCapacityValue(miscCgroupPath *os.File, resource string) int64 {
 	var totalResources int64 = -1
-	var err error = nil
-	var f *os.File = nil
 
-	miscCgroupsPaths := []string{"fs/cgroup/misc.capacity", "fs/cgroup/misc/misc.capacity"}
-	for _, miscCgroupsPath := range miscCgroupsPaths {
-		miscCgroups := hostpath.SysfsDir.Path(miscCgroupsPath)
-		f, err = os.Open(miscCgroups)
-		if err == nil {
-			defer f.Close()
-			break
-		}
-	}
-
-	if err != nil {
-		return totalResources
-	}
-
-	r := bufio.NewReader(f)
+	r := bufio.NewReader(miscCgroupPath)
 	for {
 		line, _, err := r.ReadLine()
 		if err != nil {
@@ -158,4 +142,19 @@ func getCgroupMiscCapacity(resource string) int64 {
 	}
 
 	return totalResources
+}
+
+func getCgroupMiscCapacity(resource string) int64 {
+	miscCgroupsPaths := []string{"fs/cgroup/misc.capacity", "fs/cgroup/misc/misc.capacity"}
+	for _, miscCgroupsPath := range miscCgroupsPaths {
+		miscCgroups := hostpath.SysfsDir.Path(miscCgroupsPath)
+		f, err := os.Open(miscCgroups)
+		if err == nil {
+			defer f.Close()
+
+			return retrieveCgroupMiscCapacityValue(f, resource)
+		}
+	}
+
+	return -1
 }
