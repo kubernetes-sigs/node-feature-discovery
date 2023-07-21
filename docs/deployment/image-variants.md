@@ -7,12 +7,6 @@ sort: 1
 # Image variants
 {: .no_toc}
 
-## Table of contents
-{: .no_toc .text-delta}
-
-1. TOC
-{:toc}
-
 ---
 
 NFD currently offers two variants of the container image. The "minimal" variant is
