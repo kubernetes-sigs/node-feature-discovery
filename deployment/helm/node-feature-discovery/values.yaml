@@ -31,6 +31,7 @@ master:
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   # The TCP port that nfd-master listens for incoming requests. Default: 8080
   port: 8080
+  metricsPort: 8081
   instance:
   featureApi:
   resyncPeriod:
@@ -343,6 +344,7 @@ worker:
     #
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
+  metricsPort: 8081
   daemonsetAnnotations: {}
   podSecurityContext: {}
     # fsGroup: 2000
@@ -493,3 +495,6 @@ topologyGC:
 tls:
   enable: false
   certManager: false
+
+prometheus:
+  enable: false

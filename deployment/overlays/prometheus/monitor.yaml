@@ -1,0 +1,20 @@
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: nfd-metrics
+  labels:
+    app: nfd
+spec:
+  podMetricsEndpoints:
+    - honorLabels: true
+      interval: 10s
+      path: /metrics
+      port: metrics
+      scheme: http
+  namespaceSelector:
+    matchNames:
+    - node-feature-discovery
+  selector:
+    matchExpressions:
+    - {key: app, operator: In, values: ["nfd-master", "nfd-worker"]}

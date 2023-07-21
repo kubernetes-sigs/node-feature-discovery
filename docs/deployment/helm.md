@@ -102,6 +102,11 @@ We have introduced the following Chart parameters.
 | `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
 | `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
 | `enableNodeFeatureApi` | bool  | false | Enable the [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication.
+| `prometheus.enable` | bool | false | Specifies whether to expose metrics using prometheus operator |
+
+Metrics are configured to be exposed using prometheus operator API's by
+default. If you want to expose metrics using the prometheus operator
+API's you need to install the prometheus operator in your cluster.
 
 ### Master pod parameters
 
@@ -109,6 +114,7 @@ We have introduced the following Chart parameters.
 |-----------------------------|---------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
 | `master.port`               | integer |                                         | Specifies the TCP port that nfd-master listens for incoming requests.                                                      |
+| `master.metricsPort`        | integer |   8081                                  | Port on which to expose metrics from components to prometheus operator |
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
 | `master.resyncPeriod`       | string  |                                         | NFD API controller resync period.                                                  |
 | `master.extraLabelNs`       | array   | []                                      | List of allowed extra label namespaces                                                                                                   |
@@ -139,6 +145,7 @@ We have introduced the following Chart parameters.
 | Name | Type | Default | description |
 | ---- | ---- | ------- | ----------- |
 | `worker.*` | dict |  | NFD worker daemonset configuration |
+| `worker.metricsPort*` | integer | 8081 | Port on which to expose metrics from components to prometheus operator |
 | `worker.config` | dict |  | NFD worker [configuration](../reference/worker-configuration-reference) |
 | `worker.podSecurityContext` | dict | {} | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings |
 | `worker.securityContext` | dict | {} | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) |

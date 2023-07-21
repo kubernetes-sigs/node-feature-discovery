@@ -124,6 +124,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Enable NFD CRD API controller for processing NodeFeature and NodeFeatureRule objects.")
 	flagset.IntVar(&args.Port, "port", 8080,
 		"Port on which to listen for connections.")
+	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
+		"Port on which to expose metrics.")
 	flagset.BoolVar(&args.Prune, "prune", false,
 		"Prune all NFD related attributes from all nodes of the cluster and exit.")
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,

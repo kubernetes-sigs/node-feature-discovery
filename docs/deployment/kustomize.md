@@ -57,6 +57,8 @@ scenarios under
   see [Master Worker Topologyupdater](#master-worker-topologyupdater) below
 - [`topologyupdater`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/topologyupdater):
   see [Topology Updater](#topologyupdater) below
+- [`Metrics`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prometheus):
+  see [Metrics](#metrics) below
 - [`prune`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prune):
   clean up the cluster after uninstallation, see
   [Removing feature labels](uninstallation.md#removing-feature-labels)
@@ -137,6 +139,17 @@ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deplo
 
 ```
 
+### Metrics
+
+To allow [prometheus operator][prometheus-operator]
+to scrape metrics from node-feature-discovery,
+run the following command:
+
+```bash
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prometheus?ref={{ site.release }}
+```
+
 ## Uninstallation
 
 Simplest way is to invoke `kubectl delete` on the overlay that was used for
@@ -162,3 +175,4 @@ kubectl delete clusterrolebinding nfd-master
 
 <!-- Links -->
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
+[prometheus-operator]: https://github.com/prometheus-operator/prometheus-operator

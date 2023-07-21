@@ -114,6 +114,7 @@ type Args struct {
 	VerifyNodeName       bool
 	Options              string
 	EnableLeaderElection bool
+	MetricsPort          int
 
 	Overrides ConfigOverrideArgs
 }
@@ -241,6 +242,14 @@ func (m *nfdMaster) Run() error {
 			return fmt.Errorf("failed to update master node: %v", err)
 		}
 	}
+
+	// Register to metrics server
+	if m.args.MetricsPort > 0 {
+		go runMetricsServer(m.args.MetricsPort)
+		registerVersion(version.Get())
+		defer stopMetricsServer()
+	}
+
 	// Run gRPC server
 	grpcErr := make(chan error, 1)
 	go m.runGrpcServer(grpcErr)
@@ -845,6 +854,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		return err
 	}
 
+	updatedNodes.Inc()
 	return nil
 }
 
@@ -968,6 +978,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 	}
 
 	// Process all rule CRs
+	processStart := time.Now()
 	for _, spec := range ruleSpecs {
 		switch {
 		case klog.V(3).Enabled():
@@ -994,6 +1005,9 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 		}
 	}
+	processingTime := time.Since(processStart)
+	crdProcessingTime.Set(float64(processingTime))
+	klog.V(2).InfoS("processed NodeFeatureRule objects", "nodeName", nodeName, "objectCount", len(ruleSpecs), "duration", processingTime)
 
 	return labels, extendedResources, taints
 }
