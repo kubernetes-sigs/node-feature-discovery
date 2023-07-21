@@ -2,7 +2,7 @@
 name: New Release
 about: Propose a new release
 title: Release v0.x.0
-assignees: adrianchiris, ArangoGutierrez, jjacobelli, kad, marquiz, zvonkok
+assignees: adrianchiris, ArangoGutierrez, fmuyassarov, jjacobelli, kad, marquiz, PiotrProkop, zvonkok
 
 ---
 
