@@ -5,11 +5,9 @@ sort: 5
 ---
 
 # NFD-Topology-Updater Commandline Flags
-
 {: .no_toc }
 
 ## Table of Contents
-
 {: .no_toc .text-delta }
 
 1. TOC
