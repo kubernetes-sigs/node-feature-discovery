@@ -36,8 +36,10 @@ given a configuration of resources to exclude via [`-excludeList`](../reference/
 
 ## Deployment Notes
 
-Kubelet [PodResource API][podresource-api] is a prerequisite for
-nfd-topology-updater to be able to run.
+Kubelet [PodResource API][podresource-api] with the
+[GetAllocatableResources][getallocatableresources] functionality enabled is a
+prerequisite for nfd-topology-updater to be able to run (i.e. Kubernetes v1.21
+or later is required).
 
 Preceding Kubernetes v1.23, the `kubelet` must be started with
 `--feature-gates=KubeletPodResourcesGetAllocatable=true`.
@@ -83,3 +85,4 @@ for creating a configuration.
 <!-- Links -->
 [podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
 [feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates
+[getallocatableresources]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#grpc-endpoint-getallocatableresources
