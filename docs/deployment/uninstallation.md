@@ -7,12 +7,6 @@ sort: 6
 # Uninstallation
 {: .no_toc}
 
-## Table of contents
-{: .no_toc .text-delta}
-
-1. TOC
-{:toc}
-
 ---
 
 Follow the uninstallation instructions of the deployment method used
