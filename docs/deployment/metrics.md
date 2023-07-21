@@ -41,3 +41,6 @@ We recommend setting
 `--set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false`
 when deploying prometheus-operator via Helm to enable the prometheus-operator
 to scrape metrics from any PodMonitor.
+
+or setting labels on the PodMonitor via the helm parameter `prometheus.labels`
+to control which Prometheus instances will scrape this PodMonitor.
