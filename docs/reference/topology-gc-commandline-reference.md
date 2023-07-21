@@ -5,11 +5,9 @@ sort: 7
 ---
 
 # NFD-Topology-Garbage-Collector Commandline Flags
-
 {: .no_toc }
 
 ## Table of Contents
-
 {: .no_toc .text-delta }
 
 1. TOC
