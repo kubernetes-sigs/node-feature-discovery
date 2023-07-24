@@ -103,6 +103,7 @@ We have introduced the following Chart parameters.
 | `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
 | `enableNodeFeatureApi` | bool  | false | Enable the [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication.
 | `prometheus.enable` | bool | false | Specifies whether to expose metrics using prometheus operator |
+| `prometheus.labels` | dict | {} | Specifies labels for use with the prometheus operator to control how it is selected |
 
 Metrics are configured to be exposed using prometheus operator API's by
 default. If you want to expose metrics using the prometheus operator

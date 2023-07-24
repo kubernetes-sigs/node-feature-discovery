@@ -498,3 +498,4 @@ tls:
 
 prometheus:
   enable: false
+  labels: {}
