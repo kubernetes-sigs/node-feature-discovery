@@ -34,3 +34,6 @@ Command-line flags and configuration file options are supported for 1 more
 release after being deprecated, at minimum. That is, if option/flag is
 deprecated in version **X**, it will be supported in **X+1** and may be removed
 in **X+2**.
+
+The same policy (support for 1 release after deprecation) also applies to Helm
+chart parameters.
