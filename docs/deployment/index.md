@@ -6,6 +6,9 @@ sort: 2
 
 # Deployment
 
+Node Feature Discovery can be deployed on any recent version of Kubernetes
+(v1.21+).
+
 See [Image variants](image-variants.md) for description of the different NFD
 container images available.
 
