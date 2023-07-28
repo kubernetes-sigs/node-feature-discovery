@@ -316,6 +316,14 @@ Label namespace may be specified with `<namespace>/<name>[=<value>]`.
 
 Comment lines (starting with `#`) are ignored.
 
+You can include the following block if you want to define the expiration date 
+of features that are described in the feature files:
+
+```plaintext
+# +expiry-time: 2023-07-29T11:22:33Z
+```
+**Note: The time format that we are supporting is RFC3339.**
+
 ### Mounts
 
 The standard NFD deployments contain `hostPath` mounts for

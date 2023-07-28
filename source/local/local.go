@@ -276,22 +276,19 @@ func getFeaturesFromFiles() (map[string]string, error) {
 			klog.ErrorS(err, "failed to read file", "fileName", fileName)
 			continue
 		}
-		
+
 		// Append features
 		fileFeatures := parseFeatures(lines)
 
 		// Check expiration of file features
-		if expiryDate, ok := fileFeatures[ExpiryDateKey]; ok {
-			expiryDate, err := time.Parse(time.RFC3339, expiryDate)
-			if err != nil {
-				klog.ErrorS(err, "failed to parse feature file expiry date", "fileName", fileName)
-				continue
-			}
+		expiryDate, err := getExpirationDate(lines)
+		if err != nil {
+			klog.ErrorS(err, "failed to parse feature file expiry date", "fileName", fileName)
+			continue
+		}
 
-			// Features should not be included if they're expired
-			if expiryDate.Before(time.Now()) {
-				continue
-			}
+		if expiryDate.Before(time.Now()) {
+			continue
 		}
 
 		klog.V(4).InfoS("feature file read", "fileName", fileName, "features", utils.DelayedDumper(fileFeatures))
@@ -304,6 +301,27 @@ func getFeaturesFromFiles() (map[string]string, error) {
 	}
 
 	return features, nil
+}
+
+// Return the expiration date of a feature file
+func getExpirationDate(lines [][]byte) (time.Time, error) {
+	for _, line := range lines {
+		if len(line) > 0 {
+			lineSplit := strings.SplitN(string(line), ":", 2)
+
+			key := lineSplit[0]
+
+			if key == ExpiryDateKey {
+				expiryDate, err := time.Parse(time.RFC3339, lineSplit[1])
+				if err != nil {
+					return time.Now(), err
+				}
+				return expiryDate, nil
+			}
+		}
+	}
+
+	return time.Now(), nil
 }
 
 // Read one file
