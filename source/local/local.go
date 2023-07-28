@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"k8s.io/klog/v2"
 
@@ -36,6 +37,10 @@ const Name = "local"
 
 // LabelFeature of this feature source
 const LabelFeature = "label"
+
+// ExpiryDateKey is the key of this feature source indicating
+// when features should be removed.
+const ExpiryDateKey = "# +expiry-time"
 
 // Config
 var (
@@ -271,9 +276,24 @@ func getFeaturesFromFiles() (map[string]string, error) {
 			klog.ErrorS(err, "failed to read file", "fileName", fileName)
 			continue
 		}
-
+		
 		// Append features
 		fileFeatures := parseFeatures(lines)
+
+		// Check expiration of file features
+		if expiryDate, ok := fileFeatures[ExpiryDateKey]; ok {
+			expiryDate, err := time.Parse(time.RFC3339, expiryDate)
+			if err != nil {
+				klog.ErrorS(err, "failed to parse feature file expiry date", "fileName", fileName)
+				continue
+			}
+
+			// Features should not be included if they're expired
+			if expiryDate.Before(time.Now()) {
+				continue
+			}
+		}
+
 		klog.V(4).InfoS("feature file read", "fileName", fileName, "features", utils.DelayedDumper(fileFeatures))
 		for k, v := range fileFeatures {
 			if old, ok := features[k]; ok {
