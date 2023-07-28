@@ -854,7 +854,6 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		return err
 	}
 
-	updatedNodes.Inc()
 	return nil
 }
 
@@ -1073,6 +1072,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	}
 
 	if len(patches) > 0 || len(statusPatches) > 0 {
+		nodeUpdates.Inc()
 		klog.InfoS("node updated", "nodeName", nodeName)
 	} else {
 		klog.V(1).InfoS("no updates to node", "nodeName", nodeName)
