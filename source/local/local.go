@@ -38,9 +38,12 @@ const Name = "local"
 // LabelFeature of this feature source
 const LabelFeature = "label"
 
-// ExpiryDateKey is the key of this feature source indicating
+// ExpiryTimeKey is the key of this feature source indicating
 // when features should be removed.
-const ExpiryDateKey = "# +expiry-time"
+const ExpiryTimeKey = "expiry-time"
+
+// DirectivePrefix defines the prefix of directives that should be parsed
+const DirectivePrefix = "# +"
 
 // Config
 var (
@@ -56,6 +59,11 @@ type localSource struct {
 
 type Config struct {
 	HooksEnabled bool `json:"hooksEnabled,omitempty"`
+}
+
+// parsingOpts contains options used for directives parsing
+type parsingOpts struct {
+	ExpiryTime time.Time
 }
 
 // Singleton source instance
@@ -149,14 +157,56 @@ func (s *localSource) GetFeatures() *nfdv1alpha1.Features {
 	return s.features
 }
 
-func parseFeatures(lines [][]byte) map[string]string {
+func parseDirectives(line string, opts *parsingOpts) error {
+	if !strings.HasPrefix(line, DirectivePrefix) {
+		return nil
+	}
+
+	directive := line[len(DirectivePrefix):]
+	split := strings.SplitN(directive, "=", 2)
+	key := split[0]
+
+	if len(split) == 1 {
+		return fmt.Errorf("invalid directive format in %q, should be '# +key=value'", line)
+	}
+	value := split[1]
+
+	switch key {
+	case ExpiryTimeKey:
+		expiryDate, err := time.Parse(time.RFC3339, strings.TrimSpace(value))
+		if err != nil {
+			return fmt.Errorf("failed to parse expiry-date directive: %w", err)
+		}
+		opts.ExpiryTime = expiryDate
+	default:
+		return fmt.Errorf("unknown feature file directive %q", key)
+	}
+
+	return nil
+}
+
+func parseFeatures(lines [][]byte, fileName string) map[string]string {
 	features := make(map[string]string)
+	now := time.Now()
+	parsingOpts := &parsingOpts{
+		ExpiryTime: now,
+	}
 
 	for _, l := range lines {
 		line := strings.TrimSpace(string(l))
 		if len(line) > 0 {
-			// Skip comment lines
 			if strings.HasPrefix(line, "#") {
+				// Parse directives
+				err := parseDirectives(line, parsingOpts)
+				if err != nil {
+					klog.ErrorS(err, "error while parsing directives", "fileName", fileName)
+				}
+
+				continue
+			}
+
+			// handle expiration
+			if parsingOpts.ExpiryTime.Before(now) {
 				continue
 			}
 
@@ -202,7 +252,7 @@ func getFeaturesFromHooks() (map[string]string, error) {
 		}
 
 		// Append features
-		fileFeatures := parseFeatures(lines)
+		fileFeatures := parseFeatures(lines, fileName)
 		klog.V(4).InfoS("hook executed", "fileName", fileName, "features", utils.DelayedDumper(fileFeatures))
 		for k, v := range fileFeatures {
 			if old, ok := features[k]; ok {
@@ -278,18 +328,7 @@ func getFeaturesFromFiles() (map[string]string, error) {
 		}
 
 		// Append features
-		fileFeatures := parseFeatures(lines)
-
-		// Check expiration of file features
-		expiryDate, err := getExpirationDate(lines)
-		if err != nil {
-			klog.ErrorS(err, "failed to parse feature file expiry date", "fileName", fileName)
-			continue
-		}
-
-		if expiryDate.Before(time.Now()) {
-			continue
-		}
+		fileFeatures := parseFeatures(lines, fileName)
 
 		klog.V(4).InfoS("feature file read", "fileName", fileName, "features", utils.DelayedDumper(fileFeatures))
 		for k, v := range fileFeatures {
@@ -301,27 +340,6 @@ func getFeaturesFromFiles() (map[string]string, error) {
 	}
 
 	return features, nil
-}
-
-// Return the expiration date of a feature file
-func getExpirationDate(lines [][]byte) (time.Time, error) {
-	for _, line := range lines {
-		if len(line) > 0 {
-			lineSplit := strings.SplitN(string(line), ":", 2)
-
-			key := lineSplit[0]
-
-			if key == ExpiryDateKey {
-				expiryDate, err := time.Parse(time.RFC3339, lineSplit[1])
-				if err != nil {
-					return time.Now(), err
-				}
-				return expiryDate, nil
-			}
-		}
-	}
-
-	return time.Now(), nil
 }
 
 // Read one file

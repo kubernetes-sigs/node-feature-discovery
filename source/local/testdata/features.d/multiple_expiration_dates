@@ -1,0 +1,11 @@
+# +expiry-time=2012-07-28T11:22:33Z
+featureKey=featureValue
+
+# +expiry-time=2080-07-28T11:22:33Z
+featureKey2=featureValue2
+
+# +expiry-time=2070-07-28T11:22:33Z
+featureKey3=featureValue3
+
+# +expiry-time=2002-07-28T11:22:33Z
+featureKey4=featureValue4
