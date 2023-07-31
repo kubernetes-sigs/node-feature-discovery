@@ -29,8 +29,8 @@ import (
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
 	buildInfoQuery         = "nfd_master_build_info"
-	updatedNodesQuery      = "nfd_updated_nodes"
-	crdProcessingTimeQuery = "nfd_crd_processing_time"
+	nodeUpdatesQuery       = "nfd_node_updates_total"
+	nfrProcessingTimeQuery = "nfd_nodefeaturerule_processing_duration_seconds"
 )
 
 var (
@@ -43,14 +43,21 @@ var (
 			"version": version.Get(),
 		},
 	})
-	updatedNodes = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: updatedNodesQuery,
+	nodeUpdates = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeUpdatesQuery,
 		Help: "Number of nodes updated by the master.",
 	})
-	crdProcessingTime = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: crdProcessingTimeQuery,
-		Help: "Time spent processing the NodeFeatureRule CRD.",
-	})
+	nfrProcessingTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    nfrProcessingTimeQuery,
+			Help:    "Time processing time of NodeFeatureRule objects.",
+			Buckets: []float64{0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01},
+		},
+		[]string{
+			"name",
+			"node",
+		},
+	)
 )
 
 // registerVersion exposes the Operator build version.
@@ -62,8 +69,8 @@ func registerVersion(version string) {
 func runMetricsServer(port int) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(buildInfo,
-		updatedNodes,
-		crdProcessingTime)
+		nodeUpdates,
+		nfrProcessingTime)
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))

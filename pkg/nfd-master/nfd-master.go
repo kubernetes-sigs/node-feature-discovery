@@ -854,7 +854,6 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		return err
 	}
 
-	updatedNodes.Inc()
 	return nil
 }
 
@@ -980,6 +979,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 	// Process all rule CRs
 	processStart := time.Now()
 	for _, spec := range ruleSpecs {
+		t := time.Now()
 		switch {
 		case klog.V(3).Enabled():
 			klog.InfoS("executing NodeFeatureRule", "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName, "nodeFeatureRuleSpec", utils.DelayedDumper(spec.Spec))
@@ -1004,9 +1004,9 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 		}
+		nfrProcessingTime.WithLabelValues(spec.Name, nodeName).Observe(time.Since(t).Seconds())
 	}
 	processingTime := time.Since(processStart)
-	crdProcessingTime.Set(float64(processingTime))
 	klog.V(2).InfoS("processed NodeFeatureRule objects", "nodeName", nodeName, "objectCount", len(ruleSpecs), "duration", processingTime)
 
 	return labels, extendedResources, taints
@@ -1072,6 +1072,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	}
 
 	if len(patches) > 0 || len(statusPatches) > 0 {
+		nodeUpdates.Inc()
 		klog.InfoS("node updated", "nodeName", nodeName)
 	} else {
 		klog.V(1).InfoS("no updates to node", "nodeName", nodeName)

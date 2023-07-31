@@ -38,10 +38,11 @@ var (
 
 	featureDiscoveryDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: featureDiscoveryDurationQuery,
-			Help: "Time taken to discover features",
+			Name:    featureDiscoveryDurationQuery,
+			Help:    "Time taken to discover features",
+			Buckets: []float64{0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1},
 		},
-		[]string{"NodeName"},
+		[]string{"node"},
 	)
 	buildInfo = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: buildInfoQuery,
