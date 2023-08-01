@@ -38,7 +38,7 @@ func newNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
 	}
 }
 
-func (u *nodeUpdaterPool) processNodeLabelRequest(queue workqueue.RateLimitingInterface) bool {
+func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingInterface) bool {
 	nodeName, quit := queue.Get()
 	if quit {
 		return false
@@ -48,11 +48,11 @@ func (u *nodeUpdaterPool) processNodeLabelRequest(queue workqueue.RateLimitingIn
 
 	if err := u.nfdMaster.nfdAPIUpdateOneNode(nodeName.(string)); err != nil {
 		if queue.NumRequeues(nodeName) < 5 {
-			klog.InfoS("retrying labeling request for node", "nodeName", nodeName)
+			klog.InfoS("retrying node update", "nodeName", nodeName)
 			queue.AddRateLimited(nodeName)
 			return true
 		} else {
-			klog.ErrorS(err, "error labeling node", "nodeName", nodeName)
+			klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
 		}
 	}
 	queue.Forget(nodeName)
@@ -60,7 +60,7 @@ func (u *nodeUpdaterPool) processNodeLabelRequest(queue workqueue.RateLimitingIn
 }
 
 func (u *nodeUpdaterPool) runNodeUpdater(queue workqueue.RateLimitingInterface) {
-	for u.processNodeLabelRequest(queue) {
+	for u.processNodeUpdateRequest(queue) {
 	}
 	u.wg.Done()
 }
