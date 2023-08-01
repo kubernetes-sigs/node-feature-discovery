@@ -28,9 +28,10 @@ import (
 
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
-	buildInfoQuery         = "nfd_master_build_info"
-	nodeUpdatesQuery       = "nfd_node_updates_total"
-	nfrProcessingTimeQuery = "nfd_nodefeaturerule_processing_duration_seconds"
+	buildInfoQuery          = "nfd_master_build_info"
+	nodeUpdatesQuery        = "nfd_node_updates_total"
+	nodeUpdateFailuresQuery = "nfd_node_update_failures_total"
+	nfrProcessingTimeQuery  = "nfd_nodefeaturerule_processing_duration_seconds"
 )
 
 var (
@@ -46,6 +47,10 @@ var (
 	nodeUpdates = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: nodeUpdatesQuery,
 		Help: "Number of nodes updated by the master.",
+	})
+	nodeUpdateFailures = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeUpdateFailuresQuery,
+		Help: "Number of node update failures.",
 	})
 	nfrProcessingTime = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -70,6 +75,7 @@ func runMetricsServer(port int) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(buildInfo,
 		nodeUpdates,
+		nodeUpdateFailures,
 		nfrProcessingTime)
 
 	mux := http.NewServeMux()

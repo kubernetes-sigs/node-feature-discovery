@@ -53,6 +53,7 @@ func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingI
 			return true
 		} else {
 			klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
+			nodeUpdateFailures.Inc()
 		}
 	}
 	queue.Forget(nodeName)

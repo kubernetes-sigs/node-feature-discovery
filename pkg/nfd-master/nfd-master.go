@@ -452,6 +452,7 @@ func (m *nfdMaster) prune() error {
 		// Prune labels and extended resources
 		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
+			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
 		}
 
@@ -675,6 +676,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 
 		// Create labels et al
 		if err := m.refreshNodeFeatures(cli, r.NodeName, annotations, r.GetLabels(), r.GetFeatures()); err != nil {
+			nodeUpdateFailures.Inc()
 			return &pb.SetLabelsReply{}, err
 		}
 	}
