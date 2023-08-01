@@ -991,6 +991,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			ruleOut, err := rule.Execute(features)
 			if err != nil {
 				klog.ErrorS(err, "failed to process rule", "ruleName", rule.Name, "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName)
+				nfrProcessingErrors.Inc()
 				continue
 			}
 			taints = append(taints, ruleOut.Taints...)

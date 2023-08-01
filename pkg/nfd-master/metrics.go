@@ -28,10 +28,11 @@ import (
 
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
-	buildInfoQuery          = "nfd_master_build_info"
-	nodeUpdatesQuery        = "nfd_node_updates_total"
-	nodeUpdateFailuresQuery = "nfd_node_update_failures_total"
-	nfrProcessingTimeQuery  = "nfd_nodefeaturerule_processing_duration_seconds"
+	buildInfoQuery           = "nfd_master_build_info"
+	nodeUpdatesQuery         = "nfd_node_updates_total"
+	nodeUpdateFailuresQuery  = "nfd_node_update_failures_total"
+	nfrProcessingTimeQuery   = "nfd_nodefeaturerule_processing_duration_seconds"
+	nfrProcessingErrorsQuery = "nfd_nodefeaturerule_processing_errors_total"
 )
 
 var (
@@ -63,6 +64,10 @@ var (
 			"node",
 		},
 	)
+	nfrProcessingErrors = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nfrProcessingErrorsQuery,
+		Help: "Number of errors encountered while processing NodeFeatureRule objects.",
+	})
 )
 
 // registerVersion exposes the Operator build version.
@@ -76,7 +81,8 @@ func runMetricsServer(port int) {
 	r.MustRegister(buildInfo,
 		nodeUpdates,
 		nodeUpdateFailures,
-		nfrProcessingTime)
+		nfrProcessingTime,
+		nfrProcessingErrors)
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))

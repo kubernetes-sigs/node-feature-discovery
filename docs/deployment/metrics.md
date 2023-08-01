@@ -20,6 +20,7 @@ The exposed metrics are
 | `nfd_node_updates_total`                          | Counter   | Number of nodes updated
 | `nfd_node_update_failures_total`                  | Counter   | Number of nodes update failures
 | `nfd_nodefeaturerule_processing_duration_seconds` | Histogram | Time taken to process NodeFeatureRule objects
+| `nfd_nodefeaturerule_processing_errors_total`     | Counter   | Number or errors encountered while processing NodeFeatureRule objects
 | `nfd_feature_discovery_duration_seconds`          | Histogram | Time taken to discover features on a node
 
 ## Via Kustomize
