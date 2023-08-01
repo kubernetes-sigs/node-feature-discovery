@@ -13,13 +13,13 @@ By default NFD Master and Worker expose metrics on port 8081.
 
 The exposed metrics are
 
-| Metric                             | Type    | Meaning |
-| ---------------------------------- | ------- | ---------------- |
-| `nfd_master_build_info`            | Gauge   | Version from which nfd-master was built. |
-| `nfd_worker_build_info`            | Gauge   | Version from which nfd-worker was built. |
-| `nfd_updated_nodes`                | Counter | Time taken to label a node |
-| `nfd_crd_processing_time`          | Gauge   | Time taken to process a NodeFeatureRule CRD |
-| `nfd_feature_discovery_duration_seconds` | HistogramVec | Time taken to discover features on a node |
+| Metric                                            | Type      | Description
+| ------------------------------------------------- | --------- | ---------------------------------------
+| `nfd_master_build_info`                           | Gauge     | Version from which nfd-master was built
+| `nfd_worker_build_info`                           | Gauge     | Version from which nfd-worker was built
+| `nfd_node_updates_total`                          | Counter   | Number of nodes updated
+| `nfd_nodefeaturerule_processing_duration_seconds` | Histogram | Time taken to process NodeFeatureRule objects
+| `nfd_feature_discovery_duration_seconds`          | Histogram | Time taken to discover features on a node
 
 ## Via Kustomize
 
