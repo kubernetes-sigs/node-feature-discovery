@@ -19,6 +19,9 @@ The exposed metrics are
 | `nfd_worker_build_info`                           | Gauge     | Version from which nfd-worker was built
 | `nfd_node_updates_total`                          | Counter   | Number of nodes updated
 | `nfd_node_update_failures_total`                  | Counter   | Number of nodes update failures
+| `nfd_node_labels_rejected_total`                  | Counter   | Number of nodes labels rejected by nfd-master
+| `nfd_node_extendedresources_rejected_total`       | Counter   | Number of nodes extended resources rejected by nfd-master
+| `nfd_node_taints_rejected_total`                  | Counter   | Number of nodes taints rejected by nfd-master
 | `nfd_nodefeaturerule_processing_duration_seconds` | Histogram | Time taken to process NodeFeatureRule objects
 | `nfd_nodefeaturerule_processing_errors_total`     | Counter   | Number or errors encountered while processing NodeFeatureRule objects
 | `nfd_feature_discovery_duration_seconds`          | Histogram | Time taken to discover features on a node

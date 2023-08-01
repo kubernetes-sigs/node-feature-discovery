@@ -510,6 +510,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 
 		if value, err := m.filterFeatureLabel(name, value, features); err != nil {
 			klog.ErrorS(err, "ignoring label", "labelKey", name, "labelValue", value)
+			nodeLabelsRejected.Inc()
 		} else {
 			outLabels[name] = value
 		}
@@ -523,6 +524,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 		if value, ok := outLabels[extendedResourceName]; ok {
 			if _, err := strconv.Atoi(value); err != nil {
 				klog.ErrorS(err, "bad label value encountered for extended resource", "labelKey", extendedResourceName, "labelValue", value)
+				nodeERsRejected.Inc()
 				continue // non-numeric label can't be used
 			}
 
@@ -603,6 +605,7 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 	for _, taint := range taints {
 		if err := filterTaint(&taint); err != nil {
 			klog.ErrorS(err, "ignoring taint", "taint", taint)
+			nodeTaintsRejected.Inc()
 		} else {
 			outTaints = append(outTaints, taint)
 		}
@@ -786,6 +789,7 @@ func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources E
 		capacity, err := filterExtendedResource(name, value, features)
 		if err != nil {
 			klog.ErrorS(err, "failed to create extended resources", "extendedResourceName", name, "extendedResourceValue", value)
+			nodeERsRejected.Inc()
 		} else {
 			outExtendedResources[name] = capacity
 		}
