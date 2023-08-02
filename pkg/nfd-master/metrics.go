@@ -29,6 +29,7 @@ import (
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
 	buildInfoQuery           = "nfd_master_build_info"
+	nodeUpdateRequestsQuery  = "nfd_node_update_requests_total"
 	nodeUpdatesQuery         = "nfd_node_updates_total"
 	nodeUpdateFailuresQuery  = "nfd_node_update_failures_total"
 	nodeLabelsRejectedQuery  = "nfd_node_labels_rejected_total"
@@ -47,6 +48,10 @@ var (
 		ConstLabels: map[string]string{
 			"version": version.Get(),
 		},
+	})
+	nodeUpdateRequests = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeUpdateRequestsQuery,
+		Help: "Number of node update requests processed by the master.",
 	})
 	nodeUpdates = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: nodeUpdatesQuery,
@@ -95,6 +100,7 @@ func runMetricsServer(port int) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
 		buildInfo,
+		nodeUpdateRequests,
 		nodeUpdates,
 		nodeUpdateFailures,
 		nodeLabelsRejected,

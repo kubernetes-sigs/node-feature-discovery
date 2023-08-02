@@ -654,6 +654,7 @@ func isNamespaceDenied(labelNs string, wildcardDeniedNs map[string]struct{}, nor
 
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
+	nodeUpdateRequests.Inc()
 	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
 	if err != nil {
 		klog.ErrorS(err, "gRPC client authorization failed", "nodeName", r.NodeName)
