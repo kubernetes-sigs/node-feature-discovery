@@ -32,9 +32,9 @@ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deplo
 This will required RBAC rules and deploy nfd-master (as a deployment) and
 nfd-worker (as daemonset) in the `node-feature-discovery` namespace.
 
-**NOTE:** nfd-topology-updater is not deployed as part of the `default` overlay.
-Please refer to the [Master Worker Topologyupdater](#master-worker-topologyupdater)
-and [Topologyupdater](#topologyupdater) below.
+> **NOTE:** nfd-topology-updater is not deployed as part of the `default`
+> overlay.  Please refer to the [Master Worker Topologyupdater](#master-worker-topologyupdater)
+> and [Topologyupdater](#topologyupdater) below.
 
 Alternatively you can clone the repository and customize the deployment by
 creating your own overlays. For example, to deploy the
@@ -86,9 +86,9 @@ This creates a DaemonSet that runs nfd-worker and nfd-master in the same Pod.
 In this case no nfd-master is run on the master node(s), but, the worker nodes
 are able to label themselves which may be desirable e.g. in single-node setups.
 
-**NOTE:** nfd-topology-updater is not deployed by the default-combined overlay.
-To enable nfd-topology-updater in this scenario,the users must customize the
-deployment themselves.
+> **NOTE:** nfd-topology-updater is not deployed by the default-combined
+> overlay.  To enable nfd-topology-updater in this scenario,the users must
+> customize the deployment themselves.
 
 ### Worker one-shot
 

@@ -25,7 +25,7 @@ processing pipeline. In addition, any labels listed in the NodeFeature object
 are created on the node (note the allowed
 [label namespaces](customization-guide.md#node-labels) are controlled).
 
-> NOTE: NodeFeature API must also be enabled in nfd-worker with
+> **NOTE:** NodeFeature API must also be enabled in nfd-worker with
 > its [`-enable-nodefeature-api`](../reference/worker-commandline-reference.md#-enable-nodefeature-api)
 > flag.
 
@@ -45,7 +45,7 @@ received from nfd-worker instances through the gRPC interface or from
 requires that the [NodeFeaure controller](#nodefeature-controller) has been
 enabled.
 
-> NOTE: when gRPC is used for communicating the features (the default
+> **NOTE:** when gRPC is used for communicating the features (the default
 > mechanism), (re-)labelling only happens when a request is received from
 > nfd-worker. That is, in practice rules are evaluated and labels for each node
 > are created on intervals specified by the
@@ -103,8 +103,8 @@ affinity to prevent masters from running on the same node.
 However note that inter-pod affinity is costly and is not recommended
 in bigger clusters.
 
-> NOTE: If the [NodeFeature controller](#nodefeature-controller) is enabled the
-> replica count should be 1.
+> **NOTE:** If the [NodeFeature controller](#nodefeature-controller) is enabled
+> the replica count should be 1.
 
 If you have RBAC authorization enabled (as is the default e.g. with clusters
 initialized with kubeadm) you need to configure the appropriate ClusterRoles,

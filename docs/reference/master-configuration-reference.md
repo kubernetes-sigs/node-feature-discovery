@@ -103,8 +103,9 @@ enableTaints: true
 labels based on their name. Each label must match against the given reqular
 expression in order to be published.
 
-Note: The regular expression is only matches against the "basename" part of the
-label, i.e. to the part of the name after '/'. The label namespace is omitted.
+> ** NOTE:** The regular expression is only matches against the "basename" part
+> of the label, i.e. to the part of the name after '/'. The label namespace is
+> omitted.
 
 Default: *empty*
 

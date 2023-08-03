@@ -26,5 +26,5 @@ kubectl -n node-feature-discovery wait job.batch/nfd-master --for=condition=comp
     kubectl delete -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prune?ref={{ site.release }}
 ```
 
-**NOTE:** You must run prune before removing the RBAC rules (serviceaccount,
-clusterrole and clusterrolebinding).
+> **NOTE:** You must run prune before removing the RBAC rules (serviceaccount,
+> clusterrole and clusterrolebinding).

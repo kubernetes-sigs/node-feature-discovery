@@ -79,8 +79,8 @@ conjunction with `all`. This configuration option affects the generation of
 node labels but not the actual discovery of the underlying feature data that is
 used e.g. in custom/`NodeFeatureRule` rules.
 
-Note: Overridden by the `-label-sources` command line flag and
-the `core.sources` configurations option (if either of them is specified).
+> **NOTE:** Overridden by the `-label-sources` command line flag and the
+> `core.sources` configurations option (if either of them is specified).
 
 Default: `[all]`
 
@@ -107,17 +107,17 @@ core:
 
 **DEPRECATED**: use [`core.labelSources`](#core.labelSources) instead.
 
-Note: `core.sources` takes precedence over the `core.labelSources`
-configuration file option.
+> **NOTE:** `core.sources` takes precedence over the `core.labelSources`
+> configuration file option.
 
 ### core.labelWhiteList
 
 `core.labelWhiteList` specifies a regular expression for filtering feature
 labels based on the label name. Non-matching labels are not published.
 
-Note: The regular expression is only matches against the "basename" part of the
-label, i.e. to the part of the name after '/'. The label prefix (or namespace)
-is omitted.
+> **NOTE:** The regular expression is only matches against the "basename" part
+> of the label, i.e. to the part of the name after '/'. The label prefix (or
+> namespace) is omitted.
 
 Default: `null`
 
@@ -136,9 +136,9 @@ NFD-Worker runs feature detection normally, but no labeling requests are sent
 to nfd-master and no [NodeFeature](../usage/custom-resources.md#nodefeature)
 objects are created or updated in the API server.
 
-Note: Overridden by the
-[`-no-publish`](worker-commandline-reference.md#-no-publish) command line flag (if
-specified).
+> **NOTE:** Overridden by the
+> [`-no-publish`](worker-commandline-reference.md#-no-publish)
+> command line flag (if specified).
 
 Default: `false`
 
@@ -154,8 +154,8 @@ core:
 The following options specify the logger configuration. Most of which can be
 dynamically adjusted at run-time.
 
-Note: The logger options can also be specified via command line flags which
-take precedence over any corresponding config file options.
+> **NOTE:** The logger options can also be specified via command line flags
+> which take precedence over any corresponding config file options.
 
 #### core.klog.addDirHeader
 
@@ -264,7 +264,7 @@ The `sources` section contains feature source specific configuration parameters.
 
 Prevent publishing cpuid features listed in this option.
 
-Note: overridden by `sources.cpu.cpuid.attributeWhitelist` (if specified)
+> **NOTE:** overridden by `sources.cpu.cpuid.attributeWhitelist` (if specified)
 
 Default: `[BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT,
 NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3, SSE4.1,
@@ -283,7 +283,7 @@ sources:
 
 Only publish the cpuid features listed in this option.
 
-Note: takes precedence over `sources.cpu.cpuid.attributeBlacklist`
+> **NOTE:** takes precedence over `sources.cpu.cpuid.attributeBlacklist`
 
 Default: *empty*
 
@@ -336,10 +336,10 @@ Hooks are DEPRECATED since v0.12.0 release and support will be removed in a
 future release. Use
 [feature files](../usage//customization-guide.md#feature-files) instead.
 
-Note: The default NFD container image only supports statically linked binaries.
-Use the [full](../deployment/image-variants.md#full) image variant for a
-slightly more extensive environment that additionally supports bash and perl
-runtimes.
+> **NOTE:** The default NFD container image only supports statically linked
+> binaries. Use the [full](../deployment/image-variants.md#full) image variant
+> for a slightly more extensive environment that additionally supports bash and
+> perl runtimes.
 
 Related tracking issues:
 
