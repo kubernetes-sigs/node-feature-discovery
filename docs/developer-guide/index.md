@@ -197,12 +197,12 @@ $ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker
 If you just want to try out feature discovery without connecting to nfd-master,
 pass the `-no-publish` flag to nfd-worker.
 
-**NOTE** Some feature sources need certain directories and/or files from the
-host mounted inside the NFD container. Thus, you need to provide Docker with the
-correct `--volume` options in order for them to work correctly when run
-stand-alone directly with `docker run`. See the
-[default deployment](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/common/worker-mounts.yaml)
-for up-to-date information about the required volume mounts.
+> **NOTE:** Some feature sources need certain directories and/or files from the
+> host mounted inside the NFD container. Thus, you need to provide Docker with
+> the correct `--volume` options in order for them to work correctly when run
+> stand-alone directly with `docker run`. See
+> the [default deployment](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/common/worker-mounts.yaml)
+> for up-to-date information about the required volume mounts.
 
 ### NFD-Topology-Updater
 
@@ -218,20 +218,19 @@ $ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-topolo
 If you just want to try out feature discovery without connecting to nfd-master,
 pass the `-no-publish` flag to nfd-topology-updater.
 
-NOTE:
-
-NFD topology updater needs certain directories and/or files from the
-host mounted inside the NFD container. Thus, you need to provide Docker with the
-correct `--volume` options in order for them to work correctly when run
-stand-alone directly with `docker run`. See the
-[template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater/topologyupdater-mounts.yaml)
-for up-to-date information about the required volume mounts.
-
-[PodResource API][podresource-api] is a prerequisite for nfd-topology-updater.
-Preceding Kubernetes v1.23, the `kubelet` must be started with the following flag:
-`--feature-gates=KubeletPodResourcesGetAllocatable=true`.
-Starting Kubernetes v1.23, the `GetAllocatableResources` is enabled by default
-through `KubeletPodResourcesGetAllocatable` [feature gate][feature-gate].
+> **NOTE:** NFD topology updater needs certain directories and/or files from
+> the host mounted inside the NFD container. Thus, you need to provide Docker
+> with the correct `--volume` options in order for them to work correctly when
+> run stand-alone directly with `docker run`. See
+> the [template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater/topologyupdater-mounts.yaml)
+> for up-to-date information about the required volume mounts.
+>
+> [PodResource API][podresource-api] is a prerequisite for
+> nfd-topology-updater.  Preceding Kubernetes v1.23, the `kubelet` must be
+> started with the following flag:
+> `--feature-gates=KubeletPodResourcesGetAllocatable=true`. Starting
+> Kubernetes v1.23, the `GetAllocatableResources` is enabled by default through
+> `KubeletPodResourcesGetAllocatable` [feature gate][feature-gate].
 
 ## Running with Tilt
 

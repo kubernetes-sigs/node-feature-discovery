@@ -177,10 +177,10 @@ To enable the tainting feature, `--enable-taints` flag needs to be set to `true`
 If the flag `--enable-taints` is set to `false` (i.e. disabled), taints defined in
 the NodeFeatureRule CR have no effect and will be ignored by the NFD master.
 
-**NOTE**: Before enabling any taints, make sure to edit nfd-worker daemonset to
-tolerate the taints to be created. Otherwise, already running pods that do not
-tolerate the taint are evicted immediately from the node including the nfd-worker
-pod.
+> **NOTE:** Before enabling any taints, make sure to edit nfd-worker daemonset
+> to tolerate the taints to be created. Otherwise, already running pods that do
+> not tolerate the taint are evicted immediately from the node including the
+> nfd-worker pod.
 
 Example NodeFeatureRule with custom taints:
 
@@ -232,11 +232,11 @@ used in label rules specified in
 [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and the
 [`custom`](#custom-feature-source) feature source.
 
-**NOTE:** Be careful when creating and/or updating hook or feature files while
-NFD is running. In order to avoid race conditions you should write into a
-temporary file (outside the `source.d` and `features.d` directories), and,
-atomically create/update the original file by doing a filesystem move
-operation.
+> **NOTE:** Be careful when creating and/or updating hook or feature files
+> while NFD is running. In order to avoid race conditions you should write into
+> a temporary file (outside the `source.d` and `features.d` directories), and,
+> atomically create/update the original file by doing a filesystem move
+> operation.
 
 ### A hook example
 
@@ -277,9 +277,9 @@ should be placed in a separate directory in order to avoid NFD unnecessarily
 trying to execute them. A subdirectory under the hooks directory can be used,
 for example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 
-**NOTE:** Hooks are being DEPRECATED and will be removed in a future release.
-Starting from release v0.14 hooks are disabled by default and can be enabled
-via `sources.local.hooksEnabled` field in the worker configuration.
+> **NOTE:** Hooks are being DEPRECATED and will be removed in a future release.
+> Starting from release v0.14 hooks are disabled by default and can be enabled
+> via `sources.local.hooksEnabled` field in the worker configuration.
 
 ```yaml
 sources:
@@ -287,13 +287,13 @@ sources:
     hooksEnabled: true  # true by default at this point
 ```
 
-**NOTE:** NFD will blindly run any executables placed/mounted in the hooks
-directory. It is the user's responsibility to review the hooks for e.g.
-possible security implications.
-
-**NOTE:** The [full](../deployment/image-variants.md#full) image variant
-provides backwards-compatibility with older NFD versions by including a more
-expanded environment, supporting bash and perl runtimes.
+> **NOTE:** NFD will blindly run any executables placed/mounted in the hooks
+> directory. It is the user's responsibility to review the hooks for e.g.
+> possible security implications.
+>
+> **NOTE:** The [full](../deployment/image-variants.md#full) image variant
+> provides backwards-compatibility with older NFD versions by including a more
+> expanded environment, supporting bash and perl runtimes.
 
 ### Feature files
 
@@ -513,9 +513,9 @@ The `.labelsTemplate` field specifies a text template for dynamically creating
 labels based on the matched features. See [templating](#templating) for
 details.
 
-**NOTE** The `labels` field has priority over `labelsTemplate`, i.e.
-labels specified in the `labels` field will override anything
-originating from `labelsTemplate`.
+> **NOTE:** The `labels` field has priority over `labelsTemplate`, i.e.
+> labels specified in the `labels` field will override anything
+> originating from `labelsTemplate`.
 
 #### Taints
 
@@ -523,8 +523,8 @@ originating from `labelsTemplate`.
 where the `value` is optional. Effect could be `NoSchedule`, `PreferNoSchedule`
 or `NoExecute`. To learn more about the meaning of these effects, check out k8s [documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
 
-**NOTE** taints field is not available for the custom rules of nfd-worker and only
-for NodeFeatureRule objects.
+> **NOTE:** taints field is not available for the custom rules of nfd-worker
+> and only for NodeFeatureRule objects.
 
 #### Vars
 
@@ -599,9 +599,9 @@ vars based on the matched features. See [templating](#templating) for details
 on using templates and [backreferences](#backreferences) for more details on
 the usage of vars.
 
-**NOTE** The `vars` field has priority over `varsTemplate`, i.e.
-vars specified in the `vars` field will override anything originating from
-`varsTemplate`.
+> **NOTE:** The `vars` field has priority over `varsTemplate`, i.e.
+> vars specified in the `vars` field will override anything originating from
+> `varsTemplate`.
 
 #### MatchFeatures
 
@@ -847,10 +847,10 @@ feature:
 ```
 
 <!-- {% endraw %} -->
-**NOTE** In case of matchAny is specified, the template is executed separately
-against each individual `matchFeatures` field and the final set of labels will
-be superset of all these separate template expansions. E.g. consider the
-following:
+> **NOTE:** In case of matchAny is specified, the template is executed
+> separately against each individual `matchFeatures` field and the final set of
+> labels will be superset of all these separate template expansions. E.g.
+> consider the following:
 
 ```yaml
   - name: <name>

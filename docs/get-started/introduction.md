@@ -107,8 +107,8 @@ NFD also annotates nodes it is running on:
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-labels     | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users.
 | [&lt;instance&gt;.]nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users.
 
-NOTE: the [`-instance`](../reference/master-commandline-reference.md#instance)
-command line flag affects the annotation names
+> **NOTE:** the [`-instance`](../reference/master-commandline-reference.md#instance)
+> command line flag affects the annotation names
 
 Unapplicable annotations are not created, i.e. for example master.version is
 only created on nodes running nfd-master.

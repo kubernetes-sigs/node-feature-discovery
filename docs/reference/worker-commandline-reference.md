@@ -80,7 +80,7 @@ authenticity of nfd-master.
 
 Default: *empty*
 
-Note: Must be specified together with `-cert-file` and `-key-file`
+> **NOTE:** Must be specified together with `-cert-file` and `-key-file`
 
 Example:
 
@@ -97,7 +97,7 @@ requests.
 
 Default: *empty*
 
-Note: Must be specified together with `-ca-file` and `-key-file`
+> **NOTE:** Must be specified together with `-ca-file` and `-key-file`
 
 Example:
 
@@ -114,7 +114,7 @@ This flag specifies the private key corresponding the given certificate file
 
 Default: *empty*
 
-Note: Must be specified together with `-cert-file` and `-ca-file`
+> **NOTE:** Must be specified together with `-cert-file` and `-ca-file`
 
 Example:
 
@@ -164,8 +164,8 @@ labels are generated nor the raw feature data is available for custom rule
 processing.  Consider using the `core.featureSources` config file option,
 instead, allowing dynamic configurability.
 
-Note: This flag takes precedence over the `core.featureSources` configuration
-file option.
+> **NOTE:** This flag takes precedence over the `core.featureSources`
+> configuration file option.
 
 Default: all
 
@@ -184,8 +184,8 @@ meaningful when used in conjunction with `all`. Consider using the
 `core.labelSources` config file option, instead, allowing dynamic
 configurability.
 
-Note: This flag takes precedence over the `core.labelSources` configuration
-file option.
+> **NOTE:** This flag takes precedence over the `core.labelSources`
+> configuration file option.
 
 Default: all
 
@@ -220,9 +220,9 @@ NFD-Worker runs feature detection normally, but no labeling requests are sent
 to nfd-master and no NodeFeature objects are created or updated in the API
 server.
 
-Note: This flag takes precedence over the
-[`core.noPublish`](worker-configuration-reference.md#corenopublish)
-configuration file option.
+> **NOTE:** This flag takes precedence over the
+> [`core.noPublish`](worker-configuration-reference.md#corenopublish)
+> configuration file option.
 
 Default: *false*
 
@@ -250,9 +250,9 @@ nfd-worker -oneshot -no-publish
 The following logging-related flags are inherited from the
 [klog](https://pkg.go.dev/k8s.io/klog/v2) package.
 
-Note: The logger setup can also be specified via the `core.klog` configuration
-file options. However, the command line flags take precedence over any
-corresponding config file options specified.
+> **NOTE:** The logger setup can also be specified via the `core.klog`
+> configuration file options. However, the command line flags take precedence
+> over any corresponding config file options specified.
 
 #### -add_dir_header
 

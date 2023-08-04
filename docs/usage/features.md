@@ -33,14 +33,14 @@ have the following format.
 feature.node.kubernetes.io/<feature> = <value>
 ```
 
-> NOTE: Consecutive runs of nfd-worker will update the labels on a
-given node. If features are not discovered on a consecutive run, the corresponding
-label will be removed. This includes any restrictions placed on the consecutive run,
-such as restricting discovered features with the
-[`-label-whitelist`](../reference/master-commandline-reference.md#-label-whitelist)
-flag of nfd-master or
-[`core.labelWhiteList`](../reference/worker-configuration-reference.md#corelabelwhitelist)
-option of nfd-worker.
+> **NOTE:** Consecutive runs of nfd-worker will update the labels on a given
+> node. If features are not discovered on a consecutive run, the corresponding
+> label will be removed. This includes any restrictions placed on the
+> consecutive run, such as restricting discovered features with the
+> [`-label-whitelist`](../reference/master-commandline-reference.md#-label-whitelist)
+> flag of nfd-master or
+> [`core.labelWhiteList`](../reference/worker-configuration-reference.md#corelabelwhitelist)
+> option of nfd-worker.
 
 ### CPU
 
@@ -70,8 +70,8 @@ option of nfd-worker.
 | **`cpu-model.family`**            | int    | CPU family.
 | **`cpu-model.id`**                | int    | CPU model number.
 
-> NOTE: the `cpu-rdt.<rdt-flag>` labels are deprecated and will be removed in a
-> future release. They will remain to be available as features
+> **NOTE:** the `cpu-rdt.<rdt-flag>` labels are deprecated and will be removed
+> in a future release. They will remain to be available as features
 > for [NodeFeatureRule](custom-resources.md#nodefeaturerule) to consume.
 > See [customization guide](customization-guide.md#nodefeaturerule-custom-resource)
 > for details how to use NodeFeatureRule objects to create labels.

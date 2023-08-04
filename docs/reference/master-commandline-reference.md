@@ -74,7 +74,7 @@ and cert files configured in order for the incoming requests to be accepted.
 
 Default: *empty*
 
-Note: Must be specified together with `-cert-file` and `-key-file`
+> **NOTE:** Must be specified together with `-cert-file` and `-key-file`
 
 Example:
 
@@ -91,7 +91,7 @@ authenticating outgoing traffic towards nfd-worker.
 
 Default: *empty*
 
-Note: Must be specified together with `-ca-file` and `-key-file`
+> **NOTE:** Must be specified together with `-ca-file` and `-key-file`
 
 Example:
 
@@ -109,7 +109,7 @@ traffic.
 
 Default: *empty*
 
-Note: Must be specified together with `-cert-file` and `-ca-file`
+> **NOTE:** Must be specified together with `-cert-file` and `-ca-file`
 
 Example:
 
@@ -216,8 +216,9 @@ The `-label-whitelist` specifies a regular expression for filtering feature
 labels based on their name. Each label must match against the given reqular
 expression in order to be published.
 
-Note: The regular expression is only matches against the "basename" part of the
-label, i.e. to the part of the name after '/'. The label namespace is omitted.
+> **NOTE:** The regular expression is only matches against the "basename" part
+> of the label, i.e. to the part of the name after '/'. The label namespace is
+> omitted.
 
 Default: *empty*
 
