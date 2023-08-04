@@ -147,9 +147,10 @@ func (s *localSource) GetFeatures() *nfdv1alpha1.Features {
 func parseFeatures(lines [][]byte) map[string]string {
 	features := make(map[string]string)
 
-	for _, line := range lines {
+	for _, l := range lines {
+		line := strings.TrimSpace(string(l))
 		if len(line) > 0 {
-			lineSplit := strings.SplitN(string(line), "=", 2)
+			lineSplit := strings.SplitN(line, "=", 2)
 
 			key := lineSplit[0]
 
