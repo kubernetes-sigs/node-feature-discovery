@@ -821,7 +821,6 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, annotations Annotations, labels map[string]string, features *nfdv1alpha1.Features) error {
-
 	if labels == nil {
 		labels = make(map[string]string)
 	}
