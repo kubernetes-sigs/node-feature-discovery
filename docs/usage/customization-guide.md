@@ -306,12 +306,15 @@ The hook stdout and feature files are expected to contain features in simple
 key-value pairs, separated by newlines:
 
 ```plaintext
+# This is a comment
 <name>[=<value>]
 ```
 
 The label value defaults to `true`, if not specified.
 
 Label namespace may be specified with `<namespace>/<name>[=<value>]`.
+
+Comment lines (starting with `#`) are ignored.
 
 ### Mounts
 
