@@ -150,6 +150,11 @@ func parseFeatures(lines [][]byte) map[string]string {
 	for _, l := range lines {
 		line := strings.TrimSpace(string(l))
 		if len(line) > 0 {
+			// Skip comment lines
+			if strings.HasPrefix(line, "#") {
+				continue
+			}
+
 			lineSplit := strings.SplitN(line, "=", 2)
 
 			key := lineSplit[0]
