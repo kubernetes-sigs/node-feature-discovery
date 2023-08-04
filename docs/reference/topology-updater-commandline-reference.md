@@ -72,6 +72,20 @@ Example:
 nfd-topology-updater -oneshot -no-publish
 ```
 
+### -metrics
+
+The `-metrics` flag specifies the port on which to expose
+[Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the
+metrics server on nfd-topology-updater.
+
+Default: 8081
+
+Example:
+
+```bash
+nfd-topology-updater -metrics=12345
+```
+
 ### -sleep-interval
 
 The `-sleep-interval` specifies the interval between resource hardware

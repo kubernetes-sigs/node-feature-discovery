@@ -106,6 +106,8 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Do not publish discovered features to the cluster-local Kubernetes API server.")
 	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
 		"Kube config file.")
+	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
+		"Port on which to expose metrics.")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
 		"Time to sleep between CR updates. zero means no CR updates on interval basis. [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",

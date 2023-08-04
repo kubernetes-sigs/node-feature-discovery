@@ -70,6 +70,10 @@ spec:
           # Disable kubelet state tracking by giving an empty path
           - "-kubelet-state-dir="
           {{- end }}
+          - -metrics={{ .Values.topologyUpdater.metricsPort | default "8081"}}
+        ports:
+          - name: metrics
+            containerPort: {{ .Values.topologyUpdater.metricsPort | default "8081"}}
         volumeMounts:
         {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
         - name: kubelet-config

@@ -417,6 +417,7 @@ topologyUpdater:
   rbac:
     create: true
 
+  metricsPort: 8081
   kubeletConfigPath:
   kubeletPodResourcesSockPath:
   updateInterval: 60s

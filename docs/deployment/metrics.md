@@ -20,6 +20,7 @@ The exposed metrics are
 | `nfd_node_updates_total`                          | Counter   | Number of nodes updated
 | `nfd_nodefeaturerule_processing_duration_seconds` | Histogram | Time taken to process NodeFeatureRule objects
 | `nfd_feature_discovery_duration_seconds`          | Histogram | Time taken to discover features on a node
+| `nfd_topology_updater_scan_errors_total`          | Counter   | Number of errors in scanning resource allocation of pods.
 
 ## Via Kustomize
 
