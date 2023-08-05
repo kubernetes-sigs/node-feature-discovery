@@ -48,6 +48,20 @@ Example:
 nfd-master -port=443
 ```
 
+### -metrics
+
+The `-metrics` flag specifies the port on which to expose
+[Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the
+metrics server on nfd-master.
+
+Default: 8081
+
+Example:
+
+```bash
+nfd-master -metrics=12345
+```
+
 ### -instance
 
 The `-instance` flag makes it possible to run multiple NFD deployments in

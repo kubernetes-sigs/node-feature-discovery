@@ -212,6 +212,20 @@ Example:
 nfd-worker -enable-nodefeature-api
 ```
 
+### -metrics
+
+The `-metrics` flag specifies the port on which to expose
+[Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the
+metrics server on nfd-worker.
+
+Default: 8081
+
+Example:
+
+```bash
+nfd-worker -metrics=12345
+```
+
 ### -no-publish
 
 The `-no-publish` flag disables all communication with the nfd-master and the
