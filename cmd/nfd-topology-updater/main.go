@@ -43,14 +43,7 @@ var DefaultKubeletStateDir = path.Join(string(hostpath.VarDir), "lib", "kubelet"
 func main() {
 	flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
 
-	printVersion := flags.Bool("version", false, "Print version and exit.")
-
 	args, resourcemonitorArgs := parseArgs(flags, os.Args[1:]...)
-
-	if *printVersion {
-		fmt.Println(ProgramName, version.Get())
-		os.Exit(0)
-	}
 
 	// Assert that the version is known
 	if version.Undefined() {
@@ -75,12 +68,18 @@ func main() {
 
 func parseArgs(flags *flag.FlagSet, osArgs ...string) (*topology.Args, *resourcemonitor.Args) {
 	args, resourcemonitorArgs := initFlags(flags)
+	printVersion := flags.Bool("version", false, "Print version and exit.")
 
 	_ = flags.Parse(osArgs)
 	if len(flags.Args()) > 0 {
 		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
+	}
+
+	if *printVersion {
+		fmt.Println(ProgramName, version.Get())
+		os.Exit(0)
 	}
 
 	if len(resourcemonitorArgs.KubeletConfigURI) == 0 {
