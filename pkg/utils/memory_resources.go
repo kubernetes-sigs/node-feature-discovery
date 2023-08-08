@@ -69,7 +69,11 @@ func GetNumaMemoryResources() (NumaMemoryResources, error) {
 		// Get hugepages
 		hugepageBytes, err := getHugepagesBytes(filepath.Join(sysBusNodeBasepath, numaNode, "hugepages"))
 		if err != nil {
-			return nil, err
+			if os.IsNotExist(err) {
+				continue
+			} else {
+				return nil, err
+			}
 		}
 		for n, s := range hugepageBytes {
 			info[n] = s
