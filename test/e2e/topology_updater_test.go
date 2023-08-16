@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	"k8s.io/kubernetes/test/e2e/framework"
-	"k8s.io/kubernetes/test/e2e/framework/kubelet"
+	e2ekubeletconfig "k8s.io/kubernetes/test/e2e_node/kubeletconfig"
 	admissionapi "k8s.io/pod-security-admission/api"
 
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
@@ -91,7 +91,7 @@ var _ = SIGDescribe("NFD topology updater", func() {
 		topologyUpdaterNode, err = f.ClientSet.CoreV1().Nodes().Get(ctx, pods.Items[0].Spec.NodeName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
-		kubeletConfig, err = kubelet.GetCurrentKubeletConfig(ctx, topologyUpdaterNode.Name, "", true, false)
+		kubeletConfig, err = e2ekubeletconfig.GetCurrentKubeletConfig(ctx, topologyUpdaterNode.Name, "", true, false)
 		Expect(err).NotTo(HaveOccurred())
 
 		workerNodes, err = testutils.GetWorkerNodes(ctx, f)
