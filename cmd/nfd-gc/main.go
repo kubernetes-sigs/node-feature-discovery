@@ -24,13 +24,13 @@ import (
 
 	"k8s.io/klog/v2"
 
-	nfdtopologygarbagecollector "sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-gc"
+	nfdgarbagecollector "sigs.k8s.io/node-feature-discovery/pkg/nfd-gc"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName = "nfd-topology-gc"
+	ProgramName = "nfd-gc"
 )
 
 func main() {
@@ -50,10 +50,10 @@ func main() {
 		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
-	// Get new TopologyGC instance
-	gc, err := nfdtopologygarbagecollector.New(args)
+	// Get new garbage collector instance
+	gc, err := nfdgarbagecollector.New(args)
 	if err != nil {
-		klog.ErrorS(err, "failed to initialize topology garbage collector instance")
+		klog.ErrorS(err, "failed to initialize nfd garbage collector instance")
 		os.Exit(1)
 	}
 
@@ -63,7 +63,7 @@ func main() {
 	}
 }
 
-func parseArgs(flags *flag.FlagSet, osArgs ...string) *nfdtopologygarbagecollector.Args {
+func parseArgs(flags *flag.FlagSet, osArgs ...string) *nfdgarbagecollector.Args {
 	args := initFlags(flags)
 
 	_ = flags.Parse(osArgs)
@@ -76,11 +76,11 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *nfdtopologygarbagecollect
 	return args
 }
 
-func initFlags(flagset *flag.FlagSet) *nfdtopologygarbagecollector.Args {
-	args := &nfdtopologygarbagecollector.Args{}
+func initFlags(flagset *flag.FlagSet) *nfdgarbagecollector.Args {
+	args := &nfdgarbagecollector.Args{}
 
 	flagset.DurationVar(&args.GCPeriod, "gc-interval", time.Duration(1)*time.Hour,
-		"Interval between which Garbage Collector will try to cleanup any missed but already obsolete NodeResourceTopology. [Default: 1h]")
+		"interval between cleanup of obsolete api objects")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
 

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nfdtopologygarbagecollector
+package nfdgarbagecollector
 
 import (
 	"context"
@@ -93,7 +93,7 @@ func TestNRTGC(t *testing.T) {
 func newMockGC(nodes, nrts []string) *mockGC {
 	k8sClient := fakek8sclientset.NewSimpleClientset(createFakeNodes(nodes...)...)
 	return &mockGC{
-		topologyGC: topologyGC{
+		nfdGarbageCollector: nfdGarbageCollector{
 			factory:    informers.NewSharedInformerFactory(k8sClient, 5*time.Minute),
 			topoClient: faketopologyv1alpha2.NewSimpleClientset(createFakeNRTs(nrts...)...),
 			stopChan:   make(chan struct{}, 1),
@@ -126,7 +126,7 @@ func createFakeNRTs(names ...string) []runtime.Object {
 }
 
 type mockGC struct {
-	topologyGC
+	nfdGarbageCollector
 
 	k8sClient k8sclientset.Interface
 }

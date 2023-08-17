@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nfdtopologygarbagecollector
+package nfdgarbagecollector
 
 import (
 	"context"
@@ -42,19 +42,19 @@ type Args struct {
 	Kubeconfig string
 }
 
-type TopologyGC interface {
+type NfdGarbageCollector interface {
 	Run() error
 	Stop()
 }
 
-type topologyGC struct {
+type nfdGarbageCollector struct {
 	stopChan   chan struct{}
 	topoClient topologyclientset.Interface
 	gcPeriod   time.Duration
 	factory    informers.SharedInformerFactory
 }
 
-func New(args *Args) (TopologyGC, error) {
+func New(args *Args) (NfdGarbageCollector, error) {
 	kubeconfig, err := apihelper.GetKubeconfig(args.Kubeconfig)
 	if err != nil {
 		return nil, err
@@ -62,10 +62,10 @@ func New(args *Args) (TopologyGC, error) {
 
 	stop := make(chan struct{})
 
-	return newTopologyGC(kubeconfig, stop, args.GCPeriod)
+	return newNfdGarbageCollector(kubeconfig, stop, args.GCPeriod)
 }
 
-func newTopologyGC(config *restclient.Config, stop chan struct{}, gcPeriod time.Duration) (*topologyGC, error) {
+func newNfdGarbageCollector(config *restclient.Config, stop chan struct{}, gcPeriod time.Duration) (*nfdGarbageCollector, error) {
 	helper := apihelper.K8sHelpers{Kubeconfig: config}
 	cli, err := helper.GetTopologyClient()
 	if err != nil {
@@ -75,7 +75,7 @@ func newTopologyGC(config *restclient.Config, stop chan struct{}, gcPeriod time.
 	clientset := kubernetes.NewForConfigOrDie(config)
 	factory := informers.NewSharedInformerFactory(clientset, 5*time.Minute)
 
-	return &topologyGC{
+	return &nfdGarbageCollector{
 		topoClient: cli,
 		stopChan:   stop,
 		gcPeriod:   gcPeriod,
@@ -83,7 +83,7 @@ func newTopologyGC(config *restclient.Config, stop chan struct{}, gcPeriod time.
 	}, nil
 }
 
-func (n *topologyGC) deleteNRT(nodeName string) {
+func (n *nfdGarbageCollector) deleteNRT(nodeName string) {
 	if err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().Delete(context.TODO(), nodeName, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			klog.V(2).InfoS("NodeResourceTopology not found, omitting deletion", "nodeName", nodeName)
@@ -96,7 +96,7 @@ func (n *topologyGC) deleteNRT(nodeName string) {
 	klog.InfoS("NodeResourceTopology object has been deleted", "nodeName", nodeName)
 }
 
-func (n *topologyGC) deleteNodeHandler(object interface{}) {
+func (n *nfdGarbageCollector) deleteNodeHandler(object interface{}) {
 	// handle a case when we are starting up and need to clear stale NRT resources
 	obj := object
 	if deletedFinalStateUnknown, ok := object.(cache.DeletedFinalStateUnknown); ok {
@@ -114,7 +114,7 @@ func (n *topologyGC) deleteNodeHandler(object interface{}) {
 }
 
 // garbageCollect removes all stale API objects
-func (n *topologyGC) garbageCollect() {
+func (n *nfdGarbageCollector) garbageCollect() {
 	klog.InfoS("performing garbage collection")
 	nodes, err := n.factory.Core().V1().Nodes().Lister().List(labels.Everything())
 	if err != nil {
@@ -145,7 +145,7 @@ func (n *topologyGC) garbageCollect() {
 }
 
 // periodicGC runs garbage collector at every gcPeriod to make sure we haven't missed any node
-func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
+func (n *nfdGarbageCollector) periodicGC(gcPeriod time.Duration) {
 	// Do initial round of garbage collection at startup time
 	n.garbageCollect()
 
@@ -162,7 +162,7 @@ func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
 	}
 }
 
-func (n *topologyGC) startNodeInformer() error {
+func (n *nfdGarbageCollector) startNodeInformer() error {
 	nodeInformer := n.factory.Core().V1().Nodes().Informer()
 
 	if _, err := nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -179,7 +179,7 @@ func (n *topologyGC) startNodeInformer() error {
 }
 
 // Run is a blocking function that removes stale NRT objects when Node is deleted and runs periodic GC to make sure any obsolete objects are removed
-func (n *topologyGC) Run() error {
+func (n *nfdGarbageCollector) Run() error {
 	if err := n.startNodeInformer(); err != nil {
 		return err
 	}
@@ -189,6 +189,6 @@ func (n *topologyGC) Run() error {
 	return nil
 }
 
-func (n *topologyGC) Stop() {
+func (n *nfdGarbageCollector) Stop() {
 	close(n.stopChan)
 }
