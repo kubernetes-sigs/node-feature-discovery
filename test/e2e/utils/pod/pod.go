@@ -355,6 +355,38 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 	return p
 }
 
+func NFDGCSpec(opts ...SpecOption) *corev1.PodSpec {
+	yes := true
+	no := false
+	p := &corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:            "node-feature-discovery",
+				ImagePullPolicy: pullPolicy(),
+				Command:         []string{"nfd-gc"},
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{"ALL"},
+					},
+					Privileged:               &no,
+					RunAsNonRoot:             &yes,
+					ReadOnlyRootFilesystem:   &yes,
+					AllowPrivilegeEscalation: &no,
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
+			},
+		},
+		ServiceAccountName: "nfd-gc-e2e",
+	}
+
+	for _, o := range opts {
+		o(p)
+	}
+	return p
+}
+
 func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.PodSpec {
 	p := &corev1.PodSpec{
 		Containers: []corev1.Container{
