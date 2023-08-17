@@ -146,6 +146,9 @@ func (n *topologyGC) garbageCollect() {
 
 // periodicGC runs garbage collector at every gcPeriod to make sure we haven't missed any node
 func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
+	// Do initial round of garbage collection at startup time
+	n.garbageCollect()
+
 	gcTrigger := time.NewTicker(gcPeriod)
 	defer gcTrigger.Stop()
 	for {
@@ -171,8 +174,6 @@ func (n *topologyGC) startNodeInformer() error {
 	// start informers
 	n.factory.Start(n.stopChan)
 	n.factory.WaitForCacheSync(n.stopChan)
-
-	n.garbageCollect()
 
 	return nil
 }
