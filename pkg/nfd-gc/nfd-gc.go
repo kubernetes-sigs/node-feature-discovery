@@ -33,6 +33,8 @@ import (
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	nfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 )
 
 // Args are the command line arguments
@@ -49,6 +51,7 @@ type NfdGarbageCollector interface {
 
 type nfdGarbageCollector struct {
 	stopChan   chan struct{}
+	nfdClient  nfdclientset.Interface
 	topoClient topologyclientset.Interface
 	gcPeriod   time.Duration
 	factory    informers.SharedInformerFactory
@@ -77,10 +80,24 @@ func newNfdGarbageCollector(config *restclient.Config, stop chan struct{}, gcPer
 
 	return &nfdGarbageCollector{
 		topoClient: cli,
+		nfdClient:  nfdclientset.NewForConfigOrDie(config),
 		stopChan:   stop,
 		gcPeriod:   gcPeriod,
 		factory:    factory,
 	}, nil
+}
+
+func (n *nfdGarbageCollector) deleteNodeFeature(namespace, name string) {
+	if err := n.nfdClient.NfdV1alpha1().NodeFeatures(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
+		if errors.IsNotFound(err) {
+			klog.V(2).InfoS("NodeFeature not found, omitting deletion", "nodefeature", klog.KRef(namespace, name))
+			return
+		} else {
+			klog.ErrorS(err, "failed to delete NodeFeature object", "nodefeature", klog.KRef(namespace, name))
+			return
+		}
+	}
+	klog.InfoS("NodeFeature object has been deleted", "nodefeature", klog.KRef(namespace, name))
 }
 
 func (n *nfdGarbageCollector) deleteNRT(nodeName string) {
@@ -111,6 +128,16 @@ func (n *nfdGarbageCollector) deleteNodeHandler(object interface{}) {
 	}
 
 	n.deleteNRT(node.GetName())
+
+	// Delete all NodeFeature objects (from all namespaces) targeting the deleted node
+	nfListOptions := metav1.ListOptions{LabelSelector: nfdv1alpha1.NodeFeatureObjNodeNameLabel + "=" + node.GetName()}
+	if nfs, err := n.nfdClient.NfdV1alpha1().NodeFeatures("").List(context.TODO(), nfListOptions); err != nil {
+		klog.ErrorS(err, "failed to list NodeFeature objects")
+	} else {
+		for _, nf := range nfs.Items {
+			n.deleteNodeFeature(nf.Namespace, nf.Name)
+		}
+	}
 }
 
 // garbageCollect removes all stale API objects
@@ -126,20 +153,35 @@ func (n *nfdGarbageCollector) garbageCollect() {
 		nodeNames.Insert(node.Name)
 	}
 
-	nrts, err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		klog.ErrorS(err, "failed to list NodeResourceTopology objects")
-		return
+	// Handle NodeFeature objects
+	nfs, err := n.nfdClient.NfdV1alpha1().NodeFeatures("").List(context.TODO(), metav1.ListOptions{})
+	if errors.IsNotFound(err) {
+		klog.V(2).InfoS("NodeFeature CRD does not exist")
+	} else if err != nil {
+		klog.ErrorS(err, "failed to list NodeFeature objects")
+	} else {
+		for _, nf := range nfs.Items {
+			nodeName, ok := nf.GetLabels()[nfdv1alpha1.NodeFeatureObjNodeNameLabel]
+			if !ok {
+				klog.InfoS("node name label missing from NodeFeature object", "nodefeature", klog.KObj(&nf))
+			}
+			if !nodeNames.Has(nodeName) {
+				n.deleteNodeFeature(nf.Namespace, nf.Name)
+			}
+		}
 	}
 
-	for _, nrt := range nrts.Items {
-		key, err := cache.MetaNamespaceKeyFunc(&nrt)
-		if err != nil {
-			klog.ErrorS(err, "failed to create key", "noderesourcetopology", klog.KObj(&nrt))
-			continue
-		}
-		if !nodeNames.Has(key) {
-			n.deleteNRT(key)
+	// Handle NodeResourceTopology objects
+	nrts, err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+	if errors.IsNotFound(err) {
+		klog.V(2).InfoS("NodeResourceTopology CRD does not exist")
+	} else if err != nil {
+		klog.ErrorS(err, "failed to list NodeResourceTopology objects")
+	} else {
+		for _, nrt := range nrts.Items {
+			if !nodeNames.Has(nrt.Name) {
+				n.deleteNRT(nrt.Name)
+			}
 		}
 	}
 }
