@@ -22,10 +22,14 @@ import (
 	"time"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
+	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	faketopologyv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/informers"
+	k8sclientset "k8s.io/client-go/kubernetes"
 	fakek8sclientset "k8s.io/client-go/kubernetes/fake"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,177 +37,42 @@ import (
 
 func TestNRTGC(t *testing.T) {
 	Convey("When theres is old NRT ", t, func() {
-		k8sClient := fakek8sclientset.NewSimpleClientset()
+		gc := newMockGC(nil, []string{"node1"})
 
-		fakeClient := faketopologyv1alpha2.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "node1",
-			},
-		})
-		factory := informers.NewSharedInformerFactory(k8sClient, 5*time.Minute)
+		errChan := make(chan error, 1)
+		go func() { errChan <- gc.Run() }()
 
-		stopChan := make(chan struct{}, 1)
-
-		gc := &topologyGC{
-			factory:    factory,
-			topoClient: fakeClient,
-			stopChan:   stopChan,
-			gcPeriod:   10 * time.Minute,
-		}
-
-		err := gc.startNodeInformer()
-		So(err, ShouldBeNil)
-
-		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-		So(err, ShouldBeNil)
-		So(nrts.Items, ShouldHaveLength, 0)
+		So(waitForNRT(gc.topoClient), ShouldBeTrue)
 
 		gc.Stop()
+		So(<-errChan, ShouldBeNil)
 	})
 	Convey("When theres is one old NRT and one up to date", t, func() {
-		k8sClient := fakek8sclientset.NewSimpleClientset(&corev1.Node{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "node1",
-			},
-		})
+		gc := newMockGC([]string{"node1"}, []string{"node1", "node2"})
 
-		fakeClient := faketopologyv1alpha2.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "node1",
-			},
-		},
-			&v1alpha2.NodeResourceTopology{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node2",
-				},
-			},
-		)
+		errChan := make(chan error, 1)
+		go func() { errChan <- gc.Run() }()
 
-		stopChan := make(chan struct{}, 1)
+		So(waitForNRT(gc.topoClient, "node1"), ShouldBeTrue)
 
-		factory := informers.NewSharedInformerFactory(k8sClient, 5*time.Minute)
-
-		gc := &topologyGC{
-			factory:    factory,
-			topoClient: fakeClient,
-			stopChan:   stopChan,
-			gcPeriod:   10 * time.Minute,
-		}
-
-		err := gc.startNodeInformer()
-		So(err, ShouldBeNil)
-
-		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-		So(err, ShouldBeNil)
-		So(nrts.Items, ShouldHaveLength, 1)
-		So(nrts.Items[0].GetName(), ShouldEqual, "node1")
-
+		gc.Stop()
+		So(<-errChan, ShouldBeNil)
 	})
 	Convey("Should react to delete event", t, func() {
-		k8sClient := fakek8sclientset.NewSimpleClientset(
-			&corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node1",
-				},
-			},
-			&corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node2",
-				},
-			},
-		)
+		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
 
-		fakeClient := faketopologyv1alpha2.NewSimpleClientset(
-			&v1alpha2.NodeResourceTopology{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node1",
-				},
-			},
-			&v1alpha2.NodeResourceTopology{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node2",
-				},
-			},
-		)
+		errChan := make(chan error, 1)
+		go func() { errChan <- gc.Run() }()
 
-		stopChan := make(chan struct{}, 1)
-
-		factory := informers.NewSharedInformerFactory(k8sClient, 5*time.Minute)
-		gc := &topologyGC{
-			factory:    factory,
-			topoClient: fakeClient,
-			stopChan:   stopChan,
-			gcPeriod:   10 * time.Minute,
-		}
-
-		err := gc.startNodeInformer()
+		err := gc.k8sClient.CoreV1().Nodes().Delete(context.TODO(), "node1", metav1.DeleteOptions{})
 		So(err, ShouldBeNil)
 
-		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-		So(err, ShouldBeNil)
-
-		So(nrts.Items, ShouldHaveLength, 2)
-
-		err = k8sClient.CoreV1().Nodes().Delete(context.TODO(), "node1", metav1.DeleteOptions{})
-		So(err, ShouldBeNil)
-		// simple sleep with retry loop to make sure indexer will pick up event and trigger deleteNode Function
-		deleted := false
-		for i := 0; i < 5; i++ {
-			nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-			So(err, ShouldBeNil)
-
-			if len(nrts.Items) == 1 {
-				deleted = true
-				break
-			}
-			time.Sleep(time.Second)
-		}
-		So(deleted, ShouldBeTrue)
+		So(waitForNRT(gc.topoClient, "node2"), ShouldBeTrue)
 	})
 	Convey("periodic GC should remove obsolete NRT", t, func() {
-		k8sClient := fakek8sclientset.NewSimpleClientset(
-			&corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node1",
-				},
-			},
-			&corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node2",
-				},
-			},
-		)
-
-		fakeClient := faketopologyv1alpha2.NewSimpleClientset(
-			&v1alpha2.NodeResourceTopology{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node1",
-				},
-			},
-			&v1alpha2.NodeResourceTopology{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node2",
-				},
-			},
-		)
-
-		stopChan := make(chan struct{}, 1)
-
-		factory := informers.NewSharedInformerFactory(k8sClient, 5*time.Minute)
-		gc := &topologyGC{
-			factory:    factory,
-			topoClient: fakeClient,
-			stopChan:   stopChan,
-			gcPeriod:   time.Second,
-		}
-
-		err := gc.startNodeInformer()
-		So(err, ShouldBeNil)
-
-		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-		So(err, ShouldBeNil)
-
-		So(nrts.Items, ShouldHaveLength, 2)
+		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
+		// Override period to run fast
+		gc.gcPeriod = 100 * time.Millisecond
 
 		nrt := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
@@ -211,23 +80,72 @@ func TestNRTGC(t *testing.T) {
 			},
 		}
 
-		go gc.periodicGC(time.Second)
+		errChan := make(chan error, 1)
+		go func() { errChan <- gc.Run() }()
 
-		_, err = fakeClient.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrt, metav1.CreateOptions{})
+		_, err := gc.topoClient.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrt, metav1.CreateOptions{})
 		So(err, ShouldBeNil)
-		// simple sleep with retry loop to make sure GC was triggered
-		deleted := false
-		for i := 0; i < 5; i++ {
-			nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
-			So(err, ShouldBeNil)
 
-			if len(nrts.Items) == 2 {
-				deleted = true
-				break
-			}
-			time.Sleep(2 * time.Second)
-		}
-		So(deleted, ShouldBeTrue)
+		So(waitForNRT(gc.topoClient, "node1", "node2"), ShouldBeTrue)
 	})
+}
 
+func newMockGC(nodes, nrts []string) *mockGC {
+	k8sClient := fakek8sclientset.NewSimpleClientset(createFakeNodes(nodes...)...)
+	return &mockGC{
+		topologyGC: topologyGC{
+			factory:    informers.NewSharedInformerFactory(k8sClient, 5*time.Minute),
+			topoClient: faketopologyv1alpha2.NewSimpleClientset(createFakeNRTs(nrts...)...),
+			stopChan:   make(chan struct{}, 1),
+			gcPeriod:   10 * time.Minute,
+		},
+		k8sClient: k8sClient,
+	}
+}
+
+func createFakeNodes(names ...string) []runtime.Object {
+	nodes := make([]runtime.Object, len(names))
+	for i, n := range names {
+		nodes[i] = &corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: n,
+			}}
+	}
+	return nodes
+}
+
+func createFakeNRTs(names ...string) []runtime.Object {
+	nrts := make([]runtime.Object, len(names))
+	for i, n := range names {
+		nrts[i] = &v1alpha2.NodeResourceTopology{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: n,
+			}}
+	}
+	return nrts
+}
+
+type mockGC struct {
+	topologyGC
+
+	k8sClient k8sclientset.Interface
+}
+
+func waitForNRT(cli topologyclientset.Interface, names ...string) bool {
+	nameSet := sets.NewString(names...)
+	for i := 0; i < 2; i++ {
+		nrts, err := cli.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+		So(err, ShouldBeNil)
+
+		nrtNames := sets.NewString()
+		for _, nrt := range nrts.Items {
+			nrtNames.Insert(nrt.Name)
+		}
+
+		if nrtNames.Equal(nameSet) {
+			return true
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return false
 }
