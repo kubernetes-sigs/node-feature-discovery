@@ -158,7 +158,7 @@ func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
 	}
 }
 
-func (n *topologyGC) run() error {
+func (n *topologyGC) startNodeInformer() error {
 	nodeInformer := n.factory.Core().V1().Nodes().Informer()
 
 	if _, err := nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -178,7 +178,7 @@ func (n *topologyGC) run() error {
 
 // Run is a blocking function that removes stale NRT objects when Node is deleted and runs periodic GC to make sure any obsolete objects are removed
 func (n *topologyGC) Run() error {
-	if err := n.run(); err != nil {
+	if err := n.startNodeInformer(); err != nil {
 		return err
 	}
 	// run periodic GC
