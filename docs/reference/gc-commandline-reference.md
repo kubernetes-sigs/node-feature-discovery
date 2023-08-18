@@ -1,10 +1,10 @@
 ---
-title: "Topology Garbage Collector Cmdline Reference"
+title: "Garbage Collector Cmdline Reference"
 layout: default
 sort: 7
 ---
 
-# NFD-Topology-Garbage-Collector Commandline Flags
+# NFD-GC Commandline Flags
 {: .no_toc }
 
 ## Table of Contents
@@ -15,12 +15,12 @@ sort: 7
 
 ---
 
-To quickly view available command line flags execute `nfd-topology-gc -help`.
+To quickly view available command line flags execute `nfd-gc -help`.
 In a docker container:
 
 ```bash
 docker run {{ site.container_image }} \
-nfd-topology-gc -help
+nfd-gc -help
 ```
 
 ### -h, -help
@@ -40,5 +40,5 @@ Default: 1h
 Example:
 
 ```bash
-nfd-topology-gc -gc-interval=1h
+nfd-gc -gc-interval=1h
 ```
