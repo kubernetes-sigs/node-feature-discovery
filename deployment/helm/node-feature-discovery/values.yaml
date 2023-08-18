@@ -450,7 +450,7 @@ topologyUpdater:
   affinity: {}
   podSetFingerprint: true
 
-topologyGC:
+gc:
   enable: true
   replicaCount: 1
 
@@ -464,12 +464,6 @@ topologyGC:
   interval: 1h
 
   podSecurityContext: {}
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop: [ "ALL" ]
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
