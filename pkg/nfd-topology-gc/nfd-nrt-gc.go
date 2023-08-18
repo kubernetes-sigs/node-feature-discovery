@@ -112,8 +112,9 @@ func (n *topologyGC) deleteNodeHandler(object interface{}) {
 	n.deleteNRT(node.GetName())
 }
 
-func (n *topologyGC) runGC() {
-	klog.InfoS("Running GC")
+// garbageCollect removes all stale API objects
+func (n *topologyGC) garbageCollect() {
+	klog.InfoS("performing garbage collection")
 	objects := n.factory.Core().V1().Nodes().Informer().GetIndexer().List()
 	nodes := sets.NewString()
 	for _, object := range objects {
@@ -150,7 +151,7 @@ func (n *topologyGC) periodicGC(gcPeriod time.Duration) {
 	for {
 		select {
 		case <-gcTrigger.C:
-			n.runGC()
+			n.garbageCollect()
 		case <-n.stopChan:
 			klog.InfoS("shutting down periodic Garbage Collector")
 			return
@@ -171,7 +172,7 @@ func (n *topologyGC) startNodeInformer() error {
 	n.factory.Start(n.stopChan)
 	n.factory.WaitForCacheSync(n.stopChan)
 
-	n.runGC()
+	n.garbageCollect()
 
 	return nil
 }
