@@ -188,8 +188,5 @@ func (n *topologyGC) Run() error {
 }
 
 func (n *topologyGC) Stop() {
-	select {
-	case n.stopChan <- struct{}{}:
-	default:
-	}
+	close(n.stopChan)
 }
