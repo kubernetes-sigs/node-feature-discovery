@@ -51,7 +51,7 @@ func TestNRTGC(t *testing.T) {
 			gcPeriod:   10 * time.Minute,
 		}
 
-		err := gc.run()
+		err := gc.startNodeInformer()
 		So(err, ShouldBeNil)
 
 		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
@@ -90,7 +90,7 @@ func TestNRTGC(t *testing.T) {
 			gcPeriod:   10 * time.Minute,
 		}
 
-		err := gc.run()
+		err := gc.startNodeInformer()
 		So(err, ShouldBeNil)
 
 		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
@@ -136,7 +136,7 @@ func TestNRTGC(t *testing.T) {
 			gcPeriod:   10 * time.Minute,
 		}
 
-		err := gc.run()
+		err := gc.startNodeInformer()
 		So(err, ShouldBeNil)
 
 		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
@@ -197,7 +197,7 @@ func TestNRTGC(t *testing.T) {
 			gcPeriod:   time.Second,
 		}
 
-		err := gc.run()
+		err := gc.startNodeInformer()
 		So(err, ShouldBeNil)
 
 		nrts, err := fakeClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
