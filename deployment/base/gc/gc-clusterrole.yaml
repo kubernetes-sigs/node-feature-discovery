@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: nfd-topology-gc
+  name: nfd-gc
 rules:
 - apiGroups:
   - ""
@@ -20,6 +20,13 @@ rules:
   - topology.node.k8s.io
   resources:
   - noderesourcetopologies
+  verbs:
+  - delete
+  - list
+- apiGroups:
+  - nfd.k8s-sigs.io
+  resources:
+  - nodefeatures
   verbs:
   - delete
   - list

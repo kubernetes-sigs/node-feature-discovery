@@ -3,21 +3,21 @@ kind: Deployment
 metadata:
   labels:
     app: nfd
-  name: nfd-topology-gc
+  name: nfd-gc
 spec:
   selector:
     matchLabels:
-      app: nfd-topology-gc
+      app: nfd-gc
   template:
     metadata:
       labels:
-        app: nfd-topology-gc
+        app: nfd-gc
     spec:
       dnsPolicy: ClusterFirstWithHostNet
-      serviceAccount: nfd-topology-gc
+      serviceAccount: nfd-gc
       containers:
-        - name: nfd-topology-gc
+        - name: nfd-gc
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           imagePullPolicy: Always
           command:
-            - "nfd-topology-gc"
+            - "nfd-gc"

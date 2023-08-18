@@ -6,13 +6,12 @@ namespace: node-feature-discovery
 resources:
 - ../../base/rbac
 - ../../base/rbac-topologyupdater
-- ../../base/rbac-topology-gc
 - ../../base/nfd-crds
 - ../../base/master
 - ../../base/worker-daemonset
 - ../../base/noderesourcetopologies-crd
 - ../../base/topologyupdater-daemonset
-- ../../base/topology-gc
+- ../../base/gc
 - namespace.yaml
 
 components:
