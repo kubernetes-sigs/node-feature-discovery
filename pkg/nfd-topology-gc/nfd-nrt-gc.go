@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -115,15 +116,14 @@ func (n *topologyGC) deleteNodeHandler(object interface{}) {
 // garbageCollect removes all stale API objects
 func (n *topologyGC) garbageCollect() {
 	klog.InfoS("performing garbage collection")
-	objects := n.factory.Core().V1().Nodes().Informer().GetIndexer().List()
-	nodes := sets.NewString()
-	for _, object := range objects {
-		key, err := cache.MetaNamespaceKeyFunc(object)
-		if err != nil {
-			klog.ErrorS(err, "failed to create key", "object", object)
-			continue
-		}
-		nodes.Insert(key)
+	nodes, err := n.factory.Core().V1().Nodes().Lister().List(labels.Everything())
+	if err != nil {
+		klog.ErrorS(err, "failed to list Node objects")
+		return
+	}
+	nodeNames := sets.NewString()
+	for _, node := range nodes {
+		nodeNames.Insert(node.Name)
 	}
 
 	nrts, err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
@@ -138,7 +138,7 @@ func (n *topologyGC) garbageCollect() {
 			klog.ErrorS(err, "failed to create key", "noderesourcetopology", klog.KObj(&nrt))
 			continue
 		}
-		if !nodes.Has(key) {
+		if !nodeNames.Has(key) {
 			n.deleteNRT(key)
 		}
 	}
