@@ -22,3 +22,6 @@ spec:
           command:
             - "nfd-topology-updater"
           args: []
+          ports:
+            - name: metrics
+              containerPort: 8081

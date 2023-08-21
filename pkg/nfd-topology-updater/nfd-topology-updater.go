@@ -50,6 +50,7 @@ const (
 
 // Args are the command line arguments
 type Args struct {
+	MetricsPort     int
 	NoPublish       bool
 	Oneshot         bool
 	KubeConfigFile  string
@@ -142,6 +143,13 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
 	}
 
+	// Register to metrics server
+	if w.args.MetricsPort > 0 {
+		go runMetricsServer(w.args.MetricsPort)
+		registerVersion(version.Get())
+		defer stopMetricsServer()
+	}
+
 	var resScan resourcemonitor.ResourcesScanner
 
 	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, w.apihelper, w.resourcemonitorArgs.PodSetFingerprint)
@@ -169,6 +177,7 @@ func (w *nfdTopologyUpdater) Run() error {
 			klog.V(1).InfoS("received updated pod resources", "podResources", utils.DelayedDumper(scanResponse.PodResources))
 			if err != nil {
 				klog.ErrorS(err, "scan failed")
+				scanErrors.Inc()
 				continue
 			}
 			zones = resAggr.Aggregate(scanResponse.PodResources)
