@@ -189,24 +189,23 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.podSetFingerprint`           | bool   | false                   | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
 | `topologyUpdater.kubeletStateDir`             | string | /var/lib/kubelet | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                          |
 
-### Topology garbage collector parameters
+### Garbage collector parameters
 
 | Name                                          | Type   | Default | description                                                                                                                                                                                           |
-|-----------------------------------------------|--------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `topologyGC.*`                                | dict   |         | NFD Topology Garbage Collector configuration                                                                                                                                                          |
-| `topologyGC.enable`                           | bool   | true    | Specifies whether the NFD Topology Garbage Collector should be created                                                                                                                                |
-| `topologyGC.serviceAccount.create`            | bool   | true    | Specifies whether the service account for topology garbage collector should be created                                                                                                                |
-| `topologyGC.serviceAccount.annotations`       | dict   | {}      | Annotations to add to the service account for topology garbage collector                                                                                                                              |
-| `topologyGC.serviceAccount.name`              | string |         | The name of the service account for topology garbage collector to use. If not set and create is true, a name is generated using the fullname template and `-topology-gc` suffix                       |
-| `topologyGC.rbac.create`                      | bool   | true    | Specifies whether to create [RBAC][rbac] configuration for topology garbage collector                                                                                                                 |
-| `topologyGC.interval`                         | string | 1h      | Time between periodic garbage collector runs                                                                                                                                                          |
-| `topologyGC.podSecurityContext`               | dict   | {}      | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings |
-| `topologyGC.securityContext`                  | dict   | {}      | Container [security settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container)                                                    |
-| `topologyGC.resources`                        | dict   | {}      | Topology garbage collector pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                                                                 |
-| `topologyGC.nodeSelector`                     | dict   | {}      | Topology garbage collector pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                                                                 |
-| `topologyGC.tolerations`                      | dict   | {}      | Topology garbage collector pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                                                                      |
-| `topologyGC.annotations`                      | dict   | {}      | Topology garbage collector pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                          |
-| `topologyGC.affinity`                         | dict   | {}      | Topology garbage collector pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                                            |
+|---------------------------------------|--------|---------|--------------------
+| `gc.*`                                | dict   |         | NFD Garbage Collector configuration
+| `gc.enable`                           | bool   | true    | Specifies whether the NFD Garbage Collector should be created
+| `gc.serviceAccount.create`            | bool   | true    | Specifies whether the service account for garbage collector should be created
+| `gc.serviceAccount.annotations`       | dict   | {}      | Annotations to add to the service account for garbage collector
+| `gc.serviceAccount.name`              | string |         | The name of the service account for garbage collector to use. If not set and create is true, a name is generated using the fullname template and `-gc` suffix
+| `gc.rbac.create`                      | bool   | true    | Specifies whether to create [RBAC][rbac] configuration for garbage collector
+| `gc.interval`                         | string | 1h      | Time between periodic garbage collector runs
+| `gc.podSecurityContext`               | dict   | {}      | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings
+| `gc.resources`                        | dict   | {}      | Garbage collector pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+| `gc.nodeSelector`                     | dict   | {}      | Garbage collector pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)
+| `gc.tolerations`                      | dict   | {}      | Garbage collector pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
+| `gc.annotations`                      | dict   | {}      | Garbage collector pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
+| `gc.affinity`                         | dict   | {}      | Garbage collector pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)
 
 <!-- Links -->
 [rbac]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/

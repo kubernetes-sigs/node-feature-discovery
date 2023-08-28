@@ -42,8 +42,8 @@ rules:
   - update
 {{- end }}
 
----
 {{- if and .Values.topologyUpdater.enable .Values.topologyUpdater.rbac.create }}
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -80,12 +80,12 @@ rules:
   - update
 {{- end }}
 
+{{- if and .Values.gc.enable .Values.gc.rbac.create (or .Values.enableNodeFeatureApi .Values.topologyUpdater.enable) }}
 ---
-{{- if and .Values.topologyGC.enable .Values.topologyGC.rbac.create .Values.topologyUpdater.enable }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "node-feature-discovery.fullname" . }}-topology-gc
+  name: {{ include "node-feature-discovery.fullname" . }}-gc
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
 rules:
@@ -106,6 +106,13 @@ rules:
   - topology.node.k8s.io
   resources:
   - noderesourcetopologies
+  verbs:
+  - delete
+  - list
+- apiGroups:
+  - nfd.k8s-sigs.io
+  resources:
+  - nodefeatures
   verbs:
   - delete
   - list

@@ -4,4 +4,7 @@ kind: Kustomization
 namespace: node-feature-discovery
 
 resources:
-- topology-gc.yaml
+- gc-clusterrole.yaml
+- gc-clusterrolebinding.yaml
+- gc-serviceaccount.yaml
+- gc.yaml

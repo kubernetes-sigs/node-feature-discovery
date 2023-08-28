@@ -26,7 +26,7 @@ NFD consists of four software components:
 1. nfd-master
 1. nfd-worker
 1. nfd-topology-updater
-1. nfd-topology-gc
+1. nfd-gc
 
 ## NFD-Master
 
@@ -50,13 +50,13 @@ creates or updates a
 resource object specific to this node. One instance of nfd-topology-updater is
 supposed to be running on each node of the cluster.
 
-## NFD-Topology-GC
+## NFD-GC
 
-NFD-Topology-GC is a daemon responsible for cleaning obsolete
-[NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology) objects,
-obsolete means that there is no corresponding worker node.
+NFD-GC is a daemon responsible for cleaning obsolete
+[NodeFeature](../usage/custom-resources.md#nodefeature) and
+[NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology) objects.
 
-One instance of nfd-topology-gc is supposed to be running in the cluster.
+One instance of nfd-gc is supposed to be running in the cluster.
 
 ## Feature Discovery
 

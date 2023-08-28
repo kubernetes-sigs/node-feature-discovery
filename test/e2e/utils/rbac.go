@@ -42,6 +42,11 @@ func ConfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) error
 		return err
 	}
 
+	_, err = createServiceAccount(ctx, cs, "nfd-gc-e2e", ns)
+	if err != nil {
+		return err
+	}
+
 	_, err = createServiceAccount(ctx, cs, "nfd-topology-updater-e2e", ns)
 	if err != nil {
 		return err
@@ -57,6 +62,11 @@ func ConfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) error
 		return err
 	}
 
+	_, err = createClusterRoleGC(ctx, cs)
+	if err != nil {
+		return err
+	}
+
 	_, err = createClusterRoleTopologyUpdater(ctx, cs)
 	if err != nil {
 		return err
@@ -68,6 +78,11 @@ func ConfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) error
 	}
 
 	_, err = createRoleBindingWorker(ctx, cs, ns)
+	if err != nil {
+		return err
+	}
+
+	_, err = createClusterRoleBindingGC(ctx, cs, ns)
 	if err != nil {
 		return err
 	}
@@ -94,6 +109,10 @@ func DeconfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) err
 	if err != nil {
 		return err
 	}
+	err = cs.RbacV1().ClusterRoleBindings().Delete(ctx, "nfd-gc-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
 	err = cs.RbacV1().ClusterRoles().Delete(ctx, "nfd-topology-updater-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -106,6 +125,10 @@ func DeconfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) err
 	if err != nil {
 		return err
 	}
+	err = cs.RbacV1().ClusterRoles().Delete(ctx, "nfd-gc-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
 	err = cs.CoreV1().ServiceAccounts(ns).Delete(ctx, "nfd-topology-updater-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -115,6 +138,10 @@ func DeconfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) err
 		return err
 	}
 	err = cs.CoreV1().ServiceAccounts(ns).Delete(ctx, "nfd-worker-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	err = cs.CoreV1().ServiceAccounts(ns).Delete(ctx, "nfd-gc-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -180,6 +207,33 @@ func createRoleWorker(ctx context.Context, cs clientset.Interface, ns string) (*
 		},
 	}
 	return cs.RbacV1().Roles(ns).Update(ctx, cr, metav1.UpdateOptions{})
+}
+
+// Configure cluster role required by NFD GC
+func createClusterRoleGC(ctx context.Context, cs clientset.Interface) (*rbacv1.ClusterRole, error) {
+	cr := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "nfd-gc-e2e",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{"nfd.k8s-sigs.io"},
+				Resources: []string{"nodefeatures"},
+				Verbs:     []string{"list", "delete"},
+			},
+			{
+				APIGroups: []string{"topology.node.k8s.io"},
+				Resources: []string{"noderesourcetopologies"},
+				Verbs:     []string{"list", "delete"},
+			},
+		},
+	}
+	return cs.RbacV1().ClusterRoles().Update(ctx, cr, metav1.UpdateOptions{})
 }
 
 // Configure cluster role required by NFD Topology Updater
@@ -266,6 +320,29 @@ func createRoleBindingWorker(ctx context.Context, cs clientset.Interface, ns str
 	}
 
 	return cs.RbacV1().RoleBindings(ns).Update(ctx, crb, metav1.UpdateOptions{})
+}
+
+// Configure cluster role binding required by NFD GC
+func createClusterRoleBindingGC(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.ClusterRoleBinding, error) {
+	crb := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "nfd-gc-e2e",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      "nfd-gc-e2e",
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     "nfd-gc-e2e",
+		},
+	}
+
+	return cs.RbacV1().ClusterRoleBindings().Update(ctx, crb, metav1.UpdateOptions{})
 }
 
 // Configure cluster role binding required by NFD Topology Updater

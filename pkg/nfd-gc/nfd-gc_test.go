@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nfdtopologygarbagecollector
+package nfdgarbagecollector
 
 import (
 	"context"
@@ -31,6 +31,7 @@ import (
 	"k8s.io/client-go/informers"
 	k8sclientset "k8s.io/client-go/kubernetes"
 	fakek8sclientset "k8s.io/client-go/kubernetes/fake"
+	fakenfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -93,8 +94,9 @@ func TestNRTGC(t *testing.T) {
 func newMockGC(nodes, nrts []string) *mockGC {
 	k8sClient := fakek8sclientset.NewSimpleClientset(createFakeNodes(nodes...)...)
 	return &mockGC{
-		topologyGC: topologyGC{
+		nfdGarbageCollector: nfdGarbageCollector{
 			factory:    informers.NewSharedInformerFactory(k8sClient, 5*time.Minute),
+			nfdClient:  fakenfdclientset.NewSimpleClientset(),
 			topoClient: faketopologyv1alpha2.NewSimpleClientset(createFakeNRTs(nrts...)...),
 			stopChan:   make(chan struct{}, 1),
 			gcPeriod:   10 * time.Minute,
@@ -126,7 +128,7 @@ func createFakeNRTs(names ...string) []runtime.Object {
 }
 
 type mockGC struct {
-	topologyGC
+	nfdGarbageCollector
 
 	k8sClient k8sclientset.Interface
 }
