@@ -28,9 +28,15 @@ import (
 
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
-	buildInfoQuery         = "nfd_master_build_info"
-	nodeUpdatesQuery       = "nfd_node_updates_total"
-	nfrProcessingTimeQuery = "nfd_nodefeaturerule_processing_duration_seconds"
+	buildInfoQuery           = "nfd_master_build_info"
+	nodeUpdateRequestsQuery  = "nfd_node_update_requests_total"
+	nodeUpdatesQuery         = "nfd_node_updates_total"
+	nodeUpdateFailuresQuery  = "nfd_node_update_failures_total"
+	nodeLabelsRejectedQuery  = "nfd_node_labels_rejected_total"
+	nodeERsRejectedQuery     = "nfd_node_extendedresources_rejected_total"
+	nodeTaintsRejectedQuery  = "nfd_node_taints_rejected_total"
+	nfrProcessingTimeQuery   = "nfd_nodefeaturerule_processing_duration_seconds"
+	nfrProcessingErrorsQuery = "nfd_nodefeaturerule_processing_errors_total"
 )
 
 var (
@@ -43,9 +49,29 @@ var (
 			"version": version.Get(),
 		},
 	})
+	nodeUpdateRequests = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeUpdateRequestsQuery,
+		Help: "Number of node update requests processed by the master.",
+	})
 	nodeUpdates = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: nodeUpdatesQuery,
 		Help: "Number of nodes updated by the master.",
+	})
+	nodeUpdateFailures = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeUpdateFailuresQuery,
+		Help: "Number of node update failures.",
+	})
+	nodeLabelsRejected = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeLabelsRejectedQuery,
+		Help: "Number of node labels that were rejected by nfd-master.",
+	})
+	nodeERsRejected = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeERsRejectedQuery,
+		Help: "Number of node extended resources that were rejected by nfd-master.",
+	})
+	nodeTaintsRejected = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeTaintsRejectedQuery,
+		Help: "Number of node taints that were rejected by nfd-master.",
 	})
 	nfrProcessingTime = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -58,6 +84,10 @@ var (
 			"node",
 		},
 	)
+	nfrProcessingErrors = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nfrProcessingErrorsQuery,
+		Help: "Number of errors encountered while processing NodeFeatureRule objects.",
+	})
 )
 
 // registerVersion exposes the Operator build version.
@@ -68,9 +98,16 @@ func registerVersion(version string) {
 // runMetricsServer starts a http server to expose metrics
 func runMetricsServer(port int) {
 	r := prometheus.NewRegistry()
-	r.MustRegister(buildInfo,
+	r.MustRegister(
+		buildInfo,
+		nodeUpdateRequests,
 		nodeUpdates,
-		nfrProcessingTime)
+		nodeUpdateFailures,
+		nodeLabelsRejected,
+		nodeERsRejected,
+		nodeTaintsRejected,
+		nfrProcessingTime,
+		nfrProcessingErrors)
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))

@@ -452,6 +452,7 @@ func (m *nfdMaster) prune() error {
 		// Prune labels and extended resources
 		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
+			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
 		}
 
@@ -509,6 +510,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 
 		if value, err := m.filterFeatureLabel(name, value, features); err != nil {
 			klog.ErrorS(err, "ignoring label", "labelKey", name, "labelValue", value)
+			nodeLabelsRejected.Inc()
 		} else {
 			outLabels[name] = value
 		}
@@ -522,6 +524,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 		if value, ok := outLabels[extendedResourceName]; ok {
 			if _, err := strconv.Atoi(value); err != nil {
 				klog.ErrorS(err, "bad label value encountered for extended resource", "labelKey", extendedResourceName, "labelValue", value)
+				nodeERsRejected.Inc()
 				continue // non-numeric label can't be used
 			}
 
@@ -602,6 +605,7 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 	for _, taint := range taints {
 		if err := filterTaint(&taint); err != nil {
 			klog.ErrorS(err, "ignoring taint", "taint", taint)
+			nodeTaintsRejected.Inc()
 		} else {
 			outTaints = append(outTaints, taint)
 		}
@@ -650,6 +654,7 @@ func isNamespaceDenied(labelNs string, wildcardDeniedNs map[string]struct{}, nor
 
 // SetLabels implements LabelerServer
 func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
+	nodeUpdateRequests.Inc()
 	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
 	if err != nil {
 		klog.ErrorS(err, "gRPC client authorization failed", "nodeName", r.NodeName)
@@ -675,6 +680,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 
 		// Create labels et al
 		if err := m.refreshNodeFeatures(cli, r.NodeName, annotations, r.GetLabels(), r.GetFeatures()); err != nil {
+			nodeUpdateFailures.Inc()
 			return &pb.SetLabelsReply{}, err
 		}
 	}
@@ -784,6 +790,7 @@ func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources E
 		capacity, err := filterExtendedResource(name, value, features)
 		if err != nil {
 			klog.ErrorS(err, "failed to create extended resources", "extendedResourceName", name, "extendedResourceValue", value)
+			nodeERsRejected.Inc()
 		} else {
 			outExtendedResources[name] = capacity
 		}
@@ -989,6 +996,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			ruleOut, err := rule.Execute(features)
 			if err != nil {
 				klog.ErrorS(err, "failed to process rule", "ruleName", rule.Name, "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName)
+				nfrProcessingErrors.Inc()
 				continue
 			}
 			taints = append(taints, ruleOut.Taints...)
