@@ -25,7 +25,7 @@ import (
 )
 
 // CreateService creates nfd-master Service
-func CreateService(cs clientset.Interface, ns string) (*corev1.Service, error) {
+func CreateService(ctx context.Context, cs clientset.Interface, ns string) (*corev1.Service, error) {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "nfd-master-e2e",
@@ -41,5 +41,5 @@ func CreateService(cs clientset.Interface, ns string) (*corev1.Service, error) {
 			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
-	return cs.CoreV1().Services(ns).Create(context.TODO(), svc, metav1.CreateOptions{})
+	return cs.CoreV1().Services(ns).Create(ctx, svc, metav1.CreateOptions{})
 }
