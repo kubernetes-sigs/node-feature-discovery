@@ -167,7 +167,7 @@ gofmt-verify:
 	fi
 
 ci-lint:
-	golangci-lint run --timeout 7m0s
+	golangci-lint run --timeout 10m
 
 lint:
 	golint -set_exit_status ./...
