@@ -17,6 +17,15 @@ resources and hence the allocatable resources on a per-zone basis by updating
 It makes sure that new NodeResourceTopology instances are created for each new
 nodes that get added to the cluster.
 
+Because of the design and implementation of Kubernetes, only resources exclusively
+allocated to [Guaranteed Quality of Service](https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/#guaranteed)
+pods will be accounted.
+This includes
+[CPU cores](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy),
+[memory](https://kubernetes.io/docs/tasks/administer-cluster/memory-manager/#policy-static)
+and
+[devices](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/).
+
 When run as a daemonset, nodes are re-examined for the allocated resources
 (to determine the information of the allocatable resources on a per-zone basis
 where a zone can be a NUMA node) at an interval specified using the
