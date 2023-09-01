@@ -54,26 +54,35 @@ type Info struct {
 }
 
 func New(sleepInterval time.Duration, dest chan<- Info, kubeletStateDir string) (*Notifier, error) {
-	devicePluginsDir := path.Join(kubeletStateDir, devicePluginsDirName)
-	ch, err := createFSWatcherEvent([]string{kubeletStateDir, devicePluginsDir})
-	if err != nil {
-		return nil, err
-	}
-	return &Notifier{
+	notif := Notifier{
 		sleepInterval: sleepInterval,
 		dest:          dest,
-		fsEvent:       ch,
-	}, nil
+	}
+
+	if kubeletStateDir != "" {
+		devicePluginsDir := path.Join(kubeletStateDir, devicePluginsDirName)
+		ch, err := createFSWatcherEvent([]string{kubeletStateDir, devicePluginsDir})
+		if err != nil {
+			return nil, err
+		}
+		notif.fsEvent = ch
+	}
+
+	return &notif, nil
 }
 
 func (n *Notifier) Run() {
-	timeEvents := make(<-chan time.Time)
+	var timeEvents <-chan time.Time
+
 	if n.sleepInterval > 0 {
 		ticker := time.NewTicker(n.sleepInterval)
 		defer ticker.Stop()
 		timeEvents = ticker.C
 	}
 
+	// it's safe to keep the channels we don't need nil:
+	// https://dave.cheney.net/2014/03/19/channel-axioms
+	// "A receive from a nil channel blocks forever"
 	for {
 		select {
 		case <-timeEvents:
