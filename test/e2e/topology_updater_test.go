@@ -31,6 +31,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -385,6 +386,45 @@ excludeList:
 			}, 1*time.Minute, 10*time.Second).Should(BeFalse())
 		})
 	})
+
+	When("kubelet state monitoring disabled", func() {
+		BeforeEach(func(ctx context.Context) {
+			cfg, err := testutils.GetConfig()
+			Expect(err).ToNot(HaveOccurred())
+
+			kcfg := cfg.GetKubeletConfig()
+			By(fmt.Sprintf("Using config (%#v)", kcfg))
+			// we need a predictable and "low enough" sleep interval to make sure we wait enough time, and still we don't want to waste too much time waiting
+			podSpecOpts := []testpod.SpecOption{testpod.SpecWithContainerImage(dockerImage()), testpod.SpecWithContainerExtraArgs("-kubelet-state-dir=", "-sleep-interval=3s")}
+			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
+		})
+
+		It("should still create or update CRs with periodic updates", func(ctx context.Context) {
+			// this is the simplest test. A more refined test would be check updates. We do like this to minimize flakes.
+			By("deleting existing CRs")
+
+			err := topologyClient.TopologyV1alpha2().NodeResourceTopologies().Delete(ctx, topologyUpdaterNode.Name, metav1.DeleteOptions{})
+			Expect(err).ToNot(HaveOccurred())
+
+			// need to set the polling interval explicitly and bigger than the sleep interval
+			By("checking the topology was recreated or updated")
+			Eventually(func() bool {
+				_, err = topologyClient.TopologyV1alpha2().NodeResourceTopologies().Get(ctx, topologyUpdaterNode.Name, metav1.GetOptions{})
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						framework.Logf("missing node topology resource for %q", topologyUpdaterNode.Name)
+						return true // intentionally retry
+					}
+					framework.Logf("failed to get the node topology resource: %v", err)
+					return false
+				}
+				return true
+			}).WithPolling(5 * time.Second).WithTimeout(30 * time.Second).Should(BeTrue())
+
+			framework.Logf("found NRT data for node %q!", topologyUpdaterNode.Name)
+		})
+	})
+
 	When("topology-updater configure to compute pod fingerprint", func() {
 		BeforeEach(func(ctx context.Context) {
 			cfg, err := testutils.GetConfig()

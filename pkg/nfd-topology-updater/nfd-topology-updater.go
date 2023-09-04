@@ -85,13 +85,12 @@ type nfdTopologyUpdater struct {
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
 func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (NfdTopologyUpdater, error) {
 	eventSource := make(chan kubeletnotifier.Info)
-	if args.KubeletStateDir != "" {
-		ntf, err := kubeletnotifier.New(resourcemonitorArgs.SleepInterval, eventSource, args.KubeletStateDir)
-		if err != nil {
-			return nil, err
-		}
-		go ntf.Run()
+
+	ntf, err := kubeletnotifier.New(resourcemonitorArgs.SleepInterval, eventSource, args.KubeletStateDir)
+	if err != nil {
+		return nil, err
 	}
+	go ntf.Run()
 
 	kubeletConfigFunc, err := getKubeletConfigFunc(resourcemonitorArgs.KubeletConfigURI, resourcemonitorArgs.APIAuthTokenFile)
 	if err != nil {

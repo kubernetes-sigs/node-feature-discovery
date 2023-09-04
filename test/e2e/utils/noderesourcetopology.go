@@ -128,7 +128,7 @@ func GetNodeTopology(ctx context.Context, topologyClient *topologyclientset.Clie
 			return false
 		}
 		return true
-	}, time.Minute, 5*time.Second).Should(gomega.BeTrue())
+	}).WithPolling(5 * time.Second).WithTimeout(1 * time.Minute).Should(gomega.BeTrue())
 	return nodeTopology
 }
 
