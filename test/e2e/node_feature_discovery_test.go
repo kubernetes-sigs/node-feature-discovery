@@ -175,8 +175,8 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 	nfdTestSuite := func(useNodeFeatureApi bool) {
 		createPodSpecOpts := func(opts ...testpod.SpecOption) []testpod.SpecOption {
-			if useNodeFeatureApi {
-				return append(opts, testpod.SpecWithContainerExtraArgs("-enable-nodefeature-api"))
+			if !useNodeFeatureApi {
+				return append(opts, testpod.SpecWithContainerExtraArgs("-enable-nodefeature-api=false"))
 			}
 			return opts
 		}

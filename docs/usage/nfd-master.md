@@ -15,40 +15,26 @@ extended resources based on requests from nfd-workers and 3rd party extensions.
 
 ## NodeFeature controller
 
-**EXPERIMENTAL**
-Controller for [NodeFeature](custom-resources.md#nodefeature-custom-resource)
-objects can be enabled with the
-[`-enable-nodefeature-api`](../reference/master-commandline-reference.md#-enable-nodefeature-api)
-command line flag. When enabled, features from NodeFeature objects are used as
+The NodeFeature Controller uses NodeFeature objects as
 the input for the [NodeFeatureRule](custom-resources.md#nodefeaturerule)
 processing pipeline. In addition, any labels listed in the NodeFeature object
 are created on the node (note the allowed
 [label namespaces](customization-guide.md#node-labels) are controlled).
-
-> **NOTE:** NodeFeature API must also be enabled in nfd-worker with
-> its [`-enable-nodefeature-api`](../reference/worker-commandline-reference.md#-enable-nodefeature-api)
-> flag.
-
-When `-enable-nodefeature-api` option is enabled and NFD-Master is intended to run
-with more than one replica, it is advised to use `-enable-leader-election` flag.
-This flag turns on leader election for NFD-Master and let only one replica
-to act on changes in NodeFeature and NodeFeatureRule objects.
 
 ## NodeFeatureRule controller
 
 NFD-Master acts as the controller for
 [NodeFeatureRule](custom-resources.md#nodefeaturerule) objects.
 It applies the rules specified in NodeFeatureRule objects on raw feature data
-and creates node labels accordingly. The feature data used as the input can be
-received from nfd-worker instances through the gRPC interface or from
-[NodeFeature](custom-resources.md#nodefeature-custom-resource) objects. The latter
-requires that the [NodeFeaure controller](#nodefeature-controller) has been
-enabled.
+and creates node labels accordingly. The feature data used as the input is
+received from nfd-worker instances through
+[NodeFeature](custom-resources.md#nodefeature-custom-resource) objects.
 
-> **NOTE:** when gRPC is used for communicating the features (the default
-> mechanism), (re-)labelling only happens when a request is received from
-> nfd-worker. That is, in practice rules are evaluated and labels for each node
-> are created on intervals specified by the
+> **NOTE:** when gRPC is used for communicating the features (by setting the
+> flag `-enable-nodefeature-api=false` on both nfd-master and nfd-worker, or
+> via Helm values.enableNodeFeatureApi=false),(re-)labelling only happens
+> when a request is received from nfd-worker. That is, in practice rules are
+> evaluated and labels for each node are created on intervals specified by the
 > [`core.sleepInterval`](../reference/worker-configuration-reference.md#coresleepinterval)
 > configuration option of nfd-worker instances. This means that modification or
 > creation of NodeFeatureRule objects does not instantly cause the node
@@ -103,8 +89,10 @@ affinity to prevent masters from running on the same node.
 However note that inter-pod affinity is costly and is not recommended
 in bigger clusters.
 
-> **NOTE:** If the [NodeFeature controller](#nodefeature-controller) is enabled
-> the replica count should be 1.
+> **Note:** When NFD-Master is intended to run with more than one replica,
+> it is advised to use `-enable-leader-election` flag. This flag turns on
+> leader election for NFD-Master and let only one replica to act on changes
+> in NodeFeature and NodeFeatureRule objects.
 
 If you have RBAC authorization enabled (as is the default e.g. with clusters
 initialized with kubeadm) you need to configure the appropriate ClusterRoles,

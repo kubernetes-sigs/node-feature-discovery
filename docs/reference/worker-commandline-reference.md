@@ -197,19 +197,19 @@ nfd-worker -label-sources=kernel,system,local
 
 ### -enable-nodefeature-api
 
-The `-enable-nodefeature-api` flag enables the experimental
+The `-enable-nodefeature-api` flag enables/disables the
 [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API
-for communicating with nfd-master. This will also automatically disable the
-gRPC communication to nfd-master. When enabled, nfd-worker will create per-node
+for communicating with nfd-master. When enabled nfd-worker creates per-node
 NodeFeature objects the contain all discovered node features and the set of
-feature labels to be created.
+feature labels to be created. Setting the flag to false will enable
+gRPC communication to nfd-master.
 
-Default: false
+Default: true
 
 Example:
 
 ```bash
-nfd-worker -enable-nodefeature-api
+nfd-worker -enable-nodefeature-api=false
 ```
 
 ### -metrics

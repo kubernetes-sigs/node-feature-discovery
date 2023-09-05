@@ -20,7 +20,7 @@ sort: 8
 NFD provides multiple extension points for vendor and application specific
 labeling:
 
-- [`NodeFeature`](#nodefeature-custom-resource) (EXPERIMENTAL) objects can be
+- [`NodeFeature`](#nodefeature-custom-resource) objects can be
   used to communicate "raw" node features and node labeling requests to
   nfd-master.
 - [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects provide a way to
@@ -32,7 +32,6 @@ labeling:
 
 ## NodeFeature custom resource
 
-**EXPERIMENTAL**
 NodeFeature objects provide a way for 3rd party extensions to advertise custom
 features, both as "raw" features that serve as input to
 [NodeFeatureRule](#nodefeaturerule-custom-resource) objects and as feature
@@ -41,9 +40,10 @@ labels directly.
 Note that RBAC rules must be created for each extension for them to be able to
 create and manipulate NodeFeature objects in their namespace.
 
-Support for NodeFeature CRD API is enabled with the `-enable-nodefeature-api`
-command line flag. This flag must be specified for both nfd-master and
-nfd-worker as it will disable the gRPC communication between them.
+The NodeFeature CRD API can be disabled with the
+`-enable-nodefeature-api=false` command line flag. This flag must be specified
+for both nfd-master and nfd-worker as it will enable the gRPC communication
+between them.
 
 ### A NodeFeature example
 

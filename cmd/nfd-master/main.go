@@ -116,7 +116,7 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
-	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", false,
+	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
 		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication.")
 	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
 		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")

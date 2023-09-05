@@ -10,7 +10,7 @@ nameOverride: ""
 fullnameOverride: ""
 namespaceOverride: ""
 
-enableNodeFeatureApi: false
+enableNodeFeatureApi: true
 
 master:
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>

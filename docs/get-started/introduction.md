@@ -117,8 +117,8 @@ only created on nodes running nfd-master.
 
 NFD takes use of some Kubernetes Custom Resources.
 
-[NodeFeature](../usage/custom-resources.md#nodefeature)s (EXPERIMENTAL)
-can be used for representing node features and requesting node labels to be
+[NodeFeature](../usage/custom-resources.md#nodefeature)s
+is be used for representing node features and requesting node labels to be
 generated.
 
 NFD-Master uses [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)s
