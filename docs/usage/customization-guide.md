@@ -317,6 +317,38 @@ Label namespace may be specified with `<namespace>/<name>[=<value>]`.
 
 Comment lines (starting with `#`) are ignored.
 
+Adding following line anywhere to feature file defines date when
+its content expires / is ignored:
+
+```plaintext
+# +expiry-time=2023-07-29T11:22:33Z
+```
+
+Also, the expiry-time value would stay the same during the processing of the
+feature file until another expiry-time directive is encountered.
+Considering the following file:
+
+```plaintext
+# +expiry-time=2012-07-28T11:22:33Z
+featureKey=featureValue
+
+# +expiry-time=2080-07-28T11:22:33Z
+featureKey2=featureValue2
+
+# +expiry-time=2070-07-28T11:22:33Z
+featureKey3=featureValue3
+
+# +expiry-time=2002-07-28T11:22:33Z
+featureKey4=featureValue4
+```
+
+After processing the above file, only `featureKey2` and `featureKey3` would be
+included in the list of accepted features.
+
+> **NOTE:** The time format that we are supporting is RFC3339. Also, the `expiry-time`
+> tag is only evaluated in each re-discovery period, and the expiration of
+> node labels is not tracked.
+
 ### Mounts
 
 The standard NFD deployments contain `hostPath` mounts for

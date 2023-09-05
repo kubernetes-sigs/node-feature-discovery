@@ -17,7 +17,11 @@ limitations under the License.
 package local
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,4 +36,49 @@ func TestLocalSource(t *testing.T) {
 	assert.Nil(t, err, err)
 	assert.Empty(t, l)
 
+}
+
+func TestGetExpirationDate(t *testing.T) {
+	expectedFeaturesLen := 5
+	pwd, _ := os.Getwd()
+	featureFilesDir = filepath.Join(pwd, "testdata/features.d")
+
+	features, err := getFeaturesFromFiles()
+	fmt.Println(features)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedFeaturesLen, len(features))
+}
+
+func TestParseDirectives(t *testing.T) {
+	testCases := []struct {
+		name      string
+		directive string
+		wantErr   bool
+	}{
+		{
+			name:      "valid directive",
+			directive: "# +expiry-time=2080-07-28T11:22:33Z",
+			wantErr:   false,
+		},
+		{
+			name:      "invalid directive",
+			directive: "# +random-key=random-value",
+			wantErr:   true,
+		},
+		{
+			name:      "invalid directive format",
+			directive: "# + Something",
+			wantErr:   true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			parsingOpts := parsingOpts{
+				ExpiryTime: time.Now(),
+			}
+			err := parseDirectives(tc.directive, &parsingOpts)
+			assert.Equal(t, err != nil, tc.wantErr)
+		})
+	}
 }
