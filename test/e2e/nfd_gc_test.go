@@ -93,7 +93,6 @@ var _ = SIGDescribe("NFD GC", func() {
 				if err := utils.CreateNodeResourceTopology(ctx, topologyClient, name); err != nil {
 					return err
 				}
-				framework.Logf("CREATED CRS FOR node %q", name)
 			}
 			return nil
 		}
@@ -121,7 +120,11 @@ var _ = SIGDescribe("NFD GC", func() {
 			It("it should delete stale objects at startup", func(ctx context.Context) {
 				nodes, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				targetNodeNames := []string{nodes.Items[0].GetName(), nodes.Items[len(nodes.Items)-1].GetName()}
+				targetNodeNames := []string{nodes.Items[0].GetName()}
+				if len(nodes.Items) > 1 {
+					// Add another node if we're in larger than one-node cluster
+					targetNodeNames = append(targetNodeNames, nodes.Items[len(nodes.Items)-1].GetName())
+				}
 				staleNodeNames := []string{"non-existent-node-1", "non-existent-node-2"}
 
 				// Create NodeFeature and NodeResourceTopology objects
@@ -153,7 +156,11 @@ var _ = SIGDescribe("NFD GC", func() {
 			It("it should remove stale objects", func(ctx context.Context) {
 				nodes, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				targetNodeNames := []string{nodes.Items[0].GetName(), nodes.Items[len(nodes.Items)-1].GetName()}
+				targetNodeNames := []string{nodes.Items[0].GetName()}
+				if len(nodes.Items) > 1 {
+					// Add another node if we're in larger than one-node cluster
+					targetNodeNames = append(targetNodeNames, nodes.Items[len(nodes.Items)-1].GetName())
+				}
 				staleNodeNames := []string{"non-existent-node-2.1", "non-existent-node-2.2"}
 
 				// Deploy nfd-gc
