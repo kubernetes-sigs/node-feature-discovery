@@ -153,16 +153,17 @@ nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
 
 ### -enable-nodefeature-api
 
-The `-enable-nodefeature-api` flag enables the
+The `-enable-nodefeature-api` flag enables/disables the
 [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for receiving
-feature requests. This will also automatically disable the gRPC interface.
+feature requests. This will also automatically disable/enable the gRPC
+interface.
 
-Default: false
+Default: true
 
 Example:
 
 ```bash
-nfd-master -enable-nodefeature-api
+nfd-master -enable-nodefeature-api=false
 ```
 
 ### -enable-leader-election

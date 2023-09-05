@@ -103,7 +103,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.KeyFile, "key-file", "",
 		"Private key matching -cert-file")
-	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", false,
+	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
 		"Enable the NodeFeature CRD API for communicating with nfd-master. This will automatically disable the gRPC communication.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
