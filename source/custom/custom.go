@@ -134,6 +134,7 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 
 func (r *CustomRule) execute(features *nfdv1alpha1.Features) (nfdv1alpha1.RuleOutput, error) {
 	if r.LegacyRule != nil {
+		klog.InfoS("legacy 'matchOn' rule format is deprecated, please convert to the new 'matchFeatures' rule format", "ruleName", r.LegacyRule.Name)
 		ruleOut, err := r.LegacyRule.execute()
 		if err != nil {
 			return nfdv1alpha1.RuleOutput{}, fmt.Errorf("failed to execute legacy rule %s: %w", r.LegacyRule.Name, err)
