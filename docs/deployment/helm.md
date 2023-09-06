@@ -184,6 +184,7 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.nodeSelector`                | dict   | {}                      | Topology updater pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                                                                           |
 | `topologyUpdater.tolerations`                 | dict   | {}                      | Topology updater pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                                                                                |
 | `topologyUpdater.annotations`                 | dict   | {}                      | Topology updater pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                    |
+| `topologyUpdater.daemonsetAnnotations`        | dict   | {}                      | Topology updater daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                    |
 | `topologyUpdater.affinity`                    | dict   | {}                      | Topology updater pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)                                                                      |
 | `topologyUpdater.config`                      | dict   |                         | [configuration](../reference/topology-updater-configuration-reference)                                                                                                                                |
 | `topologyUpdater.podSetFingerprint`           | bool   | false                   | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
@@ -205,6 +206,7 @@ API's you need to install the prometheus operator in your cluster.
 | `gc.nodeSelector`                     | dict   | {}      | Garbage collector pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)
 | `gc.tolerations`                      | dict   | {}      | Garbage collector pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
 | `gc.annotations`                      | dict   | {}      | Garbage collector pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
+| `gc.deploymentAnnotations`            | dict   | {}      | Garbage collector deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
 | `gc.affinity`                         | dict   | {}      | Garbage collector pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)
 
 <!-- Links -->
