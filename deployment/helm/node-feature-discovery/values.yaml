@@ -447,6 +447,7 @@ topologyUpdater:
   nodeSelector: {}
   tolerations: []
   annotations: {}
+  daemonsetAnnotations: {}
   affinity: {}
   podSetFingerprint: true
 
@@ -480,6 +481,7 @@ gc:
   nodeSelector: {}
   tolerations: []
   annotations: {}
+  deploymentAnnotations: {}
   affinity: {}
 
 # Optionally use encryption for worker <--> master comms

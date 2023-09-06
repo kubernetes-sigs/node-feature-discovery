@@ -7,6 +7,10 @@ metadata:
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
     role: topology-updater
+  {{- with .Values.topologyUpdater.daemonsetAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:

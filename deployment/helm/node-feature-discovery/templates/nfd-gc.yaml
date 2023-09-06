@@ -7,6 +7,10 @@ metadata:
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
     role: gc
+  {{- with .Values.gc.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.gc.replicaCount | default 1 }}
   selector:
