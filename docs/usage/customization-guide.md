@@ -315,6 +315,9 @@ The label value defaults to `true`, if not specified.
 
 Label namespace may be specified with `<namespace>/<name>[=<value>]`.
 
+> **NOTE:** The feature file size limit it 64kB. The feature file will be
+> ignored if the size limit is exceeded.
+
 Comment lines (starting with `#`) are ignored.
 
 Adding following line anywhere to feature file defines date when

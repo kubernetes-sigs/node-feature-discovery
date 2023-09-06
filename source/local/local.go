@@ -46,7 +46,7 @@ const ExpiryTimeKey = "expiry-time"
 const DirectivePrefix = "# +"
 
 // MaxFeatureFileSize defines the maximum size of a feature file size
-const MaxFeatureFileSize = 64000
+const MaxFeatureFileSize = 65536
 
 // Config
 var (
@@ -334,8 +334,8 @@ func getFeaturesFromFiles() (map[string]string, error) {
 		fileSize := fileInfo.Size()
 		if fileSize > MaxFeatureFileSize {
 			klog.ErrorS(
-				fmt.Errorf("invalid file size: %d bytes > %d bytes", fileSize, MaxFeatureFileSize),
-				"skipping file with invalid size",
+				fmt.Errorf("file size limit exceeded: %d bytes > %d bytes", fileSize, MaxFeatureFileSize),
+				"skipping too big feature file",
 				"fileName", fileName, "fileSize", fileSize,
 			)
 			continue
