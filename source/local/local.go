@@ -45,6 +45,9 @@ const ExpiryTimeKey = "expiry-time"
 // DirectivePrefix defines the prefix of directives that should be parsed
 const DirectivePrefix = "# +"
 
+// MaxFeatureFileSize defines the maximum size of a feature file size
+const MaxFeatureFileSize = 65536
+
 // Config
 var (
 	featureFilesDir = "/etc/kubernetes/node-feature-discovery/features.d/"
@@ -321,6 +324,23 @@ func getFeaturesFromFiles() (map[string]string, error) {
 
 	for _, file := range files {
 		fileName := file.Name()
+
+		fileInfo, err := file.Info()
+		if err != nil {
+			klog.ErrorS(err, "failed to get file info", "fileName", fileName)
+			continue
+		}
+
+		fileSize := fileInfo.Size()
+		if fileSize > MaxFeatureFileSize {
+			klog.ErrorS(
+				fmt.Errorf("file size limit exceeded: %d bytes > %d bytes", fileSize, MaxFeatureFileSize),
+				"skipping too big feature file",
+				"fileName", fileName, "fileSize", fileSize,
+			)
+			continue
+		}
+
 		lines, err := getFileContent(fileName)
 		if err != nil {
 			klog.ErrorS(err, "failed to read file", "fileName", fileName)
