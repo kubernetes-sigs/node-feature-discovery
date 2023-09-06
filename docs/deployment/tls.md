@@ -15,6 +15,10 @@ sort: 5
 
 ---
 
+> ***NOTE*** this section only applies when the gRPC API is used, i.e. when the
+> NodeFeature API is disabled via the `-enable-nodefeature-api=false` flag on
+> both nfd-master and nfd-worker.
+
 NFD supports mutual TLS authentication between the nfd-master and nfd-worker
 instances.  That is, nfd-worker and nfd-master both verify that the other end
 presents a valid certificate.
