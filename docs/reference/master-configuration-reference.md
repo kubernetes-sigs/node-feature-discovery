@@ -191,7 +191,7 @@ leaderElection:
   retryPeriod: 2s
 ```
 
-### nfdApiParallelism
+## nfdApiParallelism
 
 The `nfdApiParallelism` option can be used to specify the maximum
 number of concurrent node updates.
@@ -205,3 +205,106 @@ Example:
 ```yaml
 nfdApiParallelism: 1
 ```
+
+## klog
+
+The following options specify the logger configuration. Most of which can be
+dynamically adjusted at run-time.
+
+> **NOTE:** The logger options can also be specified via command line flags
+> which take precedence over any corresponding config file options.
+
+### klog.addDirHeader
+
+If true, adds the file directory to the header of the log messages.
+
+Default: `false`
+
+Run-time configurable: yes
+
+### klog.alsologtostderr
+
+Log to standard error as well as files.
+
+Default: `false`
+
+Run-time configurable: yes
+
+### klog.logBacktraceAt
+
+When logging hits line file:N, emit a stack trace.
+
+Default: *empty*
+
+Run-time configurable: yes
+
+### klog.logDir
+
+If non-empty, write log files in this directory.
+
+Default: *empty*
+
+Run-time configurable: no
+
+### klog.logFile
+
+If non-empty, use this log file.
+
+Default: *empty*
+
+Run-time configurable: no
+
+### klog.logFileMaxSize
+
+Defines the maximum size a log file can grow to. Unit is megabytes. If the
+value is 0, the maximum file size is unlimited.
+
+Default: `1800`
+
+Run-time configurable: no
+
+### klog.logtostderr
+
+Log to standard error instead of files
+
+Default: `true`
+
+Run-time configurable: yes
+
+### klog.skipHeaders
+
+If true, avoid header prefixes in the log messages.
+
+Default: `false`
+
+Run-time configurable: yes
+
+### klog.skipLogHeaders
+
+If true, avoid headers when opening log files.
+
+Default: `false`
+
+Run-time configurable: no
+
+### klog.stderrthreshold
+
+Logs at or above this threshold go to stderr (default 2)
+
+Run-time configurable: yes
+
+### klog.v
+
+Number for the log level verbosity.
+
+Default: `0`
+
+Run-time configurable: yes
+
+### klog.vmodule
+
+Comma-separated list of `pattern=N` settings for file-filtered logging.
+
+Default: *empty*
+
+Run-time configurable: yes
