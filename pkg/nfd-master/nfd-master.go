@@ -78,6 +78,7 @@ type NFDConfig struct {
 	ResyncPeriod      utils.DurationVal
 	LeaderElection    LeaderElectionConfig
 	NfdApiParallelism int
+	Klog              map[string]string
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -106,6 +107,7 @@ type Args struct {
 	ConfigFile           string
 	Instance             string
 	KeyFile              string
+	Klog                 map[string]*utils.KlogFlagVal
 	Kubeconfig           string
 	CrdController        bool
 	EnableNodeFeatureApi bool
@@ -201,6 +203,7 @@ func newDefaultConfig() *NFDConfig {
 			RetryPeriod:   utils.DurationVal{Duration: time.Duration(2) * time.Second},
 			RenewDeadline: utils.DurationVal{Duration: time.Duration(10) * time.Second},
 		},
+		Klog: make(map[string]string),
 	}
 }
 
@@ -1166,6 +1169,28 @@ func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResour
 	return patches
 }
 
+func (m *nfdMaster) configureKlog(c *NFDConfig) error {
+	// Handle klog
+	for k, a := range m.args.Klog {
+		if !a.IsSetFromCmdline() {
+			v, ok := c.Klog[k]
+			if !ok {
+				v = a.DefValue()
+			}
+			if err := a.SetFromConfig(v); err != nil {
+				return fmt.Errorf("failed to set logger option klog.%s = %v: %v", k, v, err)
+			}
+		}
+	}
+	for k := range c.Klog {
+		if _, ok := m.args.Klog[k]; !ok {
+			klog.InfoS("unknown logger option in config", "optionName", k)
+		}
+	}
+
+	return nil
+}
+
 // Parse configuration options
 func (m *nfdMaster) configure(filepath string, overrides string) error {
 	// Create a new default config
@@ -1224,6 +1249,11 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	}
 
 	m.config = c
+
+	if err := m.configureKlog(c); err != nil {
+		return err
+	}
+
 	if !c.NoPublish {
 		kubeconfig, err := m.getKubeconfig()
 		if err != nil {
