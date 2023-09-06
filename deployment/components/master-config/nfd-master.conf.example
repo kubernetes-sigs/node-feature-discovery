@@ -5,6 +5,21 @@
 # enableTaints: false
 # labelWhiteList: "foo"
 # resyncPeriod: "2h"
+# klog:
+#    addDirHeader: false
+#    alsologtostderr: false
+#    logBacktraceAt:
+#    logtostderr: true
+#    skipHeaders: false
+#    stderrthreshold: 2
+#    v: 0
+#    vmodule:
+##   NOTE: the following options are not dynamically run-time configurable
+##         and require a nfd-master restart to take effect after being changed
+#    logDir:
+#    logFile:
+#    logFileMaxSize: 1800
+#    skipLogHeaders: false
 # leaderElection:
 #   leaseDuration: 15s
 #   # this value has to be lower than leaseDuration and greater than retryPeriod*1.2
