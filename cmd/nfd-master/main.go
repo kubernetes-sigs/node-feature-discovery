@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -40,8 +41,6 @@ func main() {
 	printVersion := flags.Bool("version", false, "Print version and exit.")
 
 	args, overrides := initFlags(flags)
-	// Inject klog flags
-	klog.InitFlags(flags)
 
 	_ = flags.Parse(os.Args[1:])
 	if len(flags.Args()) > 0 {
@@ -137,6 +136,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.BoolVar(&args.EnableLeaderElection, "enable-leader-election", false,
 		"Enables a leader election. Enable this when running more than one replica on nfd master.")
 
+	initKlogFlags(flagset, args)
+
 	overrides := &master.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},
 		DenyLabelNs:    &utils.StringSetVal{},
@@ -164,4 +165,25 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Can be used for the throttling mechanism. It has effect only when -enable-nodefeature-api has been set.")
 
 	return args, overrides
+}
+
+func initKlogFlags(flagset *flag.FlagSet, args *master.Args) {
+	args.Klog = make(map[string]*utils.KlogFlagVal)
+
+	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
+	//flags.SetOutput(ioutil.Discard)
+	klog.InitFlags(flags)
+	flags.VisitAll(func(f *flag.Flag) {
+		name := klogConfigOptName(f.Name)
+		args.Klog[name] = utils.NewKlogFlagVal(f)
+		flagset.Var(args.Klog[name], f.Name, f.Usage)
+	})
+}
+
+func klogConfigOptName(flagName string) string {
+	split := strings.Split(flagName, "_")
+	for i, v := range split[1:] {
+		split[i+1] = strings.ToUpper(v[0:1]) + v[1:]
+	}
+	return strings.Join(split, "")
 }
