@@ -99,9 +99,9 @@ We have introduced the following Chart parameters.
 | `imagePullSecrets` | list | [] | ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
 | `nameOverride` | string |  | Override the name of the chart |
 | `fullnameOverride` | string |  | Override a default fully qualified app name |
-| `tls.enable` | bool | false | Specifies whether to use TLS for communications between components |
-| `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates |
-| `enableNodeFeatureApi` | bool  | true | Enable the [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication.
+| `tls.enable` | bool | false | Specifies whether to use TLS for communications between components. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release  |
+| `tls.certManager` | bool | false | If enabled, requires [cert-manager](https://cert-manager.io/docs/) to be installed and will automatically create the required TLS certificates. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release |
+| `enableNodeFeatureApi` | bool  | true | Enable the [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release    |
 | `prometheus.enable` | bool | false | Specifies whether to expose metrics using prometheus operator |
 | `prometheus.labels` | dict | {} | Specifies labels for use with the prometheus operator to control how it is selected |
 
@@ -114,7 +114,7 @@ API's you need to install the prometheus operator in your cluster.
 | Name                        | Type    | Default                                 | description                                                                                                                              |
 |-----------------------------|---------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
-| `master.port`               | integer |                                         | Specifies the TCP port that nfd-master listens for incoming requests.                                                      |
+| `master.port`               | integer |                                         | Specifies the TCP port that nfd-master listens for incoming requests. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release    |
 | `master.metricsPort`        | integer |   8081                                  | Port on which to expose metrics from components to prometheus operator |
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
 | `master.resyncPeriod`       | string  |                                         | NFD API controller resync period.                                                  |
@@ -130,8 +130,8 @@ API's you need to install the prometheus operator in your cluster.
 | `master.serviceAccount.annotations` | dict | {}                                 | Annotations to add to the service account
 | `master.serviceAccount.name` | string |                                         | The name of the service account to use. If not set and create is true, a name is generated using the fullname template
 | `master.rbac.create`        | bool    | true                                    | Specifies whether to create [RBAC][rbac] configuration for nfd-master
-| `master.service.type`       | string  | ClusterIP                               | NFD master service type                                                                                                                  |
-| `master.service.port`       | integer | 8080                                    | NFD master service port                                                                                                                  |
+| `master.service.type`       | string  | ClusterIP                               | NFD master service type. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release    |
+| `master.service.port`       | integer | 8080                                    | NFD master service port. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release |
 | `master.resources`          | dict    | {}                                      | NFD master pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)                    |
 | `master.nodeSelector`       | dict    | {}                                      | NFD master pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)                    |
 | `master.tolerations`        | dict    | _Scheduling to master node is disabled_ | NFD master pod [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)                              |

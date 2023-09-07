@@ -30,11 +30,12 @@ and creates node labels accordingly. The feature data used as the input is
 received from nfd-worker instances through
 [NodeFeature](custom-resources.md#nodefeature-custom-resource) objects.
 
-> **NOTE:** when gRPC is used for communicating the features (by setting the
-> flag `-enable-nodefeature-api=false` on both nfd-master and nfd-worker, or
-> via Helm values.enableNodeFeatureApi=false),(re-)labelling only happens
-> when a request is received from nfd-worker. That is, in practice rules are
-> evaluated and labels for each node are created on intervals specified by the
+> **NOTE**: when gRPC (**DEPRECATED**)  is used for communicating
+> the features (by setting the flag `-enable-nodefeature-api=false` on both
+> nfd-master and nfd-worker, or via Helm values.enableNodeFeatureApi=false),
+> (re-)labelling only happens when a request is received from nfd-worker.
+> That is, in practice rules are evaluated and labels for each node are created
+> on intervals specified by the
 > [`core.sleepInterval`](../reference/worker-configuration-reference.md#coresleepinterval)
 > configuration option of nfd-worker instances. This means that modification or
 > creation of NodeFeatureRule objects does not instantly cause the node

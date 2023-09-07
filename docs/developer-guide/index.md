@@ -166,6 +166,11 @@ make e2e-test KUBECONFIG=$HOME/.kube/config
 
 ## Running locally
 
+> ****DEPRECATED**: Running NFD locally is deprecated and will be removed in a
+> future release. It depends on the gRPC API which is deprecated and will be
+> removed in a future release. To run NFD locally, use the
+> `-enable-nodefeature-api=false` flag.
+
 You can run NFD locally, either directly on your host OS or in containers for
 testing and development purposes. This may be useful e.g. for checking
 features-detection.
@@ -174,22 +179,23 @@ features-detection.
 
 When running as a standalone container labeling is expected to fail because
 Kubernetes API is not available. Thus, it is recommended to use `-no-publish`
-command line flag. E.g.
+Also specify `-crd-controller=false` and `-enable-nodefeature-api=false`
+command line flags to disable CRD controller and enable gRPC. E.g.
 
 ```bash
 $ export NFD_CONTAINER_IMAGE={{ site.container_image }}
-$ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish
+$ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish -crd-controller=false -enable-nodefeature-api=false
 2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
 2019/02/01 14:48:21 gRPC server serving on port: 8080
 ```
 
 ### NFD-Worker
 
-In order to run nfd-worker as a "stand-alone" container against your
-standalone nfd-master you need to run them in the same network namespace:
+In order to run nfd-worker as a "stand-alone" container
+you need to run it in the same network namespace as the nfd-master container:
 
 ```bash
-$ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker
+$ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker -enable-nodefeature-api=false
 2019/02/01 14:48:56 Node Feature Discovery Worker <NFD_VERSION>
 ...
 ```
@@ -206,11 +212,12 @@ pass the `-no-publish` flag to nfd-worker.
 
 ### NFD-Topology-Updater
 
-In order to run nfd-topology-updater as a "stand-alone" container against your
-standalone nfd-master you need to run them in the same network namespace:
+In order to run nfd-topology-updater as a "stand-alone" container
+you need to run it in with the `-no-publish` flag to disable communication to
+the Kubernetes apiserver.
 
 ```bash
-$ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-topology-updater
+$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-topology-updater -no-publish
 2019/02/01 14:48:56 Node Feature Discovery Topology Updater <NFD_VERSION>
 ...
 ```

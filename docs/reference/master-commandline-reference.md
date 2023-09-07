@@ -80,6 +80,9 @@ nfd-master -instance=network
 
 ### -ca-file
 
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
+
 The `-ca-file` is one of the three flags (together with `-cert-file` and
 `-key-file`) controlling master-worker mutual TLS authentication on the
 nfd-master side. This flag specifies the TLS root certificate that is used for
@@ -98,6 +101,9 @@ nfd-master -ca-file=/opt/nfd/ca.crt -cert-file=/opt/nfd/master.crt -key-file=/op
 
 ### -cert-file
 
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
+
 The `-cert-file` is one of the three flags (together with `-ca-file` and
 `-key-file`) controlling master-worker mutual TLS authentication on the
 nfd-master side. This flag specifies the TLS certificate presented for
@@ -114,6 +120,9 @@ nfd-master -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key -ca-file
 ```
 
 ### -key-file
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-key-file` is one of the three flags (together with `-ca-file` and
 `-cert-file`) controlling master-worker mutual TLS authentication on the
@@ -132,6 +141,9 @@ nfd-master -key-file=/opt/nfd/master.key -cert-file=/opt/nfd/master.crt -ca-file
 ```
 
 ### -verify-node-name
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-verify-node-name` flag controls the NodeName based authorization of
 incoming requests and only has effect when mTLS authentication has been enabled
@@ -152,6 +164,9 @@ nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
 ```
 
 ### -enable-nodefeature-api
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-enable-nodefeature-api` flag enables/disables the
 [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for receiving

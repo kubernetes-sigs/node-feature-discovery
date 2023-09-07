@@ -43,7 +43,8 @@ create and manipulate NodeFeature objects in their namespace.
 The NodeFeature CRD API can be disabled with the
 `-enable-nodefeature-api=false` command line flag. This flag must be specified
 for both nfd-master and nfd-worker as it will enable the gRPC communication
-between them.
+between them. Note that the gRPC API is **DEPRECATED** and will be removed in a
+future release, at which point the NodeFeature API cannot be disabled.
 
 ### A NodeFeature example
 

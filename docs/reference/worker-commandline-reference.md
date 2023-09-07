@@ -60,6 +60,9 @@ nfd-worker -options='{"sources":{"cpu":{"cpuid":{"attributeWhitelist":["AVX","AV
 
 ### -server
 
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
+
 The `-server` flag specifies the address of the nfd-master endpoint where to
 connect to.
 
@@ -72,6 +75,9 @@ nfd-worker -server=nfd-master.nfd.svc.cluster.local:443
 ```
 
 ### -ca-file
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-ca-file` is one of the three flags (together with `-cert-file` and
 `-key-file`) controlling the mutual TLS authentication on the worker side.
@@ -90,6 +96,9 @@ nfd-worker -ca-file=/opt/nfd/ca.crt -cert-file=/opt/nfd/worker.crt -key-file=/op
 
 ### -cert-file
 
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
+
 The `-cert-file` is one of the three flags (together with `-ca-file` and
 `-key-file`) controlling mutual TLS authentication on the worker side. This
 flag specifies the TLS certificate presented for authenticating outgoing
@@ -106,6 +115,9 @@ nfd-workerr -cert-file=/opt/nfd/worker.crt -key-file=/opt/nfd/worker.key -ca-fil
 ```
 
 ### -key-file
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-key-file` is one of the three flags (together with `-ca-file` and
 `-cert-file`) controlling the mutual TLS authentication on the worker side.
@@ -140,6 +152,9 @@ nfd-worker -kubeconfig ${HOME}/.kube/config
 ```
 
 ### -server-name-override
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-server-name-override` flag specifies the common name (CN) which to
 expect from the nfd-master TLS certificate. This flag is mostly intended for
@@ -196,6 +211,9 @@ nfd-worker -label-sources=kernel,system,local
 ```
 
 ### -enable-nodefeature-api
+
+> **NOTE** the gRPC API is deprecated and will be removed in a future release.
+> and this flag will be removed as well.
 
 The `-enable-nodefeature-api` flag enables/disables the
 [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API

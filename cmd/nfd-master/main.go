@@ -71,6 +71,18 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
+		case "enable-nodefeature-api":
+			klog.InfoS("-enable-nodefeature-api is deprecated, will be removed in a future release along with the deprecated gRPC API")
+		case "ca-file":
+			klog.InfoS("-ca-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
+		case "cert-file":
+			klog.InfoS("-cert-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
+		case "key-file":
+			klog.InfoS("-key-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
+		case "port":
+			klog.InfoS("-port is deprecated, will be removed in a future release along with the deprecated gRPC API")
+		case "verify-node-name":
+			klog.InfoS("-verify-node-name is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		}
 	})
 
@@ -104,32 +116,38 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	args := &master.Args{}
 
 	flagset.StringVar(&args.CaFile, "ca-file", "",
-		"Root certificate for verifying connections")
+		"Root certificate for verifying connections."+
+			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.CertFile, "cert-file", "",
-		"Certificate used for authenticating connections")
+		"Certificate used for authenticating connections."+
+			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Instance, "instance", "",
 		"Instance name. Used to separate annotation namespaces for multiple parallel deployments.")
 	flagset.StringVar(&args.KeyFile, "key-file", "",
-		"Private key matching -cert-file")
+		"Private key matching -cert-file."+
+			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-master.conf",
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
 	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
-		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication.")
+		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication."+
+			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
 		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")
 	flagset.BoolVar(&args.CrdController, "crd-controller", true,
 		"Enable NFD CRD API controller for processing NodeFeature and NodeFeatureRule objects.")
 	flagset.IntVar(&args.Port, "port", 8080,
-		"Port on which to listen for connections.")
+		"Port on which to listen for gRPC connections."+
+			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
 		"Port on which to expose metrics.")
 	flagset.BoolVar(&args.Prune, "prune", false,
 		"Prune all NFD related attributes from all nodes of the cluster and exit.")
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
 		"Verify worker node name against the worker's TLS certificate. "+
-			"Only takes effect when TLS authentication has been enabled.")
+			"Only takes effect when TLS authentication has been enabled."+
+			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
