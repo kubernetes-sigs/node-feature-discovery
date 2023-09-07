@@ -7,6 +7,10 @@ metadata:
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
     role: gc
+  {{- with .Values.gc.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.gc.replicaCount | default 1 }}
   selector:
@@ -18,8 +22,10 @@ spec:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
         role: gc
+      {{- with .Values.gc.annotations }}
       annotations:
-        {{- toYaml .Values.gc.annotations | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: {{ .Values.gc.serviceAccountName | default "nfd-gc" }}
       dnsPolicy: ClusterFirstWithHostNet

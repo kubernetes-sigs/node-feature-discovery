@@ -7,6 +7,10 @@ metadata:
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
     role: topology-updater
+  {{- with .Values.topologyUpdater.daemonsetAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:
@@ -17,8 +21,10 @@ spec:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
         role: topology-updater
+      {{- with .Values.topologyUpdater.annotations }}
       annotations:
-        {{- toYaml .Values.topologyUpdater.annotations | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: {{ include "node-feature-discovery.topologyUpdater.serviceAccountName" . }}
       dnsPolicy: ClusterFirstWithHostNet
