@@ -1,0 +1,37 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+apiVersion: v2
+appVersion: v0.14.0
+description: 'Detects hardware features available on each node in a Kubernetes cluster,
+  and advertises those features using node labels. '
+home: https://github.com/kubernetes-sigs/node-feature-discovery
+keywords:
+- - feature-discovery
+- - feature-detection
+- - node-labels
+name: node-feature-discovery
+sources:
+- - https://github.com/kubernetes-sigs/node-feature-discovery
+type: application
+version: 0.14.0
+...
+files:
+  node-feature-discovery-chart-0.14.0.tgz: sha256:cf3de96a95448654502b6b151df5ed97ef380602a6ada7fe724e9cf6228ff155
+-----BEGIN PGP SIGNATURE-----
+
+iQJIBAEBCAAyFiEEKrKKtcjq6L+Y2HjvVpcBfkTZBzcFAmT5itIUHGVkdWFyZG9h
+QG52aWRpYS5jb20ACgkQVpcBfkTZBzcsHQ/9GvaxTy5qcJYpNyKVBD9xXWTC7PIZ
+fbxQKcfl2um18dLvfQemPvm7fvdi3E0jdoxC16pmM1BIuadVQsZ9i1e2UH+KsFJl
+TYn5yNDnZmGfkc5KMqbJJtcHBPY7y1riTGNXQ1f+uwHuxUVc5wK4ofleFJIUOzdI
+Yk5hrOZz08mapmvcrt0xQM0TjGRLWDyIZsOK0+FlmsP0w3hNF387J8FBhhRjS/JI
+dh/25D2H9jKeNBZXqwrEl2y/jnl8tVbgOG+266puSvFmAyM+MYglcflEgeTz0vuO
+pP5UfuX+GY7MjtepjuWjQYTSj8engBpdQjAFdqTMwNhi+XOdmfbnjnHv9kfTriY7
+DNfDnmHa2h6e7vXTebGYBRkieOYXO1WUazYSuG5TlBU8LvE8UXqvzcZh13XE8Ywq
+lcP7tYpZal6ErWZcw6U7ZuyH4i2/YPvXFr6T/VrhXzyXaU0v4/WObH6MydFSB3QD
+bhhfwGBYN2ywgrDYrVZxBg741RFmbYI68alW8+jJn7C4MZjU0UCk99mMbm5/oLH8
+089XS4Aono0BqzDAJSHjM9l2FU5kHp3+leHobfjlesnRWXVW7EKFIsHz32jlewsj
+4iiE8H8lmuvG4HTWQTkQiuI5cCR0GjURzZcQBZo3HNAOIc1X8w/td+Gttcdh+SXM
+DVCewnsLpmkdMN4=
+=YaWA
+-----END PGP SIGNATURE-----

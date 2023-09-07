@@ -17,7 +17,7 @@ spec:
       serviceAccount: nfd-gc
       containers:
         - name: nfd-gc
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-          imagePullPolicy: Always
+          image: registry.k8s.io/nfd/node-feature-discovery:v0.14.0
+          imagePullPolicy: IfNotPresent
           command:
             - "nfd-gc"
