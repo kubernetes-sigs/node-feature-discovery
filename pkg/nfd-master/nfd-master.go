@@ -48,6 +48,8 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
 
@@ -78,7 +80,7 @@ type NFDConfig struct {
 	ResyncPeriod      utils.DurationVal
 	LeaderElection    LeaderElectionConfig
 	NfdApiParallelism int
-	Klog              map[string]string
+	Klog              klogutils.KlogConfigOpts
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -1169,28 +1171,6 @@ func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResour
 	return patches
 }
 
-func (m *nfdMaster) configureKlog(c *NFDConfig) error {
-	// Handle klog
-	for k, a := range m.args.Klog {
-		if !a.IsSetFromCmdline() {
-			v, ok := c.Klog[k]
-			if !ok {
-				v = a.DefValue()
-			}
-			if err := a.SetFromConfig(v); err != nil {
-				return fmt.Errorf("failed to set logger option klog.%s = %v: %v", k, v, err)
-			}
-		}
-	}
-	for k := range c.Klog {
-		if _, ok := m.args.Klog[k]; !ok {
-			klog.InfoS("unknown logger option in config", "optionName", k)
-		}
-	}
-
-	return nil
-}
-
 // Parse configuration options
 func (m *nfdMaster) configure(filepath string, overrides string) error {
 	// Create a new default config
@@ -1250,7 +1230,7 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 
 	m.config = c
 
-	if err := m.configureKlog(c); err != nil {
+	if err := klogutils.MergeKlogConfiguration(m.args.Klog, c.Klog); err != nil {
 		return err
 	}
 

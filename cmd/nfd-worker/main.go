@@ -20,9 +20,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"k8s.io/klog/v2"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -143,7 +143,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Hostname expected from server certificate, useful in testing."+
 			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 
-	initKlogFlags(flagset, args)
+	args.Klog = klogutils.InitKlogFlags(flagset)
 
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
@@ -160,25 +160,4 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 			"Prefix the source name with '-' to disable it.")
 
 	return args, overrides
-}
-
-func initKlogFlags(flagset *flag.FlagSet, args *worker.Args) {
-	args.Klog = make(map[string]*utils.KlogFlagVal)
-
-	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
-	//flags.SetOutput(ioutil.Discard)
-	klog.InitFlags(flags)
-	flags.VisitAll(func(f *flag.Flag) {
-		name := klogConfigOptName(f.Name)
-		args.Klog[name] = utils.NewKlogFlagVal(f)
-		flagset.Var(args.Klog[name], f.Name, f.Usage)
-	})
-}
-
-func klogConfigOptName(flagName string) string {
-	split := strings.Split(flagName, "_")
-	for i, v := range split[1:] {
-		split[i+1] = strings.ToUpper(v[0:1]) + v[1:]
-	}
-	return strings.Join(split, "")
 }

@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -74,7 +75,7 @@ type NFDConfig struct {
 }
 
 type coreConfig struct {
-	Klog           map[string]string
+	Klog           klogutils.KlogConfigOpts
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
 	FeatureSources []string
@@ -377,21 +378,9 @@ func (c *coreConfig) sanitize() {
 
 func (w *nfdWorker) configureCore(c coreConfig) error {
 	// Handle klog
-	for k, a := range w.args.Klog {
-		if !a.IsSetFromCmdline() {
-			v, ok := c.Klog[k]
-			if !ok {
-				v = a.DefValue()
-			}
-			if err := a.SetFromConfig(v); err != nil {
-				return fmt.Errorf("failed to set logger option klog.%s = %v: %v", k, v, err)
-			}
-		}
-	}
-	for k := range c.Klog {
-		if _, ok := w.args.Klog[k]; !ok {
-			klog.InfoS("unknown logger option in config", "optionName", k)
-		}
+	err := klogutils.MergeKlogConfiguration(w.args.Klog, c.Klog)
+	if err != nil {
+		return err
 	}
 
 	// Determine enabled feature sources
