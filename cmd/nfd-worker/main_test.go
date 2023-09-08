@@ -55,19 +55,3 @@ func TestParseArgs(t *testing.T) {
 		})
 	})
 }
-
-func TestKlogConfigOptName(t *testing.T) {
-	Convey("When converting names of klog command line flags", t, func() {
-		tcs := map[string]string{
-			"":                    "",
-			"a":                   "a",
-			"an_arg":              "anArg",
-			"arg_with_many_parts": "argWithManyParts",
-		}
-		Convey("resulting config option names should be as expected", func() {
-			for input, expected := range tcs {
-				So(klogConfigOptName(input), ShouldEqual, expected)
-			}
-		})
-	})
-}
