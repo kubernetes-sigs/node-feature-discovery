@@ -234,10 +234,12 @@ further be used in label rules specified in
 [`custom`](#custom-feature-source) feature source.
 
 > **NOTE:** Be careful when creating and/or updating hook or feature files
-> while NFD is running. In order to avoid race conditions you should write into
-> a temporary file (outside the `source.d` and `features.d` directories), and,
-> atomically create/update the original file by doing a filesystem move
-> operation.
+> while NFD is running. In order to avoid race conditions you should write
+> into a temporary file, and atomically create/update the original file by
+> doing a file rename operation. NFD ignores dot files,
+> so temporary file can be written to the same directory and renamed
+> (`.my.feature` -> `my.feature`) once file is complete. Both file names should
+> (obviously) be unique for the given application.
 
 ### An example
 
