@@ -324,23 +324,6 @@ func getFeaturesFromFiles() (map[string]string, error) {
 
 	for _, file := range files {
 		fileName := file.Name()
-
-		fileInfo, err := file.Info()
-		if err != nil {
-			klog.ErrorS(err, "failed to get file info", "fileName", fileName)
-			continue
-		}
-
-		fileSize := fileInfo.Size()
-		if fileSize > MaxFeatureFileSize {
-			klog.ErrorS(
-				fmt.Errorf("file size limit exceeded: %d bytes > %d bytes", fileSize, MaxFeatureFileSize),
-				"skipping too big feature file",
-				"fileName", fileName, "fileSize", fileSize,
-			)
-			continue
-		}
-
 		lines, err := getFileContent(fileName)
 		if err != nil {
 			klog.ErrorS(err, "failed to read file", "fileName", fileName)
@@ -374,6 +357,10 @@ func getFileContent(fileName string) ([][]byte, error) {
 	}
 
 	if filestat.Mode().IsRegular() {
+		if filestat.Size() > MaxFeatureFileSize {
+			return lines, fmt.Errorf("file size limit exceeded: %d bytes > %d bytes", filestat.Size(), MaxFeatureFileSize)
+		}
+
 		fileContent, err := os.ReadFile(path)
 
 		// Do not return any lines if an error occurred
