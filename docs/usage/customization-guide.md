@@ -755,12 +755,8 @@ The following features are available for matching:
 |                  |              | **`sev.enabled`** | bool | `true` if AMD SEV (Secure Encrypted Virtualization) is available on the host and has been enabled, otherwise does not exist
 |                  |              | **`sev.es.enabled`** | bool | `true` if AMD SEV-ES (Encrypted State supported) is available on the host and has been enabled, otherwise does not exist
 |                  |              | **`sev.snp.enabled`** | bool | `true` if AMD SEV-SNP (Secure Nested Paging supported) is available on the host and has been enabled, otherwise does not exist
-| **`cpu.sgx`**    | attribute    |          |            | **DEPRECATED**: replaced by **`cpu.security`** feature
-|                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`sgx.enabled`** from **`cpu.security`** instead
 | **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities
 |                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist
-| **`cpu.se`**     | attribute    |          |            | **DEPRECATED**: replaced by **`cpu.security`** feature
-|                  |              | **`enabled`** | bool  | **DEPRECATED**: use **`se.enabled`** from **`cpu.security`** instead
 | **`cpu.topology`** | attribute  |          |            | CPU topology related features
 | | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled
 | **`cpu.coprocessor`** | attribute |        |            | CPU Coprocessor related features

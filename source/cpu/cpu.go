@@ -41,9 +41,7 @@ const (
 	CstateFeature      = "cstate"
 	PstateFeature      = "pstate"
 	RdtFeature         = "rdt"
-	SeFeature          = "se" // DEPRECATED in v0.12: will be removed in the future
 	SecurityFeature    = "security"
-	SgxFeature         = "sgx" // DEPRECATED in v0.12: will be removed in the future
 	SstFeature         = "sst"
 	TopologyFeature    = "topology"
 	CoprocessorFeature = "coprocessor"
@@ -189,16 +187,6 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		}
 	}
 
-	// SGX
-	for k, v := range features.Attributes[SgxFeature].Elements {
-		labels["sgx."+k] = v
-	}
-
-	// Secure Execution
-	for k, v := range features.Attributes[SeFeature].Elements {
-		labels["se."+k] = v
-	}
-
 	// SST
 	for k, v := range features.Attributes[SstFeature].Elements {
 		labels["power.sst_"+k] = v
@@ -247,20 +235,6 @@ func (s *cpuSource) Discover() error {
 
 	// Detect available guest protection(SGX,TDX,SEV) features
 	s.features.Attributes[SecurityFeature] = nfdv1alpha1.NewAttributeFeatures(discoverSecurity())
-
-	// Detect SGX features
-	//
-	// DEPRECATED in v0.12: will be removed in the future
-	if val, ok := s.features.Attributes[SecurityFeature].Elements["sgx.enabled"]; ok {
-		s.features.Attributes[SgxFeature] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"enabled": val})
-	}
-
-	// Detect Secure Execution features
-	//
-	// DEPRECATED in v0.12: will be removed in the future
-	if val, ok := s.features.Attributes[SecurityFeature].Elements["se.enabled"]; ok {
-		s.features.Attributes[SeFeature] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"enabled": val})
-	}
 
 	// Detect SST features
 	s.features.Attributes[SstFeature] = nfdv1alpha1.NewAttributeFeatures(discoverSST())
