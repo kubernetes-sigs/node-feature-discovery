@@ -1,0 +1,16 @@
+# See the OWNERS file documentation:
+#  https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md
+#
+
+approvers:
+  - ArangoGutierrez
+  - marquiz
+reviewers:
+  - ArangoGutierrez
+  - jjacobelli
+  - fmuyassarov
+  - kad
+  - marquiz
+  - PiotrProkop
+  - zvonkok
+  - adrianchiris
