@@ -23,6 +23,8 @@ spec:
           imagePullPolicy: Always
           command:
             - "nfd-master"
+          args:
+            - "--extra-label-ns=nvidia.com"
           ports:
             - name: metrics
               containerPort: 8081
