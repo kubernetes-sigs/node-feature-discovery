@@ -22,7 +22,7 @@ spec:
           command:
             - "nfd-worker"
           args:
-            - "-server=nfd-master:8080"
+            - "--server=nfd-master:8080"
           ports:
             - name: metrics
               containerPort: 8081
