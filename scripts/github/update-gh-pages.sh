@@ -181,6 +181,11 @@ else
     commit_hash=`git describe --tags --dirty --always`
 fi
 
+# Sync OWNERS file from master branch
+if [ "$GITHUB_REF" = "refs/heads/master" ]; then
+    cp OWNERS "$build_dir"/OWNERS
+fi
+
 # Switch to work in the gh-pages worktree
 pushd "$build_dir" > /dev/null
 
