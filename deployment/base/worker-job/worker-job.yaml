@@ -33,5 +33,5 @@ spec:
             - "nfd-worker"
           args:
             - "-oneshot"
-            - "-server=nfd-master:8080"
+            - "--server=nfd-master:8080"
 
