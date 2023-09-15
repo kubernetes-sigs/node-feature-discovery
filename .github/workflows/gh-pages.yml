@@ -6,11 +6,13 @@ on:
       - release-*
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
-  release:
-    types: [published]
+
+concurrency:
+  group: gh-pages
+
 jobs:
-  build:
-    name: Update gh-pages
+  update-docs:
+    name: Update gh-pages documentation
     runs-on: ubuntu-latest
     steps:
 
