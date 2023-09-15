@@ -8,6 +8,10 @@ on:
       - v[0-9]+.[0-9]+.[0-9]+
   release:
     types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}
+
 jobs:
   build:
     name: Update gh-pages
