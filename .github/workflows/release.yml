@@ -1,0 +1,31 @@
+name: gh-pages
+on:
+  release:
+    types: [published, edited]
+
+concurrency:
+  group: gh-pages
+
+jobs:
+  update-helm-repo:
+    name: Update gh-pages helm repo index
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 3.12.3
+
+    - name: Check out repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Update repo index
+      run: |
+        git config user.name "Github Actions"
+        git config user.email "no-reply@github.com"
+        ./scripts/github/update-helm-repo.sh ${{ join(github.event.release.assets.*.browser_download_url, ' ') }}
+
+    - name: Push
+      run: git push -f https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} gh-pages

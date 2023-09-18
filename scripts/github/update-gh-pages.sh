@@ -29,54 +29,6 @@ create_versions_js() {
     echo -e "  ];\n}"
 }
 
-# Helper for updating help repo index
-update_helm_repo_index() {
-    echo "Updating Helm repo index"
-
-    # TODO: with a lot of releases github API will paginate and this will break
-    releases="`curl -sSf -H 'Accept: application/vnd.github.v3+json' \
-        $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | jq -c '.[]'`"
-
-    echo "$releases" | while read -r release_meta; do
-        # Set fields we're interested in as shell variables
-        eval `echo "$release_meta" | jq -r '{tag_name, url, assets} | keys[] as $k | "\($k)='"'"'\(.[$k])'"'"'"'`
-
-        echo "Scanning assets of release $tag_name..."
-
-        for asset_meta in `echo $assets | jq -c '.[]'`; do
-            # Set fields we're interested in as "asset_<field>" shell variables
-            eval `echo $asset_meta | jq -r '{id, name, url, browser_download_url} | keys[] as $k | "local asset_\($k)=\(.[$k])"'`
-
-            if [[ "$asset_name" != node-feature-discovery-chart-*tgz ]]; then
-                echo "  $asset_name does not look like a Helm chart archive, skipping..."
-                continue
-            fi
-
-            # Check if the asset has changed
-            asset_id_old=`cat "$asset_name".id 2> /dev/null || :`
-            if [[ $asset_id_old == $asset_id ]]; then
-                echo "  $asset_name (id=$asset_id) unchanged, skipping..."
-                continue
-            fi
-
-            # Update helm repo index
-            local tmpdir="`mktemp -d`"
-
-            echo "  downloading $asset_name..."
-            curl -sSfL -H "Accept:application/octet-stream" -o "$tmpdir/$asset_name" $asset_url
-
-            echo "  updating helm index for $asset_name..."
-            local download_baseurl=`dirname $asset_browser_download_url`
-            helm repo index "$tmpdir" --merge index.yaml --url $download_baseurl
-            cp "$tmpdir/index.yaml" .
-            rm -rf "$tmpdir"
-
-            # Update id cache file
-            echo $asset_id > "$asset_name".id
-        done
-    done
-}
-
 #
 # Argument parsing
 #
@@ -203,7 +155,6 @@ EOF
 # Update Helm repo
 mkdir -p charts
 pushd charts > /dev/null
-update_helm_repo_index
 popd > /dev/null
 
 # Check if there were any changes in the repo
