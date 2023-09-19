@@ -50,8 +50,8 @@ spec:
         - "nfd-worker"
         args:
         - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
-        {{- if .Values.enableNodeFeatureApi }}
-        - "-enable-nodefeature-api"
+        {{- if not .Values.enableNodeFeatureApi }}
+        - "-enable-nodefeature-api=false"
         {{- end }}
 {{- if .Values.tls.enable }}
         - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
