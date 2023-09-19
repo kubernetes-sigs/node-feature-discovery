@@ -248,6 +248,10 @@ func getFeaturesFromHooks() (map[string]string, error) {
 
 	for _, file := range files {
 		fileName := file.Name()
+		// ignore hidden feature file
+		if strings.HasPrefix(fileName, ".") {
+			continue
+		}
 		lines, err := runHook(fileName)
 		if err != nil {
 			klog.ErrorS(err, "failed to run hook", "fileName", fileName)
@@ -324,6 +328,10 @@ func getFeaturesFromFiles() (map[string]string, error) {
 
 	for _, file := range files {
 		fileName := file.Name()
+		// ignore hidden feature file
+		if strings.HasPrefix(fileName, ".") {
+			continue
+		}
 		lines, err := getFileContent(fileName)
 		if err != nil {
 			klog.ErrorS(err, "failed to read file", "fileName", fileName)
