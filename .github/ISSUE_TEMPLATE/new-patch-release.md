@@ -1,7 +1,7 @@
 ---
-name: New Release
-about: Propose a new release
-title: Release v0.x.0
+name: New Patch Release
+about: Cut a new patch release
+title: Release v0.x.y
 assignees: adrianchiris, ArangoGutierrez, fmuyassarov, jjacobelli, kad, marquiz, PiotrProkop, zvonkok
 
 ---
@@ -10,16 +10,7 @@ assignees: adrianchiris, ArangoGutierrez, fmuyassarov, jjacobelli, kad, marquiz,
 <!--
 Please do not remove items from the checklist
 -->
-- [ ] All [OWNERS](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/OWNERS) must LGTM the release proposal
 - [ ] Verify that the changelog in this issue is up-to-date
-- [ ] Create new release branch (release v0.$MAJ.0)
-  - [ ] an OWNER creates a vanilla release branch with
-        `git branch release-0.$MAJ master`
-  - [ ] An OWNER pushes the new release branch with
-        `git push release-0.$MAJ`
-  - [ ] Create Prow pre-submit job configuration for the new release branch in K8s
-        [test-infra](https://github.com/kubernetes/test-infra), submit a PR
-  - [ ] Wait for the test-infra Prow config PR to be merged
 - [ ] Run `hack/prepare-release.sh $VERSION` to turn references to point to the upcoming release
       (README, deployment templates, docs configuration, test/e2e flags), submit a PR against the release branch
 - An OWNER prepares a draft release
@@ -40,15 +31,10 @@ Please do not remove items from the checklist
 - [ ] Publish the draft release prepared at the [Github releases page](https://github.com/kubernetes-sigs/node-feature-discovery/releases)
       which will also trigger a Helm repo index update to add the latest release
 - [ ] Add a link to the tagged release in this issue.
-- [ ] Send an announcement email to `dev@kubernetes.io` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
-  - [ ] Add a link to the release announcement in this issue
-- [ ] Update README in master branch
+- [ ] For a point release of the latest newest release branch, update README in master branch
   - [ ] Update references e.g. by running `hack/prepare-release.sh $VERSION` but **only** committing README.md, and,
         submit a PR
   - [ ] Wait for the PR to be merged
-- [ ] Create an unannotated *devel* tag in the master branch, on the first commit that gets merged after the release branch has been created (presumably the README update commit above), and, push the tag:
-      `DEVEL=v0.$(($MAJ+1)).0-devel; git tag $DEVEL master && git push $DEVEL`
-      This ensures that the devel builds on the master branch will have a meaningful version number.
 - [ ] Close this issue
 
 
