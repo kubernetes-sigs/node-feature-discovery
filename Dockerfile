@@ -7,7 +7,8 @@ FROM ${BUILDER_IMAGE} as builder
 
 # Build and install the grpc-health-probe binary
 RUN GRPC_HEALTH_PROBE_VERSION=v0.4.19 && \
-	go install github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION} \
+    go install -tags osusergo,netgo -ldflags -extldflags=-static \
+        github.com/grpc-ecosystem/grpc-health-probe@${GRPC_HEALTH_PROBE_VERSION} \
         # Rename it as it's referenced as grpc_health_probe in the deployment yamls
         # and in its own project https://github.com/grpc-ecosystem/grpc-health-probe
         && mv /go/bin/grpc-health-probe /go/bin/grpc_health_probe
