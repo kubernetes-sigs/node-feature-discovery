@@ -771,13 +771,13 @@ core:
 					expectedTaints["*"] = []corev1.Taint{}
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
 
-					expectedAnnotations["*"] = k8sAnnotations{"nfd.node.kubernetes.io/extended-resources": "nons,vendor.io/dynamic,vendor.io/static"}
+					expectedAnnotations["*"] = k8sAnnotations{"nfd.node.kubernetes.io/extended-resources": "nons,vendor.feature.node.kubernetes.io/static,vendor.io/dynamic"}
 
 					expectedCapacity := map[string]corev1.ResourceList{
 						"*": {
-							"feature.node.kubernetes.io/nons": resourcev1.MustParse("123"),
-							"vendor.io/dynamic":               resourcev1.MustParse("10"),
-							"vendor.io/static":                resourcev1.MustParse("123"),
+							"feature.node.kubernetes.io/nons":          resourcev1.MustParse("123"),
+							"vendor.io/dynamic":                        resourcev1.MustParse("10"),
+							"vendor.feature.node.kubernetes.io/static": resourcev1.MustParse("123"),
 						},
 					}
 
