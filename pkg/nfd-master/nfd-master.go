@@ -806,7 +806,7 @@ func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources E
 func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) (string, error) {
 	// Check if given NS is allowed
 	ns, _ := splitNs(name)
-	if ns != nfdv1alpha1.ExtendedResourceNs && !strings.HasPrefix(ns, nfdv1alpha1.ExtendedResourceSubNsSuffix) {
+	if ns != nfdv1alpha1.ExtendedResourceNs && !strings.HasSuffix(ns, nfdv1alpha1.ExtendedResourceSubNsSuffix) {
 		if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") {
 			return "", fmt.Errorf("namespace %q is not allowed", ns)
 		}
