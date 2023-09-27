@@ -23,7 +23,7 @@ spec:
 
     - name: "e2e static rule"
       extendedResources:
-        vendor.io/static: "123"
+        vendor.feature.node.kubernetes.io/static: "123"
       matchFeatures:
 
     - name: "e2e not allowed rule"
