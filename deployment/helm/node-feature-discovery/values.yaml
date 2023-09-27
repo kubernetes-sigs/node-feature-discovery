@@ -188,11 +188,14 @@ worker:
     #      - "NO_HZ"
     #      - "X86"
     #      - "DMI"
-    #  pci:
-    #    deviceClassWhitelist:
-    #      - "0200"
-    #      - "03"
-    #      - "12"
+    pci:
+      # Copied from GPU operator https://github.com/NVIDIA/gpu-operator/blob/master/deployments/gpu-operator/values.yaml
+      deviceClassWhitelist:
+         - "02"
+         - "0200"
+         - "0207"
+         - "0300"
+         - "0302"
     #    deviceLabelFields:
     #      - "class"
     #      - "vendor"
