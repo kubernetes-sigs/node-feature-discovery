@@ -45,6 +45,8 @@ master:
     # nfdApiParallelism: 10
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   # The TCP port that nfd-master listens for incoming requests. Default: 8080
+  # Deprecated this parameter is related to the deprecated gRPC API and will
+  # be removed with it in a future release  
   port: 8080
   metricsPort: 8081
   instance:

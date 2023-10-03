@@ -49,8 +49,8 @@ spec:
         command:
         - "nfd-worker"
         args:
-        - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
         {{- if not .Values.enableNodeFeatureApi }}
+        - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
         - "-enable-nodefeature-api=false"
         {{- end }}
 {{- if .Values.tls.enable }}
