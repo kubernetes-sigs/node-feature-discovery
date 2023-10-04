@@ -4,7 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
-    api-approved.kubernetes.io: unapproved, experimental-only
   creationTimestamp: null
   name: nodefeaturediscoveries.nfd.kubernetes.io
 spec:
