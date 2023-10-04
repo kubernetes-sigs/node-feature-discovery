@@ -27,7 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: {{ .Values.gc.serviceAccountName | default "nfd-gc" }}
+      serviceAccountName: {{ include "node-feature-discovery.gc.serviceAccountName" . }}
       dnsPolicy: ClusterFirstWithHostNet
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
