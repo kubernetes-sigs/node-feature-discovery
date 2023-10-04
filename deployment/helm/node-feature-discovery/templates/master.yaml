@@ -57,6 +57,12 @@ spec:
           - containerPort: {{ .Values.master.metricsPort | default "8081" }}
             name: metrics
           env:
+          - name: NFD_MASTER_DEPLOYMENT_NAME
+            value: {{ include "node-feature-discovery.fullname" . }}-master
+          - name: NFD_WORKER_DS_NAME
+            value: {{ include "node-feature-discovery.fullname" . }}-worker
+          - name: NFD_GC_DEPLOYMENT_NAME
+            value: {{ include "node-feature-discovery.fullname" . }}-gc
           - name: NODE_NAME
             valueFrom:
               fieldRef:

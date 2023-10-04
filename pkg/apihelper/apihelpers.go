@@ -20,6 +20,7 @@ package apihelper
 
 import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 )
@@ -34,6 +35,18 @@ type APIHelpers interface {
 
 	// GetNodes returns all the nodes in the cluster
 	GetNodes(*k8sclient.Clientset) (*corev1.NodeList, error)
+
+	// GetDaemonSet returns the Kubernetes daemonset in a namepace with a name.
+	GetDaemonSet(*k8sclient.Clientset, string) (*appsv1.DaemonSet, error)
+
+	// UpdateDaemonSet updates the daemonset object via the API server using a client.
+	UpdateDaemonSet(*k8sclient.Clientset, *appsv1.DaemonSet) error
+
+	// GetDeployment returns the Kubernetes deployment in a namepace with a name.
+	GetDeployment(*k8sclient.Clientset, string) (*appsv1.Deployment, error)
+
+	// UpdateDeployment updates the deployment object via the API server using a client.
+	UpdateDeployment(*k8sclient.Clientset, *appsv1.Deployment) error
 
 	// UpdateNode updates the node via the API server using a client.
 	UpdateNode(*k8sclient.Clientset, *corev1.Node) error

@@ -21,12 +21,14 @@ import (
 	"encoding/json"
 
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 // K8sHelpers implements APIHelpers
@@ -60,6 +62,46 @@ func (h K8sHelpers) GetNode(cli *k8sclient.Clientset, nodeName string) (*corev1.
 	}
 
 	return node, nil
+}
+
+// GetDeployment retrieves one deployment object.
+func (h K8sHelpers) GetDeployment(cli *k8sclient.Clientset, dName string) (*appsv1.Deployment, error) {
+	// Get the DaemonSet object
+	d, err := cli.AppsV1().Deployments(utils.GetKubernetesNamespace()).Get(context.TODO(), dName, meta_v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+func (h K8sHelpers) UpdateDeployment(cli *k8sclient.Clientset, d *appsv1.Deployment) error {
+	// Send the updated DaemonSet to the apiserver.
+	_, err := cli.AppsV1().Deployments(utils.GetKubernetesNamespace()).Update(context.TODO(), d, meta_v1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetDaemonSet retrieves one daemonset object.
+func (h K8sHelpers) GetDaemonSet(cli *k8sclient.Clientset, dsName string) (*appsv1.DaemonSet, error) {
+	// Get the DaemonSet object
+	ds, err := cli.AppsV1().DaemonSets(utils.GetKubernetesNamespace()).Get(context.TODO(), dsName, meta_v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return ds, nil
+}
+
+func (h K8sHelpers) UpdateDaemonSet(cli *k8sclient.Clientset, ds *appsv1.DaemonSet) error {
+	// Send the updated DaemonSet to the apiserver.
+	_, err := cli.AppsV1().DaemonSets(utils.GetKubernetesNamespace()).Update(context.TODO(), ds, meta_v1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetNodes retrieves all the node objects.

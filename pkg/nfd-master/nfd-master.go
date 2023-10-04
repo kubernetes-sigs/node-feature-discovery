@@ -857,6 +857,25 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	var taints []corev1.Taint
 	if m.config.EnableTaints {
 		taints = filterTaints(crTaints)
+		tolerations := make([]corev1.Toleration, 0, len(taints))
+
+		// Add taints toletation to nfd objects to prevent them from being evicted
+		// by the NFR added taints
+		if len(taints) > 0 {
+			for _, taint := range taints {
+				tolerations = append(tolerations, corev1.Toleration{
+					Key:      taint.Key,
+					Value:    taint.Value,
+					Effect:   taint.Effect,
+					Operator: corev1.TolerationOpEqual,
+				})
+			}
+		}
+		// update tolerations
+		if err := m.updateTolerations(cli, tolerations); err != nil {
+			klog.ErrorS(err, "failed to update worker tolerations")
+		}
+		//
 	}
 
 	err := m.updateNodeObject(cli, nodeName, labels, annotations, extendedResources, taints)
@@ -1099,14 +1118,6 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	return err
 }
 
-func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
-	var err error
-	if m.kubeconfig == nil {
-		m.kubeconfig, err = apihelper.GetKubeconfig(m.args.Kubeconfig)
-	}
-	return m.kubeconfig, err
-}
-
 // createPatches is a generic helper that returns json patch operations to perform
 func createPatches(removeKeys []string, oldItems map[string]string, newItems map[string]string, jsonPath string) []apihelper.JsonPatch {
 	patches := []apihelper.JsonPatch{}
@@ -1132,6 +1143,65 @@ func createPatches(removeKeys []string, oldItems map[string]string, newItems map
 	}
 
 	return patches
+}
+
+// updateTolerations ensures nfd-worker pods don't get evicted during a
+// taint setting procedure by updating the tolerations of the nfd-worker
+// daemonset
+func (m *nfdMaster) updateTolerations(cli *kubernetes.Clientset, tolerations []corev1.Toleration) error {
+	if cli == nil {
+		return fmt.Errorf("no client is passed, client:  %v", cli)
+	}
+
+	// Get NFD objects
+	masterDepName := os.Getenv("NFD_MASTER_DEPLOYMENT_NAME")
+	masterDep, err := m.apihelper.GetDeployment(cli, masterDepName)
+	if err != nil {
+		return fmt.Errorf("failed to get deployment %q: %w", masterDepName, err)
+	}
+
+	gcDepName := os.Getenv("NFD_GC_DEPLOYMENT_NAME")
+	gcDep, err := m.apihelper.GetDeployment(cli, gcDepName)
+	if err != nil {
+		return fmt.Errorf("failed to get deployment %q: %w", gcDepName, err)
+	}
+
+	dsName := os.Getenv("NFD_WORKER_DS_NAME")
+	ds, err := m.apihelper.GetDaemonSet(cli, dsName)
+	if err != nil {
+		return fmt.Errorf("failed to get daemonset %q: %w", dsName, err)
+	}
+
+	// update tolerations
+	masterDep.Spec.Template.Spec.Tolerations = tolerations
+	gcDep.Spec.Template.Spec.Tolerations = tolerations
+	ds.Spec.Template.Spec.Tolerations = tolerations
+
+	// Update Objects
+	err = m.apihelper.UpdateDeployment(cli, masterDep)
+	if err != nil {
+		return fmt.Errorf("error while patching deployment object: %v", err)
+	}
+
+	err = m.apihelper.UpdateDeployment(cli, gcDep)
+	if err != nil {
+		return fmt.Errorf("error while patching deployment object: %v", err)
+	}
+
+	err = m.apihelper.UpdateDaemonSet(cli, ds)
+	if err != nil {
+		return fmt.Errorf("error while patching daemonset object: %v", err)
+	}
+
+	return nil
+}
+
+func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
+	var err error
+	if m.kubeconfig == nil {
+		m.kubeconfig, err = apihelper.GetKubeconfig(m.args.Kubeconfig)
+	}
+	return m.kubeconfig, err
 }
 
 // createExtendedResourcePatches returns a slice of operations to perform on
