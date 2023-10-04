@@ -8,7 +8,7 @@ IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
-BUILDER_IMAGE ?= golang:1.20-bullseye
+BUILDER_IMAGE ?= golang:1.21-bullseye
 BASE_IMAGE_FULL ?= debian:bullseye-slim
 BASE_IMAGE_MINIMAL ?= scratch
 
@@ -104,14 +104,12 @@ image-all: ensure-buildx yamls
 	$(IMAGE_BUILDX_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)
 	$(IMAGE_BUILDX_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_MINIMAL)
 
-
 # clean NFD labels on all nodes
 # devel only
 deploy-prune:
 	kubectl apply -k deployment/overlays/prune/
 	kubectl wait --for=condition=complete job -l app=nfd -n node-feature-discovery
 	kubectl delete -k deployment/overlays/prune/
-
 
 yamls:
 	@./hack/kustomize.sh $(K8S_NAMESPACE) $(IMAGE_REPO) $(IMAGE_TAG_NAME)
@@ -141,8 +139,6 @@ templates:
 	@rm nfd-master.conf.tmp
 	@rm nfd-worker.conf.tmp
 	@rm nfd-topology-updater.conf.tmp
-
-
 
 .generator.image.stamp: Dockerfile_generator
 	$(IMAGE_BUILD_CMD) \
