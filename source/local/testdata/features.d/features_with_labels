@@ -1,0 +1,11 @@
+# +no-feature
+label-only=value
+
+# +no-feature
+label-only-2=value
+
+my-feature=value
+
+foo=bar
+# +no-label
+foo=baz

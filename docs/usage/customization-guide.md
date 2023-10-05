@@ -355,6 +355,41 @@ included in the list of accepted features.
 > tag is only evaluated in each re-discovery period, and the expiration of
 > node labels is not tracked.
 
+To exclude specific features from the `local.feature` Feature, you can use the
+`# +no-feature` directive. The `# +no-label` directive causes the feature to
+be excluded from the `local.label` Feature and a node label not to be generated.
+
+Considering the following file:
+
+```plaintext
+# +no-feature
+label-only=value
+
+my-feature=value
+
+foo=bar
+# +no-label
+foo=baz
+```
+
+Processing the above file would result in the following Features:
+
+```yaml
+local.features:
+  foo: baz
+  my-feature: value
+local.labels:
+  label-only: value
+  my-feature: value
+```
+
+and the following labels added to the Node:
+
+```plaintext
+feature.node.kubernetes.io/label-only=value
+feature.node.kubernetes.io/my-feature=value
+```
+
 ### Mounts
 
 The standard NFD deployments contain `hostPath` mounts for
@@ -775,7 +810,8 @@ The following features are available for matching:
 |                  |              | **`major`** | int     | First component of the kernel version (e.g. ‘4')
 |                  |              | **`minor`** | int     | Second component of the kernel version (e.g. ‘5')
 |                  |              | **`revision`** | int  | Third component of the kernel version (e.g. ‘6')
-| **`local.label`** | attribute   |           |           | Features feature files and hooks, i.e. labels from the [*local* feature source](#local-feature-source)
+| **`local.label`** | attribute   |           |           | Labels from feature files and hooks, i.e. labels from the [*local* feature source](#local-feature-source)
+| **`local.feature`** | attribute   |           |         | Features from feature files and hooks, i.e. features from the [*local* feature source](#local-feature-source)
 |                  |              | **`<label-name>`** | string | Label `<label-name>` created by the local feature source, value equals the value of the label
 | **`memory.nv`**  | instance     |          |            | NVDIMM devices present in the system
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `devtype`, `mode`

@@ -17,7 +17,6 @@ limitations under the License.
 package local
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,14 +38,16 @@ func TestLocalSource(t *testing.T) {
 }
 
 func TestGetExpirationDate(t *testing.T) {
-	expectedFeaturesLen := 5
+	expectedFeaturesLen := 7
+	expectedLabelsLen := 8
+
 	pwd, _ := os.Getwd()
 	featureFilesDir = filepath.Join(pwd, "testdata/features.d")
+	features, labels, err := getFeaturesFromFiles()
 
-	features, err := getFeaturesFromFiles()
-	fmt.Println(features)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedFeaturesLen, len(features))
+	assert.Equal(t, expectedLabelsLen, len(labels))
 }
 
 func TestParseDirectives(t *testing.T) {
