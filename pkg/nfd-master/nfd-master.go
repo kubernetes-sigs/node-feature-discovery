@@ -1065,7 +1065,9 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
 	patches = append(patches,
 		createPatches(
-			[]string{nfdv1alpha1.FeatureLabelsAnnotation, nfdv1alpha1.ExtendedResourceAnnotation},
+			[]string{
+				m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
+				m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)},
 			node.Annotations,
 			annotations,
 			"/metadata/annotations")...)
