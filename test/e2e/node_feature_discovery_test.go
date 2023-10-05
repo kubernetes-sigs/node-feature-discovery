@@ -249,16 +249,6 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 				By("Waiting for the nfd-master pod to be running")
 				Expect(e2epod.WaitTimeoutForPodRunningInNamespace(ctx, f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(HaveOccurred())
-
-				By("Verifying the node where nfd-master is running")
-				// Get updated masterPod object (we want to know where it was scheduled)
-				masterPod, err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Get(ctx, masterPod.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				// Node running nfd-master should have master version annotation
-				masterPodNode, err := f.ClientSet.CoreV1().Nodes().Get(ctx, masterPod.Spec.NodeName, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(masterPodNode.Annotations).To(HaveKey(nfdv1alpha1.AnnotationNs + "/master.version"))
-
 				By("Waiting for the nfd-master service to be up")
 				Expect(e2enetwork.WaitForService(ctx, f.ClientSet, f.Namespace.Name, nfdSvc.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 			})

@@ -73,8 +73,6 @@ defaultFeatures:
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID.major"
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID.minor"
   annotationWhitelist:
-    - "nfd.node.kubernetes.io/master.version"
-    - "nfd.node.kubernetes.io/worker.version"
     - "nfd.node.kubernetes.io/feature-labels"
   nodes:
     - name: name-of-this-item  # name is purely informational

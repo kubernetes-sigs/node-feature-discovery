@@ -51,6 +51,7 @@ const (
 	FeatureLabelsAnnotation = AnnotationNs + "/feature-labels"
 
 	// MasterVersionAnnotation is the annotation that holds the version of nfd-master running on the node
+	// DEPRECATED: will not be used in NFD v0.15 or later.
 	MasterVersionAnnotation = AnnotationNs + "/master.version"
 
 	// WorkerVersionAnnotation is the annotation that holds the version of nfd-worker running on the node
