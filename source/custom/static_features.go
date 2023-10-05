@@ -25,33 +25,29 @@ import (
 func getStaticFeatureConfig() []CustomRule {
 	return []CustomRule{
 		{
-			Rule: &Rule{
-				nfdv1alpha1.Rule{
-					Name:   "RDMA capable static rule",
-					Labels: map[string]string{"rdma.capable": "true"},
-					MatchFeatures: nfdv1alpha1.FeatureMatcher{
-						nfdv1alpha1.FeatureMatcherTerm{
-							Feature: "pci.device",
-							MatchExpressions: nfdv1alpha1.MatchExpressionSet{
-								"vendor": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "15b3"),
-							},
+			nfdv1alpha1.Rule{
+				Name:   "RDMA capable static rule",
+				Labels: map[string]string{"rdma.capable": "true"},
+				MatchFeatures: nfdv1alpha1.FeatureMatcher{
+					nfdv1alpha1.FeatureMatcherTerm{
+						Feature: "pci.device",
+						MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+							"vendor": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "15b3"),
 						},
 					},
 				},
 			},
 		},
 		{
-			Rule: &Rule{
-				nfdv1alpha1.Rule{
-					Name:   "RDMA available static rule",
-					Labels: map[string]string{"rdma.available": "true"},
-					MatchFeatures: nfdv1alpha1.FeatureMatcher{
-						nfdv1alpha1.FeatureMatcherTerm{
-							Feature: "kernel.loadedmodule",
-							MatchExpressions: nfdv1alpha1.MatchExpressionSet{
-								"ib_uverbs": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
-								"rdma_ucm":  nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
-							},
+			nfdv1alpha1.Rule{
+				Name:   "RDMA available static rule",
+				Labels: map[string]string{"rdma.available": "true"},
+				MatchFeatures: nfdv1alpha1.FeatureMatcher{
+					nfdv1alpha1.FeatureMatcherTerm{
+						Feature: "kernel.loadedmodule",
+						MatchExpressions: nfdv1alpha1.MatchExpressionSet{
+							"ib_uverbs": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+							"rdma_ucm":  nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
 						},
 					},
 				},
