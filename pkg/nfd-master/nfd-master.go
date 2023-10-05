@@ -479,7 +479,10 @@ func (m *nfdMaster) prune() error {
 	return nil
 }
 
-// Advertise NFD master information
+// Update annotations on the node where nfd-master is running. Currently the
+// only function is to remove the deprecated
+// "nfd.node.kubernetes.io/master.version" annotation, if it exists.
+// TODO: Drop when nfdv1alpha1.MasterVersionAnnotation is removed.
 func (m *nfdMaster) updateMasterNode() error {
 	cli, err := m.apihelper.GetClient()
 	if err != nil {
@@ -491,9 +494,9 @@ func (m *nfdMaster) updateMasterNode() error {
 	}
 
 	// Advertise NFD version as an annotation
-	p := createPatches(nil,
+	p := createPatches([]string{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation)},
 		node.Annotations,
-		Annotations{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation): version.Get()},
+		nil,
 		"/metadata/annotations")
 	err = m.apihelper.PatchNode(cli, node.Name, p)
 	if err != nil {
@@ -680,8 +683,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 			return &pb.SetLabelsReply{}, err
 		}
 
-		// Advertise NFD worker version as an annotation
-		annotations := Annotations{m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation): r.NfdVersion}
+		annotations := Annotations{}
 
 		// Create labels et al
 		if err := m.refreshNodeFeatures(cli, r.NodeName, annotations, r.GetLabels(), r.GetFeatures()); err != nil {
@@ -761,13 +763,6 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		}
 
 		klog.V(4).InfoS("merged nodeFeatureSpecs", "newNodeFeatureSpec", utils.DelayedDumper(features))
-
-		if objs[0].Namespace == m.namespace && objs[0].Name == nodeName {
-			// This is the one created by nfd-worker
-			if v := objs[0].Annotations[nfdv1alpha1.WorkerVersionAnnotation]; v != "" {
-				annotations[nfdv1alpha1.WorkerVersionAnnotation] = v
-			}
-		}
 	}
 
 	// Update node labels et al. This may also mean removing all NFD-owned
@@ -1067,7 +1062,10 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 		createPatches(
 			[]string{
 				m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
-				m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)},
+				m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
+				// Clean up deprecated/stale nfd version annotations
+				m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
+				m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation)},
 			node.Annotations,
 			annotations,
 			"/metadata/annotations")...)

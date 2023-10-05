@@ -44,7 +44,6 @@ import (
 	nfdinformers "sigs.k8s.io/node-feature-discovery/pkg/generated/informers/externalversions"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
-	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
 )
 
@@ -238,8 +237,7 @@ func TestUpdateMasterNode(t *testing.T) {
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
 		Convey("When update operation succeeds", func() {
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/master.version", version.Get())}
+			expectedPatches := []apihelper.JsonPatch{}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
@@ -378,7 +376,6 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When node update succeeds", func() {
 			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
 			}
 			for k, v := range mockLabels {
@@ -397,7 +394,6 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When -label-whitelist is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
 			}
@@ -429,7 +425,6 @@ func TestSetLabels(t *testing.T) {
 				"--invalid-name--":               "valid-val",
 				"valid-name":                     "--invalid-val--"}
 			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", instance+"."+nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations",
 					instance+"."+nfdv1alpha1.FeatureLabelsAnnotation,
 					"feature-1,valid.ns/feature-2,"+vendorFeatureLabel+","+vendorProfileLabel),
@@ -457,7 +452,6 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When -resource-labels is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.WorkerVersionAnnotation, workerVer),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
