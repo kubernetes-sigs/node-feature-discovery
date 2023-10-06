@@ -250,9 +250,19 @@ func (m *nfdMaster) Run() error {
 
 	// Register to metrics server
 	if m.args.MetricsPort > 0 {
-		go runMetricsServer(m.args.MetricsPort)
+		m := utils.CreateMetricsServer(m.args.MetricsPort,
+			buildInfo,
+			nodeUpdateRequests,
+			nodeUpdates,
+			nodeUpdateFailures,
+			nodeLabelsRejected,
+			nodeERsRejected,
+			nodeTaintsRejected,
+			nfrProcessingTime,
+			nfrProcessingErrors)
+		go m.Run()
 		registerVersion(version.Get())
-		defer stopMetricsServer()
+		defer m.Stop()
 	}
 
 	// Run gRPC server

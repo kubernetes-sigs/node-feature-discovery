@@ -144,9 +144,12 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	// Register to metrics server
 	if w.args.MetricsPort > 0 {
-		go runMetricsServer(w.args.MetricsPort)
+		m := utils.CreateMetricsServer(w.args.MetricsPort,
+			buildInfo,
+			scanErrors)
+		go m.Run()
 		registerVersion(version.Get())
-		defer stopMetricsServer()
+		defer m.Stop()
 	}
 
 	var resScan resourcemonitor.ResourcesScanner
