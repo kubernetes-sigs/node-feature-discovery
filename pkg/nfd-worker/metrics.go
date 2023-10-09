@@ -17,16 +17,10 @@ limitations under the License.
 package nfdworker
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
-// When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
 	buildInfoQuery                = "nfd_worker_build_info"
@@ -34,8 +28,6 @@ const (
 )
 
 var (
-	srv *http.Server
-
 	featureDiscoveryDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    featureDiscoveryDurationQuery,
@@ -56,26 +48,4 @@ var (
 // registerVersion exposes the Operator build version.
 func registerVersion(version string) {
 	buildInfo.SetToCurrentTime()
-}
-
-// runMetricsServer starts a http server to expose metrics
-func runMetricsServer(port int) {
-	r := prometheus.NewRegistry()
-	r.MustRegister(featureDiscoveryDuration)
-	r.MustRegister(buildInfo)
-
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))
-
-	klog.InfoS("metrics server starting", "port", port)
-	srv = &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: mux}
-	klog.InfoS("metrics server stopped", "exit code", srv.ListenAndServe())
-}
-
-// stopMetricsServer stops the metrics server
-func stopMetricsServer() {
-	if srv != nil {
-		klog.InfoS("stopping metrics server", "port", srv.Addr)
-		srv.Close()
-	}
 }

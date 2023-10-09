@@ -17,12 +17,7 @@ limitations under the License.
 package nfdmaster
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -40,8 +35,6 @@ const (
 )
 
 var (
-	srv *http.Server
-
 	buildInfo = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: buildInfoQuery,
 		Help: "Version from which Node Feature Discovery was built.",
@@ -93,34 +86,4 @@ var (
 // registerVersion exposes the Operator build version.
 func registerVersion(version string) {
 	buildInfo.SetToCurrentTime()
-}
-
-// runMetricsServer starts a http server to expose metrics
-func runMetricsServer(port int) {
-	r := prometheus.NewRegistry()
-	r.MustRegister(
-		buildInfo,
-		nodeUpdateRequests,
-		nodeUpdates,
-		nodeUpdateFailures,
-		nodeLabelsRejected,
-		nodeERsRejected,
-		nodeTaintsRejected,
-		nfrProcessingTime,
-		nfrProcessingErrors)
-
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))
-
-	klog.InfoS("metrics server starting", "port", port)
-	srv = &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: mux}
-	klog.InfoS("metrics server stopped", "exitCode", srv.ListenAndServe())
-}
-
-// stopMetricsServer stops the metrics server
-func stopMetricsServer() {
-	if srv != nil {
-		klog.InfoS("stopping metrics server", "port", srv.Addr)
-		srv.Close()
-	}
 }
