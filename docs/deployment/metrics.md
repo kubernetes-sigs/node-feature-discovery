@@ -17,6 +17,7 @@ The exposed metrics are
 | ------------------------------------------------- | --------- | ---------------------------------------
 | `nfd_master_build_info`                           | Gauge     | Version from which nfd-master was built
 | `nfd_worker_build_info`                           | Gauge     | Version from which nfd-worker was built
+| `nfd_topology_updater_build_info`                 | Gauge     | Version from which nfd-topology-updater was built
 | `nfd_node_update_requests_total`                  | Counter   | Number of node update requests received by the master over gRPC
 | `nfd_node_updates_total`                          | Counter   | Number of nodes updated
 | `nfd_node_update_failures_total`                  | Counter   | Number of nodes update failures
