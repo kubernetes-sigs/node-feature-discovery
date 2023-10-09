@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
@@ -50,10 +49,10 @@ type NfdGarbageCollector interface {
 }
 
 type nfdGarbageCollector struct {
+	args       *Args
 	stopChan   chan struct{}
 	nfdClient  nfdclientset.Interface
 	topoClient topologyclientset.Interface
-	gcPeriod   time.Duration
 	factory    informers.SharedInformerFactory
 }
 
@@ -63,27 +62,14 @@ func New(args *Args) (NfdGarbageCollector, error) {
 		return nil, err
 	}
 
-	stop := make(chan struct{})
-
-	return newNfdGarbageCollector(kubeconfig, stop, args.GCPeriod)
-}
-
-func newNfdGarbageCollector(config *restclient.Config, stop chan struct{}, gcPeriod time.Duration) (*nfdGarbageCollector, error) {
-	helper := apihelper.K8sHelpers{Kubeconfig: config}
-	cli, err := helper.GetTopologyClient()
-	if err != nil {
-		return nil, err
-	}
-
-	clientset := kubernetes.NewForConfigOrDie(config)
-	factory := informers.NewSharedInformerFactory(clientset, 5*time.Minute)
+	clientset := kubernetes.NewForConfigOrDie(kubeconfig)
 
 	return &nfdGarbageCollector{
-		topoClient: cli,
-		nfdClient:  nfdclientset.NewForConfigOrDie(config),
-		stopChan:   stop,
-		gcPeriod:   gcPeriod,
-		factory:    factory,
+		args:       args,
+		stopChan:   make(chan struct{}),
+		topoClient: topologyclientset.NewForConfigOrDie(kubeconfig),
+		nfdClient:  nfdclientset.NewForConfigOrDie(kubeconfig),
+		factory:    informers.NewSharedInformerFactory(clientset, 5*time.Minute),
 	}, nil
 }
 
@@ -226,7 +212,7 @@ func (n *nfdGarbageCollector) Run() error {
 		return err
 	}
 	// run periodic GC
-	n.periodicGC(n.gcPeriod)
+	n.periodicGC(n.args.GCPeriod)
 
 	return nil
 }
