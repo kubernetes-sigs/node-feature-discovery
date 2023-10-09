@@ -34,13 +34,15 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
 // Args are the command line arguments
 type Args struct {
-	GCPeriod time.Duration
-
-	Kubeconfig string
+	GCPeriod    time.Duration
+	Kubeconfig  string
+	MetricsPort int
 }
 
 type NfdGarbageCollector interface {
@@ -74,29 +76,35 @@ func New(args *Args) (NfdGarbageCollector, error) {
 }
 
 func (n *nfdGarbageCollector) deleteNodeFeature(namespace, name string) {
+	kind := "NodeFeature"
 	if err := n.nfdClient.NfdV1alpha1().NodeFeatures(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			klog.V(2).InfoS("NodeFeature not found, omitting deletion", "nodefeature", klog.KRef(namespace, name))
 			return
 		} else {
 			klog.ErrorS(err, "failed to delete NodeFeature object", "nodefeature", klog.KRef(namespace, name))
+			objectDeleteErrors.WithLabelValues(kind).Inc()
 			return
 		}
 	}
 	klog.InfoS("NodeFeature object has been deleted", "nodefeature", klog.KRef(namespace, name))
+	objectsDeleted.WithLabelValues(kind).Inc()
 }
 
 func (n *nfdGarbageCollector) deleteNRT(nodeName string) {
+	kind := "NodeResourceTopology"
 	if err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().Delete(context.TODO(), nodeName, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			klog.V(2).InfoS("NodeResourceTopology not found, omitting deletion", "nodeName", nodeName)
 			return
 		} else {
 			klog.ErrorS(err, "failed to delete NodeResourceTopology object", "nodeName", nodeName)
+			objectDeleteErrors.WithLabelValues(kind).Inc()
 			return
 		}
 	}
 	klog.InfoS("NodeResourceTopology object has been deleted", "nodeName", nodeName)
+	objectsDeleted.WithLabelValues(kind).Inc()
 }
 
 func (n *nfdGarbageCollector) deleteNodeHandler(object interface{}) {
@@ -208,6 +216,16 @@ func (n *nfdGarbageCollector) startNodeInformer() error {
 
 // Run is a blocking function that removes stale NRT objects when Node is deleted and runs periodic GC to make sure any obsolete objects are removed
 func (n *nfdGarbageCollector) Run() error {
+	if n.args.MetricsPort > 0 {
+		m := utils.CreateMetricsServer(n.args.MetricsPort,
+			buildInfo,
+			objectsDeleted,
+			objectDeleteErrors)
+		go m.Run()
+		registerVersion(version.Get())
+		defer m.Stop()
+	}
+
 	if err := n.startNodeInformer(); err != nil {
 		return err
 	}

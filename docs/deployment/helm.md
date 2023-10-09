@@ -203,6 +203,7 @@ API's you need to install the prometheus operator in your cluster.
 | `gc.interval`                         | string | 1h      | Time between periodic garbage collector runs
 | `gc.podSecurityContext`               | dict   | {}      | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings
 | `gc.resources`                        | dict   | {}      | Garbage collector pod [resources management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+| `gc.metricsPort`                      | integer | 8081   | Port on which to serve Prometheus metrics
 | `gc.nodeSelector`                     | dict   | {}      | Garbage collector pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)
 | `gc.tolerations`                      | dict   | {}      | Garbage collector pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
 | `gc.annotations`                      | dict   | {}      | Garbage collector pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
