@@ -73,7 +73,7 @@ func TestNRTGC(t *testing.T) {
 	Convey("periodic GC should remove obsolete NRT", t, func() {
 		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
 		// Override period to run fast
-		gc.gcPeriod = 100 * time.Millisecond
+		gc.args.GCPeriod = 100 * time.Millisecond
 
 		nrt := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
@@ -99,7 +99,9 @@ func newMockGC(nodes, nrts []string) *mockGC {
 			nfdClient:  fakenfdclientset.NewSimpleClientset(),
 			topoClient: faketopologyv1alpha2.NewSimpleClientset(createFakeNRTs(nrts...)...),
 			stopChan:   make(chan struct{}, 1),
-			gcPeriod:   10 * time.Minute,
+			args: &Args{
+				GCPeriod: 10 * time.Minute,
+			},
 		},
 		k8sClient: k8sClient,
 	}
