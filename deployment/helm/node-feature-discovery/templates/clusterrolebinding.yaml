@@ -47,6 +47,6 @@ roleRef:
   name: {{ include "node-feature-discovery.fullname" . }}-gc
 subjects:
 - kind: ServiceAccount
-  name: {{ .Values.gc.serviceAccount.name | default "nfd-gc" }}
+  name: {{ include "node-feature-discovery.gc.serviceAccountName" . }}
   namespace: {{ include "node-feature-discovery.namespace" .  }}
 {{- end }}
