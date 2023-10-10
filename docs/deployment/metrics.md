@@ -17,6 +17,7 @@ The exposed metrics are
 | ------------------------------------------------- | --------- | ---------------------------------------
 | `nfd_master_build_info`                           | Gauge     | Version from which nfd-master was built
 | `nfd_worker_build_info`                           | Gauge     | Version from which nfd-worker was built
+| `nfd_gc_build_info`                               | Gauge     | Version from which nfd-gc was built
 | `nfd_topology_updater_build_info`                 | Gauge     | Version from which nfd-topology-updater was built
 | `nfd_node_update_requests_total`                  | Counter   | Number of node update requests received by the master over gRPC
 | `nfd_node_updates_total`                          | Counter   | Number of nodes updated
@@ -28,6 +29,8 @@ The exposed metrics are
 | `nfd_nodefeaturerule_processing_errors_total`     | Counter   | Number or errors encountered while processing NodeFeatureRule objects
 | `nfd_feature_discovery_duration_seconds`          | Histogram | Time taken to discover features on a node
 | `nfd_topology_updater_scan_errors_total`          | Counter   | Number of errors in scanning resource allocation of pods.
+| `nfd_gc_objects_deleted_total`                    | Counter   | Number of NodeFeature and NodeResourceTopology objects garbage collected.
+| `nfd_gc_object_delete_failures_total`             | Counter   | Number of errors in deleting NodeFeature and NodeResourceTopology objects.
 
 ## Via Kustomize
 

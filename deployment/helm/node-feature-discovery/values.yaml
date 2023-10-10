@@ -495,6 +495,8 @@ gc:
     #   cpu: 100m
     #   memory: 128Mi
 
+  metricsPort: 8081
+
   nodeSelector: {}
   tolerations: []
   annotations: {}
