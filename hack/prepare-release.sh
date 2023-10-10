@@ -105,44 +105,43 @@ fi
 #
 if [ -z "$no_patching" ]; then
     # Patch docs configuration
-    echo Patching golang version $golang_version into Makefile
-    sed -e s"/\(^BUILDER_IMAGE.*=.*golang:\)[0-9][0-9.]*\(.*\)/\1$golang_version\2/" \
-        -i Makefile
+    echo "Patching golang version $golang_version into Makefile"
+    sed -i '' -e s"/\(^BUILDER_IMAGE.*=.*golang:\)[0-9][0-9.]*\(.*\)/\1$golang_version\2/" \
+        Makefile
 
     # Patch docs configuration
-    echo Patching docs/_config.yml
+    echo "Patching docs/_config.yml"
     sed -e s"/release:.*/release: $release/"  \
         -e s"/version:.*/version: $docs_version/" \
         -e s"!container_image:.*!container_image: registry.k8s.io/nfd/node-feature-discovery:$release!" \
-        -i docs/_config.yml
+        -i '' docs/_config.yml
 
     # Patch README
-    echo Patching README.md to refer to $release
+    echo "Patching README.md to refer to $release"
     sed -e s"!\(node-feature-discovery/deployment/.*\)=v.*!\1=$release!" \
         -e s"!^\[documentation\]:.*![documentation]: https://kubernetes-sigs.github.io/node-feature-discovery/$docs_version!" \
-        -i README.md
+        -i '' README.md
 
     # Patch deployment templates
     echo Patching kustomize templates to use $container_image
-    find deployment/base deployment/overlays deployment/components -name '*.yaml' | xargs -I '{}' \
-    sed -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
-           -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," \
-           -i '{}'
+    find deployment/base deployment/overlays deployment/components -name '*.yaml' -exec \
+    sed -i '' -E -e s",^([[:space:]]+)image:.+$,\1image: $container_image," \
+           -e s",^([[:space:]]+)imagePullPolicy:.+$,\1imagePullPolicy: IfNotPresent," {} \;
 
     # Patch Helm chart
     echo "Patching Helm chart"
-    sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/helm/node-feature-discovery/Chart.yaml
+    sed -e s"/appVersion:.*/appVersion: $release/" -i '' deployment/helm/node-feature-discovery/Chart.yaml
     sed -e s"/pullPolicy:.*/pullPolicy: IfNotPresent/" \
         -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery!registry.k8s.io/nfd/node-feature-discovery!" \
-        -i deployment/helm/node-feature-discovery/values.yaml
+        -i '' deployment/helm/node-feature-discovery/values.yaml
     sed -e s"!kubernetes-sigs.github.io/node-feature-discovery/master!kubernetes-sigs.github.io/node-feature-discovery/$docs_version!" \
-        -i deployment/helm/node-feature-discovery/README.md
+        -i '' deployment/helm/node-feature-discovery/README.md
 
     # Patch e2e test
-    echo Patching test/e2e/node_feature_discovery.go flag defaults to registry.k8s.io/nfd/node-feature-discovery and $release
+    echo "Patching test/e2e/node_feature_discovery.go flag defaults to registry.k8s.io/nfd/node-feature-discovery and $release"
     sed -e s'!"nfd\.repo",.*,!"nfd.repo", "registry.k8s.io/nfd/node-feature-discovery",!' \
         -e s"!\"nfd\.tag\",.*,!\"nfd.tag\", \"$release\",!" \
-      -i test/e2e/node_feature_discovery_test.go
+        -i '' test/e2e/node_feature_discovery_test.go
 fi
 
 #
