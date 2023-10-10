@@ -1,4 +1,5 @@
 {{- if .Values.tls.certManager }}
+{{- if .Values.master.enable }}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -21,8 +22,9 @@ spec:
     name: nfd-ca-issuer
     kind: Issuer
     group: cert-manager.io
-
+{{- end }}
 ---
+{{- if .Values.worker.enable }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -40,6 +42,7 @@ spec:
     name: nfd-ca-issuer
     kind: Issuer
     group: cert-manager.io
+{{- end }}
 
 {{- if .Values.topologyUpdater.enable }}
 ---

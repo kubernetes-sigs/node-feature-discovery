@@ -13,6 +13,7 @@ namespaceOverride: ""
 enableNodeFeatureApi: true
 
 master:
+  enable: true
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
     # extraLabelNs: ["added.ns.io","added.kubernets.io"]
@@ -132,6 +133,7 @@ master:
                 values: [""]
 
 worker:
+  enable: true
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:
