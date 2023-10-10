@@ -1,0 +1,37 @@
+# The following are union of the configs of gpu-operator & network-operator's
+# node-feature-discovery components:
+# https://github.com/Mellanox/network-operator/blob/master/deployment/network-operator/values.yaml
+# https://github.com/NascentCore/gpu-operator/blob/master/deployments/gpu-operator/values.yaml
+enableNodeFeatureApi: true
+worker:
+  serviceAccount:
+    name: node-feature-discovery
+    # disable creation to avoid duplicate serviceaccount creation by master spec below
+    create: false
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+  config:
+    sources:
+      pci:
+        deviceClassWhitelist:
+        - "0300" # IB
+        - "0302" # IB
+        - "02"   # GPU
+        - "0200" # GPU
+        - "0207" # GPU
+        deviceLabelFields:
+        - vendor
+master:
+  serviceAccount:
+    name: node-feature-discovery
+    create: true
+  config:
+    extraLabelNs: ["nvidia.com"]
