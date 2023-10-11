@@ -114,6 +114,7 @@ API's you need to install the prometheus operator in your cluster.
 | Name                        | Type    | Default                                 | description                                                                                                                              |
 |-----------------------------|---------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | `master.*`                  | dict    |                                         | NFD master deployment configuration                                                                                                      |
+| `master.enable`            | bool    | true                                    | Specifies whether nfd-master should be deployed |
 | `master.port`               | integer |                                         | Specifies the TCP port that nfd-master listens for incoming requests. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release    |
 | `master.metricsPort`        | integer |   8081                                  | Port on which to expose metrics from components to prometheus operator |
 | `master.instance`           | string  |                                         | Instance name. Used to separate annotation namespaces for multiple parallel deployments                                                  |
@@ -146,6 +147,7 @@ API's you need to install the prometheus operator in your cluster.
 | Name | Type | Default | description |
 | ---- | ---- | ------- | ----------- |
 | `worker.*` | dict |  | NFD worker daemonset configuration |
+| `worker.enable` | bool | true | Specifies whether nfd-worker should be deployed |
 | `worker.metricsPort*` | integer | 8081 | Port on which to expose metrics from components to prometheus operator |
 | `worker.config` | dict |  | NFD worker [configuration](../reference/worker-configuration-reference) |
 | `worker.podSecurityContext` | dict | {} | [PodSecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) holds pod-level security attributes and common container settings |
