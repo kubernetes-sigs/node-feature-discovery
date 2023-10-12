@@ -32,12 +32,12 @@ The exposed metrics are
 | `nfd_gc_objects_deleted_total`                    | Counter   | Number of NodeFeature and NodeResourceTopology objects garbage collected.
 | `nfd_gc_object_delete_failures_total`             | Counter   | Number of errors in deleting NodeFeature and NodeResourceTopology objects.
 
-## Via Kustomize
+## Kustomize
 
 To deploy NFD with metrics enabled using kustomize, you can use the
 [Metrics Overlay](kustomize.md#metrics).
 
-## Via Helm
+## Helm
 
 By default metrics are enabled when deploying NFD via Helm. To enable Prometheus
 to scrape metrics from NFD, you need to pass the following values to Helm:
@@ -55,3 +55,9 @@ to scrape metrics from any PodMonitor.
 
 or setting labels on the PodMonitor via the helm parameter `prometheus.labels`
 to control which Prometheus instances will scrape this PodMonitor.
+
+## Grafana dashboard
+
+NFD contains an example Grafana dashboard. You can import
+[`examples/grafana-dashboard.json`](https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{site.release}}/examples/grafana-dashboard.json)
+to your Grafana instance to visualize the NFD metrics.
