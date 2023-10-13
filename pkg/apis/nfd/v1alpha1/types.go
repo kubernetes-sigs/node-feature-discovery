@@ -146,6 +146,10 @@ type Rule struct {
 	// +optional
 	LabelsTemplate string `json:"labelsTemplate"`
 
+	// Annotations to create if the rule matches.
+	// +optional
+	Annotations map[string]string `json:"annotations"`
+
 	// Vars is the variables to store if the rule matches. Variables do not
 	// directly inflict any changes in the node object. However, they can be
 	// referenced from other rules enabling more complex rule hierarchies,

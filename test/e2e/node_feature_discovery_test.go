@@ -803,6 +803,25 @@ core:
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes))
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
 
+					By("Creating NodeFeatureRules #5")
+					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-5.yaml")).NotTo(HaveOccurred())
+
+					By("Verifying node annotations from NodeFeatureRules #5")
+					expectedAnnotations["*"] = k8sAnnotations{
+						nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation":   "foo",
+						nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation-2": "bar",
+						"custom.vendor.example/feature":                        "baz",
+					}
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
+
+					By("Deleting NodeFeatureRule object")
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, " e2e-feature-annotations-test", metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying node annotations from NodeFeatureRules #5 are deleted")
+					expectedAnnotations["*"] = k8sAnnotations{}
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
+
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())

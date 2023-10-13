@@ -138,6 +138,12 @@ func TestUpdateNodeObject(t *testing.T) {
 		}
 		sort.Strings(fakeFeatureLabelNames)
 
+		fakeFeatureAnnotationsNames := make([]string, 0, len(fakeFeatureLabels))
+		for k := range fakeAnnotations {
+			fakeFeatureAnnotationsNames = append(fakeFeatureAnnotationsNames, strings.TrimPrefix(k, nfdv1alpha1.FeatureAnnotationNs+"/"))
+		}
+		sort.Strings(fakeFeatureAnnotationsNames)
+
 		fakeExtResourceNames := make([]string, 0, len(fakeExtResources))
 		for k := range fakeExtResources {
 			fakeExtResourceNames = append(fakeExtResourceNames, strings.TrimPrefix(k, nfdv1alpha1.FeatureLabelNs+"/"))
@@ -162,6 +168,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			// Create a list of expected node metadata patches
 			metadataPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("replace", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTrackingAnnotation, strings.Join(fakeFeatureAnnotationsNames, ",")),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
 				apihelper.NewJsonPatch("remove", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/old-feature", ""),
 			}
@@ -176,7 +183,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Twice()
 			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(metadataPatches))).Return(nil)
-			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
@@ -186,7 +193,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		Convey("When I fail to update the node with feature labels", func() {
 			expectedError := fmt.Errorf("no client is passed, client:  <nil>")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldResemble, expectedError)
@@ -196,7 +203,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		Convey("When I fail to get a mock client while updating feature labels", func() {
 			expectedError := fmt.Errorf("no client is passed, client:  <nil>")
 			mockAPIHelper.On("GetClient").Return(nil, expectedError)
-			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(nil, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldResemble, expectedError)
@@ -207,7 +214,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(nil, expectedError).Twice()
-			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldEqual, expectedError)
@@ -220,7 +227,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil).Twice()
 			mockAPIHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(statusPatches))).Return(nil)
 			mockAPIHelper.On("PatchNode", mockClient, mockNodeName, mock.Anything).Return(expectedError).Twice()
-			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, fakeAnnotations, fakeExtResources, nil)
+			err := mockMaster.updateNodeObject(mockClient, mockNodeName, fakeFeatureLabels, Annotations{}, fakeAnnotations, fakeExtResources, nil)
 
 			Convey("Error is produced", func() {
 				So(err.Error(), ShouldEndWith, expectedError.Error())
