@@ -471,7 +471,7 @@ topologyUpdater:
   podSetFingerprint: true
 
 gc:
-  enable: true
+  enable: false
   replicaCount: 1
 
   serviceAccount:

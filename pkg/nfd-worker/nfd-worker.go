@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 	"sigs.k8s.io/yaml"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -61,6 +62,9 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/system"
 	_ "sigs.k8s.io/node-feature-discovery/source/usb"
 )
+
+// SocketPath specifies Spiffe Socket Path
+const SocketPath = "unix:///run/spire/sockets/agent.sock"
 
 // NfdWorker is the interface for nfd-worker daemon
 type NfdWorker interface {
@@ -127,6 +131,7 @@ type nfdWorker struct {
 	stop                chan struct{} // channel for signaling stop
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
+	spiffeClient        *spiffe.SpiffeClient
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -159,6 +164,12 @@ func NewNfdWorker(args *Args) (NfdWorker, error) {
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
 	}
+
+	spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
+	if err != nil {
+		return nfd, err
+	}
+	nfd.spiffeClient = spiffeClient
 
 	return nfd, nil
 }
@@ -699,6 +710,12 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Labels:   labels,
 			},
 		}
+
+		signature, err := m.spiffeClient.SignData(nfr.Spec, spiffe.GetSpiffeId(utils.NodeName()))
+		if err != nil {
+			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+		}
+		nfr.ObjectMeta.Annotations["signature"] = string(signature)
 
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
 		if err != nil {
