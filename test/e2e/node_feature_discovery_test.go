@@ -422,26 +422,34 @@ var _ = SIGDescribe("NFD master and worker", func() {
 
 					// create 2 configmaps
 					data1 := fmt.Sprintf(`
-- name: %s
-  matchOn:
-  # default value is true
-  - nodename:
-    - "^%s$"`, targetLabelName, targetNodeName)
+- name: nodename-test-rule
+  labels:
+    "%s": "%s"
+  matchFeatures:
+    - feature: system.name
+      matchExpressions:
+         nodename: {op: In, value: ["%s"]}`, targetLabelName, targetLabelValue, targetNodeName)
 
 					cm1 := testutils.NewConfigMap("custom-config-extra-1", "custom.conf", data1)
 					cm1, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm1, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					data2 := fmt.Sprintf(`
-- name: %s
-  value: %s
-  matchOn:
-  - nodename:
-    - "^%s$"
-- name: nodename-test-negative
-  matchOn:
-  - nodename:
-    - "thisNameShouldNeverMatch"`, targetLabelNameWildcard, targetLabelValueWildcard, targetNodeNameWildcard)
+- name: nodename-test-regexp-rule
+  labels:
+    "%s": "%s"
+  matchFeatures:
+    - feature: system.name
+      matchExpressions:
+         nodename: {op: InRegexp, value: ["^%s$"]}
+
+- name: nodename-test-negative-rule
+  labels:
+    "nodename-test-negative": "true"
+  matchFeatures:
+    - feature: system.name
+      matchExpressions:
+         nodename: {op: In, value: ["thisNameShouldNeverMatch"]}`, targetLabelNameWildcard, targetLabelValueWildcard, targetNodeNameWildcard)
 
 					cm2 := testutils.NewConfigMap("custom-config-extra-2", "custom.conf", data2)
 					cm2, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm2, metav1.CreateOptions{})
@@ -465,8 +473,8 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					By("Verifying node labels")
 					expectedLabels := map[string]k8sLabels{
 						targetNodeName: {
-							nfdv1alpha1.FeatureLabelNs + "/custom-" + targetLabelName:         targetLabelValue,
-							nfdv1alpha1.FeatureLabelNs + "/custom-" + targetLabelNameWildcard: targetLabelValueWildcard,
+							nfdv1alpha1.FeatureLabelNs + "/" + targetLabelName:         targetLabelValue,
+							nfdv1alpha1.FeatureLabelNs + "/" + targetLabelNameWildcard: targetLabelValueWildcard,
 						},
 						"*": {},
 					}
