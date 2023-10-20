@@ -793,6 +793,7 @@ core:
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
+					expectedCapacity = map[string]corev1.ResourceList{"*": {}}
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes, false))
 
 					By("Deleting nfd-worker daemonset")
