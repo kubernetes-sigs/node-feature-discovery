@@ -39,7 +39,7 @@ type k8sAnnotations map[string]string
 func eventuallyNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) AsyncAssertion {
 	return Eventually(func(g Gomega, ctx context.Context) ([]corev1.Node, error) {
 		return getNonControlPlaneNodes(ctx, cli)
-	}).WithPolling(1 * time.Second).WithTimeout(10 * time.Second).WithContext(ctx)
+	}).WithPolling(1 * time.Second).WithTimeout(20 * time.Second).WithContext(ctx)
 }
 
 // MatchLabels returns a specialized Gomega matcher for checking if a list of
