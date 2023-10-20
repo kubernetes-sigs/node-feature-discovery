@@ -708,9 +708,14 @@ core:
 					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_1"] = "found"
 					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/e2e-template-test-1-instance_2"] = "found"
 					expectedLabels["*"][nfdv1alpha1.FeatureLabelNs+"/dynamic-label"] = "true"
+					expectedAnnotations := map[string]k8sAnnotations{
+						"*": {
+							"nfd.node.kubernetes.io/feature-labels": "dynamic-label,e2e-attribute-test-1,e2e-flag-test-1,e2e-instance-test-1,e2e-matchany-test-1,e2e-template-test-1-instance_1,e2e-template-test-1-instance_2"},
+					}
 
 					By("Verifying node labels from NodeFeatureRules #1 and #2")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes, false))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, false))
 
 					// Add features from NodeFeatureRule #3
 					By("Creating NodeFeatureRules #3")
@@ -736,12 +741,10 @@ core:
 							},
 						},
 					}
-					expectedAnnotations := map[string]k8sAnnotations{
-						"*": {
-							"nfd.node.kubernetes.io/taints": "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"},
-					}
+					expectedAnnotations["*"]["nfd.node.kubernetes.io/taints"] = "feature.node.kubernetes.io/fake-special-node=exists:PreferNoSchedule,feature.node.kubernetes.io/fake-dedicated-node=true:NoExecute,feature.node.kubernetes.io/performance-optimized-node=true:NoExecute"
+
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, false))
 
 					By("Re-applying NodeFeatureRules #3 with updated taints")
 					Expect(testutils.UpdateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3-updated.yaml")).NotTo(HaveOccurred())
@@ -761,15 +764,17 @@ core:
 
 					By("Verifying updated node taints and annotation from NodeFeatureRules #3")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, false))
 
 					By("Deleting NodeFeatureRule object")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-test-3", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					expectedTaints["*"] = []corev1.Taint{}
+					delete(expectedAnnotations["*"], "nfd.node.kubernetes.io/taints")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes, false))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, false))
 
-					expectedAnnotations["*"] = k8sAnnotations{"nfd.node.kubernetes.io/extended-resources": "nons,vendor.feature.node.kubernetes.io/static,vendor.io/dynamic"}
+					expectedAnnotations["*"]["nfd.node.kubernetes.io/extended-resources"] = "nons,vendor.feature.node.kubernetes.io/static,vendor.io/dynamic"
 
 					expectedCapacity := map[string]corev1.ResourceList{
 						"*": {
@@ -783,7 +788,7 @@ core:
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-4.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node annotations from NodeFeatureRules #4")
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, true))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, false))
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes, false))
@@ -794,7 +799,9 @@ core:
 
 					By("Verfiying node status capacity from NodeFeatureRules #4")
 					expectedCapacity = map[string]corev1.ResourceList{"*": {}}
+					delete(expectedAnnotations["*"], "nfd.node.kubernetes.io/extended-resources")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes, false))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes, false))
 
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
