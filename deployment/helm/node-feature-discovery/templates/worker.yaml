@@ -64,6 +64,9 @@ spec:
           - name: metrics
             containerPort: {{ .Values.worker.metricsPort | default "8081"}}
         volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
         - name: host-boot
           mountPath: "/host-boot"
           readOnly: true
@@ -99,6 +102,10 @@ spec:
           readOnly: true
 {{- end }}
       volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
         - name: host-boot
           hostPath:
             path: "/boot"

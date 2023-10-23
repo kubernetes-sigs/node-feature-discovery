@@ -49,16 +49,21 @@ import (
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
+
+// SocketPath specifies Spiffe Socket Path
+const SocketPath = "unix:///run/spire/sockets/agent.sock"
 
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
@@ -148,7 +153,8 @@ type nfdMaster struct {
 	kubeconfig      *restclient.Config
 	nodeUpdaterPool *nodeUpdaterPool
 	deniedNs
-	config *NFDConfig
+	config       *NFDConfig
+	spiffeClient *spiffe.SpiffeClient
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -186,6 +192,12 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	}
 
 	nfd.nodeUpdaterPool = newNodeUpdaterPool(nfd)
+
+	spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
+	if err != nil {
+		return nfd, err
+	}
+	nfd.spiffeClient = spiffeClient
 
 	return nfd, nil
 }
@@ -752,6 +764,22 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		return objs[i].Namespace < objs[j].Namespace
 	})
 
+	verifiedObjects := []*v1alpha1.NodeFeature{}
+	// Verify nfd objects signature
+	for _, obj := range objs {
+		isSignatureVerified, err := m.spiffeClient.VerifyDataSignature(obj.Spec, spiffe.GetSpiffeId(utils.NodeName()), obj.Annotations["signature"])
+		if err != nil {
+			klog.ErrorS(err, "error while getting data signature")
+			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+		}
+		if isSignatureVerified {
+			klog.InfoS("data verified", "nfd name", obj.Name)
+			verifiedObjects = append(verifiedObjects, obj)
+		} else {
+			klog.InfoS("data not verified", "nfd name", obj.Name)
+		}
+	}
+
 	if m.config.NoPublish {
 		return nil
 	}
@@ -762,13 +790,13 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 	annotations := Annotations{}
 
-	if len(objs) > 0 {
+	if len(verifiedObjects) > 0 {
 		// Merge in features
 		//
 		// NOTE: changing the rule api to support handle multiple objects instead
 		// of merging would probably perform better with lot less data to copy.
-		features = objs[0].Spec.DeepCopy()
-		for _, o := range objs[1:] {
+		features = verifiedObjects[0].Spec.DeepCopy()
+		for _, o := range verifiedObjects[1:] {
 			o.Spec.MergeInto(features)
 		}
 

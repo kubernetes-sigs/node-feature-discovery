@@ -28,26 +28,27 @@ import (
 	"strings"
 	"time"
 
+	b64 "encoding/base64"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
-	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
-	"sigs.k8s.io/yaml"
-
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/yaml"
 
 	// Register all source packages
 	_ "sigs.k8s.io/node-feature-discovery/source/cpu"
@@ -712,10 +713,13 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		}
 
 		signature, err := m.spiffeClient.SignData(nfr.Spec, spiffe.GetSpiffeId(utils.NodeName()))
+		klog.InfoS("data signature", "signature", string(signature))
 		if err != nil {
+			klog.ErrorS(err, "error while getting data signature")
 			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
 		}
-		nfr.ObjectMeta.Annotations["signature"] = string(signature)
+		encodedSignature := b64.StdEncoding.EncodeToString(signature)
+		nfr.ObjectMeta.Annotations["signature"] = encodedSignature
 
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
 		if err != nil {
@@ -733,6 +737,16 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			Features: *features,
 			Labels:   labels,
 		}
+
+		signature, err := m.spiffeClient.SignData(nfrUpdated.Spec, spiffe.GetSpiffeId(utils.NodeName()))
+		encodedSignature := b64.StdEncoding.EncodeToString(signature)
+		klog.InfoS("data signature", "signature", encodedSignature)
+		if err != nil {
+			klog.ErrorS(err, "error while getting data signature")
+			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+		}
+
+		nfrUpdated.ObjectMeta.Annotations["signature"] = encodedSignature
 
 		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
 			klog.InfoS("updating NodeFeature object", "nodefeature", klog.KObj(nfr))

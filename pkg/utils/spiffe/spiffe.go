@@ -23,6 +23,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -44,14 +45,14 @@ func NewSpiffeClient(socketPath string) (*SpiffeClient, error) {
 }
 
 func GetSpiffeId(nodeName string) string {
-	return fmt.Sprintf("spiffe://nfd.com/%s", nodeName)
+	return fmt.Sprintf("spiffe://example.org/%s", nodeName)
 }
 
 func (s *SpiffeClient) SignData(data interface{}, spiffeId string) ([]byte, error) {
 	ctx := context.Background()
 	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
 	if err != nil {
-		return []byte{}, nil
+		return []byte{}, err
 	}
 
 	stringifyData, err := json.Marshal(data)
@@ -75,18 +76,17 @@ func (s *SpiffeClient) SignData(data interface{}, spiffeId string) ([]byte, erro
 				if err != nil {
 					return []byte{}, err
 				}
-
+				fmt.Printf("SIGNED DATA: %v\n", signedData)
 				return signedData, nil
 			default:
 				return nil, fmt.Errorf("unknown private key type: %v", t)
 			}
 		}
 	}
-
-	return nil, fmt.Errorf("cannot sign data: spiffe ID %s is not found", spiffeId)
+	return []byte{}, fmt.Errorf("cannot sign data: spiffe ID %s is not found", spiffeId)
 }
 
-func (s *SpiffeClient) VerifyDataSignature(data interface{}, spiffeId string, signedData []byte) (bool, error) {
+func (s *SpiffeClient) VerifyDataSignature(data interface{}, spiffeId string, signedData string) (bool, error) {
 	ctx := context.Background()
 	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
 	if err != nil {
@@ -98,19 +98,25 @@ func (s *SpiffeClient) VerifyDataSignature(data interface{}, spiffeId string, si
 		return false, err
 	}
 
+	decodedSignature, err := b64.StdEncoding.DecodeString(signedData)
+	if err != nil {
+		return false, err
+	}
+
 	dataHash := sha256.Sum256([]byte(stringifyData))
+	fmt.Printf("SIGNED DATA: %v\n", decodedSignature)
 	for _, svid := range svids {
 		if svid.ID.String() == spiffeId {
 			privateKey := svid.PrivateKey
 			switch t := privateKey.(type) {
 			case *rsa.PrivateKey:
-				err = rsa.VerifyPKCS1v15(svid.PrivateKey.Public().(*rsa.PublicKey), crypto.SHA256, dataHash[:], signedData)
+				err = rsa.VerifyPKCS1v15(svid.PrivateKey.Public().(*rsa.PublicKey), crypto.SHA256, dataHash[:], decodedSignature)
 				if err != nil {
 					return false, err
 				}
 				return true, nil
 			case *ecdsa.PrivateKey:
-				verify := ecdsa.VerifyASN1(svid.PrivateKey.Public().(*ecdsa.PublicKey), dataHash[:], signedData)
+				verify := ecdsa.VerifyASN1(svid.PrivateKey.Public().(*ecdsa.PublicKey), dataHash[:], decodedSignature)
 				return verify, nil
 			default:
 				return false, fmt.Errorf("unknown private key type: %v", t)

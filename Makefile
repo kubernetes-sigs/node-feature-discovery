@@ -31,7 +31,7 @@ JEKYLL_OPTS := -d '$(SITE_DESTDIR)' $(if $(SITE_BASEURL),-b '$(SITE_BASEURL)',)
 
 VERSION := $(shell git describe --tags --dirty --always)
 
-IMAGE_REGISTRY ?= registry.k8s.io/nfd
+IMAGE_REGISTRY ?= ahmedgrati
 IMAGE_TAG_NAME ?= $(VERSION)
 IMAGE_EXTRA_TAG_NAMES ?=
 

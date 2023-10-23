@@ -115,6 +115,9 @@ spec:
               mountPath: "/etc/kubernetes/node-feature-discovery/certs"
               readOnly: true
             {{- end }}
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+              readOnly: true
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
@@ -124,6 +127,10 @@ spec:
           secret:
             secretName: nfd-master-cert
         {{- end }}
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
         - name: nfd-master-conf
           configMap:
             name: {{ include "node-feature-discovery.fullname" . }}-master-conf
