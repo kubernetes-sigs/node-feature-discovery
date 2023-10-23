@@ -44,10 +44,9 @@ func eventuallyNonControlPlaneNodes(ctx context.Context, cli clientset.Interface
 
 // MatchLabels returns a specialized Gomega matcher for checking if a list of
 // nodes are labeled as expected.
-func MatchLabels(expectedNew map[string]k8sLabels, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+func MatchLabels(expectedNew map[string]k8sLabels, oldNodes []corev1.Node) gomegatypes.GomegaMatcher {
 	matcher := &nodeIterablePropertyMatcher[k8sLabels]{
-		propertyName:     "labels",
-		ignoreUnexpected: ignoreUnexpected,
+		propertyName: "labels",
 		matchFunc: func(newNode, oldNode corev1.Node, expected k8sLabels) ([]string, []string, []string) {
 			expectedAll := maps.Clone(oldNode.Labels)
 			maps.Copy(expectedAll, expected)
@@ -64,10 +63,9 @@ func MatchLabels(expectedNew map[string]k8sLabels, oldNodes []corev1.Node, ignor
 
 // MatchAnnotations returns a specialized Gomega matcher for checking if a list of
 // nodes are annotated as expected.
-func MatchAnnotations(expectedNew map[string]k8sAnnotations, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+func MatchAnnotations(expectedNew map[string]k8sAnnotations, oldNodes []corev1.Node) gomegatypes.GomegaMatcher {
 	matcher := &nodeIterablePropertyMatcher[k8sAnnotations]{
-		propertyName:     "annotations",
-		ignoreUnexpected: ignoreUnexpected,
+		propertyName: "annotations",
 		matchFunc: func(newNode, oldNode corev1.Node, expected k8sAnnotations) ([]string, []string, []string) {
 			expectedAll := maps.Clone(oldNode.Annotations)
 			maps.Copy(expectedAll, expected)
@@ -84,10 +82,9 @@ func MatchAnnotations(expectedNew map[string]k8sAnnotations, oldNodes []corev1.N
 
 // MatchCapacity returns a specialized Gomega matcher for checking if a list of
 // nodes have resource capacity as expected.
-func MatchCapacity(expectedNew map[string]corev1.ResourceList, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+func MatchCapacity(expectedNew map[string]corev1.ResourceList, oldNodes []corev1.Node) gomegatypes.GomegaMatcher {
 	matcher := &nodeIterablePropertyMatcher[corev1.ResourceList]{
-		propertyName:     "resource capacity",
-		ignoreUnexpected: ignoreUnexpected,
+		propertyName: "resource capacity",
 		matchFunc: func(newNode, oldNode corev1.Node, expected corev1.ResourceList) ([]string, []string, []string) {
 			expectedAll := oldNode.Status.DeepCopy().Capacity
 			maps.Copy(expectedAll, expected)
@@ -104,10 +101,9 @@ func MatchCapacity(expectedNew map[string]corev1.ResourceList, oldNodes []corev1
 
 // MatchTaints returns a specialized Gomega matcher for checking if a list of
 // nodes are tainted as expected.
-func MatchTaints(expectedNew map[string][]corev1.Taint, oldNodes []corev1.Node, ignoreUnexpected bool) gomegatypes.GomegaMatcher {
+func MatchTaints(expectedNew map[string][]corev1.Taint, oldNodes []corev1.Node) gomegatypes.GomegaMatcher {
 	matcher := &nodeIterablePropertyMatcher[[]corev1.Taint]{
-		propertyName:     "taints",
-		ignoreUnexpected: ignoreUnexpected,
+		propertyName: "taints",
 		matchFunc: func(newNode, oldNode corev1.Node, expected []corev1.Taint) (missing, invalid, unexpected []string) {
 			expectedAll := oldNode.Spec.DeepCopy().Taints
 			expectedAll = append(expectedAll, expected...)
@@ -203,9 +199,8 @@ func (m *nodeListPropertyMatcher[T]) NegatedFailureMessage(actual interface{}) s
 // nodeIterablePropertyMatcher is a nodePropertyMatcher for matching iterable
 // elements such as maps or lists.
 type nodeIterablePropertyMatcher[T any] struct {
-	propertyName     string
-	ignoreUnexpected bool
-	matchFunc        func(newNode, oldNode corev1.Node, expected T) ([]string, []string, []string)
+	propertyName string
+	matchFunc    func(newNode, oldNode corev1.Node, expected T) ([]string, []string, []string)
 
 	// TODO remove nolint when golangci-lint is able to cope with generics
 	node         *corev1.Node //nolint:unused
@@ -222,9 +217,6 @@ func (m *nodeIterablePropertyMatcher[T]) match(newNode, oldNode corev1.Node, exp
 	m.node = &newNode
 	m.missing, m.invalidValue, m.unexpected = m.matchFunc(newNode, oldNode, expected)
 
-	if m.ignoreUnexpected {
-		m.unexpected = nil
-	}
 	return len(m.missing) == 0 && len(m.invalidValue) == 0 && len(m.unexpected) == 0
 }
 
