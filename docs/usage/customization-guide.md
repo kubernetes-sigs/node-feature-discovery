@@ -161,7 +161,7 @@ re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 See [Feature rule format](#feature-rule-format) for detailed description of
 available fields and how to write labeling rules.
 
-### NodeFeatureRule tainting feature
+### Node tainting
 
 This feature is experimental.
 
@@ -178,47 +178,13 @@ To enable the tainting feature, `--enable-taints` flag needs to be set to `true`
 If the flag `--enable-taints` is set to `false` (i.e. disabled), taints defined in
 the NodeFeatureRule CR have no effect and will be ignored by the NFD master.
 
+See documentation of the [taints field](#taints) for detailed description how
+to specify taints in the NodeFeatureRule object.
+
 > **NOTE:** Before enabling any taints, make sure to edit nfd-worker daemonset
 > to tolerate the taints to be created. Otherwise, already running pods that do
 > not tolerate the taint are evicted immediately from the node including the
 > nfd-worker pod.
-
-Example NodeFeatureRule with custom taints:
-
-```yaml
-apiVersion: nfd.k8s-sigs.io/v1alpha1
-kind: NodeFeatureRule
-metadata:
-  name: my-sample-rule-object
-spec:
-  rules:
-    - name: "my sample taint rule"
-      taints:
-        - effect: PreferNoSchedule
-          key: "feature.node.kubernetes.io/special-node"
-          value: "true"
-        - effect: NoExecute
-          key: "feature.node.kubernetes.io/dedicated-node"
-      matchFeatures:
-        - feature: kernel.loadedmodule
-          matchExpressions:
-            dummy: {op: Exists}
-        - feature: kernel.config
-          matchExpressions:
-            X86: {op: In, value: ["y"]}
-```
-
-In this example, if the `my sample taint rule` rule is matched, `feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
-and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
-
-There are some limitations to the namespace part (i.e. prefix/) of the taint
-key:
-
-- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
-  generally be used
-- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
-  (like `sub.ns.feature.node.kubernetes.io`)
-- unprefixed keys (like `foo`) keys are disallowed
 
 ## Local feature source
 
@@ -647,6 +613,44 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
 *taints* is a list of taint entries and each entry can have `key`, `value` and `effect`,
 where the `value` is optional. Effect could be `NoSchedule`, `PreferNoSchedule`
 or `NoExecute`. To learn more about the meaning of these effects, check out k8s [documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
+
+Example NodeFeatureRule with taints:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-rule-object
+spec:
+  rules:
+    - name: "my sample taint rule"
+      taints:
+        - effect: PreferNoSchedule
+          key: "feature.node.kubernetes.io/special-node"
+          value: "true"
+        - effect: NoExecute
+          key: "feature.node.kubernetes.io/dedicated-node"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            dummy: {op: Exists}
+        - feature: kernel.config
+          matchExpressions:
+            X86: {op: In, value: ["y"]}
+```
+
+In this example, if the `my sample taint rule` rule is matched,
+`feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
+and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
+
+There are some limitations to the namespace part (i.e. prefix/) of the taint
+key:
+
+- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
+  generally be used
+- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
+  (like `sub.ns.feature.node.kubernetes.io`)
+- unprefixed keys (like `foo`) keys are disallowed
 
 > **NOTE:** taints field is not available for the custom rules of nfd-worker
 > and only for NodeFeatureRule objects.
