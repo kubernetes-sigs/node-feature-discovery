@@ -510,11 +510,11 @@ the matchers):
 
 ### Fields
 
-#### Name
+#### name
 
 The `.name` field is required and used as an identifier of the rule.
 
-#### Labels
+#### labels
 
 The `.labels` is a map of the node labels to create if the rule matches.
 
@@ -550,7 +550,7 @@ This will yield into the following node label:
     feature.node.kubernetes.io/custom-label: "customlabel"
 ```
 
-#### Labels template
+#### labelsTemplate
 
 The `.labelsTemplate` field specifies a text template for dynamically creating
 labels based on the matched features. See [templating](#templating) for
@@ -560,9 +560,10 @@ details.
 > labels specified in the `labels` field will override anything
 > originating from `labelsTemplate`.
 
-#### Node Annotations
+#### annotations
 
-The `.annotations` field is a list of features to be advertised as annotations.
+The `.annotations` field is a list of features to be advertised as node
+annotations.
 
 Take this rule as a referential example:
 
@@ -608,7 +609,7 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
 > annotations the features won't be advertised as node labels unless they are
 > specified in the `labels` field.
 
-#### Taints
+#### taints
 
 *taints* is a list of taint entries and each entry can have `key`, `value` and `effect`,
 where the `value` is optional. Effect could be `NoSchedule`, `PreferNoSchedule`
@@ -655,14 +656,14 @@ key:
 > **NOTE:** taints field is not available for the custom rules of nfd-worker
 > and only for NodeFeatureRule objects.
 
-#### Vars
+#### vars
 
 The `.vars` field is a map of values (key-value pairs) to store for subsequent
 rules to use. In other words, these are variables that are not advertised as
 node labels. See [backreferences](#backreferences) for more details on the
 usage of vars.
 
-#### Extended resources
+#### extendedResources
 
 The `.extendedResources` field is a list of extended resources to advertise.
 See [extended resources](#extended-resources) for more details.
@@ -725,7 +726,7 @@ Resources names:
 > [custom feature source](#custom-feature-source) -- it can only be used in
 > NodeFeatureRule objects.
 
-#### Vars template
+#### varsTemplate
 
 The `.varsTemplate` field specifies a text template for dynamically creating
 vars based on the matched features. See [templating](#templating) for details
@@ -736,7 +737,7 @@ the usage of vars.
 > vars specified in the `vars` field will override anything originating from
 > `varsTemplate`.
 
-#### MatchFeatures
+#### matchFeatures
 
 The `.matchFeatures` field specifies a feature matcher, consisting of a list of
 feature matcher terms. It implements a logical AND over the terms i.e. all
@@ -784,7 +785,7 @@ element whose name matches the `<key>`. However, for *instance* features all
 MatchExpressions are evaluated against the attributes of each instance
 separately.
 
-#### MatchAny
+#### matchAny
 
 The `.matchAny` field is a list of of [`matchFeatures`](#matchfeatures)
 matchers. A logical OR is applied over the matchers, i.e. at least one of them
