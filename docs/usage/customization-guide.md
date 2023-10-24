@@ -717,6 +717,10 @@ Resources names:
 - unprefixed names will get prefixed with `feature.node.kubernetes.io/`
   automatically (e.g. `foo` becomes `feature.node.kubernetes.io/foo`)
 
+> **NOTE:** `.extendedResources` is not supported by the
+> [custom feature source](#custom-feature-source) -- it can only be used in
+> NodeFeatureRule objects.
+
 #### Vars template
 
 The `.varsTemplate` field specifies a text template for dynamically creating
