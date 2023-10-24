@@ -158,7 +158,7 @@ Now, on X86 platforms the feature label appears after doing `modprobe dummy` on
 a system and correspondingly the label is removed after `rmmod dummy`. Note a
 re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 
-See [Label rule format](#label-rule-format) for detailed description of
+See [Feature rule format](#feature-rule-format) for detailed description of
 available fields and how to write labeling rules.
 
 ### NodeFeatureRule tainting feature
@@ -503,7 +503,7 @@ The namespace part (i.e. prefix) of the labels is controlled by nfd:
     command line flag of nfd-master.
     e.g: `nfd-master -deny-label-ns="*" -extra-label-ns=example.com`
 
-## Label rule format
+## Feature rule format
 
 This section describes the rule format used  in
 [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and in the
