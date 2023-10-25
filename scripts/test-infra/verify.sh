@@ -4,7 +4,7 @@ this_dir=`dirname $0`
 
 # Install deps
 gobinpath="$(go env GOPATH)/bin"
-curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" v1.54.0
+curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" v1.55.1
 export PATH=$PATH:$(go env GOPATH)/bin
 
 curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -s -- --version v3.7.1
