@@ -110,22 +110,22 @@ name of the resulting container image. The following are targeted targeted for
 build customization and they can be specified via environment variables or
 makefile overrides.
 
-| Variable                   | Description                                                       | Default value
-| -------------------------- | ----------------------------------------------------------------- | ----------- |
-| HOSTMOUNT_PREFIX           | Prefix of system directories for feature discovery (local builds) | / (*local builds*) /host- (*container builds*)
-| IMAGE_BUILD_CMD            | Command to build the image                                        | docker build
-| IMAGE_BUILD_EXTRA_OPTS     | Extra options to pass to build command                            | *empty*
-| IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
-| IMAGE_ALL_PLATFORMS        | Comma separated list of OS/ARCH tuples for mulit-arch builds    | linux/amd64,linux/arm64
-| IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push
-| IMAGE_REGISTRY             | Container image registry to use                                   | registry.k8s.io/nfd
-| IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt;
-| IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty*
-| K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | node-feature-discovery
-| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty*
-| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty*
-| E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false
-| OPENSHIFT                  | Non-empty value enables OpenShift specific support (currently only effective in e2e tests) | *empty*
+| Variable                   | Description                                                       | Default value |
+| -------------------------- | ----------------------------------------------------------------- | ------------- |
+| HOSTMOUNT_PREFIX           | Prefix of system directories for feature discovery (local builds) | / (*local builds*) /host- (*container builds*) |
+| IMAGE_BUILD_CMD            | Command to build the image                                        | docker build |
+| IMAGE_BUILD_EXTRA_OPTS     | Extra options to pass to build command                            | *empty* |
+| IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull |
+| IMAGE_ALL_PLATFORMS        | Comma separated list of OS/ARCH tuples for mulit-arch builds       | linux/amd64,linux/arm64 |
+| IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push |
+| IMAGE_REGISTRY             | Container image registry to use                                   | registry.k8s.io/nfd |
+| IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt; |
+| IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty* |
+| K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | node-feature-discovery |
+| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty* |
+| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty* |
+| E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false |
+| OPENSHIFT                  | Non-empty value enables OpenShift specific support (currently only effective in e2e tests) | *empty* |
 
 For example, to use a custom registry:
 

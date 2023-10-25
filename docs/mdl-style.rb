@@ -8,3 +8,6 @@ rule 'MD013', :tables => false
 rule 'MD007', :indent => 2
 rule 'MD013', :ignore_code_blocks => true
 rule 'MD024', :allow_different_nesting => true
+# MD056 - Inconsistent number of columns in table
+# docs/deployment/helm.md:98
+exclude_rule 'MD056'

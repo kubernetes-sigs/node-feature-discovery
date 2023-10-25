@@ -706,18 +706,18 @@ which to evaluate against the elements of the feature.
 In each MatchExpression `op` specifies the operator to apply. Valid values are
 described below.
 
-| Operator        | Number of values | Matches when
-| --------------- | ---------------- | -----------
-|  `In`           | 1 or greater | Input is equal to one of the values
-|  `NotIn`        | 1 or greater | Input is not equal to any of the values
-|  `InRegexp`     | 1 or greater | Values of the MatchExpression are treated as regexps and input matches one or more of them
-|  `Exists`       | 0            | The key exists
-|  `DoesNotExist` | 0            | The key does not exists
-|  `Gt`           | 1            | Input is greater than the value. Both the input and value must be integer numbers.
-|  `Lt`           | 1            | Input is less than the value. Both the input and value must be integer numbers.
-|  `GtLt`         | 2            | Input is between two values. Both the input and value must be integer numbers.
-|  `IsTrue`       | 0            | Input is equal to "true"
-|  `IsFalse`      | 0            | Input is equal "false"
+| Operator        | Number of values | Matches when |
+| --------------- | ---------------- | ----------- |
+|  `In`           | 1 or greater | Input is equal to one of the values |
+|  `NotIn`        | 1 or greater | Input is not equal to any of the values |
+|  `InRegexp`     | 1 or greater | Values of the MatchExpression are treated as regexps and input matches one or more of them |
+|  `Exists`       | 0            | The key exists |
+|  `DoesNotExist` | 0            | The key does not exists |
+|  `Gt`           | 1            | Input is greater than the value. Both the input and value must be integer numbers. |
+|  `Lt`           | 1            | Input is less than the value. Both the input and value must be integer numbers. |
+|  `GtLt`         | 2            | Input is between two values. Both the input and value must be integer numbers. |
+|  `IsTrue`       | 0            | Input is equal to "true" |
+|  `IsFalse`      | 0            | Input is equal "false" |
 
 The `value` field of MatchExpression is a list of string arguments to the
 operator.
@@ -765,86 +765,86 @@ true).
 
 The following features are available for matching:
 
-| Feature          | [Feature type](#feature-types) | Elements | Value type | Description
-| ---------------- | ------------ | -------- | ---------- | -----------
-| **`cpu.cpuid`**  | flag         |          |            | Supported CPU capabilities
-|                  |              | **`<cpuid-flag>`** |  | CPUID flag is present
-| **`cpu.cstate`** | attribute    |          |            | Status of cstates in the intel_idle cpuidle driver
-|                  |              | **`enabled`** | bool  | 'true' if cstates are set, otherwise 'false'. Does not exist of intel_idle driver is not active.
-| **`cpu.model`**  | attribute    |          |            | CPU model related attributes
-|                  |              | **`family`** | int    | CPU family
-|                  |              | **`vendor_id`** | string | CPU vendor ID
-|                  |              | **`id`** | int        | CPU model ID
-| **`cpu.pstate`** | attribute    |          |            | State of the Intel pstate driver. Does not exist if the driver is not enabled.
-|                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive'
-|                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false'
-|                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'.
-| **`cpu.rdt`**    | attribute    |          |            | Intel RDT capabilities supported by the system
-|                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](#intel-rdt-flags) for details
-|                  |              | **`RDTL3CA_NUM_CLOSID`** | int  | The number or available CLOSID (Class of service ID) for Intel L3 Cache Allocation Technology
-| **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments
-|                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist
-|                  |              | **`sgx.epc`** | int | The total amount Intel SGX Encrypted Page Cache memory in bytes. It's only present if `sgx.enabled` is `true`.
-|                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist
-|                  |              | **`tdx.enabled`** | bool | `true` if Intel TDX (Trusted Domain Extensions) is available on the host and has been enabled, otherwise does not exist
-|                  |              | **`tdx.total_keys`** | int | The total amount of keys an Intel TDX (Trusted Domain Extensions) host can provide.  It's only present if `tdx.enabled` is `true`.
-|                  |              | **`tdx.protected`** | bool | `true` if a guest VM was started using Intel TDX (Trusted Domain Extensions), otherwise does not exist.
-|                  |              | **`sev.enabled`** | bool | `true` if AMD SEV (Secure Encrypted Virtualization) is available on the host and has been enabled, otherwise does not exist
-|                  |              | **`sev.es.enabled`** | bool | `true` if AMD SEV-ES (Encrypted State supported) is available on the host and has been enabled, otherwise does not exist
-|                  |              | **`sev.snp.enabled`** | bool | `true` if AMD SEV-SNP (Secure Nested Paging supported) is available on the host and has been enabled, otherwise does not exist
-| **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities
-|                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist
-| **`cpu.topology`** | attribute  |          |            | CPU topology related features
-| | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled
-| **`cpu.coprocessor`** | attribute |        |            | CPU Coprocessor related features
-| | |          **`nx_gzip`**                 | bool       | Nest Accelerator GZIP support is enabled
-| **`kernel.config`** | attribute |          |            | Kernel configuration options
-|                  |              | **`<config-flag>`** | string | Value of the kconfig option
-| **`kernel.loadedmodule`** | flag |         |            | Kernel modules loaded on the node as reported by `/proc/modules`
-| **`kernel.enabledmodule`** | flag |        |            | Kernel modules loaded on the node and available as built-ins as reported by `modules.builtin`
-|                  |              | **`mod-name`** |      | Kernel module `<mod-name>` is loaded
-| **`kernel.selinux`** | attribute |         |            | Kernel SELinux related features
-|                  |              | **`enabled`** | bool  | `true` if SELinux has been enabled and is in enforcing mode, otherwise `false`
-| **`kernel.version`** | attribute |          |           | Kernel version information
-|                  |              | **`full`** | string   | Full kernel version (e.g. ‘4.5.6-7-g123abcde')
-|                  |              | **`major`** | int     | First component of the kernel version (e.g. ‘4')
-|                  |              | **`minor`** | int     | Second component of the kernel version (e.g. ‘5')
-|                  |              | **`revision`** | int  | Third component of the kernel version (e.g. ‘6')
-| **`local.label`** | attribute   |           |           | Labels from feature files and hooks, i.e. labels from the [*local* feature source](#local-feature-source)
-| **`local.feature`** | attribute   |           |         | Features from feature files and hooks, i.e. features from the [*local* feature source](#local-feature-source)
-|                  |              | **`<label-name>`** | string | Label `<label-name>` created by the local feature source, value equals the value of the label
-| **`memory.nv`**  | instance     |          |            | NVDIMM devices present in the system
-|                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `devtype`, `mode`
-| **`memory.numa`**  | attribute  |          |            | NUMA nodes
-|                  |              | **`is_numa`** | bool  | `true` if NUMA architecture, `false` otherwise
-|                  |              | **`node_count`** | int | Number of NUMA nodes
-| **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system
-|                  |              | **`name`** | string   | Name of the network interface
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`
-| **`pci.device`** | instance     |          |            | PCI devices present in the system
-|                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`, `iommu/intel-iommu/version`
-| **`storage.device`** | instance |          |            | Block storage devices present in the system
-|                  |              | **`name`** | string   | Name of the block device
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned`
-| **`system.osrelease`** | attribute |          |            | System identification data from `/etc/os-release`
-|                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release`
-| **`system.name`** | attribute   |          |            | System name information
-|                  |              | **`nodename`** | string | Name of the kubernetes node object
-| **`usb.device`** | instance     |          |            | USB devices present in the system
-|                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `serial`
-| **`rule.matched`** | attribute  |          |            | Previously matched rules
-|                  |              | **`<label-or-var>`** | string | Label or var from a preceding rule that matched
+| Feature          | [Feature type](#feature-types) | Elements | Value type | Description |
+| ---------------- | ------------ | -------- | ---------- | ----------- |
+| **`cpu.cpuid`**  | flag         |          |            | Supported CPU capabilities |
+|                  |              | **`<cpuid-flag>`** |  | CPUID flag is present |
+| **`cpu.cstate`** | attribute    |          |            | Status of cstates in the intel_idle cpuidle driver |
+|                  |              | **`enabled`** | bool  | 'true' if cstates are set, otherwise 'false'. Does not exist of intel_idle driver is not active. |
+| **`cpu.model`**  | attribute    |          |            | CPU model related attributes |
+|                  |              | **`family`** | int    | CPU family |
+|                  |              | **`vendor_id`** | string | CPU vendor ID |
+|                  |              | **`id`** | int        | CPU model ID |
+| **`cpu.pstate`** | attribute    |          |            | State of the Intel pstate driver. Does not exist if the driver is not enabled. |
+|                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive' |
+|                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false' |
+|                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'. |
+| **`cpu.rdt`**    | attribute    |          |            | Intel RDT capabilities supported by the system |
+|                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](#intel-rdt-flags) for details |
+|                  |              | **`RDTL3CA_NUM_CLOSID`** | int  | The number or available CLOSID (Class of service ID) for Intel L3 Cache Allocation Technology |
+| **`cpu.security`** | attribute  |          |            | Features related to security and trusted execution environments |
+|                  |              | **`sgx.enabled`** | bool | `true` if Intel SGX (Software Guard Extensions) has been enabled, otherwise does not exist |
+|                  |              | **`sgx.epc`** | int | The total amount Intel SGX Encrypted Page Cache memory in bytes. It's only present if `sgx.enabled` is `true`. |
+|                  |              | **`se.enabled`** | bool  | `true` if IBM Secure Execution for Linux is available and has been enabled, otherwise does not exist |
+|                  |              | **`tdx.enabled`** | bool | `true` if Intel TDX (Trusted Domain Extensions) is available on the host and has been enabled, otherwise does not exist |
+|                  |              | **`tdx.total_keys`** | int | The total amount of keys an Intel TDX (Trusted Domain Extensions) host can provide.  It's only present if `tdx.enabled` is `true`. |
+|                  |              | **`tdx.protected`** | bool | `true` if a guest VM was started using Intel TDX (Trusted Domain Extensions), otherwise does not exist. |
+|                  |              | **`sev.enabled`** | bool | `true` if AMD SEV (Secure Encrypted Virtualization) is available on the host and has been enabled, otherwise does not exist |
+|                  |              | **`sev.es.enabled`** | bool | `true` if AMD SEV-ES (Encrypted State supported) is available on the host and has been enabled, otherwise does not exist |
+|                  |              | **`sev.snp.enabled`** | bool | `true` if AMD SEV-SNP (Secure Nested Paging supported) is available on the host and has been enabled, otherwise does not exist |
+| **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities |
+|                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist |
+| **`cpu.topology`** | attribute  |          |            | CPU topology related features |
+| | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled |
+| **`cpu.coprocessor`** | attribute |        |            | CPU Coprocessor related features |
+| | |          **`nx_gzip`**                 | bool       | Nest Accelerator GZIP support is enabled |
+| **`kernel.config`** | attribute |          |            | Kernel configuration options |
+|                  |              | **`<config-flag>`** | string | Value of the kconfig option |
+| **`kernel.loadedmodule`** | flag |         |            | Kernel modules loaded on the node as reported by `/proc/modules` |
+| **`kernel.enabledmodule`** | flag |        |            | Kernel modules loaded on the node and available as built-ins as reported by `modules.builtin` |
+|                  |              | **`mod-name`** |      | Kernel module `<mod-name>` is loaded |
+| **`kernel.selinux`** | attribute |         |            | Kernel SELinux related features |
+|                  |              | **`enabled`** | bool  | `true` if SELinux has been enabled and is in enforcing mode, otherwise `false` |
+| **`kernel.version`** | attribute |          |           | Kernel version information |
+|                  |              | **`full`** | string   | Full kernel version (e.g. ‘4.5.6-7-g123abcde') |
+|                  |              | **`major`** | int     | First component of the kernel version (e.g. ‘4') |
+|                  |              | **`minor`** | int     | Second component of the kernel version (e.g. ‘5') |
+|                  |              | **`revision`** | int  | Third component of the kernel version (e.g. ‘6') |
+| **`local.label`** | attribute   |           |           | Labels from feature files and hooks, i.e. labels from the [*local* feature source](#local-feature-source) |
+| **`local.feature`** | attribute   |           |         | Features from feature files and hooks, i.e. features from the [*local* feature source](#local-feature-source) |
+|                  |              | **`<label-name>`** | string | Label `<label-name>` created by the local feature source, value equals the value of the label |
+| **`memory.nv`**  | instance     |          |            | NVDIMM devices present in the system |
+|                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `devtype`, `mode` |
+| **`memory.numa`**  | attribute  |          |            | NUMA nodes |
+|                  |              | **`is_numa`** | bool  | `true` if NUMA architecture, `false` otherwise |
+|                  |              | **`node_count`** | int | Number of NUMA nodes |
+| **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system |
+|                  |              | **`name`** | string   | Name of the network interface |
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs` |
+| **`pci.device`** | instance     |          |            | PCI devices present in the system |
+|                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`, `iommu/intel-iommu/version` |
+| **`storage.device`** | instance |          |            | Block storage devices present in the system |
+|                  |              | **`name`** | string   | Name of the block device |
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned` |
+| **`system.osrelease`** | attribute |          |            | System identification data from `/etc/os-release` |
+|                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release` |
+| **`system.name`** | attribute   |          |            | System name information |
+|                  |              | **`nodename`** | string | Name of the kubernetes node object |
+| **`usb.device`** | instance     |          |            | USB devices present in the system |
+|                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `serial` |
+| **`rule.matched`** | attribute  |          |            | Previously matched rules |
+|                  |              | **`<label-or-var>`** | string | Label or var from a preceding rule that matched |
 
 #### Intel RDT flags
 
 | Flag      | Description                                                      |
 | --------- | ---------------------------------------------------------------- |
-| RDTMON    | Intel RDT Monitoring Technology
-| RDTCMT    | Intel Cache Monitoring (CMT)
-| RDTMBM    | Intel Memory Bandwidth Monitoring (MBM)
-| RDTL3CA   | Intel L3 Cache Allocation Technology
-| RDTl2CA   | Intel L2 Cache Allocation Technology
-| RDTMBA    | Intel Memory Bandwidth Allocation (MBA) Technology
+| RDTMON    | Intel RDT Monitoring Technology                                   |
+| RDTCMT    | Intel Cache Monitoring (CMT)                                      |
+| RDTMBM    | Intel Memory Bandwidth Monitoring (MBM)                           |
+| RDTL3CA   | Intel L3 Cache Allocation Technology                              |
+| RDTl2CA   | Intel L2 Cache Allocation Technology                              |
+| RDTMBA    | Intel Memory Bandwidth Allocation (MBA) Technology                |
 
 ### Templating
 
