@@ -807,19 +807,22 @@ core:
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-5.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node annotations from NodeFeatureRules #5")
-					expectedAnnotations["*"] = k8sAnnotations{
-						nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation":   "foo",
-						nfdv1alpha1.FeatureLabelNs + "/defaul-ns-annotation-2": "bar",
-						"custom.vendor.example/feature":                        "baz",
-					}
+					expectedAnnotations["*"][nfdv1alpha1.FeatureAnnotationNs+"/defaul-ns-annotation"] = "foo"
+					expectedAnnotations["*"][nfdv1alpha1.FeatureAnnotationNs+"/defaul-ns-annotation-2"] = "bar"
+					expectedAnnotations["*"]["custom.vendor.io/feature"] = "baz"
+					expectedAnnotations["*"][nfdv1alpha1.FeatureAnnotationsTrackingAnnotation] = "custom.vendor.io/feature,defaul-ns-annotation,defaul-ns-annotation-2"
+
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
 
 					By("Deleting NodeFeatureRule object")
-					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, " e2e-feature-annotations-test", metav1.DeleteOptions{})
+					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-feature-annotations-test", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node annotations from NodeFeatureRules #5 are deleted")
-					expectedAnnotations["*"] = k8sAnnotations{}
+					delete(expectedAnnotations["*"], nfdv1alpha1.FeatureAnnotationNs+"/defaul-ns-annotation")
+					delete(expectedAnnotations["*"], nfdv1alpha1.FeatureAnnotationNs+"/defaul-ns-annotation-2")
+					delete(expectedAnnotations["*"], "custom.vendor.io/feature")
+					delete(expectedAnnotations["*"], nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
 
 					By("Deleting nfd-worker daemonset")
