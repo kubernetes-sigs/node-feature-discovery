@@ -465,7 +465,7 @@ func (m *nfdMaster) prune() error {
 		klog.InfoS("pruning node...", "nodeName", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
+		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
 			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
@@ -837,12 +837,12 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	return q.String(), nil
 }
 
-func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, annotations Annotations, labels map[string]string, features *nfdv1alpha1.Features) error {
+func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, nfdAnnotations Annotations, labels map[string]string, features *nfdv1alpha1.Features) error {
 	if labels == nil {
 		labels = make(map[string]string)
 	}
 
-	crLabels, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
+	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
 
 	// Mix in CR-originated labels
 	for k, v := range crLabels {
@@ -859,12 +859,16 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	}
 	extendedResources = filterExtendedResources(features, extendedResources)
 
+	// Annotations
+	featureAnnotations := m.filterFeatureAnnotations(crAnnotations)
+
+	// Taints
 	var taints []corev1.Taint
 	if m.config.EnableTaints {
 		taints = filterTaints(crTaints)
 	}
 
-	err := m.updateNodeObject(cli, nodeName, labels, annotations, extendedResources, taints)
+	err := m.updateNodeObject(cli, nodeName, labels, nfdAnnotations, featureAnnotations, extendedResources, taints)
 	if err != nil {
 		klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
 		return err
@@ -974,13 +978,14 @@ func authorizeClient(c context.Context, checkNodeName bool, nodeName string) err
 	return nil
 }
 
-func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, ExtendedResources, []corev1.Taint) {
+func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, Annotations, ExtendedResources, []corev1.Taint) {
 	if m.nfdController == nil {
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	}
 
 	extendedResources := ExtendedResources{}
 	labels := make(map[string]string)
+	annotations := make(map[string]string)
 	var taints []corev1.Taint
 	ruleSpecs, err := m.nfdController.ruleLister.List(k8sLabels.Everything())
 	sort.Slice(ruleSpecs, func(i, j int) bool {
@@ -989,7 +994,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 
 	if err != nil {
 		klog.ErrorS(err, "failed to list NodeFeatureRule resources")
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	}
 
 	// Process all rule CRs
@@ -1016,6 +1021,9 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			for k, v := range ruleOut.ExtendedResources {
 				extendedResources[k] = v
 			}
+			for k, v := range ruleOut.Annotations {
+				annotations[k] = v
+			}
 
 			// Feed back rule output to features map for subsequent rules to match
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
@@ -1026,13 +1034,13 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 	processingTime := time.Since(processStart)
 	klog.V(2).InfoS("processed NodeFeatureRule objects", "nodeName", nodeName, "objectCount", len(ruleSpecs), "duration", processingTime)
 
-	return labels, extendedResources, taints
+	return labels, annotations, extendedResources, taints
 }
 
 // updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string, labels Labels, annotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
+func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string, labels Labels, nfdAnnotations, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
 	if cli == nil {
 		return fmt.Errorf("no client is passed, client:  %v", cli)
 	}
@@ -1051,7 +1059,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 			labelKeys = append(labelKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
 		}
 		sort.Strings(labelKeys)
-		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
+		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 	}
 
 	// Store names of extended resources in an annotation
@@ -1062,23 +1070,43 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 			extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
 		}
 		sort.Strings(extendedResourceKeys)
-		annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
+		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
+	}
+
+	// Store feature annotations
+	annotations := make(Annotations)
+	if len(featureAnnotations) > 0 {
+		// Store names of feature annotations in an annotation
+		annotationKeys := make([]string, 0, len(featureAnnotations))
+		for key := range featureAnnotations {
+			// Drop the ns part for annotations in the default ns
+			annotationKeys = append(annotationKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureAnnotationNs+"/"))
+		}
+		sort.Strings(annotationKeys)
+		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)] = strings.Join(annotationKeys, ",")
+		for k, v := range featureAnnotations {
+			annotations[k] = v
+		}
+	}
+
+	if len(nfdAnnotations) > 0 {
+		for k, v := range nfdAnnotations {
+			annotations[k] = v
+		}
 	}
 
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
+	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
 	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
-	patches = append(patches,
-		createPatches(
-			[]string{
-				m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
-				m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
-				// Clean up deprecated/stale nfd version annotations
-				m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
-				m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation)},
-			node.Annotations,
-			annotations,
-			"/metadata/annotations")...)
+	oldAnnotations = append(oldAnnotations, []string{
+		m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
+		m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
+		m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation),
+		// Clean up deprecated/stale nfd version annotations
+		m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
+		m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation)}...)
+	patches = append(patches, createPatches(oldAnnotations, node.Annotations, annotations, "/metadata/annotations")...)
 
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
@@ -1378,4 +1406,28 @@ func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
 	}
 
 	leaderElector.Run(ctx)
+}
+
+// Filter annotations by namespace. i.e. adds the possibly missing default namespace for annotations
+func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[string]string {
+	outAnnotations := make(map[string]string)
+
+	for annotation, value := range annotations {
+		// Add possibly missing default ns
+		annotation := addNs(annotation, nfdv1alpha1.FeatureAnnotationNs)
+
+		ns, _ := splitNs(annotation)
+
+		// Check annotation namespace, filter out if ns is not whitelisted
+		if ns != nfdv1alpha1.FeatureAnnotationNs && !strings.HasSuffix(ns, nfdv1alpha1.FeatureAnnotationSubNsSuffix) {
+			// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
+			if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") || ns == nfdv1alpha1.AnnotationNs {
+				klog.ErrorS(fmt.Errorf("namespace %v is not allowed", ns), fmt.Sprintf("Ignoring annotation %v\n", annotation))
+				continue
+			}
+		}
+
+		outAnnotations[annotation] = value
+	}
+	return outAnnotations
 }

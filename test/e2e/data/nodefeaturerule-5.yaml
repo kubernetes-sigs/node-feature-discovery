@@ -1,0 +1,19 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: e2e-feature-annotations-test
+spec:
+  rules:
+    # Positive test expected to set the annotations
+    - name: "e2e-annotation-test"
+      annotations:
+        defaul-ns-annotation: "foo"
+        feature.node.kubernetes.io/defaul-ns-annotation-2: "bar"
+        custom.vendor.io/feature: "baz"
+        kubernetes.io/feature: "denied"
+        subns.kubernetes.io/blah: "denied"
+        nfd.node.kubernetes.io/xyz: "denied"
+      matchFeatures:
+        - feature: "fake.flag"
+          matchExpressions:
+            "flag_1": {op: Exists}

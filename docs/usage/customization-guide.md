@@ -594,6 +594,54 @@ details.
 > labels specified in the `labels` field will override anything
 > originating from `labelsTemplate`.
 
+#### Node Annotations
+
+The `.annotations` field is a list of features to be advertised as annotations.
+
+Take this rule as a referential example:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: feature-annotations-example
+spec:
+  rules:
+    - name: "annotation-example"
+      annotations:
+        defaul-ns-annotation: "foo"
+        feature.node.kubernetes.io/defaul-ns-annotation-2: "bar"
+        custom.vendor.io/feature: "baz"
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: Exists}
+```
+
+This will yield into the following node annotations:
+
+```yaml
+  annotations:
+    ...
+    feature.node.kubernetes.io/defaul-ns-annotation: "foo"
+    feature.node.kubernetes.io/defaul-ns-annotation-2: "bar"
+    custom.vendor.io/feature: "baz"
+    ...
+```
+
+NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
+
+- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
+  generally be used
+- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
+  (like `sub.ns.feature.node.kubernetes.io`)
+- unprefixed names will get prefixed with `feature.node.kubernetes.io/`
+  automatically (e.g. `foo` becomes `feature.node.kubernetes.io/foo`)
+
+> **NOTE:** The `annotations` field has will only advertise features via node
+> annotations the features won't be advertised as node labels unless they are
+> specified in the `labels` field.
+
 #### Taints
 
 *taints* is a list of taint entries and each entry can have `key`, `value` and `effect`,

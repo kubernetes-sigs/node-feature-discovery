@@ -153,6 +153,11 @@ spec:
                   description: Rule defines a rule for node customization such as
                     labeling.
                   properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations to create if the rule matches.
+                      type: object
                     extendedResources:
                       additionalProperties:
                         type: string
