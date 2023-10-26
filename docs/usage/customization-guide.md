@@ -158,10 +158,10 @@ Now, on X86 platforms the feature label appears after doing `modprobe dummy` on
 a system and correspondingly the label is removed after `rmmod dummy`. Note a
 re-labeling delay up to the sleep-interval of nfd-worker (1 minute by default).
 
-See [Label rule format](#label-rule-format) for detailed description of
+See [Feature rule format](#feature-rule-format) for detailed description of
 available fields and how to write labeling rules.
 
-### NodeFeatureRule tainting feature
+### Node tainting
 
 This feature is experimental.
 
@@ -178,47 +178,13 @@ To enable the tainting feature, `--enable-taints` flag needs to be set to `true`
 If the flag `--enable-taints` is set to `false` (i.e. disabled), taints defined in
 the NodeFeatureRule CR have no effect and will be ignored by the NFD master.
 
+See documentation of the [taints field](#taints) for detailed description how
+to specify taints in the NodeFeatureRule object.
+
 > **NOTE:** Before enabling any taints, make sure to edit nfd-worker daemonset
 > to tolerate the taints to be created. Otherwise, already running pods that do
 > not tolerate the taint are evicted immediately from the node including the
 > nfd-worker pod.
-
-Example NodeFeatureRule with custom taints:
-
-```yaml
-apiVersion: nfd.k8s-sigs.io/v1alpha1
-kind: NodeFeatureRule
-metadata:
-  name: my-sample-rule-object
-spec:
-  rules:
-    - name: "my sample taint rule"
-      taints:
-        - effect: PreferNoSchedule
-          key: "feature.node.kubernetes.io/special-node"
-          value: "true"
-        - effect: NoExecute
-          key: "feature.node.kubernetes.io/dedicated-node"
-      matchFeatures:
-        - feature: kernel.loadedmodule
-          matchExpressions:
-            dummy: {op: Exists}
-        - feature: kernel.config
-          matchExpressions:
-            X86: {op: In, value: ["y"]}
-```
-
-In this example, if the `my sample taint rule` rule is matched, `feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
-and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
-
-There are some limitations to the namespace part (i.e. prefix/) of the taint
-key:
-
-- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
-  generally be used
-- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
-  (like `sub.ns.feature.node.kubernetes.io`)
-- unprefixed keys (like `foo`) keys are disallowed
 
 ## Local feature source
 
@@ -503,7 +469,7 @@ The namespace part (i.e. prefix) of the labels is controlled by nfd:
     command line flag of nfd-master.
     e.g: `nfd-master -deny-label-ns="*" -extra-label-ns=example.com`
 
-## Label rule format
+## Feature rule format
 
 This section describes the rule format used  in
 [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and in the
@@ -544,11 +510,11 @@ the matchers):
 
 ### Fields
 
-#### Name
+#### name
 
 The `.name` field is required and used as an identifier of the rule.
 
-#### Labels
+#### labels
 
 The `.labels` is a map of the node labels to create if the rule matches.
 
@@ -584,7 +550,7 @@ This will yield into the following node label:
     feature.node.kubernetes.io/custom-label: "customlabel"
 ```
 
-#### Labels template
+#### labelsTemplate
 
 The `.labelsTemplate` field specifies a text template for dynamically creating
 labels based on the matched features. See [templating](#templating) for
@@ -594,9 +560,10 @@ details.
 > labels specified in the `labels` field will override anything
 > originating from `labelsTemplate`.
 
-#### Node Annotations
+#### annotations
 
-The `.annotations` field is a list of features to be advertised as annotations.
+The `.annotations` field is a list of features to be advertised as node
+annotations.
 
 Take this rule as a referential example:
 
@@ -642,23 +609,61 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
 > annotations the features won't be advertised as node labels unless they are
 > specified in the `labels` field.
 
-#### Taints
+#### taints
 
 *taints* is a list of taint entries and each entry can have `key`, `value` and `effect`,
 where the `value` is optional. Effect could be `NoSchedule`, `PreferNoSchedule`
 or `NoExecute`. To learn more about the meaning of these effects, check out k8s [documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
 
+Example NodeFeatureRule with taints:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-rule-object
+spec:
+  rules:
+    - name: "my sample taint rule"
+      taints:
+        - effect: PreferNoSchedule
+          key: "feature.node.kubernetes.io/special-node"
+          value: "true"
+        - effect: NoExecute
+          key: "feature.node.kubernetes.io/dedicated-node"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            dummy: {op: Exists}
+        - feature: kernel.config
+          matchExpressions:
+            X86: {op: In, value: ["y"]}
+```
+
+In this example, if the `my sample taint rule` rule is matched,
+`feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
+and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
+
+There are some limitations to the namespace part (i.e. prefix/) of the taint
+key:
+
+- `kubernetes.io/` and its sub-namespaces (like `sub.ns.kubernetes.io/`) cannot
+  generally be used
+- the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
+  (like `sub.ns.feature.node.kubernetes.io`)
+- unprefixed keys (like `foo`) keys are disallowed
+
 > **NOTE:** taints field is not available for the custom rules of nfd-worker
 > and only for NodeFeatureRule objects.
 
-#### Vars
+#### vars
 
 The `.vars` field is a map of values (key-value pairs) to store for subsequent
 rules to use. In other words, these are variables that are not advertised as
 node labels. See [backreferences](#backreferences) for more details on the
 usage of vars.
 
-#### Extended resources
+#### extendedResources
 
 The `.extendedResources` field is a list of extended resources to advertise.
 See [extended resources](#extended-resources) for more details.
@@ -717,7 +722,11 @@ Resources names:
 - unprefixed names will get prefixed with `feature.node.kubernetes.io/`
   automatically (e.g. `foo` becomes `feature.node.kubernetes.io/foo`)
 
-#### Vars template
+> **NOTE:** `.extendedResources` is not supported by the
+> [custom feature source](#custom-feature-source) -- it can only be used in
+> NodeFeatureRule objects.
+
+#### varsTemplate
 
 The `.varsTemplate` field specifies a text template for dynamically creating
 vars based on the matched features. See [templating](#templating) for details
@@ -728,7 +737,7 @@ the usage of vars.
 > vars specified in the `vars` field will override anything originating from
 > `varsTemplate`.
 
-#### MatchFeatures
+#### matchFeatures
 
 The `.matchFeatures` field specifies a feature matcher, consisting of a list of
 feature matcher terms. It implements a logical AND over the terms i.e. all
@@ -776,7 +785,7 @@ element whose name matches the `<key>`. However, for *instance* features all
 MatchExpressions are evaluated against the attributes of each instance
 separately.
 
-#### MatchAny
+#### matchAny
 
 The `.matchAny` field is a list of of [`matchFeatures`](#matchfeatures)
 matchers. A logical OR is applied over the matchers, i.e. at least one of them
