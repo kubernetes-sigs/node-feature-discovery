@@ -657,7 +657,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithTolerations(testTolerations),
 					}
 				})
-				It("custom labels from the NodeFeatureRule rules should be created", func(ctx context.Context) {
+				It("custom features from the NodeFeatureRule rules should be created", func(ctx context.Context) {
 					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -766,9 +766,10 @@ core:
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes))
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
 
-					By("Deleting NodeFeatureRule object")
+					By("Deleting NodeFeatureRule #3")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-test-3", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
+					By("Verifying taints from NodeFeatureRules #3 were removed")
 					expectedTaints["*"] = []corev1.Taint{}
 					delete(expectedAnnotations["*"], "nfd.node.kubernetes.io/taints")
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes))
