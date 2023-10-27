@@ -66,6 +66,12 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 				nfdLabels[name] = struct{}{}
 			}
 		}
+		nfdAnnotations := map[string]struct{}{}
+		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.FeatureAnnotationsTrackingAnnotation], ",") {
+			if strings.Contains(name, "/") {
+				nfdAnnotations[name] = struct{}{}
+			}
+		}
 		nfdERs := map[string]struct{}{}
 		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.ExtendedResourceAnnotation], ",") {
 			if strings.Contains(name, "/") {
@@ -84,7 +90,8 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 
 		// Remove annotations
 		for key := range node.Annotations {
-			if strings.HasPrefix(key, nfdv1alpha1.AnnotationNs) {
+			_, ok := nfdAnnotations[key]
+			if ok || strings.HasPrefix(key, nfdv1alpha1.AnnotationNs) || strings.HasPrefix(key, nfdv1alpha1.FeatureAnnotationNs) {
 				delete(node.Annotations, key)
 				update = true
 			}
