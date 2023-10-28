@@ -13,6 +13,9 @@ namespaceOverride: ""
 
 enableNodeFeatureApi: true
 
+spiffe:
+  enable: true
+
 master:
   enable: true
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
@@ -22,6 +25,7 @@ master:
     # resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
     # enableTaints: false
     # labelWhiteList: "foo"
+    # enableSpiffe: true
     # resyncPeriod: "2h"
     # klog:
     #    addDirHeader: false
@@ -142,6 +146,7 @@ worker:
     #  sleepInterval: 60s
     #  featureSources: [all]
     #  labelSources: [all]
+    #  enableSpiffe: true
     #  klog:
     #    addDirHeader: false
     #    alsologtostderr: false
