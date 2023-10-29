@@ -108,6 +108,9 @@ spec:
             - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
             - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
             {{- end }}
+            {{- if .Values.spiffe.enable }}
+            - "-enable-spiffe"
+            {{- end }}
             - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
           volumeMounts:
             {{- if .Values.tls.enable }}
@@ -115,9 +118,11 @@ spec:
               mountPath: "/etc/kubernetes/node-feature-discovery/certs"
               readOnly: true
             {{- end }}
+            {{- if .Values.spiffe.enable }}
             - name: spire-agent-socket
               mountPath: /run/spire/sockets
               readOnly: true
+            {{- end }}
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
@@ -127,10 +132,12 @@ spec:
           secret:
             secretName: nfd-master-cert
         {{- end }}
+        {{- if .Values.spiffe.enable }}
         - name: spire-agent-socket
           hostPath:
             path: /run/spire/sockets
             type: Directory
+        {{- end }}
         - name: nfd-master-conf
           configMap:
             name: {{ include "node-feature-discovery.fullname" . }}-master-conf

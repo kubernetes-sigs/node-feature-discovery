@@ -13,7 +13,6 @@ spec:
   serviceName: spire-server
   template:
     metadata:
-      namespace: spire
       labels:
         app: spire-server
     spec:
@@ -54,7 +53,6 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: spire-data
-        namespace: spire
       spec:
         accessModes:
           - ReadWriteOnce

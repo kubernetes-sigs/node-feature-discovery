@@ -1,6 +1,6 @@
 image:
   repository: ahmedgrati/node-feature-discovery
-  tag: b0290ef-dirty
+  tag: 42a3b9f-dirty
   # This should be set to 'IfNotPresent' for released version
   pullPolicy: Always
   # tag, if defined will use the given image tag, else Chart.AppVersion will be used
@@ -24,8 +24,8 @@ master:
     # denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
     # resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
     # enableTaints: false
-    # labelWhiteList: "foo"
     # enableSpiffe: true
+    # labelWhiteList: "foo"
     # resyncPeriod: "2h"
     # klog:
     #    addDirHeader: false
@@ -144,9 +144,9 @@ worker:
     #  labelWhiteList:
     #  noPublish: false
     #  sleepInterval: 60s
+    #  enableSpiffe: true
     #  featureSources: [all]
     #  labelSources: [all]
-    #  enableSpiffe: true
     #  klog:
     #    addDirHeader: false
     #    alsologtostderr: false

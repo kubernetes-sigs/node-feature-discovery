@@ -120,21 +120,21 @@ deploy: yamls
 templates:
 	@# Need to prepend each line in the sample config with spaces in order to
 	@# fit correctly in the configmap spec.
-	@sed s'/^/    /' deployment/components/worker-config/nfd-worker.conf.example > nfd-worker.conf.tmp
-	@sed s'/^/    /' deployment/components/master-config/nfd-master.conf.example > nfd-master.conf.tmp
-	@sed s'/^/    /' deployment/components/topology-updater-config/nfd-topology-updater.conf.example > nfd-topology-updater.conf.tmp
+	@gsed s'/^/    /' deployment/components/worker-config/nfd-worker.conf.example > nfd-worker.conf.tmp
+	@gsed s'/^/    /' deployment/components/master-config/nfd-master.conf.example > nfd-master.conf.tmp
+	@gsed s'/^/    /' deployment/components/topology-updater-config/nfd-topology-updater.conf.example > nfd-topology-updater.conf.tmp
 	@# The sed magic below replaces the block of text between the lines with start and end markers
 	@start=NFD-MASTER-CONF-START-DO-NOT-REMOVE; \
 	end=NFD-MASTER-CONF-END-DO-NOT-REMOVE; \
-	sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-master.conf.tmp" \
+	gsed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-master.conf.tmp" \
 	    -e "}; /$$end/p; d }" -i deployment/helm/node-feature-discovery/values.yaml
 	@start=NFD-WORKER-CONF-START-DO-NOT-REMOVE; \
 	end=NFD-WORKER-CONF-END-DO-NOT-REMOVE; \
-	sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-worker.conf.tmp" \
+	gsed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-worker.conf.tmp" \
 	    -e "}; /$$end/p; d }" -i deployment/helm/node-feature-discovery/values.yaml
 	@start=NFD-TOPOLOGY-UPDATER-CONF-START-DO-NOT-REMOVE; \
 	end=NFD-TOPOLOGY-UPDATER-CONF-END-DO-NOT-REMOVE; \
-	sed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-topology-updater.conf.tmp" \
+	gsed -e "/$$start/,/$$end/{ /$$start/{ p; r nfd-topology-updater.conf.tmp" \
 		-e "}; /$$end/p; d }" -i deployment/helm/node-feature-discovery/values.yaml
 	@rm nfd-master.conf.tmp
 	@rm nfd-worker.conf.tmp

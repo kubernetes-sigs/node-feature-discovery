@@ -30,6 +30,9 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 )
 
+// WorkerSpiffeID is the SpiffeID of the worker
+const WorkerSpiffeID = "spiffe://nfd.com/worker"
+
 type SpiffeClient struct {
 	WorkloadApiClient workloadapi.Client
 }
@@ -44,11 +47,7 @@ func NewSpiffeClient(socketPath string) (*SpiffeClient, error) {
 	return &spiffeClient, nil
 }
 
-func GetSpiffeId(nodeName string) string {
-	return fmt.Sprintf("spiffe://example.org/%s", nodeName)
-}
-
-func (s *SpiffeClient) SignData(data interface{}, spiffeId string) ([]byte, error) {
+func (s *SpiffeClient) SignData(data interface{}) ([]byte, error) {
 	ctx := context.Background()
 	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
 	if err != nil {
@@ -62,7 +61,7 @@ func (s *SpiffeClient) SignData(data interface{}, spiffeId string) ([]byte, erro
 
 	dataHash := sha256.Sum256([]byte(stringifyData))
 	for _, svid := range svids {
-		if svid.ID.String() == spiffeId {
+		if svid.ID.String() == WorkerSpiffeID {
 			privateKey := svid.PrivateKey
 			switch t := privateKey.(type) {
 			case *rsa.PrivateKey:
@@ -76,17 +75,16 @@ func (s *SpiffeClient) SignData(data interface{}, spiffeId string) ([]byte, erro
 				if err != nil {
 					return []byte{}, err
 				}
-				fmt.Printf("SIGNED DATA: %v\n", signedData)
 				return signedData, nil
 			default:
 				return nil, fmt.Errorf("unknown private key type: %v", t)
 			}
 		}
 	}
-	return []byte{}, fmt.Errorf("cannot sign data: spiffe ID %s is not found", spiffeId)
+	return []byte{}, fmt.Errorf("cannot sign data: spiffe ID %s is not found", WorkerSpiffeID)
 }
 
-func (s *SpiffeClient) VerifyDataSignature(data interface{}, spiffeId string, signedData string) (bool, error) {
+func (s *SpiffeClient) VerifyDataSignature(data interface{}, signedData string) (bool, error) {
 	ctx := context.Background()
 	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
 	if err != nil {
@@ -104,9 +102,8 @@ func (s *SpiffeClient) VerifyDataSignature(data interface{}, spiffeId string, si
 	}
 
 	dataHash := sha256.Sum256([]byte(stringifyData))
-	fmt.Printf("SIGNED DATA: %v\n", decodedSignature)
 	for _, svid := range svids {
-		if svid.ID.String() == spiffeId {
+		if svid.ID.String() == WorkerSpiffeID {
 			privateKey := svid.PrivateKey
 			switch t := privateKey.(type) {
 			case *rsa.PrivateKey:
@@ -124,5 +121,5 @@ func (s *SpiffeClient) VerifyDataSignature(data interface{}, spiffeId string, si
 		}
 	}
 
-	return false, fmt.Errorf("cannot sign data: spiffe ID %s is not found", spiffeId)
+	return false, fmt.Errorf("cannot sign data: spiffe ID %s is not found", WorkerSpiffeID)
 }

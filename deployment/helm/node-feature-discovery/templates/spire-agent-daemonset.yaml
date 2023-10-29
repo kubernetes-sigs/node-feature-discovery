@@ -43,20 +43,6 @@ spec:
             - name: spire-agent-socket
               mountPath: /run/spire/sockets
               readOnly: false
-          livenessProbe:
-            httpGet:
-              path: /live
-              port: 8080
-            failureThreshold: 2
-            initialDelaySeconds: 15
-            periodSeconds: 60
-            timeoutSeconds: 3
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
       volumes:
         - name: spire-config
           configMap:

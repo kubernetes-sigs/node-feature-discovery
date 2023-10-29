@@ -86,6 +86,7 @@ type NFDConfig struct {
 	LeaderElection    LeaderElectionConfig
 	NfdApiParallelism int
 	Klog              klogutils.KlogConfigOpts
+	EnableSpiffe      bool
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -105,6 +106,7 @@ type ConfigOverrideArgs struct {
 	NoPublish         *bool
 	ResyncPeriod      *utils.DurationVal
 	NfdApiParallelism *int
+	EnableSpiffe      *bool
 }
 
 // Args holds command line arguments
@@ -211,6 +213,7 @@ func newDefaultConfig() *NFDConfig {
 		NfdApiParallelism: 10,
 		ResourceLabels:    utils.StringSetVal{},
 		EnableTaints:      false,
+		EnableSpiffe:      false,
 		ResyncPeriod:      utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 		LeaderElection: LeaderElectionConfig{
 			LeaseDuration: utils.DurationVal{Duration: time.Duration(15) * time.Second},
@@ -764,19 +767,11 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		return objs[i].Namespace < objs[j].Namespace
 	})
 
-	verifiedObjects := []*v1alpha1.NodeFeature{}
-	// Verify nfd objects signature
-	for _, obj := range objs {
-		isSignatureVerified, err := m.spiffeClient.VerifyDataSignature(obj.Spec, spiffe.GetSpiffeId(utils.NodeName()), obj.Annotations["signature"])
+	// If spiffe is enabled, we should filter out the non verified NFD objects
+	if m.config.EnableSpiffe {
+		objs, err = m.getVerifiedNFDObjects(objs)
 		if err != nil {
-			klog.ErrorS(err, "error while getting data signature")
-			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
-		}
-		if isSignatureVerified {
-			klog.InfoS("data verified", "nfd name", obj.Name)
-			verifiedObjects = append(verifiedObjects, obj)
-		} else {
-			klog.InfoS("data not verified", "nfd name", obj.Name)
+			return err
 		}
 	}
 
@@ -790,13 +785,13 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 	annotations := Annotations{}
 
-	if len(verifiedObjects) > 0 {
+	if len(objs) > 0 {
 		// Merge in features
 		//
 		// NOTE: changing the rule api to support handle multiple objects instead
 		// of merging would probably perform better with lot less data to copy.
-		features = verifiedObjects[0].Spec.DeepCopy()
-		for _, o := range verifiedObjects[1:] {
+		features = objs[0].Spec.DeepCopy()
+		for _, o := range objs[1:] {
 			o.Spec.MergeInto(features)
 		}
 
@@ -1261,6 +1256,9 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	if m.args.Overrides.NfdApiParallelism != nil {
 		c.NfdApiParallelism = *m.args.Overrides.NfdApiParallelism
 	}
+	if m.args.Overrides.EnableSpiffe != nil {
+		c.EnableSpiffe = *m.args.Overrides.EnableSpiffe
+	}
 
 	if c.NfdApiParallelism <= 0 {
 		return fmt.Errorf("the maximum number of concurrent labelers should be a non-zero positive number")
@@ -1406,4 +1404,23 @@ func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
 	}
 
 	leaderElector.Run(ctx)
+}
+
+func (m *nfdMaster) getVerifiedNFDObjects(objs []*v1alpha1.NodeFeature) ([]*v1alpha1.NodeFeature, error) {
+	verifiedObjects := []*v1alpha1.NodeFeature{}
+
+	for _, obj := range objs {
+		isSignatureVerified, err := m.spiffeClient.VerifyDataSignature(obj.Spec, obj.Annotations["signature"])
+		if err != nil {
+			return nil, fmt.Errorf("failed to verify NodeFeature signature: %w", err)
+		}
+
+		if isSignatureVerified {
+			klog.InfoS("NodeFeature verified", "NodeFeature name", obj.Name)
+			verifiedObjects = append(verifiedObjects, obj)
+		} else {
+			klog.InfoS("NodeFeature not verified, skipping...", "NodeFeature name", obj.Name)
+		}
+	}
+	return verifiedObjects, nil
 }

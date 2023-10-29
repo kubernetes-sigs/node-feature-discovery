@@ -18,7 +18,7 @@ data:
       ca_subject = {
         country = ["US"],
         organization = ["SPIFFE"],
-        common_name = "",
+        common_name = "nfd.com",
       }
     }
 
@@ -35,7 +35,7 @@ data:
           clusters = {
             "nfd" = {
               use_token_review_api_validation = true
-              service_account_allow_list = ["spire:spire-agent"]
+              service_account_allow_list = ["{{ include "node-feature-discovery.namespace" . }}:spire-agent"]
             }
           }
         }
@@ -49,6 +49,7 @@ data:
 
       Notifier "k8sbundle" {
         plugin_data {
+          namespace = "{{ include "node-feature-discovery.namespace" . }}"
         }
       }
     }

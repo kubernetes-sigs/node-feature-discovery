@@ -71,6 +71,8 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
+		case "enable-spiffe":
+			args.Overrides.EnableSpiffe = overrides.EnableSpiffe
 		case "enable-nodefeature-api":
 			klog.InfoS("-enable-nodefeature-api is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "ca-file":
@@ -181,6 +183,7 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 			"It has an effect when the NodeFeature API has been enabled (with -enable-nodefeature-api).")
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
 		"Can be used for the throttling mechanism. It has effect only when -enable-nodefeature-api has been set.")
-
+	overrides.EnableSpiffe = flagset.Bool("enable-spiffe", false,
+		"Enables the Spiffe signature verification of created CRDs. This is still an EXPERIMENTAL feature.")
 	return args, overrides
 }

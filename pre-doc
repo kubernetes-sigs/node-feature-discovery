@@ -1,0 +1,15 @@
+kubectl exec spire-server-0 -- \
+    /opt/spire/bin/spire-server entry create \
+    -spiffeID spiffe://nfd.com/ns/default/sa/spire-agent \
+    -selector k8s_sat:cluster:nfd \
+    -selector k8s_sat:agent_ns:default \
+    -selector k8s_sat:agent_sa:spire-agent \
+    -node
+
+kubectl exec spire-server-0 -- \
+    /opt/spire/bin/spire-server entry create \
+    -spiffeID spiffe://nfd.com/worker \
+    -parentID spiffe://nfd.com/ns/default/sa/spire-agent \
+    -selector k8s:ns:default
+
+

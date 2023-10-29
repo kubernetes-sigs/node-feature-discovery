@@ -87,6 +87,7 @@ type coreConfig struct {
 	Sources        *[]string
 	LabelSources   []string
 	SleepInterval  utils.DurationVal
+	EnableSpiffe   bool
 }
 
 type sourcesConfig map[string]source.Config
@@ -118,6 +119,7 @@ type ConfigOverrideArgs struct {
 
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
+	EnableSpiffe   *bool
 }
 
 type nfdWorker struct {
@@ -539,6 +541,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	if w.args.Overrides.LabelSources != nil {
 		c.Core.LabelSources = *w.args.Overrides.LabelSources
 	}
+	if w.args.Overrides.EnableSpiffe != nil {
+		c.Core.EnableSpiffe = *w.args.Overrides.EnableSpiffe
+	}
 
 	c.Core.sanitize()
 
@@ -712,14 +717,15 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			},
 		}
 
-		signature, err := m.spiffeClient.SignData(nfr.Spec, spiffe.GetSpiffeId(utils.NodeName()))
-		klog.InfoS("data signature", "signature", string(signature))
-		if err != nil {
-			klog.ErrorS(err, "error while getting data signature")
-			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+		// If Spiffe is enabled, we add the signature to the annotations section
+		if m.config.Core.EnableSpiffe {
+			signature, err := m.spiffeClient.SignData(nfr.Spec)
+			if err != nil {
+				return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+			}
+			encodedSignature := b64.StdEncoding.EncodeToString(signature)
+			nfr.ObjectMeta.Annotations["signature"] = encodedSignature
 		}
-		encodedSignature := b64.StdEncoding.EncodeToString(signature)
-		nfr.ObjectMeta.Annotations["signature"] = encodedSignature
 
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
 		if err != nil {
@@ -738,15 +744,16 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			Labels:   labels,
 		}
 
-		signature, err := m.spiffeClient.SignData(nfrUpdated.Spec, spiffe.GetSpiffeId(utils.NodeName()))
-		encodedSignature := b64.StdEncoding.EncodeToString(signature)
-		klog.InfoS("data signature", "signature", encodedSignature)
-		if err != nil {
-			klog.ErrorS(err, "error while getting data signature")
-			return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
-		}
+		if m.config.Core.EnableSpiffe {
+			signature, err := m.spiffeClient.SignData(nfrUpdated.Spec)
 
-		nfrUpdated.ObjectMeta.Annotations["signature"] = encodedSignature
+			if err != nil {
+				return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+			}
+
+			encodedSignature := b64.StdEncoding.EncodeToString(signature)
+			nfrUpdated.ObjectMeta.Annotations["signature"] = encodedSignature
+		}
 
 		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
 			klog.InfoS("updating NodeFeature object", "nodefeature", klog.KObj(nfr))
