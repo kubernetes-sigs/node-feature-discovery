@@ -1409,8 +1409,13 @@ func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
 func (m *nfdMaster) getVerifiedNFDObjects(objs []*v1alpha1.NodeFeature) ([]*v1alpha1.NodeFeature, error) {
 	verifiedObjects := []*v1alpha1.NodeFeature{}
 
+	workerPrivateKey, workerPublicKey, err := m.spiffeClient.GetWorkerKeys()
+	if err != nil {
+		return verifiedObjects, err
+	}
+
 	for _, obj := range objs {
-		isSignatureVerified, err := m.spiffeClient.VerifyDataSignature(obj.Spec, obj.Annotations["signature"])
+		isSignatureVerified, err := spiffe.VerifyDataSignature(obj.Spec, obj.Annotations["signature"], workerPrivateKey, workerPublicKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify NodeFeature signature: %w", err)
 		}

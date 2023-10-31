@@ -719,12 +719,10 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 
 		// If Spiffe is enabled, we add the signature to the annotations section
 		if m.config.Core.EnableSpiffe {
-			signature, err := m.spiffeClient.SignData(nfr.Spec)
+			err = m.signNodeFeatureCR(nfr)
 			if err != nil {
-				return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+				return err
 			}
-			encodedSignature := b64.StdEncoding.EncodeToString(signature)
-			nfr.ObjectMeta.Annotations["signature"] = encodedSignature
 		}
 
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
@@ -745,14 +743,10 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		}
 
 		if m.config.Core.EnableSpiffe {
-			signature, err := m.spiffeClient.SignData(nfrUpdated.Spec)
-
+			err = m.signNodeFeatureCR(nfrUpdated)
 			if err != nil {
-				return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+				return err
 			}
-
-			encodedSignature := b64.StdEncoding.EncodeToString(signature)
-			nfrUpdated.ObjectMeta.Annotations["signature"] = encodedSignature
 		}
 
 		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
@@ -809,6 +803,26 @@ func (c *sourcesConfig) UnmarshalJSON(data []byte) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+// signNodeFeatureCR add the signature to the annotations of a given NodeFeature CR
+func (m *nfdWorker) signNodeFeatureCR(nfr *nfdv1alpha1.NodeFeature) error {
+	workerPrivateKey, _, err := m.spiffeClient.GetWorkerKeys()
+
+	if err != nil {
+		return fmt.Errorf("error while getting worker keys: %w", err)
+	}
+
+	signature, err := spiffe.SignData(nfr.Spec, workerPrivateKey)
+
+	if err != nil {
+		return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+	}
+
+	encodedSignature := b64.StdEncoding.EncodeToString(signature)
+	nfr.ObjectMeta.Annotations["signature"] = encodedSignature
 
 	return nil
 }

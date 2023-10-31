@@ -47,50 +47,33 @@ func NewSpiffeClient(socketPath string) (*SpiffeClient, error) {
 	return &spiffeClient, nil
 }
 
-func (s *SpiffeClient) SignData(data interface{}) ([]byte, error) {
-	ctx := context.Background()
-	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
-	if err != nil {
-		return []byte{}, err
-	}
-
+func SignData(data interface{}, privateKey crypto.Signer) ([]byte, error) {
 	stringifyData, err := json.Marshal(data)
 	if err != nil {
 		return []byte{}, err
 	}
 
 	dataHash := sha256.Sum256([]byte(stringifyData))
-	for _, svid := range svids {
-		if svid.ID.String() == WorkerSpiffeID {
-			privateKey := svid.PrivateKey
-			switch t := privateKey.(type) {
-			case *rsa.PrivateKey:
-				signedData, err := rsa.SignPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), crypto.SHA256, dataHash[:])
-				if err != nil {
-					return []byte{}, err
-				}
-				return signedData, nil
-			case *ecdsa.PrivateKey:
-				signedData, err := ecdsa.SignASN1(rand.Reader, privateKey.(*ecdsa.PrivateKey), dataHash[:])
-				if err != nil {
-					return []byte{}, err
-				}
-				return signedData, nil
-			default:
-				return nil, fmt.Errorf("unknown private key type: %v", t)
-			}
+
+	switch t := privateKey.(type) {
+	case *rsa.PrivateKey:
+		signedData, err := rsa.SignPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), crypto.SHA256, dataHash[:])
+		if err != nil {
+			return []byte{}, err
 		}
+		return signedData, nil
+	case *ecdsa.PrivateKey:
+		signedData, err := ecdsa.SignASN1(rand.Reader, privateKey.(*ecdsa.PrivateKey), dataHash[:])
+		if err != nil {
+			return []byte{}, err
+		}
+		return signedData, nil
+	default:
+		return nil, fmt.Errorf("unknown private key type: %v", t)
 	}
-	return []byte{}, fmt.Errorf("cannot sign data: spiffe ID %s is not found", WorkerSpiffeID)
 }
 
-func (s *SpiffeClient) VerifyDataSignature(data interface{}, signedData string) (bool, error) {
-	ctx := context.Background()
-	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
-	if err != nil {
-		return false, nil
-	}
-
+func VerifyDataSignature(data interface{}, signedData string, privateKey crypto.Signer, publicKey crypto.PublicKey) (bool, error) {
 	stringifyData, err := json.Marshal(data)
 	if err != nil {
 		return false, err
@@ -102,24 +85,39 @@ func (s *SpiffeClient) VerifyDataSignature(data interface{}, signedData string) 
 	}
 
 	dataHash := sha256.Sum256([]byte(stringifyData))
+
+	if err != nil {
+		return false, err
+	}
+
+	switch t := privateKey.(type) {
+	case *rsa.PrivateKey:
+		err = rsa.VerifyPKCS1v15(publicKey.(*rsa.PublicKey), crypto.SHA256, dataHash[:], decodedSignature)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	case *ecdsa.PrivateKey:
+		verify := ecdsa.VerifyASN1(publicKey.(*ecdsa.PublicKey), dataHash[:], decodedSignature)
+		return verify, nil
+	default:
+		return false, fmt.Errorf("unknown private key type: %v", t)
+	}
+}
+
+func (s *SpiffeClient) GetWorkerKeys() (crypto.Signer, crypto.PublicKey, error) {
+	ctx := context.Background()
+
+	svids, err := s.WorkloadApiClient.FetchX509SVIDs(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for _, svid := range svids {
 		if svid.ID.String() == WorkerSpiffeID {
-			privateKey := svid.PrivateKey
-			switch t := privateKey.(type) {
-			case *rsa.PrivateKey:
-				err = rsa.VerifyPKCS1v15(svid.PrivateKey.Public().(*rsa.PublicKey), crypto.SHA256, dataHash[:], decodedSignature)
-				if err != nil {
-					return false, err
-				}
-				return true, nil
-			case *ecdsa.PrivateKey:
-				verify := ecdsa.VerifyASN1(svid.PrivateKey.Public().(*ecdsa.PublicKey), dataHash[:], decodedSignature)
-				return verify, nil
-			default:
-				return false, fmt.Errorf("unknown private key type: %v", t)
-			}
+			return svid.PrivateKey, svid.PrivateKey.Public, nil
 		}
 	}
 
-	return false, fmt.Errorf("cannot sign data: spiffe ID %s is not found", WorkerSpiffeID)
+	return nil, nil, fmt.Errorf("cannot sign data: spiffe ID %s is not found", WorkerSpiffeID)
 }
