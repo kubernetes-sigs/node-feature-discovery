@@ -38,10 +38,8 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
-	k8sQuantity "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
-	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
@@ -55,6 +53,7 @@ import (
 
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -553,24 +552,27 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 }
 
 func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1.Features) (string, error) {
-	//Validate label name
-	if errs := k8svalidation.IsQualifiedName(name); len(errs) > 0 {
-		return "", fmt.Errorf("invalid name %q: %s", name, strings.Join(errs, "; "))
+	// Check if Value is dynamic
+	var filteredValue string
+	if strings.HasPrefix(value, "@") {
+		dynamicValue, err := getDynamicValue(value, features)
+		if err != nil {
+			return "", err
+		}
+		filteredValue = dynamicValue
+	} else {
+		filteredValue = value
 	}
 
-	// Check label namespace, filter out if ns is not whitelisted
+	// Validate
 	ns, base := splitNs(name)
-	if ns == "" {
-		return "", fmt.Errorf("labels without namespace (prefix/) not allowed")
-	}
-	if ns != nfdv1alpha1.FeatureLabelNs && ns != nfdv1alpha1.ProfileLabelNs &&
-		!strings.HasSuffix(ns, nfdv1alpha1.FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, nfdv1alpha1.ProfileLabelSubNsSuffix) {
-		// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
-		if isNamespaceDenied(ns, m.deniedNs.wildcard, m.deniedNs.normal) {
-			if _, ok := m.config.ExtraLabelNs[ns]; !ok {
-				return "", fmt.Errorf("namespace %q is not allowed", ns)
-			}
+	err := validate.Label(name, filteredValue)
+	if err == validate.ErrNSNotAllowed || isNamespaceDenied(ns, m.deniedNs.wildcard, m.deniedNs.normal) {
+		if _, ok := m.config.ExtraLabelNs[ns]; !ok {
+			return "", fmt.Errorf("namespace %q is not allowed", ns)
 		}
+	} else if err != nil {
+		return "", err
 	}
 
 	// Skip if label doesn't match labelWhiteList
@@ -578,24 +580,7 @@ func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1
 		return "", fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.Regexp.String())
 	}
 
-	var filteredLabel string
-
-	// Dynamic Value
-	if strings.HasPrefix(value, "@") {
-		dynamicValue, err := getDynamicValue(value, features)
-		if err != nil {
-			return "", err
-		}
-		filteredLabel = dynamicValue
-	} else {
-		filteredLabel = value
-	}
-
-	// Validate the label value
-	if errs := k8svalidation.IsValidLabelValue(filteredLabel); len(errs) > 0 {
-		return "", fmt.Errorf("invalid value %q: %s", filteredLabel, strings.Join(errs, "; "))
-	}
-	return filteredLabel, nil
+	return filteredValue, nil
 }
 
 func getDynamicValue(value string, features *nfdv1alpha1.Features) (string, error) {
@@ -621,7 +606,7 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 	outTaints := []corev1.Taint{}
 
 	for _, taint := range taints {
-		if err := filterTaint(&taint); err != nil {
+		if err := validate.Taint(&taint); err != nil {
 			klog.ErrorS(err, "ignoring taint", "taint", taint)
 			nodeTaintsRejected.Inc()
 		} else {
@@ -629,19 +614,6 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 		}
 	}
 	return outTaints
-}
-
-func filterTaint(taint *corev1.Taint) error {
-	// Check prefix of the key, filter out disallowed ones
-	ns, _ := splitNs(taint.Key)
-	if ns == "" {
-		return fmt.Errorf("taint keys without namespace (prefix/) are not allowed")
-	}
-	if ns != nfdv1alpha1.TaintNs && !strings.HasSuffix(ns, nfdv1alpha1.TaintSubNsSuffix) &&
-		(ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io")) {
-		return fmt.Errorf("prefix %q is not allowed for taint key", ns)
-	}
-	return nil
 }
 
 func verifyNodeName(cert *x509.Certificate, nodeName string) error {
@@ -809,35 +781,25 @@ func (m *nfdMaster) filterExtendedResources(features *nfdv1alpha1.Features, exte
 }
 
 func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) (string, error) {
-	// Check if given NS is allowed
-	ns, _ := splitNs(name)
-	if ns == "" {
-		return "", fmt.Errorf("extended resource without namespace (prefix/) not allowed")
-	}
-	if ns != nfdv1alpha1.ExtendedResourceNs && !strings.HasSuffix(ns, nfdv1alpha1.ExtendedResourceSubNsSuffix) {
-		if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") {
-			return "", fmt.Errorf("namespace %q is not allowed", ns)
+	// Dynamic Value
+	var filteredValue string
+	if strings.HasPrefix(value, "@") {
+		dynamicValue, err := getDynamicValue(value, features)
+		if err != nil {
+			return "", err
 		}
+		filteredValue = dynamicValue
+	} else {
+		filteredValue = value
 	}
 
-	// Dynamic Value
-	if strings.HasPrefix(value, "@") {
-		if element, err := getDynamicValue(value, features); err != nil {
-			return "", err
-		} else {
-			q, err := k8sQuantity.ParseQuantity(element)
-			if err != nil {
-				return "", fmt.Errorf("invalid value %s (from %s): %w", element, value, err)
-			}
-			return q.String(), nil
-		}
-	}
-	// Static Value (Pre-Defined at the NodeFeatureRule)
-	q, err := k8sQuantity.ParseQuantity(value)
+	// Validate
+	err := validate.ExtendedResource(name, filteredValue)
 	if err != nil {
-		return "", fmt.Errorf("invalid value %s: %w", value, err)
+		return "", err
 	}
-	return q.String(), nil
+
+	return filteredValue, nil
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
@@ -1331,6 +1293,7 @@ func addNs(src string, nsToAdd string) string {
 }
 
 // splitNs splits a name into its namespace and name parts
+// Ported to Validate
 func splitNs(fullname string) (string, string) {
 	split := strings.SplitN(fullname, "/", 2)
 	if len(split) == 2 {
@@ -1441,22 +1404,11 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 	outAnnotations := make(map[string]string)
 
 	for annotation, value := range annotations {
-		ns, _ := splitNs(annotation)
-		if ns == "" {
-			klog.ErrorS(fmt.Errorf("annotations without namespace (prefix/) not allowed"), fmt.Sprintf("Ignoring annotation %s", annotation))
-			continue
-		}
 		// Check annotation namespace, filter out if ns is not whitelisted
-		if ns != nfdv1alpha1.FeatureAnnotationNs && !strings.HasSuffix(ns, nfdv1alpha1.FeatureAnnotationSubNsSuffix) {
-			// If the namespace is denied the annotation will be ignored
-			if ns == "" {
-				klog.ErrorS(fmt.Errorf("labels without namespace (prefix/) not allowed"), fmt.Sprintf("Ignoring annotation %s", annotation))
-				continue
-			}
-			if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") || ns == nfdv1alpha1.AnnotationNs {
-				klog.ErrorS(fmt.Errorf("namespace %q is not allowed", ns), fmt.Sprintf("Ignoring annotation %s", annotation))
-				continue
-			}
+		err := validate.Annotation(annotation, value)
+		if err != nil {
+			klog.ErrorS(err, "ignoring annotation", "annotationKey", annotation, "annotationValue", value)
+			continue
 		}
 
 		outAnnotations[annotation] = value

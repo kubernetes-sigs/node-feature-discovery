@@ -382,6 +382,7 @@ func TestSetLabels(t *testing.T) {
 		expectedStatusPatches := []apihelper.JsonPatch{}
 
 		Convey("When node update succeeds", func() {
+			mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
 			}
@@ -400,6 +401,7 @@ func TestSetLabels(t *testing.T) {
 		})
 
 		Convey("When -label-whitelist is specified", func() {
+			mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
@@ -443,7 +445,6 @@ func TestSetLabels(t *testing.T) {
 			}
 
 			mockMaster.deniedNs.normal = map[string]struct{}{"random.denied.ns": {}}
-			mockMaster.deniedNs.wildcard = map[string]struct{}{"kubernetes.io": {}}
 			mockMaster.config.ExtraLabelNs = map[string]struct{}{"valid.ns": {}}
 			mockMaster.args.Instance = instance
 			mockHelper.On("GetClient").Return(mockClient, nil)
@@ -459,10 +460,11 @@ func TestSetLabels(t *testing.T) {
 		})
 
 		Convey("When -resource-labels is specified", func() {
+			mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
 				apihelper.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
 			}
 			expectedStatusPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
@@ -502,6 +504,7 @@ func TestSetLabels(t *testing.T) {
 func TestFilterLabels(t *testing.T) {
 	mockHelper := &apihelper.MockAPIHelpers{}
 	mockMaster := newMockMaster(mockHelper)
+	mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
 	mockMaster.deniedNs = deniedNs{
 		normal:   map[string]struct{}{"": struct{}{}, "kubernetes.io": struct{}{}, "denied.ns": struct{}{}},
 		wildcard: map[string]struct{}{".kubernetes.io": struct{}{}, ".denied.subns": struct{}{}},
@@ -939,4 +942,63 @@ func removeLabelsWithPrefix(n *corev1.Node, search string) []apihelper.JsonPatch
 	}
 
 	return p
+}
+
+func TestGetDynamicValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		features *nfdv1alpha1.Features
+		want     string
+		fail     bool
+	}{
+		{
+			name:  "Valid dynamic value",
+			value: "@test.feature.LSM",
+			features: &nfdv1alpha1.Features{
+				Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
+					"test.feature": nfdv1alpha1.AttributeFeatureSet{
+						Elements: map[string]string{
+							"LSM": "123",
+						},
+					},
+				},
+			},
+			want: "123",
+			fail: false,
+		},
+		{
+			name:     "Invalid feature name",
+			value:    "@invalid",
+			features: &nfdv1alpha1.Features{},
+			want:     "",
+			fail:     true,
+		},
+		{
+			name:     "Element not found",
+			value:    "@test.feature.LSM",
+			features: &nfdv1alpha1.Features{},
+			want:     "",
+			fail:     true,
+		},
+		{
+			name:     "Invalid dynamic value",
+			value:    "@test.feature.LSM",
+			features: &nfdv1alpha1.Features{},
+			want:     "",
+			fail:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getDynamicValue(tt.value, tt.features)
+			if err != nil && !tt.fail {
+				t.Errorf("getDynamicValue() = %v, want %v", err, tt.want)
+			}
+			if got != tt.want {
+				t.Errorf("getDynamicValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
