@@ -19,6 +19,7 @@ package validate
 import (
 	"fmt"
 	"strings"
+	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
 	k8sQuantity "k8s.io/apimachinery/pkg/api/resource"
@@ -37,6 +38,58 @@ var (
 	// Default error for empty taint effect
 	ErrEmptyTaintEffect = fmt.Errorf("empty taint effect")
 )
+
+// MatchAny validates a slice of MatchAnyElem and returns a slice of errors if
+// any of the MatchAnyElem are invalid.
+func MatchAny(matchAny []nfdv1alpha1.MatchAnyElem) []error {
+	var validationErr []error
+
+	for _, matcher := range matchAny {
+		validationErr = append(validationErr, MatchFeatures(matcher.MatchFeatures)...)
+	}
+
+	return validationErr
+}
+
+// MatchFeatures validates a slice of FeatureMatcher and returns a slice of
+// errors if any of the FeatureMatcher are invalid.
+func MatchFeatures(matchFeature nfdv1alpha1.FeatureMatcher) []error {
+	var validationErr []error
+
+	for _, match := range matchFeature {
+		nameSplit := strings.SplitN(match.Feature, ".", 2)
+		if len(nameSplit) != 2 {
+			validationErr = append(validationErr, fmt.Errorf("invalid feature name %v (not <domain>.<feature>), cannot be used for templating", match.Feature))
+		}
+	}
+
+	return validationErr
+}
+
+// Template validates a template string and returns a slice of errors if the
+// template is invalid.
+func Template(labelsTemplate string) []error {
+	var validationErr []error
+
+	// Validate template
+	_, err := template.New("").Option("missingkey=error").Parse(labelsTemplate)
+	if err != nil {
+		validationErr = append(validationErr, fmt.Errorf("invalid template: %w", err))
+	}
+	return validationErr
+}
+
+// Labels validates a map of labels and returns a slice of errors if any of the
+// labels are invalid.
+func Labels(labels map[string]string) []error {
+	var errs []error
+	for key, value := range labels {
+		if err := Label(key, value); err != nil {
+			errs = append(errs, fmt.Errorf("invalid label %q:%q %w", key, value, err))
+		}
+	}
+	return errs
+}
 
 // Label validates a label key and value and returns an error if the key or
 // value is invalid.
@@ -68,6 +121,18 @@ func Label(key, value string) error {
 	return nil
 }
 
+// Annotations validates a map of annotations and returns a slice of errors if
+// any of the annotations are invalid.
+func Annotations(annotations map[string]string) []error {
+	var errs []error
+	for key, value := range annotations {
+		if err := Annotation(key, value); err != nil {
+			errs = append(errs, fmt.Errorf("invalid annotation %q:%q %w", key, value, err))
+		}
+	}
+	return errs
+}
+
 // Annotation validates an annotation key and value and returns an error if the
 // key or value is invalid.
 func Annotation(key, value string) error {
@@ -95,6 +160,18 @@ func Annotation(key, value string) error {
 	}
 
 	return nil
+}
+
+// Taints validates a slice of taints and returns a slice of errors if any of
+// the taints are invalid.
+func Taints(taints []corev1.Taint) []error {
+	var errs []error
+	for _, taint := range taints {
+		if err := Taint(&taint); err != nil {
+			errs = append(errs, fmt.Errorf("invalid taint %s=%s:%s: %w", taint.Key, taint.Value, taint.Effect, err))
+		}
+	}
+	return errs
 }
 
 // Taint validates a taint key and value and returns an error if the key or
@@ -125,6 +202,18 @@ func Taint(taint *corev1.Taint) error {
 	}
 
 	return nil
+}
+
+// ExtendedResources validates a map of extended resources and returns a slice
+// of errors if any of the extended resources are invalid.
+func ExtendedResources(extendedResources map[string]string) []error {
+	var errs []error
+	for key, value := range extendedResources {
+		if err := ExtendedResource(key, value); err != nil {
+			errs = append(errs, fmt.Errorf("invalid extended resource %q:%q %w", key, value, err))
+		}
+	}
+	return errs
 }
 
 // ExtendedResource validates an extended resource key and value and returns an
