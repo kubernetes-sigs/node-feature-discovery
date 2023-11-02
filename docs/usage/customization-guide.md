@@ -849,6 +849,8 @@ The following features are available for matching:
 |                  |              | **`sev.enabled`** | bool | `true` if AMD SEV (Secure Encrypted Virtualization) is available on the host and has been enabled, otherwise does not exist |
 |                  |              | **`sev.es.enabled`** | bool | `true` if AMD SEV-ES (Encrypted State supported) is available on the host and has been enabled, otherwise does not exist |
 |                  |              | **`sev.snp.enabled`** | bool | `true` if AMD SEV-SNP (Secure Nested Paging supported) is available on the host and has been enabled, otherwise does not exist |
+|                  |              | **`sev.asids`** | int | The total amount of AMD SEV address-space identifiers (ASIDs), based on the `/sys/fs/cgroup/misc.capacity` information. |
+|                  |              | **`sev.encrypted_state_ids`** | int | The total amount of AMD SEV-ES and SEV-SNP supported, based on the `/sys/fs/cgroup/misc.capacity` information. |
 | **`cpu.sst`**    | attribute    |          |            | Intel SST (Speed Select Technology) capabilities |
 |                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist |
 | **`cpu.topology`** | attribute  |          |            | CPU topology related features |
