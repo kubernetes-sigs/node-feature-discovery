@@ -34,10 +34,12 @@ import (
 // Name of this feature source
 const Name = "network"
 
-// VirtualFeature exposes features for network interfaces that are not attached to a physical device
-const VirtualFeature = "virtual"
-
-const DeviceFeature = "device"
+const (
+	// DeviceFeature exposes physical network devices
+	DeviceFeature = "device"
+	// VirtualFeature exposes features for network interfaces that are not attached to a physical device
+	VirtualFeature = "virtual"
+)
 
 const sysfsBaseDir = "class/net"
 
@@ -54,8 +56,11 @@ var (
 )
 
 var (
-	// ifaceAttrs is the list of files under /sys/class/net/<iface> that we're reading
-	ifaceAttrs = []string{"operstate", "speed", "device/sriov_numvfs", "device/sriov_totalvfs"}
+	// devIfaceAttrs is the list of files under /sys/class/net/<iface> that we're reading
+	devIfaceAttrs = []string{"operstate", "speed", "device/sriov_numvfs", "device/sriov_totalvfs"}
+
+	// virtualIfaceAttrs is the list of files under /sys/class/net/<iface> that we're reading
+	virtualIfaceAttrs = []string{"operstate"}
 )
 
 // Name returns an identifier string for this feature source.
@@ -94,11 +99,12 @@ func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 func (s *networkSource) Discover() error {
 	s.features = nfdv1alpha1.NewFeatures()
 
-	devs, err := detectNetDevices()
+	devs, virts, err := detectNetDevices()
 	if err != nil {
 		return fmt.Errorf("failed to detect network devices: %w", err)
 	}
 	s.features.Instances[DeviceFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: devs}
+	s.features.Instances[VirtualFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: virts}
 
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
@@ -113,26 +119,28 @@ func (s *networkSource) GetFeatures() *nfdv1alpha1.Features {
 	return s.features
 }
 
-func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, error) {
+func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, []nfdv1alpha1.InstanceFeature, error) {
 	sysfsBasePath := hostpath.SysfsDir.Path(sysfsBaseDir)
 
 	ifaces, err := os.ReadDir(sysfsBasePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list network interfaces: %w", err)
+		return nil, nil, fmt.Errorf("failed to list network interfaces: %w", err)
 	}
 
 	// Iterate over devices
-	info := make([]nfdv1alpha1.InstanceFeature, 0, len(ifaces))
+	devIfacesinfo := make([]nfdv1alpha1.InstanceFeature, 0, len(ifaces))
+	virtualIfacesinfo := make([]nfdv1alpha1.InstanceFeature, 0, len(ifaces))
+
 	for _, iface := range ifaces {
 		name := iface.Name()
 		if _, err := os.Stat(filepath.Join(sysfsBasePath, name, "device")); err == nil {
-			info = append(info, readIfaceInfo(filepath.Join(sysfsBasePath, name), ifaceAttrs))
-		} else if klogV := klog.V(3); klogV.Enabled() {
-			klogV.InfoS("skipping non-device iface", "interfaceName", name)
+			devIfacesinfo = append(devIfacesinfo, readIfaceInfo(filepath.Join(sysfsBasePath, name), devIfaceAttrs))
+		} else {
+			virtualIfacesinfo = append(virtualIfacesinfo, readIfaceInfo(filepath.Join(sysfsBasePath, name), virtualIfaceAttrs))
 		}
 	}
 
-	return info, nil
+	return devIfacesinfo, virtualIfacesinfo, nil
 }
 
 func readIfaceInfo(path string, attrFiles []string) nfdv1alpha1.InstanceFeature {
