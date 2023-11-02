@@ -34,6 +34,9 @@ import (
 // Name of this feature source
 const Name = "network"
 
+// VirtualFeature exposes features for network interfaces that are not attached to a physical device
+const VirtualFeature = "virtual"
+
 const DeviceFeature = "device"
 
 const sysfsBaseDir = "class/net"
