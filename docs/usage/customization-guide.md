@@ -882,10 +882,10 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs` |
 | **`pci.device`** | instance     |          |            | PCI devices present in the system |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`, `iommu/intel-iommu/version` |
-| **`storage.device`** | instance |          |            | Block storage devices present in the system |
+| **`storage.block`** | instance |          |             | Block storage devices present in the system |
 |                  |              | **`name`** | string   | Name of the block device |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned` |
-| **`system.osrelease`** | attribute |          |            | System identification data from `/etc/os-release` |
+| **`system.osrelease`** | attribute |       |            | System identification data from `/etc/os-release` |
 |                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release` |
 | **`system.name`** | attribute   |          |            | System name information |
 |                  |              | **`nodename`** | string | Name of the kubernetes node object |
