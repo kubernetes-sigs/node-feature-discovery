@@ -62,8 +62,6 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-security.sev.enabled`**    | true   | Set to 'true' if ADM SEV is available on the host and has been enabled (requires `/sys/module/kvm_amd/parameters/sev`).
 | **`cpu-security.sev.es.enabled`** | true   | Set to 'true' if ADM SEV-ES is available on the host and has been enabled (requires `/sys/module/kvm_amd/parameters/sev_es`).
 | **`cpu-security.sev.snp.enabled`**| true   | Set to 'true' if ADM SEV-SNP is available on the host and has been enabled (requires `/sys/module/kvm_amd/parameters/sev_snp`).
-| **`cpu-security.sex.asids`** | int    | The total amount of AMD SEV address-space identifiers (ASIDs), based on the `/sys/fs/cgroup/misc.capacity` information.
-| **`cpu-security.sex.encrypted_state_ids`** | int    | The total amount of AMD SEV-ES and SEV-SNP supported, based on the `/sys/fs/cgroup/misc.capacity` information.
 | **`cpu-sgx.enabled`**             | true   | **DEPRECATED**: use **`cpu-security.sgx.enabled`** instead.
 | **`cpu-se.enabled`**              | true   | **DEPRECATED**: use **`cpu-security.se.enabled`** instead.
 | **`cpu-model.vendor_id`**         | string | Comparable CPU vendor ID.
