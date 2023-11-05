@@ -51,10 +51,8 @@ var (
 )
 
 var (
-	// ifaceAttrs is the list of files under /sys/class/net/<iface> that we're trying to read
-	ifaceAttrs = []string{"operstate", "speed"}
-	// devAttrs is the list of files under /sys/class/net/<iface>/device that we're trying to read
-	devAttrs = []string{"sriov_numvfs", "sriov_totalvfs"}
+	// ifaceAttrs is the list of files under /sys/class/net/<iface> that we're reading
+	ifaceAttrs = []string{"operstate", "speed", "device/sriov_numvfs", "device/sriov_totalvfs"}
 )
 
 // Name returns an identifier string for this feature source.
@@ -125,7 +123,7 @@ func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, error) {
 	for _, iface := range ifaces {
 		name := iface.Name()
 		if _, err := os.Stat(filepath.Join(sysfsBasePath, name, "device")); err == nil {
-			info = append(info, readIfaceInfo(filepath.Join(sysfsBasePath, name)))
+			info = append(info, readIfaceInfo(filepath.Join(sysfsBasePath, name), ifaceAttrs))
 		} else if klogV := klog.V(3); klogV.Enabled() {
 			klogV.InfoS("skipping non-device iface", "interfaceName", name)
 		}
@@ -134,27 +132,17 @@ func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, error) {
 	return info, nil
 }
 
-func readIfaceInfo(path string) nfdv1alpha1.InstanceFeature {
+func readIfaceInfo(path string, attrFiles []string) nfdv1alpha1.InstanceFeature {
 	attrs := map[string]string{"name": filepath.Base(path)}
-	for _, attrName := range ifaceAttrs {
-		data, err := os.ReadFile(filepath.Join(path, attrName))
+	for _, attrFile := range attrFiles {
+		data, err := os.ReadFile(filepath.Join(path, attrFile))
 		if err != nil {
 			if !os.IsNotExist(err) {
-				klog.ErrorS(err, "failed to read net iface attribute", "attributeName", attrName)
+				klog.ErrorS(err, "failed to read net iface attribute", "attributeName", attrFile)
 			}
 			continue
 		}
-		attrs[attrName] = strings.TrimSpace(string(data))
-	}
-
-	for _, attrName := range devAttrs {
-		data, err := os.ReadFile(filepath.Join(path, "device", attrName))
-		if err != nil {
-			if !os.IsNotExist(err) {
-				klog.ErrorS(err, "failed to read net device attribute", "attributeName", attrName)
-			}
-			continue
-		}
+		attrName := filepath.Base(attrFile)
 		attrs[attrName] = strings.TrimSpace(string(data))
 	}
 
