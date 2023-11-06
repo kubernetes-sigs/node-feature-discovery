@@ -11,7 +11,7 @@ require (
 	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.0
 	github.com/k8stopologyawareschedwg/podfingerprint v0.1.2
-	github.com/klauspost/cpuid/v2 v2.2.5
+	github.com/klauspost/cpuid/v2 v2.2.6
 	github.com/onsi/ginkgo/v2 v2.9.4
 	github.com/onsi/gomega v1.27.6
 	github.com/opencontainers/runc v1.1.7
