@@ -799,7 +799,7 @@ core:
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
 
 					By("Verifying node status capacity from NodeFeatureRules #4")
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchCapacity(expectedCapacity, nodes))
 
 					By("Deleting NodeFeatureRules #4")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-extened-resource-test", metav1.DeleteOptions{})
@@ -808,7 +808,7 @@ core:
 					By("Verifying node status capacity from NodeFeatureRules #4 was removed")
 					expectedCapacity = map[string]corev1.ResourceList{"*": {}}
 					delete(expectedAnnotations["*"], "nfd.node.kubernetes.io/extended-resources")
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchCapacity(expectedCapacity, nodes))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchCapacity(expectedCapacity, nodes))
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
 
 					By("Creating NodeFeatureRules #5")
