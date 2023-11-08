@@ -251,35 +251,19 @@ detailed documentation.
 
 ## Extended resources
 
-This feature is experimental and by no means a replacement for the usage of
-device plugins.
+NFD is able to create extended resources, see the
+[NodeFeatureRule](custom-resources.md#nodefeaturerule) CRD and its
+[extendedResources](#customization-guide.md#extendedresources) field for more
+details.
 
-Labels which have integer values, can be promoted to Kubernetes extended
-resources by listing them to the master `-resource-labels` command line flag.
-These labels won't then show in the node label section, they will appear only
-as extended resources.
+Note that NFD is not a replacement for the usage of device plugins.
 
-An example use-case for the extended resources could be based on a hook which
-creates a label for the node SGX EPC memory section size. By giving the name of
-that label in the `-resource-labels` flag, that value will then turn into an
-extended resource of the node, allowing PODs to request that resource and the
-Kubernetes scheduler to schedule such PODs to only those nodes which have a
-sufficient capacity of said resource left.
-
-Similar to labels, the default namespace `feature.node.kubernetes.io` is
-automatically prefixed to the extended resource, if the promoted label doesn't
-have a namespace.
-
-Example usage of the command line arguments, using a new namespace:
-`nfd-master -resource-labels=my_source-my.feature,sgx.some.ns/epc -extra-label-ns=sgx.some.ns`
-
-The above would result in following extended resources provided that related
-labels exist:
-
-```plaintext
-  sgx.some.ns/epc: <label value>
-  feature.node.kubernetes.io/my_source-my.feature: <label value>
-```
+An example use-case for extended resources could be based on custom feature
+(created e.g. with [feature files](#customization-guide.md#feature-files) that
+exposes the node SGX EPC memory section size. This value will then be turned
+into an extended resource of the node, allowing PODs to request that resource
+and the Kubernetes scheduler to schedule such PODs to only those nodes which
+have a sufficient capacity of said resource left.
 
 <!-- Links -->
 [klauspost-cpuid]: https://github.com/klauspost/cpuid#x86-cpu-instructions
