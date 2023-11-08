@@ -81,7 +81,7 @@ spec:
             vendor: "acme"
   # Labels to be created
   labels:
-    vendor-feature.enabled: "true"
+    vendor.io/feature.enabled: "true"
 ```
 
 The object targets node named `node-1`. It lists two "flag type" features under
@@ -92,8 +92,7 @@ labels but they will be used as input when the
 [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects are evaluated.
 
 In addition, the example requests directly the
-`feature.node.kubenernetes.io/vendor-feature.enabled=true` node label to be
-created.
+`vendor.io/feature.enabled=true` node label to be created.
 
 The `nfd.node.kubernetes.io/node-name=<node-name>` must be in place for each
 NodeFeature object as NFD uses it to determine the node which it is targeting.
@@ -130,7 +129,7 @@ spec:
   rules:
     - name: "my sample rule"
       labels:
-        "my-sample-feature": "true"
+        "feature.node.kubernetes.io/my-sample-feature": "true"
       matchFeatures:
         - feature: kernel.loadedmodule
           matchExpressions:
@@ -141,7 +140,7 @@ spec:
 ```
 
 It specifies one rule which creates node label
-`feature.node.kubenernetes.io/my-sample-feature=true` if both of the following
+`feature.node.kubernetes.io/my-sample-feature=true` if both of the following
 conditions are true (`matchFeatures` implements a logical AND over the
 matchers):
 
@@ -216,9 +215,9 @@ having the following contents (or alternatively a shell script
 following stdout output):
 
 ```plaintext
-my-feature.1
-my-feature.2=myvalue
-my.namespace/my-feature.3=456
+feature.node.kubernetes.io/my-feature.1
+feature.node.kubernetes.io/my-feature.2=myvalue
+vendor.io/my-feature.3=456
 ```
 
 This will translate into the following node labels:
@@ -226,7 +225,7 @@ This will translate into the following node labels:
 ```yaml
 feature.node.kubernetes.io/my-feature.1: "true"
 feature.node.kubernetes.io/my-feature.2: "myvalue"
-my.namespace/my-feature.3: "456"
+vendor.io/my-feature.3: "456"
 ```
 
 ### Feature files
@@ -277,12 +276,12 @@ key-value pairs, separated by newlines:
 
 ```plaintext
 # This is a comment
-<name>[=<value>]
+<key>[=<value>]
 ```
 
 The label value defaults to `true`, if not specified.
 
-Label namespace may be specified with `<namespace>/<name>[=<value>]`.
+Label namespace must be specified with `<namespace>/<name>[=<value>]`.
 
 > **NOTE:** The feature file size limit it 64kB. The feature file will be
 > ignored if the size limit is exceeded.
@@ -302,20 +301,20 @@ Considering the following file:
 
 ```plaintext
 # +expiry-time=2012-07-28T11:22:33Z
-featureKey=featureValue
+vendor.io/feature1=featureValue
 
 # +expiry-time=2080-07-28T11:22:33Z
-featureKey2=featureValue2
+vendor.io/feature2=featureValue2
 
 # +expiry-time=2070-07-28T11:22:33Z
-featureKey3=featureValue3
+vendor.io/feature3=featureValue3
 
 # +expiry-time=2002-07-28T11:22:33Z
-featureKey4=featureValue4
+vendor.io/feature4=featureValue4
 ```
 
-After processing the above file, only `featureKey2` and `featureKey3` would be
-included in the list of accepted features.
+After processing the above file, only `vendor.io/feature2` and
+`vendor.io/feature3` would be included in the list of accepted features.
 
 > **NOTE:** The time format that we are supporting is RFC3339. Also, the `expiry-time`
 > tag is only evaluated in each re-discovery period, and the expiration of
@@ -329,11 +328,12 @@ Considering the following file:
 
 ```plaintext
 # +no-feature
-label-only=value
+vendor.io/label-only=value
 
-my-feature=value
+vendor.io/my-feature=value
 
-foo=bar
+vendor.io/foo=bar
+
 # +no-label
 foo=baz
 ```
@@ -343,18 +343,26 @@ Processing the above file would result in the following Features:
 ```yaml
 local.features:
   foo: baz
-  my-feature: value
+  vendor.io/my-feature: value
 local.labels:
-  label-only: value
-  my-feature: value
+  vendor.io/label-only: value
+  vendor.io/my-feature: value
 ```
 
 and the following labels added to the Node:
 
 ```plaintext
-feature.node.kubernetes.io/label-only=value
-feature.node.kubernetes.io/my-feature=value
+vendor.io/label-only=value
+vendor.io/my-feature=value
 ```
+
+> **NOTE:** use of unprefixed label names (like `foo=bar`) should not be used.
+> In NFD {{ site.version }} unprefixed names will be automatically prefixed
+> with `feature.node.kubernetes.io/` but this will change in a future version
+> (see
+> [autoDefaultNs config option](../reference/master-configuration-reference.md#autoDefaultNs).
+> Unprefixed names for plain Features (tagged with `# +no-label`) can be used
+> without restrictions, however.
 
 ### Mounts
 
@@ -395,7 +403,7 @@ sources:
   custom:
     - name: "my sample rule"
       labels:
-        "my-sample-feature": "true"
+        "feature.node.kubenernetes.io/my-sample-feature": "true"
       matchFeatures:
         - feature: kernel.loadedmodule
           matchExpressions:
@@ -434,7 +442,7 @@ following content:
 ```yaml
 - name: "my e1000 rule"
   labels:
-    "e1000.present": "true"
+    "feature.node.kubenernetes.io/e1000.present": "true"
   matchFeatures:
     - feature: kernel.loadedmodule
       matchExpressions:
@@ -459,8 +467,7 @@ Feature labels have the following format:
 
 The namespace part (i.e. prefix) of the labels is controlled by nfd:
 
-- All built-in labels use `feature.node.kubernetes.io`. This is also
-  the default for user defined features that don't specify any namespace.
+- All built-in labels use `feature.node.kubernetes.io`.
 - Namespaces may be excluded with the
   [`-deny-label-ns`](../reference/master-commandline-reference.md#-deny-label-ns)
   command line flag of nfd-master
@@ -468,6 +475,9 @@ The namespace part (i.e. prefix) of the labels is controlled by nfd:
     [`-extra-label-ns`](../reference/master-commandline-reference.md#-extra-label-ns)
     command line flag of nfd-master.
     e.g: `nfd-master -deny-label-ns="*" -extra-label-ns=example.com`
+  - Built-in default namespaces `feature.node.kubernetes.io` and
+    `profile.node.kubernetes.io` (and their sub-namespaces) are always allowed
+    and cannot be denied.
 
 ## Feature rule format
 
@@ -485,7 +495,7 @@ Take this rule as a referential example:
 ```yaml
     - name: "my feature rule"
       labels:
-        "my-special-feature": "my-value"
+        "feature.node.kubernetes.io/my-special-feature": "my-value"
       matchFeatures:
         - feature: cpu.cpuid
           matchExpressions:
@@ -500,7 +510,7 @@ Take this rule as a referential example:
             class: {op: In, value: ["0200"]}
 ```
 
-This will yield `feature.node.kubenernetes.io/my-special-feature=my-value` node
+This will yield `feature.node.kubernetes.io/my-special-feature=my-value` node
 label if all of these are true (`matchFeatures` implements a logical AND over
 the matchers):
 
@@ -529,8 +539,8 @@ spec:
   rules:
     - name: "my dynamic label value rule"
       labels:
-        linux-lsm-enabled: "@kernel.config.LSM"
-        custom-label: "customlabel"
+        feature.node.kubernetes.io/linux-lsm-enabled: "@kernel.config.LSM"
+        feature.node.kubernetes.io/custom-label: "customlabel"
 ```
 
 Label `linux-lsm-enabled` uses the `@` notation for dynamic values.
@@ -576,8 +586,7 @@ spec:
   rules:
     - name: "annotation-example"
       annotations:
-        defaul-ns-annotation: "foo"
-        feature.node.kubernetes.io/defaul-ns-annotation-2: "bar"
+        feature.node.kubernetes.io/defaul-ns-annotation: "foo"
         custom.vendor.io/feature: "baz"
       matchFeatures:
         - feature: kernel.version
@@ -591,7 +600,6 @@ This will yield into the following node annotations:
   annotations:
     ...
     feature.node.kubernetes.io/defaul-ns-annotation: "foo"
-    feature.node.kubernetes.io/defaul-ns-annotation-2: "bar"
     custom.vendor.io/feature: "baz"
     ...
 ```
@@ -602,8 +610,10 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
   generally be used
 - the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
   (like `sub.ns.feature.node.kubernetes.io`)
-- unprefixed names will get prefixed with `feature.node.kubernetes.io/`
-  automatically (e.g. `foo` becomes `feature.node.kubernetes.io/foo`)
+- unprefixed names (like `my-annotation`) should not be used. In NFD {{
+  site.version }} unprefixed names will be automatically prefixed with
+  `feature.node.kubernetes.io/` but this will change in a future version (see
+  [autoDefaultNs config option](../reference/master-configuration-reference.md#autoDefaultNs).
 
 > **NOTE:** The `annotations` field has will only advertise features via node
 > annotations the features won't be advertised as node labels unless they are
@@ -719,8 +729,10 @@ Resources names:
   generally be used
 - the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
   (like `sub.ns.feature.node.kubernetes.io`)
-- unprefixed names will get prefixed with `feature.node.kubernetes.io/`
-  automatically (e.g. `foo` becomes `feature.node.kubernetes.io/foo`)
+- unprefixed names (like `my-er`) site.version }} unprefixed names will be
+  automatically prefixed with `feature.node.kubernetes.io/` but this will
+  change in a future version (see
+  [autoDefaultNs config option](../reference/master-configuration-reference.md#autoDefaultNs).
 
 > **NOTE:** `.extendedResources` is not supported by the
 > [custom feature source](#custom-feature-source) -- it can only be used in

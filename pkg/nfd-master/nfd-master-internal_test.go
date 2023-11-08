@@ -370,12 +370,12 @@ func TestSetLabels(t *testing.T) {
 		mockNode := newMockNode()
 		mockCtx := context.Background()
 		// In the gRPC request the label names may omit the default ns
-		mockLabels := map[string]string{"feature-1": "1", "feature-2": "val-2", "feature-3": "3"}
+		mockLabels := map[string]string{"feature.node.kubernetes.io/feature-1": "1", "example.io/feature-2": "val-2", "feature.node.kubernetes.io/feature-3": "3"}
 		mockReq := &labeler.SetLabelsRequest{NodeName: workerName, NfdVersion: workerVer, Labels: mockLabels}
 
 		mockLabelNames := make([]string, 0, len(mockLabels))
 		for k := range mockLabels {
-			mockLabelNames = append(mockLabelNames, k)
+			mockLabelNames = append(mockLabelNames, strings.TrimPrefix(k, nfdv1alpha1.FeatureLabelNs+"/"))
 		}
 		sort.Strings(mockLabelNames)
 
@@ -386,7 +386,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
 			}
 			for k, v := range mockLabels {
-				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/"+k, v))
+				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))
 			}
 
 			mockHelper.On("GetClient").Return(mockClient, nil)
@@ -401,8 +401,8 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When -label-whitelist is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
-				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
+				apihelper.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
 			}
 
 			mockMaster.config.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
@@ -460,13 +460,13 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When -resource-labels is specified", func() {
 			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "feature-2"),
+				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
 				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
-				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-2", mockLabels["feature-2"]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
 			}
 			expectedStatusPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/status/capacity", nfdv1alpha1.FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),
-				apihelper.NewJsonPatch("add", "/status/capacity", nfdv1alpha1.FeatureLabelNs+"/feature-3", mockLabels["feature-3"]),
+				apihelper.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
+				apihelper.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-3", mockLabels["feature.node.kubernetes.io/feature-3"]),
 			}
 
 			mockMaster.config.ResourceLabels = map[string]struct{}{"feature.node.kubernetes.io/feature-3": {}, "feature-1": {}}
@@ -502,29 +502,92 @@ func TestSetLabels(t *testing.T) {
 func TestFilterLabels(t *testing.T) {
 	mockHelper := &apihelper.MockAPIHelpers{}
 	mockMaster := newMockMaster(mockHelper)
+	mockMaster.deniedNs = deniedNs{
+		normal:   map[string]struct{}{"": struct{}{}, "kubernetes.io": struct{}{}, "denied.ns": struct{}{}},
+		wildcard: map[string]struct{}{".kubernetes.io": struct{}{}, ".denied.subns": struct{}{}},
+	}
 
-	Convey("When using dynamic values", t, func() {
-		labelName := "ns/testLabel"
-		labelValue := "@test.feature.LSM"
-		features := nfdv1alpha1.Features{
-			Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
-				"test.feature": nfdv1alpha1.AttributeFeatureSet{
-					Elements: map[string]string{
-						"LSM": "123",
+	type TC struct {
+		description   string
+		labelName     string
+		labelValue    string
+		features      nfdv1alpha1.Features
+		expectErr     bool
+		expectedValue string
+	}
+
+	tcs := []TC{
+		TC{
+			description:   "Static value",
+			labelName:     "example.io/test",
+			labelValue:    "test-val",
+			expectedValue: "test-val",
+		},
+		TC{
+			description: "Dynamic value",
+			labelName:   "example.io/testLabel",
+			labelValue:  "@test.feature.LSM",
+			features: nfdv1alpha1.Features{
+				Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
+					"test.feature": nfdv1alpha1.AttributeFeatureSet{
+						Elements: map[string]string{
+							"LSM": "123",
+						},
 					},
 				},
 			},
-		}
-		labelValue, err := mockMaster.filterFeatureLabel(labelName, labelValue, &features)
+			expectedValue: "123",
+		},
+		TC{
+			description: "Unprefixed should be denied",
+			labelName:   "test-label",
+			labelValue:  "test-value",
+			expectErr:   true,
+		},
+		TC{
+			description: "kubernetes.io ns should be denied",
+			labelName:   "kubernetes.io/test-label",
+			labelValue:  "test-value",
+			expectErr:   true,
+		},
+		TC{
+			description: "*.kubernetes.io ns should be denied",
+			labelName:   "sub.ns.kubernetes.io/test-label",
+			labelValue:  "test-value",
+			expectErr:   true,
+		},
+		TC{
+			description: "denied.ns ns should be denied",
+			labelName:   "denied.ns/test-label",
+			labelValue:  "test-value",
+			expectErr:   true,
+		},
+		TC{
+			description: "*.denied.subns ns should be denied",
+			labelName:   "my.denied.subns/test-label",
+			labelValue:  "test-value",
+			expectErr:   true,
+		},
+	}
 
-		Convey("Operation should succeed", func() {
-			So(err, ShouldBeNil)
-		})
+	for _, tc := range tcs {
+		t.Run(tc.description, func(t *testing.T) {
+			labelValue, err := mockMaster.filterFeatureLabel(tc.labelName, tc.labelValue, &tc.features)
 
-		Convey("Label value should change", func() {
-			So(labelValue, ShouldEqual, "123")
+			if tc.expectErr {
+				Convey("Label should be filtered out", t, func() {
+					So(err, ShouldBeError)
+				})
+			} else {
+				Convey("Label should not be filtered out", t, func() {
+					So(err, ShouldBeNil)
+				})
+				Convey("Label value should be correct", t, func() {
+					So(labelValue, ShouldEqual, tc.expectedValue)
+				})
+			}
 		})
-	})
+	}
 }
 
 func TestCreatePatches(t *testing.T) {

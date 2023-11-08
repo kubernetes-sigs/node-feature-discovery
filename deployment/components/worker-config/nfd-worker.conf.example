@@ -82,7 +82,7 @@
 #    # The following feature demonstrates the capabilities of the matchFeatures
 #    - name: "my custom rule"
 #      labels:
-#        my-ng-feature: "true"
+#        "vendor.io/my-ng-feature": "true"
 #      # matchFeatures implements a logical AND over all matcher terms in the
 #      # list (i.e. all of the terms, or per-feature matchers, must match)
 #      matchFeatures:
@@ -153,7 +153,7 @@
 #    # The following feature demonstrates the capabilities of the matchAny
 #    - name: "my matchAny rule"
 #      labels:
-#        my-ng-feature-2: "my-value"
+#        "vendor.io/my-ng-feature-2": "my-value"
 #      # matchAny implements a logical IF over all elements (sub-matchers) in
 #      # the list (i.e. at least one feature matcher must match)
 #      matchAny:
@@ -177,7 +177,7 @@
 #    # The following features demonstreate label templating capabilities
 #    - name: "my template rule"
 #      labelsTemplate: |
-#        {{ range .system.osrelease }}my-system-feature.{{ .Name }}={{ .Value }}
+#        {{ range .system.osrelease }}vendor.io/my-system-feature.{{ .Name }}={{ .Value }}
 #        {{ end }}
 #      matchFeatures:
 #        - feature: system.osrelease
@@ -187,7 +187,7 @@
 #
 #    - name: "my template rule 2"
 #      labelsTemplate: |
-#        {{ range .pci.device }}my-pci-device.{{ .class }}-{{ .device }}=with-cpuid
+#        {{ range .pci.device }}vendor.io/my-pci-device.{{ .class }}-{{ .device }}=with-cpuid
 #        {{ end }}
 #      matchFeatures:
 #        - feature: pci.device
@@ -202,7 +202,7 @@
 #    # previous labels and vars
 #    - name: "my dummy kernel rule"
 #      labels:
-#        "my.kernel.feature": "true"
+#        "vendor.io/my.kernel.feature": "true"
 #      matchFeatures:
 #        - feature: kernel.version
 #          matchExpressions:
@@ -217,10 +217,10 @@
 #
 #    - name: "my rule using backrefs"
 #      labels:
-#        "my.backref.feature": "true"
+#        "vendor.io/my.backref.feature": "true"
 #      matchFeatures:
 #        - feature: rule.matched
 #          matchExpressions:
-#            my.kernel.feature: {op: IsTrue}
+#            vendor.io/my.kernel.feature: {op: IsTrue}
 #            my.dummy.var: {op: Gt, value: ["0"]}
 #

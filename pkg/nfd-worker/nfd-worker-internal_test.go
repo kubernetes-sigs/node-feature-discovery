@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -84,7 +85,7 @@ func makeFakeFeatures(names []string) (source.FeatureLabels, Labels) {
 	labels := Labels{}
 	for _, f := range names {
 		features[f] = true
-		labelName := fakeLabelSourceName + "-" + f
+		labelName := nfdv1alpha1.FeatureLabelNs + "/" + fakeLabelSourceName + "-" + f
 		if strings.IndexByte(f, '/') >= 0 {
 			labelName = f
 		}
@@ -352,9 +353,9 @@ func TestCreateFeatureLabels(t *testing.T) {
 
 			Convey("Proper fake labels are returned", func() {
 				So(len(labels), ShouldEqual, 3)
-				So(labels, ShouldContainKey, "fake-fakefeature1")
-				So(labels, ShouldContainKey, "fake-fakefeature2")
-				So(labels, ShouldContainKey, "fake-fakefeature3")
+				So(labels, ShouldContainKey, nfdv1alpha1.FeatureLabelNs+"/"+"fake-fakefeature1")
+				So(labels, ShouldContainKey, nfdv1alpha1.FeatureLabelNs+"/"+"fake-fakefeature2")
+				So(labels, ShouldContainKey, nfdv1alpha1.FeatureLabelNs+"/"+"fake-fakefeature3")
 			})
 		})
 		Convey("When fake feature source is configured with a whitelist that doesn't match", func() {

@@ -6,7 +6,7 @@ spec:
   rules:
     - name: "my sample rule"
       labels:
-        "my-sample-feature": "true"
+        "vendor.io/my-sample-feature": "true"
       matchFeatures:
         - feature: kernel.loadedmodule
           matchExpressions:

@@ -70,6 +70,38 @@ Example:
 denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
 ```
 
+## autoDefaultNs
+
+The `autoDefaultNs` option controls the automatic prefixing of names. When set
+to true (the default in {{ site.version }}) nfd-master automatically adds the
+default `feature.node.kubernetes.io/` prefix to unprefixed labels, annotations
+and extended resources - this is also the default behavior in NFD v0.13 and
+earlier. When the option is set to `false`, no prefix will be prepended to
+unprefixed names, effectively causing them to be filtered out (as NFD does not
+currently allow unprefixed names of labels, annotations or extended resources).
+The default will be changed to `false` in a future release.
+
+For example, with the `autoDefaultNs` set to `true`, a NodeFeatureRule with
+
+```yaml
+  labels:
+    foo: bar
+```
+
+Will turn into `feature.node.kubernetes.io/foo=bar` node label. With
+`autoDefaultNs` set to `false`, no prefix is added and the label will be
+filtered out.
+
+Note that taint keys are not affected by this option.
+
+Default: `true`
+
+Example:
+
+```yaml
+autoDefaultNs: false
+```
+
 ## resourceLabels
 
 **DEPRECATED**: [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)
