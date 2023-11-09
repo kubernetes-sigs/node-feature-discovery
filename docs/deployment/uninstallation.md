@@ -16,6 +16,9 @@ Follow the uninstallation instructions of the deployment method used
 
 ## Removing feature labels
 
+> **NOTE:** This is unnecessary when using the Helm chart for deployment as it
+> will clean up the nodes when NFD is uninstalled.
+
 NFD-Master has a special `-prune` command line flag for removing all
 nfd-related node labels, annotations, extended resources and taints from the
 cluster.
