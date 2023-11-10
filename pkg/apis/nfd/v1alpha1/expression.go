@@ -211,14 +211,14 @@ func (m *MatchExpression) MatchKeys(name string, keys map[string]Nil) (bool, err
 	}
 
 	if klogV := klog.V(3); klogV.Enabled() {
-		klogV.InfoS("matched keys", "matchResult", "matched", "matchKey", name, "matchOp", m.Op)
+		klogV.InfoS("matched keys", "matchResult", matched, "matchKey", name, "matchOp", m.Op)
 	} else if klogV := klog.V(4); klogV.Enabled() {
 		k := make([]string, 0, len(keys))
 		for n := range keys {
 			k = append(k, n)
 		}
 		sort.Strings(k)
-		klogV.InfoS("matched keys", "matchResult", "matched", "matchKey", name, "matchOp", m.Op, "inputKeys", k)
+		klogV.InfoS("matched keys", "matchResult", matched, "matchKey", name, "matchOp", m.Op, "inputKeys", k)
 	}
 	return matched, nil
 }
@@ -232,9 +232,9 @@ func (m *MatchExpression) MatchValues(name string, values map[string]string) (bo
 	}
 
 	if klogV := klog.V(3); klogV.Enabled() {
-		klogV.InfoS("matched values", "matchResult", "matched", "matchKey", name, "matchOp", m.Op, "matchValue", m.Value)
+		klogV.InfoS("matched values", "matchResult", matched, "matchKey", name, "matchOp", m.Op, "matchValue", m.Value)
 	} else if klogV := klog.V(4); klogV.Enabled() {
-		klogV.InfoS("matched values", "matchResult", "matched", "matchKey", name, "matchOp", m.Op, "matchValue", m.Value, "inputValues", values)
+		klogV.InfoS("matched values", "matchResult", matched, "matchKey", name, "matchOp", m.Op, "matchValue", m.Value, "inputValues", values)
 	}
 
 	return matched, nil
