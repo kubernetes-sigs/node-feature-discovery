@@ -294,10 +294,8 @@ type MatchedKey struct {
 }
 
 // MatchGetKeys evaluates the MatchExpressionSet against a set of keys and
-// returns all matched keys or nil if no match was found. Special case of an
-// empty MatchExpressionSet returns all existing keys are returned. Note that
-// an empty MatchExpressionSet and an empty set of keys returns an empty slice
-// which is not nil and is treated as a match.
+// returns all matched keys or nil if no match was found. Note that an empty
+// MatchExpressionSet returns a match with an empty slice of matched features.
 func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedKey, error) {
 	ret := make([]MatchedKey, 0, len(*m))
 
@@ -329,10 +327,8 @@ type MatchedValue struct {
 }
 
 // MatchGetValues evaluates the MatchExpressionSet against a set of key-value
-// pairs and returns all matched key-value pairs. Special case of an empty
-// MatchExpressionSet returns all existing key-value pairs. Note that an empty
-// MatchExpressionSet and an empty set of values returns an empty non-nil map
-// which is treated as a match.
+// pairs and returns all matched key-value pairs. Note that an empty
+// MatchExpressionSet returns a match with an empty slice of matched features.
 func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []MatchedValue, error) {
 	ret := make([]MatchedValue, 0, len(*m))
 
