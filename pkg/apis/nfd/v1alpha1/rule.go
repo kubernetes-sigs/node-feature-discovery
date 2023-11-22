@@ -155,7 +155,7 @@ func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) er
 
 type matchedFeatures map[string]domainMatchedFeatures
 
-type domainMatchedFeatures map[string]interface{}
+type domainMatchedFeatures map[string][]MatchedElement
 
 func (e *MatchAnyElem) match(features *Features) (bool, matchedFeatures, error) {
 	return e.MatchFeatures.match(features)
@@ -175,30 +175,26 @@ func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error
 			nameSplit = []string{featureName, ""}
 		}
 
-		if _, ok := matches[nameSplit[0]]; !ok {
-			matches[nameSplit[0]] = make(domainMatchedFeatures)
+		dom := nameSplit[0]
+		nam := nameSplit[1]
+		if _, ok := matches[dom]; !ok {
+			matches[dom] = make(domainMatchedFeatures)
 		}
 
 		var isMatch bool
+		var matchedElems []MatchedElement
 		var err error
 		if f, ok := features.Flags[featureName]; ok {
-			m, v, e := term.MatchExpressions.MatchGetKeys(f.Elements)
-			isMatch = m
-			err = e
-			matches[nameSplit[0]][nameSplit[1]] = v
+			isMatch, matchedElems, err = term.MatchExpressions.MatchGetKeys(f.Elements)
 		} else if f, ok := features.Attributes[featureName]; ok {
-			m, v, e := term.MatchExpressions.MatchGetValues(f.Elements)
-			isMatch = m
-			err = e
-			matches[nameSplit[0]][nameSplit[1]] = v
+			isMatch, matchedElems, err = term.MatchExpressions.MatchGetValues(f.Elements)
 		} else if f, ok := features.Instances[featureName]; ok {
-			v, e := term.MatchExpressions.MatchGetInstances(f.Elements)
-			isMatch = len(v) > 0
-			err = e
-			matches[nameSplit[0]][nameSplit[1]] = v
+			matchedElems, err = term.MatchExpressions.MatchGetInstances(f.Elements)
+			isMatch = len(matchedElems) > 0
 		} else {
 			return false, nil, fmt.Errorf("feature %q not available", featureName)
 		}
+		matches[dom][nam] = append(matches[dom][nam], matchedElems...)
 
 		if err != nil {
 			return false, nil, err

@@ -290,8 +290,8 @@ func TestMatchValues(t *testing.T) {
 
 func TestMESMatchKeys(t *testing.T) {
 	type I = map[string]api.Nil
-	type MK = api.MatchedKey
-	type O = []MK
+	type ME = api.MatchedElement
+	type O = []ME
 	type TC struct {
 		mes    string
 		input  I
@@ -312,7 +312,7 @@ foo: { op: DoesNotExist }
 bar: { op: Exists }
 `,
 			input:  I{"bar": {}, "baz": {}, "buzz": {}},
-			output: O{MK{Name: "bar"}, MK{Name: "foo"}},
+			output: O{ME{"Name": "bar"}, ME{"Name": "foo"}},
 			result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
@@ -351,8 +351,8 @@ bar: { op: Exists }
 
 func TestMESMatchValues(t *testing.T) {
 	type I = map[string]string
-	type MV = api.MatchedValue
-	type O = []MV
+	type ME = api.MatchedElement
+	type O = []ME
 	type TC struct {
 		mes    string
 		input  I
@@ -382,7 +382,7 @@ bar: { op: In, value: ["val", "wal"] }
 baz: { op: Gt, value: ["10"] }
 `,
 			input:  I{"foo": "1", "bar": "val", "baz": "123", "buzz": "light"},
-			output: O{MV{Name: "bar", Value: "val"}, MV{Name: "baz", Value: "123"}, MV{Name: "foo", Value: "1"}},
+			output: O{ME{"Name": "bar", "Value": "val"}, ME{"Name": "baz", "Value": "123"}, ME{"Name": "foo", "Value": "1"}},
 			result: assert.Truef, err: assert.Nilf},
 
 		{mes: `
@@ -413,8 +413,8 @@ baz: { op: Gt, value: ["10"] }
 
 func TestMESMatchInstances(t *testing.T) {
 	type I = api.InstanceFeature
-	type MI = api.MatchedInstance
-	type O = []MI
+	type ME = api.MatchedElement
+	type O = []ME
 	type A = map[string]string
 	type TC struct {
 		mes    string
