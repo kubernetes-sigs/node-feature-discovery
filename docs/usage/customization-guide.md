@@ -932,7 +932,7 @@ Consider the following example:
 The rule above will create individual labels
 `feature.node.kubernetes.io/vendor-<class-id>-<device-id>.present=true` for
 each network controller device (device class starting with 02) from vendor
-0ffff.
+0fff.
 
 All the matched features of each feature matcher term under `matchFeatures`
 fields are available for the template engine. Matched features can be
