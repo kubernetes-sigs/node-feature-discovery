@@ -465,7 +465,7 @@ func (m *nfdMaster) prune() error {
 		klog.InfoS("pruning node...", "nodeName", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
+		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
 			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
@@ -693,10 +693,8 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 			return &pb.SetLabelsReply{}, err
 		}
 
-		annotations := Annotations{}
-
 		// Create labels et al
-		if err := m.refreshNodeFeatures(cli, r.NodeName, annotations, r.GetLabels(), r.GetFeatures()); err != nil {
+		if err := m.refreshNodeFeatures(cli, r.NodeName, r.GetLabels(), r.GetFeatures()); err != nil {
 			nodeUpdateFailures.Inc()
 			return &pb.SetLabelsReply{}, err
 		}
@@ -760,8 +758,6 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 	features := nfdv1alpha1.NewNodeFeatureSpec()
 
-	annotations := Annotations{}
-
 	if len(objs) > 0 {
 		// Merge in features
 		//
@@ -782,7 +778,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 	if err != nil {
 		return err
 	}
-	if err := m.refreshNodeFeatures(cli, nodeName, annotations, features.Labels, &features.Features); err != nil {
+	if err := m.refreshNodeFeatures(cli, nodeName, features.Labels, &features.Features); err != nil {
 		return err
 	}
 
@@ -837,7 +833,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	return q.String(), nil
 }
 
-func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, nfdAnnotations Annotations, labels map[string]string, features *nfdv1alpha1.Features) error {
+func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
 	if labels == nil {
 		labels = make(map[string]string)
 	}
@@ -860,7 +856,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	extendedResources = filterExtendedResources(features, extendedResources)
 
 	// Annotations
-	featureAnnotations := m.filterFeatureAnnotations(crAnnotations)
+	annotations := m.filterFeatureAnnotations(crAnnotations)
 
 	// Taints
 	var taints []corev1.Taint
@@ -868,7 +864,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		taints = filterTaints(crTaints)
 	}
 
-	err := m.updateNodeObject(cli, nodeName, labels, nfdAnnotations, featureAnnotations, extendedResources, taints)
+	err := m.updateNodeObject(cli, nodeName, labels, annotations, extendedResources, taints)
 	if err != nil {
 		klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
 		return err
@@ -1040,7 +1036,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 // updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string, labels Labels, nfdAnnotations, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
+func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
 	if cli == nil {
 		return fmt.Errorf("no client is passed, client:  %v", cli)
 	}
@@ -1051,6 +1047,8 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 		return err
 	}
 
+	annotations := make(Annotations)
+
 	// Store names of labels in an annotation
 	if len(labels) > 0 {
 		labelKeys := make([]string, 0, len(labels))
@@ -1059,7 +1057,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 			labelKeys = append(labelKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
 		}
 		sort.Strings(labelKeys)
-		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
+		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 	}
 
 	// Store names of extended resources in an annotation
@@ -1070,11 +1068,10 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 			extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
 		}
 		sort.Strings(extendedResourceKeys)
-		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
+		annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
 	}
 
 	// Store feature annotations
-	annotations := make(Annotations)
 	if len(featureAnnotations) > 0 {
 		// Store names of feature annotations in an annotation
 		annotationKeys := make([]string, 0, len(featureAnnotations))
@@ -1083,14 +1080,8 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 			annotationKeys = append(annotationKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureAnnotationNs+"/"))
 		}
 		sort.Strings(annotationKeys)
-		nfdAnnotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)] = strings.Join(annotationKeys, ",")
+		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)] = strings.Join(annotationKeys, ",")
 		for k, v := range featureAnnotations {
-			annotations[k] = v
-		}
-	}
-
-	if len(nfdAnnotations) > 0 {
-		for k, v := range nfdAnnotations {
 			annotations[k] = v
 		}
 	}
