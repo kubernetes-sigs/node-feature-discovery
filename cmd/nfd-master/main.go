@@ -137,6 +137,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
 		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication."+
 			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
+	flagset.BoolVar(&args.EnableNodeFeatureGroupApi, "enable-nodefeaturegroup-api", false,
+		"Enable the NodeFeatureGroup CRD API for receiving cluster feature rules.")
 	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
 		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")
 	flagset.BoolVar(&args.CrdController, "crd-controller", true,

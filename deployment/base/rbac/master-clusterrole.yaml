@@ -23,6 +23,16 @@ rules:
   - list
   - watch
 - apiGroups:
+  - nfd.k8s-sigs.io
+  resources:
+  - nodefeaturegroups
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases

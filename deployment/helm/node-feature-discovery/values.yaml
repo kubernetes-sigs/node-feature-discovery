@@ -11,6 +11,7 @@ fullnameOverride: ""
 namespaceOverride: ""
 
 enableNodeFeatureApi: true
+enableNodeFeatureGroupApi: false
 
 priorityClassName: ""
 

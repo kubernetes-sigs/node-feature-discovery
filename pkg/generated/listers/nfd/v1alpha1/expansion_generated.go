@@ -26,6 +26,14 @@ type NodeFeatureListerExpansion interface{}
 // NodeFeatureNamespaceLister.
 type NodeFeatureNamespaceListerExpansion interface{}
 
+// NodeFeatureGroupListerExpansion allows custom methods to be added to
+// NodeFeatureGroupLister.
+type NodeFeatureGroupListerExpansion interface{}
+
+// NodeFeatureGroupNamespaceListerExpansion allows custom methods to be added to
+// NodeFeatureGroupNamespaceLister.
+type NodeFeatureGroupNamespaceListerExpansion interface{}
+
 // NodeFeatureRuleListerExpansion allows custom methods to be added to
 // NodeFeatureRuleLister.
 type NodeFeatureRuleListerExpansion interface{}

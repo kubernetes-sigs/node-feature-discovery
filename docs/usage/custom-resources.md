@@ -96,6 +96,52 @@ with the
 [`core.labelSources`](../reference/worker-configuration-reference.md#corelabelsources)
 configuration option.
 
+## NodeFeatureGroup
+
+> **NOTE:** This feature is experimental and may change in the future.
+
+NodeFeatureGroup is an NFD-specific custom resource that is designed for
+grouping Nodes by matching features rules. NFD-Master watches for
+NodeFeatureGroupRules objects in the cluster and creates a NodeFeatureGroup
+object for each NodeFeatureGroupRule. The NodeFeatureGroup object contains a
+list of nodes that match the NodeFeatureGroupRule.
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: my-sample-group-resource
+spec:
+  FeatureGroup:
+    name: my-sample-group-resource
+    nodes:
+    - node-1
+    - node-2
+    - node-3
+```
+
+NodeFeatureGroupRule is an NFD-specific custom resource that is designed for
+grouping Nodes by matching features rules. NFD-Master watches for
+NodeFeatureGroupRules objects in the cluster and creates a NodeFeatureGroup
+object for each NodeFeatureRule.
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: my-sample-group-resource
+spec:
+  featureGroupRules:
+    - name: dummy-rule
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: Exists}
+```
+
+The NodeFeatureGroup is disabled by default and can be enabled by setting the
+`-enable-nodefeaturegroup-api` flag to `true` for nfd-master.
+
 ## NodeResourceTopology
 
 When run with NFD-Topology-Updater, NFD creates NodeResourceTopology objects
