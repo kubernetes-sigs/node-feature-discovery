@@ -288,16 +288,15 @@ func (m *MatchExpressionSet) MatchKeys(keys map[string]Nil) (bool, error) {
 	return matched, err
 }
 
-// MatchedKey holds one matched key.
-type MatchedKey struct {
-	Name string
-}
+// MatchedElement holds one matched Instance.
+// +k8s:deepcopy-gen=false
+type MatchedElement map[string]string
 
 // MatchGetKeys evaluates the MatchExpressionSet against a set of keys and
 // returns all matched keys or nil if no match was found. Note that an empty
 // MatchExpressionSet returns a match with an empty slice of matched features.
-func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedKey, error) {
-	ret := make([]MatchedKey, 0, len(*m))
+func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedElement, error) {
+	ret := make([]MatchedElement, 0, len(*m))
 
 	for n, e := range *m {
 		match, err := e.MatchKeys(n, keys)
@@ -307,10 +306,8 @@ func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedK
 		if !match {
 			return false, nil, nil
 		}
-		ret = append(ret, MatchedKey{Name: n})
+		ret = append(ret, MatchedElement{"Name": n})
 	}
-	// Sort for reproducible output
-	sort.Slice(ret, func(i, j int) bool { return ret[i].Name < ret[j].Name })
 	return true, ret, nil
 }
 
@@ -320,17 +317,11 @@ func (m *MatchExpressionSet) MatchValues(values map[string]string) (bool, error)
 	return matched, err
 }
 
-// MatchedValue holds one matched key-value pair.
-type MatchedValue struct {
-	Name  string
-	Value string
-}
-
 // MatchGetValues evaluates the MatchExpressionSet against a set of key-value
 // pairs and returns all matched key-value pairs. Note that an empty
 // MatchExpressionSet returns a match with an empty slice of matched features.
-func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []MatchedValue, error) {
-	ret := make([]MatchedValue, 0, len(*m))
+func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []MatchedElement, error) {
+	ret := make([]MatchedElement, 0, len(*m))
 
 	for n, e := range *m {
 		match, err := e.MatchValues(n, values)
@@ -340,10 +331,8 @@ func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []M
 		if !match {
 			return false, nil, nil
 		}
-		ret = append(ret, MatchedValue{Name: n, Value: values[n]})
+		ret = append(ret, MatchedElement{"Name": n, "Value": values[n]})
 	}
-	// Sort for reproducible output
-	sort.Slice(ret, func(i, j int) bool { return ret[i].Name < ret[j].Name })
 	return true, ret, nil
 }
 
@@ -355,15 +344,12 @@ func (m *MatchExpressionSet) MatchInstances(instances []InstanceFeature) (bool, 
 	return len(v) > 0, err
 }
 
-// MatchedInstance holds one matched Instance.
-type MatchedInstance map[string]string
-
 // MatchGetInstances evaluates the MatchExpressionSet against a set of instance
 // features, each of which is an individual set of key-value pairs
 // (attributes). A slice containing all matching instances is returned. An
 // empty (non-nil) slice is returned if no matching instances were found.
-func (m *MatchExpressionSet) MatchGetInstances(instances []InstanceFeature) ([]MatchedInstance, error) {
-	ret := []MatchedInstance{}
+func (m *MatchExpressionSet) MatchGetInstances(instances []InstanceFeature) ([]MatchedElement, error) {
+	ret := []MatchedElement{}
 
 	for _, i := range instances {
 		if match, err := m.MatchValues(i.Attributes); err != nil {

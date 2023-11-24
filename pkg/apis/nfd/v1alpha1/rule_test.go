@@ -246,6 +246,13 @@ func TestTemplating(t *testing.T) {
 							"attr-2": "val-200",
 						},
 					},
+					{
+						Attributes: map[string]string{
+							"attr-1": "1000",
+							"attr-2": "val-2000",
+							"attr-3": "3000",
+						},
+					},
 				},
 			},
 		},
@@ -290,6 +297,14 @@ var-2=
 					"attr-1": MustCreateMatchExpression(MatchLt, "100"),
 				},
 			},
+			FeatureMatcherTerm{
+				Feature: "domain_1.if_1",
+				MatchExpressions: MatchExpressionSet{
+					"attr-1": MustCreateMatchExpression(MatchExists),
+					"attr-2": MustCreateMatchExpression(MatchExists),
+					"attr-3": MustCreateMatchExpression(MatchExists),
+				},
+			},
 		},
 	}
 
@@ -309,8 +324,9 @@ var-2=
 		"vf-key-1": "vf-val-1",
 		"vf-bar":   "vf-",
 		// From if_1 template
-		"if-1_val-2":   "present",
-		"if-10_val-20": "present",
+		"if-1_val-2":       "present",
+		"if-10_val-20":     "present",
+		"if-1000_val-2000": "present",
 	}
 	expectedVars := map[string]string{
 		"var-1": "var-val-1",
