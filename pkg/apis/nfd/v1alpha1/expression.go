@@ -308,6 +308,8 @@ func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedE
 		}
 		ret = append(ret, MatchedElement{"Name": n})
 	}
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i]["Name"] < ret[j]["Name"] })
 	return true, ret, nil
 }
 
@@ -333,6 +335,8 @@ func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []M
 		}
 		ret = append(ret, MatchedElement{"Name": n, "Value": values[n]})
 	}
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i]["Name"] < ret[j]["Name"] })
 	return true, ret, nil
 }
 
