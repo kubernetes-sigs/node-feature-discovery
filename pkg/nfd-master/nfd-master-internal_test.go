@@ -422,20 +422,21 @@ func TestSetLabels(t *testing.T) {
 			vendorFeatureLabel := "vendor." + nfdv1alpha1.FeatureLabelNs + "/feature-4"
 			vendorProfileLabel := "vendor." + nfdv1alpha1.ProfileLabelNs + "/feature-5"
 			mockLabels := map[string]string{
-				"feature-1":                      "val-1",
-				"valid.ns/feature-2":             "val-2",
-				"random.denied.ns/feature-3":     "val-3",
-				"kubernetes.io/feature-4":        "val-4",
-				"sub.ns.kubernetes.io/feature-5": "val-5",
-				vendorFeatureLabel:               "val-6",
-				vendorProfileLabel:               "val-7",
-				"--invalid-name--":               "valid-val",
-				"valid-name":                     "--invalid-val--"}
+				"feature-1":                            "val-0",
+				"feature.node.kubernetes.io/feature-1": "val-1",
+				"valid.ns/feature-2":                   "val-2",
+				"random.denied.ns/feature-3":           "val-3",
+				"kubernetes.io/feature-4":              "val-4",
+				"sub.ns.kubernetes.io/feature-5":       "val-5",
+				vendorFeatureLabel:                     "val-6",
+				vendorProfileLabel:                     "val-7",
+				"--invalid-name--":                     "valid-val",
+				"valid-name":                           "--invalid-val--"}
 			expectedPatches := []apihelper.JsonPatch{
 				apihelper.NewJsonPatch("add", "/metadata/annotations",
 					instance+"."+nfdv1alpha1.FeatureLabelsAnnotation,
 					"feature-1,valid.ns/feature-2,"+vendorFeatureLabel+","+vendorProfileLabel),
-				apihelper.NewJsonPatch("add", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/feature-1", mockLabels["feature-1"]),
+				apihelper.NewJsonPatch("add", "/metadata/labels", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
 				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
@@ -468,7 +469,7 @@ func TestSetLabels(t *testing.T) {
 				apihelper.NewJsonPatch("add", "/status/capacity", nfdv1alpha1.FeatureLabelNs+"/feature-3", mockLabels["feature-3"]),
 			}
 
-			mockMaster.config.ResourceLabels = map[string]struct{}{"feature-3": {}, "feature-1": {}}
+			mockMaster.config.ResourceLabels = map[string]struct{}{"feature.node.kubernetes.io/feature-3": {}, "feature-1": {}}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, workerName).Return(mockNode, nil)
 			mockHelper.On("PatchNodeStatus", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedStatusPatches))).Return(nil)
@@ -503,7 +504,7 @@ func TestFilterLabels(t *testing.T) {
 	mockMaster := newMockMaster(mockHelper)
 
 	Convey("When using dynamic values", t, func() {
-		labelName := "testLabel"
+		labelName := "ns/testLabel"
 		labelValue := "@test.feature.LSM"
 		features := nfdv1alpha1.Features{
 			Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{

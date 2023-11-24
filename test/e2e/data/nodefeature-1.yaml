@@ -25,7 +25,9 @@ spec:
             attr_2: "9"
   # Labels to be created
   labels:
-    e2e-nodefeature-test-1: "obj-1"
+    e2e-nodefeature-test-1: "foo"
+    # The prefixed name should take precedence over the non-prefixed name above
+    feature.node.kubernetes.io/e2e-nodefeature-test-1: "obj-1"
     e2e-nodefeature-test-2: "obj-1"
     # Override feature from nfd-worker
     fake-fakefeature3: "overridden"

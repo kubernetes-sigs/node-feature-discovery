@@ -523,9 +523,6 @@ func (m *nfdMaster) updateMasterNode() error {
 func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) (Labels, ExtendedResources) {
 	outLabels := Labels{}
 	for name, value := range labels {
-		// Add possibly missing default ns
-		name := addNs(name, nfdv1alpha1.FeatureLabelNs)
-
 		if value, err := m.filterFeatureLabel(name, value, features); err != nil {
 			klog.ErrorS(err, "ignoring label", "labelKey", name, "labelValue", value)
 			nodeLabelsRejected.Inc()
@@ -537,8 +534,7 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 	// Remove labels which are intended to be extended resources
 	extendedResources := ExtendedResources{}
 	for extendedResourceName := range m.config.ResourceLabels {
-		// Add possibly missing default ns
-		extendedResourceName = addNs(extendedResourceName, nfdv1alpha1.FeatureLabelNs)
+		extendedResourceName := addNs(extendedResourceName, nfdv1alpha1.FeatureLabelNs)
 		if value, ok := outLabels[extendedResourceName]; ok {
 			if _, err := strconv.Atoi(value); err != nil {
 				klog.ErrorS(err, "bad label value encountered for extended resource", "labelKey", extendedResourceName, "labelValue", value)
@@ -563,6 +559,9 @@ func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1
 
 	// Check label namespace, filter out if ns is not whitelisted
 	ns, base := splitNs(name)
+	if ns == "" {
+		return "", fmt.Errorf("labels without namespace (prefix/) not allowed")
+	}
 	if ns != nfdv1alpha1.FeatureLabelNs && ns != nfdv1alpha1.ProfileLabelNs &&
 		!strings.HasSuffix(ns, nfdv1alpha1.FeatureLabelSubNsSuffix) && !strings.HasSuffix(ns, nfdv1alpha1.ProfileLabelSubNsSuffix) {
 		// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
@@ -764,8 +763,11 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		// NOTE: changing the rule api to support handle multiple objects instead
 		// of merging would probably perform better with lot less data to copy.
 		features = objs[0].Spec.DeepCopy()
+		features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
 		for _, o := range objs[1:] {
-			o.Spec.MergeInto(features)
+			s := o.Spec.DeepCopy()
+			s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
+			s.MergeInto(features)
 		}
 
 		klog.V(4).InfoS("merged nodeFeatureSpecs", "newNodeFeatureSpec", utils.DelayedDumper(features))
@@ -790,9 +792,6 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources ExtendedResources) ExtendedResources {
 	outExtendedResources := ExtendedResources{}
 	for name, value := range extendedResources {
-		// Add possibly missing default ns
-		name = addNs(name, nfdv1alpha1.ExtendedResourceNs)
-
 		capacity, err := filterExtendedResource(name, value, features)
 		if err != nil {
 			klog.ErrorS(err, "failed to create extended resources", "extendedResourceName", name, "extendedResourceValue", value)
@@ -807,6 +806,9 @@ func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources E
 func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) (string, error) {
 	// Check if given NS is allowed
 	ns, _ := splitNs(name)
+	if ns == "" {
+		return "", fmt.Errorf("extended resource without namespace (prefix/) not allowed")
+	}
 	if ns != nfdv1alpha1.ExtendedResourceNs && !strings.HasSuffix(ns, nfdv1alpha1.ExtendedResourceSubNsSuffix) {
 		if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") {
 			return "", fmt.Errorf("namespace %q is not allowed", ns)
@@ -834,9 +836,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
-	if labels == nil {
-		labels = make(map[string]string)
-	}
+	labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 
 	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
 
@@ -1011,13 +1011,13 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 				continue
 			}
 			taints = append(taints, ruleOut.Taints...)
-			for k, v := range ruleOut.Labels {
+			for k, v := range addNsToMapKeys(ruleOut.Labels, nfdv1alpha1.FeatureLabelNs) {
 				labels[k] = v
 			}
-			for k, v := range ruleOut.ExtendedResources {
+			for k, v := range addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs) {
 				extendedResources[k] = v
 			}
-			for k, v := range ruleOut.Annotations {
+			for k, v := range addNsToMapKeys(ruleOut.Annotations, nfdv1alpha1.FeatureAnnotationNs) {
 				annotations[k] = v
 			}
 
@@ -1285,6 +1285,25 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	return nil
 }
 
+// addNsToMapKeys creates a copy of a map with the namespace (prefix) added to
+// unprefixed keys. Prefixed keys in the input map will take presedence, i.e.
+// if the input contains both prefixed (say "prefix/name") and unprefixed
+// ("name") name the unprefixed key will be ignored.
+func addNsToMapKeys(in map[string]string, nsToAdd string) map[string]string {
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		if strings.Contains(k, "/") {
+			out[k] = v
+		} else {
+			fqn := path.Join(nsToAdd, k)
+			if _, ok := in[fqn]; !ok {
+				out[fqn] = v
+			}
+		}
+	}
+	return out
+}
+
 // addNs adds a namespace if one isn't already found from src string
 func addNs(src string, nsToAdd string) string {
 	if strings.Contains(src, "/") {
@@ -1404,11 +1423,11 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 	outAnnotations := make(map[string]string)
 
 	for annotation, value := range annotations {
-		// Add possibly missing default ns
-		annotation := addNs(annotation, nfdv1alpha1.FeatureAnnotationNs)
-
 		ns, _ := splitNs(annotation)
-
+		if ns == "" {
+			klog.ErrorS(fmt.Errorf("annotations without namespace (prefix/) not allowed"), fmt.Sprintf("Ignoring annotation %s", annotation))
+			continue
+		}
 		// Check annotation namespace, filter out if ns is not whitelisted
 		if ns != nfdv1alpha1.FeatureAnnotationNs && !strings.HasSuffix(ns, nfdv1alpha1.FeatureAnnotationSubNsSuffix) {
 			// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
