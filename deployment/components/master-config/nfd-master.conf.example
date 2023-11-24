@@ -1,4 +1,5 @@
 # noPublish: false
+# autoDefaultNs: true
 # extraLabelNs: ["added.ns.io","added.kubernets.io"]
 # denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
 # resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]

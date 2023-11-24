@@ -580,34 +580,29 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 		return nil, err
 	}
 
-	// Prefix for labels in the default namespace
-	prefix := source.Name() + "-"
-	switch source.Name() {
-	case "local", "custom":
-		// Do not prefix labels from the custom rules, hooks or feature files
-		prefix = ""
-	}
-
 	for k, v := range features {
-		// Split label name into namespace and name compoents. Use dummy 'ns'
-		// default namespace because there is no function to validate just
-		// the name part
-		split := strings.SplitN(k, "/", 2)
+		name := k
+		switch sourceName := source.Name(); sourceName {
+		case "local", "custom":
+			// No mangling of labels from the custom rules, hooks or feature files
+		default:
+			// Prefix for labels from other sources
+			if !strings.Contains(name, "/") {
+				name = nfdv1alpha1.FeatureLabelNs + "/" + sourceName + "-" + name
+			}
+		}
+		// Split label name into namespace and name compoents
+		split := strings.SplitN(name, "/", 2)
 
-		label := prefix + split[0]
-		nameForValidation := "ns/" + label
-		nameForWhiteListing := label
-
+		nameForWhiteListing := name
 		if len(split) == 2 {
-			label = k
-			nameForValidation = label
 			nameForWhiteListing = split[1]
 		}
 
 		// Validate label name.
-		errs := validation.IsQualifiedName(nameForValidation)
+		errs := validation.IsQualifiedName(name)
 		if len(errs) > 0 {
-			klog.InfoS("ignoring label with invalid name", "lableKey", label, "errors", errs)
+			klog.InfoS("ignoring label with invalid name", "lableKey", name, "errors", errs)
 			continue
 		}
 
@@ -615,7 +610,7 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 		// Validate label value
 		errs = validation.IsValidLabelValue(value)
 		if len(errs) > 0 {
-			klog.InfoS("ignoring label with invalide value", "labelKey", label, "labelValue", value, "errors", errs)
+			klog.InfoS("ignoring label with invalide value", "labelKey", name, "labelValue", value, "errors", errs)
 			continue
 		}
 
@@ -625,7 +620,7 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 			continue
 		}
 
-		labels[label] = value
+		labels[name] = value
 	}
 	return labels, nil
 }

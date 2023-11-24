@@ -71,6 +71,7 @@ type Annotations map[string]string
 
 // NFDConfig contains the configuration settings of NfdMaster.
 type NFDConfig struct {
+	AutoDefaultNs     bool
 	DenyLabelNs       utils.StringSetVal
 	ExtraLabelNs      utils.StringSetVal
 	LabelWhiteList    utils.RegexpVal
@@ -196,6 +197,7 @@ func newDefaultConfig() *NFDConfig {
 		DenyLabelNs:       utils.StringSetVal{},
 		ExtraLabelNs:      utils.StringSetVal{},
 		NoPublish:         false,
+		AutoDefaultNs:     true,
 		NfdApiParallelism: 10,
 		ResourceLabels:    utils.StringSetVal{},
 		EnableTaints:      false,
@@ -551,7 +553,6 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 }
 
 func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1.Features) (string, error) {
-
 	//Validate label name
 	if errs := k8svalidation.IsQualifiedName(name); len(errs) > 0 {
 		return "", fmt.Errorf("invalid name %q: %s", name, strings.Join(errs, "; "))
@@ -763,10 +764,14 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		// NOTE: changing the rule api to support handle multiple objects instead
 		// of merging would probably perform better with lot less data to copy.
 		features = objs[0].Spec.DeepCopy()
-		features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
+		if m.config.AutoDefaultNs {
+			features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
+		}
 		for _, o := range objs[1:] {
 			s := o.Spec.DeepCopy()
-			s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
+			if m.config.AutoDefaultNs {
+				s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
+			}
 			s.MergeInto(features)
 		}
 
@@ -789,7 +794,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 
 // filterExtendedResources filters extended resources and returns a map
 // of valid extended resources.
-func filterExtendedResources(features *nfdv1alpha1.Features, extendedResources ExtendedResources) ExtendedResources {
+func (m *nfdMaster) filterExtendedResources(features *nfdv1alpha1.Features, extendedResources ExtendedResources) ExtendedResources {
 	outExtendedResources := ExtendedResources{}
 	for name, value := range extendedResources {
 		capacity, err := filterExtendedResource(name, value, features)
@@ -836,7 +841,11 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
-	labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
+	if m.config.AutoDefaultNs {
+		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
+	} else if labels == nil {
+		labels = make(map[string]string)
+	}
 
 	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
 
@@ -853,7 +862,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	for k, v := range crExtendedResources {
 		extendedResources[k] = v
 	}
-	extendedResources = filterExtendedResources(features, extendedResources)
+	extendedResources = m.filterExtendedResources(features, extendedResources)
 
 	// Annotations
 	annotations := m.filterFeatureAnnotations(crAnnotations)
@@ -1011,13 +1020,22 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 				continue
 			}
 			taints = append(taints, ruleOut.Taints...)
-			for k, v := range addNsToMapKeys(ruleOut.Labels, nfdv1alpha1.FeatureLabelNs) {
+
+			l := ruleOut.Labels
+			e := ruleOut.ExtendedResources
+			a := ruleOut.Annotations
+			if m.config.AutoDefaultNs {
+				l = addNsToMapKeys(ruleOut.Labels, nfdv1alpha1.FeatureLabelNs)
+				e = addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs)
+				a = addNsToMapKeys(ruleOut.Annotations, nfdv1alpha1.FeatureAnnotationNs)
+			}
+			for k, v := range l {
 				labels[k] = v
 			}
-			for k, v := range addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs) {
+			for k, v := range e {
 				extendedResources[k] = v
 			}
-			for k, v := range addNsToMapKeys(ruleOut.Annotations, nfdv1alpha1.FeatureAnnotationNs) {
+			for k, v := range a {
 				annotations[k] = v
 			}
 
@@ -1430,9 +1448,13 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 		}
 		// Check annotation namespace, filter out if ns is not whitelisted
 		if ns != nfdv1alpha1.FeatureAnnotationNs && !strings.HasSuffix(ns, nfdv1alpha1.FeatureAnnotationSubNsSuffix) {
-			// If the namespace is denied, and not present in the extraLabelNs, label will be ignored
+			// If the namespace is denied the annotation will be ignored
+			if ns == "" {
+				klog.ErrorS(fmt.Errorf("labels without namespace (prefix/) not allowed"), fmt.Sprintf("Ignoring annotation %s", annotation))
+				continue
+			}
 			if ns == "kubernetes.io" || strings.HasSuffix(ns, ".kubernetes.io") || ns == nfdv1alpha1.AnnotationNs {
-				klog.ErrorS(fmt.Errorf("namespace %v is not allowed", ns), fmt.Sprintf("Ignoring annotation %v\n", annotation))
+				klog.ErrorS(fmt.Errorf("namespace %q is not allowed", ns), fmt.Sprintf("Ignoring annotation %s", annotation))
 				continue
 			}
 		}
