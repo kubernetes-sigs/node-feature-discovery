@@ -54,7 +54,7 @@ can refer to their documentation for other installation methods such as the
 helm chart they provide.
 
 ```bash
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
 ```
 
 To use the kustomize overlay to install node-feature-discovery with TLS enabled,
