@@ -15,8 +15,8 @@ sort: 2
 
 ---
 
-[Kustomize](https://github.com/kubernetes-sigs/kustomize) provides easy
-deployment of NFD. Customization of the deployment is done by maintaining
+[Kustomize](https://github.com/kubernetes-sigs/kustomize) can be used to
+deploy NFD. Customization of the deployment is done by maintaining
 declarative overlays on top of the base overlays in NFD.
 
 To follow the deployment instructions here,

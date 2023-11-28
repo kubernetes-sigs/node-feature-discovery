@@ -69,7 +69,7 @@ in the `NodeFeatureDiscovery` object above.
 
 ## Uninstallation
 
-If you followed the deployment instructions above you can simply do:
+If you followed the deployment instructions above you can uninstall NFD with:
 
 ```bash
 kubectl -n nfd delete NodeFeatureDiscovery my-nfd-deployment

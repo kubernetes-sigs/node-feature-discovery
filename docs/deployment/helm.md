@@ -15,7 +15,7 @@ sort: 3
 
 ---
 
-Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
+Node Feature Discovery provides a Helm chart to manage its deployment.
 
 > **NOTE:** NFD is not ideal for other Helm charts to depend on as that may
 > result in multiple parallel NFD deployments in the same cluster which is not

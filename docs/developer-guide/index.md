@@ -150,7 +150,7 @@ Or to specify a build tool different from Docker, It can be done in 2 ways:
 ### Testing
 
 Unit tests are automatically run as part of the container image build. You can
-also run them manually in the source code tree by simply running:
+also run them manually in the source code tree by running:
 
 ```bash
 make test
@@ -257,7 +257,7 @@ the steps below.
 1. Install [tilt](https://docs.tilt.dev/install.html)
 1. Create a local Kubernetes cluster
 
-To start up your Tilt development environment, just run
+To start up your Tilt development environment, run
 
 ```shell
 tilt up
@@ -300,8 +300,7 @@ make site-serve
 This will build the documentation in a container and serve it under
 [localhost:4000/](http://localhost:4000/) making it easy to verify the results.
 Any changes made to the `docs/` will automatically re-trigger a rebuild and are
-reflected in the served content and can be inspected with a simple browser
-refresh.
+reflected in the served content and can be inspected with a browser refresh.
 
 In order to just build the html documentation run:
 
