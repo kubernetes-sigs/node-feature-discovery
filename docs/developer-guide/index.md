@@ -222,8 +222,8 @@ $ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-topology-updater -no-publish
 ...
 ```
 
-If you just want to try out feature discovery without connecting to nfd-master,
-pass the `-no-publish` flag to nfd-topology-updater.
+If you just want to try out resource topology discovery without connecting to
+the Kubernetes API, pass the `-no-publish` flag to nfd-topology-updater.
 
 > **NOTE:** NFD topology updater needs certain directories and/or files from
 > the host mounted inside the NFD container. Thus, you need to provide Docker
