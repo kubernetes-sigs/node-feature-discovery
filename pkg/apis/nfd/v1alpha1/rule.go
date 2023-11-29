@@ -112,15 +112,12 @@ func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) 
 		return nil
 	}
 
-	if r.labelsTemplate == nil {
-		t, err := newTemplateHelper(r.LabelsTemplate)
-		if err != nil {
-			return fmt.Errorf("failed to parse LabelsTemplate: %w", err)
-		}
-		r.labelsTemplate = t
+	th, err := newTemplateHelper(r.LabelsTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse LabelsTemplate: %w", err)
 	}
 
-	labels, err := r.labelsTemplate.expandMap(in)
+	labels, err := th.expandMap(in)
 	if err != nil {
 		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
 	}
@@ -134,15 +131,13 @@ func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) er
 	if r.VarsTemplate == "" {
 		return nil
 	}
-	if r.varsTemplate == nil {
-		t, err := newTemplateHelper(r.VarsTemplate)
-		if err != nil {
-			return err
-		}
-		r.varsTemplate = t
+
+	th, err := newTemplateHelper(r.VarsTemplate)
+	if err != nil {
+		return err
 	}
 
-	vars, err := r.varsTemplate.expandMap(in)
+	vars, err := th.expandMap(in)
 	if err != nil {
 		return err
 	}
@@ -214,22 +209,6 @@ func newTemplateHelper(name string) (*templateHelper, error) {
 		return nil, fmt.Errorf("invalid template: %w", err)
 	}
 	return &templateHelper{template: tmpl}, nil
-}
-
-// DeepCopy is a stub to augment the auto-generated code
-func (h *templateHelper) DeepCopy() *templateHelper {
-	if h == nil {
-		return nil
-	}
-	out := new(templateHelper)
-	h.DeepCopyInto(out)
-	return out
-}
-
-// DeepCopyInto is a stub to augment the auto-generated code
-func (h *templateHelper) DeepCopyInto(out *templateHelper) {
-	// HACK: just re-use the template
-	out.template = h.template
 }
 
 func (h *templateHelper) execute(data interface{}) (string, error) {

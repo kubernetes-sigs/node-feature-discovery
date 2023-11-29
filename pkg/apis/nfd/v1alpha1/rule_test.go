@@ -369,17 +369,14 @@ var-2=
 	assert.Equal(t, map[string]string{"foo": "bar"}, m.Labels, "instances should have matched")
 	assert.Empty(t, m.Vars)
 
-	r2.labelsTemplate = nil
 	r2.LabelsTemplate = "foo"
 	_, err = r2.Execute(f)
 	assert.Error(t, err)
 
-	r2.labelsTemplate = nil
 	r2.LabelsTemplate = "{{"
 	_, err = r2.Execute(f)
 	assert.Error(t, err)
 
-	r2.labelsTemplate = nil
 	r2.LabelsTemplate = ""
 	r2.VarsTemplate = "bar=baz"
 	m, err = r2.Execute(f)
@@ -387,12 +384,10 @@ var-2=
 	assert.Empty(t, m.Labels)
 	assert.Equal(t, map[string]string{"bar": "baz"}, m.Vars, "instances should have matched")
 
-	r2.varsTemplate = nil
 	r2.VarsTemplate = "bar"
 	_, err = r2.Execute(f)
 	assert.Error(t, err)
 
-	r2.varsTemplate = nil
 	r2.VarsTemplate = "{{"
 	_, err = r2.Execute(f)
 	assert.Error(t, err)
