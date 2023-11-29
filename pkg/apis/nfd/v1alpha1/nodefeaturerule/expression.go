@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package nodefeaturerule
 
 import (
 	"fmt"
@@ -25,40 +25,42 @@ import (
 
 	"golang.org/x/exp/maps"
 	"k8s.io/klog/v2"
+
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 )
 
-var matchOps = map[MatchOp]struct{}{
-	MatchAny:          {},
-	MatchIn:           {},
-	MatchNotIn:        {},
-	MatchInRegexp:     {},
-	MatchExists:       {},
-	MatchDoesNotExist: {},
-	MatchGt:           {},
-	MatchLt:           {},
-	MatchGtLt:         {},
-	MatchIsTrue:       {},
-	MatchIsFalse:      {},
+var matchOps = map[nfdv1alpha1.MatchOp]struct{}{
+	nfdv1alpha1.MatchAny:          {},
+	nfdv1alpha1.MatchIn:           {},
+	nfdv1alpha1.MatchNotIn:        {},
+	nfdv1alpha1.MatchInRegexp:     {},
+	nfdv1alpha1.MatchExists:       {},
+	nfdv1alpha1.MatchDoesNotExist: {},
+	nfdv1alpha1.MatchGt:           {},
+	nfdv1alpha1.MatchLt:           {},
+	nfdv1alpha1.MatchGtLt:         {},
+	nfdv1alpha1.MatchIsTrue:       {},
+	nfdv1alpha1.MatchIsFalse:      {},
 }
 
-// Match evaluates the MatchExpression against a single input value.
-func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
+// evaluateMatchExpression evaluates the MatchExpression against a single input value.
+func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value interface{}) (bool, error) {
 	if _, ok := matchOps[m.Op]; !ok {
 		return false, fmt.Errorf("invalid Op %q", m.Op)
 	}
 
 	switch m.Op {
-	case MatchAny:
+	case nfdv1alpha1.MatchAny:
 		if len(m.Value) != 0 {
 			return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
 		}
 		return true, nil
-	case MatchExists:
+	case nfdv1alpha1.MatchExists:
 		if len(m.Value) != 0 {
 			return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
 		}
 		return valid, nil
-	case MatchDoesNotExist:
+	case nfdv1alpha1.MatchDoesNotExist:
 		if len(m.Value) != 0 {
 			return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
 		}
@@ -68,7 +70,7 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 	if valid {
 		value := fmt.Sprintf("%v", value)
 		switch m.Op {
-		case MatchIn:
+		case nfdv1alpha1.MatchIn:
 			if len(m.Value) == 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
 			}
@@ -77,7 +79,7 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 					return true, nil
 				}
 			}
-		case MatchNotIn:
+		case nfdv1alpha1.MatchNotIn:
 			if len(m.Value) == 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
 			}
@@ -87,7 +89,7 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 				}
 			}
 			return true, nil
-		case MatchInRegexp:
+		case nfdv1alpha1.MatchInRegexp:
 			if len(m.Value) == 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
 			}
@@ -104,7 +106,7 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 					return true, nil
 				}
 			}
-		case MatchGt, MatchLt:
+		case nfdv1alpha1.MatchGt, nfdv1alpha1.MatchLt:
 			if len(m.Value) != 1 {
 				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly one element for Op %q (have %v)", m.Op, m.Value)
 			}
@@ -118,10 +120,10 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 				return false, fmt.Errorf("not a number %q in %v", m.Value[0], m)
 			}
 
-			if (l < r && m.Op == MatchLt) || (l > r && m.Op == MatchGt) {
+			if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l > r && m.Op == nfdv1alpha1.MatchGt) {
 				return true, nil
 			}
-		case MatchGtLt:
+		case nfdv1alpha1.MatchGtLt:
 			if len(m.Value) != 2 {
 				return false, fmt.Errorf("invalid expression, value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
 			}
@@ -140,12 +142,12 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 				return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
 			}
 			return v > lr[0] && v < lr[1], nil
-		case MatchIsTrue:
+		case nfdv1alpha1.MatchIsTrue:
 			if len(m.Value) != 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
 			}
 			return value == "true", nil
-		case MatchIsFalse:
+		case nfdv1alpha1.MatchIsFalse:
 			if len(m.Value) != 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
 			}
@@ -157,17 +159,17 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 	return false, nil
 }
 
-// MatchKeys evaluates the MatchExpression against a set of keys.
-func (m *MatchExpression) MatchKeys(name string, keys map[string]Nil) (bool, error) {
+// evaluateMatchExpressionKeys evaluates the MatchExpression against a set of keys.
+func evaluateMatchExpressionKeys(m *nfdv1alpha1.MatchExpression, name string, keys map[string]nfdv1alpha1.Nil) (bool, error) {
 	matched := false
 
 	_, ok := keys[name]
 	switch m.Op {
-	case MatchAny:
+	case nfdv1alpha1.MatchAny:
 		matched = true
-	case MatchExists:
+	case nfdv1alpha1.MatchExists:
 		matched = ok
-	case MatchDoesNotExist:
+	case nfdv1alpha1.MatchDoesNotExist:
 		matched = !ok
 	default:
 		return false, fmt.Errorf("invalid Op %q when matching keys", m.Op)
@@ -183,10 +185,10 @@ func (m *MatchExpression) MatchKeys(name string, keys map[string]Nil) (bool, err
 	return matched, nil
 }
 
-// MatchValues evaluates the MatchExpression against a set of key-value pairs.
-func (m *MatchExpression) MatchValues(name string, values map[string]string) (bool, error) {
+// evaluateMatchExpressionValues evaluates the MatchExpression against a set of key-value pairs.
+func evaluateMatchExpressionValues(m *nfdv1alpha1.MatchExpression, name string, values map[string]string) (bool, error) {
 	v, ok := values[name]
-	matched, err := m.Match(ok, v)
+	matched, err := evaluateMatchExpression(m, ok, v)
 	if err != nil {
 		return false, err
 	}
@@ -201,11 +203,11 @@ func (m *MatchExpression) MatchValues(name string, values map[string]string) (bo
 }
 
 // MatchKeyNames evaluates the MatchExpression against names of a set of key features.
-func (m *MatchExpression) MatchKeyNames(keys map[string]Nil) (bool, []MatchedElement, error) {
+func MatchKeyNames(m *nfdv1alpha1.MatchExpression, keys map[string]nfdv1alpha1.Nil) (bool, []MatchedElement, error) {
 	ret := []MatchedElement{}
 
 	for k := range keys {
-		if match, err := m.Match(true, k); err != nil {
+		if match, err := evaluateMatchExpression(m, true, k); err != nil {
 			return false, nil, err
 		} else if match {
 			ret = append(ret, MatchedElement{"Name": k})
@@ -237,11 +239,11 @@ func (m *MatchExpression) MatchKeyNames(keys map[string]Nil) (bool, []MatchedEle
 }
 
 // MatchValueNames evaluates the MatchExpression against names of a set of value features.
-func (m *MatchExpression) MatchValueNames(values map[string]string) (bool, []MatchedElement, error) {
+func MatchValueNames(m *nfdv1alpha1.MatchExpression, values map[string]string) (bool, []MatchedElement, error) {
 	ret := []MatchedElement{}
 
 	for k, v := range values {
-		if match, err := m.Match(true, k); err != nil {
+		if match, err := evaluateMatchExpression(m, true, k); err != nil {
 			return false, nil, err
 		} else if match {
 			ret = append(ret, MatchedElement{"Name": k, "Value": v})
@@ -269,11 +271,11 @@ func (m *MatchExpression) MatchValueNames(values map[string]string) (bool, []Mat
 
 // MatchInstanceAttributeNames evaluates the MatchExpression against a set of
 // instance features, matching against the names of their attributes.
-func (m *MatchExpression) MatchInstanceAttributeNames(instances []InstanceFeature) ([]MatchedElement, error) {
+func MatchInstanceAttributeNames(m *nfdv1alpha1.MatchExpression, instances []nfdv1alpha1.InstanceFeature) ([]MatchedElement, error) {
 	ret := []MatchedElement{}
 
 	for _, i := range instances {
-		if match, _, err := m.MatchValueNames(i.Attributes); err != nil {
+		if match, _, err := MatchValueNames(m, i.Attributes); err != nil {
 			return nil, err
 		} else if match {
 			ret = append(ret, i.Attributes)
@@ -283,23 +285,22 @@ func (m *MatchExpression) MatchInstanceAttributeNames(instances []InstanceFeatur
 }
 
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
-func (m *MatchExpressionSet) MatchKeys(keys map[string]Nil) (bool, error) {
-	matched, _, err := m.MatchGetKeys(keys)
+func MatchKeys(m *nfdv1alpha1.MatchExpressionSet, keys map[string]nfdv1alpha1.Nil) (bool, error) {
+	matched, _, err := MatchGetKeys(m, keys)
 	return matched, err
 }
 
 // MatchedElement holds one matched Instance.
-// +k8s:deepcopy-gen=false
 type MatchedElement map[string]string
 
 // MatchGetKeys evaluates the MatchExpressionSet against a set of keys and
 // returns all matched keys or nil if no match was found. Note that an empty
 // MatchExpressionSet returns a match with an empty slice of matched features.
-func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedElement, error) {
+func MatchGetKeys(m *nfdv1alpha1.MatchExpressionSet, keys map[string]nfdv1alpha1.Nil) (bool, []MatchedElement, error) {
 	ret := make([]MatchedElement, 0, len(*m))
 
 	for n, e := range *m {
-		match, err := e.MatchKeys(n, keys)
+		match, err := evaluateMatchExpressionKeys(e, n, keys)
 		if err != nil {
 			return false, nil, err
 		}
@@ -314,19 +315,19 @@ func (m *MatchExpressionSet) MatchGetKeys(keys map[string]Nil) (bool, []MatchedE
 }
 
 // MatchValues evaluates the MatchExpressionSet against a set of key-value pairs.
-func (m *MatchExpressionSet) MatchValues(values map[string]string) (bool, error) {
-	matched, _, err := m.MatchGetValues(values)
+func MatchValues(m *nfdv1alpha1.MatchExpressionSet, values map[string]string) (bool, error) {
+	matched, _, err := MatchGetValues(m, values)
 	return matched, err
 }
 
 // MatchGetValues evaluates the MatchExpressionSet against a set of key-value
 // pairs and returns all matched key-value pairs. Note that an empty
 // MatchExpressionSet returns a match with an empty slice of matched features.
-func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []MatchedElement, error) {
+func MatchGetValues(m *nfdv1alpha1.MatchExpressionSet, values map[string]string) (bool, []MatchedElement, error) {
 	ret := make([]MatchedElement, 0, len(*m))
 
 	for n, e := range *m {
-		match, err := e.MatchValues(n, values)
+		match, err := evaluateMatchExpressionValues(e, n, values)
 		if err != nil {
 			return false, nil, err
 		}
@@ -343,8 +344,8 @@ func (m *MatchExpressionSet) MatchGetValues(values map[string]string) (bool, []M
 // MatchInstances evaluates the MatchExpressionSet against a set of instance
 // features, each of which is an individual set of key-value pairs
 // (attributes).
-func (m *MatchExpressionSet) MatchInstances(instances []InstanceFeature) (bool, error) {
-	v, err := m.MatchGetInstances(instances)
+func MatchInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha1.InstanceFeature) (bool, error) {
+	v, err := MatchGetInstances(m, instances)
 	return len(v) > 0, err
 }
 
@@ -352,11 +353,11 @@ func (m *MatchExpressionSet) MatchInstances(instances []InstanceFeature) (bool, 
 // features, each of which is an individual set of key-value pairs
 // (attributes). A slice containing all matching instances is returned. An
 // empty (non-nil) slice is returned if no matching instances were found.
-func (m *MatchExpressionSet) MatchGetInstances(instances []InstanceFeature) ([]MatchedElement, error) {
+func MatchGetInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha1.InstanceFeature) ([]MatchedElement, error) {
 	ret := []MatchedElement{}
 
 	for _, i := range instances {
-		if match, err := m.MatchValues(i.Attributes); err != nil {
+		if match, err := MatchValues(m, i.Attributes); err != nil {
 			return nil, err
 		} else if match {
 			ret = append(ret, i.Attributes)
