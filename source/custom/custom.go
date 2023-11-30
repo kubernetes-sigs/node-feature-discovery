@@ -18,22 +18,21 @@ package custom
 
 import (
 	"fmt"
+	"os"
 
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
+	api "sigs.k8s.io/node-feature-discovery/source/custom/api"
 )
 
 // Name of this feature source
 const Name = "custom"
 
-type CustomRule struct {
-	nfdv1alpha1.Rule
-}
-
-type config []CustomRule
+// The config files use the internal API type.
+type config []api.Rule
 
 // newDefaultConfig returns a new config with pre-populated defaults
 func newDefaultConfig() *config {
@@ -43,13 +42,19 @@ func newDefaultConfig() *config {
 // customSource implements the LabelSource and ConfigurableSource interfaces.
 type customSource struct {
 	config *config
+	// The rules are stored in the NFD API format that is a superset of our
+	// internal API and provides the functions for rule matching.
+	rules []nfdv1alpha1.Rule
 }
 
 // Singleton source instance
 var (
-	src                           = customSource{config: newDefaultConfig()}
-	_   source.LabelSource        = &src
-	_   source.ConfigurableSource = &src
+	src = customSource{
+		config: &config{},
+		rules:  []nfdv1alpha1.Rule{},
+	}
+	_ source.LabelSource        = &src
+	_ source.ConfigurableSource = &src
 )
 
 // Name returns the name of the feature source
@@ -65,6 +70,8 @@ func (s *customSource) GetConfig() source.Config { return s.config }
 func (s *customSource) SetConfig(conf source.Config) {
 	switch v := conf.(type) {
 	case *config:
+		r := []api.Rule(*v)
+		s.rules = convertInternalRulesToNfdApi(&r)
 		s.config = v
 	default:
 		panic(fmt.Sprintf("invalid config type: %T", conf))
@@ -80,8 +87,8 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	features := source.GetAllFeatures()
 
 	labels := source.FeatureLabels{}
-	allFeatureConfig := append(getStaticFeatureConfig(), *s.config...)
-	allFeatureConfig = append(allFeatureConfig, getDirectoryFeatureConfig()...)
+	allFeatureConfig := append(getStaticRules(), s.rules...)
+	allFeatureConfig = append(allFeatureConfig, getDropinDirRules()...)
 	klog.V(2).InfoS("resolving custom features", "configuration", utils.DelayedDumper(allFeatureConfig))
 	// Iterate over features
 	for _, rule := range allFeatureConfig {
@@ -100,6 +107,17 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	}
 
 	return labels, nil
+}
+
+func convertInternalRulesToNfdApi(in *[]api.Rule) []nfdv1alpha1.Rule {
+	out := make([]nfdv1alpha1.Rule, len(*in))
+	for i := range *in {
+		if err := api.ConvertRuleToV1alpha1(&(*in)[i], &out[i]); err != nil {
+			klog.ErrorS(err, "FATAL: API conversion failed")
+			os.Exit(255)
+		}
+	}
+	return out
 }
 
 func init() {
