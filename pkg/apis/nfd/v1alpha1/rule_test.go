@@ -22,6 +22,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// newMatchExpression returns a new MatchExpression instance.
+func newMatchExpression(op MatchOp, values ...string) *MatchExpression {
+	return &MatchExpression{
+		Op:    op,
+		Value: values,
+	}
+}
+
 func TestRule(t *testing.T) {
 	f := &Features{}
 	r1 := Rule{Labels: map[string]string{"label-1": "", "label-2": "true"}}

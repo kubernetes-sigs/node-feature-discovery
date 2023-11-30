@@ -17,12 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
-	"strings"
+	strings "strings"
 
 	"golang.org/x/exp/maps"
 	"k8s.io/klog/v2"
@@ -40,14 +39,6 @@ var matchOps = map[MatchOp]struct{}{
 	MatchGtLt:         {},
 	MatchIsTrue:       {},
 	MatchIsFalse:      {},
-}
-
-// newMatchExpression returns a new MatchExpression instance.
-func newMatchExpression(op MatchOp, values ...string) *MatchExpression {
-	return &MatchExpression{
-		Op:    op,
-		Value: values,
-	}
 }
 
 // Validate validates the expression.
@@ -340,48 +331,6 @@ func (m *MatchExpression) MatchInstanceAttributeNames(instances []InstanceFeatur
 	return ret, nil
 }
 
-// matchExpression is a helper type for unmarshalling MatchExpression
-type matchExpression MatchExpression
-
-// UnmarshalJSON implements the Unmarshaler interface of "encoding/json"
-func (m *MatchExpression) UnmarshalJSON(data []byte) error {
-	raw := new(interface{})
-
-	err := json.Unmarshal(data, raw)
-	if err != nil {
-		return err
-	}
-
-	switch v := (*raw).(type) {
-	case string:
-		*m = *newMatchExpression(MatchIn, v)
-	case bool:
-		*m = *newMatchExpression(MatchIn, strconv.FormatBool(v))
-	case float64:
-		*m = *newMatchExpression(MatchIn, strconv.FormatFloat(v, 'f', -1, 64))
-	case []interface{}:
-		values := make([]string, len(v))
-		for i, value := range v {
-			str, ok := value.(string)
-			if !ok {
-				return fmt.Errorf("invalid value %v in %v", value, v)
-			}
-			values[i] = str
-		}
-		*m = *newMatchExpression(MatchIn, values...)
-	case map[string]interface{}:
-		helper := &matchExpression{}
-		if err := json.Unmarshal(data, &helper); err != nil {
-			return err
-		}
-		*m = *newMatchExpression(helper.Op, helper.Value...)
-	default:
-		return fmt.Errorf("invalid rule '%v' (%T)", v, v)
-	}
-
-	return m.Validate()
-}
-
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
 func (m *MatchExpressionSet) MatchKeys(keys map[string]Nil) (bool, error) {
 	matched, _, err := m.MatchGetKeys(keys)
@@ -463,84 +412,4 @@ func (m *MatchExpressionSet) MatchGetInstances(instances []InstanceFeature) ([]M
 		}
 	}
 	return ret, nil
-}
-
-// UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
-func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
-	*m = MatchExpressionSet{}
-
-	names := make([]string, 0)
-	if err := json.Unmarshal(data, &names); err == nil {
-		// Simplified slice form
-		for _, name := range names {
-			split := strings.SplitN(name, "=", 2)
-			if len(split) == 1 {
-				(*m)[split[0]] = newMatchExpression(MatchExists)
-			} else {
-				(*m)[split[0]] = newMatchExpression(MatchIn, split[1])
-			}
-		}
-	} else {
-		// Unmarshal the full map form
-		expressions := make(map[string]*MatchExpression)
-		if err := json.Unmarshal(data, &expressions); err != nil {
-			return err
-		}
-		for k, v := range expressions {
-			if v != nil {
-				(*m)[k] = v
-			} else {
-				(*m)[k] = newMatchExpression(MatchExists)
-			}
-		}
-	}
-
-	return nil
-}
-
-// UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
-func (m *MatchOp) UnmarshalJSON(data []byte) error {
-	var raw string
-
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	if _, ok := matchOps[MatchOp(raw)]; !ok {
-		return fmt.Errorf("invalid Op %q", raw)
-	}
-	*m = MatchOp(raw)
-	return nil
-}
-
-// UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
-func (m *MatchValue) UnmarshalJSON(data []byte) error {
-	var raw interface{}
-
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	switch v := raw.(type) {
-	case string:
-		*m = []string{v}
-	case bool:
-		*m = []string{strconv.FormatBool(v)}
-	case float64:
-		*m = []string{strconv.FormatFloat(v, 'f', -1, 64)}
-	case []interface{}:
-		values := make([]string, len(v))
-		for i, value := range v {
-			str, ok := value.(string)
-			if !ok {
-				return fmt.Errorf("invalid value %v in %v", value, v)
-			}
-			values[i] = str
-		}
-		*m = values
-	default:
-		return fmt.Errorf("invalid values '%v' (%T)", v, v)
-	}
-
-	return nil
 }
