@@ -4,8 +4,8 @@ FROM ${BUILDER_IMAGE} as builder
 # Install tools
 RUN go install github.com/vektra/mockery/v2@v2.32.0 && \
     go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.12.1 && \
-    git clone https://github.com/kubernetes/code-generator -b v0.27.4 --depth 1 && \
-    go install k8s.io/code-generator/cmd/go-to-protobuf/...@v0.27.4 && \
+    git clone https://github.com/kubernetes/code-generator -b v0.28.4 --depth 1 && \
+    go install k8s.io/code-generator/cmd/go-to-protobuf/...@v0.28.4 && \
     go install golang.org/x/tools/cmd/goimports@v0.11.0 && \
     go install github.com/golang/protobuf/protoc-gen-go@v1.4.3
 
