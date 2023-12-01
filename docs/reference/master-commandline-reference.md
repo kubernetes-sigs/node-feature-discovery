@@ -243,7 +243,7 @@ nfd-master -crd-controller=false
 ### -label-whitelist
 
 The `-label-whitelist` specifies a regular expression for filtering feature
-labels based on their name. Each label must match against the given reqular
+labels based on their name. Each label must match against the given regular
 expression in order to be published.
 
 > **NOTE:** The regular expression is only matches against the "basename" part
