@@ -41,55 +41,6 @@ var matchOps = map[MatchOp]struct{}{
 	MatchIsFalse:      {},
 }
 
-// Validate validates the expression.
-func (m *MatchExpression) Validate() error {
-	if _, ok := matchOps[m.Op]; !ok {
-		return fmt.Errorf("invalid Op %q", m.Op)
-	}
-	switch m.Op {
-	case MatchExists, MatchDoesNotExist, MatchIsTrue, MatchIsFalse, MatchAny:
-		if len(m.Value) != 0 {
-			return fmt.Errorf("value must be empty for Op %q (have %v)", m.Op, m.Value)
-		}
-	case MatchGt, MatchLt:
-		if len(m.Value) != 1 {
-			return fmt.Errorf("value must contain exactly one element for Op %q (have %v)", m.Op, m.Value)
-		}
-		if _, err := strconv.Atoi(m.Value[0]); err != nil {
-			return fmt.Errorf("value must be an integer for Op %q (have %v)", m.Op, m.Value[0])
-		}
-	case MatchGtLt:
-		if len(m.Value) != 2 {
-			return fmt.Errorf("value must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
-		}
-		var err error
-		v := make([]int, 2)
-		for i := 0; i < 2; i++ {
-			if v[i], err = strconv.Atoi(m.Value[i]); err != nil {
-				return fmt.Errorf("value must contain integers for Op %q (have %v)", m.Op, m.Value)
-			}
-		}
-		if v[0] >= v[1] {
-			return fmt.Errorf("value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
-		}
-	case MatchInRegexp:
-		if len(m.Value) == 0 {
-			return fmt.Errorf("value must be non-empty for Op %q", m.Op)
-		}
-		for _, v := range m.Value {
-			_, err := regexp.Compile(v)
-			if err != nil {
-				return fmt.Errorf("value must only contain valid regexps for Op %q (have %v)", m.Op, m.Value)
-			}
-		}
-	default:
-		if len(m.Value) == 0 {
-			return fmt.Errorf("value must be non-empty for Op %q", m.Op)
-		}
-	}
-	return nil
-}
-
 // Match evaluates the MatchExpression against a single input value.
 func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 	if _, ok := matchOps[m.Op]; !ok {
