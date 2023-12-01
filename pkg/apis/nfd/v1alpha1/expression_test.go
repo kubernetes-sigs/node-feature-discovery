@@ -104,59 +104,55 @@ func TestMatch(t *testing.T) {
 		input  interface{}
 		valid  bool
 		result BoolAssertionFunc
-		err    ValueAssertionFunc
 	}
 
 	tcs := []TC{
-		{name: "1", op: api.MatchAny, result: assert.True, err: assert.Nil},
-		{name: "2", op: api.MatchAny, input: "2", valid: false, result: assert.True, err: assert.Nil},
+		{name: "MatchAny-1", op: api.MatchAny, result: assert.True},
+		{name: "MatchAny-2", op: api.MatchAny, input: "2", valid: false, result: assert.True},
 
-		{name: "3", op: api.MatchIn, values: V{"1"}, input: "2", valid: false, result: assert.False, err: assert.Nil},
-		{name: "4", op: api.MatchIn, values: V{"1"}, input: "2", valid: true, result: assert.False, err: assert.Nil},
-		{name: "5", op: api.MatchIn, values: V{"1", "2", "3"}, input: "2", valid: false, result: assert.False, err: assert.Nil},
-		{name: "6", op: api.MatchIn, values: V{"1", "2", "3"}, input: "2", valid: true, result: assert.True, err: assert.Nil},
+		{name: "MatchIn-1", op: api.MatchIn, values: V{"1"}, input: "2", valid: false, result: assert.False},
+		{name: "MatchIn-2", op: api.MatchIn, values: V{"1"}, input: "2", valid: true, result: assert.False},
+		{name: "MatchIn-3", op: api.MatchIn, values: V{"1", "2", "3"}, input: "2", valid: false, result: assert.False},
+		{name: "MatchIn-4", op: api.MatchIn, values: V{"1", "2", "3"}, input: "2", valid: true, result: assert.True},
 
-		{name: "7", op: api.MatchNotIn, values: V{"2"}, input: 2, valid: false, result: assert.False, err: assert.Nil},
-		{name: "8", op: api.MatchNotIn, values: V{"1"}, input: 2, valid: true, result: assert.True, err: assert.Nil},
-		{name: "9", op: api.MatchNotIn, values: V{"1", "2", "3"}, input: "2", valid: false, result: assert.False, err: assert.Nil},
-		{name: "10", op: api.MatchNotIn, values: V{"1", "2", "3"}, input: "2", valid: true, result: assert.False, err: assert.Nil},
+		{name: "MatchNotIn-1", op: api.MatchNotIn, values: V{"2"}, input: 2, valid: false, result: assert.False},
+		{name: "MatchNotIn-2", op: api.MatchNotIn, values: V{"1"}, input: 2, valid: true, result: assert.True},
+		{name: "MatchNotIn-3", op: api.MatchNotIn, values: V{"1", "2", "3"}, input: "2", valid: false, result: assert.False},
+		{name: "MatchNotIn-4", op: api.MatchNotIn, values: V{"1", "2", "3"}, input: "2", valid: true, result: assert.False},
 
-		{name: "11", op: api.MatchInRegexp, values: V{"val-[0-9]$"}, input: "val-1", valid: false, result: assert.False, err: assert.Nil},
-		{name: "12", op: api.MatchInRegexp, values: V{"val-[0-9]$"}, input: "val-1", valid: true, result: assert.True, err: assert.Nil},
-		{name: "13", op: api.MatchInRegexp, values: V{"val-[0-9]$"}, input: "val-12", valid: true, result: assert.False, err: assert.Nil},
-		{name: "14", op: api.MatchInRegexp, values: V{"val-[0-9]$", "al-[1-9]"}, input: "val-12", valid: true, result: assert.True, err: assert.Nil},
+		{name: "MatchInRegexp-1", op: api.MatchInRegexp, values: V{"val-[0-9]$"}, input: "val-1", valid: false, result: assert.False},
+		{name: "MatchInRegexp-2", op: api.MatchInRegexp, values: V{"val-[0-9]$"}, input: "val-1", valid: true, result: assert.True},
+		{name: "MatchInRegexp-3", op: api.MatchInRegexp, values: V{"val-[0-9]$"}, input: "val-12", valid: true, result: assert.False},
+		{name: "MatchInRegexp-4", op: api.MatchInRegexp, values: V{"val-[0-9]$", "al-[1-9]"}, input: "val-12", valid: true, result: assert.True},
 
-		{name: "15", op: api.MatchExists, input: nil, valid: false, result: assert.False, err: assert.Nil},
-		{name: "16", op: api.MatchExists, input: nil, valid: true, result: assert.True, err: assert.Nil},
+		{name: "MatchExists-1", op: api.MatchExists, input: nil, valid: false, result: assert.False},
+		{name: "MatchExists-2", op: api.MatchExists, input: nil, valid: true, result: assert.True},
 
-		{name: "17", op: api.MatchDoesNotExist, input: false, valid: false, result: assert.True, err: assert.Nil},
-		{name: "18", op: api.MatchDoesNotExist, input: false, valid: true, result: assert.False, err: assert.Nil},
+		{name: "MatchDoesNotExist-1", op: api.MatchDoesNotExist, input: false, valid: false, result: assert.True},
+		{name: "MatchDoesNotExist-2", op: api.MatchDoesNotExist, input: false, valid: true, result: assert.False},
 
-		{name: "19", op: api.MatchGt, values: V{"2"}, input: 3, valid: false, result: assert.False, err: assert.Nil},
-		{name: "20", op: api.MatchGt, values: V{"2"}, input: 2, valid: true, result: assert.False, err: assert.Nil},
-		{name: "21", op: api.MatchGt, values: V{"2"}, input: 3, valid: true, result: assert.True, err: assert.Nil},
-		{name: "22", op: api.MatchGt, values: V{"-10"}, input: -3, valid: true, result: assert.True, err: assert.Nil},
-		{name: "23", op: api.MatchGt, values: V{"2"}, input: "3a", valid: true, result: assert.False, err: assert.NotNil},
+		{name: "MatchGt-1", op: api.MatchGt, values: V{"2"}, input: 3, valid: false, result: assert.False},
+		{name: "MatchGt-2", op: api.MatchGt, values: V{"2"}, input: 2, valid: true, result: assert.False},
+		{name: "MatchGt-3", op: api.MatchGt, values: V{"2"}, input: 3, valid: true, result: assert.True},
+		{name: "MatchGt-4", op: api.MatchGt, values: V{"-10"}, input: -3, valid: true, result: assert.True},
 
-		{name: "24", op: api.MatchLt, values: V{"2"}, input: "1", valid: false, result: assert.False, err: assert.Nil},
-		{name: "25", op: api.MatchLt, values: V{"2"}, input: "2", valid: true, result: assert.False, err: assert.Nil},
-		{name: "26", op: api.MatchLt, values: V{"-10"}, input: -3, valid: true, result: assert.False, err: assert.Nil},
-		{name: "27", op: api.MatchLt, values: V{"2"}, input: "1", valid: true, result: assert.True, err: assert.Nil},
-		{name: "28", op: api.MatchLt, values: V{"2"}, input: "1.0", valid: true, result: assert.False, err: assert.NotNil},
+		{name: "MatchLt-1", op: api.MatchLt, values: V{"2"}, input: "1", valid: false, result: assert.False},
+		{name: "MatchLt-2", op: api.MatchLt, values: V{"2"}, input: "2", valid: true, result: assert.False},
+		{name: "MatchLt-3", op: api.MatchLt, values: V{"-10"}, input: -3, valid: true, result: assert.False},
+		{name: "MatchLt-4", op: api.MatchLt, values: V{"2"}, input: "1", valid: true, result: assert.True},
 
-		{name: "29", op: api.MatchGtLt, values: V{"1", "10"}, input: "1", valid: false, result: assert.False, err: assert.Nil},
-		{name: "30", op: api.MatchGtLt, values: V{"1", "10"}, input: "1", valid: true, result: assert.False, err: assert.Nil},
-		{name: "31", op: api.MatchGtLt, values: V{"1", "10"}, input: "10", valid: true, result: assert.False, err: assert.Nil},
-		{name: "32", op: api.MatchGtLt, values: V{"1", "10"}, input: "2", valid: true, result: assert.True, err: assert.Nil},
-		{name: "33", op: api.MatchGtLt, values: V{"1", "10"}, input: "1.0", valid: true, result: assert.False, err: assert.NotNil},
+		{name: "MatchGtLt-1", op: api.MatchGtLt, values: V{"1", "10"}, input: "1", valid: false, result: assert.False},
+		{name: "MatchGtLt-2", op: api.MatchGtLt, values: V{"1", "10"}, input: "1", valid: true, result: assert.False},
+		{name: "MatchGtLt-3", op: api.MatchGtLt, values: V{"1", "10"}, input: "10", valid: true, result: assert.False},
+		{name: "MatchGtLt-4", op: api.MatchGtLt, values: V{"1", "10"}, input: "2", valid: true, result: assert.True},
 
-		{name: "34", op: api.MatchIsTrue, input: true, valid: false, result: assert.False, err: assert.Nil},
-		{name: "35", op: api.MatchIsTrue, input: true, valid: true, result: assert.True, err: assert.Nil},
-		{name: "36", op: api.MatchIsTrue, input: false, valid: true, result: assert.False, err: assert.Nil},
+		{name: "MatchIsTrue-1", op: api.MatchIsTrue, input: true, valid: false, result: assert.False},
+		{name: "MatchIsTrue-2", op: api.MatchIsTrue, input: true, valid: true, result: assert.True},
+		{name: "MatchIsTrue-3", op: api.MatchIsTrue, input: false, valid: true, result: assert.False},
 
-		{name: "37", op: api.MatchIsFalse, input: "false", valid: false, result: assert.False, err: assert.Nil},
-		{name: "38", op: api.MatchIsFalse, input: "false", valid: true, result: assert.True, err: assert.Nil},
-		{name: "39", op: api.MatchIsFalse, input: "true", valid: true, result: assert.False, err: assert.Nil},
+		{name: "MatchIsFalse-1", op: api.MatchIsFalse, input: "false", valid: false, result: assert.False},
+		{name: "MatchIsFalse-2", op: api.MatchIsFalse, input: "false", valid: true, result: assert.True},
+		{name: "MatchIsFalse-3", op: api.MatchIsFalse, input: "true", valid: true, result: assert.False},
 	}
 
 	for _, tc := range tcs {
@@ -164,22 +160,53 @@ func TestMatch(t *testing.T) {
 			me := api.MustCreateMatchExpression(tc.op, tc.values...)
 			res, err := me.Match(tc.valid, tc.input)
 			tc.result(t, res)
-			tc.err(t, err)
+			assert.Nil(t, err)
 		})
 	}
 
-	// Check some special error cases separately because MustCreateMatch panics
+	// Error cases
 	tcs = []TC{
-		{name: "err-1", op: api.MatchGt, values: V{"3.0"}, input: 1, valid: true},
-		{name: "err-2", op: api.MatchLt, values: V{"0x2"}, input: 1, valid: true},
-		{name: "err-3", op: api.MatchGtLt, values: V{"1", "str"}, input: 1, valid: true},
-		{name: "err-4", op: "non-existent-op", values: V{"1"}, input: 1, valid: true},
+		{name: "MatchAny-err-1", op: api.MatchAny, values: V{"1"}, input: "val"},
+
+		{name: "MatchIn-err-1", op: api.MatchIn, input: "val"},
+
+		{name: "MatchNotIn-err-1", op: api.MatchNotIn, input: "val"},
+
+		{name: "MatchInRegexp-err-1", op: api.MatchInRegexp, input: "val"},
+		{name: "MatchInRegexp-err-2", op: api.MatchInRegexp, values: V{"("}, input: "val"},
+
+		{name: "MatchExists-err-1", op: api.MatchExists, values: V{"1"}},
+
+		{name: "MatchDoesNotExist-err-1", op: api.MatchDoesNotExist, values: V{"1"}},
+
+		{name: "MatchGt-err-1", op: api.MatchGt, input: "1"},
+		{name: "MatchGt-err-2", op: api.MatchGt, values: V{"1", "2"}, input: "1"},
+		{name: "MatchGt-err-3", op: api.MatchGt, values: V{""}, input: "1"},
+		{name: "MatchGt-err-4", op: api.MatchGt, values: V{"2"}, input: "3a"},
+
+		{name: "MatchLt-err-1", op: api.MatchLt, input: "1"},
+		{name: "MatchLt-err-2", op: api.MatchLt, values: V{"1", "2", "3"}, input: "1"},
+		{name: "MatchLt-err-3", op: api.MatchLt, values: V{"a"}, input: "1"},
+		{name: "MatchLt-err-4", op: api.MatchLt, values: V{"2"}, input: "1.0"},
+
+		{name: "MatchGtLt-err-1", op: api.MatchGtLt, input: "1"},
+		{name: "MatchGtLt-err-2", op: api.MatchGtLt, values: V{"1"}, input: "1"},
+		{name: "MatchGtLt-err-3", op: api.MatchGtLt, values: V{"2", "1"}, input: "1"},
+		{name: "MatchGtLt-err-4", op: api.MatchGtLt, values: V{"1", "2", "3"}, input: "1"},
+		{name: "MatchGtLt-err-5", op: api.MatchGtLt, values: V{"a", "2"}, input: "1"},
+		{name: "MatchGtLt-err-6", op: api.MatchGtLt, values: V{"1", "10"}, input: "1.0"},
+
+		{name: "MatchIsTrue-err-1", op: api.MatchIsTrue, values: V{"1"}, input: "true"},
+
+		{name: "MatchIsFalse-err-1", op: api.MatchIsFalse, values: V{"1", "2"}, input: "false"},
+
+		{name: "invalid-op-err", op: "non-existent-op", values: V{"1"}, input: 1},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			me := api.MatchExpression{Op: tc.op, Value: tc.values}
-			res, err := me.Match(tc.valid, tc.input)
+			res, err := me.Match(true, tc.input)
 			assert.False(t, res)
 			assert.NotNil(t, err)
 		})

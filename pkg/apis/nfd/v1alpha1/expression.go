@@ -123,12 +123,25 @@ func (m *MatchExpression) Validate() error {
 
 // Match evaluates the MatchExpression against a single input value.
 func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
+	if _, ok := matchOps[m.Op]; !ok {
+		return false, fmt.Errorf("invalid Op %q", m.Op)
+	}
+
 	switch m.Op {
 	case MatchAny:
+		if len(m.Value) != 0 {
+			return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
+		}
 		return true, nil
 	case MatchExists:
+		if len(m.Value) != 0 {
+			return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
+		}
 		return valid, nil
 	case MatchDoesNotExist:
+		if len(m.Value) != 0 {
+			return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
+		}
 		return !valid, nil
 	}
 
@@ -136,12 +149,18 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 		value := fmt.Sprintf("%v", value)
 		switch m.Op {
 		case MatchIn:
+			if len(m.Value) == 0 {
+				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
+			}
 			for _, v := range m.Value {
 				if value == v {
 					return true, nil
 				}
 			}
 		case MatchNotIn:
+			if len(m.Value) == 0 {
+				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
+			}
 			for _, v := range m.Value {
 				if value == v {
 					return false, nil
@@ -149,8 +168,19 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 			}
 			return true, nil
 		case MatchInRegexp:
+			if len(m.Value) == 0 {
+				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
+			}
 			if m.valueRe == nil {
-				return false, fmt.Errorf("BUG: MatchExpression has not been initialized properly, regexps missing")
+				m.valueRe = make([]*regexp.Regexp, len(m.Value))
+				for i, v := range m.Value {
+					re, err := regexp.Compile(v)
+					if err != nil {
+						m.valueRe = nil
+						return false, fmt.Errorf("invalid expressiom, 'value' field must only contain valid regexps for Op %q (have %v)", m.Op, m.Value)
+					}
+					m.valueRe[i] = re
+				}
 			}
 			for _, re := range m.valueRe {
 				if re.MatchString(value) {
@@ -158,6 +188,10 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 				}
 			}
 		case MatchGt, MatchLt:
+			if len(m.Value) != 1 {
+				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly one element for Op %q (have %v)", m.Op, m.Value)
+			}
+
 			l, err := strconv.Atoi(value)
 			if err != nil {
 				return false, fmt.Errorf("not a number %q", value)
@@ -171,6 +205,9 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 				return true, nil
 			}
 		case MatchGtLt:
+			if len(m.Value) != 2 {
+				return false, fmt.Errorf("invalid expression, value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
+			}
 			v, err := strconv.Atoi(value)
 			if err != nil {
 				return false, fmt.Errorf("not a number %q", value)
@@ -182,10 +219,19 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 					return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
 				}
 			}
+			if lr[0] >= lr[1] {
+				return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
+			}
 			return v > lr[0] && v < lr[1], nil
 		case MatchIsTrue:
+			if len(m.Value) != 0 {
+				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
+			}
 			return value == "true", nil
 		case MatchIsFalse:
+			if len(m.Value) != 0 {
+				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
+			}
 			return value == "false", nil
 		default:
 			return false, fmt.Errorf("unsupported Op %q", m.Op)
