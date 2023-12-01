@@ -24,7 +24,7 @@ For backwards compatibility a container image tag with suffix `-minimal`
 
 ## Full
 
-This image is based on [debian:bullseye-slim](https://hub.docker.com/_/debian)
+This image is based on [debian:bookworm-slim](https://hub.docker.com/_/debian)
 and contains a full Linux system for running shell-based nfd-worker hooks and
 doing live debugging and diagnosis of the NFD images.
 

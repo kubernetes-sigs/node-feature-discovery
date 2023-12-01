@@ -9,7 +9,7 @@ IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
 BUILDER_IMAGE ?= golang:1.21-bookworm
-BASE_IMAGE_FULL ?= debian:bullseye-slim
+BASE_IMAGE_FULL ?= debian:bookworm-slim
 BASE_IMAGE_MINIMAL ?= scratch
 
 # Docker base command for working with html documentation.
