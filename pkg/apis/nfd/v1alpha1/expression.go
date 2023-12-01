@@ -41,8 +41,6 @@ var matchOps = map[MatchOp]struct{}{
 	MatchIsFalse:      {},
 }
 
-type valueRegexpCache []*regexp.Regexp
-
 // CreateMatchExpression creates a new MatchExpression instance. Returns an
 // error if validation fails.
 func CreateMatchExpression(op MatchOp, values ...string) (*MatchExpression, error) {
@@ -70,8 +68,6 @@ func newMatchExpression(op MatchOp, values ...string) *MatchExpression {
 
 // Validate validates the expression.
 func (m *MatchExpression) Validate() error {
-	m.valueRe = nil
-
 	if _, ok := matchOps[m.Op]; !ok {
 		return fmt.Errorf("invalid Op %q", m.Op)
 	}
@@ -105,13 +101,11 @@ func (m *MatchExpression) Validate() error {
 		if len(m.Value) == 0 {
 			return fmt.Errorf("value must be non-empty for Op %q", m.Op)
 		}
-		m.valueRe = make([]*regexp.Regexp, len(m.Value))
-		for i, v := range m.Value {
-			re, err := regexp.Compile(v)
+		for _, v := range m.Value {
+			_, err := regexp.Compile(v)
 			if err != nil {
 				return fmt.Errorf("value must only contain valid regexps for Op %q (have %v)", m.Op, m.Value)
 			}
-			m.valueRe[i] = re
 		}
 	default:
 		if len(m.Value) == 0 {
@@ -171,18 +165,15 @@ func (m *MatchExpression) Match(valid bool, value interface{}) (bool, error) {
 			if len(m.Value) == 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
 			}
-			if m.valueRe == nil {
-				m.valueRe = make([]*regexp.Regexp, len(m.Value))
-				for i, v := range m.Value {
-					re, err := regexp.Compile(v)
-					if err != nil {
-						m.valueRe = nil
-						return false, fmt.Errorf("invalid expressiom, 'value' field must only contain valid regexps for Op %q (have %v)", m.Op, m.Value)
-					}
-					m.valueRe[i] = re
+			valueRe := make([]*regexp.Regexp, len(m.Value))
+			for i, v := range m.Value {
+				re, err := regexp.Compile(v)
+				if err != nil {
+					return false, fmt.Errorf("invalid expressiom, 'value' field must only contain valid regexps for Op %q (have %v)", m.Op, m.Value)
 				}
+				valueRe[i] = re
 			}
-			for _, re := range m.valueRe {
+			for _, re := range valueRe {
 				if re.MatchString(value) {
 					return true, nil
 				}
@@ -489,24 +480,4 @@ func (m *MatchValue) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-// DeepCopy supplements the auto-generated code
-func (in *valueRegexpCache) DeepCopy() *valueRegexpCache {
-	if in == nil {
-		return nil
-	}
-	out := new(valueRegexpCache)
-	in.DeepCopyInto(out)
-	return out
-}
-
-// DeepCopyInto is a stub to augment the auto-generated code
-//
-//nolint:staticcheck  // re.Copy is deprecated but we want to use  it here
-func (in *valueRegexpCache) DeepCopyInto(out *valueRegexpCache) {
-	*out = make(valueRegexpCache, len(*in))
-	for i, re := range *in {
-		(*out)[i] = re.Copy()
-	}
 }

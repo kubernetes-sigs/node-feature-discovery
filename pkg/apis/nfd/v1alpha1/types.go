@@ -226,9 +226,6 @@ type MatchExpression struct {
 	// In other cases Value should contain at least one element.
 	// +optional
 	Value MatchValue `json:"value,omitempty"`
-
-	// valueRe caches compiled regexps for "InRegexp" operator
-	valueRe valueRegexpCache `json:"-"`
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a
