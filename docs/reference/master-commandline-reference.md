@@ -87,7 +87,7 @@ The `-ca-file` is one of the three flags (together with `-cert-file` and
 `-key-file`) controlling master-worker mutual TLS authentication on the
 nfd-master side. This flag specifies the TLS root certificate that is used for
 authenticating incoming connections. NFD-Worker side needs to have matching key
-and cert files configured in order for the incoming requests to be accepted.
+and cert files configured for the incoming requests to be accepted.
 
 Default: *empty*
 
@@ -244,7 +244,7 @@ nfd-master -crd-controller=false
 
 The `-label-whitelist` specifies a regular expression for filtering feature
 labels based on their name. Each label must match against the given regular
-expression in order to be published.
+expression or it will not be published.
 
 > **NOTE:** The regular expression is only matches against the "basename" part
 > of the label, i.e. to the part of the name after '/'. The label namespace is

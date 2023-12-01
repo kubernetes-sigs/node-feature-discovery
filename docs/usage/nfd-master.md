@@ -97,5 +97,5 @@ in bigger clusters.
 
 If you have RBAC authorization enabled (as is the default e.g. with clusters
 initialized with kubeadm) you need to configure the appropriate ClusterRoles,
-ClusterRoleBindings and a ServiceAccount in order for NFD to create node
+ClusterRoleBindings and a ServiceAccount for NFD to create node
 labels. The provided template will configure these for you.

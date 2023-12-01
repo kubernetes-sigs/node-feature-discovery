@@ -133,7 +133,7 @@ enableTaints: true
 ## labelWhiteList
 `labelWhiteList` specifies a regular expression for filtering feature
 labels based on their name. Each label must match against the given regular
-expression in order to be published.
+expression or it will not be published.
 
 > ** NOTE:** The regular expression is only matches against the "basename" part
 > of the label, i.e. to the part of the name after '/'. The label namespace is

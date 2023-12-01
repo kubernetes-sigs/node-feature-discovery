@@ -49,7 +49,7 @@ helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_N
 See the [configuration](#configuration) section below for instructions how to
 alter the deployment parameters.
 
-In order to deploy the [minimal](image-variants.md#minimal) image you need to
+To deploy the [minimal](image-variants.md#minimal) image you need to
 override the image tag:
 
 ```bash

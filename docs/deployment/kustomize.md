@@ -33,7 +33,7 @@ This will required RBAC rules and deploy nfd-master (as a deployment) and
 nfd-worker (as daemonset) in the `node-feature-discovery` namespace.
 
 > **NOTE:** nfd-topology-updater is not deployed as part of the `default`
-> overlay.  Please refer to the [Master Worker Topologyupdater](#master-worker-topologyupdater)
+> overlay. Refer to the [Master Worker Topologyupdater](#master-worker-topologyupdater)
 > and [Topologyupdater](#topologyupdater) below.
 
 Alternatively you can clone the repository and customize the deployment by
@@ -120,7 +120,7 @@ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deplo
 
 ### Topologyupdater
 
-In order to deploy just nfd-topology-updater (without nfd-master and nfd-worker)
+To deploy just nfd-topology-updater (without nfd-master and nfd-worker)
 use the `topologyupdater` overlay:
 
 ```bash

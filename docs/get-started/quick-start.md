@@ -78,7 +78,7 @@ feature-dependent-pod   1/1     Running   0          23s   10.36.0.4   node-2   
 
 ### Deploy nfd-topology-updater
 
-In order to deploy nfd-topology-updater use the `topologyupdater` kustomize
+To deploy nfd-topology-updater use the `topologyupdater` kustomize
 overlay.
 
 ```bash
