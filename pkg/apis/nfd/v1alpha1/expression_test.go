@@ -29,7 +29,7 @@ type BoolAssertionFunc func(assert.TestingT, bool, ...interface{}) bool
 
 type ValueAssertionFunc func(assert.TestingT, interface{}, ...interface{}) bool
 
-func TestCreateMatchExpression(t *testing.T) {
+func TestMatchExpressionValidate(t *testing.T) {
 	type V = api.MatchValue
 	type TC struct {
 		name   string
@@ -89,7 +89,8 @@ func TestCreateMatchExpression(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := api.CreateMatchExpression(tc.op, tc.values...)
+			me := api.MatchExpression{Op: tc.op, Value: tc.values}
+			err := me.Validate()
 			tc.err(t, err)
 		})
 	}
@@ -157,7 +158,7 @@ func TestMatch(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			me := api.MustCreateMatchExpression(tc.op, tc.values...)
+			me := api.MatchExpression{Op: tc.op, Value: tc.values}
 			res, err := me.Match(tc.valid, tc.input)
 			tc.result(t, res)
 			assert.Nil(t, err)
@@ -251,7 +252,7 @@ func TestMatchKeys(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			me := api.MustCreateMatchExpression(tc.op, tc.values...)
+			me := api.MatchExpression{Op: tc.op, Value: tc.values}
 			res, err := me.MatchKeys(tc.key, tc.input)
 			tc.result(t, res)
 			tc.err(t, err)
@@ -320,7 +321,7 @@ func TestMatchValues(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			me := api.MustCreateMatchExpression(tc.op, tc.values...)
+			me := api.MatchExpression{Op: tc.op, Value: tc.values}
 			res, err := me.MatchValues(tc.key, tc.input)
 			tc.result(t, res)
 			tc.err(t, err)
