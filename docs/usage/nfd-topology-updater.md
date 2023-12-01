@@ -62,8 +62,7 @@ NFD-Topology-Updater supports configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/topology-updater.conf`,
 but, this can be changed by specifying the`-config` command line flag.
 
-> **NOTE:** unlike nfd-worker, dynamic configuration updates are not currently
-> supported.
+> **NOTE:** unlike nfd-worker, dynamic configuration updates are not supported.
 
 Topology-Updater configuration file is read inside the container,
 and thus, Volumes and VolumeMounts are needed

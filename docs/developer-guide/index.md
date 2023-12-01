@@ -125,7 +125,7 @@ makefile overrides.
 | KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty* |
 | E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty* |
 | E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false |
-| OPENSHIFT                  | Non-empty value enables OpenShift specific support (currently only effective in e2e tests) | *empty* |
+| OPENSHIFT                  | Non-empty value enables OpenShift specific support (only affects e2e tests) | *empty* |
 
 For example, to use a custom registry:
 
@@ -150,7 +150,7 @@ Or to specify a build tool different from Docker, It can be done in 2 ways:
 ### Testing
 
 Unit tests are automatically run as part of the container image build. You can
-also run them manually in the source code tree by simply running:
+also run them manually in the source code tree by running:
 
 ```bash
 make test
@@ -191,8 +191,8 @@ $ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish 
 
 ### NFD-Worker
 
-In order to run nfd-worker as a "stand-alone" container
-you need to run it in the same network namespace as the nfd-master container:
+To run nfd-worker as a "stand-alone" container you need to run it in the same
+network namespace as the nfd-master container:
 
 ```bash
 $ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker -enable-nodefeature-api=false
@@ -205,14 +205,14 @@ pass the `-no-publish` flag to nfd-worker.
 
 > **NOTE:** Some feature sources need certain directories and/or files from the
 > host mounted inside the NFD container. Thus, you need to provide Docker with
-> the correct `--volume` options in order for them to work correctly when run
+> the correct `--volume` options for them to work correctly when run
 > stand-alone directly with `docker run`. See
 > the [default deployment](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/common/worker-mounts.yaml)
 > for up-to-date information about the required volume mounts.
 
 ### NFD-Topology-Updater
 
-In order to run nfd-topology-updater as a "stand-alone" container
+To run nfd-topology-updater as a "stand-alone" container
 you need to run it in with the `-no-publish` flag to disable communication to
 the Kubernetes apiserver.
 
@@ -227,7 +227,7 @@ the Kubernetes API, pass the `-no-publish` flag to nfd-topology-updater.
 
 > **NOTE:** NFD topology updater needs certain directories and/or files from
 > the host mounted inside the NFD container. Thus, you need to provide Docker
-> with the correct `--volume` options in order for them to work correctly when
+> with the correct `--volume` options for them to work correctly when
 > run stand-alone directly with `docker run`. See
 > the [template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater/topologyupdater-mounts.yaml)
 > for up-to-date information about the required volume mounts.
@@ -257,7 +257,7 @@ the steps below.
 1. Install [tilt](https://docs.tilt.dev/install.html)
 1. Create a local Kubernetes cluster
 
-To start up your Tilt development environment, just run
+To start up your Tilt development environment, run
 
 ```shell
 tilt up
@@ -290,7 +290,7 @@ All documentation resides under the
 directory in the source tree. It is designed to be served as a html site by
 [GitHub Pages](https://pages.github.com/).
 
-Building the documentation is containerized in order to fix the build
+Building the documentation is containerized to fix the build
 environment. The recommended way for developing documentation is to run:
 
 ```bash
@@ -300,10 +300,9 @@ make site-serve
 This will build the documentation in a container and serve it under
 [localhost:4000/](http://localhost:4000/) making it easy to verify the results.
 Any changes made to the `docs/` will automatically re-trigger a rebuild and are
-reflected in the served content and can be inspected with a simple browser
-refresh.
+reflected in the served content and can be inspected with a browser refresh.
 
-In order to just build the html documentation run:
+To just build the html documentation run:
 
 ```bash
 make site-build

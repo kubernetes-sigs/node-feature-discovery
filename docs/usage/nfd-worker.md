@@ -20,7 +20,7 @@ This can be changed by using the
 config option.
 
 The worker configuration file is watched and re-read on every change which
-provides a simple mechanism of dynamic run-time reconfiguration. See
+provides a mechanism of dynamic run-time reconfiguration. See
 [worker configuration](#worker-configuration) for more details.
 
 ## Worker configuration

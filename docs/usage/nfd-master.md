@@ -83,7 +83,7 @@ NFD-Master runs as a deployment, by default
 it prefers running on the cluster's master nodes but will run on worker
 nodes if no master nodes are found.
 
-For High Availability, you should simply increase the replica count of
+For High Availability, you should increase the replica count of
 the deployment object. You should also look into adding
 [inter-pod](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity)
 affinity to prevent masters from running on the same node.
@@ -97,5 +97,5 @@ in bigger clusters.
 
 If you have RBAC authorization enabled (as is the default e.g. with clusters
 initialized with kubeadm) you need to configure the appropriate ClusterRoles,
-ClusterRoleBindings and a ServiceAccount in order for NFD to create node
+ClusterRoleBindings and a ServiceAccount for NFD to create node
 labels. The provided template will configure these for you.

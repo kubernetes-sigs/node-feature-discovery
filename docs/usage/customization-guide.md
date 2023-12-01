@@ -199,7 +199,7 @@ further be used in label rules specified in
 [`custom`](#custom-feature-source) feature source.
 
 > **NOTE:** Be careful when creating and/or updating hook or feature files
-> while NFD is running. In order to avoid race conditions you should write
+> while NFD is running. To avoid race conditions you should write
 > into a temporary file, and atomically create/update the original file by
 > doing a file rename operation. NFD ignores dot files,
 > so temporary file can be written to the same directory and renamed
@@ -247,7 +247,7 @@ debugging and logging.
 
 NFD tries to execute any regular files found from the hooks directory.
 Any additional data files the hook might need (e.g. a configuration file)
-should be placed in a separate directory in order to avoid NFD unnecessarily
+should be placed in a separate directory to avoid NFD unnecessarily
 trying to execute them. A subdirectory under the hooks directory can be used,
 for example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 
@@ -316,7 +316,7 @@ vendor.io/feature4=featureValue4
 After processing the above file, only `vendor.io/feature2` and
 `vendor.io/feature3` would be included in the list of accepted features.
 
-> **NOTE:** The time format that we are supporting is RFC3339. Also, the `expiry-time`
+> **NOTE:** The time format supported is RFC3339. Also, the `expiry-time`
 > tag is only evaluated in each re-discovery period, and the expiration of
 > node labels is not tracked.
 
@@ -753,7 +753,7 @@ the usage of vars.
 
 The `.matchFeatures` field specifies a feature matcher, consisting of a list of
 feature matcher terms. It implements a logical AND over the terms i.e. all
-of them must match in order for the rule to trigger.
+of them must match for the rule to trigger.
 
 ```yaml
       matchFeatures:
@@ -801,7 +801,7 @@ separately.
 
 The `.matchAny` field is a list of of [`matchFeatures`](#matchfeatures)
 matchers. A logical OR is applied over the matchers, i.e. at least one of them
-must match in order for the rule to trigger.
+must match for the rule to trigger.
 
 Consider the following example:
 
@@ -1030,7 +1030,7 @@ advertising the number of PCI network controllers from a specific vendor:
 ```
 
 <!-- {% endraw %} -->
-Imaginative template pipelines are possible, but care must be taken in order to
+Imaginative template pipelines are possible, but care must be taken to
 produce understandable and maintainable rule sets.
 
 ### Backreferences

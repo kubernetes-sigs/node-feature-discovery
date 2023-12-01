@@ -15,7 +15,7 @@ sort: 3
 
 ---
 
-Node Feature Discovery Helm chart allow to easily deploy and manage NFD.
+Node Feature Discovery provides a Helm chart to manage its deployment.
 
 > **NOTE:** NFD is not ideal for other Helm charts to depend on as that may
 > result in multiple parallel NFD deployments in the same cluster which is not
@@ -49,7 +49,7 @@ helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_N
 See the [configuration](#configuration) section below for instructions how to
 alter the deployment parameters.
 
-In order to deploy the [minimal](image-variants.md#minimal) image you need to
+To deploy the [minimal](image-variants.md#minimal) image you need to
 override the image tag:
 
 ```bash
@@ -86,8 +86,8 @@ deletes the release.
 
 ## Chart parameters
 
-In order to tailor the deployment of the Node Feature Discovery to your cluster needs
-We have introduced the following Chart parameters.
+To tailor the deployment of the Node Feature Discovery to your needs following
+Chart parameters are available.
 
 ### General parameters
 

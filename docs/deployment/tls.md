@@ -49,13 +49,14 @@ The NFD source code repository contains an example kustomize overlay and helm
 chart that can be used to deploy NFD with cert-manager supplied certificates
 enabled.
 
-To install `cert-manager` itself can be done as easily as this, below, or you
-can refer to their documentation for other installation methods such as the
-helm chart they provide.
+To install `cert-manager` itself, you can run:
 
 ```bash
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
 ```
+
+Alternatively, you can refer to cert-manager documentation for other
+installation methods such as the Helm chart they provide.
 
 To use the kustomize overlay to install node-feature-discovery with TLS enabled,
 you may use the following:
