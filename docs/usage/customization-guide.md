@@ -316,7 +316,7 @@ vendor.io/feature4=featureValue4
 After processing the above file, only `vendor.io/feature2` and
 `vendor.io/feature3` would be included in the list of accepted features.
 
-> **NOTE:** The time format that we are supporting is RFC3339. Also, the `expiry-time`
+> **NOTE:** The time format supported is RFC3339. Also, the `expiry-time`
 > tag is only evaluated in each re-discovery period, and the expiration of
 > node labels is not tracked.
 

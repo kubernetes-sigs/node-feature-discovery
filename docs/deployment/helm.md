@@ -86,8 +86,8 @@ deletes the release.
 
 ## Chart parameters
 
-In order to tailor the deployment of the Node Feature Discovery to your cluster needs
-We have introduced the following Chart parameters.
+To tailor the deployment of the Node Feature Discovery to your needs following
+Chart parameters are available.
 
 ### General parameters
 

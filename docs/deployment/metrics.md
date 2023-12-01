@@ -48,7 +48,7 @@ to scrape metrics from NFD, you need to pass the following values to Helm:
 
 For more info on Helm deployment, see [Helm](helm.md).
 
-We recommend setting
+It is recommended to specify
 `--set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false`
 when deploying prometheus-operator via Helm to enable the prometheus-operator
 to scrape metrics from any PodMonitor.
