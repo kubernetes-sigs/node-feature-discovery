@@ -59,14 +59,6 @@ is recommended to be done via
    EOF
    ```
 
-To deploy the [minimal](image-variants.md#minimal) image you need to use
-
-```yaml
-  image: {{ site.container_image }}-minimal
-```
-
-in the `NodeFeatureDiscovery` object above.
-
 ## Uninstallation
 
 If you followed the deployment instructions above you can uninstall NFD with:
