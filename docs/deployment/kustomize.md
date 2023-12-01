@@ -37,9 +37,8 @@ nfd-worker (as daemonset) in the `node-feature-discovery` namespace.
 > and [Topologyupdater](#topologyupdater) below.
 
 Alternatively you can clone the repository and customize the deployment by
-creating your own overlays. For example, to deploy the
-[minimal](image-variants.md#minimal) image. See [kustomize][kustomize] for more
-information about managing deployment configurations.
+creating your own overlays. See [kustomize][kustomize] for more information
+about managing deployment configurations.
 
 ## Overlays
 
