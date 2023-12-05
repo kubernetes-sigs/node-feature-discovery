@@ -122,10 +122,6 @@ makefile overrides.
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt; |
 | IMAGE_EXTRA_TAG_NAMES      | Additional container image tag(s) to create when building image   | *empty* |
 | K8S_NAMESPACE              | nfd-master and nfd-worker namespace                               | node-feature-discovery |
-| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty* |
-| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty* |
-| E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false |
-| OPENSHIFT                  | Non-empty value enables OpenShift specific support (only affects e2e tests) | *empty* |
 
 For example, to use a custom registry:
 
@@ -163,6 +159,18 @@ cluster you need to specify the kubeconfig to be used:
 ```bash
 make e2e-test KUBECONFIG=$HOME/.kube/config
 ```
+
+There are several environment variables that can be used to customize the
+e2e-tests:
+
+| Variable                   | Description                                                       | Default value |
+| -------------------------- | ----------------------------------------------------------------- | ------------- |
+| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty* |
+| E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty* |
+| E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false |
+| E2E_TEST_FULL_IMAGE        | Run e2e-test also against the Full Image tag                      | false |
+| E2E_GINKGO_LABEL_FILTER    | Ginkgo label filter to use for running e2e tests                  | *empty* |
+| OPENSHIFT                  | Non-empty value enables OpenShift specific support (only affects e2e tests) | *empty* |
 
 ## Running locally
 

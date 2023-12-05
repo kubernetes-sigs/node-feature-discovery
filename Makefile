@@ -56,6 +56,8 @@ HOSTMOUNT_PREFIX ?= /
 KUBECONFIG ?= ${HOME}/.kube/config
 E2E_TEST_CONFIG ?=
 E2E_PULL_IF_NOT_PRESENT ?= false
+E2E_TEST_FULL_IMAGE ?= false
+E2E_GINKGO_LABEL_FILTER ?=
 
 BUILD_FLAGS = -tags osusergo,netgo \
               -ldflags "-s -w -extldflags=-static -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath.pathPrefix=$(HOSTMOUNT_PREFIX)"
@@ -191,16 +193,20 @@ e2e-test:
 	    -kubeconfig=$(KUBECONFIG) \
 	    -nfd.e2e-config=$(E2E_TEST_CONFIG) \
 	    -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
-	    -ginkgo.focus="\[kubernetes-sigs\]" \
+		-ginkgo.focus="\[k8s-sigs\/node-feature-discovery\]" \
+	    -ginkgo.label-filter=$(E2E_GINKGO_LABEL_FILTER) \
 	    -test.timeout=1h \
 	    $(if $(OPENSHIFT),-nfd.openshift,)
-	$(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME)-full \
-	    -kubeconfig=$(KUBECONFIG) \
-	    -nfd.e2e-config=$(E2E_TEST_CONFIG) \
-	    -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
-	    -ginkgo.focus="\[kubernetes-sigs\]" \
-	    -test.timeout=1h \
-	    $(if $(OPENSHIFT),-nfd.openshift,)
+	@if [ "$(E2E_TEST_FULL_IMAGE)" = "true" ]; then \
+	    $(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME)-full \
+	        -kubeconfig=$(KUBECONFIG) \
+	        -nfd.e2e-config=$(E2E_TEST_CONFIG) \
+	        -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
+		    -ginkgo.focus="\[k8s-sigs\/node-feature-discovery\]" \
+	        -ginkgo.label-filter=$(E2E_GINKGO_LABEL_FILTER) \
+	        -test.timeout=1h \
+	        $(if $(OPENSHIFT),-nfd.openshift,)
+	fi
 
 push:
 	$(IMAGE_PUSH_CMD) $(IMAGE_TAG)
