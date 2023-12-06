@@ -69,7 +69,7 @@ defaultFeatures:
     - "feature.node.kubernetes.io/pci-0300_1a03.present"
     - "feature.node.kubernetes.io/storage-nonrotationaldisk"
     - "feature.node.kubernetes.io/system-os_release.ID"
-    - "feature.node.kubernetes.io/system-os_release.VERSION_ID"
+    - "feature.node.kubernetes.io/system-os_release.VERSION_ID.full"
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID.major"
     - "feature.node.kubernetes.io/system-os_release.VERSION_ID.minor"
   annotationWhitelist:
@@ -105,7 +105,7 @@ defaultFeatures:
         - "feature.node.kubernetes.io/kernel-version.major"
         - "feature.node.kubernetes.io/kernel-version.minor"
         - "feature.node.kubernetes.io/kernel-version.revision"
-        - "feature.node.kubernetes.io/system-os_release.VERSION_ID"
+        - "feature.node.kubernetes.io/system-os_release.VERSION_ID.full"
         - "feature.node.kubernetes.io/system-os_release.VERSION_ID.minor"
       expectedAnnotationKeys:
         - "nfd.node.kubernetes.io/worker.version"

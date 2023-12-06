@@ -227,7 +227,7 @@ instructions.
 | Feature                                 | Value  | Description                                                 |
 | --------------------------------------- | ------ | ----------------------------------------------------------- |
 | **`system-os_release.ID`**              | string | Operating system identifier                                  |
-| **`system-os_release.VERSION_ID`**      | string | Operating system version identifier (e.g. '6.7')            |
+| **`system-os_release.VERSION_ID.full`** | string | Operating system version identifier (e.g. '6.7')            |
 | **`system-os_release.VERSION_ID.major`**| string | First component of the OS version id (e.g. '6')             |
 | **`system-os_release.VERSION_ID.minor`**| string | Second component of the OS version id (e.g. '7')            |
 

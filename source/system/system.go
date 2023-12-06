@@ -32,7 +32,7 @@ import (
 
 var osReleaseFields = [...]string{
 	"ID",
-	"VERSION_ID",
+	"VERSION_ID.full",
 	"VERSION_ID.major",
 	"VERSION_ID.minor",
 }
@@ -91,7 +91,7 @@ func (s *systemSource) Discover() error {
 	} else {
 		s.features.Attributes[OsReleaseFeature] = nfdv1alpha1.NewAttributeFeatures(release)
 
-		if v, ok := release["VERSION_ID"]; ok {
+		if v, ok := release["VERSION_ID.full"]; ok {
 			versionComponents := splitVersion(v)
 			for subKey, subValue := range versionComponents {
 				if subValue != "" {
