@@ -91,7 +91,8 @@ func (s *systemSource) Discover() error {
 	} else {
 		s.features.Attributes[OsReleaseFeature] = nfdv1alpha1.NewAttributeFeatures(release)
 
-		if v, ok := release["VERSION_ID.full"]; ok {
+		if v, ok := release["VERSION_ID"]; ok {
+			release["VERSION_ID.full"] = release["VERSION_ID"]
 			versionComponents := splitVersion(v)
 			for subKey, subValue := range versionComponents {
 				if subValue != "" {
