@@ -90,8 +90,7 @@ kubectl apply -k .
 ```
 
 You can use alternative deployment methods by modifying the auto-generated
-kustomization file. For example, deploying worker and master in the same pod by
-pointing to `deployment/overlays/default-combined`.
+kustomization file.
 
 ### Building locally
 
