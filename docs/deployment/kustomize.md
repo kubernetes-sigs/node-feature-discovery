@@ -48,8 +48,6 @@ scenarios under
 
 - [`default`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default):
   default deployment of nfd-worker as a daemonset, described above
-- [`default-combined`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-combined)
-  see [Master-worker pod](#master-worker-pod) below
 - [`default-job`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/default-job):
   see [Worker one-shot](#worker-one-shot) below
 - [`master-worker-topologyupdater`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/master-worker-topologyupdater):
@@ -71,23 +69,6 @@ scenarios under
   configmap of custom labeling rules, see
   [Custom feature source](../usage/features.md#custom) for more information about
   custom node labels
-
-### Master-worker pod
-
-You can also run nfd-master and nfd-worker inside the same pod
-
-```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default-combined?ref={{ site.release }}
-
-```
-
-This creates a DaemonSet that runs nfd-worker and nfd-master in the same Pod.
-In this case no nfd-master is run on the master node(s), but, the worker nodes
-are able to label themselves which may be desirable e.g. in single-node setups.
-
-> **NOTE:** nfd-topology-updater is not deployed by the default-combined
-> overlay.  To enable nfd-topology-updater in this scenario,the users must
-> customize the deployment themselves.
 
 ### Worker one-shot
 
