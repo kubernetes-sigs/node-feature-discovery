@@ -183,7 +183,7 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 }
 
 // Actual test suite
-var _ = SIGDescribe("NFD master and worker", func() {
+var _ = NFDDescribe(Label("nfd-master"), func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
 
 	nfdTestSuite := func(useNodeFeatureApi bool) {
@@ -278,7 +278,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Simple test with only the fake source enabled
 			//
 			Context("and a single worker pod with fake source enabled", func() {
-				It("it should decorate the node with the fake feature labels", func(ctx context.Context) {
+				It("it should decorate the node with the fake feature labels", Label("nfd-worker"), func(ctx context.Context) {
 					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -327,7 +327,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// More comprehensive test when --e2e-node-config is enabled
 			//
 			Context("and nfd-workers as a daemonset with default sources enabled", func() {
-				It("the node labels and annotations listed in the e2e config should be present", func(ctx context.Context) {
+				It("the node labels and annotations listed in the e2e config should be present", Label("nfd-worker"), func(ctx context.Context) {
 					cfg, err := testutils.GetConfig()
 					Expect(err).ToNot(HaveOccurred())
 
@@ -419,7 +419,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 			// Test custom nodename source configured in 2 additional ConfigMaps
 			//
 			Context("and nfd-workers as a daemonset with 2 additional configmaps for the custom source configured", func() {
-				It("the nodename matching features listed in the configmaps should be present", func(ctx context.Context) {
+				It("the nodename matching features listed in the configmaps should be present", Label("nfd-worker"), func(ctx context.Context) {
 					By("Getting a worker node")
 
 					// We need a valid nodename for the configmap
@@ -523,7 +523,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						),
 					}
 				})
-				It("labels from the NodeFeature objects should be created", func(ctx context.Context) {
+				It("labels from the NodeFeature objects should be created", Label("nfd-worker"), func(ctx context.Context) {
 					if !useNodeFeatureApi {
 						Skip("NodeFeature API not enabled")
 					}
@@ -682,7 +682,7 @@ var _ = SIGDescribe("NFD master and worker", func() {
 						testpod.SpecWithTolerations(testTolerations),
 					}
 				})
-				It("custom features from the NodeFeatureRule rules should be created", func(ctx context.Context) {
+				It("custom features from the NodeFeatureRule rules should be created", Label("nfd-worker"), func(ctx context.Context) {
 					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 

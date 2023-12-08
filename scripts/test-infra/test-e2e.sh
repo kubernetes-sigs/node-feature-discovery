@@ -11,6 +11,7 @@ chmod a+x /usr/local/bin/kubectl
 # Configure environment
 export KUBECONFIG=`pwd`/kubeconfig
 export E2E_TEST_CONFIG=`pwd`/e2e-test-config
+export E2E_TEST_FULL_IMAGE=true
 
 echo "$KUBECONFIG_DATA" > "$KUBECONFIG"
 echo "$E2E_TEST_CONFIG_DATA" > "$E2E_TEST_CONFIG"

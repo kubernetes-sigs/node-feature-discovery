@@ -46,7 +46,7 @@ import (
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
-var _ = SIGDescribe("NFD topology updater", func() {
+var _ = NFDDescribe(Label("nfd-topology-updater"), func() {
 	var (
 		extClient                *extclient.Clientset
 		topologyClient           *topologyclientset.Clientset

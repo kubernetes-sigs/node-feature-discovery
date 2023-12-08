@@ -38,7 +38,7 @@ import (
 )
 
 // Actual test suite
-var _ = SIGDescribe("NFD GC", func() {
+var _ = NFDDescribe(Label("nfd-gc"), func() {
 	f := framework.NewDefaultFramework("nfd-gc")
 
 	Context("when deploying nfd-gc", Ordered, func() {
@@ -117,7 +117,7 @@ var _ = SIGDescribe("NFD GC", func() {
 		// Test GC at startup
 		//
 		Context("with pre-existing NodeFeature and NodeResourceTopology objects", func() {
-			It("it should delete stale objects at startup", func(ctx context.Context) {
+			It("it should delete stale objects at startup", Label("gc-startup"), func(ctx context.Context) {
 				nodes, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				targetNodeNames := []string{nodes.Items[0].GetName()}
@@ -153,7 +153,7 @@ var _ = SIGDescribe("NFD GC", func() {
 		// Test periodic GC
 		//
 		Context("with stale NodeFeature and NodeResourceTopology objects appearing", func() {
-			It("it should remove stale objects", func(ctx context.Context) {
+			It("it should remove stale objects", Label("gc-periodic"), func(ctx context.Context) {
 				nodes, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				targetNodeNames := []string{nodes.Items[0].GetName()}
