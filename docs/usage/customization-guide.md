@@ -867,6 +867,7 @@ The following features are available for matching:
 |                  |              | **`bf.enabled`** | bool | `true` if Intel SST-BF (Intel Speed Select Technology - Base frequency) has been enabled, otherwise does not exist |
 | **`cpu.topology`** | attribute  |          |            | CPU topology related features |
 | | |          **`hardware_multithreading`** | bool       | Hardware multithreading, such as Intel HTT, is enabled |
+| | |          **`socket_count`**            | int        | Number of CPU Sockets |
 | **`cpu.coprocessor`** | attribute |        |            | CPU Coprocessor related features |
 | | |          **`nx_gzip`**                 | bool       | Nest Accelerator GZIP support is enabled |
 | **`kernel.config`** | attribute |          |            | Kernel configuration options |

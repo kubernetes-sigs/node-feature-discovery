@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
@@ -276,7 +277,36 @@ func discoverTopology() map[string]string {
 		features["hardware_multithreading"] = strconv.FormatBool(ht)
 	}
 
+	if socketCount, err := getCPUSocketCount(); err != nil {
+		klog.ErrorS(err, "failed to get sockets count")
+	} else {
+		features["socket_count"] = strconv.FormatInt(socketCount, 10)
+	}
+
 	return features
+}
+
+func getCPUSocketCount() (int64, error) {
+	files, err := os.ReadDir(hostpath.SysfsDir.Path("bus/cpu/devices"))
+	if err != nil {
+		return 0, err
+	}
+
+	uniquePhysicalIDs := sets.NewString()
+
+	for _, file := range files {
+		// Try to read physical_package_id from topology
+		physicalID, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/physical_package_id"))
+		if err != nil {
+			return 0, err
+		}
+		id := strings.TrimSpace(string(physicalID))
+		if err != nil {
+			return 0, err
+		}
+		uniquePhysicalIDs.Insert(id)
+	}
+	return int64(uniquePhysicalIDs.Len()), nil
 }
 
 // Check if any (online) CPUs have thread siblings
