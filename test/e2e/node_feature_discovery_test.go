@@ -30,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	resourcev1 "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -171,7 +172,12 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 		By("Deleting NodeFeature objects from namespace " + namespace)
 		for _, nf := range nfs.Items {
 			err = cli.NfdV1alpha1().NodeFeatures(namespace).Delete(ctx, nf.Name, metav1.DeleteOptions{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(func() error {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				return err
+			}()).NotTo(HaveOccurred())
 		}
 	}
 }
@@ -308,6 +314,12 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					By("Deleting the node-feature-discovery worker pod")
 					err = f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(ctx, workerPod.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
+
+					if useNodeFeatureApi {
+						By("Verify that labels from nfd-worker are garbage-collected")
+						delete(expectedLabels, workerPod.Spec.NodeName)
+						eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
+					}
 				})
 			})
 
@@ -490,6 +502,12 @@ var _ = SIGDescribe("NFD master and worker", func() {
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
+
+					if useNodeFeatureApi {
+						By("Verify that labels from nfd-worker are garbage-collected")
+						delete(expectedLabels, targetNodeName)
+						eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
+					}
 				})
 			})
 
@@ -836,6 +854,12 @@ core:
 					By("Deleting nfd-worker daemonset")
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
+
+					By("Verify that labels from nfd-worker are garbage-collected")
+					expectedLabels = map[string]k8sLabels{
+						"*": {},
+					}
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
 				})
 			})
 
