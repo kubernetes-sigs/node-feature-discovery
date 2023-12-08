@@ -193,8 +193,9 @@ e2e-test:
 	    -kubeconfig=$(KUBECONFIG) \
 	    -nfd.e2e-config=$(E2E_TEST_CONFIG) \
 	    -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
-		-ginkgo.focus="\[k8s-sigs\/node-feature-discovery\]" \
+	    -ginkgo.focus="\[k8s-sigs\/node-feature-discovery\]" \
 	    -ginkgo.label-filter=$(E2E_GINKGO_LABEL_FILTER) \
+	    -ginkgo.v \
 	    -test.timeout=1h \
 	    $(if $(OPENSHIFT),-nfd.openshift,)
 	@if [ "$(E2E_TEST_FULL_IMAGE)" = "true" ]; then \
@@ -202,8 +203,9 @@ e2e-test:
 	        -kubeconfig=$(KUBECONFIG) \
 	        -nfd.e2e-config=$(E2E_TEST_CONFIG) \
 	        -nfd.pull-if-not-present=$(E2E_PULL_IF_NOT_PRESENT) \
-		    -ginkgo.focus="\[k8s-sigs\/node-feature-discovery\]" \
+	        -ginkgo.focus="\[k8s-sigs\/node-feature-discovery\]" \
 	        -ginkgo.label-filter=$(E2E_GINKGO_LABEL_FILTER) \
+	        -ginkgo.v \
 	        -test.timeout=1h \
 	        $(if $(OPENSHIFT),-nfd.openshift,)
 	fi
