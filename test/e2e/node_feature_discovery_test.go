@@ -855,11 +855,13 @@ core:
 					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Verify that labels from nfd-worker are garbage-collected")
-					expectedLabels = map[string]k8sLabels{
-						"*": {},
+					if useNodeFeatureApi {
+						By("Verify that labels from nfd-worker are garbage-collected")
+						expectedLabels = map[string]k8sLabels{
+							"*": {},
+						}
+						eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
 					}
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
 				})
 			})
 
