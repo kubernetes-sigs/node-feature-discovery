@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/klog/v2"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
@@ -679,15 +680,35 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 
 	features := source.GetAllFeatures()
 
+	// Create owner ref
+	ownerRefs := []metav1.OwnerReference{}
+	podName := os.Getenv("POD_NAME")
+	podUID := os.Getenv("POD_UID")
+	if podName != "" && podUID != "" {
+		isTrue := true
+		ownerRefs = []metav1.OwnerReference{
+			{
+				APIVersion: "v1",
+				Kind:       "Pod",
+				Name:       podName,
+				UID:        types.UID(podUID),
+				Controller: &isTrue,
+			},
+		}
+	} else {
+		klog.InfoS("Cannot set NodeFeature owner reference, POD_NAME and/or POD_UID not specified")
+	}
+
 	// TODO: we could implement some simple caching of the object, only get it
 	// every 10 minutes or so because nobody else should really be modifying it
 	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
 		klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
 		nfr = &nfdv1alpha1.NodeFeature{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        nodename,
-				Annotations: map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
-				Labels:      map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
+				Name:            nodename,
+				Annotations:     map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
+				Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
+				OwnerReferences: ownerRefs,
 			},
 			Spec: nfdv1alpha1.NodeFeatureSpec{
 				Features: *features,
@@ -707,6 +728,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		nfrUpdated := nfr.DeepCopy()
 		nfrUpdated.Annotations = map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()}
 		nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
+		nfrUpdated.OwnerReferences = ownerRefs
 		nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
 			Features: *features,
 			Labels:   labels,
