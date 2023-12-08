@@ -4,5 +4,4 @@ kind: Kustomization
 namespace: node-feature-discovery
 
 resources:
-- master-service.yaml
 - master-deployment.yaml
