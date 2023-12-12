@@ -59,8 +59,6 @@ namespaces, excluding `kubernetes.io` namespace and its sub-namespaces
 `kubernetes.io` and its sub-namespaces are always denied.
 This option can be used to exclude some vendors or application specific
 namespaces.
-Note that the namespaces `feature.node.kubernetes.io` and `profile.node.kubernetes.io`
-and their sub-namespaces are always allowed and cannot be denied.
 
 Default: *empty*
 

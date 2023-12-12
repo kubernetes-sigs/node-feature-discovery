@@ -31,7 +31,5 @@ while true; do
     i=$(( $i + 1 ))
 done
 
-
 # Configure environment and run tests
 make e2e-test
-

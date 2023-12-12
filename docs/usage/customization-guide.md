@@ -475,9 +475,6 @@ The namespace part (i.e. prefix) of the labels is controlled by nfd:
     [`-extra-label-ns`](../reference/master-commandline-reference.md#-extra-label-ns)
     command line flag of nfd-master.
     e.g: `nfd-master -deny-label-ns="*" -extra-label-ns=example.com`
-  - Built-in default namespaces `feature.node.kubernetes.io` and
-    `profile.node.kubernetes.io` (and their sub-namespaces) are always allowed
-    and cannot be denied.
 
 ## Feature rule format
 
