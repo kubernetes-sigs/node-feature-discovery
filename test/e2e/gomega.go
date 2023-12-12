@@ -19,12 +19,12 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
-	"golang.org/x/exp/maps"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 
 	corev1 "k8s.io/api/core/v1"
