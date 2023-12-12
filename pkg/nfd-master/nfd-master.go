@@ -1255,10 +1255,6 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	normalDeniedNs, wildcardDeniedNs := preProcessDeniedNamespaces(c.DenyLabelNs)
 	m.deniedNs.normal = normalDeniedNs
 	m.deniedNs.wildcard = wildcardDeniedNs
-	// We forcibly deny kubernetes.io
-	m.deniedNs.normal[""] = struct{}{}
-	m.deniedNs.normal["kubernetes.io"] = struct{}{}
-	m.deniedNs.wildcard[".kubernetes.io"] = struct{}{}
 
 	klog.InfoS("configuration successfully updated", "configuration", utils.DelayedDumper(m.config))
 
