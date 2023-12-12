@@ -198,7 +198,7 @@ e2e-test:
 	    -ginkgo.v \
 	    -test.timeout=1h \
 	    $(if $(OPENSHIFT),-nfd.openshift,)
-	@if [ "$(E2E_TEST_FULL_IMAGE)" = "true" ]; then \
+	if [ "$(E2E_TEST_FULL_IMAGE)" = "true" ]; then \
 	    $(GO_CMD) test -v ./test/e2e/ -args -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME)-full \
 	        -kubeconfig=$(KUBECONFIG) \
 	        -nfd.e2e-config=$(E2E_TEST_CONFIG) \
@@ -207,7 +207,7 @@ e2e-test:
 	        -ginkgo.label-filter=$(E2E_GINKGO_LABEL_FILTER) \
 	        -ginkgo.v \
 	        -test.timeout=1h \
-	        $(if $(OPENSHIFT),-nfd.openshift,)
+	        $(if $(OPENSHIFT),-nfd.openshift,); \
 	fi
 
 push:
