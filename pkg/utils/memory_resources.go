@@ -18,6 +18,7 @@ package utils
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -75,9 +76,7 @@ func GetNumaMemoryResources() (NumaMemoryResources, error) {
 				return nil, err
 			}
 		}
-		for n, s := range hugepageBytes {
-			info[n] = s
-		}
+		maps.Copy(info, hugepageBytes)
 
 		memoryResources[nodeID] = info
 	}

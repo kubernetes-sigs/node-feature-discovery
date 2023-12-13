@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/maps"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -415,10 +416,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		}
 	}
 
-	w.featureSources = make([]source.FeatureSource, 0, len(featureSources))
-	for _, s := range featureSources {
-		w.featureSources = append(w.featureSources, s)
-	}
+	w.featureSources = maps.Values(featureSources)
 
 	sort.Slice(w.featureSources, func(i, j int) bool { return w.featureSources[i].Name() < w.featureSources[j].Name() })
 
@@ -450,10 +448,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		}
 	}
 
-	w.labelSources = make([]source.LabelSource, 0, len(labelSources))
-	for _, s := range labelSources {
-		w.labelSources = append(w.labelSources, s)
-	}
+	w.labelSources = maps.Values(labelSources)
 
 	sort.Slice(w.labelSources, func(i, j int) bool {
 		iP, jP := w.labelSources[i].Priority(), w.labelSources[j].Priority()
@@ -560,9 +555,7 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 			continue
 		}
 
-		for name, value := range labelsFromSource {
-			labels[name] = value
-		}
+		maps.Copy(labels, labelsFromSource)
 	}
 	if klogV := klog.V(1); klogV.Enabled() {
 		klogV.InfoS("feature discovery completed", "labels", utils.DelayedDumper(labels))

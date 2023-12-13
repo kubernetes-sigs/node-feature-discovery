@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/exp/maps"
 	"k8s.io/klog/v2"
 )
 
@@ -259,10 +260,7 @@ func (m *MatchExpression) MatchKeys(name string, keys map[string]Nil) (bool, err
 	if klogV := klog.V(3); klogV.Enabled() {
 		klogV.InfoS("matched keys", "matchResult", matched, "matchKey", name, "matchOp", m.Op)
 	} else if klogV := klog.V(4); klogV.Enabled() {
-		k := make([]string, 0, len(keys))
-		for n := range keys {
-			k = append(k, n)
-		}
+		k := maps.Keys(keys)
 		sort.Strings(k)
 		klogV.InfoS("matched keys", "matchResult", matched, "matchKey", name, "matchOp", m.Op, "inputKeys", k)
 	}

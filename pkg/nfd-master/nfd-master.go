@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"maps"
 	"net"
 	"os"
 	"path"
@@ -477,11 +478,9 @@ func (m *nfdMaster) prune() error {
 		if err != nil {
 			return err
 		}
-		for a := range node.Annotations {
-			if strings.HasPrefix(a, m.instanceAnnotation(nfdv1alpha1.AnnotationNs)) {
-				delete(node.Annotations, a)
-			}
-		}
+		maps.DeleteFunc(node.Annotations, func(k, v string) bool {
+			return strings.HasPrefix(k, m.instanceAnnotation(nfdv1alpha1.AnnotationNs))
+		})
 		err = m.apihelper.UpdateNode(cli, node)
 		if err != nil {
 			return fmt.Errorf("failed to prune annotations from node %q: %v", node.Name, err)
@@ -812,18 +811,14 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
 
 	// Mix in CR-originated labels
-	for k, v := range crLabels {
-		labels[k] = v
-	}
+	maps.Copy(labels, crLabels)
 
 	// Remove labels which are intended to be extended resources via
 	// -resource-labels or their NS is not whitelisted
 	labels, extendedResources := m.filterFeatureLabels(labels, features)
 
 	// Mix in CR-originated extended resources with -resource-labels
-	for k, v := range crExtendedResources {
-		extendedResources[k] = v
-	}
+	maps.Copy(extendedResources, crExtendedResources)
 	extendedResources = m.filterExtendedResources(features, extendedResources)
 
 	// Annotations
@@ -991,15 +986,9 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 				e = addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs)
 				a = addNsToMapKeys(ruleOut.Annotations, nfdv1alpha1.FeatureAnnotationNs)
 			}
-			for k, v := range l {
-				labels[k] = v
-			}
-			for k, v := range e {
-				extendedResources[k] = v
-			}
-			for k, v := range a {
-				annotations[k] = v
-			}
+			maps.Copy(labels, l)
+			maps.Copy(extendedResources, e)
+			maps.Copy(annotations, a)
 
 			// Feed back rule output to features map for subsequent rules to match
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
@@ -1061,9 +1050,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 		}
 		sort.Strings(annotationKeys)
 		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)] = strings.Join(annotationKeys, ",")
-		for k, v := range featureAnnotations {
-			annotations[k] = v
-		}
+		maps.Copy(annotations, featureAnnotations)
 	}
 
 	// Create JSON patches for changes in labels and annotations
