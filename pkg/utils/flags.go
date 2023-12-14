@@ -24,6 +24,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/maps"
 )
 
 // RegexpVal is a wrapper for regexp command line flags
@@ -77,10 +79,7 @@ func (a *StringSetVal) String() string {
 	if *a == nil {
 		return ""
 	}
-	vals := make([]string, 0, len(*a))
-	for val := range *a {
-		vals = append(vals, val)
-	}
+	vals := maps.Keys(*a)
 	sort.Strings(vals)
 	return strings.Join(vals, ",")
 }

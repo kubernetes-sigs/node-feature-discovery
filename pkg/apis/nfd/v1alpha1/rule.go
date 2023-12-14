@@ -19,6 +19,8 @@ package v1alpha1
 import (
 	"bytes"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -40,7 +42,6 @@ type RuleOutput struct {
 
 // Execute the rule against a set of input features.
 func (r *Rule) Execute(features *Features) (RuleOutput, error) {
-	extendedResources := make(map[string]string)
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
@@ -92,18 +93,16 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		}
 	}
 
-	for k, v := range r.ExtendedResources {
-		extendedResources[k] = v
-	}
+	maps.Copy(labels, r.Labels)
+	maps.Copy(vars, r.Vars)
 
-	for k, v := range r.Labels {
-		labels[k] = v
+	ret := RuleOutput{
+		Labels:            labels,
+		Vars:              vars,
+		Annotations:       maps.Clone(r.Annotations),
+		ExtendedResources: maps.Clone(r.ExtendedResources),
+		Taints:            slices.Clone(r.Taints),
 	}
-	for k, v := range r.Vars {
-		vars[k] = v
-	}
-
-	ret := RuleOutput{ExtendedResources: extendedResources, Labels: labels, Vars: vars, Taints: r.Taints, Annotations: r.Annotations}
 	klog.V(2).InfoS("rule matched", "ruleName", r.Name, "ruleOutput", utils.DelayedDumper(ret))
 	return ret, nil
 }

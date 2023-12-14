@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/maps"
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
@@ -102,11 +103,7 @@ func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
 		}
 	}
 	if len(configLabelFields) > 0 {
-		keys := []string{}
-		for key := range configLabelFields {
-			keys = append(keys, key)
-		}
-		klog.InfoS("ignoring invalid fields in deviceLabelFields", "invalidFieldNames", keys)
+		klog.InfoS("ignoring invalid fields in deviceLabelFields", "invalidFieldNames", maps.Keys(configLabelFields))
 	}
 	if len(deviceLabelFields) == 0 {
 		deviceLabelFields = []string{"class", "vendor"}
