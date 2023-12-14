@@ -42,23 +42,6 @@ var matchOps = map[MatchOp]struct{}{
 	MatchIsFalse:      {},
 }
 
-// CreateMatchExpression creates a new MatchExpression instance. Returns an
-// error if validation fails.
-func CreateMatchExpression(op MatchOp, values ...string) (*MatchExpression, error) {
-	m := newMatchExpression(op, values...)
-	return m, m.Validate()
-}
-
-// MustCreateMatchExpression creates a new MatchExpression instance. Panics if
-// validation fails.
-func MustCreateMatchExpression(op MatchOp, values ...string) *MatchExpression {
-	m, err := CreateMatchExpression(op, values...)
-	if err != nil {
-		panic(err)
-	}
-	return m
-}
-
 // newMatchExpression returns a new MatchExpression instance.
 func newMatchExpression(op MatchOp, values ...string) *MatchExpression {
 	return &MatchExpression{

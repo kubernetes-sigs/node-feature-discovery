@@ -32,7 +32,9 @@ func getStaticFeatureConfig() []CustomRule {
 					nfdv1alpha1.FeatureMatcherTerm{
 						Feature: "pci.device",
 						MatchExpressions: nfdv1alpha1.MatchExpressionSet{
-							"vendor": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchIn, "15b3"),
+							"vendor": &nfdv1alpha1.MatchExpression{
+								Op:    nfdv1alpha1.MatchIn,
+								Value: nfdv1alpha1.MatchValue{"15b3"}},
 						},
 					},
 				},
@@ -46,8 +48,12 @@ func getStaticFeatureConfig() []CustomRule {
 					nfdv1alpha1.FeatureMatcherTerm{
 						Feature: "kernel.loadedmodule",
 						MatchExpressions: nfdv1alpha1.MatchExpressionSet{
-							"ib_uverbs": nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
-							"rdma_ucm":  nfdv1alpha1.MustCreateMatchExpression(nfdv1alpha1.MatchExists),
+							"ib_uverbs": &nfdv1alpha1.MatchExpression{
+								Op: nfdv1alpha1.MatchExists,
+							},
+							"rdma_ucm": &nfdv1alpha1.MatchExpression{
+								Op: nfdv1alpha1.MatchExists,
+							},
 						},
 					},
 				},
