@@ -1,0 +1,32 @@
+#
+# This NodeFeatureRule replicates all built-in pci feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-pci-features
+spec:
+  rules:
+    - name: "nfd built-in pci-<device>.present labels"
+      labelsTemplate: |
+        {{ range .pci.device }}pci-{{ .class }}_{{ .vendor }}.present=true
+        {{ end }}
+      matchFeatures:
+        - feature: pci.device
+          matchExpressions:
+            "class":
+              op: InRegexp
+              value: ["^03", "^0b40", "^12"]
+
+    - name: "nfd built-in pci-<device>.sriov.capable labels"
+      labelsTemplate: |
+        {{ range .pci.device }}pci-{{ .class }}_{{ .vendor }}.sriov.capable=true
+        {{ end }}
+      matchFeatures:
+        - feature: pci.device
+          matchExpressions:
+            "class":
+              op: InRegexp
+              value: ["^03", "^0b40", "^12"]
+            "sriov_totalvfs":
+              op: Exists

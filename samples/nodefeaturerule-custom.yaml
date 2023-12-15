@@ -1,0 +1,29 @@
+#
+# This NodeFeatureRule replicates all built-in static custom feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-custom-features
+spec:
+  rules:
+    - name: "nfd built-in static custom rdma.capable label"
+      labels:
+        "custom-rdma.capable": "true"
+      matchFeatures:
+        - feature: pci.device
+          matchExpressions:
+            vendor:
+              op: In
+              value: ["15b3"]
+
+    - name: "nfd built-in static custom rdma.available label"
+      labels:
+        "custom-rdma.available": "true"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            "ib_uverbs":
+              op: Exists
+            "rdma_ucm":
+              op: Exists

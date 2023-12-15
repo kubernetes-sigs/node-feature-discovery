@@ -258,6 +258,88 @@ func (m *MatchExpression) MatchValues(name string, values map[string]string) (bo
 	return matched, nil
 }
 
+// MatchKeyNames evaluates the MatchExpression against names of a set of key features.
+func (m *MatchExpression) MatchKeyNames(keys map[string]Nil) (bool, []MatchedElement, error) {
+	ret := []MatchedElement{}
+
+	for k := range keys {
+		if match, err := m.Match(true, k); err != nil {
+			return false, nil, err
+		} else if match {
+			ret = append(ret, MatchedElement{"Name": k})
+		}
+	}
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i]["Name"] < ret[j]["Name"] })
+
+	if klogV3 := klog.V(3); klogV3.Enabled() {
+		mk := make([]string, len(ret))
+		for i, v := range ret {
+			mk[i] = v["Name"]
+		}
+		mkMsg := strings.Join(mk, ", ")
+
+		if klogV4 := klog.V(4); klogV4.Enabled() {
+			k := make([]string, 0, len(keys))
+			for n := range keys {
+				k = append(k, n)
+			}
+			sort.Strings(k)
+			klogV3.InfoS("matched (key) names", "matchResult", mkMsg, "matchOp", m.Op, "matchValue", m.Value, "inputKeys", k)
+		} else {
+			klogV3.InfoS("matched (key) names", "matchResult", mkMsg, "matchOp", m.Op, "matchValue", m.Value)
+		}
+	}
+
+	return len(ret) > 0, ret, nil
+}
+
+// MatchValueNames evaluates the MatchExpression against names of a set of value features.
+func (m *MatchExpression) MatchValueNames(values map[string]string) (bool, []MatchedElement, error) {
+	ret := []MatchedElement{}
+
+	for k, v := range values {
+		if match, err := m.Match(true, k); err != nil {
+			return false, nil, err
+		} else if match {
+			ret = append(ret, MatchedElement{"Name": k, "Value": v})
+		}
+	}
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i]["Name"] < ret[j]["Name"] })
+
+	if klogV3 := klog.V(3); klogV3.Enabled() {
+		mk := make([]string, len(ret))
+		for i, v := range ret {
+			mk[i] = v["Name"]
+		}
+		mkMsg := strings.Join(mk, ", ")
+
+		if klogV4 := klog.V(4); klogV4.Enabled() {
+			klogV3.InfoS("matched (value) names", "matchResult", mkMsg, "matchOp", m.Op, "matchValue", m.Value, "inputValues", values)
+		} else {
+			klogV3.InfoS("matched (value) names", "matchResult", mkMsg, "matchOp", m.Op, "matchValue", m.Value)
+		}
+	}
+
+	return len(ret) > 0, ret, nil
+}
+
+// MatchInstanceAttributeNames evaluates the MatchExpression against a set of
+// instance features, matching against the names of their attributes.
+func (m *MatchExpression) MatchInstanceAttributeNames(instances []InstanceFeature) ([]MatchedElement, error) {
+	ret := []MatchedElement{}
+
+	for _, i := range instances {
+		if match, _, err := m.MatchValueNames(i.Attributes); err != nil {
+			return nil, err
+		} else if match {
+			ret = append(ret, i.Attributes)
+		}
+	}
+	return ret, nil
+}
+
 // matchExpression is a helper type for unmarshalling MatchExpression
 type matchExpression MatchExpression
 

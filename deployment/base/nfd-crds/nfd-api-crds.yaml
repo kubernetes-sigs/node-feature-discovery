@@ -190,6 +190,8 @@ spec:
                                 in the feature set.
                               properties:
                                 feature:
+                                  description: Feature is the name of the feature
+                                    set to match against.
                                   type: string
                                 matchExpressions:
                                   additionalProperties:
@@ -229,13 +231,46 @@ spec:
                                     required:
                                     - op
                                     type: object
-                                  description: MatchExpressionSet contains a set of
-                                    MatchExpressions, each of which is evaluated against
-                                    a set of input values.
+                                  description: MatchExpressions is the set of per-element
+                                    expressions evaluated. These match against the
+                                    value of the specified elements.
+                                  type: object
+                                matchName:
+                                  description: MatchName in an expression that is
+                                    matched against the name of each element in the
+                                    feature set.
+                                  properties:
+                                    op:
+                                      description: Op is the operator to be applied.
+                                      enum:
+                                      - In
+                                      - NotIn
+                                      - InRegexp
+                                      - Exists
+                                      - DoesNotExist
+                                      - Gt
+                                      - Lt
+                                      - GtLt
+                                      - IsTrue
+                                      - IsFalse
+                                      type: string
+                                    value:
+                                      description: Value is the list of values that
+                                        the operand evaluates the input against. Value
+                                        should be empty if the operator is Exists,
+                                        DoesNotExist, IsTrue or IsFalse. Value should
+                                        contain exactly one element if the operator
+                                        is Gt or Lt and exactly two elements if the
+                                        operator is GtLt. In other cases Value should
+                                        contain at least one element.
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - op
                                   type: object
                               required:
                               - feature
-                              - matchExpressions
                               type: object
                             type: array
                         required:
@@ -251,6 +286,8 @@ spec:
                           are evaluated against each element in the feature set.
                         properties:
                           feature:
+                            description: Feature is the name of the feature set to
+                              match against.
                             type: string
                           matchExpressions:
                             additionalProperties:
@@ -288,12 +325,44 @@ spec:
                               required:
                               - op
                               type: object
-                            description: MatchExpressionSet contains a set of MatchExpressions,
-                              each of which is evaluated against a set of input values.
+                            description: MatchExpressions is the set of per-element
+                              expressions evaluated. These match against the value
+                              of the specified elements.
+                            type: object
+                          matchName:
+                            description: MatchName in an expression that is matched
+                              against the name of each element in the feature set.
+                            properties:
+                              op:
+                                description: Op is the operator to be applied.
+                                enum:
+                                - In
+                                - NotIn
+                                - InRegexp
+                                - Exists
+                                - DoesNotExist
+                                - Gt
+                                - Lt
+                                - GtLt
+                                - IsTrue
+                                - IsFalse
+                                type: string
+                              value:
+                                description: Value is the list of values that the
+                                  operand evaluates the input against. Value should
+                                  be empty if the operator is Exists, DoesNotExist,
+                                  IsTrue or IsFalse. Value should contain exactly
+                                  one element if the operator is Gt or Lt and exactly
+                                  two elements if the operator is GtLt. In other cases
+                                  Value should contain at least one element.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - op
                             type: object
                         required:
                         - feature
-                        - matchExpressions
                         type: object
                       type: array
                     name:

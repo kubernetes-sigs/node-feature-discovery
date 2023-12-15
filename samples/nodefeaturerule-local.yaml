@@ -1,0 +1,17 @@
+#
+# This NodeFeatureRule replicates all built-in local feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-local-features
+spec:
+  rules:
+    - name: "nfd built-in labels from the local feature source"
+      labelsTemplate: |
+        {{ range .local.label }}{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: local.label
+          matchName:
+            op: Exists

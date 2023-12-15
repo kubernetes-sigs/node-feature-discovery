@@ -180,16 +180,39 @@ func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error
 			matches[dom] = make(domainMatchedFeatures)
 		}
 
-		var isMatch bool
+		var isMatch = true
 		var matchedElems []MatchedElement
 		var err error
 		if f, ok := features.Flags[featureName]; ok {
-			isMatch, matchedElems, err = term.MatchExpressions.MatchGetKeys(f.Elements)
+			if term.MatchExpressions != nil {
+				isMatch, matchedElems, err = term.MatchExpressions.MatchGetKeys(f.Elements)
+			}
+			var meTmp []MatchedElement
+			if err == nil && isMatch && term.MatchName != nil {
+				isMatch, meTmp, err = term.MatchName.MatchKeyNames(f.Elements)
+				matchedElems = append(matchedElems, meTmp...)
+			}
 		} else if f, ok := features.Attributes[featureName]; ok {
-			isMatch, matchedElems, err = term.MatchExpressions.MatchGetValues(f.Elements)
+			if term.MatchExpressions != nil {
+				isMatch, matchedElems, err = term.MatchExpressions.MatchGetValues(f.Elements)
+			}
+			var meTmp []MatchedElement
+			if err == nil && isMatch && term.MatchName != nil {
+				isMatch, meTmp, err = term.MatchName.MatchValueNames(f.Elements)
+				matchedElems = append(matchedElems, meTmp...)
+			}
 		} else if f, ok := features.Instances[featureName]; ok {
-			matchedElems, err = term.MatchExpressions.MatchGetInstances(f.Elements)
-			isMatch = len(matchedElems) > 0
+			if term.MatchExpressions != nil {
+				matchedElems, err = term.MatchExpressions.MatchGetInstances(f.Elements)
+				isMatch = len(matchedElems) > 0
+			}
+			var meTmp []MatchedElement
+			if err == nil && isMatch && term.MatchName != nil {
+				meTmp, err = term.MatchName.MatchInstanceAttributeNames(f.Elements)
+				isMatch = len(meTmp) > 0
+				matchedElems = append(matchedElems, meTmp...)
+
+			}
 		} else {
 			return false, nil, fmt.Errorf("feature %q not available", featureName)
 		}

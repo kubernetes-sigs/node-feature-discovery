@@ -1,0 +1,23 @@
+#
+# This NodeFeatureRule replicates all built-in system feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-system-features
+spec:
+  rules:
+    - name: "nfd built-in system-os_release labels"
+      labelsTemplate: |
+        {{ range .system.osrelease }}system-os_release.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: system.osrelease
+          matchName:
+            op: In
+            value:
+              - "ID"
+              - "VERSION_ID"
+              - "VERSION_ID.major"
+              - "VERSION_ID.minor"
+

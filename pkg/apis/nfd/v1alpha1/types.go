@@ -198,8 +198,16 @@ type FeatureMatcher []FeatureMatcherTerm
 // requirements (specified as MatchExpressions) are evaluated against each
 // element in the feature set.
 type FeatureMatcherTerm struct {
-	Feature          string             `json:"feature"`
-	MatchExpressions MatchExpressionSet `json:"matchExpressions"`
+	// Feature is the name of the feature set to match against.
+	Feature string `json:"feature"`
+	// MatchExpressions is the set of per-element expressions evaluated. These
+	// match against the value of the specified elements.
+	// +optional
+	MatchExpressions *MatchExpressionSet `json:"matchExpressions"`
+	// MatchName in an expression that is matched against the name of each
+	// element in the feature set.
+	// +optional
+	MatchName *MatchExpression `json:"matchName"`
 }
 
 // MatchExpressionSet contains a set of MatchExpressions, each of which is
@@ -279,3 +287,7 @@ const (
 	// output of preceding rules.
 	RuleBackrefFeature = "matched"
 )
+
+// MatchAllNames is a special key in MatchExpressionSet to use field names
+// (keys from the input) instead of values when matching.
+const MatchAllNames = "*"

@@ -761,16 +761,46 @@ of them must match for the rule to trigger.
               value:
                 - <value-1>
                 - ...
+          matchName:
+            op: <op>
+            value:
+                - <value-1>
+                - ...
 ```
 
-The `.matchFeatures[].feature` field specifies the feature against which to
-match.
+The `.matchFeatures[].feature` field specifies the feature which to evaluate.
 
-The `.matchFeatures[].matchExpressions` field specifies a map of expressions
-which to evaluate against the elements of the feature.
+> **NOTE:**If both [`matchExpressions`](#matchexpressions) and
+> [`matchName`](#matchname) are specified, they both must match.
 
-In each MatchExpression `op` specifies the operator to apply. Valid values are
-described below.
+##### matchExpressions
+
+The `.matchFeatures[].matchExpressions` field is used to match against the
+value(s) of a feature. The `matchExpressions` field consists of a set of
+expressions, each of which is evaluated against all elements of the specified
+feature.
+
+```yaml
+      matchExpressions:
+        <key>:
+          op: <op>
+          value:
+            - <value-1>
+            - ...
+```
+
+In each MatchExpression the `key` specifies the name of of the feature element
+(*flag* and *attribute* features) or name of the attribute (*instance*
+features) which to look for. The behavior of MatchExpression depends on the
+[feature type](#feature-types):
+
+- for *flag* and *attribute* features the MatchExpression operates on the
+  feature element whose name matches the `<key>`
+- for *instance* features all MatchExpressions are evaluated against the
+  attributes of each instance separately
+
+The `op` field specifies the operator to apply. Valid values are described
+below.
 
 | Operator        | Number of values | Matches when |
 | --------------- | ---------------- | ----------- |
@@ -788,11 +818,57 @@ described below.
 The `value` field of MatchExpression is a list of string arguments to the
 operator.
 
-The behavior of MatchExpression depends on the [feature type](#feature-types):
-for *flag* and *attribute* features the MatchExpression operates on the feature
-element whose name matches the `<key>`. However, for *instance* features all
-MatchExpressions are evaluated against the attributes of each instance
-separately.
+##### matchName
+
+The `.matchFeatures[].matchName` field is used to match against the
+name(s) of a feature (whereas the [`matchExpressions`](#matchexpressions) field
+matches against the value(s). The `matchName` field consists of a single
+expression which is evaulated against the name of each element of the specified
+feature.
+
+```yaml
+      matchName:
+        op: <op>
+        value:
+          - <value-1>
+          - ...
+```
+
+The behavior of `matchName` depends on the [feature type](#feature-types):
+
+- for *flag* and *attribute* features the expression is evaluated against the
+  name of each element
+- for *instance* features the expression is evaluated against the name of
+  each attribute, for each element (instance) separately (matches if the
+  attributes of any of the elements satisfy the expression)
+
+The `op` field specifies the operator to apply. Same operators as for
+[`matchExpressions`](#matchexpressions) above are available.
+
+| Operator        | Number of values | Matches |
+| --------------- | ---------------- | ----------- |
+|  `In`           | 1 or greater | All name is equal to one of the values |
+|  `NotIn`        | 1 or greater | All name that is not equal to any of the values |
+|  `InRegexp`     | 1 or greater | All name that matches any of the values (treated as regexps) |
+|  `Exists`       | 0            | All elements |
+
+Other operators are not practical with `matchName` (`DoesNotExist` never
+matches; `Gt`,`Lt` and `GtLt` are only usable if feature names are integers;
+`IsTrue` and `IsFalse` are only usable if the feature name is `true` or
+`false`).
+
+The `value` field is a list of string arguments to the operator.
+
+An example:
+
+```yaml
+      matchFeatures:
+        - feature: cpu.cpuid
+          matchName: {op: InRegexp, value: ["^AVX"]}
+```
+
+The snippet above would match if any CPUID feature starting with AVX is present
+(e.g. AVX1 or AVX2 or AVX512F etc).
 
 #### matchAny
 
@@ -992,6 +1068,10 @@ feature:
 ```
 
 <!-- {% endraw %} -->
+> **NOTE:**If both `matchExpressions` and `matchName` for a feature matcher
+> term (see [`matchFeatures`](#matchfeatures)) is specified, the list of
+> matched features (for the template engine) is the union from both of these.
+<!-- note #2 -->
 > **NOTE:** In case of matchAny is specified, the template is executed
 > separately against each individual `matchFeatures` field and the final set of
 > labels will be superset of all these separate template expansions. E.g.

@@ -1,0 +1,19 @@
+#
+# This NodeFeatureRule replicates all built-in usb feature labels of NFD.
+#
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: nfd-builtin-usb-features
+spec:
+  rules:
+    - name: "nfd built-in usb-<device>.present labels"
+      labelsTemplate: |
+        {{ range .usb.device }}usb-{{ .class }}_{{ .vendor }}_{{ .device }}.present=true
+        {{ end }}
+      matchFeatures:
+        - feature: usb.device
+          matchExpressions:
+            "class":
+              op: In
+              value: ["0e", "ef", "fe", "ff"]
