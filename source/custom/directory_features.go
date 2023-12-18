@@ -22,22 +22,24 @@ import (
 	"strings"
 
 	"k8s.io/klog/v2"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	api "sigs.k8s.io/node-feature-discovery/source/custom/api"
 	"sigs.k8s.io/yaml"
 )
 
 // Directory stores the full path for the custom sources folder
 const Directory = "/etc/kubernetes/node-feature-discovery/custom.d"
 
-// getDirectoryFeatureConfig returns features configured in the "/etc/kubernetes/node-feature-discovery/custom.d"
+// getDropinDirRules returns features configured in the "/etc/kubernetes/node-feature-discovery/custom.d"
 // host directory and its 1st level subdirectories, which can be populated e.g. by ConfigMaps
-func getDirectoryFeatureConfig() []CustomRule {
+func getDropinDirRules() []nfdv1alpha1.Rule {
 	features := readDir(Directory, true)
 	klog.V(3).InfoS("all custom feature specs from config dir", "featureSpecs", features)
 	return features
 }
 
-func readDir(dirName string, recursive bool) []CustomRule {
-	features := make([]CustomRule, 0)
+func readDir(dirName string, recursive bool) []nfdv1alpha1.Rule {
+	features := make([]nfdv1alpha1.Rule, 0)
 
 	klog.V(4).InfoS("reading directory", "path", dirName)
 	files, err := os.ReadDir(dirName)
@@ -74,14 +76,14 @@ func readDir(dirName string, recursive bool) []CustomRule {
 			continue
 		}
 
-		config := &[]CustomRule{}
+		config := &[]api.Rule{}
 		err = yaml.UnmarshalStrict(bytes, config)
 		if err != nil {
 			klog.ErrorS(err, "could not parse file", "path", fileName)
 			continue
 		}
 
-		features = append(features, *config...)
+		features = append(features, convertInternalRulesToNfdApi(config)...)
 	}
 	return features
 }
