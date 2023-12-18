@@ -271,67 +271,44 @@ func getCPUModel() map[string]string {
 func discoverTopology() map[string]string {
 	features := make(map[string]string)
 
-	if ht, err := haveThreadSiblings(); err != nil {
-		klog.ErrorS(err, "failed to detect hyper-threading")
-	} else {
-		features["hardware_multithreading"] = strconv.FormatBool(ht)
-	}
-
-	if socketCount, err := getCPUSocketCount(); err != nil {
-		klog.ErrorS(err, "failed to get sockets count")
-	} else {
-		features["socket_count"] = strconv.FormatInt(socketCount, 10)
-	}
-
-	return features
-}
-
-func getCPUSocketCount() (int64, error) {
 	files, err := os.ReadDir(hostpath.SysfsDir.Path("bus/cpu/devices"))
 	if err != nil {
-		return 0, err
+		klog.ErrorS(err, "failed to read devices folder")
+		return features
 	}
 
+	ht := false
 	uniquePhysicalIDs := sets.NewString()
-
-	for _, file := range files {
-		// Try to read physical_package_id from topology
-		physicalID, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/physical_package_id"))
-		if err != nil {
-			return 0, err
-		}
-		id := strings.TrimSpace(string(physicalID))
-		if err != nil {
-			return 0, err
-		}
-		uniquePhysicalIDs.Insert(id)
-	}
-	return int64(uniquePhysicalIDs.Len()), nil
-}
-
-// Check if any (online) CPUs have thread siblings
-func haveThreadSiblings() (bool, error) {
-
-	files, err := os.ReadDir(hostpath.SysfsDir.Path("bus/cpu/devices"))
-	if err != nil {
-		return false, err
-	}
 
 	for _, file := range files {
 		// Try to read siblings from topology
 		siblings, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
 		if err != nil {
-			return false, err
+			klog.ErrorS(err, "error while reading thread_sigblings_list file")
+			return map[string]string{}
 		}
 		for _, char := range siblings {
 			// If list separator found, we determine that there are multiple siblings
 			if char == ',' || char == '-' {
-				return true, nil
+				ht = true
+				break
 			}
 		}
+
+		// Try to read physical_package_id from topology
+		physicalID, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/physical_package_id"))
+		if err != nil {
+			klog.ErrorS(err, "error while reading physical_package_id file")
+			return map[string]string{}
+		}
+		id := strings.TrimSpace(string(physicalID))
+		uniquePhysicalIDs.Insert(id)
 	}
-	// No siblings were found
-	return false, nil
+
+	features["hardware_multithreading"] = strconv.FormatBool(ht)
+	features["socket_count"] = strconv.FormatInt(int64(uniquePhysicalIDs.Len()), 10)
+
+	return features
 }
 
 func (s *cpuSource) initCpuidFilter() {
