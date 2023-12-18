@@ -604,7 +604,7 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 		// Validate label value
 		errs = validation.IsValidLabelValue(value)
 		if len(errs) > 0 {
-			klog.InfoS("ignoring label with invalide value", "labelKey", name, "labelValue", value, "errors", errs)
+			klog.InfoS("ignoring label with invalid value", "labelKey", name, "labelValue", value, "errors", errs)
 			continue
 		}
 
