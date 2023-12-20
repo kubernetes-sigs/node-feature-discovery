@@ -31,10 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubectl/pkg/util/podutils"
+	"k8s.io/utils/ptr"
 
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
-	"k8s.io/utils/pointer"
 
 	"sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 )
@@ -428,9 +428,9 @@ func NFDTopologyUpdaterSpec(kc utils.KubeletConfig, opts ...SpecOption) *corev1.
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{"ALL"},
 					},
-					RunAsUser:                pointer.Int64(0),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					RunAsUser:                ptr.To[int64](0),
+					ReadOnlyRootFilesystem:   ptr.To[bool](true),
+					AllowPrivilegeEscalation: ptr.To[bool](false),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
