@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package nodefeaturerule
 
 import (
 	"bytes"
@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
@@ -41,7 +42,7 @@ type RuleOutput struct {
 }
 
 // Execute the rule against a set of input features.
-func (r *Rule) Execute(features *Features) (RuleOutput, error) {
+func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, error) {
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
@@ -49,7 +50,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 		// Logical OR over the matchAny matchers
 		matched := false
 		for _, matcher := range r.MatchAny {
-			if isMatch, matches, err := matcher.match(features); err != nil {
+			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features); err != nil {
 				return RuleOutput{}, err
 			} else if isMatch {
 				matched = true
@@ -62,10 +63,10 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 					break
 				}
 
-				if err := r.executeLabelsTemplate(matches, labels); err != nil {
+				if err := executeLabelsTemplate(r, matches, labels); err != nil {
 					return RuleOutput{}, err
 				}
-				if err := r.executeVarsTemplate(matches, vars); err != nil {
+				if err := executeVarsTemplate(r, matches, vars); err != nil {
 					return RuleOutput{}, err
 				}
 			}
@@ -77,17 +78,17 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, matches, err := r.MatchFeatures.match(features); err != nil {
+		if isMatch, matches, err := evaluateFeatureMatcher(&r.MatchFeatures, features); err != nil {
 			return RuleOutput{}, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{}, nil
 		} else {
 			klog.V(4).InfoS("matchFeatures matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
-			if err := r.executeLabelsTemplate(matches, labels); err != nil {
+			if err := executeLabelsTemplate(r, matches, labels); err != nil {
 				return RuleOutput{}, err
 			}
-			if err := r.executeVarsTemplate(matches, vars); err != nil {
+			if err := executeVarsTemplate(r, matches, vars); err != nil {
 				return RuleOutput{}, err
 			}
 		}
@@ -107,7 +108,7 @@ func (r *Rule) Execute(features *Features) (RuleOutput, error) {
 	return ret, nil
 }
 
-func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) error {
+func executeLabelsTemplate(r *nfdv1alpha1.Rule, in matchedFeatures, out map[string]string) error {
 	if r.LabelsTemplate == "" {
 		return nil
 	}
@@ -127,7 +128,7 @@ func (r *Rule) executeLabelsTemplate(in matchedFeatures, out map[string]string) 
 	return nil
 }
 
-func (r *Rule) executeVarsTemplate(in matchedFeatures, out map[string]string) error {
+func executeVarsTemplate(r *nfdv1alpha1.Rule, in matchedFeatures, out map[string]string) error {
 	if r.VarsTemplate == "" {
 		return nil
 	}
@@ -151,11 +152,11 @@ type matchedFeatures map[string]domainMatchedFeatures
 
 type domainMatchedFeatures map[string][]MatchedElement
 
-func (e *MatchAnyElem) match(features *Features) (bool, matchedFeatures, error) {
-	return e.MatchFeatures.match(features)
+func evaluateMatchAnyElem(e *nfdv1alpha1.MatchAnyElem, features *nfdv1alpha1.Features) (bool, matchedFeatures, error) {
+	return evaluateFeatureMatcher(&e.MatchFeatures, features)
 }
 
-func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error) {
+func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1.Features) (bool, matchedFeatures, error) {
 	matches := make(matchedFeatures, len(*m))
 
 	// Logical AND over the terms
@@ -180,30 +181,30 @@ func (m *FeatureMatcher) match(features *Features) (bool, matchedFeatures, error
 		var err error
 		if f, ok := features.Flags[featureName]; ok {
 			if term.MatchExpressions != nil {
-				isMatch, matchedElems, err = term.MatchExpressions.MatchGetKeys(f.Elements)
+				isMatch, matchedElems, err = MatchGetKeys(term.MatchExpressions, f.Elements)
 			}
 			var meTmp []MatchedElement
 			if err == nil && isMatch && term.MatchName != nil {
-				isMatch, meTmp, err = term.MatchName.MatchKeyNames(f.Elements)
+				isMatch, meTmp, err = MatchKeyNames(term.MatchName, f.Elements)
 				matchedElems = append(matchedElems, meTmp...)
 			}
 		} else if f, ok := features.Attributes[featureName]; ok {
 			if term.MatchExpressions != nil {
-				isMatch, matchedElems, err = term.MatchExpressions.MatchGetValues(f.Elements)
+				isMatch, matchedElems, err = MatchGetValues(term.MatchExpressions, f.Elements)
 			}
 			var meTmp []MatchedElement
 			if err == nil && isMatch && term.MatchName != nil {
-				isMatch, meTmp, err = term.MatchName.MatchValueNames(f.Elements)
+				isMatch, meTmp, err = MatchValueNames(term.MatchName, f.Elements)
 				matchedElems = append(matchedElems, meTmp...)
 			}
 		} else if f, ok := features.Instances[featureName]; ok {
 			if term.MatchExpressions != nil {
-				matchedElems, err = term.MatchExpressions.MatchGetInstances(f.Elements)
+				matchedElems, err = MatchGetInstances(term.MatchExpressions, f.Elements)
 				isMatch = len(matchedElems) > 0
 			}
 			var meTmp []MatchedElement
 			if err == nil && isMatch && term.MatchName != nil {
-				meTmp, err = term.MatchName.MatchInstanceAttributeNames(f.Elements)
+				meTmp, err = MatchInstanceAttributeNames(term.MatchName, f.Elements)
 				isMatch = len(meTmp) > 0
 				matchedElems = append(matchedElems, meTmp...)
 
