@@ -9,13 +9,12 @@ sort: 1
 
 ---
 
-NFD offers two variants of the container image. The "minimal" variant is
-deployed by default. Released container images are available for
-x86_64 and Arm64 architectures.
+NFD offers two variants of the container image. Released container images are
+available for x86_64 and Arm64 architectures.
 
-## Minimal
+## Default
 
-This is a minimal image based on
+The default is a minimal image based on
 [scratch](https://hub.docker.com/_/scratch)
 and only supports running statically linked binaries.
 
