@@ -100,10 +100,12 @@ An overview of the default feature labels:
 
 NFD also annotates nodes it is running on:
 
-| Annotation                                                   | Description                                                 |
-| ------------------------------------------------------------ | ----------------------------------------------------------- |
-| [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-labels     | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users. |
-| [&lt;instance&gt;.]nfd.node.kubernetes.io/extended-resources | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users. |
+| Annotation                                                    | Description                                                 |
+| ------------------------------------------------------------- | ----------------------------------------------------------- |
+| [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-labels      | Comma-separated list of node labels managed by NFD. NFD uses this internally so must not be edited by users. |
+| [&lt;instance&gt;.]nfd.node.kubernetes.io/feature-annotations | Comma-separated list of node annotations managed by NFD. NFD uses this internally so must not be edited by users. |
+| [&lt;instance&gt;.]nfd.node.kubernetes.io/extended-resources  | Comma-separated list of node extended resources managed by NFD. NFD uses this internally so must not be edited by users. |
+| [&lt;instance&gt;.]nfd.node.kubernetes.io/taints              | Comma-separated list of node taints managed by NFD. NFD uses this internally so must not be edited by users. |
 
 > **NOTE:** the [`-instance`](../reference/master-commandline-reference.md#instance)
 > command line flag affects the annotation names
