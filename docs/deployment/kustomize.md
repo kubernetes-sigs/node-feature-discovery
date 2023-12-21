@@ -54,7 +54,7 @@ scenarios under
   see [Master Worker Topologyupdater](#master-worker-topologyupdater) below
 - [`topologyupdater`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/topologyupdater):
   see [Topology Updater](#topologyupdater) below
-- [`Metrics`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prometheus):
+- [`prometheus`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prometheus):
   see [Metrics](#metrics) below
 - [`prune`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prune):
   clean up the cluster after uninstallation, see
