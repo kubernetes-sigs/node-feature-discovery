@@ -83,8 +83,12 @@ configuration options for details.
 | ------------------ | ------------------------------------------------------- |
 | ADX                | Multi-Precision Add-Carry Instruction Extensions (ADX) |
 | AESNI              | Advanced Encryption Standard (AES) New Instructions (AES-NI) |
+| APX_F              | Intel Advanced Performance Extensions (APX) |
+| AVX10              | Intel Advanced Vector Extensions 10 (AVX10) |
+| AVX10_256, AVX10_512 | Intel AVX10 256-bit and 512-bit vector support |
 | AVX                | Advanced Vector Extensions (AVX) |
 | AVX2               | Advanced Vector Extensions 2 (AVX2) |
+| AVXIFMA            | AVX-IFMA instructions |
 | AVXVNNI            | AVX (VEX encoded) VNNI neural network instructions |
 | AMXBF16            | Advanced Matrix Extension, tile multiplication operations on BFLOAT16 numbers |
 | AMXINT8            | Advanced Matrix Extension, tile multiplication operations on 8-bit integers |
@@ -106,7 +110,6 @@ configuration options for details.
 | AVX512VNNI         | AVX-512 vector neural network instructions |
 | AVX512VP2INTERSECT | AVX-512 intersect for D/Q |
 | AVX512VPOPCNTDQ    | AVX-512 vector population count doubleword and quadword |
-| AVXIFMA            | AVX-IFMA instructions |
 | AVXNECONVERT       | AVX-NE-CONVERT instructions |
 | AVXVNNIINT8        | AVX-VNNI-INT8 instructions |
 | CMPCCXADD          | CMPCCXADD instructions |
