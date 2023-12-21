@@ -35,7 +35,7 @@ The exposed metrics are
 ## Kustomize
 
 To deploy NFD with metrics enabled using kustomize, you can use the
-[Metrics Overlay](kustomize.md#metrics).
+[prometheus overlay](kustomize.md#metrics).
 
 ## Helm
 
