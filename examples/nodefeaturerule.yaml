@@ -10,10 +10,10 @@ spec:
       matchFeatures:
         - feature: kernel.loadedmodule
           matchExpressions:
-            dummy: {op: Exists}
+            dummy: { op: Exists }
         - feature: kernel.config
           matchExpressions:
-            X86: {op: In, value: ["y"]}
+            X86: { op: In, value: ["y"] }
 ---
 apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeatureRule
@@ -28,4 +28,4 @@ spec:
       matchFeatures:
         - feature: kernel.version
           matchExpressions:
-            major: {op: Exists}
+            major: { op: Exists }

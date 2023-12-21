@@ -1,4 +1,4 @@
-.PHONY: all test templates yamls
+.PHONY: all test templates yamls build build-%
 .FORCE:
 
 GO_CMD ?= go
@@ -90,12 +90,17 @@ IMAGE_BUILD_ARGS_MINIMAL = --target minimal \
 
 all: image
 
-build:
-	@mkdir -p bin
-	$(GO_CMD) build -v -o bin $(BUILD_FLAGS) ./cmd/...
+BUILD_BINARIES := nfd-master nfd-worker nfd-topology-updater nfd-gc kubectl-nfd
 
-install:
-	$(GO_CMD) install -v $(BUILD_FLAGS) ./cmd/...
+build-%:
+	$(GO_CMD) build -v -o bin $(BUILD_FLAGS) ./cmd/$*
+
+build:	$(foreach bin, $(BUILD_BINARIES), build-$(bin))
+
+install-%:
+	$(GO_CMD) install -v $(BUILD_FLAGS) ./cmd/$*
+
+install:	$(foreach bin, $(BUILD_BINARIES), install-$(bin))
 
 image: yamls
 	$(IMAGE_BUILD_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)

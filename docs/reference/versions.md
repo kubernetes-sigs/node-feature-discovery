@@ -1,7 +1,7 @@
 ---
 title: "Versions"
 layout: default
-sort: 8
+sort: 9
 ---
 
 # Versions and deprecation

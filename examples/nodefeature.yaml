@@ -1,0 +1,119 @@
+---
+# Example NodeFeature object
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeature
+metadata:
+  labels:
+    nfd.node.kubernetes.io/node-name: example-node
+  name: example-node
+  namespace: node-feature-discovery
+spec:
+  features:
+    attributes:
+      cpu.coprocessor:
+        elements: {}
+      cpu.cstate:
+        elements: {}
+      cpu.model:
+        elements:
+          family: "0"
+          id: "0"
+          vendor_id: VendorUnknown
+      cpu.pstate:
+        elements: {}
+      cpu.rdt:
+        elements: {}
+      cpu.security:
+        elements: {}
+      cpu.sst:
+        elements: {}
+      cpu.topology:
+        elements:
+          hardware_multithreading: "false"
+      kernel.config:
+        elements:
+          DUMMY: m
+          NET: "y"
+          X86: "y"
+      kernel.selinux:
+        elements:
+          enabled: "false"
+      kernel.version:
+        elements:
+          full: 6.3.13-linuxkit
+          major: "6"
+          minor: "3"
+          revision: "13"
+      local.label:
+        elements: {}
+      system.name:
+        elements:
+          nodename: example-node
+      system.osrelease:
+        elements:
+          BUG_REPORT_URL: https://bugs.launchpad.net/ubuntu/
+          HOME_URL: https://www.ubuntu.com/
+          ID: ubuntu
+          ID_LIKE: debian
+          NAME: Ubuntu
+          PRETTY_NAME: Ubuntu 22.04.2 LTS
+          PRIVACY_POLICY_URL: https://www.ubuntu.com/legal/terms-and-policies/privacy-policy
+          SUPPORT_URL: https://help.ubuntu.com/
+          UBUNTU_CODENAME: jammy
+          VERSION: 22.04.2 LTS (Jammy Jellyfish)
+          VERSION_CODENAME: jammy
+          VERSION_ID: "22.04"
+          VERSION_ID.major: "22"
+          VERSION_ID.minor: "04"
+    flags:
+      cpu.cpuid:
+        elements:
+          SHA1: {}
+          SHA2: {}
+          SHA3: {}
+          SHA512: {}
+      kernel.loadedmodule:
+        elements:
+          auth_rpcgss: {}
+          dummy: {}
+          fakeowner: {}
+          grace: {}
+          grpcfuse: {}
+          iscsi_tcp: {}
+          libiscsi: {}
+          libiscsi_tcp: {}
+          lockd: {}
+          nfs: {}
+          nfsd: {}
+          scsi_transport_iscsi: {}
+          shiftfs: {}
+          sunrpc: {}
+          vmw_vsock_virtio_transport: {}
+          vmw_vsock_virtio_transport_common: {}
+          vsock: {}
+          xfrm_algo: {}
+          xfrm_user: {}
+    instances:
+      memory.nv:
+        elements: []
+      network.device:
+        elements: []
+      usb.device:
+        elements: []
+  labels:
+    cpu-hardware_multithreading: "false"
+    cpu-model.family: "0"
+    cpu-model.id: "0"
+    cpu-model.vendor_id: VendorUnknown
+    kernel-config.NO_HZ: "true"
+    kernel-config.NO_HZ_IDLE: "true"
+    kernel-config.PREEMPT: "true"
+    kernel-version.full: 6.3.13-linuxkit
+    kernel-version.major: "6"
+    kernel-version.minor: "3"
+    kernel-version.revision: "13"
+    storage-nonrotationaldisk: "true"
+    system-os_release.ID: ubuntu
+    system-os_release.VERSION_ID: "22.04"
+    system-os_release.VERSION_ID.major: "22"
+    system-os_release.VERSION_ID.minor: "04"
