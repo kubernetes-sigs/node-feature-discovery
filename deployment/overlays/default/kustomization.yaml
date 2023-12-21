@@ -8,6 +8,7 @@ resources:
 - ../../base/nfd-crds
 - ../../base/master
 - ../../base/worker-daemonset
+- ../../base/gc
 - namespace.yaml
 
 components:
