@@ -43,7 +43,7 @@ plugins:
 #   - vendor/ruby/
 
 # Document versioning
-version: master
+version: v0.15
 display_version_list: true
 
 # Customize page width (make it wider) for large screens
@@ -57,7 +57,7 @@ scss: |
 # Release is the full released version number. Used to make external links to
 # point to the correct blobs in the Github repo. This is also the version shown
 # in the sidebar (top left corner of the page)
-release: master
+release: v0.15.0
 
 # Container image which to point to in the documentation
-container_image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+container_image: registry.k8s.io/nfd/node-feature-discovery:v0.15.0
