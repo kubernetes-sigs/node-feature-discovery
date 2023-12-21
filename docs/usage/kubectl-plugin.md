@@ -62,9 +62,9 @@ Or you can use the example NodeFeature file(it is a minimal NodeFeature file):
 
 ```bash
 $ kubectl nfd dryrun -f examples/nodefeaturerule.yaml -n examples/nodefeature.yaml
-Processing rule:  my sample rule
-***  Labels  ***
-vendor.io/my-sample-feature=true
 Evaluating NodeFeatureRule "examples/nodefeaturerule.yaml" against NodeFeature "examples/nodefeature.yaml"
+Processing rule:  my sample rule
+*** Labels ***
+vendor.io/my-sample-feature=true
 NodeFeatureRule "examples/nodefeaturerule.yaml" is valid for NodeFeature "examples/nodefeature.yaml"
 ```
