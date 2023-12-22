@@ -12,21 +12,30 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.14.3
+$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.15.0
   namespace/node-feature-discovery created
   customresourcedefinition.apiextensions.k8s.io/nodefeaturerules.nfd.k8s-sigs.io created
+  customresourcedefinition.apiextensions.k8s.io/nodefeatures.nfd.k8s-sigs.io created
+  serviceaccount/nfd-gc created
   serviceaccount/nfd-master created
+  serviceaccount/nfd-worker created
+  role.rbac.authorization.k8s.io/nfd-worker created
+  clusterrole.rbac.authorization.k8s.io/nfd-gc created
   clusterrole.rbac.authorization.k8s.io/nfd-master created
+  rolebinding.rbac.authorization.k8s.io/nfd-worker created
+  clusterrolebinding.rbac.authorization.k8s.io/nfd-gc created
   clusterrolebinding.rbac.authorization.k8s.io/nfd-master created
+  configmap/nfd-master-conf created
   configmap/nfd-worker-conf created
-  service/nfd-master created
+  deployment.apps/nfd-gc created
   deployment.apps/nfd-master created
   daemonset.apps/nfd-worker created
 
 $ kubectl -n node-feature-discovery get all
   NAME                              READY   STATUS    RESTARTS   AGE
-  pod/nfd-master-555458dbbc-sxg6w   1/1     Running   0          56s
-  pod/nfd-worker-mjg9f              1/1     Running   0          17s
+  pod/nfd-gc-565fc85d9b-94jpj       1/1     Running   0          18s
+  pod/nfd-master-6796d89d7b-qccrq   1/1     Running   0          18s
+  pod/nfd-worker-nwdp6              1/1     Running   0          18s
 ...
 
 $ kubectl get no -o json | jq '.items[].metadata.labels'
