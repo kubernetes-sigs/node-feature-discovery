@@ -93,7 +93,7 @@ all: image
 BUILD_BINARIES := nfd-master nfd-worker nfd-topology-updater nfd-gc kubectl-nfd
 
 build-%:
-	$(GO_CMD) build -v -o bin $(BUILD_FLAGS) ./cmd/$*
+	$(GO_CMD) build -v -o bin/ $(BUILD_FLAGS) ./cmd/$*
 
 build:	$(foreach bin, $(BUILD_BINARIES), build-$(bin))
 
