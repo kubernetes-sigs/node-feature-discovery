@@ -75,7 +75,9 @@ helm uninstall node-feature-discovery --namespace $NFD_NS
 ```
 
 The command removes all the Kubernetes components associated with the chart and
-deletes the release.
+deletes the release. It also runs a post-delete hook that cleans up the nodes
+of all labels, annotations, taints and extended resources that were created by
+NFD.
 
 ## Chart parameters
 
