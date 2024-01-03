@@ -1,9 +1,0 @@
-- op: add
-  path: /spec/template/spec/containers/0/args/-
-  value: "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-- op: add
-  path: /spec/template/spec/containers/0/args/-
-  value: "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-- op: add
-  path: /spec/template/spec/containers/0/args/-
-  value: "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
