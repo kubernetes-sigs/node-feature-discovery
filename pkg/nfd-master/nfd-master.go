@@ -116,6 +116,9 @@ type Args struct {
 	CrdController        bool
 	EnableNodeFeatureApi bool
 	Port                 int
+	// GrpcHealthPort is only needed to avoid races between tests (by skipping the health server).
+	// Could be removed when gRPC labler service is dropped (when nfd-worker tests stop running nfd-master).
+	GrpcHealthPort       int
 	Prune                bool
 	VerifyNodeName       bool
 	Options              string
@@ -144,6 +147,7 @@ type nfdMaster struct {
 	nodeName        string
 	configFilePath  string
 	server          *grpc.Server
+	healthServer    *grpc.Server
 	stop            chan struct{}
 	ready           chan bool
 	apihelper       apihelper.APIHelpers
@@ -270,7 +274,11 @@ func (m *nfdMaster) Run() error {
 
 	// Run gRPC server
 	grpcErr := make(chan error, 1)
-	go m.runGrpcServer(grpcErr)
+	// If the NodeFeature API is enabled, don'tregister the labeler API
+	// server. Otherwise, register the labeler server.
+	if !m.args.EnableNodeFeatureApi {
+		go m.runGrpcServer(grpcErr)
+	}
 
 	// Run updater that handles events from the nfd CRD API.
 	if m.nfdController != nil {
@@ -278,6 +286,13 @@ func (m *nfdMaster) Run() error {
 			go m.nfdAPIUpdateHandlerWithLeaderElection()
 		} else {
 			go m.nfdAPIUpdateHandler()
+		}
+	}
+
+	// Start gRPC server for liveness probe (at this point we're "live")
+	if m.args.GrpcHealthPort != 0 {
+		if err := m.startGrpcHealthServer(grpcErr); err != nil {
+			return fmt.Errorf("failed to start gRPC health server: %w", err)
 		}
 	}
 
@@ -323,6 +338,32 @@ func (m *nfdMaster) Run() error {
 	}
 }
 
+// startGrpcHealthServer starts a gRPC health server for Kubernetes readiness/liveness probes.
+// TODO: improve status checking e.g. with watchdog in the main event loop and
+// cheking that node updater pool is alive.
+func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.GrpcHealthPort))
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	s := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	klog.InfoS("gRPC health server serving", "port", m.args.GrpcHealthPort)
+
+	go func() {
+		defer func() {
+			lis.Close()
+		}()
+		if err := s.Serve(lis); err != nil {
+			errChan <- fmt.Errorf("gRPC health server exited with an error: %w", err)
+		}
+		klog.InfoS("gRPC health server stopped")
+	}()
+	m.healthServer = s
+	return nil
+}
+
 func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 	// Create server listening for TCP connections
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.Port))
@@ -352,13 +393,8 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 	}
 	m.server = grpc.NewServer(serverOpts...)
 
-	// If the NodeFeature API is enabled, don'tregister the labeler API
-	// server. Otherwise, register the labeler server.
-	if !m.args.EnableNodeFeatureApi {
-		pb.RegisterLabelerServer(m.server, m)
-	}
+	pb.RegisterLabelerServer(m.server, m)
 
-	grpc_health_v1.RegisterHealthServer(m.server, health.NewServer())
 	klog.InfoS("gRPC server serving", "port", m.args.Port)
 
 	// Run gRPC server
@@ -421,7 +457,12 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 
 // Stop NfdMaster
 func (m *nfdMaster) Stop() {
-	m.server.GracefulStop()
+	if m.server != nil {
+		m.server.GracefulStop()
+	}
+	if m.healthServer != nil {
+		m.healthServer.GracefulStop()
+	}
 
 	if m.nfdController != nil {
 		m.nfdController.stop()

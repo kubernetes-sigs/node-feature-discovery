@@ -43,12 +43,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             grpc:
-              port: 8080
+              port: 8082
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             grpc:
-              port: 8080
+              port: 8082
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 10
