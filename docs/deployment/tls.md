@@ -36,9 +36,7 @@ the nfd-worker has been signed by the specified root certificate (-ca-file).
 Additional hardening can be enabled by specifying `-verify-node-name` in
 nfd-master args, in which case nfd-master verifies that the NodeName presented
 by nfd-worker matches the Common Name (CN) or a Subject Alternative Name (SAN)
-of its certificate.  Note that `-verify-node-name` complicates certificate
-management and is not yet supported in the helm or kustomize deployment
-methods.
+of its certificate.
 
 ## Automated TLS certificate management using cert-manager
 
@@ -58,14 +56,7 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 Alternatively, you can refer to cert-manager documentation for other
 installation methods such as the Helm chart they provide.
 
-To use the kustomize overlay to install node-feature-discovery with TLS enabled,
-you may use the following:
-
-```bash
-kubectl apply -k deployment/overlays/samples/cert-manager
-```
-
-To make use of the helm chart, override `values.yaml` to enable both the
+When using the Helm chart to deploy NFD, override `values.yaml` to enable both the
 `tls.enabled` and `tls.certManager` options. Note that if you do not enable
 `tls.certManager`, helm will successfully install the application, but
 deployment will wait until certificates are manually created, as demonstrated
