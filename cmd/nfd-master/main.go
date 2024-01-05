@@ -32,7 +32,8 @@ import (
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName = "nfd-master"
+	ProgramName    = "nfd-master"
+	GrpcHealthPort = 8082
 )
 
 func main() {
@@ -100,6 +101,7 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new NfdMaster instance
+	args.GrpcHealthPort = GrpcHealthPort
 	instance, err := master.NewNfdMaster(args)
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdMaster instance")
