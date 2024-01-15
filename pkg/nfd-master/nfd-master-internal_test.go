@@ -503,12 +503,12 @@ func TestCreatePatches(t *testing.T) {
 		jsonPath := "/root"
 
 		Convey("When when there are neither itmes to remoe nor to add or update", func() {
-			p := createPatches([]string{"foo", "bar"}, existingItems, map[string]string{}, jsonPath)
+			p := createPatches([]string{"foo", "bar"}, existingItems, map[string]string{}, jsonPath, true)
 			So(len(p), ShouldEqual, 0)
 		})
 
 		Convey("When when there are itmes to remoe but none to add or update", func() {
-			p := createPatches([]string{"key-2", "key-3", "foo"}, existingItems, map[string]string{}, jsonPath)
+			p := createPatches([]string{"key-2", "key-3", "foo"}, existingItems, map[string]string{}, jsonPath, true)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("remove", jsonPath, "key-2", ""),
 				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
@@ -518,7 +518,7 @@ func TestCreatePatches(t *testing.T) {
 
 		Convey("When when there are no itmes to remove but new items to add", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-1": "new-1"}
-			p := createPatches([]string{"key-1"}, existingItems, newItems, jsonPath)
+			p := createPatches([]string{"key-1"}, existingItems, newItems, jsonPath, true)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
 				utils.NewJsonPatch("replace", jsonPath, "key-1", newItems["key-1"]),
@@ -528,7 +528,7 @@ func TestCreatePatches(t *testing.T) {
 
 		Convey("When when there are items to remove add and update", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-2": "new-2", "key-4": "val-4"}
-			p := createPatches([]string{"key-1", "key-2", "key-3", "foo"}, existingItems, newItems, jsonPath)
+			p := createPatches([]string{"key-1", "key-2", "key-3", "foo"}, existingItems, newItems, jsonPath, true)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
 				utils.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),

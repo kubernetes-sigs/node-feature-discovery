@@ -35,8 +35,9 @@ import (
 )
 
 type nfdController struct {
-	featureLister nfdlisters.NodeFeatureLister
-	ruleLister    nfdlisters.NodeFeatureRuleLister
+	featureLister     nfdlisters.NodeFeatureLister
+	ruleLister        nfdlisters.NodeFeatureRuleLister
+	allowedNamespaces []string
 
 	stopChan chan struct{}
 
@@ -47,6 +48,7 @@ type nfdController struct {
 type nfdApiControllerOptions struct {
 	DisableNodeFeature bool
 	ResyncPeriod       time.Duration
+	AllowedNamespaces  []string
 }
 
 func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
@@ -54,6 +56,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		stopChan:           make(chan struct{}, 1),
 		updateAllNodesChan: make(chan struct{}, 1),
 		updateOneNodeChan:  make(chan string),
+		allowedNamespaces:  nfdApiControllerOptions.AllowedNamespaces,
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
@@ -68,17 +71,23 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			AddFunc: func(obj interface{}) {
 				nfr := obj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
-				c.updateOneNode("NodeFeature", nfr)
+				if c.isNamespaceAllowed(nfr.Namespace) {
+					c.updateOneNode("NodeFeature", nfr)
+				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				nfr := newObj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
-				c.updateOneNode("NodeFeature", nfr)
+				if c.isNamespaceAllowed(nfr.Namespace) {
+					c.updateOneNode("NodeFeature", nfr)
+				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				nfr := obj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
-				c.updateOneNode("NodeFeature", nfr)
+				if c.isNamespaceAllowed(nfr.Namespace) {
+					c.updateOneNode("NodeFeature", nfr)
+				}
 			},
 		}); err != nil {
 			return nil, err
@@ -127,6 +136,16 @@ func (c *nfdController) stop() {
 	case c.stopChan <- struct{}{}:
 	default:
 	}
+}
+
+func (c *nfdController) isNamespaceAllowed(namespace string) bool {
+	for _, ns := range c.allowedNamespaces {
+		if ns == namespace {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *nfdController) updateOneNode(typ string, obj metav1.Object) {

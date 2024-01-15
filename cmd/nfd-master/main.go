@@ -72,6 +72,18 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
+		case "max-labels-per-cr":
+			args.Overrides.MaxLabelsPerCR = overrides.MaxLabelsPerCR
+		case "max-taints-per-cr":
+			args.Overrides.MaxTaintsPerCR = overrides.MaxTaintsPerCR
+		case "max-extended-resources-per-cr":
+			args.Overrides.MaxExtendedResourcesPerCR = overrides.MaxExtendedResourcesPerCR
+		case "allowed-namespaces":
+			args.Overrides.AllowedNamespaces = overrides.AllowedNamespaces
+		case "deny-node-feature-labels":
+			args.Overrides.DenyNodeFeatureLabels = overrides.DenyNodeFeatureLabels
+		case "overwrite-labels":
+			args.Overrides.OverwriteLabels = overrides.OverwriteLabels
 		case "enable-nodefeature-api":
 			klog.InfoS("-enable-nodefeature-api is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "ca-file":
@@ -174,6 +186,9 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Enable node tainting feature")
 	overrides.NoPublish = flagset.Bool("no-publish", false,
 		"Do not publish feature labels")
+	overrides.DenyNodeFeatureLabels = flagset.Bool("deny-node-feature-labels", false,
+		"Deny third-party features from being created i.e. only create raw features")
+	overrides.OverwriteLabels = flagset.Bool("overwrite-labels", true, "Allow to overwrite labels")
 	flagset.Var(overrides.DenyLabelNs, "deny-label-ns",
 		"Comma separated list of denied label namespaces")
 	flagset.Var(overrides.ResourceLabels, "resource-labels",
@@ -184,5 +199,11 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
 		"Can be used for the throttling mechanism. It has effect only when -enable-nodefeature-api has been set.")
 
+	// Restrictions flags
+	overrides.MaxLabelsPerCR = flagset.Int("max-labels-per-cr", -1, "Defines the maximum number of labels that can be added by a single NodeFeature CR.")
+	overrides.MaxTaintsPerCR = flagset.Int("max-taints-per-cr", -1, "Defines the maximum number of taints that can be added by a single NodeFeature CR.")
+	overrides.MaxExtendedResourcesPerCR = flagset.Int("max-extended-resources-per-cr", -1, "Defines the maximum number of extended resources that can be added by a single NodeFeature CR.")
+	flagset.Var(overrides.AllowedNamespaces, "allowed-namespaces",
+		"Comma separated list of allowed Kubernetes namespaces to watch")
 	return args, overrides
 }

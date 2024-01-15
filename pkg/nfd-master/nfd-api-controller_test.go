@@ -42,3 +42,33 @@ func TestGetNodeNameForObj(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, n, "node-1")
 }
+
+func TestIsNamespaceAllowed(t *testing.T) {
+	c := &nfdController{}
+
+	testcases := []struct {
+		name              string
+		objectNamespace   string
+		allowedNamespaces []string
+		expectedResult    bool
+	}{
+		{
+			name:              "namespace not allowed",
+			objectNamespace:   "ns3",
+			allowedNamespaces: []string{"ns1", "ns2"},
+			expectedResult:    false,
+		},
+		{
+			name:              "namespace is allowed",
+			objectNamespace:   "ns1",
+			allowedNamespaces: []string{"ns2", "ns1"},
+			expectedResult:    false,
+		},
+	}
+
+	for _, tc := range testcases {
+		c.allowedNamespaces = tc.allowedNamespaces
+		res := c.isNamespaceAllowed(tc.name)
+		assert.Equal(t, res, tc.expectedResult)
+	}
+}
