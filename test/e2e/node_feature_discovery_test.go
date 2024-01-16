@@ -55,10 +55,7 @@ import (
 // labels and annotations
 func cleanupNode(ctx context.Context, cs clientset.Interface) {
 	// Per-node cleanup function
-	cleanup := func(nodeName string) error {
-		node, err := cs.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
-		Expect(err).NotTo(HaveOccurred())
-
+	cleanup := func(node *corev1.Node) error {
 		update := false
 		updateStatus := false
 		// Gather info about all NFD-managed node assets outside the default prefix
@@ -122,7 +119,7 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 		}
 
 		if updateStatus {
-			By("Deleting NFD extended resources from node " + nodeName)
+			By("Deleting NFD extended resources from node " + node.Name)
 			if _, err := cs.CoreV1().Nodes().UpdateStatus(ctx, node, metav1.UpdateOptions{}); err != nil {
 				return err
 			}
@@ -144,7 +141,7 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 	for _, n := range nodeList.Items {
 		var err error
 		for retry := 0; retry < 5; retry++ {
-			if err = cleanup(n.Name); err == nil {
+			if err = cleanup(&n); err == nil {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
