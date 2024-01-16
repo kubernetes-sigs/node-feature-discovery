@@ -54,7 +54,6 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-pstate.turbo`**              | bool   | Set to 'true' if turbo frequencies are enabled in Intel pstate driver, set to 'false' if they have been disabled. |
 | **`cpu-pstate.scaling_governor`**   | string | The value of the Intel pstate scaling_governor when in use, either 'powersave' or 'performance'. |
 | **`cpu-cstate.enabled`**            | bool   | Set to 'true' if cstates are set in the intel_idle driver, otherwise set to 'false'. Unset if intel_idle cpuidle driver is not active. |
-| **`cpu-rdt.<rdt-flag>`**            | true   | **DEPRECATED** [Intel RDT][intel-rdt] capability is supported. See [RDT flags](customization-guide.md#intel-rdt-flags) for details. |
 | **`cpu-security.sgx.enabled`**      | true   | Set to 'true' if Intel SGX is enabled in BIOS (based on a non-zero sum value of SGX EPC section sizes). |
 | **`cpu-security.se.enabled`**       | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility) |
 | **`cpu-security.tdx.enabled`**      | true   | Set to 'true' if Intel TDX is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/tdx`). |
@@ -65,12 +64,6 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-model.vendor_id`**           | string | Comparable CPU vendor ID. |
 | **`cpu-model.family`**              | int    | CPU family. |
 | **`cpu-model.id`**                  | int    | CPU model number. |
-
-> **NOTE:** the `cpu-rdt.<rdt-flag>` labels are deprecated and will be removed
-> in a future release. They will remain to be available as features
-> for [NodeFeatureRule](custom-resources.md#nodefeaturerule) to consume.
-> See [customization guide](customization-guide.md#nodefeaturerule-custom-resource)
-> for details how to use NodeFeatureRule objects to create labels.
 
 The CPU label source is configurable, see
 [worker configuration](nfd-worker.md#worker-configuration) and
@@ -270,7 +263,6 @@ have a sufficient capacity of said resource left.
 
 <!-- Links -->
 [klauspost-cpuid]: https://github.com/klauspost/cpuid#x86-cpu-instructions
-[intel-rdt]: http://www.intel.com/content/www/us/en/architecture-and-technology/resource-director-technology.html
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
 [intel-sst]: https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
 [sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html

@@ -165,15 +165,6 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["pstate."+k] = v
 	}
 
-	// RDT
-	for k, v := range features.Attributes[RdtFeature].Elements {
-		if k == "RDTL3CA_NUM_CLOSID" {
-			continue
-		}
-
-		labels["rdt."+k] = v
-	}
-
 	// Security
 	// skipLabel lists features that will not have labels created but are only made available for
 	// NodeFeatureRules (e.g. to be published via extended resources instead)
