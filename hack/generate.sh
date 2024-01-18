@@ -30,5 +30,10 @@ rm -rf pkg/generated
 
 mv sigs.k8s.io/node-feature-discovery/pkg/generated pkg/
 
+
+# HACK: manually patching the auto-generated code as code-generator cannot
+# properly handle deepcopy of MatchExpressionSet.
+sed s'/out = new(map\[string\]\*MatchExpression)/out = new(MatchExpressionSet)/' -i pkg/apis/nfd/v1alpha1/zz_generated.deepcopy.go
+
 rm -rf sigs.k8s.io
 
