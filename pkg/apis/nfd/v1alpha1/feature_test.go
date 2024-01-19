@@ -165,7 +165,7 @@ func TestFeature(t *testing.T) {
 	assert.Equal(t, expectedFeatures, f)
 }
 
-func TestFeatureSoec(t *testing.T) {
+func TestFeatureSpec(t *testing.T) {
 	// Test merging
 	f := NodeFeatureSpec{}
 	f2 := NodeFeatureSpec{}
