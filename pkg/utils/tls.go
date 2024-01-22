@@ -47,12 +47,12 @@ func (c *TlsConfig) UpdateConfig(certFile, keyFile, caFile string) error {
 	// Load cert for authenticating this server
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return fmt.Errorf("failed to load server certificate: %v", err)
+		return fmt.Errorf("failed to load server certificate: %w", err)
 	}
 	// Load CA cert for client cert verification
 	caCert, err := os.ReadFile(caFile)
 	if err != nil {
-		return fmt.Errorf("failed to read root certificate file: %v", err)
+		return fmt.Errorf("failed to read root certificate file: %w", err)
 	}
 	caPool := x509.NewCertPool()
 	if ok := caPool.AppendCertsFromPEM(caCert); !ok {

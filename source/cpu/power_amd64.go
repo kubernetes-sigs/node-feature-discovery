@@ -69,7 +69,7 @@ func discoverSSTBF() (bool, error) {
 
 		effectiveBaseFreq, err := strconv.Atoi(strings.TrimSpace(string(data)))
 		if err != nil {
-			return false, fmt.Errorf("non-integer value of %q: %v", filePath, err)
+			return false, fmt.Errorf("non-integer value of %q: %w", filePath, err)
 		}
 
 		// Sanity check: Return an error (we don't have enough information to

@@ -291,7 +291,7 @@ func getFeaturesFromHooks() (map[string]string, map[string]string, error) {
 			klog.InfoS("hook directory does not exist", "path", hookDir)
 			return features, labels, nil
 		}
-		return features, labels, fmt.Errorf("unable to access %v: %v", hookDir, err)
+		return features, labels, fmt.Errorf("unable to access %v: %w", hookDir, err)
 	}
 	if len(files) > 0 {
 		klog.InfoS("hooks are DEPRECATED since v0.12.0 and support will be removed in a future release; use feature files instead")
@@ -382,7 +382,7 @@ func getFeaturesFromFiles() (map[string]string, map[string]string, error) {
 			klog.InfoS("features directory does not exist", "path", featureFilesDir)
 			return features, labels, nil
 		}
-		return features, labels, fmt.Errorf("unable to access %v: %v", featureFilesDir, err)
+		return features, labels, fmt.Errorf("unable to access %v: %w", featureFilesDir, err)
 	}
 
 	for _, file := range files {

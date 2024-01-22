@@ -43,7 +43,7 @@ var devAttrFileMap = map[string]string{
 func readSingleUsbSysfsAttribute(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to read device attribute %s: %v", filepath.Base(path), err)
+		return "", fmt.Errorf("failed to read device attribute %s: %w", filepath.Base(path), err)
 	}
 
 	attrVal := strings.TrimSpace(string(data))
