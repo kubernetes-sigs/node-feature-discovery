@@ -22,6 +22,7 @@ import (
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 // APIHelpers represents a set of API helpers for Kubernetes
@@ -39,10 +40,10 @@ type APIHelpers interface {
 	UpdateNode(*k8sclient.Clientset, *corev1.Node) error
 
 	// PatchNode updates the node object via the API server using a client.
-	PatchNode(*k8sclient.Clientset, string, []JsonPatch) error
+	PatchNode(*k8sclient.Clientset, string, []utils.JsonPatch) error
 
 	// PatchNodeStatus updates the node status via the API server using a client.
-	PatchNodeStatus(*k8sclient.Clientset, string, []JsonPatch) error
+	PatchNodeStatus(*k8sclient.Clientset, string, []utils.JsonPatch) error
 
 	// GetTopologyClient returns a topologyclientset
 	GetTopologyClient() (*topologyclientset.Clientset, error)

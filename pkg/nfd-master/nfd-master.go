@@ -1146,14 +1146,14 @@ func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
 }
 
 // createPatches is a generic helper that returns json patch operations to perform
-func createPatches(removeKeys []string, oldItems map[string]string, newItems map[string]string, jsonPath string) []apihelper.JsonPatch {
-	patches := []apihelper.JsonPatch{}
+func createPatches(removeKeys []string, oldItems map[string]string, newItems map[string]string, jsonPath string) []utils.JsonPatch {
+	patches := []utils.JsonPatch{}
 
 	// Determine items to remove
 	for _, key := range removeKeys {
 		if _, ok := oldItems[key]; ok {
 			if _, ok := newItems[key]; !ok {
-				patches = append(patches, apihelper.NewJsonPatch("remove", jsonPath, key, ""))
+				patches = append(patches, utils.NewJsonPatch("remove", jsonPath, key, ""))
 			}
 		}
 	}
@@ -1162,10 +1162,10 @@ func createPatches(removeKeys []string, oldItems map[string]string, newItems map
 	for key, newVal := range newItems {
 		if oldVal, ok := oldItems[key]; ok {
 			if newVal != oldVal {
-				patches = append(patches, apihelper.NewJsonPatch("replace", jsonPath, key, newVal))
+				patches = append(patches, utils.NewJsonPatch("replace", jsonPath, key, newVal))
 			}
 		} else {
-			patches = append(patches, apihelper.NewJsonPatch("add", jsonPath, key, newVal))
+			patches = append(patches, utils.NewJsonPatch("add", jsonPath, key, newVal))
 		}
 	}
 
@@ -1174,8 +1174,8 @@ func createPatches(removeKeys []string, oldItems map[string]string, newItems map
 
 // createExtendedResourcePatches returns a slice of operations to perform on
 // the node status
-func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources) []apihelper.JsonPatch {
-	patches := []apihelper.JsonPatch{}
+func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources) []utils.JsonPatch {
+	patches := []utils.JsonPatch{}
 
 	// Form a list of namespaced resource names managed by us
 	oldResources := stringToNsNames(n.Annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)], nfdv1alpha1.FeatureLabelNs)
@@ -1185,8 +1185,8 @@ func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResour
 		if _, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
 			// check if the ext resource is still needed
 			if _, extResNeeded := extendedResources[resource]; !extResNeeded {
-				patches = append(patches, apihelper.NewJsonPatch("remove", "/status/capacity", resource, ""))
-				patches = append(patches, apihelper.NewJsonPatch("remove", "/status/allocatable", resource, ""))
+				patches = append(patches, utils.NewJsonPatch("remove", "/status/capacity", resource, ""))
+				patches = append(patches, utils.NewJsonPatch("remove", "/status/allocatable", resource, ""))
 			}
 		}
 	}
@@ -1197,11 +1197,11 @@ func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResour
 		if quantity, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
 			val, _ := quantity.AsInt64()
 			if strconv.FormatInt(val, 10) != value {
-				patches = append(patches, apihelper.NewJsonPatch("replace", "/status/capacity", resource, value))
-				patches = append(patches, apihelper.NewJsonPatch("replace", "/status/allocatable", resource, value))
+				patches = append(patches, utils.NewJsonPatch("replace", "/status/capacity", resource, value))
+				patches = append(patches, utils.NewJsonPatch("replace", "/status/allocatable", resource, value))
 			}
 		} else {
-			patches = append(patches, apihelper.NewJsonPatch("add", "/status/capacity", resource, value))
+			patches = append(patches, utils.NewJsonPatch("add", "/status/capacity", resource, value))
 			// "allocatable" gets added implicitly after adding to capacity
 		}
 	}

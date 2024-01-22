@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 // K8sHelpers implements APIHelpers
@@ -77,7 +78,7 @@ func (h K8sHelpers) UpdateNode(c *k8sclient.Clientset, n *corev1.Node) error {
 	return nil
 }
 
-func (h K8sHelpers) PatchNode(c *k8sclient.Clientset, nodeName string, patches []JsonPatch) error {
+func (h K8sHelpers) PatchNode(c *k8sclient.Clientset, nodeName string, patches []utils.JsonPatch) error {
 	if len(patches) > 0 {
 		data, err := json.Marshal(patches)
 		if err == nil {
@@ -88,7 +89,7 @@ func (h K8sHelpers) PatchNode(c *k8sclient.Clientset, nodeName string, patches [
 	return nil
 }
 
-func (h K8sHelpers) PatchNodeStatus(c *k8sclient.Clientset, nodeName string, patches []JsonPatch) error {
+func (h K8sHelpers) PatchNodeStatus(c *k8sclient.Clientset, nodeName string, patches []utils.JsonPatch) error {
 	if len(patches) > 0 {
 		data, err := json.Marshal(patches)
 		if err == nil {

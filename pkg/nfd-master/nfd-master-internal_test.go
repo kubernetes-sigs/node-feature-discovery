@@ -151,9 +151,9 @@ func TestUpdateNodeObject(t *testing.T) {
 		sort.Strings(fakeExtResourceNames)
 
 		// Create a list of expected node status patches
-		statusPatches := []apihelper.JsonPatch{}
+		statusPatches := []utils.JsonPatch{}
 		for k, v := range fakeExtResources {
-			statusPatches = append(statusPatches, apihelper.NewJsonPatch("add", "/status/capacity", k, v))
+			statusPatches = append(statusPatches, utils.NewJsonPatch("add", "/status/capacity", k, v))
 		}
 
 		mockAPIHelper := new(apihelper.MockAPIHelpers)
@@ -166,17 +166,17 @@ func TestUpdateNodeObject(t *testing.T) {
 
 		Convey("When I successfully update the node with feature labels", func() {
 			// Create a list of expected node metadata patches
-			metadataPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("replace", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTrackingAnnotation, strings.Join(fakeFeatureAnnotationsNames, ",")),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
-				apihelper.NewJsonPatch("remove", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/old-feature", ""),
+			metadataPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("replace", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/feature-labels", strings.Join(fakeFeatureLabelNames, ",")),
+				utils.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureAnnotationsTrackingAnnotation, strings.Join(fakeFeatureAnnotationsNames, ",")),
+				utils.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.AnnotationNs+"/extended-resources", strings.Join(fakeExtResourceNames, ",")),
+				utils.NewJsonPatch("remove", "/metadata/labels", nfdv1alpha1.FeatureLabelNs+"/old-feature", ""),
 			}
 			for k, v := range fakeFeatureLabels {
-				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))
+				metadataPatches = append(metadataPatches, utils.NewJsonPatch("add", "/metadata/labels", k, v))
 			}
 			for k, v := range fakeAnnotations {
-				metadataPatches = append(metadataPatches, apihelper.NewJsonPatch("add", "/metadata/annotations", k, v))
+				metadataPatches = append(metadataPatches, utils.NewJsonPatch("add", "/metadata/annotations", k, v))
 			}
 
 			mockAPIHelper.On("GetClient").Return(mockClient, nil)
@@ -244,7 +244,7 @@ func TestUpdateMasterNode(t *testing.T) {
 		mockClient := &k8sclient.Clientset{}
 		mockNode := newMockNode()
 		Convey("When update operation succeeds", func() {
-			expectedPatches := []apihelper.JsonPatch{}
+			expectedPatches := []utils.JsonPatch{}
 			mockHelper.On("GetClient").Return(mockClient, nil)
 			mockHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil)
 			mockHelper.On("PatchNode", mockClient, mockNodeName, mock.MatchedBy(jsonPatchMatcher(expectedPatches))).Return(nil)
@@ -297,9 +297,9 @@ func TestAddingExtResources(t *testing.T) {
 		Convey("When there are matching labels", func() {
 			mockNode := newMockNode()
 			mockResourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/status/capacity", "feature-1", "1"),
-				apihelper.NewJsonPatch("add", "/status/capacity", "feature-2", "2"),
+			expectedPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("add", "/status/capacity", "feature-1", "1"),
+				utils.NewJsonPatch("add", "/status/capacity", "feature-2", "2"),
 			}
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
@@ -317,9 +317,9 @@ func TestAddingExtResources(t *testing.T) {
 			mockNode := newMockNode()
 			mockNode.Status.Capacity[corev1.ResourceName("feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
 			mockResourceLabels := ExtendedResources{"feature-1": "1"}
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
-				apihelper.NewJsonPatch("replace", "/status/allocatable", "feature-1", "1"),
+			expectedPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
+				utils.NewJsonPatch("replace", "/status/allocatable", "feature-1", "1"),
 			}
 			patches := mockMaster.createExtendedResourcePatches(mockNode, mockResourceLabels)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
@@ -379,15 +379,15 @@ func TestSetLabels(t *testing.T) {
 		}
 		sort.Strings(mockLabelNames)
 
-		expectedStatusPatches := []apihelper.JsonPatch{}
+		expectedStatusPatches := []utils.JsonPatch{}
 
 		Convey("When node update succeeds", func() {
 			mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
+			expectedPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, strings.Join(mockLabelNames, ",")),
 			}
 			for k, v := range mockLabels {
-				expectedPatches = append(expectedPatches, apihelper.NewJsonPatch("add", "/metadata/labels", k, v))
+				expectedPatches = append(expectedPatches, utils.NewJsonPatch("add", "/metadata/labels", k, v))
 			}
 
 			mockHelper.On("GetClient").Return(mockClient, nil)
@@ -402,9 +402,9 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When -label-whitelist is specified", func() {
 			mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
-				apihelper.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
+			expectedPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
+				utils.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
 			}
 
 			mockMaster.config.LabelWhiteList.Regexp = *regexp.MustCompile("^f.*2$")
@@ -434,14 +434,14 @@ func TestSetLabels(t *testing.T) {
 				vendorProfileLabel:                     "val-7",
 				"--invalid-name--":                     "valid-val",
 				"valid-name":                           "--invalid-val--"}
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations",
+			expectedPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("add", "/metadata/annotations",
 					instance+"."+nfdv1alpha1.FeatureLabelsAnnotation,
 					"feature-1,valid.ns/feature-2,"+vendorFeatureLabel+","+vendorProfileLabel),
-				apihelper.NewJsonPatch("add", "/metadata/labels", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
-				apihelper.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
-				apihelper.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
-				apihelper.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
+				utils.NewJsonPatch("add", "/metadata/labels", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
+				utils.NewJsonPatch("add", "/metadata/labels", "valid.ns/feature-2", mockLabels["valid.ns/feature-2"]),
+				utils.NewJsonPatch("add", "/metadata/labels", vendorFeatureLabel, mockLabels[vendorFeatureLabel]),
+				utils.NewJsonPatch("add", "/metadata/labels", vendorProfileLabel, mockLabels[vendorProfileLabel]),
 			}
 
 			mockMaster.deniedNs.normal = map[string]struct{}{"random.denied.ns": {}}
@@ -461,14 +461,14 @@ func TestSetLabels(t *testing.T) {
 
 		Convey("When -resource-labels is specified", func() {
 			mockMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
-			expectedPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
-				apihelper.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
-				apihelper.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
+			expectedPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.FeatureLabelsAnnotation, "example.io/feature-2"),
+				utils.NewJsonPatch("add", "/metadata/labels", "example.io/feature-2", mockLabels["example.io/feature-2"]),
+				utils.NewJsonPatch("add", "/metadata/annotations", nfdv1alpha1.ExtendedResourceAnnotation, "feature-1,feature-3"),
 			}
-			expectedStatusPatches := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
-				apihelper.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-3", mockLabels["feature.node.kubernetes.io/feature-3"]),
+			expectedStatusPatches := []utils.JsonPatch{
+				utils.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-1", mockLabels["feature.node.kubernetes.io/feature-1"]),
+				utils.NewJsonPatch("add", "/status/capacity", "feature.node.kubernetes.io/feature-3", mockLabels["feature.node.kubernetes.io/feature-3"]),
 			}
 
 			mockMaster.config.ResourceLabels = map[string]struct{}{"feature.node.kubernetes.io/feature-3": {}, "feature-1": {}}
@@ -605,9 +605,9 @@ func TestCreatePatches(t *testing.T) {
 
 		Convey("When when there are itmes to remoe but none to add or update", func() {
 			p := createPatches([]string{"key-2", "key-3", "foo"}, existingItems, map[string]string{}, jsonPath)
-			expected := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("remove", jsonPath, "key-2", ""),
-				apihelper.NewJsonPatch("remove", jsonPath, "key-3", ""),
+			expected := []utils.JsonPatch{
+				utils.NewJsonPatch("remove", jsonPath, "key-2", ""),
+				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
 			}
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
@@ -615,9 +615,9 @@ func TestCreatePatches(t *testing.T) {
 		Convey("When when there are no itmes to remove but new items to add", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-1": "new-1"}
 			p := createPatches([]string{"key-1"}, existingItems, newItems, jsonPath)
-			expected := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
-				apihelper.NewJsonPatch("replace", jsonPath, "key-1", newItems["key-1"]),
+			expected := []utils.JsonPatch{
+				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
+				utils.NewJsonPatch("replace", jsonPath, "key-1", newItems["key-1"]),
 			}
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
@@ -625,12 +625,12 @@ func TestCreatePatches(t *testing.T) {
 		Convey("When when there are items to remove add and update", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-2": "new-2", "key-4": "val-4"}
 			p := createPatches([]string{"key-1", "key-2", "key-3", "foo"}, existingItems, newItems, jsonPath)
-			expected := []apihelper.JsonPatch{
-				apihelper.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
-				apihelper.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),
-				apihelper.NewJsonPatch("replace", jsonPath, "key-2", newItems["key-2"]),
-				apihelper.NewJsonPatch("remove", jsonPath, "key-1", ""),
-				apihelper.NewJsonPatch("remove", jsonPath, "key-3", ""),
+			expected := []utils.JsonPatch{
+				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
+				utils.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),
+				utils.NewJsonPatch("replace", jsonPath, "key-2", newItems["key-2"]),
+				utils.NewJsonPatch("remove", jsonPath, "key-1", ""),
+				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
 			}
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
@@ -651,14 +651,14 @@ func TestRemoveLabelsWithPrefix(t *testing.T) {
 
 		Convey("a unique label should be removed", func() {
 			p := removeLabelsWithPrefix(n, "single")
-			So(p, ShouldResemble, []apihelper.JsonPatch{apihelper.NewJsonPatch("remove", "/metadata/labels", "single-label", "")})
+			So(p, ShouldResemble, []utils.JsonPatch{utils.NewJsonPatch("remove", "/metadata/labels", "single-label", "")})
 		})
 
 		Convey("a non-unique search string should remove all matching keys", func() {
 			p := removeLabelsWithPrefix(n, "multiple")
-			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches([]apihelper.JsonPatch{
-				apihelper.NewJsonPatch("remove", "/metadata/labels", "multiple_A", ""),
-				apihelper.NewJsonPatch("remove", "/metadata/labels", "multiple_B", ""),
+			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches([]utils.JsonPatch{
+				utils.NewJsonPatch("remove", "/metadata/labels", "multiple_A", ""),
+				utils.NewJsonPatch("remove", "/metadata/labels", "multiple_B", ""),
 			}))
 		})
 
@@ -851,8 +851,8 @@ func BenchmarkNfdAPIUpdateAllNodes(b *testing.B) {
 
 	mockClient := &k8sclient.Clientset{}
 
-	statusPatches := []apihelper.JsonPatch{}
-	metadataPatches := []apihelper.JsonPatch{
+	statusPatches := []utils.JsonPatch{}
+	metadataPatches := []utils.JsonPatch{
 		{Op: "add", Path: "/metadata/annotations/nfd.node.kubernetes.io~1feature-labels", Value: ""}, {Op: "add", Path: "/metadata/annotations/nfd.node.kubernetes.io~1extended-resources", Value: ""},
 	}
 
@@ -909,8 +909,8 @@ func withTimeout(actual interface{}, expected ...interface{}) string {
 	}
 }
 
-func jsonPatchMatcher(expected []apihelper.JsonPatch) func([]apihelper.JsonPatch) bool {
-	return func(actual []apihelper.JsonPatch) bool {
+func jsonPatchMatcher(expected []utils.JsonPatch) func([]utils.JsonPatch) bool {
+	return func(actual []utils.JsonPatch) bool {
 		// We don't care about modifying the original slices
 		ok, msg := assertions.So(sortJsonPatches(actual), ShouldResemble, sortJsonPatches(expected))
 		if !ok {
@@ -926,18 +926,18 @@ func jsonPatchMatcher(expected []apihelper.JsonPatch) func([]apihelper.JsonPatch
 	}
 }
 
-func sortJsonPatches(p []apihelper.JsonPatch) []apihelper.JsonPatch {
+func sortJsonPatches(p []utils.JsonPatch) []utils.JsonPatch {
 	sort.Slice(p, func(i, j int) bool { return p[i].Path < p[j].Path })
 	return p
 }
 
 // Remove any labels having the given prefix
-func removeLabelsWithPrefix(n *corev1.Node, search string) []apihelper.JsonPatch {
-	var p []apihelper.JsonPatch
+func removeLabelsWithPrefix(n *corev1.Node, search string) []utils.JsonPatch {
+	var p []utils.JsonPatch
 
 	for k := range n.Labels {
 		if strings.HasPrefix(k, search) {
-			p = append(p, apihelper.NewJsonPatch("remove", "/metadata/labels", k, ""))
+			p = append(p, utils.NewJsonPatch("remove", "/metadata/labels", k, ""))
 		}
 	}
 

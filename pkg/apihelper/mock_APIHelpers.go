@@ -6,6 +6,8 @@ import (
 	mock "github.com/stretchr/testify/mock"
 	kubernetes "k8s.io/client-go/kubernetes"
 
+	utils "sigs.k8s.io/node-feature-discovery/pkg/utils"
+
 	v1 "k8s.io/api/core/v1"
 
 	versioned "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
@@ -147,11 +149,11 @@ func (_m *MockAPIHelpers) GetTopologyClient() (*versioned.Clientset, error) {
 }
 
 // PatchNode provides a mock function with given fields: _a0, _a1, _a2
-func (_m *MockAPIHelpers) PatchNode(_a0 *kubernetes.Clientset, _a1 string, _a2 []JsonPatch) error {
+func (_m *MockAPIHelpers) PatchNode(_a0 *kubernetes.Clientset, _a1 string, _a2 []utils.JsonPatch) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, []JsonPatch) error); ok {
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, []utils.JsonPatch) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
@@ -161,11 +163,11 @@ func (_m *MockAPIHelpers) PatchNode(_a0 *kubernetes.Clientset, _a1 string, _a2 [
 }
 
 // PatchNodeStatus provides a mock function with given fields: _a0, _a1, _a2
-func (_m *MockAPIHelpers) PatchNodeStatus(_a0 *kubernetes.Clientset, _a1 string, _a2 []JsonPatch) error {
+func (_m *MockAPIHelpers) PatchNodeStatus(_a0 *kubernetes.Clientset, _a1 string, _a2 []utils.JsonPatch) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, []JsonPatch) error); ok {
+	if rf, ok := ret.Get(0).(func(*kubernetes.Clientset, string, []utils.JsonPatch) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
