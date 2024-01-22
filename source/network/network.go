@@ -148,7 +148,7 @@ func readIfaceInfo(path string, attrFiles []string) nfdv1alpha1.InstanceFeature 
 	for _, attrFile := range attrFiles {
 		data, err := os.ReadFile(filepath.Join(path, attrFile))
 		if err != nil {
-			if !os.IsNotExist(err) {
+			if !os.IsNotExist(err) && !strings.Contains(err.Error(), "invalid argument") {
 				klog.ErrorS(err, "failed to read net iface attribute", "attributeName", attrFile)
 			}
 			continue
