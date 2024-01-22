@@ -25,22 +25,16 @@ import (
 	"github.com/k8stopologyawareschedwg/podfingerprint"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sclient "k8s.io/client-go/kubernetes"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
-	mockv1 "sigs.k8s.io/node-feature-discovery/pkg/podres/mocks"
+	mockpodres "sigs.k8s.io/node-feature-discovery/pkg/podres/mocks"
 )
 
 func TestPodScanner(t *testing.T) {
-
-	var resScan ResourcesScanner
-	var err error
-
 	// PodFingerprint only depends on Name/Namespace of the pods running on a Node
 	// so we can precalculate the expected value
 	expectedFingerprintCompute := func(pods []*corev1.Pod) (string, error) {
@@ -54,11 +48,11 @@ func TestPodScanner(t *testing.T) {
 	}
 
 	Convey("When I scan for pod resources using fake client and no namespace", t, func() {
-		mockPodResClient := new(mockv1.PodResourcesListerClient)
-		mockAPIHelper := new(apihelper.MockAPIHelpers)
-		mockClient := &k8sclient.Clientset{}
+		mockPodResClient := new(mockpodres.PodResourcesListerClient)
+
+		fakeCli := fakeclient.NewSimpleClientset()
 		computePodFingerprint := true
-		resScan, err = NewPodResourcesScanner("*", mockPodResClient, mockAPIHelper, computePodFingerprint)
+		resScan, err := NewPodResourcesScanner("*", mockPodResClient, fakeCli, computePodFingerprint)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)
@@ -172,8 +166,9 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+
+			fakeCli := fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -286,8 +281,9 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -373,8 +369,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -463,8 +459,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -541,8 +537,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -633,8 +629,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -676,11 +672,10 @@ func TestPodScanner(t *testing.T) {
 	})
 
 	Convey("When I scan for pod resources using fake client and given namespace", t, func() {
-		mockPodResClient := new(mockv1.PodResourcesListerClient)
-		mockAPIHelper := new(apihelper.MockAPIHelpers)
-		mockClient := &k8sclient.Clientset{}
+		mockPodResClient := new(mockpodres.PodResourcesListerClient)
+		fakeCli := fakeclient.NewSimpleClientset()
 		computePodFingerprint := false
-		resScan, err = NewPodResourcesScanner("pod-res-test", mockPodResClient, mockAPIHelper, computePodFingerprint)
+		resScan, err := NewPodResourcesScanner("pod-res-test", mockPodResClient, fakeCli, computePodFingerprint)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)
@@ -752,12 +747,12 @@ func TestPodScanner(t *testing.T) {
 							Name: "test-cnt-0",
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:                      *resource.NewQuantity(2, resource.DecimalSI),
+									corev1.ResourceCPU:                      *resource.NewQuantity(1, resource.DecimalSI),
 									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
 									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
 								},
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:                      *resource.NewQuantity(2, resource.DecimalSI),
+									corev1.ResourceCPU:                      *resource.NewQuantity(1, resource.DecimalSI),
 									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
 									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
 								},
@@ -766,8 +761,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -831,8 +826,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "pod-res-test", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -911,8 +906,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -977,8 +972,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "default", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -1035,8 +1030,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "pod-res-test", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -1119,8 +1114,8 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			mockAPIHelper.On("GetClient").Return(mockClient, nil)
-			mockAPIHelper.On("GetPod", mock.AnythingOfType("*kubernetes.Clientset"), "pod-res-test", "test-pod-0").Return(pod, nil)
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {

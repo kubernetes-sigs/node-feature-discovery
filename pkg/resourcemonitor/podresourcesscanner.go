@@ -23,10 +23,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	client "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
-
-	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	"github.com/k8stopologyawareschedwg/podfingerprint"
@@ -35,16 +35,16 @@ import (
 type PodResourcesScanner struct {
 	namespace         string
 	podResourceClient podresourcesapi.PodResourcesListerClient
-	apihelper         apihelper.APIHelpers
+	k8sClient         client.Interface
 	podFingerprint    bool
 }
 
 // NewPodResourcesScanner creates a new ResourcesScanner instance
-func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, kubeApihelper apihelper.APIHelpers, podFingerprint bool) (ResourcesScanner, error) {
+func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, k8sClient client.Interface, podFingerprint bool) (ResourcesScanner, error) {
 	resourcemonitorInstance := &PodResourcesScanner{
 		namespace:         namespace,
 		podResourceClient: podResourceClient,
-		apihelper:         kubeApihelper,
+		k8sClient:         k8sClient,
 		podFingerprint:    podFingerprint,
 	}
 	if resourcemonitorInstance.namespace != "*" {
@@ -58,11 +58,7 @@ func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.
 
 // isWatchable tells if the the given namespace should be watched.
 func (resMon *PodResourcesScanner) isWatchable(podNamespace string, podName string, hasDevice bool) (bool, bool, error) {
-	cli, err := resMon.apihelper.GetClient()
-	if err != nil {
-		return false, false, err
-	}
-	pod, err := resMon.apihelper.GetPod(cli, podNamespace, podName)
+	pod, err := resMon.k8sClient.CoreV1().Pods(podNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {
 		return false, false, err
 	}

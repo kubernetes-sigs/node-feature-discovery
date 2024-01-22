@@ -26,12 +26,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
-	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater/kubeletnotifier"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
@@ -74,7 +74,6 @@ type NfdTopologyUpdater interface {
 type nfdTopologyUpdater struct {
 	nodeName            string
 	args                Args
-	apihelper           apihelper.APIHelpers
 	topoClient          topologyclientset.Interface
 	resourcemonitorArgs resourcemonitor.Args
 	stop                chan struct{} // channel for signaling stop
@@ -137,12 +136,16 @@ func (w *nfdTopologyUpdater) Run() error {
 	if err != nil {
 		return err
 	}
-	w.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
 	topoClient, err := topologyclientset.NewForConfig(kubeconfig)
 	if err != nil {
 		return nil
 	}
 	w.topoClient = topoClient
+
+	k8sClient, err := k8sclient.NewForConfig(kubeconfig)
+	if err != nil {
+		return err
+	}
 
 	if err := w.configure(); err != nil {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
@@ -160,7 +163,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	var resScan resourcemonitor.ResourcesScanner
 
-	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, w.apihelper, w.resourcemonitorArgs.PodSetFingerprint)
+	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, k8sClient, w.resourcemonitorArgs.PodSetFingerprint)
 	if err != nil {
 		return fmt.Errorf("failed to initialize ResourceMonitor instance: %w", err)
 	}
