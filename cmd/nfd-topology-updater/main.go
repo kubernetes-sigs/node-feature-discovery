@@ -102,7 +102,7 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Update once and exit")
 	flagset.BoolVar(&args.NoPublish, "no-publish", false,
-		"Do not publish discovered features to the cluster-local Kubernetes API server.")
+		"Do not create or update NodeResourceTopology objects.")
 	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
 		"Kube config file.")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
