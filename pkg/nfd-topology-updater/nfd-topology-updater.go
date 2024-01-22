@@ -131,13 +131,12 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("failed to get PodResource Client: %w", err)
 	}
 
-	if !w.args.NoPublish {
-		kubeconfig, err := apihelper.GetKubeconfig(w.args.KubeConfigFile)
-		if err != nil {
-			return err
-		}
-		w.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
+	kubeconfig, err := apihelper.GetKubeconfig(w.args.KubeConfigFile)
+	if err != nil {
+		return err
 	}
+	w.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
+
 	if err := w.configure(); err != nil {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
 	}
