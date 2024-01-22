@@ -42,7 +42,6 @@ import (
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
@@ -747,7 +746,7 @@ func (m *nfdWorker) getNfdClient() (*nfdclient.Clientset, error) {
 		return m.nfdClient, nil
 	}
 
-	kubeconfig, err := apihelper.GetKubeconfig(m.args.Kubeconfig)
+	kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
 	if err != nil {
 		return nil, err
 	}

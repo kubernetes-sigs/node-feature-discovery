@@ -131,7 +131,7 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("failed to get PodResource Client: %w", err)
 	}
 
-	kubeconfig, err := apihelper.GetKubeconfig(w.args.KubeConfigFile)
+	kubeconfig, err := utils.GetKubeconfig(w.args.KubeConfigFile)
 	if err != nil {
 		return err
 	}

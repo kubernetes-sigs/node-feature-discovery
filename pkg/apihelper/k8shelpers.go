@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 // K8sHelpers implements APIHelpers
@@ -109,12 +108,4 @@ func (h K8sHelpers) GetPod(cli *k8sclient.Clientset, namespace string, podName s
 	}
 
 	return pod, nil
-}
-
-// GetKubeconfig returns the kubeconfig for the cluster
-func GetKubeconfig(path string) (*restclient.Config, error) {
-	if path == "" {
-		return restclient.InClusterConfig()
-	}
-	return clientcmd.BuildConfigFromFlags("", path)
 }

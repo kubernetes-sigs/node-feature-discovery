@@ -1140,7 +1140,7 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
 	var err error
 	if m.kubeconfig == nil {
-		m.kubeconfig, err = apihelper.GetKubeconfig(m.args.Kubeconfig)
+		m.kubeconfig, err = utils.GetKubeconfig(m.args.Kubeconfig)
 	}
 	return m.kubeconfig, err
 }
