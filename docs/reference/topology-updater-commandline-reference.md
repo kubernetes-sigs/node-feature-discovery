@@ -46,10 +46,10 @@ nfd-topology-updater -config=/opt/nfd/nfd-topology-updater.conf
 
 ### -no-publish
 
-The `-no-publish` flag disables all communication with the nfd-master, making
-it a "dry-run" flag for nfd-topology-updater. NFD-Topology-Updater runs
-resource hardware topology detection normally, but no CR requests are sent to
-nfd-master.
+The `-no-publish` flag makes for a "dry-run" flag for nfd-topology-updater.
+NFD-Topology-Updater runs resource hardware topology detection normally, but
+[NodeResourceTopology](../usage/custom-resources.md#noderesourcetopology)
+objects are not created or updated.
 
 Default: *false*
 
