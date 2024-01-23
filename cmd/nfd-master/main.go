@@ -171,11 +171,12 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	args.Klog = klogutils.InitKlogFlags(flagset)
 
 	overrides := &master.ConfigOverrideArgs{
-		LabelWhiteList: &utils.RegexpVal{},
-		DenyLabelNs:    &utils.StringSetVal{},
-		ExtraLabelNs:   &utils.StringSetVal{},
-		ResourceLabels: &utils.StringSetVal{},
-		ResyncPeriod:   &utils.DurationVal{Duration: time.Duration(1) * time.Hour},
+		LabelWhiteList:    &utils.RegexpVal{},
+		DenyLabelNs:       &utils.StringSetVal{},
+		ExtraLabelNs:      &utils.StringSetVal{},
+		ResourceLabels:    &utils.StringSetVal{},
+		AllowedNamespaces: &utils.StringSliceVal{},
+		ResyncPeriod:      &utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 	}
 	flagset.Var(overrides.ExtraLabelNs, "extra-label-ns",
 		"Comma separated list of allowed extra label namespaces")

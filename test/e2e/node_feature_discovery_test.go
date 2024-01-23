@@ -995,6 +995,91 @@ resyncPeriod: "1s"
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
+
+			Context("allowed namespaces restriction is respected or not", func() {
+				BeforeEach(func(ctx context.Context) {
+					extraMasterPodSpecOpts = []testpod.SpecOption{
+						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
+					}
+					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
+restrictions:
+  allowedNamespaces: ["non-existant-namespace"]
+`)
+					fmt.Println(cm.Data)
+					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("Nothing should be created", func(ctx context.Context) {
+					// deploy node feature object
+					if !useNodeFeatureApi {
+						Skip("NodeFeature API not enabled")
+					}
+
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					targetNodeName := nodes[0].Name
+					Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
+
+					// Apply Node Feature object
+					By("Creating NodeFeature object")
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying node labels from NodeFeature object #1 are not created")
+					// No labels should be created since the f.Namespace is not in the allowed Namespaces
+					expectedLabels := map[string]k8sLabels{}
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
+
+					By("Deleting NodeFeature object")
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("max labels, taints, extended resources restrictions should be respected", func() {
+				BeforeEach(func(ctx context.Context) {
+					extraMasterPodSpecOpts = []testpod.SpecOption{
+						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
+					}
+					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
+restrictions:
+  maxLabelsPerCR: 1
+  maxTaintsPerCR: 1
+  maxExtendedResourcesPerCR: 1
+`)
+					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("Nothing should be created", func(ctx context.Context) {
+					// deploy node feature object
+					if !useNodeFeatureApi {
+						Skip("NodeFeature API not enabled")
+					}
+
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					targetNodeName := nodes[0].Name
+					Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
+
+					// Apply Node Feature object
+					By("Creating NodeFeature object")
+					nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying node labels from NodeFeature object #1 are not created")
+					// No labels should be created since the f.Namespace is not in the allowed Namespaces
+					expectedLabels := map[string]k8sLabels{}
+					expectedAnnotations := map[string]k8sAnnotations{}
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
+					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
+
+					By("Deleting NodeFeature object")
+					err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
 		})
 	}
 
