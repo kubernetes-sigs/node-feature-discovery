@@ -17,11 +17,13 @@ limitations under the License.
 package network
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"k8s.io/klog/v2"
 
@@ -148,7 +150,7 @@ func readIfaceInfo(path string, attrFiles []string) nfdv1alpha1.InstanceFeature 
 	for _, attrFile := range attrFiles {
 		data, err := os.ReadFile(filepath.Join(path, attrFile))
 		if err != nil {
-			if !os.IsNotExist(err) {
+			if !os.IsNotExist(err) && !errors.Is(err, syscall.EINVAL) {
 				klog.ErrorS(err, "failed to read net iface attribute", "attributeName", attrFile)
 			}
 			continue
