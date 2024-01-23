@@ -52,7 +52,7 @@ func MergeKlogConfiguration(klogArgs map[string]*utils.KlogFlagVal, klogConfig K
 				v = a.DefValue()
 			}
 			if err := a.SetFromConfig(v); err != nil {
-				return fmt.Errorf("failed to set logger option klog.%s = %v: %v", k, v, err)
+				return fmt.Errorf("failed to set logger option klog.%s = %v: %w", k, v, err)
 			}
 		}
 	}

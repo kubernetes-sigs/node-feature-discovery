@@ -251,7 +251,7 @@ func (m *nfdMaster) Run() error {
 	if !m.config.NoPublish {
 		err := m.updateMasterNode()
 		if err != nil {
-			return fmt.Errorf("failed to update master node: %v", err)
+			return fmt.Errorf("failed to update master node: %w", err)
 		}
 	}
 
@@ -368,7 +368,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 	// Create server listening for TCP connections
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.Port))
 	if err != nil {
-		errChan <- fmt.Errorf("failed to listen: %v", err)
+		errChan <- fmt.Errorf("failed to listen: %w", err)
 		return
 	}
 
@@ -414,7 +414,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 
 		case err := <-grpcErr:
 			if err != nil {
-				errChan <- fmt.Errorf("gRPC server exited with an error: %v", err)
+				errChan <- fmt.Errorf("gRPC server exited with an error: %w", err)
 			}
 			klog.InfoS("gRPC server stopped")
 		}
@@ -552,7 +552,7 @@ func (m *nfdMaster) updateMasterNode() error {
 		"/metadata/annotations")
 	err = m.apihelper.PatchNode(cli, node.Name, p)
 	if err != nil {
-		return fmt.Errorf("failed to patch node annotations: %v", err)
+		return fmt.Errorf("failed to patch node annotations: %w", err)
 	}
 
 	return nil
@@ -951,7 +951,7 @@ func (m *nfdMaster) setTaints(cli *kubernetes.Clientset, taints []corev1.Taint, 
 	if len(patches) > 0 {
 		err = m.apihelper.PatchNode(cli, node.Name, patches)
 		if err != nil {
-			return fmt.Errorf("error while patching node object: %v", err)
+			return fmt.Errorf("error while patching node object: %w", err)
 		}
 		klog.V(1).InfoS("patched node annotations for taints", "nodeName", nodeName)
 	}
@@ -1112,13 +1112,13 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
 	err = m.apihelper.PatchNodeStatus(cli, node.Name, statusPatches)
 	if err != nil {
-		return fmt.Errorf("error while patching extended resources: %v", err)
+		return fmt.Errorf("error while patching extended resources: %w", err)
 	}
 
 	// Patch the node object in the apiserver
 	err = m.apihelper.PatchNode(cli, node.Name, patches)
 	if err != nil {
-		return fmt.Errorf("error while patching node object: %v", err)
+		return fmt.Errorf("error while patching node object: %w", err)
 	}
 
 	if len(patches) > 0 || len(statusPatches) > 0 {
@@ -1235,7 +1235,7 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 
 	// Parse config overrides
 	if err := yaml.Unmarshal([]byte(overrides), c); err != nil {
-		return fmt.Errorf("failed to parse -options: %s", err)
+		return fmt.Errorf("failed to parse -options: %w", err)
 	}
 	if m.args.Overrides.NoPublish != nil {
 		c.NoPublish = *m.args.Overrides.NoPublish

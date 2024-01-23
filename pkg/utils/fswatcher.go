@@ -67,7 +67,7 @@ func (w *FsWatcher) reset(names ...string) error {
 func (w *FsWatcher) initWatcher() error {
 	if w.Watcher != nil {
 		if err := w.Watcher.Close(); err != nil {
-			return fmt.Errorf("failed to close fsnotify watcher: %v", err)
+			return fmt.Errorf("failed to close fsnotify watcher: %w", err)
 		}
 	}
 	w.paths = make(map[string]struct{})
@@ -75,7 +75,7 @@ func (w *FsWatcher) initWatcher() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		w.Watcher = nil
-		return fmt.Errorf("failed to create fsnotify watcher: %v", err)
+		return fmt.Errorf("failed to create fsnotify watcher: %w", err)
 	}
 	w.Watcher = watcher
 
