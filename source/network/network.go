@@ -17,11 +17,13 @@ limitations under the License.
 package network
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"k8s.io/klog/v2"
 
