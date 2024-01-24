@@ -66,8 +66,8 @@ spec:
           - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
           - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
           {{- end }}
-          {{- if .Values.topologyUpdater.podSetFingerprint }}
-          - "-pods-fingerprint"
+          {{- if not .Values.topologyUpdater.podSetFingerprint }}
+          - "-pods-fingerprint=false"
           {{- end }}
           {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
           - "-kubelet-config-uri=file:///host-var/kubelet-config"
