@@ -6,11 +6,12 @@ approvers:
   - ArangoGutierrez
   - marquiz
 reviewers:
+  - adrianchiris
+  - AhmedGrati
   - ArangoGutierrez
-  - jjacobelli
   - fmuyassarov
+  - jjacobelli
   - kad
   - marquiz
   - PiotrProkop
   - zvonkok
-  - adrianchiris
