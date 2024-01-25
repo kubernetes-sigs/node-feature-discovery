@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -59,7 +58,7 @@ type nfdGarbageCollector struct {
 }
 
 func New(args *Args) (NfdGarbageCollector, error) {
-	kubeconfig, err := apihelper.GetKubeconfig(args.Kubeconfig)
+	kubeconfig, err := utils.GetKubeconfig(args.Kubeconfig)
 	if err != nil {
 		return nil, err
 	}

@@ -19,6 +19,9 @@ package utils
 import (
 	"os"
 	"strings"
+
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var nodeName string
@@ -42,4 +45,12 @@ func GetKubernetesNamespace() string {
 		}
 	}
 	return os.Getenv("KUBERNETES_NAMESPACE")
+}
+
+// GetKubeconfig returns the kubeconfig for the cluster
+func GetKubeconfig(path string) (*restclient.Config, error) {
+	if path == "" {
+		return restclient.InClusterConfig()
+	}
+	return clientcmd.BuildConfigFromFlags("", path)
 }
