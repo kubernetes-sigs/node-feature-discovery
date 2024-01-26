@@ -26,6 +26,7 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	"sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 func newMockNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
@@ -80,8 +81,8 @@ func TestRunNodeUpdater(t *testing.T) {
 	mockClient := &k8sclient.Clientset{}
 	mockNode := newMockNode()
 	mockNodeUpdaterPool := newMockNodeUpdaterPool(mockMaster)
-	statusPatches := []apihelper.JsonPatch{}
-	metadataPatches := []apihelper.JsonPatch{}
+	statusPatches := []utils.JsonPatch{}
+	metadataPatches := []utils.JsonPatch{}
 
 	mockAPIHelper.On("GetClient").Return(mockClient, nil)
 	mockAPIHelper.On("GetNode", mockClient, mockNodeName).Return(mockNode, nil)
