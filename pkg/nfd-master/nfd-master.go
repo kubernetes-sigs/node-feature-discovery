@@ -1419,7 +1419,7 @@ func (m *nfdMaster) patchNode(nodeName string, patches []utils.JsonPatch, subres
 	}
 	data, err := json.Marshal(patches)
 	if err == nil {
-		_, err = m.k8sClient.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, data, metav1.PatchOptions{})
+		_, err = m.k8sClient.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, data, metav1.PatchOptions{}, subresources...)
 	}
 	return err
 }
