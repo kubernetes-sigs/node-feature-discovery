@@ -19,6 +19,7 @@ package nfdmaster
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"net"
@@ -41,8 +42,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
+	"k8s.io/apimachinery/pkg/types"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
@@ -52,7 +53,6 @@ import (
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/apihelper"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
@@ -150,8 +150,7 @@ type nfdMaster struct {
 	healthServer    *grpc.Server
 	stop            chan struct{}
 	ready           chan bool
-	apihelper       apihelper.APIHelpers
-	kubeconfig      *restclient.Config
+	k8sClient       k8sclient.Interface
 	nodeUpdaterPool *nodeUpdaterPool
 	deniedNs
 	config *NFDConfig
@@ -495,12 +494,7 @@ func (m *nfdMaster) prune() error {
 		return nil
 	}
 
-	cli, err := m.apihelper.GetClient()
-	if err != nil {
-		return err
-	}
-
-	nodes, err := m.apihelper.GetNodes(cli)
+	nodes, err := m.getNodes()
 	if err != nil {
 		return err
 	}
@@ -509,21 +503,21 @@ func (m *nfdMaster) prune() error {
 		klog.InfoS("pruning node...", "nodeName", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeObject(cli, node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
+		err := m.updateNodeObject(node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
 			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
 		}
 
 		// Prune annotations
-		node, err := m.apihelper.GetNode(cli, node.Name)
+		node, err := m.getNode(node.Name)
 		if err != nil {
 			return err
 		}
 		maps.DeleteFunc(node.Annotations, func(k, v string) bool {
 			return strings.HasPrefix(k, m.instanceAnnotation(nfdv1alpha1.AnnotationNs))
 		})
-		err = m.apihelper.UpdateNode(cli, node)
+		_, err = m.k8sClient.CoreV1().Nodes().Update(context.TODO(), node, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to prune annotations from node %q: %v", node.Name, err)
 		}
@@ -536,11 +530,7 @@ func (m *nfdMaster) prune() error {
 // "nfd.node.kubernetes.io/master.version" annotation, if it exists.
 // TODO: Drop when nfdv1alpha1.MasterVersionAnnotation is removed.
 func (m *nfdMaster) updateMasterNode() error {
-	cli, err := m.apihelper.GetClient()
-	if err != nil {
-		return err
-	}
-	node, err := m.apihelper.GetNode(cli, m.nodeName)
+	node, err := m.getNode(m.nodeName)
 	if err != nil {
 		return err
 	}
@@ -550,7 +540,8 @@ func (m *nfdMaster) updateMasterNode() error {
 		node.Annotations,
 		nil,
 		"/metadata/annotations")
-	err = m.apihelper.PatchNode(cli, node.Name, p)
+
+	err = m.patchNode(node.Name, p)
 	if err != nil {
 		return fmt.Errorf("failed to patch node annotations: %w", err)
 	}
@@ -701,13 +692,8 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		klog.InfoS("gRPC SetLabels request received", "nodeName", r.NodeName)
 	}
 	if !m.config.NoPublish {
-		cli, err := m.apihelper.GetClient()
-		if err != nil {
-			return &pb.SetLabelsReply{}, err
-		}
-
 		// Create labels et al
-		if err := m.refreshNodeFeatures(cli, r.NodeName, r.GetLabels(), r.GetFeatures()); err != nil {
+		if err := m.refreshNodeFeatures(r.NodeName, r.GetLabels(), r.GetFeatures()); err != nil {
 			nodeUpdateFailures.Inc()
 			return &pb.SetLabelsReply{}, err
 		}
@@ -718,12 +704,7 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 	klog.InfoS("will process all nodes in the cluster")
 
-	cli, err := m.apihelper.GetClient()
-	if err != nil {
-		return err
-	}
-
-	nodes, err := m.apihelper.GetNodes(cli)
+	nodes, err := m.getNodes()
 	if err != nil {
 		return err
 	}
@@ -794,11 +775,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 	// Update node labels et al. This may also mean removing all NFD-owned
 	// labels (et al.), for example  in the case no NodeFeature objects are
 	// present.
-	cli, err := m.apihelper.GetClient()
-	if err != nil {
-		return err
-	}
-	if err := m.refreshNodeFeatures(cli, nodeName, features.Labels, &features.Features); err != nil {
+	if err := m.refreshNodeFeatures(nodeName, features.Labels, &features.Features); err != nil {
 		return err
 	}
 
@@ -843,7 +820,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	return filteredValue, nil
 }
 
-func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
+func (m *nfdMaster) refreshNodeFeatures(nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
 	if m.config.AutoDefaultNs {
 		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 	} else if labels == nil {
@@ -872,7 +849,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 		taints = filterTaints(crTaints)
 	}
 
-	err := m.updateNodeObject(cli, nodeName, labels, annotations, extendedResources, taints)
+	err := m.updateNodeObject(nodeName, labels, annotations, extendedResources, taints)
 	if err != nil {
 		klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
 		return err
@@ -884,9 +861,9 @@ func (m *nfdMaster) refreshNodeFeatures(cli *kubernetes.Clientset, nodeName stri
 // setTaints sets node taints and annotations based on the taints passed via
 // nodeFeatureRule custom resorce. If empty list of taints is passed, currently
 // NFD owned taints and annotations are removed from the node.
-func (m *nfdMaster) setTaints(cli *kubernetes.Clientset, taints []corev1.Taint, nodeName string) error {
+func (m *nfdMaster) setTaints(taints []corev1.Taint, nodeName string) error {
 	// Fetch the node object.
-	node, err := m.apihelper.GetNode(cli, nodeName)
+	node, err := m.getNode(nodeName)
 	if err != nil {
 		return err
 	}
@@ -928,7 +905,7 @@ func (m *nfdMaster) setTaints(cli *kubernetes.Clientset, taints []corev1.Taint, 
 	}
 
 	if taintsUpdated {
-		err = controller.PatchNodeTaints(context.TODO(), cli, nodeName, node, newNode)
+		err = controller.PatchNodeTaints(context.TODO(), m.k8sClient, nodeName, node, newNode)
 		if err != nil {
 			return fmt.Errorf("failed to patch the node %v", node.Name)
 		}
@@ -949,7 +926,7 @@ func (m *nfdMaster) setTaints(cli *kubernetes.Clientset, taints []corev1.Taint, 
 
 	patches := createPatches([]string{nfdv1alpha1.NodeTaintsAnnotation}, node.Annotations, newAnnotations, "/metadata/annotations")
 	if len(patches) > 0 {
-		err = m.apihelper.PatchNode(cli, node.Name, patches)
+		err = m.patchNode(node.Name, patches)
 		if err != nil {
 			return fmt.Errorf("error while patching node object: %w", err)
 		}
@@ -1047,13 +1024,9 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 // updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
-	if cli == nil {
-		return fmt.Errorf("no client is passed, client:  %v", cli)
-	}
-
+func (m *nfdMaster) updateNodeObject(nodeName string, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
 	// Get the worker node object
-	node, err := m.apihelper.GetNode(cli, nodeName)
+	node, err := m.getNode(nodeName)
 	if err != nil {
 		return err
 	}
@@ -1110,13 +1083,13 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
-	err = m.apihelper.PatchNodeStatus(cli, node.Name, statusPatches)
+	err = m.patchNodeStatus(node.Name, statusPatches)
 	if err != nil {
 		return fmt.Errorf("error while patching extended resources: %w", err)
 	}
 
 	// Patch the node object in the apiserver
-	err = m.apihelper.PatchNode(cli, node.Name, patches)
+	err = m.patchNode(node.Name, patches)
 	if err != nil {
 		return fmt.Errorf("error while patching node object: %w", err)
 	}
@@ -1129,20 +1102,12 @@ func (m *nfdMaster) updateNodeObject(cli *kubernetes.Clientset, nodeName string,
 	}
 
 	// Set taints
-	err = m.setTaints(cli, taints, node.Name)
+	err = m.setTaints(taints, node.Name)
 	if err != nil {
 		return err
 	}
 
 	return err
-}
-
-func (m *nfdMaster) getKubeconfig() (*restclient.Config, error) {
-	var err error
-	if m.kubeconfig == nil {
-		m.kubeconfig, err = utils.GetKubeconfig(m.args.Kubeconfig)
-	}
-	return m.kubeconfig, err
 }
 
 // createPatches is a generic helper that returns json patch operations to perform
@@ -1273,11 +1238,15 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	}
 
 	if !c.NoPublish {
-		kubeconfig, err := m.getKubeconfig()
+		kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
 		if err != nil {
 			return err
 		}
-		m.apihelper = apihelper.K8sHelpers{Kubeconfig: kubeconfig}
+		cli, err := k8sclient.NewForConfig(kubeconfig)
+		if err != nil {
+			return err
+		}
+		m.k8sClient = cli
 	}
 
 	// Pre-process DenyLabelNS into 2 lists: one for normal ns, and the other for wildcard ns
@@ -1365,7 +1334,7 @@ func (m *nfdMaster) instanceAnnotation(name string) string {
 }
 
 func (m *nfdMaster) startNfdApiController() error {
-	kubeconfig, err := m.getKubeconfig()
+	kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
 	if err != nil {
 		return err
 	}
@@ -1382,17 +1351,12 @@ func (m *nfdMaster) startNfdApiController() error {
 
 func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
 	ctx := context.Background()
-	client, err := m.apihelper.GetClient()
-	if err != nil {
-		klog.ErrorS(err, "failed to get Kubernetes client")
-		m.Stop()
-	}
 	lock := &resourcelock.LeaseLock{
 		LeaseMeta: metav1.ObjectMeta{
 			Name:      "nfd-master.nfd.kubernetes.io",
 			Namespace: m.namespace,
 		},
-		Client: client.CoordinationV1(),
+		Client: m.k8sClient.CoordinationV1(),
 		LockConfig: resourcelock.ResourceLockConfig{
 			// add uuid to prevent situation where 2 nfd-master nodes run on same node
 			Identity: m.nodeName + "_" + uuid.NewString(),
@@ -1410,7 +1374,7 @@ func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
 			},
 			OnStoppedLeading: func() {
 				// We lost the lock.
-				klog.ErrorS(err, "leaderelection lock was lost")
+				klog.InfoS("leaderelection lock was lost")
 				m.Stop()
 			},
 		},
@@ -1439,4 +1403,27 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 		outAnnotations[annotation] = value
 	}
 	return outAnnotations
+}
+
+func (m *nfdMaster) getNode(nodeName string) (*corev1.Node, error) {
+	return m.k8sClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+}
+
+func (m *nfdMaster) getNodes() (*corev1.NodeList, error) {
+	return m.k8sClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+}
+
+func (m *nfdMaster) patchNode(nodeName string, patches []utils.JsonPatch, subresources ...string) error {
+	if len(patches) == 0 {
+		return nil
+	}
+	data, err := json.Marshal(patches)
+	if err == nil {
+		_, err = m.k8sClient.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.JSONPatchType, data, metav1.PatchOptions{})
+	}
+	return err
+}
+
+func (m *nfdMaster) patchNodeStatus(nodeName string, patches []utils.JsonPatch) error {
+	return m.patchNode(nodeName, patches, "status")
 }
