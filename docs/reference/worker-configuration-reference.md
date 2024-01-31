@@ -331,21 +331,19 @@ sources:
 
 ### sources.local.hooksEnabled
 
-Configuration option to disable/enable hooks execution. Enabled by default.
-Hooks are DEPRECATED since v0.12.0 release and support will be removed in a
-future release. Use
+**DEPRECATED**: Hooks are DEPRECATED since v0.12.0 release and support (and
+this configuration option) will be removed in NFD v0.17. Use
 [feature files](../usage//customization-guide.md#feature-files) instead.
+
+Configuration option to disable/enable hooks execution. Disabled by default.
 
 > **NOTE:** The default NFD container image only supports statically linked
 > binaries. Use the [full](../deployment/image-variants.md#full) image variant
 > for a slightly more extensive environment that additionally supports bash and
 > perl runtimes.
 
-Related tracking issues:
-
-1. Config option to disable hooks [#859](https://github.com/kubernetes-sigs/node-feature-discovery/issues/859).
-1. Disable hook support by default [#855](https://github.com/kubernetes-sigs/node-feature-discovery/issues/855).
-1. Drop support for hooks [#856](https://github.com/kubernetes-sigs/node-feature-discovery/issues/856).
+GitHub tracking issue:
+[Drop support for hooks (#856)](https://github.com/kubernetes-sigs/node-feature-discovery/issues/856).
 
 Default: false
 

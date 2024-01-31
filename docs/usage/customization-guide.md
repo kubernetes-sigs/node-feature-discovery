@@ -193,10 +193,10 @@ extensions, allowing the creation of new user-specific features and even
 overriding built-in labels.
 
 The `local` feature source has two methods for detecting features, feature
-files and hooks (deprecated). The features discovered by the `local` source can
-further be used in label rules specified in
-[`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and the
-[`custom`](#custom-feature-source) feature source.
+files and hooks (hooks are deprecated and slated for removal in NFD v0.17). The
+features discovered by the `local` source can further be used in label rules
+specified in [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and
+the [`custom`](#custom-feature-source) feature source.
 
 > **NOTE:** Be careful when creating and/or updating hook or feature files
 > while NFD is running. To avoid race conditions you should write
@@ -236,7 +236,10 @@ and translated into node labels, see the [input format below](#input-format).
 
 ### Hooks
 
-**DEPRECATED** The `local` source executes hooks found in
+**DEPRECATED** Hooks are deprecated and will be completely removed in NFD
+v0.17.
+
+The `local` source executes hooks found in
 `/etc/kubernetes/node-feature-discovery/source.d/`. The hook files must be
 executable and they are supposed to print all discovered features in `stdout`.
 Since NFD v0.13 the default container image only supports statically linked ELF
@@ -251,9 +254,9 @@ should be placed in a separate directory to avoid NFD unnecessarily
 trying to execute them. A subdirectory under the hooks directory can be used,
 for example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
 
-> **NOTE:** Hooks are being DEPRECATED and will be removed in a future release.
-> Starting from release v0.14 hooks are disabled by default and can be enabled
-> via `sources.local.hooksEnabled` field in the worker configuration.
+> **NOTE:** Starting from release v0.14 hooks are disabled by default and can
+> be enabled via `sources.local.hooksEnabled` field in the worker
+> configuration.
 
 ```yaml
 sources:
