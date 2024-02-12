@@ -17,7 +17,7 @@ curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring 
 curl -Os https://uploader.codecov.io/latest/linux/codecov
 chmod +x codecov
 
-go install sigs.k8s.io/logtools/logcheck@v0.6.0
+go install sigs.k8s.io/logtools/logcheck@v0.8.1
 
 # Run verify steps
 echo "Checking gofmt"
