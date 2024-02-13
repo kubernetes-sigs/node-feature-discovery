@@ -34,6 +34,8 @@ var (
 	VarDir = HostDir(pathPrefix + "var")
 	// LibDir is where the /lib directory of the system to be inspected is located
 	LibDir = HostDir(pathPrefix + "lib")
+	// ProcDir is where the /proc directory of the system to be inspected is located
+	ProcDir = HostDir(pathPrefix + "proc")
 )
 
 // HostDir is a helper for handling host system directories

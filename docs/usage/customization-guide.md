@@ -966,6 +966,8 @@ The following features are available for matching:
 | **`memory.numa`**  | attribute  |          |            | NUMA nodes |
 |                  |              | **`is_numa`** | bool  | `true` if NUMA architecture, `false` otherwise |
 |                  |              | **`node_count`** | int | Number of NUMA nodes |
+| **`memory.swap`**  | attribute  |          |            | Swap enabled on node |
+|                  |              | **`enabled`** | bool  | `true` if swap partition detected, `false` otherwise |
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs` |

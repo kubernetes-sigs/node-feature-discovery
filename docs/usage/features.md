@@ -177,6 +177,7 @@ configuration options for details.
 | **`memory-numa`**    | true  | Multiple memory nodes i.e. NUMA architecture detected     |
 | **`memory-nv.present`** | true | NVDIMM device(s) are present                              |
 | **`memory-nv.dax`** | true  | NVDIMM region(s) configured in DAX mode are present        |
+| **`memory-swap.enabled`** | true  | Swap is enabled on the node                          |
 
 ### Network
 

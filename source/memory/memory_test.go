@@ -31,5 +31,33 @@ func TestMemorySource(t *testing.T) {
 
 	assert.Nil(t, err, err)
 	assert.Empty(t, l)
+}
 
+func TestGetNumberofLinesFromFile(t *testing.T) {
+	type testCase struct {
+		path          string
+		expectedLines int
+		expectErr     bool
+	}
+	tc := []testCase{
+		{
+			path:          "testdata/swap",
+			expectedLines: 2,
+		},
+		{
+			path:          "testdata/noswap",
+			expectedLines: 1,
+		},
+		{
+			path:      "file_not_exist",
+			expectErr: true,
+		},
+	}
+	for _, tc := range tc {
+		actual, err := getNumberOfLinesFromFile(tc.path)
+		if tc.expectErr {
+			assert.NotNil(t, err, "should get an error")
+		}
+		assert.Equal(t, tc.expectedLines, actual, "lines should match")
+	}
 }
