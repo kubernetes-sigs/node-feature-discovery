@@ -27,6 +27,9 @@ spec:
       {{- end }}
     spec:
       dnsPolicy: ClusterFirstWithHostNet
+    {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+    {{- end }}
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

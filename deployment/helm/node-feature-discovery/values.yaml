@@ -12,6 +12,8 @@ namespaceOverride: ""
 
 enableNodeFeatureApi: true
 
+priorityClassName: ""
+
 master:
   enable: true
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
