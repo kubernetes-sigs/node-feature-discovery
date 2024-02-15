@@ -122,7 +122,7 @@ func (s *kernelSource) Discover() error {
 	s.features = nfdv1alpha1.NewFeatures()
 
 	// Read kernel version
-	if version, err := parseVersion(); err != nil {
+	if version, err := discoverVersion(); err != nil {
 		klog.ErrorS(err, "failed to get kernel version")
 	} else {
 		s.features.Attributes[VersionFeature] = nfdv1alpha1.NewAttributeFeatures(version)
