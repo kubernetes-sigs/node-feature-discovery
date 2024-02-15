@@ -23,17 +23,21 @@ import (
 )
 
 // Read and parse kernel version
-func parseVersion() (map[string]string, error) {
-	version := map[string]string{}
-
-	full, err := getVersion()
+func discoverVersion() (map[string]string, error) {
+	raw, err := getVersion()
 	if err != nil {
 		return nil, err
 	}
 
+	return parseVersion(raw), nil
+}
+
+func parseVersion(raw string) map[string]string {
+	version := map[string]string{}
+
 	// Replace forbidden symbols
 	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]")
-	full = fullRegex.ReplaceAllString(full, "_")
+	full := fullRegex.ReplaceAllString(raw, "_")
 	// Label values must start and end with an alphanumeric
 	full = strings.Trim(full, "-_.")
 
@@ -49,7 +53,7 @@ func parseVersion() (map[string]string, error) {
 		}
 	}
 
-	return version, nil
+	return version
 }
 
 func getVersion() (string, error) {
