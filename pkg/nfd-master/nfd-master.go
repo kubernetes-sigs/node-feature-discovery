@@ -75,6 +75,16 @@ type ExtendedResources map[string]string
 // Annotations are used for NFD-related node metadata
 type Annotations map[string]string
 
+// Restrictions contains the restrictions on the NF and NFR Crs
+type Restrictions struct {
+	AllowedNamespaces         *metav1.LabelSelector
+	MaxLabelsPerCR            int
+	MaxTaintsPerCR            int
+	MaxExtendedResourcesPerCR int
+	DenyNodeFeatureLabels     bool
+	OverwriteLabels           bool
+}
+
 // NFDConfig contains the configuration settings of NfdMaster.
 type NFDConfig struct {
 	AutoDefaultNs     bool
@@ -88,6 +98,7 @@ type NFDConfig struct {
 	LeaderElection    LeaderElectionConfig
 	NfdApiParallelism int
 	Klog              klogutils.KlogConfigOpts
+	Restrictions      Restrictions
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -273,6 +284,13 @@ func newDefaultConfig() *NFDConfig {
 			RenewDeadline: utils.DurationVal{Duration: time.Duration(10) * time.Second},
 		},
 		Klog: make(map[string]string),
+		Restrictions: Restrictions{
+			MaxLabelsPerCR:            0,
+			MaxTaintsPerCR:            0,
+			MaxExtendedResourcesPerCR: 0,
+			OverwriteLabels:           true,
+			DenyNodeFeatureLabels:     false,
+		},
 	}
 }
 
@@ -620,7 +638,7 @@ func (m *nfdMaster) updateMasterNode() error {
 	p := createPatches([]string{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation)},
 		node.Annotations,
 		nil,
-		"/metadata/annotations")
+		"/metadata/annotations", true)
 
 	err = patchNode(m.k8sClient, node.Name, p)
 	if err != nil {
@@ -659,6 +677,11 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 			extendedResources[extendedResourceName] = value
 			delete(outLabels, extendedResourceName)
 		}
+	}
+
+	if m.config.Restrictions.MaxLabelsPerCR > 0 && len(outLabels) > m.config.Restrictions.MaxLabelsPerCR {
+		klog.InfoS("number of labels in the request exceeds the restriction maximum labels per CR, skipping")
+		outLabels = Labels{}
 	}
 
 	return outLabels, extendedResources
@@ -715,7 +738,7 @@ func getDynamicValue(value string, features *nfdv1alpha1.Features) (string, erro
 	return element, nil
 }
 
-func filterTaints(taints []corev1.Taint) []corev1.Taint {
+func (m *nfdMaster) filterTaints(taints []corev1.Taint) []corev1.Taint {
 	outTaints := []corev1.Taint{}
 
 	for _, taint := range taints {
@@ -726,6 +749,12 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 			outTaints = append(outTaints, taint)
 		}
 	}
+
+	if m.config.Restrictions.MaxTaintsPerCR > 0 && len(taints) > m.config.Restrictions.MaxTaintsPerCR {
+		klog.InfoS("number of taints in the request exceeds the restriction maximum taints per CR, skipping")
+		outTaints = []corev1.Taint{}
+	}
+
 	return outTaints
 }
 
@@ -1031,13 +1060,24 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 	maps.Copy(extendedResources, crExtendedResources)
 	extendedResources = m.filterExtendedResources(features, extendedResources)
 
+	if m.config.Restrictions.MaxExtendedResourcesPerCR > 0 && len(extendedResources) > m.config.Restrictions.MaxExtendedResourcesPerCR {
+		klog.InfoS("number of extended resources in the request exceeds the restriction maximum extended resources per CR, skipping")
+		extendedResources = map[string]string{}
+	}
+
 	// Annotations
 	annotations := m.filterFeatureAnnotations(crAnnotations)
 
 	// Taints
 	var taints []corev1.Taint
 	if m.config.EnableTaints {
-		taints = filterTaints(crTaints)
+		taints = m.filterTaints(crTaints)
+	}
+
+	// If we deny node feature labels, we'll empty the labels variable
+	if m.config.Restrictions.DenyNodeFeatureLabels {
+		klog.InfoS("node feature labels are denied, skipping...")
+		labels = map[string]string{}
 	}
 
 	if m.config.NoPublish {
@@ -1114,7 +1154,7 @@ func setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node
 		newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
 	}
 
-	patches := createPatches([]string{nfdv1alpha1.NodeTaintsAnnotation}, node.Annotations, newAnnotations, "/metadata/annotations")
+	patches := createPatches([]string{nfdv1alpha1.NodeTaintsAnnotation}, node.Annotations, newAnnotations, "/metadata/annotations", true)
 	if len(patches) > 0 {
 		if err := patchNode(cli, node.Name, patches); err != nil {
 			return fmt.Errorf("error while patching node object: %w", err)
@@ -1254,7 +1294,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
 	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
-	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
+	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels", m.config.Restrictions.OverwriteLabels)
 	oldAnnotations = append(oldAnnotations, []string{
 		m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
 		m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
@@ -1262,7 +1302,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		// Clean up deprecated/stale nfd version annotations
 		m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
 		m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation)}...)
-	patches = append(patches, createPatches(oldAnnotations, node.Annotations, annotations, "/metadata/annotations")...)
+	patches = append(patches, createPatches(oldAnnotations, node.Annotations, annotations, "/metadata/annotations", true)...)
 
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
@@ -1294,7 +1334,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 }
 
 // createPatches is a generic helper that returns json patch operations to perform
-func createPatches(removeKeys []string, oldItems map[string]string, newItems map[string]string, jsonPath string) []utils.JsonPatch {
+func createPatches(removeKeys []string, oldItems map[string]string, newItems map[string]string, jsonPath string, overwrite bool) []utils.JsonPatch {
 	patches := []utils.JsonPatch{}
 
 	// Determine items to remove
@@ -1309,7 +1349,7 @@ func createPatches(removeKeys []string, oldItems map[string]string, newItems map
 	// Determine items to add or replace
 	for key, newVal := range newItems {
 		if oldVal, ok := oldItems[key]; ok {
-			if newVal != oldVal {
+			if newVal != oldVal && overwrite {
 				patches = append(patches, utils.NewJsonPatch("replace", jsonPath, key, newVal))
 			}
 		} else {
@@ -1511,8 +1551,10 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
-		ResyncPeriod:       m.config.ResyncPeriod.Duration,
+		DisableNodeFeature:           !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
+		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
+		K8sClient:                    m.k8sClient,
+		NodeFeatureNamespaceSelector: m.config.Restrictions.AllowedNamespaces,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)

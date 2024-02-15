@@ -509,15 +509,16 @@ func TestFilterLabels(t *testing.T) {
 func TestCreatePatches(t *testing.T) {
 	Convey("When creating JSON patches", t, func() {
 		existingItems := map[string]string{"key-1": "val-1", "key-2": "val-2", "key-3": "val-3"}
+		overwriteKeys := true
 		jsonPath := "/root"
 
-		Convey("When when there are neither itmes to remoe nor to add or update", func() {
-			p := createPatches([]string{"foo", "bar"}, existingItems, map[string]string{}, jsonPath)
+		Convey("When there are neither itmes to remoe nor to add or update", func() {
+			p := createPatches([]string{"foo", "bar"}, existingItems, map[string]string{}, jsonPath, overwriteKeys)
 			So(len(p), ShouldEqual, 0)
 		})
 
-		Convey("When when there are itmes to remoe but none to add or update", func() {
-			p := createPatches([]string{"key-2", "key-3", "foo"}, existingItems, map[string]string{}, jsonPath)
+		Convey("When there are itmes to remoe but none to add or update", func() {
+			p := createPatches([]string{"key-2", "key-3", "foo"}, existingItems, map[string]string{}, jsonPath, overwriteKeys)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("remove", jsonPath, "key-2", ""),
 				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
@@ -525,9 +526,9 @@ func TestCreatePatches(t *testing.T) {
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
 
-		Convey("When when there are no itmes to remove but new items to add", func() {
+		Convey("When there are no itmes to remove but new items to add", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-1": "new-1"}
-			p := createPatches([]string{"key-1"}, existingItems, newItems, jsonPath)
+			p := createPatches([]string{"key-1"}, existingItems, newItems, jsonPath, overwriteKeys)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
 				utils.NewJsonPatch("replace", jsonPath, "key-1", newItems["key-1"]),
@@ -535,15 +536,25 @@ func TestCreatePatches(t *testing.T) {
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
 
-		Convey("When when there are items to remove add and update", func() {
+		Convey("When there are items to remove add and update", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-2": "new-2", "key-4": "val-4"}
-			p := createPatches([]string{"key-1", "key-2", "key-3", "foo"}, existingItems, newItems, jsonPath)
+			p := createPatches([]string{"key-1", "key-2", "key-3", "foo"}, existingItems, newItems, jsonPath, overwriteKeys)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
 				utils.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),
 				utils.NewJsonPatch("replace", jsonPath, "key-2", newItems["key-2"]),
 				utils.NewJsonPatch("remove", jsonPath, "key-1", ""),
 				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
+			}
+			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
+		})
+
+		Convey("When overwrite of keys is denied and there is already an existant key", func() {
+			overwriteKeys = false
+			newItems := map[string]string{"key-1": "new-2", "key-4": "val-4"}
+			p := createPatches([]string{}, existingItems, newItems, jsonPath, overwriteKeys)
+			expected := []utils.JsonPatch{
+				utils.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),
 			}
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
@@ -893,6 +904,63 @@ func TestGetDynamicValue(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("getDynamicValue() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestFilterTaints(t *testing.T) {
+	testcases := []struct {
+		name           string
+		taints         []corev1.Taint
+		maxTaints      int
+		expectedResult []corev1.Taint
+	}{
+		{
+			name: "no restriction on the number of taints",
+			taints: []corev1.Taint{
+				{
+					Key:    "feature.node.kubernetes.io/key1",
+					Value:  "dummy",
+					Effect: corev1.TaintEffectNoSchedule,
+				},
+			},
+			maxTaints: 0,
+			expectedResult: []corev1.Taint{
+				{
+					Key:    "feature.node.kubernetes.io/key1",
+					Value:  "dummy",
+					Effect: corev1.TaintEffectNoSchedule,
+				},
+			},
+		},
+		{
+			name: "max of 1 Taint should be generated",
+			taints: []corev1.Taint{
+				{
+					Key:    "feature.node.kubernetes.io/key1",
+					Value:  "dummy",
+					Effect: corev1.TaintEffectNoSchedule,
+				},
+				{
+					Key:    "feature.node.kubernetes.io/key2",
+					Value:  "dummy",
+					Effect: corev1.TaintEffectNoSchedule,
+				},
+			},
+			maxTaints:      1,
+			expectedResult: []corev1.Taint{},
+		},
+	}
+
+	mockMaster := newFakeMaster(nil)
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockMaster.config.Restrictions.MaxTaintsPerCR = tc.maxTaints
+			res := mockMaster.filterTaints(tc.taints)
+			Convey("The expected number of taints should be correct", t, func() {
+				So(len(res), ShouldEqual, len(tc.expectedResult))
+			})
 		})
 	}
 }

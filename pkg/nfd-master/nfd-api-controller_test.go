@@ -23,6 +23,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestGetNodeNameForObj(t *testing.T) {
@@ -41,4 +43,58 @@ func TestGetNodeNameForObj(t *testing.T) {
 	n, err := getNodeNameForObj(obj)
 	assert.Nil(t, err)
 	assert.Equal(t, n, "node-1")
+}
+
+func newTestNamespace(name string) *corev1.Namespace{
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				"name": name,
+			},
+		},
+	}
+}
+
+func TestIsNamespaceAllowed(t *testing.T) {
+	fakeCli := fakeclient.NewSimpleClientset(newTestNamespace("fake"))
+	c := &nfdController{
+		k8sClient: fakeCli,
+	}
+
+	testcases := []struct {
+		name                         string
+		objectNamespace              string
+		nodeFeatureNamespaceSelector *metav1.LabelSelector
+		expectedResult               bool
+	}{
+		{
+			name:                         "namespace not allowed",
+			objectNamespace:              "random",
+			nodeFeatureNamespaceSelector: &metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "name",
+						Operator: metav1.LabelSelectorOpIn,
+						Values:   []string{"fake"},
+					},
+				},
+			},
+			expectedResult:               false,
+		},
+		{
+			name:                         "namespace is allowed",
+			objectNamespace:              "fake",
+			nodeFeatureNamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"name": "fake"},
+			},
+			expectedResult:               false,
+		},
+	}
+
+	for _, tc := range testcases {
+		c.nodeFeatureNamespaceSelector = tc.nodeFeatureNamespaceSelector
+		res := c.isNamespaceSelected(tc.name)
+		assert.Equal(t, res, tc.expectedResult)
+	}
 }
