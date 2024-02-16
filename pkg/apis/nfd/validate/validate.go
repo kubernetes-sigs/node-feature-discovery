@@ -155,8 +155,8 @@ func Annotation(key, value string) error {
 	}
 
 	// Validate annotation value
-	if errs := k8svalidation.IsValidLabelValue(value); len(errs) > 0 {
-		return fmt.Errorf("invalid value %q: %s", value, strings.Join(errs, "; "))
+	if len(value) > nfdv1alpha1.FeatureAnnotationValueSizeLimit {
+		return fmt.Errorf("invalid value: too long: feature annotations must not be longer than %d characters", nfdv1alpha1.FeatureAnnotationValueSizeLimit)
 	}
 
 	return nil
