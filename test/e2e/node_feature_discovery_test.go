@@ -1007,10 +1007,6 @@ denyLabelNs: []
 				BeforeEach(func(ctx context.Context) {
 					extraMasterPodSpecOpts = []testpod.SpecOption{
 						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
-						testpod.SpecWithContainerExtraArgs(
-							"-deny-label-ns=*.denied.ns,random.unwanted.ns,*.vendor.io",
-							"-extra-label-ns=custom.vendor.io",
-						),
 					}
 					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
 resyncPeriod: "1s"
@@ -1069,14 +1065,14 @@ resyncPeriod: "1s"
 				})
 			})
 
-			Context("allowed namespaces restriction is respected or not", func() {
+			Context("selected namespaces restriction is respected or not", func() {
 				BeforeEach(func(ctx context.Context) {
 					extraMasterPodSpecOpts = []testpod.SpecOption{
 						testpod.SpecWithConfigMap("nfd-master-conf", "/etc/kubernetes/node-feature-discovery"),
 					}
 					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
 restrictions:
-  allowedNamespaces:
+  nodeFeatureNamespaceSelector:
     matchLabels:
       kubernetes.io/metadata.name: "fake"
 `)
@@ -1101,8 +1097,11 @@ restrictions:
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying node labels from NodeFeature object #1 are not created")
-					// No labels should be created since the f.Namespace is not in the allowed Namespaces
-					expectedLabels := map[string]k8sLabels{}
+					// No labels should be created since the f.Namespace is not in the selected Namespaces
+					expectedLabels := map[string]k8sLabels{
+						targetNodeName: {},
+						"*":            {},
+					}
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
 
 					By("Deleting NodeFeature object")
@@ -1119,13 +1118,12 @@ restrictions:
 					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
 enableTaints: true
 restrictions:
-  maxLabelsPerCR: 1
-  maxTaintsPerCR: 1
+  disableLabels: true
 `)
 					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
-				It("No labels or taints should be created", func(ctx context.Context) {
+				It("No labels should be created", func(ctx context.Context) {
 					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -1158,19 +1156,16 @@ core:
 					Expect(testutils.CreateNodeFeatureRulesFromFile(ctx, nfdClient, "nodefeaturerule-3.yaml")).NotTo(HaveOccurred())
 
 					By("Verifying node taints and annotation from NodeFeatureRules #3")
-					expectedLabels := map[string]k8sLabels{}
-
-					expectedTaints := map[string][]corev1.Taint{}
+					expectedLabels := map[string]k8sLabels{
+						targetNodeName: {},
+						"*":            {},
+					}
 
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes))
 
 					By("Deleting NodeFeatureRule #3")
 					err = nfdClient.NfdV1alpha1().NodeFeatureRules().Delete(ctx, "e2e-test-3", metav1.DeleteOptions{})
 					Expect(err).NotTo(HaveOccurred())
-					By("Verifying taints from NodeFeatureRules #3 were removed")
-					expectedTaints["*"] = []corev1.Taint{}
-					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchTaints(expectedTaints, nodes))
 				})
 			})
 
@@ -1181,7 +1176,7 @@ core:
 					}
 					cm := testutils.NewConfigMap("nfd-master-conf", "nfd-master.conf", `
 restrictions:
-  maxExtendedResourcesPerCR: 1
+  disableExtendedResources: true
 `)
 					_, err := f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -1215,10 +1210,12 @@ core:
 					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
 
 					expectedAnnotations := map[string]k8sAnnotations{
-						"*": {},
+						targetNodeName: {},
+						"*":            {},
 					}
 					expectedCapacity := map[string]corev1.ResourceList{
-						"*": {},
+						targetNodeName: {},
+						"*":            {},
 					}
 
 					By("Creating NodeFeatureRules #4")
@@ -1280,7 +1277,8 @@ restrictions:
 					By("Verifying node labels from NodeFeature object #1 are not created")
 
 					expectedLabels := map[string]k8sLabels{
-						"*": {},
+						targetNodeName: {},
+						"*":            {},
 					}
 					eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
 

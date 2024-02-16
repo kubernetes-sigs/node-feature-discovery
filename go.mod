@@ -2,8 +2,6 @@ module sigs.k8s.io/node-feature-discovery
 
 go 1.22.2
 
-toolchain go1.22.0
-
 require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/protobuf v1.5.4
