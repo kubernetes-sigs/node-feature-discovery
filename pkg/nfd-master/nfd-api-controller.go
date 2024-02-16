@@ -80,7 +80,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				if c.isNamespaceSelected(nfr.Namespace) {
 					c.updateOneNode("NodeFeature", nfr)
 				} else {
-					klog.InfoS("NodeFeature not in selected namespace", "namespace", nfr.Namespace, "name", nfr.Name)
+					klog.InfoS("NodeFeature namespace is not selected, skipping", "namespace", nfr.Namespace, "name", nfr.Name)
 				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
@@ -89,7 +89,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				if c.isNamespaceSelected(nfr.Namespace) {
 					c.updateOneNode("NodeFeature", nfr)
 				} else {
-					klog.InfoS("NodeFeature not in selected namespace", "namespace", nfr.Namespace, "name", nfr.Name)
+					klog.InfoS("NodeFeature namespace is not selected, skipping", "namespace", nfr.Namespace, "name", nfr.Name)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
@@ -98,7 +98,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				if c.isNamespaceSelected(nfr.Namespace) {
 					c.updateOneNode("NodeFeature", nfr)
 				} else {
-					klog.InfoS("NodeFeature not in selected namespace", "namespace", nfr.Namespace, "name", nfr.Name)
+					klog.InfoS("NodeFeature namespace is not selected, skipping", "namespace", nfr.Namespace, "name", nfr.Name)
 				}
 			},
 		}); err != nil {

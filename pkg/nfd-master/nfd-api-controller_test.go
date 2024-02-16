@@ -21,10 +21,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func TestGetNodeNameForObj(t *testing.T) {
@@ -45,7 +45,7 @@ func TestGetNodeNameForObj(t *testing.T) {
 	assert.Equal(t, n, "node-1")
 }
 
-func newTestNamespace(name string) *corev1.Namespace{
+func newTestNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -56,7 +56,7 @@ func newTestNamespace(name string) *corev1.Namespace{
 	}
 }
 
-func TestIsNamespaceAllowed(t *testing.T) {
+func TestIsNamespaceSelected(t *testing.T) {
 	fakeCli := fakeclient.NewSimpleClientset(newTestNamespace("fake"))
 	c := &nfdController{
 		k8sClient: fakeCli,
@@ -69,8 +69,8 @@ func TestIsNamespaceAllowed(t *testing.T) {
 		expectedResult               bool
 	}{
 		{
-			name:                         "namespace not allowed",
-			objectNamespace:              "random",
+			name:            "namespace not selected",
+			objectNamespace: "random",
 			nodeFeatureNamespaceSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
@@ -80,15 +80,15 @@ func TestIsNamespaceAllowed(t *testing.T) {
 					},
 				},
 			},
-			expectedResult:               false,
+			expectedResult: false,
 		},
 		{
-			name:                         "namespace is allowed",
-			objectNamespace:              "fake",
+			name:            "namespace is selected",
+			objectNamespace: "fake",
 			nodeFeatureNamespaceSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"name": "fake"},
 			},
-			expectedResult:               false,
+			expectedResult: false,
 		},
 	}
 

@@ -73,12 +73,12 @@ type Annotations map[string]string
 
 // Restrictions contains the restrictions on the NF and NFR Crs
 type Restrictions struct {
-	AllowedNamespaces         *metav1.LabelSelector
-	MaxLabelsPerCR            int
-	MaxTaintsPerCR            int
-	MaxExtendedResourcesPerCR int
-	DenyNodeFeatureLabels     bool
-	OverwriteLabels           bool
+	NodeFeatureNamespaceSelector *metav1.LabelSelector
+	MaxLabelsPerCR               int
+	MaxTaintsPerCR               int
+	MaxExtendedResourcesPerCR    int
+	DenyNodeFeatureLabels        bool
+	OverwriteLabels              bool
 }
 
 // NFDConfig contains the configuration settings of NfdMaster.
@@ -1383,7 +1383,7 @@ func (m *nfdMaster) startNfdApiController() error {
 		DisableNodeFeature:           !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI),
 		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
 		K8sClient:                    m.k8sClient,
-		NodeFeatureNamespaceSelector: m.config.Restrictions.AllowedNamespaces,
+		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
