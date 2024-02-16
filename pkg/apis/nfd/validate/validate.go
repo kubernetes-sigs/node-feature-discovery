@@ -18,6 +18,7 @@ package validate
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -57,7 +58,7 @@ func MatchFeatures(matchFeature nfdv1alpha1.FeatureMatcher) []error {
 	var validationErr []error
 
 	for _, match := range matchFeature {
-		nameSplit := strings.SplitN(match.Feature, ".", 2)
+		nameSplit := strings.Split(match.Feature, ".")
 		if len(nameSplit) != 2 {
 			validationErr = append(validationErr, fmt.Errorf("invalid feature name %v (not <domain>.<feature>), cannot be used for templating", match.Feature))
 		}
@@ -79,6 +80,13 @@ func Template(labelsTemplate string) []error {
 	return validationErr
 }
 
+func sortErrors(errs []error) []error {
+	sort.Slice(errs, func(i, j int) bool {
+		return errs[i].Error() < errs[j].Error()
+	})
+	return errs
+}
+
 // Labels validates a map of labels and returns a slice of errors if any of the
 // labels are invalid.
 func Labels(labels map[string]string) []error {
@@ -88,7 +96,7 @@ func Labels(labels map[string]string) []error {
 			errs = append(errs, fmt.Errorf("invalid label %q:%q %w", key, value, err))
 		}
 	}
-	return errs
+	return sortErrors(errs)
 }
 
 // Label validates a label key and value and returns an error if the key or
@@ -130,7 +138,7 @@ func Annotations(annotations map[string]string) []error {
 			errs = append(errs, fmt.Errorf("invalid annotation %q:%q %w", key, value, err))
 		}
 	}
-	return errs
+	return sortErrors(errs)
 }
 
 // Annotation validates an annotation key and value and returns an error if the
@@ -213,7 +221,7 @@ func ExtendedResources(extendedResources map[string]string) []error {
 			errs = append(errs, fmt.Errorf("invalid extended resource %q:%q %w", key, value, err))
 		}
 	}
-	return errs
+	return sortErrors(errs)
 }
 
 // ExtendedResource validates an extended resource key and value and returns an
