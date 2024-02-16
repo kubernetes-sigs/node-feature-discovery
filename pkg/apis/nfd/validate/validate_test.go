@@ -29,8 +29,8 @@ func TestAnnotation(t *testing.T) {
 		{
 			name:  "Invalid annotation value",
 			key:   "feature.node.kubernetes.io/feature",
-			value: "invalid value",
-			want:  "invalid value \"invalid value\": ",
+			value: string(make([]byte, 1100)),
+			want:  "invalid value: too long:",
 		},
 		{
 			name:  "Denied annotation key",
