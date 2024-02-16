@@ -57,7 +57,7 @@ func MatchFeatures(matchFeature nfdv1alpha1.FeatureMatcher) []error {
 	var validationErr []error
 
 	for _, match := range matchFeature {
-		nameSplit := strings.SplitN(match.Feature, ".", 2)
+		nameSplit := strings.Split(match.Feature, ".")
 		if len(nameSplit) != 2 {
 			validationErr = append(validationErr, fmt.Errorf("invalid feature name %v (not <domain>.<feature>), cannot be used for templating", match.Feature))
 		}
