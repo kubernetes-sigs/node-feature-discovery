@@ -19,18 +19,22 @@ package new_controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 )
 
 // NodeFeatureDiscoveryReconciler reconciles a NodeFeatureDiscovery object
@@ -38,8 +42,8 @@ type nodeFeatureDiscoveryReconciler struct {
 	helper nodeFeatureDiscoveryHelperAPI
 }
 
-func NewNodeFeatureDiscoveryReconciler(client client.Client, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
-	helper := newNodeFeatureDiscoveryHelperAPI(client, scheme)
+func NewNodeFeatureDiscoveryReconciler(client client.Client, deploymentAPI deployment.DeploymentAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
+	helper := newNodeFeatureDiscoveryHelperAPI(client, deploymentAPI, scheme)
 	return nodeFeatureDiscoveryReconciler{
 		helper: helper,
 	}
@@ -132,14 +136,16 @@ type nodeFeatureDiscoveryHelperAPI interface {
 }
 
 type nodeFeatureDiscoveryHelper struct {
-	client client.Client
-	scheme *runtime.Scheme
+	client        client.Client
+	deploymentAPI deployment.DeploymentAPI
+	scheme        *runtime.Scheme
 }
 
-func newNodeFeatureDiscoveryHelperAPI(client client.Client, scheme *runtime.Scheme) nodeFeatureDiscoveryHelperAPI {
+func newNodeFeatureDiscoveryHelperAPI(client client.Client, deploymentAPI deployment.DeploymentAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryHelperAPI {
 	return &nodeFeatureDiscoveryHelper{
-		client: client,
-		scheme: scheme,
+		client:        client,
+		deploymentAPI: deploymentAPI,
+		scheme:        scheme,
 	}
 }
 
@@ -156,6 +162,17 @@ func (nfdh *nodeFeatureDiscoveryHelper) setFinalizer(ctx context.Context, instan
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleMaster(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
+	masterDep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "nfd-master", Namespace: nfdInstance.Namespace},
+	}
+	opRes, err := controllerutil.CreateOrPatch(ctx, nfdh.client, &masterDep, func() error {
+		return nfdh.deploymentAPI.SetMasterDeploymentAsDesired(ctx, nfdInstance, &masterDep)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to reconcile master deployment %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
+	}
+	ctrl.LoggerFrom(ctx).Info("reconciled master deployment", "namespace", nfdInstance.Namespace, "name", nfdInstance.Name, "result", opRes)
 	return nil
 }
 
