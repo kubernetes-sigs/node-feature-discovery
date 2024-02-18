@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nfd-master
+  name: nfd-master
+  namespace: test-namespace
+  ownerReferences:
+  - apiVersion: nfd.kubernetes.io/v1
+    kind: NodeFeatureDiscovery
+    controller: true
+    blockOwnerDeletion: true
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfd-master
+  template:
+    metadata:
+      labels:
+        app: nfd-master
+    spec:
+      serviceAccountName: nfd-master
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Always
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Equal
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Equal
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: In
+                values:
+                - ""
+            weight: 1
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: In
+                values:
+                - ""
+            weight: 1  
+      containers:
+        - name: nfd-master
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName      
+          image: test-image
+          imagePullPolicy: Always
+          command:
+            - "nfd-master"
+          args:
+            - "--port=12000"
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          livenessProbe:
+            exec:
+              command:
+              - /usr/bin/grpc_health_probe
+              - -addr=:12000
+            initialDelaySeconds: 10
+          readinessProbe:
+            exec:
+              command:
+              - /usr/bin/grpc_health_probe
+              - -addr=:12000
+            failureThreshold: 10
+            initialDelaySeconds: 5
