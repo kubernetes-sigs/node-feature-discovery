@@ -43,6 +43,7 @@ const Name = "system"
 const (
 	OsReleaseFeature = "osrelease"
 	NameFeature      = "name"
+	DmiIdFeature     = "dmiid"
 )
 
 // systemSource implements the FeatureSource and LabelSource interfaces.
@@ -101,6 +102,22 @@ func (s *systemSource) Discover() error {
 		}
 	}
 
+	// Get DMI ID attributes
+	dmiIDAttributeNames := []string{"sys_vendor"}
+	dmiAttrs := make(map[string]string)
+	for _, name := range dmiIDAttributeNames {
+		val, err := getDmiIDAttribute(name)
+		if err != nil {
+			klog.ErrorS(err, "failed to get DMI entry", "attributeName", name)
+		} else {
+			dmiAttrs[name] = val
+		}
+	}
+
+	if len(dmiAttrs) > 0 {
+		s.features.Attributes[DmiIdFeature] = nfdv1alpha1.NewAttributeFeatures(dmiAttrs)
+	}
+
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
@@ -151,6 +168,16 @@ func splitVersion(version string) map[string]string {
 		}
 	}
 	return components
+}
+
+// Read /sys/devices/virtual/dmi/id attribute
+func getDmiIDAttribute(name string) (string, error) {
+	s, err := os.ReadFile(hostpath.SysfsDir.Path("devices/virtual/dmi/id/", name))
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(s)), nil
 }
 
 func init() {

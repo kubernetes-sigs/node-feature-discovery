@@ -65,6 +65,9 @@ spec:
           VERSION_ID: "22.04"
           VERSION_ID.major: "22"
           VERSION_ID.minor: "04"
+      system.dmiid:
+        elements:
+          sys_vendor: VendorUnknown
     flags:
       cpu.cpuid:
         elements:
