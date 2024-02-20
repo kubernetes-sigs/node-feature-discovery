@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"golang.org/x/time/rate"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 )
@@ -41,15 +42,20 @@ func newNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
 }
 
 func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingInterface) bool {
-	nodeName, quit := queue.Get()
+	n, quit := queue.Get()
 	if quit {
 		return false
 	}
+	nodeName := n.(string)
 
 	defer queue.Done(nodeName)
 
 	nodeUpdateRequests.Inc()
-	if err := u.nfdMaster.nfdAPIUpdateOneNode(nodeName.(string)); err != nil {
+
+	// Check if node exists
+	if _, err := u.nfdMaster.getNode(nodeName); apierrors.IsNotFound(err) {
+		klog.InfoS("node not found, skip update", "nodeName", nodeName)
+	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(nodeName); err != nil {
 		if queue.NumRequeues(nodeName) < 15 {
 			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err)
 			queue.AddRateLimited(nodeName)
