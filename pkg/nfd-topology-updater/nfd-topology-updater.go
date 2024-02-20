@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
@@ -80,6 +81,9 @@ type nfdTopologyUpdater struct {
 	eventSource         <-chan kubeletnotifier.Info
 	configFilePath      string
 	config              *NFDConfig
+	kubernetesNamespace string
+	ownerRefs           []metav1.OwnerReference
+	k8sClient           k8sclient.Interface
 	kubeletConfigFunc   func() (*kubeletconfigv1beta1.KubeletConfiguration, error)
 }
 
@@ -105,6 +109,8 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (Nf
 		nodeName:            utils.NodeName(),
 		eventSource:         eventSource,
 		config:              &NFDConfig{},
+		kubernetesNamespace: utils.GetKubernetesNamespace(),
+		ownerRefs:           []metav1.OwnerReference{},
 		kubeletConfigFunc:   kubeletConfigFunc,
 	}
 	if args.ConfigFile != "" {
@@ -146,6 +152,7 @@ func (w *nfdTopologyUpdater) Run() error {
 	if err != nil {
 		return err
 	}
+	w.k8sClient = k8sClient
 
 	if err := w.configure(); err != nil {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
@@ -222,11 +229,29 @@ func (w *nfdTopologyUpdater) Stop() {
 }
 
 func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList, scanResponse resourcemonitor.ScanResponse, readKubeletConfig bool) error {
+
+	if len(w.ownerRefs) == 0 {
+		ns, err := w.k8sClient.CoreV1().Namespaces().Get(context.TODO(), w.kubernetesNamespace, metav1.GetOptions{})
+		if err != nil {
+			klog.ErrorS(err, "Cannot get NodeResourceTopology owner reference")
+		} else {
+			w.ownerRefs = []metav1.OwnerReference{
+				{
+					APIVersion: ns.APIVersion,
+					Kind:       ns.Kind,
+					Name:       ns.Name,
+					UID:        types.UID(ns.UID),
+				},
+			}
+		}
+	}
+
 	nrt, err := w.topoClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), w.nodeName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		nrtNew := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: w.nodeName,
+				Name:            w.nodeName,
+				OwnerReferences: w.ownerRefs,
 			},
 			Zones:      zoneInfo,
 			Attributes: v1alpha2.AttributeList{},
@@ -248,6 +273,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 
 	nrtMutated := nrt.DeepCopy()
 	nrtMutated.Zones = zoneInfo
+	nrtMutated.OwnerReferences = w.ownerRefs
 
 	attributes := scanResponse.Attributes
 

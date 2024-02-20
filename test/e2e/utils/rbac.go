@@ -22,6 +22,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
@@ -105,10 +106,6 @@ func DeconfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) err
 	if err != nil {
 		return err
 	}
-	err = cs.RbacV1().RoleBindings(ns).Delete(ctx, "nfd-worker-e2e", metav1.DeleteOptions{})
-	if err != nil {
-		return err
-	}
 	err = cs.RbacV1().ClusterRoleBindings().Delete(ctx, "nfd-gc-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -121,11 +118,24 @@ func DeconfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) err
 	if err != nil {
 		return err
 	}
-	err = cs.RbacV1().Roles(ns).Delete(ctx, "nfd-worker-e2e", metav1.DeleteOptions{})
+	err = cs.RbacV1().ClusterRoles().Delete(ctx, "nfd-gc-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
-	err = cs.RbacV1().ClusterRoles().Delete(ctx, "nfd-gc-e2e", metav1.DeleteOptions{})
+
+	// Skip the deletion of namespaced objects in case the namespace is gone
+	_, err = cs.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	err = cs.RbacV1().RoleBindings(ns).Delete(ctx, "nfd-worker-e2e", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	err = cs.RbacV1().Roles(ns).Delete(ctx, "nfd-worker-e2e", metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -250,6 +260,11 @@ func createClusterRoleTopologyUpdater(ctx context.Context, cs clientset.Interfac
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"get"},
 			},
 			{
 				APIGroups: []string{"topology.node.k8s.io"},
