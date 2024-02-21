@@ -530,6 +530,9 @@ gc:
 tls:
   enable: false
   certManager: false
+  certManagerCertificate:
+    issuerKind:
+    issuerName:
 
 prometheus:
   enable: false
