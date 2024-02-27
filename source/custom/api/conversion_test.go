@@ -21,8 +21,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 func TestRuleConversion(t *testing.T) {

@@ -7,6 +7,7 @@ FROM ${BUILDER_IMAGE} as builder
 
 # Get (cache) deps in a separate layer
 COPY go.mod go.sum /go/node-feature-discovery/
+COPY api/nfd/go.mod api/nfd/go.sum /go/node-feature-discovery/api/nfd/
 
 WORKDIR /go/node-feature-discovery
 
