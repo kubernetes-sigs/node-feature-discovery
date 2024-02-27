@@ -23,7 +23,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	fakek8sclient "k8s.io/client-go/kubernetes/fake"
-	fakenfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
+	fakenfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
 )
 
 func newFakeNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
