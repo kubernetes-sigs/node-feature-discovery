@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd-topology-updater
+  namespace: test-namespace
+  ownerReferences:
+  - apiVersion: nfd.kubernetes.io/v1
+    kind: NodeFeatureDiscovery
+    controller: true
+    blockOwnerDeletion: true
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfd-topology-updater
+  template:
+    metadata:
+      labels:
+        app: nfd-topology-updater
+    spec:
+      serviceAccountName: nfd-topology-updater
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: nfd-topology-updater
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName      
+          image: test-image
+          imagePullPolicy: Always
+          command:
+          - nfd-topology-updater
+          args:
+            - -podresources-socket=/host-var/lib/kubelet/pod-resources/kubelet.sock
+            - -sleep-interval=3s
+          securityContext:
+            seLinuxOptions:
+              type: "container_runtime_t"
+            allowPrivilegeEscalation: true
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          volumeMounts:
+          - mountPath: /host-var/lib/kubelet/pod-resources/kubelet.sock
+            name: kubelet-podresources-sock
+          - mountPath: /host-sys
+            name: host-sys
+          - mountPath: /host-var/lib/kubelet
+            name: kubelet-state-files
+            readOnly: true
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/pod-resources/kubelet.sock
+          type: Socket
+        name: kubelet-podresources-sock
+      - hostPath:
+          path: /sys
+          type: Directory
+        name: host-sys
+      - hostPath:
+          path: /var/lib/kubelet
+          type: Directory
+        name: kubelet-state-files
