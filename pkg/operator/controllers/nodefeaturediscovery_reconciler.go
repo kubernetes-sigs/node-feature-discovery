@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 )
 
@@ -42,8 +43,9 @@ type nodeFeatureDiscoveryReconciler struct {
 	helper nodeFeatureDiscoveryHelperAPI
 }
 
-func NewNodeFeatureDiscoveryReconciler(client client.Client, deploymentAPI deployment.DeploymentAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
-	helper := newNodeFeatureDiscoveryHelperAPI(client, deploymentAPI, scheme)
+func NewNodeFeatureDiscoveryReconciler(client client.Client, deploymentAPI deployment.DeploymentAPI,
+	daemonsetAPI daemonset.DaemonsetAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
+	helper := newNodeFeatureDiscoveryHelperAPI(client, deploymentAPI, daemonsetAPI, scheme)
 	return nodeFeatureDiscoveryReconciler{
 		helper: helper,
 	}
@@ -138,13 +140,16 @@ type nodeFeatureDiscoveryHelperAPI interface {
 type nodeFeatureDiscoveryHelper struct {
 	client        client.Client
 	deploymentAPI deployment.DeploymentAPI
+	daemonsetAPI  daemonset.DaemonsetAPI
 	scheme        *runtime.Scheme
 }
 
-func newNodeFeatureDiscoveryHelperAPI(client client.Client, deploymentAPI deployment.DeploymentAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryHelperAPI {
+func newNodeFeatureDiscoveryHelperAPI(client client.Client, deploymentAPI deployment.DeploymentAPI,
+	daemonsetAPI daemonset.DaemonsetAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryHelperAPI {
 	return &nodeFeatureDiscoveryHelper{
 		client:        client,
 		deploymentAPI: deploymentAPI,
+		daemonsetAPI:  daemonsetAPI,
 		scheme:        scheme,
 	}
 }
@@ -181,6 +186,20 @@ func (nfdh *nodeFeatureDiscoveryHelper) handleWorker(ctx context.Context, nfdIns
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleTopology(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
+	if !nfdInstance.Spec.TopologyUpdater {
+		return nil
+	}
+	topologyDS := appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{Name: "nfd-topology-updater", Namespace: nfdInstance.Namespace},
+	}
+	opRes, err := controllerutil.CreateOrPatch(ctx, nfdh.client, &topologyDS, func() error {
+		return nfdh.daemonsetAPI.SetTopologyDaemonsetAsDesired(ctx, nfdInstance, &topologyDS)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to reconcile topology daemonset %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
+	}
+	ctrl.LoggerFrom(ctx).Info("reconciled topoplogy daemonset", "namespace", nfdInstance.Namespace, "name", nfdInstance.Name, "result", opRes)
 	return nil
 }
 
