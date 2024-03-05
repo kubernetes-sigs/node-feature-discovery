@@ -164,7 +164,7 @@ func (s *localSource) Discover() error {
 			if old, ok := labelsFromFiles[k]; ok {
 				klog.InfoS("overriding label value", "labelKey", k, "oldValue", old, "newValue", v)
 			}
-			labelsFromHooks[k] = v
+			labelsFromFiles[k] = v
 		}
 	}
 
