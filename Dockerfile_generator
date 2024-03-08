@@ -21,3 +21,7 @@ RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.3
 
 # Expect to be working with nfd
 WORKDIR /go/node-feature-discovery
+
+# We need to set the /go/node-feature-discovery directory as a safe directory.
+# This allows git commands to run in the container on MacOS systems.
+RUN git config --file=/.gitconfig --add safe.directory /go/node-feature-discovery
