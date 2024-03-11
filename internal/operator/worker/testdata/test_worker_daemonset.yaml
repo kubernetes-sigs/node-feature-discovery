@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nfd
+  name: nfd-worker
+  namespace: test-namespace
+  ownerReferences:
+  - apiVersion: nfd.kubernetes.io/v1
+    kind: NodeFeatureDiscovery
+    controller: true
+    blockOwnerDeletion: true
+spec:
+  selector:
+    matchLabels:
+      app: nfd-worker
+  template:
+    metadata:
+      labels:
+        app: nfd-worker
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+            - matchExpressions:
+              - key: node-role.kubernetes.io/node
+                operator: Exists
+      containers:
+      - args:
+        - --server=nfd-master:$(NFD_MASTER_SERVICE_PORT)
+        command:
+        - nfd-worker
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: test-image
+        imagePullPolicy: Always
+        name: nfd-worker
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /host-boot
+          name: host-boot
+          readOnly: true
+        - mountPath: /host-etc/os-release
+          name: host-os-release
+          readOnly: true
+        - mountPath: /host-sys
+          name: host-sys
+        - mountPath: /etc/kubernetes/node-feature-discovery
+          name: nfd-worker-config
+        - mountPath: /etc/kubernetes/node-feature-discovery/source.d
+          name: nfd-hooks
+        - mountPath: /etc/kubernetes/node-feature-discovery/features.d
+          name: nfd-features
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: nfd-worker
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /dev
+        name: host-dev
+      - hostPath:
+          path: /boot
+        name: host-boot
+      - hostPath:
+          path: /etc/os-release
+        name: host-os-release
+      - hostPath:
+          path: /sys
+        name: host-sys
+      - hostPath:
+          path: /etc/kubernetes/node-feature-discovery/source.d
+        name: nfd-hooks
+      - hostPath:
+          path: /etc/kubernetes/node-feature-discovery/features.d
+        name: nfd-features
+      - configMap:
+          items:
+          - key: nfd-worker-conf
+            path: nfd-worker.conf
+          name: nfd-worker
+        name: nfd-worker-config
