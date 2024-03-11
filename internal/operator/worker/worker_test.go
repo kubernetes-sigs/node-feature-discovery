@@ -94,13 +94,6 @@ var _ = Describe("SetWorkerConfigMapAsDesired", func() {
 		err = yaml.Unmarshal(discoveryJSON, &actualNfdCR)
 		Expect(err).To(BeNil())
 
-//		nfdCR := nfdv1.NodeFeatureDiscovery{
-//			Spec: nfdv1.NodeFeatureDiscoverySpec{
-//				Operand: nfdv1.OperandSpec{
-//					Image: "test-image",
-//				},
-//			},
-//		}
 		actualWorkerCM := corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nfd-worker",
