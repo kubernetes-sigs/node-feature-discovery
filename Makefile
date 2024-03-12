@@ -160,7 +160,7 @@ generate: .generator.image.stamp
 	    -v "`go env GOMODCACHE`:/go/pkg/mod" \
 	    --user=`id -u`:`id -g`\
 	    nfd-generator \
-	    ./hack/generate.sh
+	    ./hack/update_codegen.sh
 
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')

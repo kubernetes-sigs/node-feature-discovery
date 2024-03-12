@@ -2174,6 +2174,7 @@ k8s.io/cloud-provider v0.29.0 h1:Qgk/jHsSKGRk/ltTlN6e7eaNuuamLROOzVBd0RPp94M=
 k8s.io/cloud-provider v0.29.0/go.mod h1:gBCt7YYKFV4oUcJ/0xF9lS/9il4MxKunJ+ZKvh39WGo=
 k8s.io/cluster-bootstrap v0.29.0 h1:zCYdZ+LWDj4O86FB5tDKckIEsf2qBHjcp78xtjOzD3A=
 k8s.io/cluster-bootstrap v0.29.0/go.mod h1:PDk+ouXC6bM2FFdo4u53IlWK3ZMWebH4TeE5BGmHWRw=
+k8s.io/code-generator v0.29.0 h1:2LQfayGDhaIlaamXjIjEQlCMy4JNCH9lrzas4DNW1GQ=
 k8s.io/code-generator v0.29.0/go.mod h1:5bqIZoCxs2zTRKMWNYqyQWW/bajc+ah4rh0tMY8zdGA=
 k8s.io/component-base v0.29.0 h1:T7rjd5wvLnPBV1vC4zWd/iWRbV8Mdxs+nGaoaFzGw3s=
 k8s.io/component-base v0.29.0/go.mod h1:sADonFTQ9Zc9yFLghpDpmNXEdHyQmFIGbiuZbqAXQ1M=
@@ -2187,6 +2188,7 @@ k8s.io/csi-translation-lib v0.29.0 h1:we4X1yUlDikvm5Rv0dwMuPHNw6KwjwsQiAuOPWXha8
 k8s.io/csi-translation-lib v0.29.0/go.mod h1:Cp6t3CNBSm1dXS17V8IImUjkqfIB6KCj8Fs8wf6uyTA=
 k8s.io/dynamic-resource-allocation v0.29.0 h1:JQW5erdoOsvhst7DxMfEpnXhrfm9SmNTnvyaXdqTLAE=
 k8s.io/dynamic-resource-allocation v0.29.0/go.mod h1:4T9Fg4J8B2SdRVVj5/1hM7hGAUrBqzyEUIGFY+wQl4Q=
+k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 h1:pWEwq4Asjm4vjW7vcsmijwBhOr1/shsbSYiWXmNGlks=
 k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01/go.mod h1:FiNAH4ZV3gBg2Kwh89tzAEV2be7d5xI0vBa/VySYy3E=
 k8s.io/klog/v2 v2.0.0/go.mod h1:PBfzABfn139FHAV07az/IF9Wp1bkk3vpT2XSJ76fSDE=
 k8s.io/klog/v2 v2.2.0/go.mod h1:Od+F08eJP+W3HUb4pSrPpgp9DGU4GzlpG/TmITuYh/Y=
