@@ -1,9 +1,9 @@
 package validate
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -12,8 +12,7 @@ func TestAnnotation(t *testing.T) {
 		name  string
 		key   string
 		value string
-		want  error
-		fail  bool
+		want  interface{}
 	}{
 		{
 			name:  "Valid annotation",
@@ -31,26 +30,23 @@ func TestAnnotation(t *testing.T) {
 			name:  "Invalid annotation value",
 			key:   "feature.node.kubernetes.io/feature",
 			value: "invalid value",
-			want:  fmt.Errorf("invalid value \"invalid value\": value must be a valid label value"),
-			fail:  true,
+			want:  "invalid value \"invalid value\": ",
 		},
 		{
 			name:  "Denied annotation key",
 			key:   "kubernetes.io/denied",
 			value: "true",
 			want:  ErrNSNotAllowed,
-			fail:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Annotation(tt.key, tt.value)
-			if got != tt.want {
-				if tt.fail {
-					return
-				}
-				t.Errorf("Annotation() = %v, want %v", got, tt.want)
+			err := Annotation(tt.key, tt.value)
+			if str, ok := tt.want.(string); ok {
+				assert.ErrorContains(t, err, str)
+			} else {
+				assert.Equal(t, tt.want, err)
 			}
 		})
 	}
@@ -112,9 +108,7 @@ func TestTaint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Taint(tt.taint)
-			if got != tt.want {
-				t.Errorf("Taint() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -124,61 +118,53 @@ func TestLabel(t *testing.T) {
 		name  string
 		key   string
 		value string
-		want  error
-		fail  bool
+		want  interface{}
 	}{
 		{
 			name:  "Valid label",
 			key:   "feature.node.kubernetes.io/label",
 			value: "true",
 			want:  nil,
-			fail:  false,
 		},
 		{
 			name:  "Valid vendor label",
 			key:   "vendor.io/label",
 			value: "true",
 			want:  nil,
-			fail:  false,
 		},
 		{
 			name:  "Denied label with prefix",
 			key:   "kubernetes.io/label",
 			value: "true",
 			want:  ErrNSNotAllowed,
-			fail:  true,
 		},
 		{
 			name:  "Invalid label key",
 			key:   "invalid-key",
 			value: "true",
-			want:  ErrNSNotAllowed,
-			fail:  true,
+			want:  ErrUnprefixedKeysNotAllowed,
 		},
 		{
 			name:  "Invalid label value",
 			key:   "feature.node.kubernetes.io/label",
 			value: "invalid value",
-			want:  fmt.Errorf("invalid value \"invalid value\": value must be a valid label value"),
-			fail:  true,
+			want:  "invalid value \"invalid value\": ",
 		},
 		{
 			name:  "Valid value label",
 			key:   "feature.node.kubernetes.io/label",
 			value: "true",
 			want:  nil,
-			fail:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := Label(tt.key, tt.value)
-			if err != tt.want {
-				if tt.fail {
-					return
-				}
-				t.Errorf("Label() = %v, want %v", err, tt.want)
+			if str, ok := tt.want.(string); ok {
+				assert.ErrorContains(t, err, str)
+			} else {
+				assert.Equal(t, tt.want, err)
 			}
 		})
 	}
@@ -189,47 +175,41 @@ func TestExtendedResource(t *testing.T) {
 		name  string
 		key   string
 		value string
-		want  error
-		fail  bool
+		want  interface{}
 	}{
 		{
 			name:  "Valid extended resource",
 			key:   "feature.node.kubernetes.io/extended-resource",
 			value: "123",
 			want:  nil,
-			fail:  false,
 		},
 		{
 			name:  "Invalid extended resource key",
 			key:   "invalid-key",
 			value: "123",
-			want:  ErrNSNotAllowed,
-			fail:  true,
+			want:  ErrUnprefixedKeysNotAllowed,
 		},
 		{
 			name:  "Invalid extended resource value",
 			key:   "feature.node.kubernetes.io/extended-resource",
 			value: "invalid value",
-			want:  fmt.Errorf("invalid value \"invalid value\": value must be a valid label value"),
-			fail:  true,
+			want:  "invalid value \"invalid value\": ",
 		},
 		{
 			name:  "Denied extended resource key",
 			key:   "kubernetes.io/extended-resource",
 			value: "123",
 			want:  ErrNSNotAllowed,
-			fail:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ExtendedResource(tt.key, tt.value)
-			if err != tt.want {
-				if tt.fail {
-					return
-				}
-				t.Errorf("ExtendedResource() = %v, want %v", err, tt.want)
+			if str, ok := tt.want.(string); ok {
+				assert.ErrorContains(t, err, str)
+			} else {
+				assert.Equal(t, tt.want, err)
 			}
 		})
 	}
