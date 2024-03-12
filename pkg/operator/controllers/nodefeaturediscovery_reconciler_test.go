@@ -32,6 +32,7 @@ import (
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 
 	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 )
 
@@ -152,7 +153,7 @@ var _ = Describe("handleMaster", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -203,5 +204,90 @@ var _ = Describe("handleMaster", func() {
 
 		err := nfdh.handleMaster(ctx, &nfdCR)
 		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("handleTopology", func() {
+	var (
+		ctrl   *gomock.Controller
+		clnt   *client.MockClient
+		mockDS *daemonset.MockDaemonsetAPI
+		nfdh   nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
+
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, scheme)
+	})
+
+	ctx := context.Background()
+
+	It("should create new nfd-topology daemonset if it does not exist", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				TopologyUpdater: true,
+			},
+		}
+		gomock.InOrder(
+			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockDS.EXPECT().SetTopologyDaemonsetAsDesired(ctx, &nfdCR, gomock.Any()).Return(nil),
+			clnt.EXPECT().Create(ctx, gomock.Any()).Return(nil),
+		)
+
+		err := nfdh.handleTopology(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+
+	It("topology daemonset exists, no need to create it, update is not executed", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nfd-cr",
+				Namespace: "test-namespace",
+			},
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				TopologyUpdater: true,
+			},
+		}
+		existingDS := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{Namespace: nfdCR.Namespace, Name: "nfd-topology-updater"},
+		}
+		gomock.InOrder(
+			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).DoAndReturn(
+				func(_ interface{}, _ interface{}, ds *appsv1.DaemonSet, _ ...ctrlclient.GetOption) error {
+					ds.SetName(existingDS.Name)
+					ds.SetNamespace(existingDS.Namespace)
+					return nil
+				},
+			),
+			mockDS.EXPECT().SetTopologyDaemonsetAsDesired(ctx, &nfdCR, &existingDS).Return(nil),
+		)
+
+		err := nfdh.handleTopology(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+
+	It("error flow, failed to populate daemonset object", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				TopologyUpdater: true,
+			},
+		}
+		gomock.InOrder(
+			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockDS.EXPECT().SetTopologyDaemonsetAsDesired(ctx, &nfdCR, gomock.Any()).Return(fmt.Errorf("some error")),
+		)
+
+		err := nfdh.handleTopology(ctx, &nfdCR)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("if TopologyUpdate not set - nothing to do", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{}
+
+		err := nfdh.handleTopology(ctx, &nfdCR)
+		Expect(err).To(BeNil())
 	})
 })
