@@ -25,7 +25,7 @@ import (
 	k8sQuantity "k8s.io/apimachinery/pkg/api/resource"
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 var (

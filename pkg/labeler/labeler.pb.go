@@ -30,7 +30,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	sync "sync"
 )
 
