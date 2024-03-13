@@ -223,6 +223,9 @@ nfd-master -no-publish
 
 ### -crd-controller
 
+> **NOTE** This flag will be removed in a future release at the same time with
+> the deprecated gRPC API.
+
 The `-crd-controller` flag specifies whether the NFD CRD API controller is
 enabled or not. The controller is responsible for processing
 [NodeFeature](../usage/custom-resources.md#nodefeature) and
