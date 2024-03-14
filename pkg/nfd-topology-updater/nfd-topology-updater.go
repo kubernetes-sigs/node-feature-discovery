@@ -218,10 +218,7 @@ func (w *nfdTopologyUpdater) Run() error {
 
 // Stop NFD Topology Updater
 func (w *nfdTopologyUpdater) Stop() {
-	select {
-	case w.stop <- struct{}{}:
-	default:
-	}
+	close(w.stop)
 }
 
 func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList, scanResponse resourcemonitor.ScanResponse, readKubeletConfig bool) error {

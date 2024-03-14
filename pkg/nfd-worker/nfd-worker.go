@@ -303,10 +303,7 @@ func (w *nfdWorker) Run() error {
 
 // Stop NfdWorker
 func (w *nfdWorker) Stop() {
-	select {
-	case w.stop <- struct{}{}:
-	default:
-	}
+	close(w.stop)
 }
 
 // getGrpcClient returns client connection to the NFD gRPC server. It creates a
