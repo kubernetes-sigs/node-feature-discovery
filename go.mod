@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang/protobuf v1.5.3
+	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.5.0
 	github.com/jaypipes/ghw v0.8.1-0.20210827132705-c7224150a17e
