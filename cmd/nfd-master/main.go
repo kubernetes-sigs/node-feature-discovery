@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"k8s.io/klog/v2"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -42,6 +43,12 @@ func main() {
 	printVersion := flags.Bool("version", false, "Print version and exit.")
 
 	args, overrides := initFlags(flags)
+	// Add FeatureGates flag
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+		klog.ErrorS(err, "failed to add default feature gates")
+		os.Exit(1)
+	}
+	features.NFDMutableFeatureGate.AddFlag(flags)
 
 	_ = flags.Parse(os.Args[1:])
 	if len(flags.Args()) > 0 {
@@ -74,8 +81,6 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
-		case "enable-nodefeature-api":
-			klog.InfoS("-enable-nodefeature-api is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "ca-file":
 			klog.InfoS("-ca-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "cert-file":
@@ -134,9 +139,6 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
-	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
-		"Enable the NodeFeature CRD API for receiving node features. This will automatically disable the gRPC communication."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
 		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")
 	flagset.BoolVar(&args.CrdController, "crd-controller", true,

@@ -31,8 +31,8 @@ received from nfd-worker instances through
 [NodeFeature](custom-resources.md#nodefeature-custom-resource) objects.
 
 > **NOTE**: when gRPC (**DEPRECATED**)  is used for communicating
-> the features (by setting the flag `-enable-nodefeature-api=false` on both
-> nfd-master and nfd-worker, or via Helm values.enableNodeFeatureApi=false),
+> the features (by setting the flag `-feature-gates NodeFeatureAPI=false` on both
+> nfd-master and nfd-worker, or via Helm values.featureGates.NodeFeatureAPI=false),
 > (re-)labelling only happens when a request is received from nfd-worker.
 > That is, in practice rules are evaluated and labels for each node are created
 > on intervals specified by the
