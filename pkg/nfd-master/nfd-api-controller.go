@@ -123,10 +123,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 }
 
 func (c *nfdController) stop() {
-	select {
-	case c.stopChan <- struct{}{}:
-	default:
-	}
+	close(c.stopChan)
 }
 
 func (c *nfdController) updateOneNode(typ string, obj metav1.Object) {
