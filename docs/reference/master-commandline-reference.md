@@ -30,6 +30,18 @@ Print usage and exit.
 
 Print version and exit.
 
+### -feature-gates
+
+The `-feature-gates` flag is used to enable or disable non GA features.
+The list of available feature gates can be found in the [feature gates
+documentation](../feature-gates.md).
+
+Example:
+
+```bash
+nfd-master -feature-gates NodeFeatureAPI=false
+```
+
 ### -prune
 
 The `-prune` flag is a sub-command like option for cleaning up the cluster. It
@@ -161,24 +173,6 @@ Example:
 ```bash
 nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
     -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
-```
-
-### -enable-nodefeature-api
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-enable-nodefeature-api` flag enables/disables the
-[NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for receiving
-feature requests. This will also automatically disable/enable the gRPC
-interface.
-
-Default: true
-
-Example:
-
-```bash
-nfd-master -enable-nodefeature-api=false
 ```
 
 ### -enable-leader-election

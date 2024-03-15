@@ -56,6 +56,7 @@ import (
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
+	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -106,16 +107,15 @@ type ConfigOverrideArgs struct {
 
 // Args holds command line arguments
 type Args struct {
-	CaFile               string
-	CertFile             string
-	ConfigFile           string
-	Instance             string
-	KeyFile              string
-	Klog                 map[string]*utils.KlogFlagVal
-	Kubeconfig           string
-	CrdController        bool
-	EnableNodeFeatureApi bool
-	Port                 int
+	CaFile        string
+	CertFile      string
+	ConfigFile    string
+	Instance      string
+	KeyFile       string
+	Klog          map[string]*utils.KlogFlagVal
+	Kubeconfig    string
+	CrdController bool
+	Port          int
 	// GrpcHealthPort is only needed to avoid races between tests (by skipping the health server).
 	// Could be removed when gRPC labler service is dropped (when nfd-worker tests stop running nfd-master).
 	GrpcHealthPort       int
@@ -275,7 +275,7 @@ func (m *nfdMaster) Run() error {
 	grpcErr := make(chan error, 1)
 	// If the NodeFeature API is enabled, don'tregister the labeler API
 	// server. Otherwise, register the labeler server.
-	if !m.args.EnableNodeFeatureApi {
+	if !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
 		go m.runGrpcServer(grpcErr)
 	}
 
@@ -323,7 +323,7 @@ func (m *nfdMaster) Run() error {
 				}
 			}
 			// Update all nodes when the configuration changes
-			if m.nfdController != nil && m.args.EnableNodeFeatureApi {
+			if m.nfdController != nil && features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
 			// Restart the node updater pool
@@ -424,7 +424,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 func (m *nfdMaster) nfdAPIUpdateHandler() {
 	// We want to unconditionally update all nodes at startup if gRPC is
 	// disabled (i.e. NodeFeature API is enabled)
-	updateAll := m.args.EnableNodeFeatureApi
+	updateAll := features.NFDFeatureGate.Enabled(features.NodeFeatureAPI)
 	updateNodes := make(map[string]struct{})
 	rateLimit := time.After(time.Second)
 	for {
@@ -1340,7 +1340,7 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !m.args.EnableNodeFeatureApi,
+		DisableNodeFeature: !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI),
 		ResyncPeriod:       m.config.ResyncPeriod.Duration,
 	})
 	if err != nil {

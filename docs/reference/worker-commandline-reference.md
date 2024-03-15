@@ -30,6 +30,18 @@ Print usage and exit.
 
 Print version and exit.
 
+### -feature-gates
+
+The `-feature-gates` flag is used to enable or disable non GA features.
+The list of available feature gates can be found in the [feature gates
+documentation](../feature-gates.md).
+
+Example:
+
+```bash
+nfd-master -feature-gates NodeFeatureAPI=false
+```
+
 ### -config
 
 The `-config` flag specifies the path of the nfd-worker configuration file to
@@ -208,26 +220,6 @@ Example:
 
 ```bash
 nfd-worker -label-sources=kernel,system,local
-```
-
-### -enable-nodefeature-api
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-enable-nodefeature-api` flag enables/disables the
-[NodeFeature](../usage/custom-resources.md#nodefeature) CRD API
-for communicating with nfd-master. When enabled nfd-worker creates per-node
-NodeFeature objects the contain all discovered node features and the set of
-feature labels to be created. Setting the flag to false will enable
-gRPC communication to nfd-master.
-
-Default: true
-
-Example:
-
-```bash
-nfd-worker -enable-nodefeature-api=false
 ```
 
 ### -metrics

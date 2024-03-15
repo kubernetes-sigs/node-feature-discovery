@@ -73,9 +73,8 @@ spec:
             {{- if .Values.master.instance | empty | not }}
             - "-instance={{ .Values.master.instance }}"
             {{- end }}
-            {{- if not .Values.enableNodeFeatureApi }}
+            {{- if not .Values.featureGates.NodeFeatureAPI }}
             - "-port={{ .Values.master.port | default "8080" }}"
-            - "-enable-nodefeature-api=false"
             {{- else if gt (int .Values.master.replicaCount) 1 }}
             - "-enable-leader-election"
             {{- end }}
@@ -110,6 +109,10 @@ spec:
             - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
             - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
             - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+            {{- end }}
+            # Go over featureGates and add the feature-gate flag
+            {{- range $key, $value := .Values.featureGates }}
+            - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
             - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
           volumeMounts:

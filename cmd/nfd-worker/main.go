@@ -22,10 +22,11 @@ import (
 	"os"
 
 	"k8s.io/klog/v2"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -38,6 +39,13 @@ func main() {
 	flags := flag.NewFlagSet(ProgramName, flag.ExitOnError)
 
 	printVersion := flags.Bool("version", false, "Print version and exit.")
+
+	// Add FeatureGates flag
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+		klog.ErrorS(err, "failed to add default feature gates")
+		os.Exit(1)
+	}
+	features.NFDMutableFeatureGate.AddFlag(flags)
 
 	args := parseArgs(flags, os.Args[1:]...)
 
@@ -123,9 +131,6 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.KeyFile, "key-file", "",
 		"Private key matching -cert-file."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
-	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
-		"Enable the NodeFeature CRD API for communicating with nfd-master. This will automatically disable the gRPC communication."+
 			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")

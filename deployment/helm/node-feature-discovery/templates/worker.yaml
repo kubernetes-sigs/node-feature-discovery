@@ -61,14 +61,17 @@ spec:
         command:
         - "nfd-worker"
         args:
-        {{- if not .Values.enableNodeFeatureApi }}
+{{- if not .Values.featureGates.NodeFeatureAPI }}
         - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
-        - "-enable-nodefeature-api=false"
-        {{- end }}
+{{- end }}
 {{- if .Values.tls.enable }}
         - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
         - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
         - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+{{- end }}
+# Go over featureGate and add the feature-gate flag
+{{- range $key, $value := .Values.featureGates }}
+        - "-feature-gates={{ $key }}={{ $value }}"
 {{- end }}
         - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
         ports:

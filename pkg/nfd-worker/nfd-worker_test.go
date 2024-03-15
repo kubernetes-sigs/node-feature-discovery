@@ -24,7 +24,9 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"k8s.io/klog/v2"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -44,6 +46,12 @@ func setupTest(args *master.Args) testContext {
 		LabelWhiteList: &utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 	}
 	args.Port = 8192
+	// Add FeatureGates flag
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+		klog.ErrorS(err, "failed to add default feature gates")
+		os.Exit(1)
+	}
+	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureAPI, false)
 	m, err := master.NewNfdMaster(args)
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)

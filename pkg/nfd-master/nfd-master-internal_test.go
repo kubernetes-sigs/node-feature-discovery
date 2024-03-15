@@ -42,8 +42,10 @@ import (
 	fakecorev1client "k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	fakenfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/pkg/generated/informers/externalversions"
@@ -685,6 +687,12 @@ extraLabelNs: ["added.ns.io"]
 `)
 
 		noPublish := true
+		// Add FeatureGates flag
+		if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+			klog.ErrorS(err, "failed to add default feature gates")
+			os.Exit(1)
+		}
+		_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureAPI, false)
 		m, err := NewNfdMaster(&Args{
 			ConfigFile: configFile,
 			Overrides: ConfigOverrideArgs{
