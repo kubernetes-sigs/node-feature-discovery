@@ -176,6 +176,11 @@ func createClusterRoleMaster(ctx context.Context, cs clientset.Interface) (*rbac
 				Resources: []string{"nodefeatures", "nodefeaturerules"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{
+				APIGroups: []string{"nfd.k8s-sigs.io"},
+				Resources: []string{"nodefeaturegroups"},
+				Verbs:     []string{"get", "list", "watch", "update", "create"},
+			},
 		},
 	}
 	if *openShift {

@@ -29,3 +29,15 @@ spec:
         - feature: kernel.version
           matchExpressions:
             major: { op: Exists }
+---
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: my-sample-group-resource
+spec:
+  featureGroupRules:
+    - name: dummy-rule
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: { op: Exists }

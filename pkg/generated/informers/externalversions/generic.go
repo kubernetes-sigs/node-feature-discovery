@@ -55,6 +55,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=nfd.k8s-sigs.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("nodefeatures"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Nfd().V1alpha1().NodeFeatures().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("nodefeaturegroups"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Nfd().V1alpha1().NodeFeatureGroups().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("nodefeaturerules"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Nfd().V1alpha1().NodeFeatureRules().Informer()}, nil
 

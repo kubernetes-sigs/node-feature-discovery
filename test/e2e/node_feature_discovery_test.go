@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"maps"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -42,6 +43,7 @@ import (
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	admissionapi "k8s.io/pod-security-admission/api"
 
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -179,6 +181,17 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 				}
 				return err
 			}()).NotTo(HaveOccurred())
+		}
+	}
+
+	nfgs, err := cli.NfdV1alpha1().NodeFeatureGroups(namespace).List(ctx, metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	if len(nfgs.Items) != 0 {
+		By("Deleting NodeFeatureGroup objects from namespace " + namespace)
+		for _, nfg := range nfgs.Items {
+			err = cli.NfdV1alpha1().NodeFeatureGroups(namespace).Delete(ctx, nfg.Name, metav1.DeleteOptions{})
+			Expect(err).NotTo(HaveOccurred())
 		}
 	}
 }
@@ -870,6 +883,64 @@ core:
 						}
 						eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
 					}
+				})
+			})
+
+			// Test NodeFeatureGroupRule
+			Context("and NodeFeatureGroupRules objects deployed", func() {
+				BeforeEach(func(ctx context.Context) {
+					// We need a NodeFeature from the node, can't be a fake one
+					if !useNodeFeatureApi {
+						Skip("NodeFeature API not enabled")
+					}
+				})
+				It("custom NodeFeatureGroup from the NodeFeatureGroupRule rules should be created", func(ctx context.Context) {
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					targetNodeName := nodes[0].Name
+					Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
+
+					By("Creating nfd-worker config")
+					cm := testutils.NewConfigMap("nfd-worker-conf", "nfd-worker.conf", `
+core:
+  sleepInterval: "1s"
+`)
+					_, err = f.ClientSet.CoreV1().ConfigMaps(f.Namespace.Name).Create(ctx, cm, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					By("Creating nfd-worker daemonset")
+					podSpecOpts := createPodSpecOpts(
+						testpod.SpecWithContainerImage(dockerImage()),
+					)
+					workerDS := testds.NFDWorker(podSpecOpts...)
+					workerDS, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Waiting for worker daemonset pods to be ready")
+					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+
+					checkNodeFeatureObject(ctx, targetNodeName)
+
+					By("Creating NodeFeatureGroupRules #1")
+					Expect(testutils.CreateNodeFeatureGroupsFromFile(ctx, nfdClient, f.Namespace.Name, "nodefeaturegroup-1.yaml")).NotTo(HaveOccurred())
+
+					By("Verifying NodeFeatureGroup from NodeFeatureRules #1")
+					expectedGroup := v1alpha1.NodeFeatureGroup{
+						Status: v1alpha1.NodeFeatureGroupStatus{
+							Nodes: []string{targetNodeName},
+						},
+					}
+					Eventually(func() bool {
+						group, err := nfdClient.NfdV1alpha1().NodeFeatureGroups(f.Namespace.Name).Get(ctx, "e2e-test-1", metav1.GetOptions{})
+						if err != nil {
+							return false
+						}
+						return reflect.DeepEqual(group.Status.Nodes, expectedGroup.Status.Nodes)
+					}, 5*time.Minute, 5*time.Second).Should(BeTrue())
+
+					By("Deleting nfd-worker daemonset")
+					err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 

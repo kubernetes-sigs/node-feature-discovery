@@ -90,6 +90,23 @@ func (n *nfdGarbageCollector) deleteNodeFeature(namespace, name string) {
 	objectsDeleted.WithLabelValues(kind).Inc()
 }
 
+func (n *nfdGarbageCollector) deleteNodeFeatureGroup(namespace, name string) {
+	kind := "NodeFeatureGroup"
+	if err := n.nfdClient.NfdV1alpha1().NodeFeatureGroups(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
+		if errors.IsNotFound(err) {
+			klog.V(2).InfoS("NodeFeatureGroup not found, omitting deletion", "nodefeaturegroup", klog.KRef(namespace, name))
+			return
+		} else {
+			klog.ErrorS(err, "failed to delete NodeFeatureGroup object", "nodefeaturegroup", klog.KRef(namespace, name))
+			objectDeleteErrors.WithLabelValues(kind).Inc()
+			return
+		}
+	}
+
+	klog.InfoS("NodeFeatureGroup object has been deleted", "nodefeaturegroup", klog.KRef(namespace, name))
+	objectsDeleted.WithLabelValues(kind).Inc()
+}
+
 func (n *nfdGarbageCollector) deleteNRT(nodeName string) {
 	kind := "NodeResourceTopology"
 	if err := n.topoClient.TopologyV1alpha2().NodeResourceTopologies().Delete(context.TODO(), nodeName, metav1.DeleteOptions{}); err != nil {
@@ -160,6 +177,24 @@ func (n *nfdGarbageCollector) garbageCollect() {
 			}
 			if !nodeNames.Has(nodeName) {
 				n.deleteNodeFeature(nf.Namespace, nf.Name)
+			}
+		}
+	}
+
+	// Handle NodeFeatureGroup objects
+	nfgs, err := n.nfdClient.NfdV1alpha1().NodeFeatureGroups("").List(context.TODO(), metav1.ListOptions{})
+	if errors.IsNotFound(err) {
+		klog.V(2).InfoS("NodeFeatureGroup CRD does not exist")
+	} else if err != nil {
+		klog.ErrorS(err, "failed to list NodeFeatureGroup objects")
+	} else {
+		for _, nfg := range nfgs.Items {
+			_, err := n.nfdClient.NfdV1alpha1().NodeFeatureGroups("").Get(context.TODO(), nfg.Name, metav1.GetOptions{})
+			if errors.IsNotFound(err) {
+				klog.V(2).InfoS("no NodeFeatureGroupRule found for NodeFeatureGroup", "nodefeaturegroup", klog.KObj(&nfg))
+				n.deleteNodeFeatureGroup(nfg.Namespace, nfg.Name)
+			} else if err != nil {
+				klog.ErrorS(err, "failed to get NodeFeatureGroupRule object", "nodefeaturegroup", klog.KObj(&nfg))
 			}
 		}
 	}

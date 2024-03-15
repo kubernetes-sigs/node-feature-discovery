@@ -20,4 +20,6 @@ package v1alpha1
 
 type NodeFeatureExpansion interface{}
 
+type NodeFeatureGroupExpansion interface{}
+
 type NodeFeatureRuleExpansion interface{}

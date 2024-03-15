@@ -38,22 +38,29 @@ type nfdController struct {
 	featureLister nfdlisters.NodeFeatureLister
 	ruleLister    nfdlisters.NodeFeatureRuleLister
 
+	featureGroupLister nfdlisters.NodeFeatureGroupLister
+
 	stopChan chan struct{}
 
-	updateAllNodesChan chan struct{}
-	updateOneNodeChan  chan string
+	updateAllNodesChan             chan struct{}
+	updateOneNodeChan              chan string
+	updateAllNodeFeatureGroupsChan chan struct{}
+	updateNodeFeatureGroupChan     chan string
 }
 
 type nfdApiControllerOptions struct {
-	DisableNodeFeature bool
-	ResyncPeriod       time.Duration
+	DisableNodeFeature      bool
+	DisableNodeFeatureGroup bool
+	ResyncPeriod            time.Duration
 }
 
 func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
 	c := &nfdController{
-		stopChan:           make(chan struct{}, 1),
-		updateAllNodesChan: make(chan struct{}, 1),
-		updateOneNodeChan:  make(chan string),
+		stopChan:                       make(chan struct{}, 1),
+		updateAllNodesChan:             make(chan struct{}, 1),
+		updateOneNodeChan:              make(chan string),
+		updateNodeFeatureGroupChan:     make(chan string),
+		updateAllNodeFeatureGroupsChan: make(chan struct{}, 1),
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
@@ -69,16 +76,19 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				nfr := obj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
 				c.updateOneNode("NodeFeature", nfr)
+				c.updateAllNodeFeatureGroups()
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				nfr := newObj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
 				c.updateOneNode("NodeFeature", nfr)
+				c.updateAllNodeFeatureGroups()
 			},
 			DeleteFunc: func(obj interface{}) {
 				nfr := obj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
 				c.updateOneNode("NodeFeature", nfr)
+				c.updateAllNodeFeatureGroups()
 			},
 		}); err != nil {
 			return nil, err
@@ -87,8 +97,8 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	}
 
 	// Add informer for NodeFeatureRule objects
-	ruleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
-	if _, err := ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	nodeRuleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
+	if _, err := nodeRuleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			klog.V(2).InfoS("NodeFeatureRule added", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
 			if !nfdApiControllerOptions.DisableNodeFeature {
@@ -113,7 +123,32 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	}); err != nil {
 		return nil, err
 	}
-	c.ruleLister = ruleInformer.Lister()
+	c.ruleLister = nodeRuleInformer.Lister()
+
+	// Add informer for NodeFeatureGroup objects
+	if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+		nodeFeatureGroupInformer := informerFactory.Nfd().V1alpha1().NodeFeatureGroups()
+		if _, err := nodeFeatureGroupInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
+				klog.V(2).InfoS("NodeFeatureGroup added", "nodeFeatureGroup", klog.KObj(nfg))
+				c.updateNodeFeatureGroup(nfg.Name)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				nfg := newObj.(*nfdv1alpha1.NodeFeatureGroup)
+				klog.V(2).InfoS("NodeFeatureGroup updated", "nodeFeatureGroup", klog.KObj(nfg))
+				c.updateNodeFeatureGroup(nfg.Name)
+			},
+			DeleteFunc: func(obj interface{}) {
+				nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
+				klog.V(2).InfoS("NodeFeatureGroup deleted", "nodeFeatureGroup", klog.KObj(nfg))
+				c.updateNodeFeatureGroup(nfg.Name)
+			},
+		}); err != nil {
+			return nil, err
+		}
+		c.featureGroupLister = nodeFeatureGroupInformer.Lister()
+	}
 
 	// Start informers
 	informerFactory.Start(c.stopChan)
@@ -133,6 +168,17 @@ func (c *nfdController) updateOneNode(typ string, obj metav1.Object) {
 		return
 	}
 	c.updateOneNodeChan <- nodeName
+}
+
+func (c *nfdController) updateNodeFeatureGroup(nodeFeatureGroup string) {
+	c.updateNodeFeatureGroupChan <- nodeFeatureGroup
+}
+
+func (c *nfdController) updateAllNodeFeatureGroups() {
+	select {
+	case c.updateAllNodeFeatureGroupsChan <- struct{}{}:
+	default:
+	}
 }
 
 func getNodeNameForObj(obj metav1.Object) (string, error) {

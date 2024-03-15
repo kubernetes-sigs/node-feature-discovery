@@ -73,6 +73,9 @@ spec:
             {{- if .Values.master.instance | empty | not }}
             - "-instance={{ .Values.master.instance }}"
             {{- end }}
+            {{- if .Values.enableNodeFeatureGroupApi }}
+            - "-enable-nodefeaturegroup-api=true"
+            {{- end }}
             {{- if not .Values.enableNodeFeatureApi }}
             - "-port={{ .Values.master.port | default "8080" }}"
             - "-enable-nodefeature-api=false"

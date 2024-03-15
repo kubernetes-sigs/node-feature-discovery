@@ -21,6 +21,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// MatchAny returns always true.
+	MatchAny MatchOp = ""
+	// MatchIn returns true if any of the values stored in the expression is
+	// equal to the input.
+	MatchIn MatchOp = "In"
+	// MatchNotIn returns true if none of the values in the expression are
+	// equal to the input.
+	MatchNotIn MatchOp = "NotIn"
+	// MatchInRegexp treats values of the expression as regular expressions and
+	// returns true if any of them matches the input.
+	MatchInRegexp MatchOp = "InRegexp"
+	// MatchExists returns true if the input is valid. The expression must not
+	// have any values.
+	MatchExists MatchOp = "Exists"
+	// MatchDoesNotExist returns true if the input is not valid. The expression
+	// must not have any values.
+	MatchDoesNotExist MatchOp = "DoesNotExist"
+	// MatchGt returns true if the input is greater than the value of the
+	// expression (number of values in the expression must be exactly one).
+	// Both the input and value must be integer numbers, otherwise an error is
+	// returned.
+	MatchGt MatchOp = "Gt"
+	// MatchLt returns true if the input is less  than the value of the
+	// expression (number of values in the expression must be exactly one).
+	// Both the input and value must be integer numbers, otherwise an error is
+	// returned.
+	MatchLt MatchOp = "Lt"
+	// MatchGtLt returns true if the input is between two values, i.e. greater
+	// than the first value and less than the second value of the expression
+	// (number of values in the expression must be exactly two). Both the input
+	// and values must be integer numbers, otherwise an error is returned.
+	MatchGtLt MatchOp = "GtLt"
+	// MatchIsTrue returns true if the input holds the value "true". The
+	// expression must not have any values.
+	MatchIsTrue MatchOp = "IsTrue"
+	// MatchIsFalse returns true if the input holds the value "false". The
+	// expression must not have any values.
+	MatchIsFalse MatchOp = "IsFalse"
+)
+
 // NodeFeatureList contains a list of NodeFeature objects.
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -235,47 +276,6 @@ type MatchOp string
 type MatchValue []string
 
 const (
-	// MatchAny returns always true.
-	MatchAny MatchOp = ""
-	// MatchIn returns true if any of the values stored in the expression is
-	// equal to the input.
-	MatchIn MatchOp = "In"
-	// MatchNotIn returns true if none of the values in the expression are
-	// equal to the input.
-	MatchNotIn MatchOp = "NotIn"
-	// MatchInRegexp treats values of the expression as regular expressions and
-	// returns true if any of them matches the input.
-	MatchInRegexp MatchOp = "InRegexp"
-	// MatchExists returns true if the input is valid. The expression must not
-	// have any values.
-	MatchExists MatchOp = "Exists"
-	// MatchDoesNotExist returns true if the input is not valid. The expression
-	// must not have any values.
-	MatchDoesNotExist MatchOp = "DoesNotExist"
-	// MatchGt returns true if the input is greater than the value of the
-	// expression (number of values in the expression must be exactly one).
-	// Both the input and value must be integer numbers, otherwise an error is
-	// returned.
-	MatchGt MatchOp = "Gt"
-	// MatchLt returns true if the input is less  than the value of the
-	// expression (number of values in the expression must be exactly one).
-	// Both the input and value must be integer numbers, otherwise an error is
-	// returned.
-	MatchLt MatchOp = "Lt"
-	// MatchGtLt returns true if the input is between two values, i.e. greater
-	// than the first value and less than the second value of the expression
-	// (number of values in the expression must be exactly two). Both the input
-	// and values must be integer numbers, otherwise an error is returned.
-	MatchGtLt MatchOp = "GtLt"
-	// MatchIsTrue returns true if the input holds the value "true". The
-	// expression must not have any values.
-	MatchIsTrue MatchOp = "IsTrue"
-	// MatchIsFalse returns true if the input holds the value "false". The
-	// expression must not have any values.
-	MatchIsFalse MatchOp = "IsFalse"
-)
-
-const (
 	// RuleBackrefDomain is the special feature domain for backreferencing
 	// output of preceding rules.
 	RuleBackrefDomain = "rule"
@@ -287,3 +287,51 @@ const (
 // MatchAllNames is a special key in MatchExpressionSet to use field names
 // (keys from the input) instead of values when matching.
 const MatchAllNames = "*"
+
+// NodeFeatureGroup resource holds Node pools by featureGroup
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced,shortName=nfg
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient
+type NodeFeatureGroup struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   NodeFeatureGroupSpec   `json:"spec"`
+	Status NodeFeatureGroupStatus `json:"status,omitempty"`
+}
+
+// NodeFeatureGroupSpec describes a NodeFeatureGroup object.
+type NodeFeatureGroupSpec struct {
+	Rules []GroupRule `json:"featureGroupRules"`
+}
+
+type NodeFeatureGroupStatus struct {
+	// Nodes is a list of nodes in the cluster that match the featureGroupRules
+	// +optional
+	Nodes []string `json:"nodes"`
+}
+
+// NodeFeatureGroupList contains a list of NodeFeatureGroup objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureGroupList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NodeFeatureGroup `json:"spec"`
+}
+
+// GroupRule defines a rule for nodegroup filtering.
+type GroupRule struct {
+	// Name of the rule.
+	Name string `json:"name"`
+
+	// MatchFeatures specifies a set of matcher terms all of which must match.
+	// +optional
+	MatchFeatures FeatureMatcher `json:"matchFeatures"`
+
+	// MatchAny specifies a list of matchers one of which must match.
+	// +optional
+	MatchAny []MatchAnyElem `json:"matchAny"`
+}

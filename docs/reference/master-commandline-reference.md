@@ -181,6 +181,22 @@ Example:
 nfd-master -enable-nodefeature-api=false
 ```
 
+### -enable-nodefeaturegroup-api
+
+> **NOTE:** This feature is experimental and may change in the future.
+
+The `-enable-nodefeaturegroup-api` flag enables/disables the
+[NodeFeatureGroup](../usage/custom-resources.md#nodefeaturegroup) CRD API for
+working with NodeFeatureGroups.
+
+Default: false
+
+Example:
+
+```bash
+nfd-master -enable-nodefeaturegroup-api=true
+```
+
 ### -enable-leader-election
 
 The `-enable-leader-election` flag enables leader election for NFD-Master.

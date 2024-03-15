@@ -1,0 +1,11 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: e2e-test-1
+spec:
+  featureGroupRules:
+    - name: "e2e-attribute-test-1"
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: Exists}

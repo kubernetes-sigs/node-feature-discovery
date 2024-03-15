@@ -66,9 +66,11 @@ func newTestNode() *corev1.Node {
 
 func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	c := &nfdController{
-		stopChan:           make(chan struct{}, 1),
-		updateAllNodesChan: make(chan struct{}, 1),
-		updateOneNodeChan:  make(chan string),
+		stopChan:                       make(chan struct{}, 1),
+		updateAllNodesChan:             make(chan struct{}, 1),
+		updateOneNodeChan:              make(chan string),
+		updateNodeFeatureGroupChan:     make(chan string),
+		updateAllNodeFeatureGroupsChan: make(chan struct{}, 1),
 	}
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(client, 1*time.Hour)

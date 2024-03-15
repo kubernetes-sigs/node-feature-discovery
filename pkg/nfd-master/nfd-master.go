@@ -39,7 +39,9 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
+
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,9 +50,9 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
-
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
+	nfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
@@ -106,16 +108,17 @@ type ConfigOverrideArgs struct {
 
 // Args holds command line arguments
 type Args struct {
-	CaFile               string
-	CertFile             string
-	ConfigFile           string
-	Instance             string
-	KeyFile              string
-	Klog                 map[string]*utils.KlogFlagVal
-	Kubeconfig           string
-	CrdController        bool
-	EnableNodeFeatureApi bool
-	Port                 int
+	CaFile                    string
+	CertFile                  string
+	ConfigFile                string
+	Instance                  string
+	KeyFile                   string
+	Klog                      map[string]*utils.KlogFlagVal
+	Kubeconfig                string
+	CrdController             bool
+	EnableNodeFeatureApi      bool
+	EnableNodeFeatureGroupApi bool
+	Port                      int
 	// GrpcHealthPort is only needed to avoid races between tests (by skipping the health server).
 	// Could be removed when gRPC labler service is dropped (when nfd-worker tests stop running nfd-master).
 	GrpcHealthPort       int
@@ -142,16 +145,17 @@ type NfdMaster interface {
 type nfdMaster struct {
 	*nfdController
 
-	args            Args
-	namespace       string
-	nodeName        string
-	configFilePath  string
-	server          *grpc.Server
-	healthServer    *grpc.Server
-	stop            chan struct{}
-	ready           chan bool
-	k8sClient       k8sclient.Interface
-	nodeUpdaterPool *nodeUpdaterPool
+	args                        Args
+	namespace                   string
+	nodeName                    string
+	configFilePath              string
+	server                      *grpc.Server
+	healthServer                *grpc.Server
+	stop                        chan struct{}
+	ready                       chan bool
+	k8sClient                   k8sclient.Interface
+	nodeUpdaterPool             *nodeUpdaterPool
+	nodeFeatureGroupUpdaterPool *nodeFeatureGroupUpdaterPool
 	deniedNs
 	config *NFDConfig
 }
@@ -191,6 +195,7 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	}
 
 	nfd.nodeUpdaterPool = newNodeUpdaterPool(nfd)
+	nfd.nodeFeatureGroupUpdaterPool = newNodeFeatureGroupUpdaterPool(nfd)
 
 	return nfd, nil
 }
@@ -240,6 +245,7 @@ func (m *nfdMaster) Run() error {
 	}
 
 	m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
+	m.nodeFeatureGroupUpdaterPool.start(m.config.NfdApiParallelism)
 
 	// Create watcher for config file
 	configWatch, err := utils.CreateFsWatcher(time.Second, m.configFilePath)
@@ -328,7 +334,9 @@ func (m *nfdMaster) Run() error {
 			}
 			// Restart the node updater pool
 			m.nodeUpdaterPool.stop()
+			m.nodeFeatureGroupUpdaterPool.stop()
 			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
+			m.nodeFeatureGroupUpdaterPool.start(m.config.NfdApiParallelism)
 
 		case <-m.stop:
 			klog.InfoS("shutting down nfd-master")
@@ -426,6 +434,8 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 	// disabled (i.e. NodeFeature API is enabled)
 	updateAll := m.args.EnableNodeFeatureApi
 	updateNodes := make(map[string]struct{})
+	nodeFeatureGroup := make(map[string]struct{})
+	updateAllNodeFeatureGroups := false
 	rateLimit := time.After(time.Second)
 	for {
 		select {
@@ -433,7 +443,12 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 			updateAll = true
 		case nodeName := <-m.nfdController.updateOneNodeChan:
 			updateNodes[nodeName] = struct{}{}
+		case <-m.nfdController.updateAllNodeFeatureGroupsChan:
+			updateAllNodeFeatureGroups = true
+		case nodeFeatureGroupName := <-m.nfdController.updateNodeFeatureGroupChan:
+			nodeFeatureGroup[nodeFeatureGroupName] = struct{}{}
 		case <-rateLimit:
+			// NodeFeature
 			errUpdateAll := false
 			if updateAll {
 				if err := m.nfdAPIUpdateAllNodes(); err != nil {
@@ -445,10 +460,21 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 					m.nodeUpdaterPool.queue.Add(nodeName)
 				}
 			}
-
-			// Reset "work queue" and timer
+			// NodeFeatureGroup
+			if updateAllNodeFeatureGroups {
+				if err := m.nfdAPIUpdateAllNodeFeatureGroups(); err != nil {
+					klog.ErrorS(err, "failed to update NodeFeatureGroups")
+				}
+			} else {
+				for nodeFeatureGroupName := range nodeFeatureGroup {
+					m.nodeFeatureGroupUpdaterPool.queue.Add(nodeFeatureGroupName)
+				}
+			}
+			// Reset "work queues" and timer
 			updateAll = errUpdateAll
+			updateAllNodeFeatureGroups = false
 			updateNodes = map[string]struct{}{}
+			nodeFeatureGroup = map[string]struct{}{}
 			rateLimit = time.After(time.Second)
 		}
 	}
@@ -711,6 +737,79 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 
 	for _, node := range nodes.Items {
 		m.nodeUpdaterPool.queue.Add(node.Name)
+	}
+
+	return nil
+}
+
+func (m *nfdMaster) nfdAPIUpdateAllNodeFeatureGroups() error {
+	klog.InfoS("updating All NodeFeatureGroups, will process all nodeFeatureGroupRules")
+
+	nodeFeatureGroups, err := m.nfdController.featureGroupLister.List(k8sLabels.Everything())
+	if err != nil {
+		return fmt.Errorf("failed to get nodeFeatureGroupRules resources: %w", err)
+	}
+	for _, nodeFeatureGroup := range nodeFeatureGroups {
+		m.nodeUpdaterPool.queue.Add(nodeFeatureGroup.Name)
+	}
+
+	return nil
+}
+
+func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nodeFeatureGroupName string) error {
+	klog.V(1).InfoS("processing of nodeFeatureGroup", "nodeFeatureGroup", nodeFeatureGroupName)
+	nodeGroupValidator := make(map[string]bool)
+	var err error
+
+	kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	nfdClient := nfdclientset.NewForConfigOrDie(kubeconfig)
+
+	nodeFeatures, err := m.nfdController.featureLister.List(k8sLabels.Everything())
+	if err != nil {
+		return fmt.Errorf("failed to get NodeFeatures resources: %w", err)
+	}
+
+	nodeFeatureGroup, err := nfdClient.NfdV1alpha1().NodeFeatureGroups(m.namespace).Get(context.Background(), nodeFeatureGroupName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get NodeFeatureGroup resource: %w", err)
+	}
+
+	// Execute rules and create matching groups
+	nodes := make([]string, 0)
+	for _, rule := range nodeFeatureGroup.Spec.Rules {
+		for _, feature := range nodeFeatures {
+			match, err := nodefeaturerule.ExecuteGroupRule(&rule, &feature.Spec.Features)
+			if err != nil {
+				return fmt.Errorf("failed to evaluate rule %q: %w", rule.Name, err)
+			}
+
+			if match {
+				klog.InfoS("node matched rule", "nodeName", feature.Name, "ruleName", rule.Name)
+				system := feature.Spec.Features.Attributes["system.name"]
+				nodeName := system.Elements["nodename"]
+				if _, ok := nodeGroupValidator[nodeName]; !ok {
+					nodes = append(nodes, nodeName)
+					nodeGroupValidator[nodeName] = true
+				}
+			}
+		}
+	}
+
+	// Update the NodeFeatureGroup object with the updated featureGroupRules
+	nodeFeatureGroupUpdated := nodeFeatureGroup.DeepCopy()
+	nodeFeatureGroupUpdated.Status.Nodes = nodes
+	if !apiequality.Semantic.DeepEqual(nodeFeatureGroup, nodeFeatureGroupUpdated) {
+		klog.InfoS("updating NodeFeatureGroup object", "nodeFeatureGroup", klog.KObj(nodeFeatureGroup))
+		nodeFeatureGroupUpdated, err = nfdClient.NfdV1alpha1().NodeFeatureGroups(m.namespace).Update(context.Background(), nodeFeatureGroupUpdated, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update NodeFeatureGroup object: %w", err)
+		}
+		klog.V(4).InfoS("NodeFeatureGroup object updated", "nodeFeatureGroup", utils.DelayedDumper(nodeFeatureGroupUpdated))
+	} else {
+		klog.V(1).InfoS("no changes in NodeFeatureGroup, object is up to date", "nodeFeatureGroup", klog.KObj(nodeFeatureGroup))
 	}
 
 	return nil
@@ -1340,8 +1439,9 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !m.args.EnableNodeFeatureApi,
-		ResyncPeriod:       m.config.ResyncPeriod.Duration,
+		DisableNodeFeature:      !m.args.EnableNodeFeatureApi,
+		DisableNodeFeatureGroup: !m.args.EnableNodeFeatureGroupApi,
+		ResyncPeriod:            m.config.ResyncPeriod.Duration,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)

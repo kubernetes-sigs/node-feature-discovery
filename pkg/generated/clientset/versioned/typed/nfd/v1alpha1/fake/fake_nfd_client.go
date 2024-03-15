@@ -32,6 +32,10 @@ func (c *FakeNfdV1alpha1) NodeFeatures(namespace string) v1alpha1.NodeFeatureInt
 	return &FakeNodeFeatures{c, namespace}
 }
 
+func (c *FakeNfdV1alpha1) NodeFeatureGroups(namespace string) v1alpha1.NodeFeatureGroupInterface {
+	return &FakeNodeFeatureGroups{c, namespace}
+}
+
 func (c *FakeNfdV1alpha1) NodeFeatureRules() v1alpha1.NodeFeatureRuleInterface {
 	return &FakeNodeFeatureRules{c}
 }
