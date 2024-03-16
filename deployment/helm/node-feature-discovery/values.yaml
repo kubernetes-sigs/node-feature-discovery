@@ -94,17 +94,13 @@ master:
     type: ClusterIP
     port: 8080
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 300m
+      memory: 4Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
 
   nodeSelector: {}
 
@@ -411,17 +407,13 @@ worker:
   # Does not work on systems without /usr/src AND a read-only /usr, such as Talos
   mountUsrSrc: false
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
 
   nodeSelector: {}
 
@@ -469,17 +461,13 @@ topologyUpdater:
     readOnlyRootFilesystem: true
     runAsUser: 0
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 100m
+      memory: 60Mi
+    requests:
+      cpu: 50m
+      memory: 40Mi
 
   nodeSelector: {}
   tolerations: []
@@ -503,17 +491,13 @@ gc:
 
   podSecurityContext: {}
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 20m
+      memory: 1Gi
+    requests:
+      cpu: 10m
+      memory: 128Mi
 
   metricsPort: 8081
 

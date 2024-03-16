@@ -19,6 +19,13 @@ spec:
         - name: nfd-gc
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 20m
+              memory: 1Gi
+            requests:
+              cpu: 10m
+              memory: 128Mi
           command:
             - "nfd-gc"
           ports:

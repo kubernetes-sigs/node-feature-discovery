@@ -21,6 +21,13 @@ spec:
           imagePullPolicy: Always
           command:
             - "nfd-worker"
+          resources:
+            limits:
+              cpu: 200m
+              memory: 512Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
           args:
             - "-server=nfd-master:8080"
           ports:

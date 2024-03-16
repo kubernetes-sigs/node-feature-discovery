@@ -21,6 +21,13 @@ spec:
         - name: nfd-master
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 300m
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
           livenessProbe:
             grpc:
               port: 8082
