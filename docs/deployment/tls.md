@@ -16,9 +16,9 @@ sort: 5
 ---
 
 > **DEPRECATED**: this section only applies when the gRPC API is used, i.e.
-> when the NodeFeature API is disabled via the `-enable-nodefeature-api=false`
-> flag on both nfd-master and nfd-worker. The gRPC API is deprecated and will
-> be removed in a future release.
+> when the NodeFeature API is disabled (via the `-feature-gates
+> NodeFeatureAPI=false` flag) on both nfd-master and nfd-worker. The gRPC API
+> is deprecated and will be removed in a future release.
 
 NFD supports mutual TLS authentication between the nfd-master and nfd-worker
 instances.  That is, nfd-worker and nfd-master both verify that the other end

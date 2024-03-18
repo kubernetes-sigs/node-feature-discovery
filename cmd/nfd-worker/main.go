@@ -62,8 +62,6 @@ func main() {
 	// Check deprecated flags
 	flags.Visit(func(f *flag.Flag) {
 		switch f.Name {
-		case "enable-nodefeature-api":
-			klog.InfoS("-enable-nodefeature-api is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "ca-file":
 			klog.InfoS("-ca-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "cert-file":
