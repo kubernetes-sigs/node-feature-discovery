@@ -40,6 +40,9 @@ const NvFeature = "nv"
 // NumaFeature is the name of the feature set that holds all NUMA related features.
 const NumaFeature = "numa"
 
+// SwapFeature is the name of the feature set that holds all Swap related features
+const SwapFeature = "swap"
+
 // memorySource implements the FeatureSource and LabelSource interfaces.
 type memorySource struct {
 	features *nfdv1alpha1.Features
@@ -68,6 +71,11 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 		labels["numa"] = true
 	}
 
+	// Swap
+	if isSwap, ok := features.Attributes[SwapFeature].Elements["enabled"]; ok && isSwap == "true" {
+		labels["swap"] = true
+	}
+
 	// NVDIMM
 	if len(features.Instances[NvFeature].Elements) > 0 {
 		labels["nv.present"] = true
@@ -93,6 +101,13 @@ func (s *memorySource) Discover() error {
 		s.features.Attributes[NumaFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: numa}
 	}
 
+	// Detect Swap
+	if swap, err := detectSwap(); err != nil {
+		klog.ErrorS(err, "failed to detect Swap nodes")
+	} else {
+		s.features.Attributes[SwapFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: swap}
+	}
+
 	// Detect NVDIMM
 	if nv, err := detectNv(); err != nil {
 		klog.ErrorS(err, "failed to detect nvdimm devices")
@@ -111,6 +126,20 @@ func (s *memorySource) GetFeatures() *nfdv1alpha1.Features {
 		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
+}
+
+// detectSwap detects Swap node information
+func detectSwap() (map[string]string, error) {
+	procBasePath := hostpath.ProcDir.Path("swaps")
+	lines, err := getNumberOfLinesFromFile(procBasePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read swaps file: %w", err)
+	}
+	// /proc/swaps has a header row
+	// If there is more than a header then we assume we have swap.
+	return map[string]string{
+		"enabled": strconv.FormatBool(lines > 1),
+	}, nil
 }
 
 // detectNuma detects NUMA node information
@@ -164,6 +193,14 @@ func readNdDeviceInfo(path string) nfdv1alpha1.InstanceFeature {
 		attrs[attrName] = strings.TrimSpace(string(data))
 	}
 	return *nfdv1alpha1.NewInstanceFeature(attrs)
+}
+
+func getNumberOfLinesFromFile(path string) (int, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	return len(strings.Split(string(data), "\n")), nil
 }
 
 func init() {

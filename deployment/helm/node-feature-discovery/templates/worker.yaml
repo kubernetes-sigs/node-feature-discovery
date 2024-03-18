@@ -93,6 +93,9 @@ spec:
         - name: host-lib
           mountPath: "/host-lib"
           readOnly: true
+        - name: host-proc-swaps
+          mountPath: "/host-proc/swaps"
+          readOnly: true
         {{- if .Values.worker.mountUsrSrc }}
         - name: host-usr-src
           mountPath: "/host-usr/src"
@@ -128,6 +131,9 @@ spec:
         - name: host-lib
           hostPath:
             path: "/lib"
+        - name: host-proc/swaps
+          hostPath:
+            path: "/proc/swaps"
         {{- if .Values.worker.mountUsrSrc }}
         - name: host-usr-src
           hostPath:

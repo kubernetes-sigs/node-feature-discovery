@@ -4,6 +4,9 @@
   - name: host-boot
     hostPath:
       path: "/boot"
+  - name: host-proc-swaps
+    hostPath:
+      path: "/proc/swaps"
   - name: host-os-release
     hostPath:
       path: "/etc/os-release"
@@ -37,6 +40,9 @@
     readOnly: true
   - name: host-sys
     mountPath: "/host-sys"
+    readOnly: true
+  - name: host-proc-swaps
+    mountPath: "/host-proc/swaps"
     readOnly: true
   - name: host-usr-lib
     mountPath: "/host-usr/lib"
