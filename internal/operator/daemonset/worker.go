@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package worker
+package daemonset
 
 import (
 	"context"
@@ -22,36 +22,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 )
 
-//go:generate mockgen -source=worker.go -package=worker -destination=mock_worker.go WorkerAPI
-
-type WorkerAPI interface {
-	SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error
-	SetWorkerConfigMapAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerCM *corev1.ConfigMap) error
-}
-
-type worker struct {
-	scheme *runtime.Scheme
-}
-
-func NewWorkerAPI(scheme *runtime.Scheme) WorkerAPI {
-	return &worker{
-		scheme: scheme,
-	}
-}
-
-func getImagePullPolicy(nfdInstance *nfdv1.NodeFeatureDiscovery) corev1.PullPolicy {
-	if nfdInstance.Spec.Operand.ImagePullPolicy != "" {
-		return corev1.PullPolicy(nfdInstance.Spec.Operand.ImagePullPolicy)
-	}
-	return corev1.PullAlways
-}
+//go:generate mockgen -source=worker.go -package=daemonset -destination=mock_worker.go DaemonsetAPI
 
 func getWorkerEnvs(envVars map[string]string) *[]corev1.EnvVar {
 
@@ -97,11 +73,15 @@ func getWorkerAffinity(terms map[string]string) *corev1.Affinity {
 
 }
 
+func BoolPointer(b bool) *bool {
+	return &b
+}
+
 func getWorkerSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		ReadOnlyRootFilesystem:   pointer.Bool(true),
-		RunAsNonRoot:             pointer.Bool(true),
-		AllowPrivilegeEscalation: pointer.Bool(false),
+		ReadOnlyRootFilesystem:   BoolPointer(true),
+		RunAsNonRoot:             BoolPointer(true),
+		AllowPrivilegeEscalation: BoolPointer(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: "RuntimeDefault",
 		},
@@ -217,7 +197,7 @@ func getWorkerLabelsAForApp(name string) map[string]string {
 	return map[string]string{"app": name}
 }
 
-func (w *worker) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error {
+func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error {
 	workerDS.ObjectMeta.Labels = map[string]string{"app": "nfd"}
 
 	envVars := map[string]string{"NODE_NAME": "spec.nodeName"}
@@ -262,12 +242,5 @@ func (w *worker) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *n
 			},
 		},
 	}
-	return controllerutil.SetControllerReference(nfdInstance, workerDS, w.scheme)
-}
-
-func (w *worker) SetWorkerConfigMapAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerCM *corev1.ConfigMap) error {
-
-	workerCM.Data = map[string]string{"nfd-worker-conf": nfdInstance.Spec.WorkerConfig.ConfigData}
-
-	return controllerutil.SetControllerReference(nfdInstance, workerCM, w.scheme)
+	return controllerutil.SetControllerReference(nfdInstance, workerDS, d.scheme)
 }
