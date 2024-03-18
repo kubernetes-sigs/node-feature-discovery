@@ -190,7 +190,7 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 	nfdTestSuite := func(useNodeFeatureApi bool) {
 		createPodSpecOpts := func(opts ...testpod.SpecOption) []testpod.SpecOption {
 			if !useNodeFeatureApi {
-				return append(opts, testpod.SpecWithContainerExtraArgs("-enable-nodefeature-api=false"))
+				return append(opts, testpod.SpecWithContainerExtraArgs("-feature-gates", "NodeFeatureAPI=false"))
 			}
 			return opts
 		}

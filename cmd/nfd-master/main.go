@@ -185,9 +185,9 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Comma separated list of labels to be exposed as extended resources. DEPRECATED: use NodeFeatureRule objects instead")
 	flagset.Var(overrides.ResyncPeriod, "resync-period",
 		"Specify the NFD API controller resync period."+
-			"It has an effect when the NodeFeature API has been enabled (with -enable-nodefeature-api).")
+			"It does not have effect when the NodeFeature API has been disabled (with -feature-gates NodeFeatureAPI=false).")
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
-		"Can be used for the throttling mechanism. It has effect only when -enable-nodefeature-api has been set.")
+		"Can be used for the throttling mechanism. It does not have effect if NodeFeatureAPI feature gate is disabled.")
 
 	return args, overrides
 }

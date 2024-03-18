@@ -181,12 +181,13 @@ The `-enable-leader-election` flag enables leader election for NFD-Master.
 It is advised to turn on this flag when running more than one instance of
 NFD-Master.
 
-This flag takes effect only when combined with `-enable-nodefeature-api` flag.
+Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
+feature gate is disabled.
 
 Default: false
 
 ```bash
-nfd-master -enable-nodefeature-api -enable-leader-election
+nfd-master -enable-leader-election
 ```
 
 ### -enable-taints
@@ -346,7 +347,8 @@ nfd-master -options='{"noPublish": true}'
 The `-nfd-api-parallelism` flag can be used to specify the maximum
 number of concurrent node updates.
 
-It takes effect only when `-enable-nodefeature-api` has been set.
+Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
+feature gate is disabled.
 
 Default: 10
 
@@ -440,8 +442,9 @@ The `-resync-period` flag specifies the NFD API controller resync period.
 The resync means nfd-master replaying all NodeFeature and NodeFeatureRule objects,
 thus effectively re-syncing all nodes in the cluster (i.e. ensuring labels, annotations,
 extended resources and taints are in place).
-Only has effect when the [NodeFeature](../usage/custom-resources.md#nodefeature)
-CRD API has been enabled with [`-enable-nodefeature-api`](master-commandline-reference.md#-enable-nodefeature-api).
+
+Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
+feature gate is disabled.
 
 Default: 1 hour.
 

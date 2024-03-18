@@ -149,11 +149,12 @@ nfd-worker -key-file=/opt/nfd/worker.key -cert-file=/opt/nfd/worker.crt -ca-file
 ### -kubeconfig
 
 The `-kubeconfig` flag specifies the kubeconfig to use for connecting to the
-Kubernetes API server. It is only needed for manipulating
-[NodeFeature](../usage/custom-resources.md#nodefeature) objects, and thus the flag
-only takes effect when
-[`-enable-nodefeature-api`](#-enable-nodefeature-api)) is specified. An empty
-value (which is also the default) implies in-cluster kubeconfig.
+Kubernetes API server. It is needed for manipulating
+[NodeFeature](../usage/custom-resources.md#nodefeature) objects. An empty value
+(which is also the default) implies in-cluster kubeconfig.
+
+Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
+feature gate is disabled.
 
 Default: *empty*
 
