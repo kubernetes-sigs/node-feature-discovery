@@ -32,7 +32,8 @@ import (
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName = "nfd-worker"
+	ProgramName    = "nfd-worker"
+	GrpcHealthPort = 8082
 )
 
 func main() {
@@ -79,6 +80,7 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new NfdWorker instance
+	args.GrpcHealthPort = GrpcHealthPort
 	instance, err := worker.NewNfdWorker(args)
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdWorker instance")

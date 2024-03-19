@@ -394,6 +394,20 @@ worker:
     runAsNonRoot: true
     # runAsUser: 1000
 
+  # livenessProbe: {}
+    ## NOTE: Currently not configurable, defaults are provided for the sake of extra documentation.
+    # grpc:
+    #   port: 8082
+    # initialDelaySeconds: 10
+    # periodSeconds: 10
+  # readinessProbe: {}
+    ## NOTE: Currently not configurable, defaults are provided for the sake of extra documentation.
+    # grpc:
+    #   port: 8082
+    # initialDelaySeconds: 5
+    # periodSeconds: 10
+    # failureThreshold: 10
+
   serviceAccount:
     # Specifies whether a service account should be created.
     # We create this by default to make it easier for downstream users to apply PodSecurityPolicies.
