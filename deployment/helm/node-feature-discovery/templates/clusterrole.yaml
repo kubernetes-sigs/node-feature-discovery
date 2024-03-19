@@ -59,6 +59,12 @@ rules:
   - get
   - list
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
     - ""
   resources:
     - nodes/proxy
