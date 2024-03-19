@@ -56,14 +56,15 @@ func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingI
 	if _, err := u.nfdMaster.getNode(nodeName); apierrors.IsNotFound(err) {
 		klog.InfoS("node not found, skip update", "nodeName", nodeName)
 	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(nodeName); err != nil {
-		if queue.NumRequeues(nodeName) < 15 {
-			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err)
-			queue.AddRateLimited(nodeName)
-			return true
+		if n := queue.NumRequeues(nodeName); n < 15 {
+			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err, "numRetries", n)
 		} else {
-			klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
+			klog.ErrorS(err, "node update failed, queuing for retry ", "nodeName", nodeName, "numRetries", n)
+			// Count only long-failing attempts
 			nodeUpdateFailures.Inc()
 		}
+		queue.AddRateLimited(nodeName)
+		return true
 	}
 	queue.Forget(nodeName)
 	return true
