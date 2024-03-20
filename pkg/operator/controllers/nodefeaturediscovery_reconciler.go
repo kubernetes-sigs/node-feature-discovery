@@ -174,7 +174,7 @@ func (nfdh *nodeFeatureDiscoveryHelper) handleMaster(ctx context.Context, nfdIns
 		ObjectMeta: metav1.ObjectMeta{Name: "nfd-master", Namespace: nfdInstance.Namespace},
 	}
 	opRes, err := controllerutil.CreateOrPatch(ctx, nfdh.client, &masterDep, func() error {
-		return nfdh.deploymentAPI.SetMasterDeploymentAsDesired(ctx, nfdInstance, &masterDep)
+		return nfdh.deploymentAPI.SetMasterDeploymentAsDesired(nfdInstance, &masterDep)
 	})
 
 	if err != nil {
@@ -232,6 +232,17 @@ func (nfdh *nodeFeatureDiscoveryHelper) handleTopology(ctx context.Context, nfdI
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleGC(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
+	gcDep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "nfd-gc", Namespace: nfdInstance.Namespace},
+	}
+	opRes, err := controllerutil.CreateOrPatch(ctx, nfdh.client, &gcDep, func() error {
+		return nfdh.deploymentAPI.SetGCDeploymentAsDesired(nfdInstance, &gcDep)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to reconcile nfd-gc deployment %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
+	}
+	ctrl.LoggerFrom(ctx).Info("reconciled nfd-gc deployment", "namespace", nfdInstance.Namespace, "name", nfdInstance.Name, "result", opRes)
 	return nil
 }
 

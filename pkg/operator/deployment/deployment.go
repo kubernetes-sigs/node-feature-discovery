@@ -17,7 +17,6 @@ limitations under the License.
 package deployment
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -38,7 +37,8 @@ const (
 //go:generate mockgen -source=deployment.go -package=deployment -destination=mock_deployment.go DeploymentAPI
 
 type DeploymentAPI interface {
-	SetMasterDeploymentAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error
+	SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error
+	SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, gcDep *v1.Deployment) error
 }
 
 type deployment struct {
@@ -51,7 +51,7 @@ func NewDeploymentAPI(scheme *runtime.Scheme) DeploymentAPI {
 	}
 }
 
-func (d *deployment) SetMasterDeploymentAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error {
+func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error {
 	standartLabels := map[string]string{"app": "nfd-master"}
 	masterDep.ObjectMeta.Labels = standartLabels
 
@@ -80,7 +80,7 @@ func (d *deployment) SetMasterDeploymentAsDesired(ctx context.Context, nfdInstan
 						},
 						Args:            getArgs(nfdInstance),
 						Env:             getEnvs(),
-						SecurityContext: getSecurityContext(),
+						SecurityContext: getMasterSecurityContext(),
 						LivenessProbe:   getLivenessProbe(),
 						ReadinessProbe:  getReadinessProbe(),
 					},
@@ -89,6 +89,40 @@ func (d *deployment) SetMasterDeploymentAsDesired(ctx context.Context, nfdInstan
 		},
 	}
 	return controllerutil.SetControllerReference(nfdInstance, masterDep, d.scheme)
+}
+
+func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, gcDep *v1.Deployment) error {
+	gcDep.ObjectMeta.Labels = map[string]string{"app": "nfd"}
+	matchLabels := map[string]string{"app": "nfd-gc"}
+	gcDep.Spec = v1.DeploymentSpec{
+		Replicas: ptr.To[int32](1),
+		Selector: &metav1.LabelSelector{
+			MatchLabels: matchLabels,
+		},
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: matchLabels,
+			},
+			Spec: corev1.PodSpec{
+				ServiceAccountName: "nfd-gc",
+				DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
+				RestartPolicy:      corev1.RestartPolicyAlways,
+				Containers: []corev1.Container{
+					{
+						Name:            "nfd-gc",
+						Image:           nfdInstance.Spec.Operand.ImagePath(),
+						ImagePullPolicy: corev1.PullAlways,
+						Command: []string{
+							"nfd-gc",
+						},
+						Env:             getEnvs(),
+						SecurityContext: getGCSecurityContext(),
+					},
+				},
+			},
+		},
+	}
+	return controllerutil.SetControllerReference(nfdInstance, gcDep, d.scheme)
 }
 
 func getPodsTolerations() []corev1.Toleration {
@@ -180,12 +214,23 @@ func getEnvs() []corev1.EnvVar {
 	}
 }
 
-func getSecurityContext() *corev1.SecurityContext {
+func getMasterSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		RunAsNonRoot: ptr.To(true),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
+		ReadOnlyRootFilesystem: ptr.To(true),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+		AllowPrivilegeEscalation: ptr.To(false),
+	}
+}
+
+func getGCSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		RunAsNonRoot:           ptr.To(true),
 		ReadOnlyRootFilesystem: ptr.To(true),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{"ALL"},
