@@ -237,8 +237,8 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 		} else {
 			w.ownerRefs = []metav1.OwnerReference{
 				{
-					APIVersion: ns.APIVersion,
-					Kind:       ns.Kind,
+					APIVersion: "v1",
+					Kind:       "Namespace",
 					Name:       ns.Name,
 					UID:        types.UID(ns.UID),
 				},
