@@ -152,7 +152,6 @@ var _ = Describe("handleMaster", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
-		//	mockConfigMap = deployment.NewMockConfigMapAPI(ctrl)
 
 		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, scheme)
 	})

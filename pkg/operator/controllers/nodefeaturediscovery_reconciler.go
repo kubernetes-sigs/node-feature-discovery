@@ -197,7 +197,6 @@ func (nfdh *nodeFeatureDiscoveryHelper) handleWorker(ctx context.Context, nfdIns
 		return fmt.Errorf("failed to reconcile worker configmap %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
 	}
 	logger.Info("reconciled worker DaemonSet", "namespace", nfdInstance.Namespace, "name", nfdInstance.Name, "result", cmRes)
-	//the configmap now exists
 
 	workerDS := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "nfd-worker", Namespace: nfdInstance.Namespace},
@@ -208,7 +207,6 @@ func (nfdh *nodeFeatureDiscoveryHelper) handleWorker(ctx context.Context, nfdIns
 	if err != nil {
 		return fmt.Errorf("failed to reconcile worker DaemonSet %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
 	}
-	// the worker DS now exists
 
 	logger.Info("reconciled worker DaemonSet", "namespace", nfdInstance.Namespace, "name", nfdInstance.Name, "result", opRes)
 
