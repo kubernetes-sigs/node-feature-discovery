@@ -537,4 +537,5 @@ tls:
 
 prometheus:
   enable: false
+  scrapeInterval: 10s
   labels: {}
