@@ -22,8 +22,6 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-//go:generate mockgen -source=worker.go -package=daemonset -destination=mock_worker.go DaemonsetAPI
-
 func getWorkerAffinity() *corev1.Affinity {
 	return &corev1.Affinity{
 		NodeAffinity: &corev1.NodeAffinity{
