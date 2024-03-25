@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 )
 
+const finalizerLabel = "nfd-finalizer"
+
 // NodeFeatureDiscoveryReconciler reconciles a NodeFeatureDiscovery object
 type nodeFeatureDiscoveryReconciler struct {
 	helper nodeFeatureDiscoveryHelperAPI
@@ -162,11 +164,12 @@ func (nfdh *nodeFeatureDiscoveryHelper) finalizeComponents(ctx context.Context, 
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) hasFinalizer(nfdInstance *nfdv1.NodeFeatureDiscovery) bool {
-	return false
+	return controllerutil.ContainsFinalizer(nfdInstance, finalizerLabel)
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) setFinalizer(ctx context.Context, instance *nfdv1.NodeFeatureDiscovery) error {
-	return nil
+	instance.Finalizers = append(instance.Finalizers, finalizerLabel)
+	return nfdh.client.Update(ctx, instance)
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleMaster(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
