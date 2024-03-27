@@ -442,7 +442,7 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 				}
 			} else {
 				for nodeName := range updateNodes {
-					m.nodeUpdaterPool.queue.Add(nodeName)
+					m.nodeUpdaterPool.addNode(nodeName)
 				}
 			}
 
@@ -710,7 +710,7 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 	}
 
 	for _, node := range nodes.Items {
-		m.nodeUpdaterPool.queue.Add(node.Name)
+		m.nodeUpdaterPool.addNode(node.Name)
 	}
 
 	return nil

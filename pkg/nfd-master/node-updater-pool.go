@@ -28,7 +28,7 @@ import (
 
 type nodeUpdaterPool struct {
 	queue workqueue.RateLimitingInterface
-	sync.Mutex
+	sync.RWMutex
 
 	wg        sync.WaitGroup
 	nfdMaster *nfdMaster
@@ -113,4 +113,10 @@ func (u *nodeUpdaterPool) stop() {
 	klog.InfoS("stopping the NFD master node updater pool")
 	u.queue.ShutDown()
 	u.wg.Wait()
+}
+
+func (u *nodeUpdaterPool) addNode(nodeName string) {
+	u.RLock()
+	defer u.RUnlock()
+	u.queue.Add(nodeName)
 }
