@@ -36,6 +36,7 @@ const (
 	// ProgramName is the canonical name of this program
 	ProgramName       = "nfd-topology-updater"
 	kubeletSecurePort = 10250
+	GrpcHealthPort    = 8082
 )
 
 var DefaultKubeletStateDir = path.Join(string(hostpath.VarDir), "lib", "kubelet")
@@ -54,6 +55,7 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new TopologyUpdater instance
+	args.GrpcHealthPort = GrpcHealthPort
 	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs)
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize topology updater instance")
