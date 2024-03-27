@@ -67,15 +67,24 @@ spec:
           name: nfd-hooks
         - mountPath: /etc/kubernetes/node-feature-discovery/features.d
           name: nfd-features
+        - mountPath: /host-usr/lib
+          name: host-usr-lib
+          readOnly: true
+        - mountPath: /host-lib
+          name: host-lib
+          readOnly: true
+        - mountPath: /host-usr/src
+          name: host-usr-src
+          readOnly: true
+        - mountPath: /host-proc/swaps
+          name: host-proc-swaps
+          readOnly: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: nfd-worker
       tolerations:
       - effect: NoSchedule
         operator: Exists
       volumes:
-      - hostPath:
-          path: /dev
-        name: host-dev
       - hostPath:
           path: /boot
         name: host-boot
@@ -97,3 +106,15 @@ spec:
             path: nfd-worker.conf
           name: nfd-worker
         name: nfd-worker-config
+      - hostPath:
+          path: /host-usr/lib
+        name: host-usr-lib
+      - hostPath:
+          path: /host-lib
+        name: host-lib
+      - hostPath:
+          path: /host-usr/src
+        name: host-usr-src
+      - hostPath:
+          path: /host-proc/swaps
+        name: host-proc-swaps

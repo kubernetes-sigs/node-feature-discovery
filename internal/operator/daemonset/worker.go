@@ -92,6 +92,26 @@ func getWorkerVolumeMounts() *[]corev1.VolumeMount {
 			Name:      "nfd-features",
 			MountPath: "/etc/kubernetes/node-feature-discovery/features.d",
 		},
+		{
+			Name:      "host-usr-lib",
+			MountPath: "/host-usr/lib",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "host-lib",
+			MountPath: "/host-lib",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "host-usr-src",
+			MountPath: "/host-usr/src",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "host-proc-swaps",
+			MountPath: "/host-proc/swaps",
+			ReadOnly:  true,
+		},
 	}
 
 	return &containerVolumeMounts
@@ -99,14 +119,6 @@ func getWorkerVolumeMounts() *[]corev1.VolumeMount {
 
 func getWorkerVolumes() []corev1.Volume {
 	containerVolume := []corev1.Volume{
-		{
-			Name: "host-dev",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/dev",
-				},
-			},
-		},
 		{
 			Name: "host-boot",
 			VolumeSource: corev1.VolumeSource{
@@ -158,6 +170,38 @@ func getWorkerVolumes() []corev1.Volume {
 							Path: "nfd-worker.conf",
 						},
 					},
+				},
+			},
+		},
+		{
+			Name: "host-usr-lib",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/host-usr/lib",
+				},
+			},
+		},
+		{
+			Name: "host-lib",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/host-lib",
+				},
+			},
+		},
+		{
+			Name: "host-usr-src",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/host-usr/src",
+				},
+			},
+		},
+		{
+			Name: "host-proc-swaps",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/host-proc/swaps",
 				},
 			},
 		},
