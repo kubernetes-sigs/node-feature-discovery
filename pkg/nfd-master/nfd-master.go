@@ -350,6 +350,11 @@ func (m *nfdMaster) Run() error {
 				return err
 			}
 
+			// Stop the nodeUpdaterPool so that no node updates are underway
+			// while we reconfigure the NFD API controller (including the
+			// listers) below
+			m.nodeUpdaterPool.stop()
+
 			// restart NFD API controller
 			if m.nfdController != nil {
 				klog.InfoS("stopping the nfd api controller")
@@ -361,13 +366,13 @@ func (m *nfdMaster) Run() error {
 					return nil
 				}
 			}
+			// Restart the nodeUpdaterPool
+			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
+
 			// Update all nodes when the configuration changes
 			if m.nfdController != nil && features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
-			// Restart the node updater pool
-			m.nodeUpdaterPool.stop()
-			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
 
 		case <-m.stop:
 			klog.InfoS("shutting down nfd-master")
