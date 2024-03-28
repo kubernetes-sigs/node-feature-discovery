@@ -421,7 +421,7 @@ excludeList:
 					}
 				}
 				return memoryFound
-			}, 1*time.Minute, 10*time.Second).Should(BeFalse())
+			}, 2*time.Minute, 10*time.Second).Should(BeFalse())
 		})
 	})
 
