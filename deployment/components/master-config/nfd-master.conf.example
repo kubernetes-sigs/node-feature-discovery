@@ -6,6 +6,20 @@
 # enableTaints: false
 # labelWhiteList: "foo"
 # resyncPeriod: "2h"
+# restrictions:
+#   maxLabelsPerCR: 10
+#   maxTaintsPerCR: 20
+#   maxExtendedResourcesPerCR: 15
+#   overwriteLabels: false
+#   denyNodeFeatureLabels: true
+#   nodeFeatureNamespaceSelector:
+#    matchLabels:
+#      kubernetes.io/metadata.name: "node-feature-discovery"
+#    matchExpressions:
+#      - key: "kubernetes.io/metadata.name"
+#        operator: "In"
+#        values:
+#           - "node-feature-discovery"
 # klog:
 #    addDirHeader: false
 #    alsologtostderr: false
