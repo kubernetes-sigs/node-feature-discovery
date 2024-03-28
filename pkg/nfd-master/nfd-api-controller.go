@@ -49,6 +49,10 @@ type nfdApiControllerOptions struct {
 	ResyncPeriod       time.Duration
 }
 
+func init() {
+	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
+}
+
 func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
 	c := &nfdController{
 		stopChan:           make(chan struct{}, 1),
@@ -118,7 +122,6 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	// Start informers
 	informerFactory.Start(c.stopChan)
 
-	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
 	return c, nil
 }
 
