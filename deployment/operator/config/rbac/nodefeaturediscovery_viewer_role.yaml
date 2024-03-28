@@ -18,4 +18,3 @@ rules:
   - nodefeaturediscoveries/status
   verbs:
   - get
-
