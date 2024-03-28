@@ -106,6 +106,7 @@ rules:
   - get
   - patch
   - update
+  - list
 - apiGroups:
   - ""
   resources:
@@ -150,6 +151,7 @@ rules:
   - get
   - list
   - watch
+  - delete
 - apiGroups:
   - policy
   resourceNames:
@@ -214,3 +216,18 @@ rules:
   - create
   - get
   - update
+  - delete
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  verbs:
+  - get
+- apiGroups:
+  - nfd.k8s-sigs.io
+  resources:
+  - nodefeatures
+  verbs:
+  - list
+  - delete
