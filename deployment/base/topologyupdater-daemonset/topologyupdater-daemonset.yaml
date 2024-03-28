@@ -22,6 +22,13 @@ spec:
           command:
             - "nfd-topology-updater"
           args: []
+          resources:
+            limits:
+              cpu: 100m
+              memory: 60Mi
+            requests:
+              cpu: 50m
+              memory: 40Mi
           ports:
             - name: metrics
               containerPort: 8081
