@@ -201,7 +201,7 @@ func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance
 						Image:           nfdInstance.Spec.Operand.ImagePath(),
 						Name:            "nfd-worker",
 						Command:         []string{"nfd-worker"},
-						Args:            []string{"--server=nfd-master:$(NFD_MASTER_SERVICE_PORT)"},
+						Args:            []string{},
 						VolumeMounts:    *getWorkerVolumeMounts(),
 						ImagePullPolicy: getImagePullPolicy(nfdInstance),
 						SecurityContext: getWorkerSecurityContext(),

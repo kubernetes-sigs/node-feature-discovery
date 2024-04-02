@@ -30,8 +30,7 @@ spec:
               - key: node-role.kubernetes.io/node
                 operator: Exists
       containers:
-      - args:
-        - --server=nfd-master:$(NFD_MASTER_SERVICE_PORT)
+      - args: []
         command:
         - nfd-worker
         env:
