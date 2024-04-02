@@ -100,6 +100,12 @@ master:
       memory: 4Gi
     requests:
       cpu: 100m
+      # You may want to use the same value for `requests.memory` and `limits.memory`. The “requests” value affects scheduling to accommodate pods on nodes.
+      # If there is a large difference between “requests” and “limits” and nodes experience memory pressure, the kernel may invoke
+      # the OOM Killer, even if the memory does not exceed the “limits” threshold. This can cause unexpected pod evictions. Memory
+      # cannot be compressed and once allocated to a pod, it can only be reclaimed by killing the pod. There is a great article by 
+      # Robusta that discusses this issue.
+      # https://home.robusta.dev/blog/kubernetes-memory-limit
       memory: 128Mi
 
   nodeSelector: {}
