@@ -71,3 +71,47 @@ var _ = Describe("SetTopologyDaemonsetAsDesired", func() {
 		Expect(topologyDS).To(BeComparableTo(testTopologyDS))
 	})
 })
+
+var _ = Describe("SetWorkerDaemonsetAsDesired", func() {
+	var (
+		daemonsetAPI DaemonsetAPI
+	)
+
+	BeforeEach(func() {
+		daemonsetAPI = NewDaemonsetAPI(scheme)
+	})
+
+	ctx := context.Background()
+
+	It("worker daemonset populated with correct values", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					Image: "test-image",
+				},
+			},
+		}
+		actualWorkerDS := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nfd-worker",
+				Namespace: "test-namespace",
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "DaemonSet",
+				APIVersion: "apps/v1",
+			},
+		}
+
+		err := daemonsetAPI.SetWorkerDaemonsetAsDesired(ctx, &nfdCR, &actualWorkerDS)
+
+		Expect(err).To(BeNil())
+		expectedYAMLFile, err := os.ReadFile("testdata/test_worker_daemonset.yaml")
+		Expect(err).To(BeNil())
+		expectedJSON, err := yaml.YAMLToJSON(expectedYAMLFile)
+		Expect(err).To(BeNil())
+		expectedWorkerDS := appsv1.DaemonSet{}
+		err = yaml.Unmarshal(expectedJSON, &expectedWorkerDS)
+		Expect(err).To(BeNil())
+		Expect(&expectedWorkerDS).To(BeComparableTo(&actualWorkerDS))
+	})
+})

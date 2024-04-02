@@ -33,6 +33,7 @@ import (
 
 type DaemonsetAPI interface {
 	SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, topologyDS *appsv1.DaemonSet) error
+	SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error
 }
 
 type daemonset struct {
@@ -170,4 +171,45 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error {
+	workerDS.ObjectMeta.Labels = map[string]string{"app": "nfd"}
+
+	workerDS.Spec = appsv1.DaemonSetSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: getWorkerLabelsAForApp("nfd-worker"),
+		},
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: getWorkerLabelsAForApp("nfd-worker"),
+			},
+			Spec: corev1.PodSpec{
+				Tolerations: []corev1.Toleration{
+					{
+						Operator: "Exists",
+						Effect:   "NoSchedule",
+					},
+				},
+				Affinity: getWorkerAffinity(),
+
+				ServiceAccountName: "nfd-worker",
+				DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
+				Containers: []corev1.Container{
+					{
+						Env:             getEnvs(),
+						Image:           nfdInstance.Spec.Operand.ImagePath(),
+						Name:            "nfd-worker",
+						Command:         []string{"nfd-worker"},
+						Args:            []string{},
+						VolumeMounts:    *getWorkerVolumeMounts(),
+						ImagePullPolicy: getImagePullPolicy(nfdInstance),
+						SecurityContext: getWorkerSecurityContext(),
+					},
+				},
+				Volumes: getWorkerVolumes(),
+			},
+		},
+	}
+	return controllerutil.SetControllerReference(nfdInstance, workerDS, d.scheme)
 }
