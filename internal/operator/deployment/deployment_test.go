@@ -17,7 +17,6 @@ limitations under the License.
 package deployment
 
 import (
-	"context"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -37,9 +36,7 @@ var _ = Describe("SetMasterDeploymentAsDesired", func() {
 		deploymentAPI = NewDeploymentAPI(scheme)
 	})
 
-	ctx := context.Background()
-
-	It("good flow, deployment object populated with correct values", func() {
+	It("good flow, master deployment object populated with correct values", func() {
 		nfdCR := nfdv1.NodeFeatureDiscovery{
 			Spec: nfdv1.NodeFeatureDiscoverySpec{
 				Operand: nfdv1.OperandSpec{
@@ -58,10 +55,52 @@ var _ = Describe("SetMasterDeploymentAsDesired", func() {
 			},
 		}
 
-		err := deploymentAPI.SetMasterDeploymentAsDesired(ctx, &nfdCR, &masterDep)
+		err := deploymentAPI.SetMasterDeploymentAsDesired(&nfdCR, &masterDep)
 
 		Expect(err).To(BeNil())
 		expectedYAMLFile, err := os.ReadFile("testdata/test_master_deployment.yaml")
+		Expect(err).To(BeNil())
+		expectedJSON, err := yaml.YAMLToJSON(expectedYAMLFile)
+		Expect(err).To(BeNil())
+		testMasterDep := appsv1.Deployment{}
+		err = yaml.Unmarshal(expectedJSON, &testMasterDep)
+		Expect(err).To(BeNil())
+		Expect(masterDep).To(BeComparableTo(testMasterDep))
+	})
+})
+
+var _ = Describe("SetGCDeploymentAsDesired", func() {
+	var (
+		deploymentAPI DeploymentAPI
+	)
+
+	BeforeEach(func() {
+		deploymentAPI = NewDeploymentAPI(scheme)
+	})
+
+	It("good flow, GC deployment object populated with correct values", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					Image: "test-image",
+				},
+			},
+		}
+		masterDep := appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nfd-gc",
+				Namespace: "test-namespace",
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
+		}
+
+		err := deploymentAPI.SetGCDeploymentAsDesired(&nfdCR, &masterDep)
+
+		Expect(err).To(BeNil())
+		expectedYAMLFile, err := os.ReadFile("testdata/test_gc_deployment.yaml")
 		Expect(err).To(BeNil())
 		expectedJSON, err := yaml.YAMLToJSON(expectedYAMLFile)
 		Expect(err).To(BeNil())
