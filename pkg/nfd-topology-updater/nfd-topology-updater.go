@@ -18,12 +18,16 @@ package nfdtopologyupdater
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -58,6 +62,7 @@ type Args struct {
 	KubeConfigFile  string
 	ConfigFile      string
 	KubeletStateDir string
+	GrpcHealthPort  int
 
 	Klog map[string]*utils.KlogFlagVal
 }
@@ -85,6 +90,7 @@ type nfdTopologyUpdater struct {
 	ownerRefs           []metav1.OwnerReference
 	k8sClient           k8sclient.Interface
 	kubeletConfigFunc   func() (*kubeletconfigv1beta1.KubeletConfiguration, error)
+	healthServer        *grpc.Server
 }
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
@@ -126,6 +132,29 @@ func (w *nfdTopologyUpdater) detectTopologyPolicyAndScope() (string, string, err
 	}
 
 	return klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope, nil
+}
+
+func (w *nfdTopologyUpdater) startGrpcHealthServer(errChan chan<- error) error {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", w.args.GrpcHealthPort))
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	s := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	klog.InfoS("gRPC health server serving", "port", w.args.GrpcHealthPort)
+
+	go func() {
+		defer func() {
+			lis.Close()
+		}()
+		if err := s.Serve(lis); err != nil {
+			errChan <- fmt.Errorf("gRPC health server exited with an error: %w", err)
+		}
+		klog.InfoS("gRPC health server stopped")
+	}()
+	w.healthServer = s
+	return nil
 }
 
 // Run nfdTopologyUpdater. Returns if a fatal error is encountered, or, after
@@ -187,8 +216,20 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
 
+	grpcErr := make(chan error, 1)
+
+	// Start gRPC server for liveness probe (at this point we're "live")
+	if w.args.GrpcHealthPort != 0 {
+		if err := w.startGrpcHealthServer(grpcErr); err != nil {
+			return fmt.Errorf("failed to start gRPC health server: %w", err)
+		}
+	}
+
 	for {
 		select {
+		case err := <-grpcErr:
+			return fmt.Errorf("error in serving gRPC: %w", err)
+
 		case info := <-w.eventSource:
 			klog.V(4).InfoS("event received, scanning...", "event", info.Event)
 			scanResponse, err := resScan.Scan()
@@ -217,6 +258,9 @@ func (w *nfdTopologyUpdater) Run() error {
 
 		case <-w.stop:
 			klog.InfoS("shutting down nfd-topology-updater")
+			if w.healthServer != nil {
+				w.healthServer.GracefulStop()
+			}
 			return nil
 		}
 	}
