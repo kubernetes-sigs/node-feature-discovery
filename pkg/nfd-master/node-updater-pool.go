@@ -53,9 +53,9 @@ func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingI
 	nodeUpdateRequests.Inc()
 
 	// Check if node exists
-	if _, err := u.nfdMaster.getNode(nodeName); apierrors.IsNotFound(err) {
+	if node, err := u.nfdMaster.getNode(nodeName); apierrors.IsNotFound(err) {
 		klog.InfoS("node not found, skip update", "nodeName", nodeName)
-	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(nodeName); err != nil {
+	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(node); err != nil {
 		if n := queue.NumRequeues(nodeName); n < 15 {
 			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err, "numRetries", n)
 		} else {

@@ -157,7 +157,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		fakeMaster := newFakeMaster(fakeCli)
 
 		Convey("When I successfully update the node with feature labels", func() {
-			err := fakeMaster.updateNodeObject(testNodeName, featureLabels, featureAnnotations, featureExtResources, nil)
+			err := fakeMaster.updateNodeObject(testNode, featureLabels, featureAnnotations, featureExtResources, nil)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -185,19 +185,11 @@ func TestUpdateNodeObject(t *testing.T) {
 			})
 		})
 
-		Convey("When I fail to get a node while updating feature labels", func() {
-			err := fakeMaster.updateNodeObject("non-existent-node", featureLabels, featureAnnotations, featureExtResources, nil)
-
-			Convey("Error is produced", func() {
-				So(err, ShouldBeError)
-			})
-		})
-
 		Convey("When I fail to patch a node", func() {
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 				return true, &v1.Node{}, errors.New("Fake error when patching node")
 			})
-			err := fakeMaster.updateNodeObject(testNodeName, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
+			err := fakeMaster.updateNodeObject(testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldBeError)

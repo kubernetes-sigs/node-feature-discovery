@@ -503,7 +503,7 @@ func (m *nfdMaster) prune() error {
 		klog.InfoS("pruning node...", "nodeName", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeObject(node.Name, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
+		err := m.updateNodeObject(&node, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
 		if err != nil {
 			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
@@ -692,8 +692,13 @@ func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.Se
 		klog.InfoS("gRPC SetLabels request received", "nodeName", r.NodeName)
 	}
 	if !m.config.NoPublish {
+		// Fetch the node object.
+		node, err := m.getNode(r.NodeName)
+		if err != nil {
+			return &pb.SetLabelsReply{}, err
+		}
 		// Create labels et al
-		if err := m.refreshNodeFeatures(r.NodeName, r.GetLabels(), r.GetFeatures()); err != nil {
+		if err := m.refreshNodeFeatures(node, r.GetLabels(), r.GetFeatures()); err != nil {
 			nodeUpdateFailures.Inc()
 			return &pb.SetLabelsReply{}, err
 		}
@@ -716,15 +721,15 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 	return nil
 }
 
-func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
+func (m *nfdMaster) nfdAPIUpdateOneNode(node *corev1.Node) error {
 	if m.nfdController == nil || m.nfdController.featureLister == nil {
 		return nil
 	}
 
-	sel := k8sLabels.SelectorFromSet(k8sLabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
+	sel := k8sLabels.SelectorFromSet(k8sLabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: node.Name})
 	objs, err := m.nfdController.featureLister.List(sel)
 	if err != nil {
-		return fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
+		return fmt.Errorf("failed to get NodeFeature resources for node %q: %w", node.Name, err)
 	}
 
 	// Sort our objects
@@ -748,7 +753,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 		return nil
 	}
 
-	klog.V(1).InfoS("processing of node initiated by NodeFeature API", "nodeName", nodeName)
+	klog.V(1).InfoS("processing of node initiated by NodeFeature API", "nodeName", node.Name)
 
 	features := nfdv1alpha1.NewNodeFeatureSpec()
 
@@ -775,7 +780,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(nodeName string) error {
 	// Update node labels et al. This may also mean removing all NFD-owned
 	// labels (et al.), for example  in the case no NodeFeature objects are
 	// present.
-	if err := m.refreshNodeFeatures(nodeName, features.Labels, &features.Features); err != nil {
+	if err := m.refreshNodeFeatures(node, features.Labels, &features.Features); err != nil {
 		return err
 	}
 
@@ -820,14 +825,14 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	return filteredValue, nil
 }
 
-func (m *nfdMaster) refreshNodeFeatures(nodeName string, labels map[string]string, features *nfdv1alpha1.Features) error {
+func (m *nfdMaster) refreshNodeFeatures(node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features) error {
 	if m.config.AutoDefaultNs {
 		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 	} else if labels == nil {
 		labels = make(map[string]string)
 	}
 
-	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(nodeName, features)
+	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(node.Name, features)
 
 	// Mix in CR-originated labels
 	maps.Copy(labels, crLabels)
@@ -849,9 +854,9 @@ func (m *nfdMaster) refreshNodeFeatures(nodeName string, labels map[string]strin
 		taints = filterTaints(crTaints)
 	}
 
-	err := m.updateNodeObject(nodeName, labels, annotations, extendedResources, taints)
+	err := m.updateNodeObject(node, labels, annotations, extendedResources, taints)
 	if err != nil {
-		klog.ErrorS(err, "failed to update node", "nodeName", nodeName)
+		klog.ErrorS(err, "failed to update node", "nodeName", node.Name)
 		return err
 	}
 
@@ -861,14 +866,9 @@ func (m *nfdMaster) refreshNodeFeatures(nodeName string, labels map[string]strin
 // setTaints sets node taints and annotations based on the taints passed via
 // nodeFeatureRule custom resorce. If empty list of taints is passed, currently
 // NFD owned taints and annotations are removed from the node.
-func (m *nfdMaster) setTaints(taints []corev1.Taint, nodeName string) error {
-	// Fetch the node object.
-	node, err := m.getNode(nodeName)
-	if err != nil {
-		return err
-	}
-
+func (m *nfdMaster) setTaints(taints []corev1.Taint, node *corev1.Node) error {
 	// De-serialize the taints annotation into corev1.Taint type for comparision below.
+	var err error
 	oldTaints := []corev1.Taint{}
 	if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok {
 		sts := strings.Split(val, ",")
@@ -905,11 +905,10 @@ func (m *nfdMaster) setTaints(taints []corev1.Taint, nodeName string) error {
 	}
 
 	if taintsUpdated {
-		err = controller.PatchNodeTaints(context.TODO(), m.k8sClient, nodeName, node, newNode)
-		if err != nil {
+		if err := controller.PatchNodeTaints(context.TODO(), m.k8sClient, node.Name, node, newNode); err != nil {
 			return fmt.Errorf("failed to patch the node %v", node.Name)
 		}
-		klog.InfoS("updated node taints", "nodeName", nodeName)
+		klog.InfoS("updated node taints", "nodeName", node.Name)
 	}
 
 	// Update node annotation that holds the taints managed by us
@@ -926,11 +925,10 @@ func (m *nfdMaster) setTaints(taints []corev1.Taint, nodeName string) error {
 
 	patches := createPatches([]string{nfdv1alpha1.NodeTaintsAnnotation}, node.Annotations, newAnnotations, "/metadata/annotations")
 	if len(patches) > 0 {
-		err = m.patchNode(node.Name, patches)
-		if err != nil {
+		if err := m.patchNode(node.Name, patches); err != nil {
 			return fmt.Errorf("error while patching node object: %w", err)
 		}
-		klog.V(1).InfoS("patched node annotations for taints", "nodeName", nodeName)
+		klog.V(1).InfoS("patched node annotations for taints", "nodeName", node.Name)
 	}
 	return nil
 }
@@ -1024,13 +1022,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 // updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeObject(nodeName string, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
-	// Get the worker node object
-	node, err := m.getNode(nodeName)
-	if err != nil {
-		return err
-	}
-
+func (m *nfdMaster) updateNodeObject(node *corev1.Node, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
 	annotations := make(Annotations)
 
 	// Store names of labels in an annotation
@@ -1083,7 +1075,7 @@ func (m *nfdMaster) updateNodeObject(nodeName string, labels Labels, featureAnno
 
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
-	err = m.patchNodeStatus(node.Name, statusPatches)
+	err := m.patchNodeStatus(node.Name, statusPatches)
 	if err != nil {
 		return fmt.Errorf("error while patching extended resources: %w", err)
 	}
@@ -1096,13 +1088,13 @@ func (m *nfdMaster) updateNodeObject(nodeName string, labels Labels, featureAnno
 
 	if len(patches) > 0 || len(statusPatches) > 0 {
 		nodeUpdates.Inc()
-		klog.InfoS("node updated", "nodeName", nodeName)
+		klog.InfoS("node updated", "nodeName", node.Name)
 	} else {
-		klog.V(1).InfoS("no updates to node", "nodeName", nodeName)
+		klog.V(1).InfoS("no updates to node", "nodeName", node.Name)
 	}
 
 	// Set taints
-	err = m.setTaints(taints, node.Name)
+	err = m.setTaints(taints, node)
 	if err != nil {
 		return err
 	}
