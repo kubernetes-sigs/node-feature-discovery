@@ -18,13 +18,18 @@ package daemonset
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -34,7 +39,7 @@ var _ = Describe("SetTopologyDaemonsetAsDesired", func() {
 	)
 
 	BeforeEach(func() {
-		daemonsetAPI = NewDaemonsetAPI(scheme)
+		daemonsetAPI = NewDaemonsetAPI(nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -78,7 +83,7 @@ var _ = Describe("SetWorkerDaemonsetAsDesired", func() {
 	)
 
 	BeforeEach(func() {
-		daemonsetAPI = NewDaemonsetAPI(scheme)
+		daemonsetAPI = NewDaemonsetAPI(nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -113,5 +118,51 @@ var _ = Describe("SetWorkerDaemonsetAsDesired", func() {
 		err = yaml.Unmarshal(expectedJSON, &expectedWorkerDS)
 		Expect(err).To(BeNil())
 		Expect(&expectedWorkerDS).To(BeComparableTo(&actualWorkerDS))
+	})
+})
+
+var _ = Describe("DeleteDaemonSet", func() {
+	var (
+		ctrl         *gomock.Controller
+		clnt         *client.MockClient
+		daemonsetAPI DaemonsetAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		daemonsetAPI = NewDaemonsetAPI(clnt, scheme)
+	})
+
+	ctx := context.Background()
+	name := "ds-name"
+	namespace := "ds-namespace"
+
+	expectedDS := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+
+	It("failure to delete daemonset from the cluster", func() {
+		clnt.EXPECT().Delete(ctx, expectedDS).Return(fmt.Errorf("some error"))
+
+		err := daemonsetAPI.DeleteDaemonSet(ctx, namespace, name)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("daemonset is not present in the cluster", func() {
+		clnt.EXPECT().Delete(ctx, expectedDS).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever"))
+
+		err := daemonsetAPI.DeleteDaemonSet(ctx, namespace, name)
+		Expect(err).To(BeNil())
+	})
+
+	It("daemonset deleted successfully", func() {
+		clnt.EXPECT().Delete(ctx, expectedDS).Return(nil)
+
+		err := daemonsetAPI.DeleteDaemonSet(ctx, namespace, name)
+		Expect(err).To(BeNil())
 	})
 })

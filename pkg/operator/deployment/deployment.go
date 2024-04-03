@@ -17,6 +17,7 @@ limitations under the License.
 package deployment
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -25,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
@@ -39,14 +41,17 @@ const (
 type DeploymentAPI interface {
 	SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error
 	SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, gcDep *v1.Deployment) error
+	DeleteDeployment(ctx context.Context, namespace, name string) error
 }
 
 type deployment struct {
+	client client.Client
 	scheme *runtime.Scheme
 }
 
-func NewDeploymentAPI(scheme *runtime.Scheme) DeploymentAPI {
+func NewDeploymentAPI(client client.Client, scheme *runtime.Scheme) DeploymentAPI {
 	return &deployment{
+		client: client,
 		scheme: scheme,
 	}
 }
@@ -123,6 +128,20 @@ func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDisc
 		},
 	}
 	return controllerutil.SetControllerReference(nfdInstance, gcDep, d.scheme)
+}
+
+func (d *deployment) DeleteDeployment(ctx context.Context, namespace, name string) error {
+	dep := v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+	err := d.client.Delete(ctx, &dep)
+	if err != nil && client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to delete deployment %s/%s: %w", namespace, name, err)
+	}
+	return nil
 }
 
 func getPodsTolerations() []corev1.Toleration {

@@ -18,9 +18,12 @@ package configmap
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
@@ -30,14 +33,17 @@ import (
 
 type ConfigMapAPI interface {
 	SetWorkerConfigMapAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerCM *corev1.ConfigMap) error
+	DeleteConfigMap(ctx context.Context, namespace, name string) error
 }
 
 type configMap struct {
+	client client.Client
 	scheme *runtime.Scheme
 }
 
-func NewConfigMapAPI(scheme *runtime.Scheme) ConfigMapAPI {
+func NewConfigMapAPI(client client.Client, scheme *runtime.Scheme) ConfigMapAPI {
 	return &configMap{
+		client: client,
 		scheme: scheme,
 	}
 }
@@ -47,4 +53,18 @@ func (c *configMap) SetWorkerConfigMapAsDesired(ctx context.Context, nfdInstance
 	cm.Data = map[string]string{"nfd-worker-conf": nfdInstance.Spec.WorkerConfig.ConfigData}
 
 	return controllerutil.SetControllerReference(nfdInstance, cm, c.scheme)
+}
+
+func (c *configMap) DeleteConfigMap(ctx context.Context, namespace, name string) error {
+	cm := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+	err := c.client.Delete(ctx, &cm)
+	if err != nil && client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to delete configmap %s/%s: %w", namespace, name, err)
+	}
+	return nil
 }

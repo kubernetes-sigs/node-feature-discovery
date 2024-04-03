@@ -18,13 +18,18 @@ package configmap
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -34,7 +39,7 @@ var _ = Describe("SetWorkerDaemonsetAsDesired", func() {
 	)
 
 	BeforeEach(func() {
-		configmapAPI = NewConfigMapAPI(scheme)
+		configmapAPI = NewConfigMapAPI(nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -69,5 +74,50 @@ var _ = Describe("SetWorkerDaemonsetAsDesired", func() {
 		err = yaml.Unmarshal(expectedJSON, &expectedWorkerCM)
 		Expect(err).To(BeNil())
 		Expect(&expectedWorkerCM).To(BeComparableTo(&actualWorkerCM))
+	})
+})
+
+var _ = Describe("DeleteConfigMap", func() {
+	var (
+		ctrl  *gomock.Controller
+		clnt  *client.MockClient
+		cmAPI ConfigMapAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		cmAPI = NewConfigMapAPI(clnt, scheme)
+	})
+
+	ctx := context.Background()
+	name := "cm-name"
+	namespace := "cm-namespace"
+	expectedCM := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+
+	It("failure to delete configmap from the cluster", func() {
+		clnt.EXPECT().Delete(ctx, expectedCM).Return(fmt.Errorf("some error"))
+
+		err := cmAPI.DeleteConfigMap(ctx, namespace, name)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("configmap is not present in the cluster", func() {
+		clnt.EXPECT().Delete(ctx, expectedCM).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever"))
+
+		err := cmAPI.DeleteConfigMap(ctx, namespace, name)
+		Expect(err).To(BeNil())
+	})
+
+	It("configmap deleted successfully", func() {
+		clnt.EXPECT().Delete(ctx, expectedCM).Return(nil)
+
+		err := cmAPI.DeleteConfigMap(ctx, namespace, name)
+		Expect(err).To(BeNil())
 	})
 })

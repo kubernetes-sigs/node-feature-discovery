@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 
@@ -545,4 +546,94 @@ var _ = Describe("setFinalizer", func() {
 		err = nfdh.setFinalizer(ctx, &nfdCR)
 		Expect(err).To(BeNil())
 	})
+})
+
+var _ = Describe("finalizeComponents", func() {
+	var (
+		ctrl           *gomock.Controller
+		clnt           *client.MockClient
+		mockDeployment *deployment.MockDeploymentAPI
+		mockDS         *daemonset.MockDaemonsetAPI
+		mockCM         *configmap.MockConfigMapAPI
+		nfdh           nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
+		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
+		mockCM = configmap.NewMockConfigMapAPI(ctrl)
+
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, scheme)
+	})
+
+	ctx := context.Background()
+	namespace := "test-namespace"
+	nfdCR := nfdv1.NodeFeatureDiscovery{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace},
+		Spec: nfdv1.NodeFeatureDiscoverySpec{
+			TopologyUpdater: true,
+		},
+	}
+
+	DescribeTable("check finalization normal and error flows", func(deleteWorkerDSError,
+		deleteWorkerCMError,
+		deleteTopologyDSError,
+		deleteMasterDeploymentError,
+		deleteGCDeploymentError,
+		updateError bool) {
+
+		controllerutil.AddFinalizer(&nfdCR, finalizerLabel)
+
+		if deleteWorkerDSError {
+			mockDS.EXPECT().DeleteDaemonSet(ctx, namespace, "nfd-worker").Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockDS.EXPECT().DeleteDaemonSet(ctx, namespace, "nfd-worker").Return(nil)
+		if deleteWorkerCMError {
+			mockCM.EXPECT().DeleteConfigMap(ctx, namespace, "nfd-worker").Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockCM.EXPECT().DeleteConfigMap(ctx, namespace, "nfd-worker").Return(nil)
+		if deleteTopologyDSError {
+			mockDS.EXPECT().DeleteDaemonSet(ctx, namespace, "nfd-topology-updater").Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockDS.EXPECT().DeleteDaemonSet(ctx, namespace, "nfd-topology-updater").Return(nil)
+		if deleteMasterDeploymentError {
+			mockDeployment.EXPECT().DeleteDeployment(ctx, namespace, "nfd-master").Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockDeployment.EXPECT().DeleteDeployment(ctx, namespace, "nfd-master").Return(nil)
+		if deleteGCDeploymentError {
+			mockDeployment.EXPECT().DeleteDeployment(ctx, namespace, "nfd-gc").Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockDeployment.EXPECT().DeleteDeployment(ctx, namespace, "nfd-gc").Return(nil)
+		if updateError {
+			clnt.EXPECT().Update(ctx, gomock.Any()).Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		clnt.EXPECT().Update(ctx, gomock.Any()).Return(nil)
+
+	executeTestFunction:
+
+		err := nfdh.finalizeComponents(ctx, &nfdCR)
+
+		if deleteGCDeploymentError || deleteWorkerDSError || deleteWorkerCMError ||
+			deleteTopologyDSError || deleteMasterDeploymentError || updateError {
+			Expect(err).To(HaveOccurred())
+		} else {
+			Expect(err).To(BeNil())
+		}
+	},
+		Entry("delete worker daemonset failed", true, false, false, false, false, false),
+		Entry("delete worker configmap failed", false, true, false, false, false, false),
+		Entry("delete topology daemonset failed", false, false, true, false, false, false),
+		Entry("delete master deployment failed", false, false, false, true, false, false),
+		Entry("delete gc deployment failed", false, false, false, false, true, false),
+		Entry("updating removed finalizer failed", false, false, false, false, false, true),
+		Entry("finalization flow was succesful", false, false, false, false, false, false),
+	)
 })
