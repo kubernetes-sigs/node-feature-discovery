@@ -162,7 +162,7 @@ var _ = Describe("handleMaster", func() {
 		nfdCR := nfdv1.NodeFeatureDiscovery{}
 		gomock.InOrder(
 			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
-			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(ctx, &nfdCR, gomock.Any()).Return(nil),
+			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(&nfdCR, gomock.Any()).Return(nil),
 			clnt.EXPECT().Create(ctx, gomock.Any()).Return(nil),
 		)
 
@@ -188,7 +188,7 @@ var _ = Describe("handleMaster", func() {
 					return nil
 				},
 			),
-			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(ctx, &nfdCR, &existingDeployment).Return(nil),
+			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(&nfdCR, &existingDeployment).Return(nil),
 		)
 
 		err := nfdh.handleMaster(ctx, &nfdCR)
@@ -199,7 +199,7 @@ var _ = Describe("handleMaster", func() {
 		nfdCR := nfdv1.NodeFeatureDiscovery{}
 		gomock.InOrder(
 			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
-			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(ctx, &nfdCR, gomock.Any()).Return(fmt.Errorf("some error")),
+			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(&nfdCR, gomock.Any()).Return(fmt.Errorf("some error")),
 		)
 
 		err := nfdh.handleMaster(ctx, &nfdCR)
@@ -289,5 +289,72 @@ var _ = Describe("handleTopology", func() {
 
 		err := nfdh.handleTopology(ctx, &nfdCR)
 		Expect(err).To(BeNil())
+	})
+})
+
+var _ = Describe("handleGC", func() {
+	var (
+		ctrl           *gomock.Controller
+		clnt           *client.MockClient
+		mockDeployment *deployment.MockDeploymentAPI
+		nfdh           nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
+
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, scheme)
+	})
+
+	ctx := context.Background()
+
+	It("should create new nfd-gc deployment if it does not exist", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{}
+		gomock.InOrder(
+			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockDeployment.EXPECT().SetGCDeploymentAsDesired(&nfdCR, gomock.Any()).Return(nil),
+			clnt.EXPECT().Create(ctx, gomock.Any()).Return(nil),
+		)
+
+		err := nfdh.handleGC(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+
+	It("nfd-gc deployment exists, no need to create it, update is not executed", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nfd-cr",
+				Namespace: "test-namespace",
+			},
+		}
+		existingDeployment := appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{Namespace: nfdCR.Namespace, Name: "nfd-gc"},
+		}
+		gomock.InOrder(
+			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).DoAndReturn(
+				func(_ interface{}, _ interface{}, dp *appsv1.Deployment, _ ...ctrlclient.GetOption) error {
+					dp.SetName(existingDeployment.Name)
+					dp.SetNamespace(existingDeployment.Namespace)
+					return nil
+				},
+			),
+			mockDeployment.EXPECT().SetGCDeploymentAsDesired(&nfdCR, &existingDeployment).Return(nil),
+		)
+
+		err := nfdh.handleGC(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+
+	It("error flow, failed to populate nfd-gc deployment object", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{}
+		gomock.InOrder(
+			clnt.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockDeployment.EXPECT().SetGCDeploymentAsDesired(&nfdCR, gomock.Any()).Return(fmt.Errorf("some error")),
+		)
+
+		err := nfdh.handleGC(ctx, &nfdCR)
+		Expect(err).To(HaveOccurred())
 	})
 })
