@@ -358,3 +358,91 @@ var _ = Describe("handleGC", func() {
 		Expect(err).To(HaveOccurred())
 	})
 })
+
+var _ = Describe("hasFinalizer", func() {
+	It("checking return status whether finalizer set or not", func() {
+		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil)
+
+		By("finalizers was empty")
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: nil,
+			},
+		}
+		res := nfdh.hasFinalizer(&nfdCR)
+		Expect(res).To(BeFalse())
+
+		By("finalizers exists, but NFD finalizer missing")
+		nfdCR = nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: []string{"some finalizer"},
+			},
+		}
+		res = nfdh.hasFinalizer(&nfdCR)
+		Expect(res).To(BeFalse())
+
+		By("finalizers exists, but NFD finalizer present")
+		nfdCR = nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: []string{"some finalizer", finalizerLabel},
+			},
+		}
+		res = nfdh.hasFinalizer(&nfdCR)
+		Expect(res).To(BeTrue())
+	})
+})
+
+var _ = Describe("setFinalizer", func() {
+	var (
+		ctrl *gomock.Controller
+		clnt *client.MockClient
+		nfdh nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil)
+	})
+
+	It("checking the return status of setFinalizer function", func() {
+		ctx := context.Background()
+
+		By("Updating the NFD instance fails, original finalizers was empty")
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: nil,
+			},
+		}
+		expectedCR := nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: []string{finalizerLabel},
+			},
+		}
+		clnt.EXPECT().Update(ctx, &expectedCR).Return(fmt.Errorf("some error"))
+		err := nfdh.setFinalizer(ctx, &nfdCR)
+		Expect(err).ToNot(BeNil())
+
+		By("Updating the NFD instance succeeds")
+		nfdCR = nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: []string{"some finalizer"},
+			},
+		}
+		expectedCR = nfdv1.NodeFeatureDiscovery{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "nfd-cr",
+				Finalizers: []string{"some finalizer", finalizerLabel},
+			},
+		}
+		clnt.EXPECT().Update(ctx, &expectedCR).Return(nil)
+		err = nfdh.setFinalizer(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+})
