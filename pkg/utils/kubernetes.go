@@ -49,8 +49,5 @@ func GetKubernetesNamespace() string {
 
 // GetKubeconfig returns the kubeconfig for the cluster
 func GetKubeconfig(path string) (*restclient.Config, error) {
-	if path == "" {
-		return restclient.InClusterConfig()
-	}
-	return clientcmd.BuildConfigFromFlags("", path)
+	return clientcmd.BuildConfigFromFlags(os.Getenv("KUBERNETES_MASTER"), path)
 }
