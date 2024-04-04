@@ -194,6 +194,19 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
 	}
 
+	// k8sClient might've been set via opts by tests
+	if nfd.k8sClient == nil {
+		kubeconfig, err := utils.GetKubeconfig(nfd.args.Kubeconfig)
+		if err != nil {
+			return nfd, err
+		}
+		cli, err := k8sclient.NewForConfig(kubeconfig)
+		if err != nil {
+			return nfd, err
+		}
+		nfd.k8sClient = cli
+	}
+
 	nfd.nodeUpdaterPool = newNodeUpdaterPool(nfd)
 
 	return nfd, nil
@@ -770,10 +783,6 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(node *corev1.Node) error {
 		return objs[i].Namespace < objs[j].Namespace
 	})
 
-	if m.config.NoPublish {
-		return nil
-	}
-
 	klog.V(1).InfoS("processing of node initiated by NodeFeature API", "nodeName", node.Name)
 
 	features := nfdv1alpha1.NewNodeFeatureSpec()
@@ -873,6 +882,11 @@ func (m *nfdMaster) refreshNodeFeatures(node *corev1.Node, labels map[string]str
 	var taints []corev1.Taint
 	if m.config.EnableTaints {
 		taints = filterTaints(crTaints)
+	}
+
+	if m.config.NoPublish {
+		klog.V(1).InfoS("node update skipped, NoPublish=true", "nodeName", node.Name)
+		return nil
 	}
 
 	err := m.updateNodeObject(node, labels, annotations, extendedResources, taints)
@@ -1248,18 +1262,6 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 
 	if err := klogutils.MergeKlogConfiguration(m.args.Klog, c.Klog); err != nil {
 		return err
-	}
-
-	if !c.NoPublish {
-		kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
-		if err != nil {
-			return err
-		}
-		cli, err := k8sclient.NewForConfig(kubeconfig)
-		if err != nil {
-			return err
-		}
-		m.k8sClient = cli
 	}
 
 	// Pre-process DenyLabelNS into 2 lists: one for normal ns, and the other for wildcard ns
