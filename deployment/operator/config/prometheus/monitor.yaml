@@ -4,8 +4,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-monitor
+    control-plane: nfd-controller-manager
+  name: nfd-controller-manager-metrics-monitor
   namespace: node-feature-discovery-operator
 spec:
   endpoints:
@@ -13,5 +13,5 @@ spec:
       port: https
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: nfd-controller-manager
 

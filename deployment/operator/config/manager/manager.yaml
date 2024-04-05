@@ -2,25 +2,25 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: controller-manager
+    control-plane: nfd-controller-manager
   name: node-feature-discovery-operator
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: nfd-controller-manager
   namespace: node-feature-discovery-operator
   labels:
     control-plane: controller-manager
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: nfd-controller-manager
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        control-plane: nfd-controller-manager
     spec:
       containers:
         - name: manager

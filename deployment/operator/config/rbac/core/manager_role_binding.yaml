@@ -1,13 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: leader-election-rolebinding
+  name: nfd-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: leader-election-role
+  kind: ClusterRole
+  name: nfd-manager-role
 subjects:
 - kind: ServiceAccount
   name: default
   namespace: node-feature-discovery-operator
-
