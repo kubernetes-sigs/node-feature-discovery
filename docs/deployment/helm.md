@@ -101,6 +101,7 @@ Chart parameters are available.
 | `featureGates.NodeFeatureAPI`| bool   | true                                    | Enable the [NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for communicating node features. This will automatically disable the gRPC communication. **NOTE**: this parameter is related to the deprecated gRPC API and will be removed with it in a future release    |
 | `prometheus.enable`   | bool   | false                                   | Specifies whether to expose metrics using prometheus operator                                                                                |
 | `prometheus.labels`   | dict   | {}                                      | Specifies labels for use with the prometheus operator to control how it is selected                                                        |
+| `prometheus.scrapeInterval`    | string   | 10s                                      | Specifies the interval by which metrics are scraped                                                        |
 | `priorityClassName`   | string |                                         | The name of the PriorityClass to be used for the NFD pods. |
 
 Metrics are configured to be exposed using prometheus operator API's by
