@@ -76,7 +76,7 @@ type NFDConfig struct {
 	AutoDefaultNs     bool
 	DenyLabelNs       utils.StringSetVal
 	ExtraLabelNs      utils.StringSetVal
-	LabelWhiteList    utils.RegexpVal
+	LabelWhiteList    *regexp.Regexp
 	NoPublish         bool
 	ResourceLabels    utils.StringSetVal
 	EnableTaints      bool
@@ -197,7 +197,6 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 
 func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
-		LabelWhiteList:    utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 		DenyLabelNs:       utils.StringSetVal{},
 		ExtraLabelNs:      utils.StringSetVal{},
 		NoPublish:         false,
@@ -608,8 +607,8 @@ func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1
 	}
 
 	// Skip if label doesn't match labelWhiteList
-	if !m.config.LabelWhiteList.Regexp.MatchString(base) {
-		return "", fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.Regexp.String())
+	if m.config.LabelWhiteList != nil && !m.config.LabelWhiteList.MatchString(base) {
+		return "", fmt.Errorf("%s (%s) does not match the whitelist (%s)", base, name, m.config.LabelWhiteList.String())
 	}
 
 	return filteredValue, nil
@@ -1210,7 +1209,7 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 		c.EnableTaints = *m.args.Overrides.EnableTaints
 	}
 	if m.args.Overrides.LabelWhiteList != nil {
-		c.LabelWhiteList = *m.args.Overrides.LabelWhiteList
+		c.LabelWhiteList = &m.args.Overrides.LabelWhiteList.Regexp
 	}
 	if m.args.Overrides.ResyncPeriod != nil {
 		c.ResyncPeriod = *m.args.Overrides.ResyncPeriod

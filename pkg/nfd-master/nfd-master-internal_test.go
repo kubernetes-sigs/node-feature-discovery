@@ -22,7 +22,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -108,7 +107,7 @@ func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 func newFakeMaster(cli k8sclient.Interface) *nfdMaster {
 	return &nfdMaster{
 		nodeName:  testNodeName,
-		config:    &NFDConfig{LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")}},
+		config:    &NFDConfig{},
 		k8sClient: cli,
 	}
 }

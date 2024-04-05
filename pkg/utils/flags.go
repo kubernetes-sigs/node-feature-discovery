@@ -42,25 +42,6 @@ func (a *RegexpVal) Set(val string) error {
 	return err
 }
 
-// UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
-func (a *RegexpVal) UnmarshalJSON(data []byte) error {
-	var v interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	switch val := v.(type) {
-	case string:
-		if r, err := regexp.Compile(string(val)); err != nil {
-			return err
-		} else {
-			*a = RegexpVal{*r}
-		}
-	default:
-		return fmt.Errorf("invalid regexp %s", data)
-	}
-	return nil
-}
-
 // StringSetVal is a Value encapsulating a set of comma-separated strings
 type StringSetVal map[string]struct{}
 
