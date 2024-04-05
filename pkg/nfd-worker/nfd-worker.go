@@ -146,7 +146,7 @@ func NewNfdWorker(args *Args) (NfdWorker, error) {
 		args:                *args,
 		config:              &NFDConfig{},
 		kubernetesNamespace: utils.GetKubernetesNamespace(),
-		stop:                make(chan struct{}, 1),
+		stop:                make(chan struct{}),
 	}
 
 	// Check TLS related args
@@ -290,7 +290,7 @@ func (w *nfdWorker) Run() error {
 		return nil
 	}
 
-	grpcErr := make(chan error, 1)
+	grpcErr := make(chan error)
 
 	// Start gRPC server for liveness probe (at this point we're "live")
 	if w.args.GrpcHealthPort != 0 {

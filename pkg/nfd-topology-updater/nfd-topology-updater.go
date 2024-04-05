@@ -111,7 +111,7 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (Nf
 	nfd := &nfdTopologyUpdater{
 		args:                args,
 		resourcemonitorArgs: resourcemonitorArgs,
-		stop:                make(chan struct{}, 1),
+		stop:                make(chan struct{}),
 		nodeName:            utils.NodeName(),
 		eventSource:         eventSource,
 		config:              &NFDConfig{},
@@ -207,7 +207,6 @@ func (w *nfdTopologyUpdater) Run() error {
 	// CAUTION: these resources are expected to change rarely - if ever.
 	// So we are intentionally do this once during the process lifecycle.
 	// TODO: Obtain node resources dynamically from the podresource API
-	// zonesChannel := make(chan v1alpha1.ZoneList)
 	var zones v1alpha2.ZoneList
 
 	excludeList := resourcemonitor.NewExcludeResourceList(w.config.ExcludeList, w.nodeName)
@@ -216,7 +215,7 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
 
-	grpcErr := make(chan error, 1)
+	grpcErr := make(chan error)
 
 	// Start gRPC server for liveness probe (at this point we're "live")
 	if w.args.GrpcHealthPort != 0 {
