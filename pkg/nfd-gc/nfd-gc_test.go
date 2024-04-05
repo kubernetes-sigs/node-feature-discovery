@@ -40,7 +40,7 @@ func TestNRTGC(t *testing.T) {
 	Convey("When theres is old NRT ", t, func() {
 		gc := newMockGC(nil, []string{"node1"})
 
-		errChan := make(chan error, 1)
+		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
 
 		So(waitForNRT(gc.topoClient), ShouldBeTrue)
@@ -51,7 +51,7 @@ func TestNRTGC(t *testing.T) {
 	Convey("When theres is one old NRT and one up to date", t, func() {
 		gc := newMockGC([]string{"node1"}, []string{"node1", "node2"})
 
-		errChan := make(chan error, 1)
+		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
 
 		So(waitForNRT(gc.topoClient, "node1"), ShouldBeTrue)
@@ -62,7 +62,7 @@ func TestNRTGC(t *testing.T) {
 	Convey("Should react to delete event", t, func() {
 		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
 
-		errChan := make(chan error, 1)
+		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
 
 		err := gc.k8sClient.CoreV1().Nodes().Delete(context.TODO(), "node1", metav1.DeleteOptions{})
@@ -81,7 +81,7 @@ func TestNRTGC(t *testing.T) {
 			},
 		}
 
-		errChan := make(chan error, 1)
+		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
 
 		_, err := gc.topoClient.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrt, metav1.CreateOptions{})
@@ -98,7 +98,7 @@ func newMockGC(nodes, nrts []string) *mockGC {
 			factory:    informers.NewSharedInformerFactory(k8sClient, 5*time.Minute),
 			nfdClient:  fakenfdclientset.NewSimpleClientset(),
 			topoClient: faketopologyv1alpha2.NewSimpleClientset(createFakeNRTs(nrts...)...),
-			stopChan:   make(chan struct{}, 1),
+			stopChan:   make(chan struct{}),
 			args: &Args{
 				GCPeriod: 10 * time.Minute,
 			},

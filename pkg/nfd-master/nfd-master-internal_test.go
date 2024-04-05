@@ -67,7 +67,7 @@ func newTestNode() *corev1.Node {
 
 func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	c := &nfdController{
-		stopChan:           make(chan struct{}, 1),
+		stopChan:           make(chan struct{}),
 		updateAllNodesChan: make(chan struct{}, 1),
 		updateOneNodeChan:  make(chan string),
 	}

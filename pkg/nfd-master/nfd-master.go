@@ -149,7 +149,7 @@ type nfdMaster struct {
 	server          *grpc.Server
 	healthServer    *grpc.Server
 	stop            chan struct{}
-	ready           chan bool
+	ready           chan struct{}
 	k8sClient       k8sclient.Interface
 	nodeUpdaterPool *nodeUpdaterPool
 	deniedNs
@@ -161,8 +161,8 @@ func NewNfdMaster(args *Args) (NfdMaster, error) {
 	nfd := &nfdMaster{args: *args,
 		nodeName:  utils.NodeName(),
 		namespace: utils.GetKubernetesNamespace(),
-		ready:     make(chan bool, 1),
-		stop:      make(chan struct{}, 1),
+		ready:     make(chan struct{}),
+		stop:      make(chan struct{}),
 	}
 
 	if args.Instance != "" {
@@ -271,7 +271,7 @@ func (m *nfdMaster) Run() error {
 	}
 
 	// Run gRPC server
-	grpcErr := make(chan error, 1)
+	grpcErr := make(chan error)
 	// If the NodeFeature API is enabled, don'tregister the labeler API
 	// server. Otherwise, register the labeler server.
 	if !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
@@ -295,7 +295,6 @@ func (m *nfdMaster) Run() error {
 	}
 
 	// Notify that we're ready to accept connections
-	m.ready <- true
 	close(m.ready)
 
 	// NFD-Master main event loop
@@ -396,7 +395,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 	klog.InfoS("gRPC server serving", "port", m.args.Port)
 
 	// Run gRPC server
-	grpcErr := make(chan error, 1)
+	grpcErr := make(chan error)
 	go func() {
 		defer lis.Close()
 		grpcErr <- m.server.Serve(lis)
@@ -474,15 +473,10 @@ func (m *nfdMaster) Stop() {
 // Wait until NfdMaster is able able to accept connections.
 func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
 	select {
-	case ready, ok := <-m.ready:
-		// Ready if the flag is true or the channel has been closed
-		if ready || !ok {
-			return true
-		}
+	case <-m.ready:
+		return true
 	case <-time.After(timeout):
-		return false
 	}
-	// We should never end-up here
 	return false
 }
 
