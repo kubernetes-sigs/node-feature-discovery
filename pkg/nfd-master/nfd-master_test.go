@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
 	m "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 )
 
@@ -36,7 +37,13 @@ func TestNewNfdMaster(t *testing.T) {
 			})
 		})
 		Convey("When -config is supplied", func() {
-			_, err := m.NewNfdMaster(m.WithArgs(&m.Args{CertFile: "crt", KeyFile: "key", CaFile: "ca", ConfigFile: "master-config.yaml"}))
+			_, err := m.NewNfdMaster(
+				m.WithArgs(&m.Args{
+					CertFile:   "crt",
+					KeyFile:    "key",
+					CaFile:     "ca",
+					ConfigFile: "master-config.yaml"}),
+				m.WithKubernetesClient(fakeclient.NewSimpleClientset()))
 			Convey("An error should not be returned", func() {
 				So(err, ShouldBeNil)
 			})

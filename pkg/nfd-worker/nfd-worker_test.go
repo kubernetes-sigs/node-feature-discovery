@@ -24,6 +24,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
@@ -52,7 +53,9 @@ func setupTest(args *master.Args) testContext {
 		os.Exit(1)
 	}
 	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureAPI, false)
-	m, err := master.NewNfdMaster(master.WithArgs(args))
+	m, err := master.NewNfdMaster(
+		master.WithArgs(args),
+		master.WithKubernetesClient(fakeclient.NewSimpleClientset()))
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)
 		os.Exit(1)
