@@ -109,7 +109,7 @@ func main() {
 
 	// Get new NfdMaster instance
 	args.GrpcHealthPort = GrpcHealthPort
-	instance, err := master.NewNfdMaster(args)
+	instance, err := master.NewNfdMaster(master.WithArgs(args))
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdMaster instance")
 		os.Exit(1)

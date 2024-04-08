@@ -52,7 +52,7 @@ func setupTest(args *master.Args) testContext {
 		os.Exit(1)
 	}
 	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureAPI, false)
-	m, err := master.NewNfdMaster(args)
+	m, err := master.NewNfdMaster(master.WithArgs(args))
 	if err != nil {
 		fmt.Printf("Test setup failed: %v\n", err)
 		os.Exit(1)

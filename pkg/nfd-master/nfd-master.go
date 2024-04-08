@@ -157,42 +157,70 @@ type nfdMaster struct {
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
-func NewNfdMaster(args *Args) (NfdMaster, error) {
-	nfd := &nfdMaster{args: *args,
+func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
+	nfd := &nfdMaster{
 		nodeName:  utils.NodeName(),
 		namespace: utils.GetKubernetesNamespace(),
 		ready:     make(chan struct{}),
 		stop:      make(chan struct{}),
 	}
 
-	if args.Instance != "" {
-		if ok, _ := regexp.MatchString(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`, args.Instance); !ok {
+	for _, o := range opts {
+		o.apply(nfd)
+	}
+
+	if nfd.args.Instance != "" {
+		if ok, _ := regexp.MatchString(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`, nfd.args.Instance); !ok {
 			return nfd, fmt.Errorf("invalid -instance %q: instance name "+
 				"must start and end with an alphanumeric character and may only contain "+
-				"alphanumerics, `-`, `_` or `.`", args.Instance)
+				"alphanumerics, `-`, `_` or `.`", nfd.args.Instance)
 		}
 	}
 
 	// Check TLS related args
-	if args.CertFile != "" || args.KeyFile != "" || args.CaFile != "" {
-		if args.CertFile == "" {
+	if nfd.args.CertFile != "" || nfd.args.KeyFile != "" || nfd.args.CaFile != "" {
+		if nfd.args.CertFile == "" {
 			return nfd, fmt.Errorf("-cert-file needs to be specified alongside -key-file and -ca-file")
 		}
-		if args.KeyFile == "" {
+		if nfd.args.KeyFile == "" {
 			return nfd, fmt.Errorf("-key-file needs to be specified alongside -cert-file and -ca-file")
 		}
-		if args.CaFile == "" {
+		if nfd.args.CaFile == "" {
 			return nfd, fmt.Errorf("-ca-file needs to be specified alongside -cert-file and -key-file")
 		}
 	}
 
-	if args.ConfigFile != "" {
-		nfd.configFilePath = filepath.Clean(args.ConfigFile)
+	if nfd.args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
 	}
 
 	nfd.nodeUpdaterPool = newNodeUpdaterPool(nfd)
 
 	return nfd, nil
+}
+
+// NfdMasterOption sets properties of the NfdMaster instance.
+type NfdMasterOption interface {
+	apply(*nfdMaster)
+}
+
+// WithArgs is used for passing settings from command line arguments.
+func WithArgs(args *Args) NfdMasterOption {
+	return &nfdMasterOpt{f: func(n *nfdMaster) { n.args = *args }}
+}
+
+// WithKuberneteClient forces to use the given kubernetes client, without
+// initializing one from kubeconfig.
+func WithKubernetesClient(cli k8sclient.Interface) NfdMasterOption {
+	return &nfdMasterOpt{f: func(n *nfdMaster) { n.k8sClient = cli }}
+}
+
+type nfdMasterOpt struct {
+	f func(*nfdMaster)
+}
+
+func (f *nfdMasterOpt) apply(n *nfdMaster) {
+	f.f(n)
 }
 
 func newDefaultConfig() *NFDConfig {

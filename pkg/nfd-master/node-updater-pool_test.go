@@ -34,7 +34,7 @@ func newFakeNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
 }
 
 func TestNodeUpdaterStart(t *testing.T) {
-	fakeMaster := newFakeMaster(nil)
+	fakeMaster := newFakeMaster()
 	nodeUpdaterPool := newFakeNodeUpdaterPool(fakeMaster)
 
 	Convey("When starting the node updater pool", t, func() {
@@ -53,7 +53,7 @@ func TestNodeUpdaterStart(t *testing.T) {
 }
 
 func TestNodeUpdaterStop(t *testing.T) {
-	fakeMaster := newFakeMaster(nil)
+	fakeMaster := newFakeMaster()
 	nodeUpdaterPool := newFakeNodeUpdaterPool(fakeMaster)
 
 	nodeUpdaterPool.start(10)
@@ -70,7 +70,7 @@ func TestNodeUpdaterStop(t *testing.T) {
 }
 
 func TestRunNodeUpdater(t *testing.T) {
-	fakeMaster := newFakeMaster(fakek8sclient.NewSimpleClientset())
+	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewSimpleClientset()))
 	fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
 	nodeUpdaterPool := newFakeNodeUpdaterPool(fakeMaster)
 
