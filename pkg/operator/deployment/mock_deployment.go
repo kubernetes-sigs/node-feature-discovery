@@ -9,6 +9,7 @@
 package deployment
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -37,6 +38,20 @@ func NewMockDeploymentAPI(ctrl *gomock.Controller) *MockDeploymentAPI {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDeploymentAPI) EXPECT() *MockDeploymentAPIMockRecorder {
 	return m.recorder
+}
+
+// DeleteDeployment mocks base method.
+func (m *MockDeploymentAPI) DeleteDeployment(ctx context.Context, namespace, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteDeployment", ctx, namespace, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteDeployment indicates an expected call of DeleteDeployment.
+func (mr *MockDeploymentAPIMockRecorder) DeleteDeployment(ctx, namespace, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployment", reflect.TypeOf((*MockDeploymentAPI)(nil).DeleteDeployment), ctx, namespace, name)
 }
 
 // SetGCDeploymentAsDesired mocks base method.

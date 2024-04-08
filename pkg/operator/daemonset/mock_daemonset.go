@@ -40,6 +40,20 @@ func (m *MockDaemonsetAPI) EXPECT() *MockDaemonsetAPIMockRecorder {
 	return m.recorder
 }
 
+// DeleteDaemonSet mocks base method.
+func (m *MockDaemonsetAPI) DeleteDaemonSet(ctx context.Context, namespace, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteDaemonSet", ctx, namespace, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteDaemonSet indicates an expected call of DeleteDaemonSet.
+func (mr *MockDaemonsetAPIMockRecorder) DeleteDaemonSet(ctx, namespace, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDaemonSet", reflect.TypeOf((*MockDaemonsetAPI)(nil).DeleteDaemonSet), ctx, namespace, name)
+}
+
 // SetTopologyDaemonsetAsDesired mocks base method.
 func (m *MockDaemonsetAPI) SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *v10.NodeFeatureDiscovery, topologyDS *v1.DaemonSet) error {
 	m.ctrl.T.Helper()

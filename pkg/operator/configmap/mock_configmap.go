@@ -40,6 +40,20 @@ func (m *MockConfigMapAPI) EXPECT() *MockConfigMapAPIMockRecorder {
 	return m.recorder
 }
 
+// DeleteConfigMap mocks base method.
+func (m *MockConfigMapAPI) DeleteConfigMap(ctx context.Context, namespace, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteConfigMap", ctx, namespace, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteConfigMap indicates an expected call of DeleteConfigMap.
+func (mr *MockConfigMapAPIMockRecorder) DeleteConfigMap(ctx, namespace, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConfigMap", reflect.TypeOf((*MockConfigMapAPI)(nil).DeleteConfigMap), ctx, namespace, name)
+}
+
 // SetWorkerConfigMapAsDesired mocks base method.
 func (m *MockConfigMapAPI) SetWorkerConfigMapAsDesired(ctx context.Context, nfdInstance *v10.NodeFeatureDiscovery, workerCM *v1.ConfigMap) error {
 	m.ctrl.T.Helper()
