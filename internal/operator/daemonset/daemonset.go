@@ -18,12 +18,14 @@ package daemonset
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
@@ -34,14 +36,17 @@ import (
 type DaemonsetAPI interface {
 	SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, topologyDS *appsv1.DaemonSet) error
 	SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error
+	DeleteDaemonSet(ctx context.Context, namespace, name string) error
 }
 
 type daemonset struct {
+	client client.Client
 	scheme *runtime.Scheme
 }
 
-func NewDaemonsetAPI(scheme *runtime.Scheme) DaemonsetAPI {
+func NewDaemonsetAPI(client client.Client, scheme *runtime.Scheme) DaemonsetAPI {
 	return &daemonset{
+		client: client,
 		scheme: scheme,
 	}
 }
@@ -80,6 +85,20 @@ func (d *daemonset) SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstan
 		},
 	}
 	return controllerutil.SetControllerReference(nfdInstance, topologyDS, d.scheme)
+}
+
+func (d *daemonset) DeleteDaemonSet(ctx context.Context, namespace, name string) error {
+	ds := appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+	err := d.client.Delete(ctx, &ds)
+	if err != nil && client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to delete daemonset %s/%s: %w", namespace, name, err)
+	}
+	return nil
 }
 
 func getImagePullPolicy(nfdInstance *nfdv1.NodeFeatureDiscovery) corev1.PullPolicy {

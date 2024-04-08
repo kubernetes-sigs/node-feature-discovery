@@ -160,6 +160,36 @@ func newNodeFeatureDiscoveryHelperAPI(client client.Client, deploymentAPI deploy
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) finalizeComponents(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
+	err := nfdh.daemonsetAPI.DeleteDaemonSet(ctx, nfdInstance.Namespace, "nfd-worker")
+	if err != nil {
+		return fmt.Errorf("failed to delete worker daemonset: %w", err)
+	}
+
+	err = nfdh.configmapAPI.DeleteConfigMap(ctx, nfdInstance.Namespace, "nfd-worker")
+	if err != nil {
+		return fmt.Errorf("failed to delete worker config map: %w", err)
+	}
+
+	if nfdInstance.Spec.TopologyUpdater {
+		err = nfdh.daemonsetAPI.DeleteDaemonSet(ctx, nfdInstance.Namespace, "nfd-topology-updater")
+		if err != nil {
+			return fmt.Errorf("failed to delete topology-updater daemonset: %w", err)
+		}
+	}
+	err = nfdh.deploymentAPI.DeleteDeployment(ctx, nfdInstance.Namespace, "nfd-master")
+	if err != nil {
+		return fmt.Errorf("failed to delete master deployment: %w", err)
+	}
+
+	err = nfdh.deploymentAPI.DeleteDeployment(ctx, nfdInstance.Namespace, "nfd-gc")
+	if err != nil {
+		return fmt.Errorf("failed to delete GC deployment: %w", err)
+	}
+
+	updated := controllerutil.RemoveFinalizer(nfdInstance, finalizerLabel)
+	if updated {
+		return nfdh.client.Update(ctx, nfdInstance)
+	}
 	return nil
 }
 

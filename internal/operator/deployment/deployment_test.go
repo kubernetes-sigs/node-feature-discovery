@@ -17,13 +17,19 @@ limitations under the License.
 package deployment
 
 import (
+	"context"
+	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -33,7 +39,7 @@ var _ = Describe("SetMasterDeploymentAsDesired", func() {
 	)
 
 	BeforeEach(func() {
-		deploymentAPI = NewDeploymentAPI(scheme)
+		deploymentAPI = NewDeploymentAPI(nil, scheme)
 	})
 
 	It("good flow, master deployment object populated with correct values", func() {
@@ -75,7 +81,7 @@ var _ = Describe("SetGCDeploymentAsDesired", func() {
 	)
 
 	BeforeEach(func() {
-		deploymentAPI = NewDeploymentAPI(scheme)
+		deploymentAPI = NewDeploymentAPI(nil, scheme)
 	})
 
 	It("good flow, GC deployment object populated with correct values", func() {
@@ -108,5 +114,50 @@ var _ = Describe("SetGCDeploymentAsDesired", func() {
 		err = yaml.Unmarshal(expectedJSON, &testMasterDep)
 		Expect(err).To(BeNil())
 		Expect(masterDep).To(BeComparableTo(testMasterDep))
+	})
+})
+
+var _ = Describe("DeleteDeployment", func() {
+	var (
+		ctrl          *gomock.Controller
+		clnt          *client.MockClient
+		deploymentAPI DeploymentAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		deploymentAPI = NewDeploymentAPI(clnt, scheme)
+	})
+
+	ctx := context.Background()
+	name := "dep-name"
+	namespace := "dep-namespace"
+	expectedDep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+
+	It("failure to delete deployment from the cluster", func() {
+		clnt.EXPECT().Delete(ctx, expectedDep).Return(fmt.Errorf("some error"))
+
+		err := deploymentAPI.DeleteDeployment(ctx, namespace, name)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("deployment is not present in the cluster", func() {
+		clnt.EXPECT().Delete(ctx, expectedDep).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever"))
+
+		err := deploymentAPI.DeleteDeployment(ctx, namespace, name)
+		Expect(err).To(BeNil())
+	})
+
+	It("deployment deleted successfully", func() {
+		clnt.EXPECT().Delete(ctx, expectedDep).Return(nil)
+
+		err := deploymentAPI.DeleteDeployment(ctx, namespace, name)
+		Expect(err).To(BeNil())
 	})
 })
