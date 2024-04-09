@@ -18,7 +18,7 @@ syntax = "proto3";
 
 option go_package = "sigs.k8s.io/node-feature-discovery/pkg/labeler";
 
-import "pkg/apis/nfd/v1alpha1/generated.proto";
+import "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1/generated.proto";
 
 package labeler;
 
