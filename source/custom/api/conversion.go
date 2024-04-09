@@ -17,7 +17,7 @@ limitations under the License.
 package api
 
 import (
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // convertFeaturematchertermToV1alpha1 converts the internal api type to nfdv1alpha1.

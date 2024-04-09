@@ -29,8 +29,8 @@ import (
 	extclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/test/e2e/framework"
-	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
-	nfdclient "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
+	nfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
+	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 	testdeploy "sigs.k8s.io/node-feature-discovery/test/e2e/utils/deployment"

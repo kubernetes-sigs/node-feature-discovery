@@ -53,8 +53,8 @@ import (
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
 
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
-	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1/nodefeaturerule"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"

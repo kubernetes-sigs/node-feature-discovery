@@ -17,7 +17,7 @@ limitations under the License.
 package custom
 
 import (
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // getStaticRules returns statically configured custom features to discover

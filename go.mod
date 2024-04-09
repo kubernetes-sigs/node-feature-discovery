@@ -4,7 +4,6 @@ go 1.22
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.5.0
@@ -36,6 +35,7 @@ require (
 	k8s.io/kubernetes v1.29.0
 	k8s.io/pod-security-admission v0.29.0
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
+	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -92,6 +92,7 @@ require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
@@ -231,4 +232,5 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.29.0
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.29.0
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.29.0
+	sigs.k8s.io/node-feature-discovery/api/nfd => ./api/nfd
 )

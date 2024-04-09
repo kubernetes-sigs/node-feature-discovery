@@ -26,11 +26,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/v1alpha1"
-	nfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned"
-	nfdscheme "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/scheme"
-	nfdinformers "sigs.k8s.io/node-feature-discovery/pkg/generated/informers/externalversions"
-	nfdlisters "sigs.k8s.io/node-feature-discovery/pkg/generated/listers/nfd/v1alpha1"
+	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
+	nfdscheme "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/scheme"
+	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
+	nfdlisters "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 

@@ -31,7 +31,7 @@ import (
 	"k8s.io/client-go/informers"
 	k8sclientset "k8s.io/client-go/kubernetes"
 	fakek8sclientset "k8s.io/client-go/kubernetes/fake"
-	fakenfdclientset "sigs.k8s.io/node-feature-discovery/pkg/generated/clientset/versioned/fake"
+	fakenfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
