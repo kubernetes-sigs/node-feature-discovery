@@ -57,7 +57,7 @@ func MatchFeatures(matchFeature nfdv1alpha1.FeatureMatcher) []error {
 	var validationErr []error
 
 	for _, match := range matchFeature {
-		nameSplit := strings.SplitN(match.Feature, ".", 2)
+		nameSplit := strings.Split(match.Feature, ".")
 		if len(nameSplit) != 2 {
 			validationErr = append(validationErr, fmt.Errorf("invalid feature name %v (not <domain>.<feature>), cannot be used for templating", match.Feature))
 		}
@@ -155,8 +155,8 @@ func Annotation(key, value string) error {
 	}
 
 	// Validate annotation value
-	if errs := k8svalidation.IsValidLabelValue(value); len(errs) > 0 {
-		return fmt.Errorf("invalid value %q: %s", value, strings.Join(errs, "; "))
+	if len(value) > nfdv1alpha1.FeatureAnnotationValueSizeLimit {
+		return fmt.Errorf("invalid value: too long: feature annotations must not be longer than %d characters", nfdv1alpha1.FeatureAnnotationValueSizeLimit)
 	}
 
 	return nil
