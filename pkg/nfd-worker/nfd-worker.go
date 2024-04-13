@@ -17,6 +17,9 @@ limitations under the License.
 package nfdworker
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -45,6 +48,7 @@ import (
 	nfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 
@@ -61,6 +65,9 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/system"
 	_ "sigs.k8s.io/node-feature-discovery/source/usb"
 )
+
+// SocketPath specifies Spiffe Socket Path
+const SocketPath = "unix:///run/spire/sockets/agent.sock"
 
 // NfdWorker is the interface for nfd-worker daemon
 type NfdWorker interface {
@@ -83,6 +90,7 @@ type coreConfig struct {
 	Sources        *[]string
 	LabelSources   []string
 	SleepInterval  utils.DurationVal
+	EnableSpiffe   bool
 }
 
 type sourcesConfig map[string]source.Config
@@ -109,6 +117,7 @@ type ConfigOverrideArgs struct {
 	NoOwnerRefs    *bool
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
+	EnableSpiffe   *bool
 }
 
 type nfdWorker struct {
@@ -122,6 +131,7 @@ type nfdWorker struct {
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
+	spiffeClient        *spiffe.SpiffeClient
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -187,6 +197,12 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 		}
 		nfd.k8sClient = cli
 	}
+
+	spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
+	if err != nil {
+		return nfd, err
+	}
+	nfd.spiffeClient = spiffeClient
 
 	return nfd, nil
 }
@@ -509,6 +525,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	if w.args.Overrides.LabelSources != nil {
 		c.Core.LabelSources = *w.args.Overrides.LabelSources
 	}
+	if w.args.Overrides.EnableSpiffe != nil {
+		c.Core.EnableSpiffe = *w.args.Overrides.EnableSpiffe
+	}
 
 	c.Core.sanitize()
 
@@ -643,6 +662,14 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		}
 		klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
 
+		// If Spiffe is enabled, we add the signature to the annotations section
+		if m.config.Core.EnableSpiffe {
+			err = m.signNodeFeatureCR(nfr)
+			if err != nil {
+				return err
+			}
+		}
+
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to create NodeFeature object %q: %w", nfr.Name, err)
@@ -659,6 +686,13 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
 			Features: *features,
 			Labels:   labels,
+		}
+
+		if m.config.Core.EnableSpiffe {
+			err = m.signNodeFeatureCR(nfrUpdated)
+			if err != nil {
+				return err
+			}
 		}
 
 		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
@@ -715,6 +749,26 @@ func (c *sourcesConfig) UnmarshalJSON(data []byte) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+// signNodeFeatureCR add the signature to the annotations of a given NodeFeature CR
+func (m *nfdWorker) signNodeFeatureCR(nfr *nfdv1alpha1.NodeFeature) error {
+	workerPrivateKey, _, err := m.spiffeClient.GetWorkerKeys()
+
+	if err != nil {
+		return fmt.Errorf("error while getting worker keys: %w", err)
+	}
+
+	signature, err := spiffe.SignData(nfr.Spec, workerPrivateKey)
+
+	if err != nil {
+		return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
+	}
+
+	encodedSignature := b64.StdEncoding.EncodeToString(signature)
+	nfr.ObjectMeta.Annotations["signature"] = encodedSignature
 
 	return nil
 }
