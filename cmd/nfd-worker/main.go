@@ -93,6 +93,8 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 			args.Overrides.LabelSources = overrides.LabelSources
 		case "no-owner-refs":
 			args.Overrides.NoOwnerRefs = overrides.NoOwnerRefs
+		case "enable-spiffe":
+			args.Overrides.EnableSpiffe = overrides.EnableSpiffe
 		}
 	})
 
@@ -131,6 +133,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.Var(overrides.LabelSources, "label-sources",
 		"Comma separated list of label sources. Special value 'all' enables all sources. "+
 			"Prefix the source name with '-' to disable it.")
+	overrides.EnableSpiffe = flagset.Bool("enable-spiffe", false,
+		"Enables the Spiffe signature verification of created CRDs. This is still an EXPERIMENTAL feature.")
 
 	return args, overrides
 }
