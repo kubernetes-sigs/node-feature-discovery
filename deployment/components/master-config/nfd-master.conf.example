@@ -6,6 +6,7 @@
 # enableTaints: false
 # labelWhiteList: "foo"
 # resyncPeriod: "2h"
+# enableSpiffe: true
 # klog:
 #    addDirHeader: false
 #    alsologtostderr: false

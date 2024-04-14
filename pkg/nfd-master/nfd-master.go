@@ -1486,7 +1486,13 @@ func (m *nfdMaster) getVerifiedNFDObjects(objs []*v1alpha1.NodeFeature) ([]*v1al
 	}
 
 	for _, obj := range objs {
-		isSignatureVerified, err := spiffe.VerifyDataSignature(obj.Spec, obj.Annotations["signature"], workerPrivateKey, workerPublicKey)
+		spiffeObj := spiffe.SpiffeObject{
+			Spec:      obj.Spec,
+			Name:      obj.Name,
+			Namespace: obj.Namespace,
+			Labels:    obj.Labels,
+		}
+		isSignatureVerified, err := spiffe.VerifyDataSignature(spiffeObj, obj.Annotations["signature"], workerPrivateKey, workerPublicKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify NodeFeature signature: %w", err)
 		}

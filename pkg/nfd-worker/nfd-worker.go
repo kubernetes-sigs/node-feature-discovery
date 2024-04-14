@@ -864,7 +864,13 @@ func (m *nfdWorker) signNodeFeatureCR(nfr *nfdv1alpha1.NodeFeature) error {
 		return fmt.Errorf("error while getting worker keys: %w", err)
 	}
 
-	signature, err := spiffe.SignData(nfr.Spec, workerPrivateKey)
+	spiffeObject := spiffe.SpiffeObject{
+		Spec:      nfr.Spec,
+		Name:      nfr.Name,
+		Namespace: nfr.Namespace,
+		Labels:    nfr.Labels,
+	}
+	signature, err := spiffe.SignData(spiffeObject, workerPrivateKey)
 
 	if err != nil {
 		return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)

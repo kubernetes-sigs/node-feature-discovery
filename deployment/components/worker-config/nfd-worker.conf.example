@@ -2,6 +2,7 @@
 #  labelWhiteList:
 #  noPublish: false
 #  sleepInterval: 60s
+#  enableSpiffe: true
 #  featureSources: [all]
 #  labelSources: [all]
 #  klog:

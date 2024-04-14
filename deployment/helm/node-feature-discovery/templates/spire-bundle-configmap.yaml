@@ -1,0 +1,6 @@
+{{- if .Values.spiffe.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-bundle
+{{- end }}

@@ -3,7 +3,9 @@ Copyright 2024 The Kubernetes Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -11,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package spiffe
 
 import (
 	"context"
@@ -25,7 +27,15 @@ import (
 	"fmt"
 
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
+
+type SpiffeObject struct {
+	Spec      nfdv1alpha1.NodeFeatureSpec
+	Name      string
+	Namespace string
+	Labels    map[string]string
+}
 
 // WorkerSpiffeID is the SpiffeID of the worker
 const WorkerSpiffeID = "spiffe://nfd.com/worker"
@@ -44,7 +54,7 @@ func NewSpiffeClient(socketPath string) (*SpiffeClient, error) {
 	return &spiffeClient, nil
 }
 
-func SignData(data interface{}, privateKey crypto.Signer) ([]byte, error) {
+func SignData(data SpiffeObject, privateKey crypto.Signer) ([]byte, error) {
 	stringifyData, err := json.Marshal(data)
 	if err != nil {
 		return []byte{}, err
@@ -70,7 +80,7 @@ func SignData(data interface{}, privateKey crypto.Signer) ([]byte, error) {
 	}
 }
 
-func VerifyDataSignature(data interface{}, signedData string, privateKey crypto.Signer, publicKey crypto.PublicKey) (bool, error) {
+func VerifyDataSignature(data SpiffeObject, signedData string, privateKey crypto.Signer, publicKey crypto.PublicKey) (bool, error) {
 	stringifyData, err := json.Marshal(data)
 	if err != nil {
 		return false, err
