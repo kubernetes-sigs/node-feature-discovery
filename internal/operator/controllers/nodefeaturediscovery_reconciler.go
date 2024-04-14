@@ -20,9 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,6 +40,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery-operator/internal/configmap"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
 )
 
 const finalizerLabel = "nfd-finalizer"
@@ -46,9 +50,9 @@ type nodeFeatureDiscoveryReconciler struct {
 	helper nodeFeatureDiscoveryHelperAPI
 }
 
-func NewNodeFeatureDiscoveryReconciler(client client.Client, deploymentAPI deployment.DeploymentAPI,
-	daemonsetAPI daemonset.DaemonsetAPI, configmapAPI configmap.ConfigMapAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
-	helper := newNodeFeatureDiscoveryHelperAPI(client, deploymentAPI, daemonsetAPI, configmapAPI, scheme)
+func NewNodeFeatureDiscoveryReconciler(client client.Client, deploymentAPI deployment.DeploymentAPI, daemonsetAPI daemonset.DaemonsetAPI,
+	configmapAPI configmap.ConfigMapAPI, jobAPI job.JobAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
+	helper := newNodeFeatureDiscoveryHelperAPI(client, deploymentAPI, daemonsetAPI, configmapAPI, jobAPI, scheme)
 	return nodeFeatureDiscoveryReconciler{
 		helper: helper,
 	}
@@ -66,6 +70,7 @@ func (r *nodeFeatureDiscoveryReconciler) SetupWithManager(mgr ctrl.Manager) erro
 		Owns(&appsv1.Deployment{}, builder.WithPredicates(p)).
 		Owns(&appsv1.DaemonSet{}, builder.WithPredicates(p)).
 		Owns(&corev1.ConfigMap{}, builder.WithPredicates(p)).
+		Owns(&batchv1.Job{}, builder.WithPredicates(p)).
 		Complete(reconcile.AsReconciler[*nfdv1.NodeFeatureDiscovery](mgr.GetClient(), r))
 }
 
@@ -73,7 +78,22 @@ func getPredicates() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc:  func(event.CreateEvent) bool { return false },
 		GenericFunc: func(event.GenericEvent) bool { return false },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return isControlledByNFD(e.ObjectNew)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return isControlledByNFD(e.Object)
+		},
 	}
+}
+
+func isControlledByNFD(obj client.Object) bool {
+	controller := metav1.GetControllerOf(obj)
+	if controller == nil {
+		return false
+	}
+	nfdKind := reflect.TypeOf(nfdv1.NodeFeatureDiscovery{}).Name()
+	return controller.Kind == nfdKind
 }
 
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -90,7 +110,19 @@ func (r *nodeFeatureDiscoveryReconciler) Reconcile(ctx context.Context, nfdInsta
 
 	if nfdInstance.DeletionTimestamp != nil {
 		// NFD CR is being deleted
-		return res, r.helper.finalizeComponents(ctx, nfdInstance)
+		err := r.helper.finalizeComponents(ctx, nfdInstance)
+		if err != nil {
+			return res, fmt.Errorf("failed to finalize components for %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
+		}
+		done, err := r.helper.handlePrune(ctx, nfdInstance)
+		if err != nil {
+			return res, fmt.Errorf("failed to handle pruning for %s/%s: %w", nfdInstance.Namespace, nfdInstance.Name, err)
+		}
+		if !done {
+			// reconcile will be called again when prune job has been completed
+			return res, nil
+		}
+		return res, r.helper.removeFinalizer(ctx, nfdInstance)
 	}
 
 	// If the finalizer doesn't exist, add it.
@@ -115,10 +147,6 @@ func (r *nodeFeatureDiscoveryReconciler) Reconcile(ctx context.Context, nfdInsta
 	err = r.helper.handleGC(ctx, nfdInstance)
 	errs = append(errs, err)
 
-	logger.Info("reconciling prune job")
-	err = r.helper.handlePrune(ctx, nfdInstance)
-	errs = append(errs, err)
-
 	logger.Info("reconciling NFD status")
 	err = r.helper.handleStatus(ctx, nfdInstance)
 	errs = append(errs, err)
@@ -132,11 +160,12 @@ type nodeFeatureDiscoveryHelperAPI interface {
 	finalizeComponents(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
 	hasFinalizer(nfdInstance *nfdv1.NodeFeatureDiscovery) bool
 	setFinalizer(ctx context.Context, instance *nfdv1.NodeFeatureDiscovery) error
+	removeFinalizer(ctx context.Context, instance *nfdv1.NodeFeatureDiscovery) error
 	handleMaster(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
 	handleWorker(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
 	handleTopology(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
 	handleGC(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
-	handlePrune(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
+	handlePrune(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) (bool, error)
 	handleStatus(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
 }
 
@@ -145,16 +174,18 @@ type nodeFeatureDiscoveryHelper struct {
 	deploymentAPI deployment.DeploymentAPI
 	daemonsetAPI  daemonset.DaemonsetAPI
 	configmapAPI  configmap.ConfigMapAPI
+	jobAPI        job.JobAPI
 	scheme        *runtime.Scheme
 }
 
-func newNodeFeatureDiscoveryHelperAPI(client client.Client, deploymentAPI deployment.DeploymentAPI,
-	daemonsetAPI daemonset.DaemonsetAPI, configmapAPI configmap.ConfigMapAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryHelperAPI {
+func newNodeFeatureDiscoveryHelperAPI(client client.Client, deploymentAPI deployment.DeploymentAPI, daemonsetAPI daemonset.DaemonsetAPI,
+	configmapAPI configmap.ConfigMapAPI, jobAPI job.JobAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryHelperAPI {
 	return &nodeFeatureDiscoveryHelper{
 		client:        client,
 		deploymentAPI: deploymentAPI,
 		daemonsetAPI:  daemonsetAPI,
 		configmapAPI:  configmapAPI,
+		jobAPI:        jobAPI,
 		scheme:        scheme,
 	}
 }
@@ -181,16 +212,7 @@ func (nfdh *nodeFeatureDiscoveryHelper) finalizeComponents(ctx context.Context, 
 		return fmt.Errorf("failed to delete master deployment: %w", err)
 	}
 
-	err = nfdh.deploymentAPI.DeleteDeployment(ctx, nfdInstance.Namespace, "nfd-gc")
-	if err != nil {
-		return fmt.Errorf("failed to delete GC deployment: %w", err)
-	}
-
-	updated := controllerutil.RemoveFinalizer(nfdInstance, finalizerLabel)
-	if updated {
-		return nfdh.client.Update(ctx, nfdInstance)
-	}
-	return nil
+	return nfdh.deploymentAPI.DeleteDeployment(ctx, nfdInstance.Namespace, "nfd-gc")
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) hasFinalizer(nfdInstance *nfdv1.NodeFeatureDiscovery) bool {
@@ -200,6 +222,14 @@ func (nfdh *nodeFeatureDiscoveryHelper) hasFinalizer(nfdInstance *nfdv1.NodeFeat
 func (nfdh *nodeFeatureDiscoveryHelper) setFinalizer(ctx context.Context, instance *nfdv1.NodeFeatureDiscovery) error {
 	instance.Finalizers = append(instance.Finalizers, finalizerLabel)
 	return nfdh.client.Update(ctx, instance)
+}
+
+func (nfdh *nodeFeatureDiscoveryHelper) removeFinalizer(ctx context.Context, instance *nfdv1.NodeFeatureDiscovery) error {
+	updated := controllerutil.RemoveFinalizer(instance, finalizerLabel)
+	if updated {
+		return nfdh.client.Update(ctx, instance)
+	}
+	return nil
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleMaster(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
@@ -279,8 +309,41 @@ func (nfdh *nodeFeatureDiscoveryHelper) handleGC(ctx context.Context, nfdInstanc
 	return nil
 }
 
-func (nfdh *nodeFeatureDiscoveryHelper) handlePrune(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
-	return nil
+func (nfdh *nodeFeatureDiscoveryHelper) handlePrune(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) (bool, error) {
+	if !nfdInstance.Spec.PruneOnDelete {
+		return true, nil
+	}
+
+	pruneJob, err := nfdh.jobAPI.GetJob(ctx, nfdInstance.Namespace, "nfd-prune")
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			err = nfdh.jobAPI.CreatePruneJob(ctx, nfdInstance)
+			if err != nil {
+				return false, fmt.Errorf("failed to create nfd-prune job: %w", err)
+			}
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to get nfd-prune job: %w", err)
+	}
+
+	deleteJob := false
+	var returnErr error
+	done := false
+	if pruneJob.Status.Succeeded > 0 {
+		deleteJob = true
+		done = true
+	}
+	if pruneJob.Status.Failed > 0 {
+		deleteJob = true
+		returnErr = fmt.Errorf("prune job's pod has failed")
+	}
+	if deleteJob {
+		err = nfdh.jobAPI.DeleteJob(ctx, pruneJob)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete nfd-prune job: %w", err)
+		}
+	}
+	return done, returnErr
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleStatus(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
