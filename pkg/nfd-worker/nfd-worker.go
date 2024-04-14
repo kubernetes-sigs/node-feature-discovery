@@ -17,8 +17,6 @@ limitations under the License.
 package nfdworker
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -67,7 +65,7 @@ import (
 )
 
 // SocketPath specifies Spiffe Socket Path
-const SocketPath = "unix:///run/spire/sockets/agent.sock"
+const SocketPath = "unix:///run/spire/agent-sockets/api.sock"
 
 // NfdWorker is the interface for nfd-worker daemon
 type NfdWorker interface {
@@ -654,6 +652,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Annotations:     map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
 				Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
 				OwnerReferences: m.ownerReference,
+				Namespace:       namespace,
 			},
 			Spec: nfdv1alpha1.NodeFeatureSpec{
 				Features: *features,
@@ -664,8 +663,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 
 		// If Spiffe is enabled, we add the signature to the annotations section
 		if m.config.Core.EnableSpiffe {
-			err = m.signNodeFeatureCR(nfr)
-			if err != nil {
+			if err = m.signNodeFeatureCR(nfr); err != nil {
 				return err
 			}
 		}
@@ -761,7 +759,13 @@ func (m *nfdWorker) signNodeFeatureCR(nfr *nfdv1alpha1.NodeFeature) error {
 		return fmt.Errorf("error while getting worker keys: %w", err)
 	}
 
-	signature, err := spiffe.SignData(nfr.Spec, workerPrivateKey)
+	spiffeObject := spiffe.SpiffeObject{
+		Spec:      nfr.Spec,
+		Name:      nfr.Name,
+		Namespace: nfr.Namespace,
+		Labels:    nfr.Labels,
+	}
+	signature, err := spiffe.SignData(spiffeObject, workerPrivateKey)
 
 	if err != nil {
 		return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)

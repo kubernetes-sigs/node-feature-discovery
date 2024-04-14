@@ -110,10 +110,18 @@ spec:
         {{- with .Values.worker.extraArgs }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- if .Values.spire.enabled }}
+        - "-enable-spiffe"
+        {{- end }}
         ports:
           - containerPort: {{ .Values.worker.port | default "8080"}}
             name: http
         volumeMounts:
+        {{- if .Values.spire.enabled }}
+        - name: spire-agent-socket
+          mountPath: /run/spire/agent-sockets
+          readOnly: true
+        {{- end }}
         - name: host-boot
           mountPath: "/host-boot"
           readOnly: true
@@ -144,6 +152,12 @@ spec:
           mountPath: "/etc/kubernetes/node-feature-discovery"
           readOnly: true
       volumes:
+        {{- if .Values.spire.enabled }}
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/agent-sockets
+            type: Directory
+        {{- end }}
         - name: host-boot
           hostPath:
             path: "/boot"
