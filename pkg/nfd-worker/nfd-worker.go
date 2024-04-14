@@ -17,8 +17,6 @@ limitations under the License.
 package nfdworker
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -35,24 +33,22 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
 
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
-
-	// Register all source packages
 	_ "sigs.k8s.io/node-feature-discovery/source/cpu"
 	_ "sigs.k8s.io/node-feature-discovery/source/custom"
 	_ "sigs.k8s.io/node-feature-discovery/source/fake"
@@ -785,7 +781,13 @@ func (m *nfdWorker) signNodeFeatureCR(nfr *nfdv1alpha1.NodeFeature) error {
 		return fmt.Errorf("error while getting worker keys: %w", err)
 	}
 
-	signature, err := spiffe.SignData(nfr.Spec, workerPrivateKey)
+	spiffeObject := spiffe.SpiffeObject{
+		Spec:      nfr.Spec,
+		Name:      nfr.Name,
+		Namespace: nfr.Namespace,
+		Labels:    nfr.Labels,
+	}
+	signature, err := spiffe.SignData(spiffeObject, workerPrivateKey)
 
 	if err != nil {
 		return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)
