@@ -1,9 +1,9 @@
 image:
-  repository: gcr.io/k8s-staging-nfd/node-feature-discovery
+  repository: docker.io/ahmedgrati/node-feature-discovery
   # This should be set to 'IfNotPresent' for released version
   pullPolicy: Always
   # tag, if defined will use the given image tag, else Chart.AppVersion will be used
-  # tag
+  tag: v0.18.0-devel-105-gb1d33c2b2-dirty
 imagePullSecrets: []
 
 nameOverride: ""
@@ -574,3 +574,57 @@ prometheus:
   enable: false
   scrapeInterval: 10s
   labels: {}
+
+spire:
+  enabled: true
+  global:
+    spire:
+      clusterName: "nfd"
+      trustDomain: "nfd.k8s-sigs.io"
+      system:
+        name: "spire-system"
+        create: false
+      server:
+        name: "spire-server"
+        create: false
+  spire-agent:
+    nameOverride: "spire-agent"
+    kubeletConnectByHostname: "true"
+    server:
+      address: "nfd-spire-server.nfd"
+    workloadAttestors:
+      unix:
+        enabled: true
+  spire-server:
+    nameOverride: "spire-server"
+    controllerManager:
+      enabled: true
+      identities:
+        clusterStaticEntries:
+          node:
+            parentID: spiffe://nfd.k8s-sigs.io/spire/server
+            spiffeID: spiffe://nfd.k8s-sigs.io/root
+            selectors:
+              - k8s_psat:agent_ns:nfd
+              - k8s_psat:agent_sa:nfd-agent
+              - k8s_psat:cluster:nfd
+          nfd:
+            parentID: spiffe://nfd.k8s-sigs.io/root
+            spiffeID: spiffe://nfd.k8s-sigs.io/worker
+            selectors:
+            - k8s:pod-label:app.kubernetes.io/name:node-feature-discovery
+
+    defaultX509SvidTTL: "4h"
+    caSubject:
+      commonName: "nfd.k8s-sigs.io"
+      country: "US"
+      organization: "SPIFFE"
+
+  upstream:
+    enabled: false
+  spiffe-csi-driver:
+    enabled: false
+  spiffe-oidc-discovery-provider:
+    enabled: false
+  tornjak-frontend:
+    enabled: false

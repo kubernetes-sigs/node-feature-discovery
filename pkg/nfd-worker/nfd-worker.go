@@ -17,8 +17,6 @@ limitations under the License.
 package nfdworker
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -67,7 +65,7 @@ import (
 )
 
 // SocketPath specifies Spiffe Socket Path
-const SocketPath = "unix:///run/spire/sockets/agent.sock"
+const SocketPath = "unix:///run/spire/agent-sockets/api.sock"
 
 // NfdWorker is the interface for nfd-worker daemon
 type NfdWorker interface {
@@ -91,6 +89,7 @@ type coreConfig struct {
 	LabelSources   []string
 	SleepInterval  utils.DurationVal
 	EnableSpiffe   bool
+	SpiffeSVIDTTL  utils.DurationVal
 }
 
 type sourcesConfig map[string]source.Config
@@ -118,6 +117,7 @@ type ConfigOverrideArgs struct {
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
 	EnableSpiffe   *bool
+	SpiffeSVIDTTL  *utils.DurationVal
 }
 
 type nfdWorker struct {
@@ -198,12 +198,6 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 		nfd.k8sClient = cli
 	}
 
-	spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
-	if err != nil {
-		return nfd, err
-	}
-	nfd.spiffeClient = spiffeClient
-
 	return nfd, nil
 }
 
@@ -212,6 +206,7 @@ func newDefaultConfig() *NFDConfig {
 		Core: coreConfig{
 			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
 			SleepInterval:  utils.DurationVal{Duration: 60 * time.Second},
+			SpiffeSVIDTTL:  utils.DurationVal{Duration: 4 * time.Hour},
 			FeatureSources: []string{"all"},
 			LabelSources:   []string{"all"},
 			Klog:           make(map[string]string),
@@ -318,6 +313,10 @@ func (w *nfdWorker) Run() error {
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
 
+	// Create ticker for Spiffe cache invalidation
+	spiffeInvalidationTicker := infiniteTicker{Ticker: time.NewTicker(w.config.Core.SpiffeSVIDTTL.Duration)}
+	defer spiffeInvalidationTicker.Stop()
+
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
@@ -325,6 +324,14 @@ func (w *nfdWorker) Run() error {
 	promRegistry.MustRegister(buildInfo, featureDiscoveryDuration)
 	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
 	registerVersion(version.Get())
+
+	if w.config.Core.EnableSpiffe {
+		spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
+		if err != nil {
+			return err
+		}
+		w.spiffeClient = spiffeClient
+	}
 
 	err = w.runFeatureDiscovery()
 	if err != nil {
@@ -349,6 +356,17 @@ func (w *nfdWorker) Run() error {
 
 	for {
 		select {
+		case <-spiffeInvalidationTicker.C:
+			if w.config.Core.EnableSpiffe {
+				klog.InfoS("invalidating cached signature and running discovery after reaching the Spiffe SVID TTL", "ttl", w.config.Core.SpiffeSVIDTTL.Duration.String())
+				w.spiffeClient.InvalidateCache()
+
+				// running feature discovery to update the signature
+				err = w.runFeatureDiscovery()
+				if err != nil {
+					return err
+				}
+			}
 		case <-labelTrigger.C:
 			err = w.runFeatureDiscovery()
 			if err != nil {
@@ -528,6 +546,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	if w.args.Overrides.EnableSpiffe != nil {
 		c.Core.EnableSpiffe = *w.args.Overrides.EnableSpiffe
 	}
+	if w.args.Overrides.SpiffeSVIDTTL != nil {
+		c.Core.SpiffeSVIDTTL = *w.args.Overrides.SpiffeSVIDTTL
+	}
 
 	c.Core.sanitize()
 
@@ -654,6 +675,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Annotations:     map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
 				Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
 				OwnerReferences: m.ownerReference,
+				Namespace:       namespace,
 			},
 			Spec: nfdv1alpha1.NodeFeatureSpec{
 				Features: *features,
@@ -664,8 +686,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 
 		// If Spiffe is enabled, we add the signature to the annotations section
 		if m.config.Core.EnableSpiffe {
-			err = m.signNodeFeatureCR(nfr)
-			if err != nil {
+			if err = m.signNodeFeatureCR(nfr); err != nil {
 				return err
 			}
 		}
@@ -761,7 +782,13 @@ func (m *nfdWorker) signNodeFeatureCR(nfr *nfdv1alpha1.NodeFeature) error {
 		return fmt.Errorf("error while getting worker keys: %w", err)
 	}
 
-	signature, err := spiffe.SignData(nfr.Spec, workerPrivateKey)
+	spiffeObject := spiffe.SpiffeObject{
+		Spec:      nfr.Spec,
+		Name:      nfr.Name,
+		Namespace: nfr.Namespace,
+		Labels:    nfr.Labels,
+	}
+	signature, err := spiffe.SignData(spiffeObject, workerPrivateKey)
 
 	if err != nil {
 		return fmt.Errorf("failed to sign CRD data using Spiffe: %w", err)

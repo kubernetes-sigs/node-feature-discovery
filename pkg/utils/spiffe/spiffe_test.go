@@ -3,7 +3,9 @@ Copyright 2024 The Kubernetes Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -11,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package spiffe
 
 import (
 	"crypto"
@@ -76,20 +78,32 @@ func TestVerify(t *testing.T) {
 	}
 
 	for _, tt := range tc {
-		signedData, err := SignData(spec, tt.privateKey)
+		spiffeObj := SpiffeObject{
+			Spec:      spec,
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"random": "test",
+			},
+		}
+		signedData, err := SignData(spiffeObj, tt.privateKey)
 		assert.NoError(t, err)
 
-		isVerified, err := VerifyDataSignature(spec, b64.StdEncoding.EncodeToString(signedData), tt.privateKey, tt.publicKey)
+		isVerified, err := VerifyDataSignature(spiffeObj, b64.StdEncoding.EncodeToString(signedData), tt.privateKey, tt.publicKey)
 		assert.NoError(t, err)
 		assert.True(t, isVerified)
 
 		signedData = append(signedData, "random"...)
-		isVerified, err = VerifyDataSignature(spec, b64.StdEncoding.EncodeToString(signedData), tt.privateKey, tt.publicKey)
+		isVerified, err = VerifyDataSignature(spiffeObj, b64.StdEncoding.EncodeToString(signedData), tt.privateKey, tt.publicKey)
 		if tt.wantErr {
 			assert.Error(t, err)
 		} else {
 			assert.False(t, isVerified)
 		}
+
+		// invalidateCache
+		latestSignature = []byte{}
+		latestHash = [32]byte{}
 	}
 }
 
@@ -113,7 +127,57 @@ func TestSignData(t *testing.T) {
 	}
 
 	for _, tt := range tc {
-		_, err := SignData(spec, tt.privateKey)
+		spiffeObj := SpiffeObject{
+			Spec:      spec,
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"random": "test",
+			},
+		}
+		_, err := SignData(spiffeObj, tt.privateKey)
 		assert.NoError(t, err)
+
+		// invalidate cache
+		latestSignature = []byte{}
+		latestHash = [32]byte{}
+	}
+}
+
+func TestSignCached(t *testing.T) {
+	rsaPrivateKey, _ := mockWorkerRSAPrivateKey()
+	ecdsaPrivateKey, _ := mockWorkerECDSAPrivateKey()
+	spec := mockNFRSpec()
+
+	tc := []struct {
+		name       string
+		privateKey crypto.Signer
+	}{
+		{
+			name:       "RSA Keys",
+			privateKey: rsaPrivateKey,
+		},
+		{
+			name:       "ECDSA Keys",
+			privateKey: ecdsaPrivateKey,
+		},
+	}
+
+	for _, tt := range tc {
+		spiffeObj := SpiffeObject{
+			Spec:      spec,
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"random": "test",
+			},
+		}
+		firstSignature, err := SignData(spiffeObj, tt.privateKey)
+		assert.NoError(t, err)
+
+		secondSignature, err := SignData(spiffeObj, tt.privateKey)
+		assert.NoError(t, err)
+
+		assert.Equal(t, string(firstSignature[:]), string(secondSignature[:]))
 	}
 }

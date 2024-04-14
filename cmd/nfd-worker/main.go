@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"k8s.io/klog/v2"
 
@@ -95,6 +96,8 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 			args.Overrides.NoOwnerRefs = overrides.NoOwnerRefs
 		case "enable-spiffe":
 			args.Overrides.EnableSpiffe = overrides.EnableSpiffe
+		case "spiffe-svid-ttl":
+			args.Overrides.SpiffeSVIDTTL = overrides.SpiffeSVIDTTL
 		}
 	})
 
@@ -122,6 +125,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	overrides := &worker.ConfigOverrideArgs{
 		FeatureSources: &utils.StringSliceVal{},
 		LabelSources:   &utils.StringSliceVal{},
+		SpiffeSVIDTTL:  &utils.DurationVal{Duration: time.Duration(4) * time.Hour},
 	}
 	overrides.NoPublish = flagset.Bool("no-publish", false,
 		"Do not publish discovered features, disable connection to nfd-master and don't create NodeFeature object.")
@@ -133,6 +137,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.Var(overrides.LabelSources, "label-sources",
 		"Comma separated list of label sources. Special value 'all' enables all sources. "+
 			"Prefix the source name with '-' to disable it.")
+	flagset.Var(overrides.SpiffeSVIDTTL, "spiffe-svid-ttl", "Specify the Time To Live (TTL) for Spiffe SVIDs. The default is 4 hours. This is still an EXPERIMENTAL feature.")
 	overrides.EnableSpiffe = flagset.Bool("enable-spiffe", false,
 		"Enables the Spiffe signature verification of created CRDs. This is still an EXPERIMENTAL feature.")
 

@@ -145,11 +145,25 @@ spec:
             {{- with .Values.master.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+            {{- if .Values.spire.enabled }}
+            - "-enable-spiffe"
+            {{- end }}
           volumeMounts:
+            {{- if .Values.spire.enabled }}
+            - name: spire-agent-socket
+              mountPath: /run/spire/agent-sockets/api.sock
+              readOnly: true
+            {{- end }}
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
       volumes:
+        {{- if .Values.spire.enabled }}
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/agent-sockets/api.sock
+            type: Socket
+        {{- end }}
         - name: nfd-master-conf
           configMap:
             name: {{ include "node-feature-discovery.fullname" . }}-master-conf

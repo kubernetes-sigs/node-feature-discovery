@@ -273,3 +273,19 @@ Default: 0
 Comma-separated list of `pattern=N` settings for file-filtered logging.
 
 Default: *empty*
+
+### -enable-spiffe
+
+the `-enable-spiffe` flag enables signing NodeFeature spec on the worker side
+and puts the signature in the annotations side of the NodeFeature object.
+The signature is verified afterwards by the master. The feature
+should be enabled, after deploying SPIFFE, and you can do it through
+the Helm chart.
+
+Default: false.
+
+Example:
+
+```bash
+nfd-master -enable-spiffe
+```

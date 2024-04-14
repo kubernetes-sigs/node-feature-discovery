@@ -13,3 +13,8 @@ keywords:
   - node-labels
 type: application
 version: 0.2.1
+dependencies:
+  - name: spire
+    version: 0.24.1
+    repository: https://spiffe.github.io/helm-charts-hardened/
+    condition: spire.enabled

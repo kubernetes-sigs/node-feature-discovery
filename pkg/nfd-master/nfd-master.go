@@ -51,12 +51,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
-	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
-
-	taintutils "k8s.io/kubernetes/pkg/util/taints"
-	"sigs.k8s.io/yaml"
-
 	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
@@ -64,11 +58,12 @@ import (
 	nfdfeatures "sigs.k8s.io/node-feature-discovery/pkg/features"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
 // SocketPath specifies Spiffe Socket Path
-const SocketPath = "unix:///run/spire/sockets/agent.sock"
+const SocketPath = "unix:///run/spire/agent-sockets/api.sock"
 
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
@@ -219,12 +214,6 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 
 	nfd.updaterPool = newUpdaterPool(nfd)
 
-	spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
-	if err != nil {
-		return nfd, err
-	}
-	nfd.spiffeClient = spiffeClient
-
 	return nfd, nil
 }
 
@@ -306,6 +295,14 @@ func (m *nfdMaster) Run() error {
 		if err != nil {
 			return fmt.Errorf("failed to update master node: %w", err)
 		}
+	}
+
+	if m.config.EnableSpiffe {
+		spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
+		if err != nil {
+			return err
+		}
+		m.spiffeClient = spiffeClient
 	}
 
 	httpMux := http.NewServeMux()
@@ -642,6 +639,14 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 		return filteredObjs[i].Namespace < filteredObjs[j].Namespace
 	})
 
+	// If spiffe is enabled, we should filter out the non verified NFD objects
+	if m.config.EnableSpiffe {
+		filteredObjs, err = m.getVerifiedNFDObjects(filteredObjs)
+		if err != nil {
+			return &nfdv1alpha1.NodeFeature{}, err
+		}
+	}
+
 	if len(filteredObjs) > 0 {
 		// Merge in features
 		//
@@ -695,55 +700,6 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 	nodeFeatures, err := m.getAndMergeNodeFeatures(node.Name)
 	if err != nil {
 		return fmt.Errorf("failed to merge NodeFeature objects for node %q: %w", node.Name, err)
-	}
-
-	// Sort our objects
-	sort.Slice(objs, func(i, j int) bool {
-		// Objects in our nfd namespace gets into the beginning of the list
-		if objs[i].Namespace == m.namespace && objs[j].Namespace != m.namespace {
-			return true
-		}
-		if objs[i].Namespace != m.namespace && objs[j].Namespace == m.namespace {
-			return false
-		}
-		// After the nfd namespace, sort objects by their name
-		if objs[i].Name != objs[j].Name {
-			return objs[i].Name < objs[j].Name
-		}
-		// Objects with the same name are sorted by their namespace
-		return objs[i].Namespace < objs[j].Namespace
-	})
-
-	// If spiffe is enabled, we should filter out the non verified NFD objects
-	if m.config.EnableSpiffe {
-		objs, err = m.getVerifiedNFDObjects(objs)
-		if err != nil {
-			return err
-		}
-	}
-
-	klog.V(1).InfoS("processing of node initiated by NodeFeature API", "nodeName", node.Name)
-
-	features := nfdv1alpha1.NewNodeFeatureSpec()
-
-	if len(objs) > 0 {
-		// Merge in features
-		//
-		// NOTE: changing the rule api to support handle multiple objects instead
-		// of merging would probably perform better with lot less data to copy.
-		features = objs[0].Spec.DeepCopy()
-		if m.config.AutoDefaultNs {
-			features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
-		}
-		for _, o := range objs[1:] {
-			s := o.Spec.DeepCopy()
-			if m.config.AutoDefaultNs {
-				s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
-			}
-			s.MergeInto(features)
-		}
-
-		klog.V(4).InfoS("merged nodeFeatureSpecs", "newNodeFeatureSpec", utils.DelayedDumper(features))
 	}
 
 	// Update node labels et al. This may also mean removing all NFD-owned
@@ -1469,16 +1425,22 @@ func (m *nfdMaster) getVerifiedNFDObjects(objs []*v1alpha1.NodeFeature) ([]*v1al
 	}
 
 	for _, obj := range objs {
-		isSignatureVerified, err := spiffe.VerifyDataSignature(obj.Spec, obj.Annotations["signature"], workerPrivateKey, workerPublicKey)
+		spiffeObj := spiffe.SpiffeObject{
+			Spec:      obj.Spec,
+			Name:      obj.Name,
+			Namespace: obj.Namespace,
+			Labels:    obj.Labels,
+		}
+		isSignatureVerified, err := spiffe.VerifyDataSignature(spiffeObj, obj.Annotations["signature"], workerPrivateKey, workerPublicKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify NodeFeature signature: %w", err)
 		}
 
 		if isSignatureVerified {
-			klog.InfoS("NodeFeature verified", "NodeFeature name", obj.Name)
+			klog.InfoS("NodeFeature verified", "nodefeature", klog.KObj(obj))
 			verifiedObjects = append(verifiedObjects, obj)
 		} else {
-			klog.InfoS("NodeFeature not verified, skipping...", "NodeFeature name", obj.Name)
+			klog.InfoS("NodeFeature not verified, skipping...", "nodefeature", klog.KObj(obj))
 		}
 	}
 	return verifiedObjects, nil
