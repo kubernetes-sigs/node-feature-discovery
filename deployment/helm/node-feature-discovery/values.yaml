@@ -584,3 +584,47 @@ prometheus:
   enable: false
   scrapeInterval: 10s
   labels: {}
+
+spire:
+  enabled: false
+  global:
+    spire:
+      clusterName: "nfd"
+      trustDomain: "nfd.io"
+  spire-agent:
+    kubeletConnectByHostname: "true"
+    workloadAttestors:
+      unix:
+        enabled: true
+  spire-server:
+    controllerManager:
+      enabled: true
+      identities:
+        clusterStaticEntries:
+          node:
+            parentID: spiffe://nfd.io/spire/server
+            spiffeID: spiffe://nfd.io/root
+            selectors:
+              - k8s_psat:agent_ns:nfd
+              - k8s_psat:agent_sa:nfd-agent
+              - k8s_psat:cluster:nfd
+          nfd:
+            parentID: spiffe://nfd.io/root
+            spiffeID: spiffe://nfd.io/worker
+            selectors:
+            - k8s:pod-label:app.kubernetes.io/name:node-feature-discovery
+
+
+    caSubject:
+      commonName: "nfd.io"
+      country: "US"
+      organization: "SPIFFE"
+
+  upstream:
+    enabled: false
+  spiffe-csi-driver:
+    enabled: false
+  spiffe-oidc-discovery-provider:
+    enabled: false
+  tornjak-frontend:
+    enabled: false
