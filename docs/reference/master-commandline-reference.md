@@ -306,3 +306,19 @@ Example:
 ```bash
 nfd-master -resync-period=2h
 ```
+
+### -enable-spiffe
+
+the `-enable-spiffe` flag enables SPIFFE verification for the created NodeFeature
+objects created by the worker. When enabled, master verifies the signature that
+is put on the annotations part of the NodeFeature object, and updates
+Kubernetes nodes if the signature is verified. The feature should be enabled,
+after deploying SPIFFE, and you can do it through the Helm chart.
+
+Default: false.
+
+Example:
+
+```bash
+nfd-master -enable-spiffe
+```
