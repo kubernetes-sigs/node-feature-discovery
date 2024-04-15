@@ -167,7 +167,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
 
 		Convey("When I successfully update the node with feature labels", func() {
-			err := fakeMaster.updateNodeObject(testNode, featureLabels, featureAnnotations, featureExtResources, nil)
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, featureLabels, featureAnnotations, featureExtResources, nil)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -199,7 +199,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 				return true, &v1.Node{}, errors.New("Fake error when patching node")
 			})
-			err := fakeMaster.updateNodeObject(testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldBeError)

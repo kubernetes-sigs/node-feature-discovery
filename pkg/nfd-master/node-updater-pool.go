@@ -22,6 +22,7 @@ import (
 
 	"golang.org/x/time/rate"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 )
@@ -41,7 +42,7 @@ func newNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
 	}
 }
 
-func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingInterface) bool {
+func (u *nodeUpdaterPool) processNodeUpdateRequest(cli k8sclient.Interface, queue workqueue.RateLimitingInterface) bool {
 	n, quit := queue.Get()
 	if quit {
 		return false
@@ -53,9 +54,9 @@ func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingI
 	nodeUpdateRequests.Inc()
 
 	// Check if node exists
-	if node, err := u.nfdMaster.getNode(nodeName); apierrors.IsNotFound(err) {
+	if node, err := getNode(cli, nodeName); apierrors.IsNotFound(err) {
 		klog.InfoS("node not found, skip update", "nodeName", nodeName)
-	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(node); err != nil {
+	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(cli, node); err != nil {
 		if n := queue.NumRequeues(nodeName); n < 15 {
 			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err, "numRetries", n)
 		} else {
@@ -71,7 +72,15 @@ func (u *nodeUpdaterPool) processNodeUpdateRequest(queue workqueue.RateLimitingI
 }
 
 func (u *nodeUpdaterPool) runNodeUpdater(queue workqueue.RateLimitingInterface) {
-	for u.processNodeUpdateRequest(queue) {
+	var cli k8sclient.Interface
+	if u.nfdMaster.kubeconfig != nil {
+		// For normal execution, initialize a separate api client for each updater
+		cli = k8sclient.NewForConfigOrDie(u.nfdMaster.kubeconfig)
+	} else {
+		// For tests, re-use the api client from nfd-master
+		cli = u.nfdMaster.k8sClient
+	}
+	for u.processNodeUpdateRequest(cli, queue) {
 	}
 	u.wg.Done()
 }
