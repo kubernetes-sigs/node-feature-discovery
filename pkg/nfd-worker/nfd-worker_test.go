@@ -128,6 +128,12 @@ func TestRun(t *testing.T) {
 							},
 						},
 					},
+					Status: nfdv1alpha1.NodeFeatureStatus{
+						LastAppliedAt:         nf.Status.LastAppliedAt,
+						NumberOfFeatures:      1,
+						NumberOfFeatureErrors: 0,
+						NumberOfLabels:        1,
+					},
 				}
 				So(nf, ShouldResemble, nfExpected)
 			})
