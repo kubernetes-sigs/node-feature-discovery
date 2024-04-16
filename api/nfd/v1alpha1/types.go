@@ -41,6 +41,7 @@ type NodeFeature struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec NodeFeatureSpec `json:"spec"`
+	Status NodeFeatureStatus `json:"status"`
 }
 
 // NodeFeatureSpec describes a NodeFeature object.
@@ -51,6 +52,22 @@ type NodeFeatureSpec struct {
 	// Labels is the set of node labels that are requested to be created.
 	// +optional
 	Labels map[string]string `json:"labels"`
+}
+
+// Status of a NodeFeature object.
+type NodeFeatureStatus struct {
+	// UTC time when the NodeFeature object was last updated.
+	// +optional
+	LastAppliedAt metav1.Time `json:"lastAppliedAt,omitempty"`
+	// +optional
+	// Number of features discovered.
+	NumberOfFeatures int `json:"numberOfFeatures,omitempty"`
+	// +optional
+	// Number of errors during last feature discovery.
+	NumberOfFeatureErrors int `json:"numberOfFeatureErrors,omitempty"`
+	// +optional
+	// Number of labels created.
+	NumberOfLabels int `json:"numberOfLabels,omitempty"`
 }
 
 // Features is the collection of all discovered features.
