@@ -39,6 +39,8 @@ type NodeFeaturesGetter interface {
 type NodeFeatureInterface interface {
 	Create(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.CreateOptions) (*v1alpha1.NodeFeature, error)
 	Update(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (*v1alpha1.NodeFeature, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (*v1alpha1.NodeFeature, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.NodeFeature, error)
