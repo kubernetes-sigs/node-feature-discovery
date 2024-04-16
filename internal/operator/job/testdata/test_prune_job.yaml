@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: nfd
+  name: nfd-prune
+  namespace: test-namespace
+  ownerReferences:
+  - apiVersion: nfd.kubernetes.io/v1
+    kind: NodeFeatureDiscovery
+    name: nfd
+    controller: true
+    blockOwnerDeletion: true
+spec:
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app: nfd-prune
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: In
+                values:
+                - ""
+            weight: 1
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: In
+                values:
+                - ""
+            weight: 1
+      containers:
+      - args:
+        - -prune
+        command:
+        - nfd-master
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: test-image
+        imagePullPolicy: Always
+        name: nfd-prune
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      restartPolicy: Never
+      serviceAccount: nfd-prune
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Equal
+        value: ""
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Equal
+        value: ""

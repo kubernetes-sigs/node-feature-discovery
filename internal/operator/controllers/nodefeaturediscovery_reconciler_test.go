@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery-operator/internal/configmap"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
 )
 
 var _ = Describe("Reconcile", func() {
@@ -65,7 +67,6 @@ var _ = Describe("Reconcile", func() {
 		mockHelper.EXPECT().handleWorker(ctx, &nfdCR).Return(nil)
 		mockHelper.EXPECT().handleTopology(ctx, &nfdCR).Return(nil)
 		mockHelper.EXPECT().handleGC(ctx, &nfdCR).Return(nil)
-		mockHelper.EXPECT().handlePrune(ctx, &nfdCR).Return(nil)
 		mockHelper.EXPECT().handleStatus(ctx, &nfdCR).Return(nil)
 
 		res, err := nfdr.Reconcile(ctx, &nfdCR)
@@ -73,22 +74,46 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).To(BeNil())
 	})
 
-	DescribeTable("finalization flow", func(finalizationError error) {
+	DescribeTable("finalization flow", func(finalizeComponentsError, handlePruneError, pruneDone, removeFinalizerError bool) {
 		nfdCR := nfdv1.NodeFeatureDiscovery{}
 		timestamp := metav1.Now()
 		nfdCR.SetDeletionTimestamp(&timestamp)
-		mockHelper.EXPECT().finalizeComponents(ctx, &nfdCR).Return(finalizationError)
+
+		if finalizeComponentsError {
+			mockHelper.EXPECT().finalizeComponents(ctx, &nfdCR).Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockHelper.EXPECT().finalizeComponents(ctx, &nfdCR).Return(nil)
+		if handlePruneError {
+			mockHelper.EXPECT().handlePrune(ctx, &nfdCR).Return(false, fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		if !pruneDone {
+			mockHelper.EXPECT().handlePrune(ctx, &nfdCR).Return(false, nil)
+			goto executeTestFunction
+		}
+		mockHelper.EXPECT().handlePrune(ctx, &nfdCR).Return(true, nil)
+		if removeFinalizerError {
+			mockHelper.EXPECT().removeFinalizer(ctx, &nfdCR).Return(fmt.Errorf("some error"))
+			goto executeTestFunction
+		}
+		mockHelper.EXPECT().removeFinalizer(ctx, &nfdCR).Return(nil)
+
+	executeTestFunction:
 
 		res, err := nfdr.Reconcile(ctx, &nfdCR)
 		Expect(res).To(Equal(reconcile.Result{}))
-		if finalizationError != nil {
+		if finalizeComponentsError || handlePruneError || removeFinalizerError {
 			Expect(err).To(HaveOccurred())
 		} else {
 			Expect(err).To(BeNil())
 		}
 	},
-		Entry("finalization failed", fmt.Errorf("finalization error")),
-		Entry("finalization succeeded", fmt.Errorf("finalization error")),
+		Entry("finalizeComponents failed", true, false, false, false),
+		Entry("handlePrune failed", false, true, false, false),
+		Entry("handlePrune succeeded but not done yet", false, false, false, false),
+		Entry("handlePrune succeeded and done, removeFinalizer failed", false, false, true, true),
+		Entry("fully successfull flow", false, false, true, false),
 	)
 
 	DescribeTable("setFinalizer flow", func(setFinalizerError error) {
@@ -121,7 +146,6 @@ var _ = Describe("Reconcile", func() {
 		mockHelper.EXPECT().handleWorker(ctx, &nfdCR).Return(handlerWorkerError)
 		mockHelper.EXPECT().handleTopology(ctx, &nfdCR).Return(handleTopologyError)
 		mockHelper.EXPECT().handleGC(ctx, &nfdCR).Return(handlerGCError)
-		mockHelper.EXPECT().handlePrune(ctx, &nfdCR).Return(handlePruneError)
 		mockHelper.EXPECT().handleStatus(ctx, &nfdCR).Return(handleStatusError)
 
 		res, err := nfdr.Reconcile(ctx, &nfdCR)
@@ -137,7 +161,6 @@ var _ = Describe("Reconcile", func() {
 		Entry("handleWorker failed", nil, fmt.Errorf("worker error"), nil, nil, nil, nil),
 		Entry("handleTopology failed", nil, nil, fmt.Errorf("topology error"), nil, nil, nil),
 		Entry("handleGC failed", nil, nil, nil, fmt.Errorf("gc error"), nil, nil),
-		Entry("handlePrune failed", nil, nil, nil, nil, fmt.Errorf("prune error"), nil),
 		Entry("handleStatus failed", nil, nil, nil, nil, nil, fmt.Errorf("status error")),
 		Entry("all components succeeded", nil, nil, nil, nil, nil, nil),
 	)
@@ -156,7 +179,7 @@ var _ = Describe("handleMaster", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -225,7 +248,7 @@ var _ = Describe("handleWorker", func() {
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 		mockCM = configmap.NewMockConfigMapAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, mockCM, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, mockCM, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -321,7 +344,7 @@ var _ = Describe("handleTopology", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -406,7 +429,7 @@ var _ = Describe("handleGC", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -462,7 +485,7 @@ var _ = Describe("handleGC", func() {
 
 var _ = Describe("hasFinalizer", func() {
 	It("checking return status whether finalizer set or not", func() {
-		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil)
+		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil, nil)
 
 		By("finalizers was empty")
 		nfdCR := nfdv1.NodeFeatureDiscovery{
@@ -506,7 +529,7 @@ var _ = Describe("setFinalizer", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil)
 	})
 
 	It("checking the return status of setFinalizer function", func() {
@@ -565,7 +588,7 @@ var _ = Describe("finalizeComponents", func() {
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 		mockCM = configmap.NewMockConfigMapAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -581,10 +604,7 @@ var _ = Describe("finalizeComponents", func() {
 		deleteWorkerCMError,
 		deleteTopologyDSError,
 		deleteMasterDeploymentError,
-		deleteGCDeploymentError,
-		updateError bool) {
-
-		controllerutil.AddFinalizer(&nfdCR, finalizerLabel)
+		deleteGCDeploymentError bool) {
 
 		if deleteWorkerDSError {
 			mockDS.EXPECT().DeleteDaemonSet(ctx, namespace, "nfd-worker").Return(fmt.Errorf("some error"))
@@ -611,29 +631,175 @@ var _ = Describe("finalizeComponents", func() {
 			goto executeTestFunction
 		}
 		mockDeployment.EXPECT().DeleteDeployment(ctx, namespace, "nfd-gc").Return(nil)
-		if updateError {
-			clnt.EXPECT().Update(ctx, gomock.Any()).Return(fmt.Errorf("some error"))
-			goto executeTestFunction
-		}
-		clnt.EXPECT().Update(ctx, gomock.Any()).Return(nil)
 
 	executeTestFunction:
 
 		err := nfdh.finalizeComponents(ctx, &nfdCR)
 
 		if deleteGCDeploymentError || deleteWorkerDSError || deleteWorkerCMError ||
-			deleteTopologyDSError || deleteMasterDeploymentError || updateError {
+			deleteTopologyDSError || deleteMasterDeploymentError {
 			Expect(err).To(HaveOccurred())
 		} else {
 			Expect(err).To(BeNil())
 		}
 	},
-		Entry("delete worker daemonset failed", true, false, false, false, false, false),
-		Entry("delete worker configmap failed", false, true, false, false, false, false),
-		Entry("delete topology daemonset failed", false, false, true, false, false, false),
-		Entry("delete master deployment failed", false, false, false, true, false, false),
-		Entry("delete gc deployment failed", false, false, false, false, true, false),
-		Entry("updating removed finalizer failed", false, false, false, false, false, true),
-		Entry("finalization flow was succesful", false, false, false, false, false, false),
+		Entry("delete worker daemonset failed", true, false, false, false, false),
+		Entry("delete worker configmap failed", false, true, false, false, false),
+		Entry("delete topology daemonset failed", false, false, true, false, false),
+		Entry("delete master deployment failed", false, false, false, true, false),
+		Entry("delete gc deployment failed", false, false, false, false, true),
+		Entry("finalization flow was succesful", false, false, false, false, false),
+	)
+})
+
+var _ = Describe("removeFinalizer", func() {
+	var (
+		ctrl *gomock.Controller
+		clnt *client.MockClient
+		nfdh nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, scheme)
+	})
+
+	ctx := context.Background()
+
+	It("removing existing finalizer", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{}
+		controllerutil.AddFinalizer(&nfdCR, finalizerLabel)
+		clnt.EXPECT().Update(ctx, gomock.Any()).Return(nil)
+
+		err := nfdh.removeFinalizer(ctx, &nfdCR)
+
+		Expect(err).To(BeNil())
+	})
+
+	It("removing existing finalizer failed", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{}
+		controllerutil.AddFinalizer(&nfdCR, finalizerLabel)
+		clnt.EXPECT().Update(ctx, gomock.Any()).Return(fmt.Errorf("some error"))
+
+		err := nfdh.removeFinalizer(ctx, &nfdCR)
+
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("removing non-existing finalizer", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{}
+
+		err := nfdh.removeFinalizer(ctx, &nfdCR)
+
+		Expect(err).To(BeNil())
+	})
+})
+
+var _ = Describe("handlePrune", func() {
+	var (
+		ctrl    *gomock.Controller
+		mockJob *job.MockJobAPI
+		nfdh    nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockJob = job.NewMockJobAPI(ctrl)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, mockJob, scheme)
+	})
+
+	ctx := context.Background()
+	namespace := "test-namespace"
+	nfdCR := nfdv1.NodeFeatureDiscovery{
+		ObjectMeta: metav1.ObjectMeta{Namespace: namespace},
+	}
+
+	It("prune not defined in the CR", func() {
+		done, err := nfdh.handlePrune(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+		Expect(done).To(BeTrue())
+	})
+
+	It("failed to get prune job from the cluster", func() {
+		nfdCR.Spec.PruneOnDelete = true
+		mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(nil, fmt.Errorf("some error"))
+
+		done, err := nfdh.handlePrune(ctx, &nfdCR)
+
+		Expect(err).To(HaveOccurred())
+		Expect(done).To(BeFalse())
+	})
+
+	It("job does not exists, creating it fails", func() {
+		nfdCR.Spec.PruneOnDelete = true
+		gomock.InOrder(
+			mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(nil, apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockJob.EXPECT().CreatePruneJob(ctx, &nfdCR).Return(fmt.Errorf("some error")),
+		)
+
+		done, err := nfdh.handlePrune(ctx, &nfdCR)
+
+		Expect(err).To(HaveOccurred())
+		Expect(done).To(BeFalse())
+	})
+
+	It("job does not exists, creating it succeeds", func() {
+		nfdCR.Spec.PruneOnDelete = true
+		gomock.InOrder(
+			mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(nil, apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockJob.EXPECT().CreatePruneJob(ctx, &nfdCR).Return(nil),
+		)
+
+		done, err := nfdh.handlePrune(ctx, &nfdCR)
+
+		Expect(err).To(BeNil())
+		Expect(done).To(BeFalse())
+	})
+
+	DescribeTable("prune job exsists flows", func(podFailed, podSucceeded, deleteFailed bool) {
+		nfdCR.Spec.PruneOnDelete = true
+		foundJob := batchv1.Job{}
+		if podFailed {
+			foundJob.Status.Failed = 1
+		}
+		if podSucceeded {
+			foundJob.Status.Succeeded = 1
+		}
+		mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(&foundJob, nil)
+		if podFailed || podSucceeded {
+			if deleteFailed {
+				mockJob.EXPECT().DeleteJob(ctx, &foundJob).Return(fmt.Errorf("some error"))
+			} else {
+				mockJob.EXPECT().DeleteJob(ctx, &foundJob).Return(nil)
+			}
+		}
+
+		done, err := nfdh.handlePrune(ctx, &nfdCR)
+
+		switch {
+		case !podFailed && !podSucceeded:
+			Expect(err).To(BeNil())
+			Expect(done).To(BeFalse())
+		case podFailed && !deleteFailed:
+			Expect(err).To(HaveOccurred())
+			Expect(done).To(BeFalse())
+		case podFailed && deleteFailed:
+			Expect(err).To(HaveOccurred())
+			Expect(done).To(BeFalse())
+		case podSucceeded && !deleteFailed:
+			Expect(err).To(BeNil())
+			Expect(done).To(BeTrue())
+		case podSucceeded && deleteFailed:
+			Expect(err).To(HaveOccurred())
+			Expect(done).To(BeFalse())
+		}
+	},
+		Entry("job has not finished yet", false, false, false),
+		Entry("job finished, its pod successfull, delete successfull", false, true, false),
+		Entry("job finished, its pod successfull, delete failed", false, true, true),
+		Entry("job finished, its pod failed, delete succeessful", true, false, false),
+		Entry("job finished, its pod failed, delete failed", true, false, true),
 	)
 })

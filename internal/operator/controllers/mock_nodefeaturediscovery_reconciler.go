@@ -82,11 +82,12 @@ func (mr *MocknodeFeatureDiscoveryHelperAPIMockRecorder) handleMaster(ctx, nfdIn
 }
 
 // handlePrune mocks base method.
-func (m *MocknodeFeatureDiscoveryHelperAPI) handlePrune(ctx context.Context, nfdInstance *v1.NodeFeatureDiscovery) error {
+func (m *MocknodeFeatureDiscoveryHelperAPI) handlePrune(ctx context.Context, nfdInstance *v1.NodeFeatureDiscovery) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "handlePrune", ctx, nfdInstance)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // handlePrune indicates an expected call of handlePrune.
@@ -149,6 +150,20 @@ func (m *MocknodeFeatureDiscoveryHelperAPI) hasFinalizer(nfdInstance *v1.NodeFea
 func (mr *MocknodeFeatureDiscoveryHelperAPIMockRecorder) hasFinalizer(nfdInstance any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "hasFinalizer", reflect.TypeOf((*MocknodeFeatureDiscoveryHelperAPI)(nil).hasFinalizer), nfdInstance)
+}
+
+// removeFinalizer mocks base method.
+func (m *MocknodeFeatureDiscoveryHelperAPI) removeFinalizer(ctx context.Context, instance *v1.NodeFeatureDiscovery) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "removeFinalizer", ctx, instance)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// removeFinalizer indicates an expected call of removeFinalizer.
+func (mr *MocknodeFeatureDiscoveryHelperAPIMockRecorder) removeFinalizer(ctx, instance any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "removeFinalizer", reflect.TypeOf((*MocknodeFeatureDiscoveryHelperAPI)(nil).removeFinalizer), ctx, instance)
 }
 
 // setFinalizer mocks base method.
