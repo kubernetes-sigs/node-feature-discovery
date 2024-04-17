@@ -23,15 +23,16 @@ import (
 
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
-	buildInfoQuery           = "nfd_master_build_info"
-	nodeUpdateRequestsQuery  = "nfd_node_update_requests_total"
-	nodeUpdatesQuery         = "nfd_node_updates_total"
-	nodeUpdateFailuresQuery  = "nfd_node_update_failures_total"
-	nodeLabelsRejectedQuery  = "nfd_node_labels_rejected_total"
-	nodeERsRejectedQuery     = "nfd_node_extendedresources_rejected_total"
-	nodeTaintsRejectedQuery  = "nfd_node_taints_rejected_total"
-	nfrProcessingTimeQuery   = "nfd_nodefeaturerule_processing_duration_seconds"
-	nfrProcessingErrorsQuery = "nfd_nodefeaturerule_processing_errors_total"
+	buildInfoQuery                      = "nfd_master_build_info"
+	nodeUpdateRequestsQuery             = "nfd_node_update_requests_total"
+	nodeUpdatesQuery                    = "nfd_node_updates_total"
+	nodeFeatureGroupUpdateRequestsQuery = "nfd_node_feature_group_update_requests_total"
+	nodeUpdateFailuresQuery             = "nfd_node_update_failures_total"
+	nodeLabelsRejectedQuery             = "nfd_node_labels_rejected_total"
+	nodeERsRejectedQuery                = "nfd_node_extendedresources_rejected_total"
+	nodeTaintsRejectedQuery             = "nfd_node_taints_rejected_total"
+	nfrProcessingTimeQuery              = "nfd_nodefeaturerule_processing_duration_seconds"
+	nfrProcessingErrorsQuery            = "nfd_nodefeaturerule_processing_errors_total"
 )
 
 var (
@@ -45,6 +46,10 @@ var (
 	nodeUpdateRequests = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: nodeUpdateRequestsQuery,
 		Help: "Number of node update requests processed by the master.",
+	})
+	nodeFeatureGroupUpdateRequests = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: nodeFeatureGroupUpdateRequestsQuery,
+		Help: "Number of cluster feature update requests processed by the master.",
 	})
 	nodeUpdates = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: nodeUpdatesQuery,

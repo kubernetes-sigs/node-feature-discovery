@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	NodeFeatureAPI    featuregate.Feature = "NodeFeatureAPI"
-	DisableAutoPrefix featuregate.Feature = "DisableAutoPrefix"
+	NodeFeatureAPI      featuregate.Feature = "NodeFeatureAPI"
+	DisableAutoPrefix   featuregate.Feature = "DisableAutoPrefix"
+	NodeFeatureGroupAPI featuregate.Feature = "NodeFeatureGroupAPI"
 )
 
 var (
@@ -34,6 +35,7 @@ var (
 )
 
 var DefaultNFDFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	NodeFeatureAPI:    {Default: true, PreRelease: featuregate.Beta},
-	DisableAutoPrefix: {Default: false, PreRelease: featuregate.Alpha},
+	NodeFeatureAPI:      {Default: true, PreRelease: featuregate.Beta},
+	DisableAutoPrefix:   {Default: false, PreRelease: featuregate.Alpha},
+	NodeFeatureGroupAPI: {Default: false, PreRelease: featuregate.Alpha},
 }

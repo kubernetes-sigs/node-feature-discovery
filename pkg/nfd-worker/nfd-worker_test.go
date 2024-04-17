@@ -53,6 +53,7 @@ func setupTest(args *master.Args) testContext {
 		os.Exit(1)
 	}
 	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureAPI, false)
+	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureGroupAPI, false)
 	m, err := master.NewNfdMaster(
 		master.WithArgs(args),
 		master.WithKubernetesClient(fakeclient.NewSimpleClientset()))

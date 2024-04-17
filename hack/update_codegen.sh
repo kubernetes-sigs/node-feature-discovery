@@ -27,6 +27,10 @@ function cleanup() {
   "${GO_CMD}" mod tidy
 }
 
+# Temporal work around until https://github.com/kubernetes/kubernetes/pull/125051 is merged
+# and added to a release.
+find api/generated/ -name 'nodefeature*' | xargs rm
+
 trap cleanup EXIT
 GO_CMD=${1:-go}
 NFD_ROOT=$(realpath $(dirname ${BASH_SOURCE[0]})/..)

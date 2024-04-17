@@ -187,6 +187,49 @@ to specify taints in the NodeFeatureRule object.
 > not tolerate the taint are evicted immediately from the node including the
 > nfd-worker pod.
 
+## NodeFeatureGroup custom resource
+
+`NodeFeatureGroup` objects provide a way to create node groups that share the
+same set of features. The `NodeFeatureGroup` object spec consists of a list of
+`NodeFeatureRule` that follow the same format as the `NodeFeatureRule`,
+but the difference in this case is that nodes that match any of the rules in the
+`NodeFeatureGroup` will be listed in the `NodeFeatureGroup` status.
+
+### A NodeFeatureGroup example
+
+Consider the following referential example:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: node-feature-group-example
+spec:
+  featureGroupRules:
+    - name: "kernel version"
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: In, value: ["6"]}
+status:
+  nodes:
+    - name: node-1
+    - name: node-2
+    - name: node-3
+```
+
+The object specifies a group of nodes that share the same
+`kernel.version.major` (Linux kernel v6.x).
+
+Create a `NodeFeatureGroup` with a yaml file:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/examples/nodefeaturegroup.yaml
+```
+
+See [Feature rule format](#feature-rule-format) for detailed description of
+available fields and how to write group filtering rules.
+
 ## Local feature source
 
 NFD-Worker has a special feature source named `local` which is an integration

@@ -26,44 +26,44 @@ import (
 	fakenfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
 )
 
-func newFakeNodeUpdaterPool(nfdMaster *nfdMaster) *nodeUpdaterPool {
-	return &nodeUpdaterPool{
+func newFakeupdaterPool(nfdMaster *nfdMaster) *updaterPool {
+	return &updaterPool{
 		nfdMaster: nfdMaster,
 		wg:        sync.WaitGroup{},
 	}
 }
 
-func TestNodeUpdaterStart(t *testing.T) {
+func TestUpdaterStart(t *testing.T) {
 	fakeMaster := newFakeMaster()
-	nodeUpdaterPool := newFakeNodeUpdaterPool(fakeMaster)
+	updaterPool := newFakeupdaterPool(fakeMaster)
 
 	Convey("When starting the node updater pool", t, func() {
-		nodeUpdaterPool.start(10)
-		q := nodeUpdaterPool.queue
+		updaterPool.start(10)
+		q := updaterPool.queue
 		Convey("Node updater pool queue properties should change", func() {
 			So(q, ShouldNotBeNil)
 			So(q.ShuttingDown(), ShouldBeFalse)
 		})
 
-		nodeUpdaterPool.start(10)
+		updaterPool.start(10)
 		Convey("Node updater pool queue should not change", func() {
-			So(nodeUpdaterPool.queue, ShouldEqual, q)
+			So(updaterPool.queue, ShouldEqual, q)
 		})
 	})
 }
 
 func TestNodeUpdaterStop(t *testing.T) {
 	fakeMaster := newFakeMaster()
-	nodeUpdaterPool := newFakeNodeUpdaterPool(fakeMaster)
+	updaterPool := newFakeupdaterPool(fakeMaster)
 
-	nodeUpdaterPool.start(10)
+	updaterPool.start(10)
 
 	Convey("When stoping the node updater pool", t, func() {
-		nodeUpdaterPool.stop()
+		updaterPool.stop()
 		Convey("Node updater pool queue should be removed", func() {
 			// Wait for the wg.Done()
 			So(func() interface{} {
-				return nodeUpdaterPool.queue.ShuttingDown()
+				return updaterPool.queue.ShuttingDown()
 			}, withTimeout, 2*time.Second, ShouldBeTrue)
 		})
 	})
@@ -72,15 +72,31 @@ func TestNodeUpdaterStop(t *testing.T) {
 func TestRunNodeUpdater(t *testing.T) {
 	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewSimpleClientset()))
 	fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
-	nodeUpdaterPool := newFakeNodeUpdaterPool(fakeMaster)
+	updaterPool := newFakeupdaterPool(fakeMaster)
 
-	nodeUpdaterPool.start(10)
+	updaterPool.start(10)
 	Convey("Queue has no element", t, func() {
-		So(nodeUpdaterPool.queue.Len(), ShouldEqual, 0)
+		So(updaterPool.queue.Len(), ShouldEqual, 0)
 	})
-	nodeUpdaterPool.queue.Add(testNodeName)
+	updaterPool.queue.Add(testNodeName)
 	Convey("Added element to the queue should be removed", t, func() {
-		So(func() interface{} { return nodeUpdaterPool.queue.Len() },
+		So(func() interface{} { return updaterPool.queue.Len() },
+			withTimeout, 2*time.Second, ShouldEqual, 0)
+	})
+}
+
+func TestRunNodeFeatureGroupUpdater(t *testing.T) {
+	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewSimpleClientset()))
+	fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
+	updaterPool := newFakeupdaterPool(fakeMaster)
+
+	updaterPool.start(10)
+	Convey("Queue has no element", t, func() {
+		So(updaterPool.nfgQueue.Len(), ShouldEqual, 0)
+	})
+	updaterPool.nfgQueue.Add(testNodeName)
+	Convey("Added element to the queue should be removed", t, func() {
+		So(func() interface{} { return updaterPool.queue.Len() },
 			withTimeout, 2*time.Second, ShouldEqual, 0)
 	})
 }
