@@ -43,35 +43,70 @@ func TestMatchKeys(t *testing.T) {
 	}
 
 	tcs := []TC{
-		{output: O{}, result: assert.True, err: assert.Nil},
-
-		{input: I{}, output: O{}, result: assert.True, err: assert.Nil},
-
-		{input: I{"foo": {}}, output: O{}, result: assert.True, err: assert.Nil},
-
-		{mes: `
+		{
+			name:   "empty expression and nil input",
+			output: O{},
+			result: assert.True,
+			err:    assert.Nil,
+		},
+		{
+			name:   "empty expression and empty input",
+			input:  I{},
+			output: O{},
+			result: assert.True,
+			err:    assert.Nil,
+		},
+		{
+			name:   "empty expression with non-empty input",
+			input:  I{"foo": {}},
+			output: O{},
+			result: assert.True,
+			err:    assert.Nil,
+		},
+		{
+			name: "expressions match",
+			mes: `
 foo: { op: DoesNotExist }
 bar: { op: Exists }
 `,
 			input:  I{"bar": {}, "baz": {}, "buzz": {}},
 			output: O{{"Name": "bar"}, {"Name": "foo"}},
-			result: assert.True, err: assert.Nil},
-
-		{mes: `
+			result: assert.True,
+			err:    assert.Nil,
+		},
+		{
+			name: "expression does not match",
+			mes: `
 foo: { op: DoesNotExist }
 bar: { op: Exists }
 `,
 			input:  I{"foo": {}, "bar": {}, "baz": {}},
 			output: nil,
-			result: assert.False, err: assert.Nil},
-
-		{mes: `
+			result: assert.False,
+			err:    assert.Nil,
+		},
+		{
+			name: "op that never matches",
+			mes: `
 foo: { op: In, value: ["bar"] }
 bar: { op: Exists }
 `,
 			input:  I{"bar": {}, "baz": {}},
 			output: nil,
-			result: assert.False, err: assert.NotNil},
+			result: assert.False,
+			err:    assert.Nil,
+		},
+		{
+			name: "error in expression",
+			mes: `
+foo: { op: Exists, value: ["bar"] }
+bar: { op: Exists }
+`,
+			input:  I{"bar": {}},
+			output: nil,
+			result: assert.False,
+			err:    assert.NotNil,
+		},
 	}
 
 	for _, tc := range tcs {

@@ -171,15 +171,15 @@ func TestEvaluateMatchExpressionKeys(t *testing.T) {
 		{name: "7", op: nfdv1alpha1.MatchDoesNotExist, key: "foo", input: I{"bar": {}}, result: assert.True, err: assert.Nil},
 		{name: "8", op: nfdv1alpha1.MatchDoesNotExist, key: "foo", input: I{"bar": {}, "foo": {}}, result: assert.False, err: assert.Nil},
 
-		// All other ops should return an error
-		{name: "9", op: nfdv1alpha1.MatchIn, values: V{"foo"}, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "10", op: nfdv1alpha1.MatchNotIn, values: V{"foo"}, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "11", op: nfdv1alpha1.MatchInRegexp, values: V{"foo"}, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "12", op: nfdv1alpha1.MatchGt, values: V{"1"}, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "13", op: nfdv1alpha1.MatchLt, values: V{"1"}, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "14", op: nfdv1alpha1.MatchGtLt, values: V{"1", "10"}, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "15", op: nfdv1alpha1.MatchIsTrue, key: "foo", result: assert.False, err: assert.NotNil},
-		{name: "16", op: nfdv1alpha1.MatchIsFalse, key: "foo", result: assert.False, err: assert.NotNil},
+		// All other ops should be nop (and return false) for "key" features
+		{name: "9", op: nfdv1alpha1.MatchIn, values: V{"foo"}, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "10", op: nfdv1alpha1.MatchNotIn, values: V{"foo"}, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "11", op: nfdv1alpha1.MatchInRegexp, values: V{"foo"}, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "12", op: nfdv1alpha1.MatchGt, values: V{"1"}, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "13", op: nfdv1alpha1.MatchLt, values: V{"1"}, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "14", op: nfdv1alpha1.MatchGtLt, values: V{"1", "10"}, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "15", op: nfdv1alpha1.MatchIsTrue, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "16", op: nfdv1alpha1.MatchIsFalse, key: "foo", result: assert.False, err: assert.Nil},
 	}
 
 	for _, tc := range tcs {
