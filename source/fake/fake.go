@@ -126,7 +126,7 @@ func (s *fakeSource) Discover() error {
 	for i, instanceAttributes := range s.config.InstanceFeatures {
 		instances[i] = *nfdv1alpha1.NewInstanceFeature(instanceAttributes)
 	}
-	s.features.Instances[InstanceFeature] = nfdv1alpha1.NewInstanceFeatures(instances)
+	s.features.Instances[InstanceFeature] = nfdv1alpha1.NewInstanceFeatures(instances...)
 
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 

@@ -84,22 +84,20 @@ func TestInstanceFeatureSet(t *testing.T) {
 	f2.MergeInto(&f1)
 	assert.Equal(t, expectedElems, f1.Elements)
 
-	f2 = NewInstanceFeatures([]InstanceFeature{})
+	f2 = NewInstanceFeatures()
 	expectedElems = []InstanceFeature{}
 	f2.MergeInto(&f1)
 	assert.Equal(t, expectedElems, f1.Elements)
 
-	f2 = NewInstanceFeatures([]InstanceFeature{InstanceFeature{}})
+	f2 = NewInstanceFeatures(InstanceFeature{})
 	expectedElems = append(expectedElems, InstanceFeature{})
 	f2.MergeInto(&f1)
 	assert.Equal(t, expectedElems, f1.Elements)
 
-	f2 = NewInstanceFeatures([]InstanceFeature{
-		InstanceFeature{
-			Attributes: map[string]string{
-				"a1": "v1",
-				"a2": "v2",
-			},
+	f2 = NewInstanceFeatures(InstanceFeature{
+		Attributes: map[string]string{
+			"a1": "v1",
+			"a2": "v2",
 		},
 	})
 	expectedElems = append(expectedElems, *NewInstanceFeature(map[string]string{"a1": "v1", "a2": "v2"}))
@@ -139,18 +137,16 @@ func TestFeature(t *testing.T) {
 	f2 = *NewFeatures()
 	f2.Flags["dom.flag"] = NewFlagFeatures("k1", "k2")
 	f2.Attributes["dom.attr"] = NewAttributeFeatures(map[string]string{"k1": "v1", "k2": "v2"})
-	f2.Instances["dom.inst"] = NewInstanceFeatures([]InstanceFeature{
+	f2.Instances["dom.inst"] = NewInstanceFeatures(
 		*NewInstanceFeature(map[string]string{"a1": "v1.1", "a2": "v1.2"}),
 		*NewInstanceFeature(map[string]string{"a1": "v2.1", "a2": "v2.2"}),
-	})
+	)
 	f2.MergeInto(&f)
 	assert.Equal(t, f2, f)
 
 	f2.Flags["dom.flag"] = NewFlagFeatures("k3")
 	f2.Attributes["dom.attr"] = NewAttributeFeatures(map[string]string{"k1": "v1.override"})
-	f2.Instances["dom.inst"] = NewInstanceFeatures([]InstanceFeature{
-		*NewInstanceFeature(map[string]string{"a1": "v3.1", "a3": "v3.3"}),
-	})
+	f2.Instances["dom.inst"] = NewInstanceFeatures(*NewInstanceFeature(map[string]string{"a1": "v3.1", "a3": "v3.3"}))
 	f2.MergeInto(&f)
 	expectedFeatures = *NewFeatures()
 	expectedFeatures.Flags["dom.flag"] = FlagFeatureSet{Elements: map[string]Nil{"k1": Nil{}, "k2": Nil{}, "k3": Nil{}}}
