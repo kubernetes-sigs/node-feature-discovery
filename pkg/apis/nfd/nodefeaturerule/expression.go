@@ -263,17 +263,17 @@ func MatchValueNames(m *nfdv1alpha1.MatchExpression, values map[string]string) (
 
 // MatchInstanceAttributeNames evaluates the MatchExpression against a set of
 // instance features, matching against the names of their attributes.
-func MatchInstanceAttributeNames(m *nfdv1alpha1.MatchExpression, instances []nfdv1alpha1.InstanceFeature) ([]MatchedElement, error) {
+func MatchInstanceAttributeNames(m *nfdv1alpha1.MatchExpression, instances []nfdv1alpha1.InstanceFeature) (bool, []MatchedElement, error) {
 	ret := []MatchedElement{}
 
 	for _, i := range instances {
 		if match, _, err := MatchValueNames(m, i.Attributes); err != nil {
-			return nil, err
+			return false, nil, err
 		} else if match {
 			ret = append(ret, i.Attributes)
 		}
 	}
-	return ret, nil
+	return len(ret) > 0, ret, nil
 }
 
 // MatchKeys evaluates the MatchExpressionSet against a set of keys.
@@ -337,23 +337,153 @@ func MatchGetValues(m *nfdv1alpha1.MatchExpressionSet, values map[string]string)
 // features, each of which is an individual set of key-value pairs
 // (attributes).
 func MatchInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha1.InstanceFeature) (bool, error) {
-	v, err := MatchGetInstances(m, instances)
-	return len(v) > 0, err
+	isMatch, _, err := MatchGetInstances(m, instances)
+	return isMatch, err
 }
 
 // MatchGetInstances evaluates the MatchExpressionSet against a set of instance
 // features, each of which is an individual set of key-value pairs
-// (attributes). A slice containing all matching instances is returned. An
-// empty (non-nil) slice is returned if no matching instances were found.
-func MatchGetInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha1.InstanceFeature) ([]MatchedElement, error) {
+// (attributes). Returns a boolean that reports whether the expression matched.
+// Also, returns a slice containing all matching instances. An empty (non-nil)
+// slice is returned if no matching instances were found.
+func MatchGetInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha1.InstanceFeature) (bool, []MatchedElement, error) {
 	ret := []MatchedElement{}
 
 	for _, i := range instances {
 		if match, err := MatchValues(m, i.Attributes); err != nil {
-			return nil, err
+			return false, nil, err
 		} else if match {
 			ret = append(ret, i.Attributes)
 		}
 	}
-	return ret, nil
+	return len(ret) > 0, ret, nil
+}
+
+// MatchMulti evaluates a MatchExpressionSet against key, value and instance
+// features all at once. Key and values features are evaluated together so that
+// a match in either (or both) of them is accepted as success. Instances are
+// handled separately as the way of evaluating match expressions is different.
+// This function is written to handle "multi-type" features where one feature
+// (say "cpu.cpuid") contains multiple types (flag, attribute and/or instance).
+func MatchMulti(m *nfdv1alpha1.MatchExpressionSet, keys map[string]nfdv1alpha1.Nil, values map[string]string, instances []nfdv1alpha1.InstanceFeature) (bool, []MatchedElement, error) {
+	matchedElems := []MatchedElement{}
+	isMatch := false
+
+	// Keys and values are handled as a union, it is enough to find a match in
+	// either of them
+	if keys != nil || values != nil {
+		// Handle the special case of empty match expression
+		isMatch = true
+	}
+	for n, e := range *m {
+		var (
+			matchK bool
+			matchV bool
+			err    error
+		)
+		if keys != nil {
+			matchK, err = evaluateMatchExpressionKeys(e, n, keys)
+			if err != nil {
+				return false, nil, err
+			}
+			if matchK {
+				matchedElems = append(matchedElems, MatchedElement{"Name": n})
+			} else if e.Op == nfdv1alpha1.MatchDoesNotExist {
+				// DoesNotExist is special in that both "keys" and "values" should match (i.e. the name is not found in either of them).
+				isMatch = false
+				matchedElems = []MatchedElement{}
+				break
+			}
+		}
+
+		if values != nil {
+			matchV, err = evaluateMatchExpressionValues(e, n, values)
+			if err != nil {
+				return false, nil, err
+			}
+			if matchV {
+				matchedElems = append(matchedElems, MatchedElement{"Name": n, "Value": values[n]})
+			} else if e.Op == nfdv1alpha1.MatchDoesNotExist {
+				// DoesNotExist is special in that both "keys" and "values" should match (i.e. the name is not found in either of them).
+				isMatch = false
+				matchedElems = []MatchedElement{}
+				break
+			}
+		}
+
+		if !matchK && !matchV {
+			isMatch = false
+			matchedElems = []MatchedElement{}
+			break
+		}
+	}
+	// Sort for reproducible output
+	sort.Slice(matchedElems, func(i, j int) bool { return matchedElems[i]["Name"] < matchedElems[j]["Name"] })
+
+	// Instances are handled separately as the logic is fundamentally different
+	// from keys and values and cannot be combined with them. We want to find
+	// instance(s) that match all match expressions. I.e. the set of all match
+	// expressions are evaluated against every instance separately.
+	ma, me, err := MatchGetInstances(m, instances)
+	if err != nil {
+		return false, nil, err
+	}
+	isMatch = isMatch || ma
+	matchedElems = append(matchedElems, me...)
+
+	return isMatch, matchedElems, nil
+}
+
+// MatchNamesMulti evaluates the MatchExpression against the names of key,
+// value and attributes of instance features all at once. It is meant to handle
+// "multi-type" features where one feature (say "cpu.cpuid") contains multiple
+// types (flag, attribute and/or instance).
+func MatchNamesMulti(m *nfdv1alpha1.MatchExpression, keys map[string]nfdv1alpha1.Nil, values map[string]string, instances []nfdv1alpha1.InstanceFeature) (bool, []MatchedElement, error) {
+	ret := []MatchedElement{}
+
+	for k := range keys {
+		if match, err := evaluateMatchExpression(m, true, k); err != nil {
+			return false, nil, err
+		} else if match {
+			ret = append(ret, MatchedElement{"Name": k})
+		}
+	}
+
+	for k, v := range values {
+		if match, err := evaluateMatchExpression(m, true, k); err != nil {
+			return false, nil, err
+		} else if match {
+			ret = append(ret, MatchedElement{"Name": k, "Value": v})
+		}
+	}
+
+	// Sort for reproducible output
+	sort.Slice(ret, func(i, j int) bool { return ret[i]["Name"] < ret[j]["Name"] })
+
+	_, me, err := MatchInstanceAttributeNames(m, instances)
+	if err != nil {
+		return false, nil, err
+	}
+	ret = append(ret, me...)
+
+	if klogV3 := klog.V(3); klogV3.Enabled() {
+		mk := make([]string, len(ret))
+		for i, v := range ret {
+			mk[i] = v["Name"]
+		}
+		mkMsg := strings.Join(mk, ", ")
+
+		if klogV4 := klog.V(4); klogV4.Enabled() {
+			k := make([]string, 0, len(keys))
+			for n := range keys {
+				k = append(k, n)
+			}
+			sort.Strings(k)
+			klogV3.InfoS("matched names", "matchResult", mkMsg, "matchOp", m.Op, "matchValue", m.Value, "inputKeys", k)
+		} else {
+			klogV3.InfoS("matched names", "matchResult", mkMsg, "matchOp", m.Op, "matchValue", m.Value)
+		}
+	}
+
+	return len(ret) > 0, ret, nil
 }

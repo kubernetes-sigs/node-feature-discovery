@@ -80,21 +80,6 @@ func (f *Features) InsertAttributeFeatures(domain, feature string, values map[st
 	maps.Copy(f.Attributes[key].Elements, values)
 }
 
-// Exists returns a non-empty string if a feature exists. The return value is
-// the type of the feautre, i.e. "flag", "attribute" or "instance".
-func (f *Features) Exists(name string) string {
-	if _, ok := f.Flags[name]; ok {
-		return "flag"
-	}
-	if _, ok := f.Attributes[name]; ok {
-		return "attribute"
-	}
-	if _, ok := f.Instances[name]; ok {
-		return "instance"
-	}
-	return ""
-}
-
 // MergeInto merges two FeatureSpecs into one. Data in the input object takes
 // precedence (overwrite) over data of the existing object we're merging into.
 func (in *NodeFeatureSpec) MergeInto(out *NodeFeatureSpec) {
