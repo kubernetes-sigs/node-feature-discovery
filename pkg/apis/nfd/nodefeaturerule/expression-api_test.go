@@ -223,3 +223,202 @@ bar: { op: Lt, value: ["10"] }
 		})
 	}
 }
+
+func TestMatchKeyNames(t *testing.T) {
+	type O = []api.MatchedElement
+	type I = map[string]nfdv1alpha1.Nil
+
+	type TC struct {
+		name   string
+		me     *nfdv1alpha1.MatchExpression
+		input  I
+		result bool
+		output O
+	}
+
+	tcs := []TC{
+		{
+			name:   "empty input",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchAny},
+			input:  I{},
+			result: false,
+			output: O{},
+		},
+		{
+			name:   "MatchAny",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchAny},
+			input:  I{"key1": {}, "key2": {}},
+			result: true,
+			output: O{{"Name": "key1"}, {"Name": "key2"}},
+		},
+		{
+			name:   "MatchExists",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchExists},
+			input:  I{"key1": {}, "key2": {}},
+			result: true,
+			output: O{{"Name": "key1"}, {"Name": "key2"}},
+		},
+		{
+			name:   "MatchDoesNotExist",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchDoesNotExist},
+			input:  I{"key1": {}, "key2": {}},
+			result: false,
+			output: O{},
+		},
+		{
+			name:   "MatchIn matches",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchIn, Value: nfdv1alpha1.MatchValue{"key1"}},
+			input:  I{"key1": {}, "key2": {}},
+			result: true,
+			output: O{{"Name": "key1"}},
+		},
+		{
+			name:   "MatchIn no match",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchIn, Value: nfdv1alpha1.MatchValue{"key3"}},
+			input:  I{"key1": {}, "key2": {}},
+			result: false,
+			output: O{},
+		},
+		{
+			name:   "MatchNotIn",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchNotIn, Value: nfdv1alpha1.MatchValue{"key1"}},
+			input:  I{"key1": {}, "key2": {}},
+			result: true,
+			output: O{{"Name": "key2"}},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			res, ret, err := api.MatchKeyNames(tc.me, tc.input)
+			assert.Equal(t, tc.result, res)
+			assert.Equal(t, tc.output, ret)
+			assert.Nil(t, err)
+		})
+	}
+}
+
+func TestMatchValueNames(t *testing.T) {
+	type O = []api.MatchedElement
+	type I = map[string]string
+
+	type TC struct {
+		name   string
+		me     *nfdv1alpha1.MatchExpression
+		input  I
+		result bool
+		output O
+	}
+
+	tcs := []TC{
+		{
+			name:   "empty input",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchAny},
+			input:  I{},
+			result: false,
+			output: O{},
+		},
+		{
+			name:   "MatchExists",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchExists},
+			input:  I{"key1": "val1", "key2": "val2"},
+			result: true,
+			output: O{{"Name": "key1", "Value": "val1"}, {"Name": "key2", "Value": "val2"}},
+		},
+		{
+			name:   "MatchDoesNotExist",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchDoesNotExist},
+			input:  I{"key1": "val1", "key2": "val2"},
+			result: false,
+			output: O{},
+		},
+		{
+			name:   "MatchIn matches",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchIn, Value: nfdv1alpha1.MatchValue{"key1"}},
+			input:  I{"key1": "val1", "key2": "val2"},
+			result: true,
+			output: O{{"Name": "key1", "Value": "val1"}},
+		},
+		{
+			name:   "MatchIn no match",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchIn, Value: nfdv1alpha1.MatchValue{"key3"}},
+			input:  I{"key1": "val1", "key2": "val2"},
+			result: false,
+			output: O{},
+		},
+		{
+			name:   "MatchNotIn",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchNotIn, Value: nfdv1alpha1.MatchValue{"key1"}},
+			input:  I{"key1": "val1", "key2": "val2"},
+			result: true,
+			output: O{{"Name": "key2", "Value": "val2"}},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			res, ret, err := api.MatchValueNames(tc.me, tc.input)
+			assert.Equal(t, tc.result, res)
+			assert.Equal(t, tc.output, ret)
+			assert.Nil(t, err)
+		})
+	}
+}
+
+func TestMatchInstanceAttributeNames(t *testing.T) {
+	type O = []api.MatchedElement
+	type I = []nfdv1alpha1.InstanceFeature
+	type A = map[string]string
+
+	type TC struct {
+		name   string
+		me     *nfdv1alpha1.MatchExpression
+		input  I
+		output O
+	}
+
+	tcs := []TC{
+		{
+			name:   "empty input",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchAny},
+			input:  I{},
+			output: O{},
+		},
+		{
+			name: "no match",
+			me: &nfdv1alpha1.MatchExpression{
+				Op:    nfdv1alpha1.MatchIn,
+				Value: nfdv1alpha1.MatchValue{"foo"},
+			},
+			input: I{
+				{Attributes: A{"bar": "1"}},
+				{Attributes: A{"baz": "2"}},
+			},
+			output: O{},
+		},
+		{
+			name: "match",
+			me: &nfdv1alpha1.MatchExpression{
+				Op:    nfdv1alpha1.MatchIn,
+				Value: nfdv1alpha1.MatchValue{"foo"},
+			},
+			input: I{
+				{Attributes: A{"foo": "1"}},
+				{Attributes: A{"bar": "2"}},
+				{Attributes: A{"foo": "3", "baz": "4"}},
+			},
+			output: O{
+				{"foo": "1"},
+				{"foo": "3", "baz": "4"},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			matched, err := api.MatchInstanceAttributeNames(tc.me, tc.input)
+			assert.Equal(t, tc.output, matched)
+			assert.Nil(t, err)
+		})
+	}
+}
