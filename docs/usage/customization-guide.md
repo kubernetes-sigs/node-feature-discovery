@@ -959,6 +959,8 @@ The following features are available for matching:
 | ---------------- | ------------ | -------- | ---------- | ----------- |
 | **`cpu.cpuid`**  | flag         |          |            | Supported CPU capabilities |
 |                  |              | **`<cpuid-flag>`** |  | CPUID flag is present |
+|                  | attribute    |          |            | CPU capability attributes |
+|                  |              | **AVX10_VERSION** | int | AVX10 vector ISA version (if supported) |
 | **`cpu.cstate`** | attribute    |          |            | Status of cstates in the intel_idle cpuidle driver |
 |                  |              | **`enabled`** | bool  | 'true' if cstates are set, otherwise 'false'. Does not exist of intel_idle driver is not active. |
 | **`cpu.model`**  | attribute    |          |            | CPU model related attributes |

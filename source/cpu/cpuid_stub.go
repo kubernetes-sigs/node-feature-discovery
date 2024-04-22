@@ -20,3 +20,5 @@ limitations under the License.
 package cpu
 
 func getCpuidFlags() []string { return nil }
+
+func getCpuidAttributes() map[string]string { return nil }

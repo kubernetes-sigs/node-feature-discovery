@@ -149,6 +149,9 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 			labels["cpuid."+f] = true
 		}
 	}
+	for f, v := range features.Attributes[CpuidFeature].Elements {
+		labels["cpuid."+f] = v
+	}
 
 	// CPU model
 	for k, v := range features.Attributes[Cpumodel].Elements {
@@ -203,6 +206,9 @@ func (s *cpuSource) Discover() error {
 
 	// Detect CPUID
 	s.features.Flags[CpuidFeature] = nfdv1alpha1.NewFlagFeatures(getCpuidFlags()...)
+	if cpuidAttrs := getCpuidAttributes(); cpuidAttrs != nil {
+		s.features.Attributes[CpuidFeature] = nfdv1alpha1.NewAttributeFeatures(cpuidAttrs)
+	}
 
 	// Detect CPU model
 	s.features.Attributes[Cpumodel] = nfdv1alpha1.NewAttributeFeatures(getCPUModel())
