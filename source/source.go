@@ -164,25 +164,16 @@ func GetAllFeatures() *nfdv1alpha1.Features {
 		for k, v := range f.Flags {
 			// Prefix feature with the name of the source
 			k = n + "." + k
-			if typ := features.Exists(k); typ != "" {
-				panic(fmt.Sprintf("feature source %q returned flag feature %q which already exists (type %q)", n, k, typ))
-			}
 			features.Flags[k] = v
 		}
 		for k, v := range f.Attributes {
 			// Prefix feature with the name of the source
 			k = n + "." + k
-			if typ := features.Exists(k); typ != "" {
-				panic(fmt.Sprintf("feature source %q returned attribute feature %q which already exists (type %q)", n, k, typ))
-			}
 			features.Attributes[k] = v
 		}
 		for k, v := range f.Instances {
 			// Prefix feature with the name of the source
 			k = n + "." + k
-			if typ := features.Exists(k); typ != "" {
-				panic(fmt.Sprintf("feature source %q returned instance feature %q which already exists (type %q)", n, k, typ))
-			}
 			features.Instances[k] = v
 		}
 	}
