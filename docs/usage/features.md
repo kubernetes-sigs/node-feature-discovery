@@ -115,9 +115,10 @@ configuration options for details.
 | VPCLMULQDQ         | Carry-less multiplication quadword |
 | WRMSRNS            | Non-Serializing Write to Model Specific Register |
 
-By default, the following CPUID flags have been blacklisted: BMI1, BMI2, CLMUL,
-CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED,
-RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42, SSSE3 and TDX_GUEST. See
+By default, the following CPUID flags have been blacklisted: AVX10 (use
+AVX10_VERSION instead), BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT,
+MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4,
+SSE42, SSSE3 and TDX_GUEST. See
 [`sources.cpu`](../reference/worker-configuration-reference.md#sourcescpu)
 configuration options to change the behavior.
 

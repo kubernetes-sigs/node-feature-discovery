@@ -266,7 +266,7 @@ Prevent publishing cpuid features listed in this option.
 
 > **NOTE:** overridden by `sources.cpu.cpuid.attributeWhitelist` (if specified)
 
-Default: `[BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT,
+Default: `[AVX10, BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT,
 NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3, SSE4.1,
 SSE4.2, SSSE3, TDX_GUEST]`
 
