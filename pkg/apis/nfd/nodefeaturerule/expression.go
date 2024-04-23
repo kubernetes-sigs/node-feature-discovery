@@ -67,7 +67,7 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 		return !valid, nil
 	}
 
-	if valid {
+	if valid && value != nil {
 		value := fmt.Sprintf("%v", value)
 		switch m.Op {
 		case nfdv1alpha1.MatchIn:
@@ -161,18 +161,10 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 
 // evaluateMatchExpressionKeys evaluates the MatchExpression against a set of keys.
 func evaluateMatchExpressionKeys(m *nfdv1alpha1.MatchExpression, name string, keys map[string]nfdv1alpha1.Nil) (bool, error) {
-	matched := false
-
 	_, ok := keys[name]
-	switch m.Op {
-	case nfdv1alpha1.MatchAny:
-		matched = true
-	case nfdv1alpha1.MatchExists:
-		matched = ok
-	case nfdv1alpha1.MatchDoesNotExist:
-		matched = !ok
-	default:
-		return false, fmt.Errorf("invalid Op %q when matching keys", m.Op)
+	matched, err := evaluateMatchExpression(m, ok, nil)
+	if err != nil {
+		return false, err
 	}
 
 	if klogV := klog.V(3); klogV.Enabled() {
