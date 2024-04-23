@@ -31,7 +31,6 @@ import (
 	"golang.org/x/net/context"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -182,7 +181,7 @@ func TestUpdateNodeObject(t *testing.T) {
 
 				expectedCapacity := testNode.Status.Capacity.DeepCopy()
 				for k, v := range featureExtResources {
-					expectedCapacity[v1.ResourceName(k)] = resource.MustParse(v)
+					expectedCapacity[corev1.ResourceName(k)] = resource.MustParse(v)
 				}
 
 				// Get the node
@@ -197,7 +196,7 @@ func TestUpdateNodeObject(t *testing.T) {
 
 		Convey("When I fail to patch a node", func() {
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-				return true, &v1.Node{}, errors.New("Fake error when patching node")
+				return true, &corev1.Node{}, errors.New("Fake error when patching node")
 			})
 			err := fakeMaster.updateNodeObject(fakeCli, testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
 
@@ -244,7 +243,7 @@ func TestUpdateMasterNode(t *testing.T) {
 			fakeErr := errors.New("Fake error when patching node")
 			fakeCli := fakeclient.NewSimpleClientset(testNode)
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-				return true, &v1.Node{}, fakeErr
+				return true, &corev1.Node{}, fakeErr
 			})
 			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
 
@@ -391,7 +390,7 @@ func TestSetLabels(t *testing.T) {
 
 			fakeErr := errors.New("Fake error when patching node")
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-				return true, &v1.Node{}, fakeErr
+				return true, &corev1.Node{}, fakeErr
 			})
 			_, err := fakeMaster.SetLabels(ctx, req)
 			Convey("An error should be returned", func() {
@@ -416,8 +415,8 @@ func TestFilterLabels(t *testing.T) {
 	fakeMaster := newFakeMaster()
 	fakeMaster.config.ExtraLabelNs = map[string]struct{}{"example.io": {}}
 	fakeMaster.deniedNs = deniedNs{
-		normal:   map[string]struct{}{"": struct{}{}, "kubernetes.io": struct{}{}, "denied.ns": struct{}{}},
-		wildcard: map[string]struct{}{".kubernetes.io": struct{}{}, ".denied.subns": struct{}{}},
+		normal:   map[string]struct{}{"": {}, "kubernetes.io": {}, "denied.ns": {}},
+		wildcard: map[string]struct{}{".kubernetes.io": {}, ".denied.subns": {}},
 	}
 
 	type TC struct {
@@ -430,19 +429,19 @@ func TestFilterLabels(t *testing.T) {
 	}
 
 	tcs := []TC{
-		TC{
+		{
 			description:   "Static value",
 			labelName:     "example.io/test",
 			labelValue:    "test-val",
 			expectedValue: "test-val",
 		},
-		TC{
+		{
 			description: "Dynamic value",
 			labelName:   "example.io/testLabel",
 			labelValue:  "@test.feature.LSM",
 			features: nfdv1alpha1.Features{
 				Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
-					"test.feature": nfdv1alpha1.AttributeFeatureSet{
+					"test.feature": {
 						Elements: map[string]string{
 							"LSM": "123",
 						},
@@ -451,31 +450,31 @@ func TestFilterLabels(t *testing.T) {
 			},
 			expectedValue: "123",
 		},
-		TC{
+		{
 			description: "Unprefixed should be denied",
 			labelName:   "test-label",
 			labelValue:  "test-value",
 			expectErr:   true,
 		},
-		TC{
+		{
 			description: "kubernetes.io ns should be denied",
 			labelName:   "kubernetes.io/test-label",
 			labelValue:  "test-value",
 			expectErr:   true,
 		},
-		TC{
+		{
 			description: "*.kubernetes.io ns should be denied",
 			labelName:   "sub.ns.kubernetes.io/test-label",
 			labelValue:  "test-value",
 			expectErr:   true,
 		},
-		TC{
+		{
 			description: "denied.ns ns should be denied",
 			labelName:   "denied.ns/test-label",
 			labelValue:  "test-value",
 			expectErr:   true,
 		},
-		TC{
+		{
 			description: "*.denied.subns ns should be denied",
 			labelName:   "my.denied.subns/test-label",
 			labelValue:  "test-value",
@@ -848,7 +847,7 @@ func TestGetDynamicValue(t *testing.T) {
 			value: "@test.feature.LSM",
 			features: &nfdv1alpha1.Features{
 				Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
-					"test.feature": nfdv1alpha1.AttributeFeatureSet{
+					"test.feature": {
 						Elements: map[string]string{
 							"LSM": "123",
 						},
