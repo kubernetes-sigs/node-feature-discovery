@@ -54,7 +54,7 @@ func NewAttributeFeatures(values map[string]string) AttributeFeatureSet {
 }
 
 // NewInstanceFeatures creates a new instance of InstanceFeatureSet.
-func NewInstanceFeatures(instances []InstanceFeature) InstanceFeatureSet {
+func NewInstanceFeatures(instances ...InstanceFeature) InstanceFeatureSet {
 	return InstanceFeatureSet{Elements: instances}
 }
 

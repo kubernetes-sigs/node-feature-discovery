@@ -143,7 +143,7 @@ func (s *pciSource) Discover() error {
 	if err != nil {
 		return fmt.Errorf("failed to detect PCI devices: %s", err.Error())
 	}
-	s.features.Instances[DeviceFeature] = nfdv1alpha1.NewInstanceFeatures(devs)
+	s.features.Instances[DeviceFeature] = nfdv1alpha1.NewInstanceFeatures(devs...)
 
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 

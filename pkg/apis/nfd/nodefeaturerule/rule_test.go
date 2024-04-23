@@ -70,7 +70,7 @@ func TestRule(t *testing.T) {
 	// Test empty feature sets
 	f.Flags["domain-1.kf-1"] = nfdv1alpha1.NewFlagFeatures()
 	f.Attributes["domain-1.vf-1"] = nfdv1alpha1.NewAttributeFeatures(nil)
-	f.Instances["domain-1.if-1"] = nfdv1alpha1.NewInstanceFeatures(nil)
+	f.Instances["domain-1.if-1"] = nfdv1alpha1.NewInstanceFeatures()
 
 	m, err = Execute(r1, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
@@ -83,8 +83,7 @@ func TestRule(t *testing.T) {
 	// Test non-empty feature sets
 	f.Flags["domain-1.kf-1"].Elements["key-x"] = nfdv1alpha1.Nil{}
 	f.Attributes["domain-1.vf-1"].Elements["key-1"] = "val-x"
-	f.Instances["domain-1.if-1"] = nfdv1alpha1.NewInstanceFeatures([]nfdv1alpha1.InstanceFeature{
-		*nfdv1alpha1.NewInstanceFeature(map[string]string{"attr-1": "val-x"})})
+	f.Instances["domain-1.if-1"] = nfdv1alpha1.NewInstanceFeatures(*nfdv1alpha1.NewInstanceFeature(map[string]string{"attr-1": "val-x"}))
 
 	m, err = Execute(r1, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
