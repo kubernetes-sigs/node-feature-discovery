@@ -9,4 +9,4 @@ VERSION_OVERRIDE=${_GIT_TAG+VERSION=${_GIT_TAG:10}}
 gcloud auth configure-docker
 
 # Build and push images
-make push-all $VERSION_OVERRIDE
+IMAGE_ALL_PLATFORMS=linux/amd64,linux/arm64 make push-all $VERSION_OVERRIDE
