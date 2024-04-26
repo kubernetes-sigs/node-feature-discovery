@@ -56,8 +56,7 @@ ln -s .. sigs.k8s.io
 
 # Generating conversion and defaults functions
 kube::codegen::gen_helpers \
-  --input-pkg-root sigs.k8s.io/node-feature-discovery/api/nfd \
-  --output-base "${NFD_ROOT}" \
+  sigs.k8s.io/node-feature-discovery/api/nfd \
   --boilerplate ${NFD_ROOT}/hack/boilerplate.go.txt
 
 # HACK: manually patching the auto-generated code as code-generator cannot
