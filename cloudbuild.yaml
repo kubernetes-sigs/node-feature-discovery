@@ -12,4 +12,4 @@ substitutions:
   _PULL_BASE_REF: 'master'
 options:
   substitution_option: ALLOW_LOOSE
-  machineType: 'E2_HIGHCPU_32'
+  machineType: 'E2_HIGHCPU_8'
