@@ -37,7 +37,7 @@ require (
 	k8s.io/pod-security-admission v0.30.0
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
