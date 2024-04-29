@@ -1,0 +1,27 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    target-branch: master
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    labels:
+    - dependencies
+    - ok-to-test
+    groups:
+      k8sio:
+        patterns:
+        - k8s.io/*
+
+  - package-ecosystem: "github-actions"
+    target-branch: master
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+    - dependencies
+    - ok-to-test
