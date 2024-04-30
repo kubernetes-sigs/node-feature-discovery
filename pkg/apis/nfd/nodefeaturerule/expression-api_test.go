@@ -269,6 +269,7 @@ func TestMatchKeyNames(t *testing.T) {
 		input  I
 		result bool
 		output O
+		err    ValueAssertionFunc
 	}
 
 	tcs := []TC{
@@ -278,6 +279,7 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{},
 			result: false,
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchAny",
@@ -285,6 +287,7 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{"key1": {}, "key2": {}},
 			result: true,
 			output: O{{"Name": "key1"}, {"Name": "key2"}},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchExists",
@@ -292,6 +295,7 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{"key1": {}, "key2": {}},
 			result: true,
 			output: O{{"Name": "key1"}, {"Name": "key2"}},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchDoesNotExist",
@@ -299,6 +303,7 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{"key1": {}, "key2": {}},
 			result: false,
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchIn matches",
@@ -306,6 +311,7 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{"key1": {}, "key2": {}},
 			result: true,
 			output: O{{"Name": "key1"}},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchIn no match",
@@ -313,6 +319,7 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{"key1": {}, "key2": {}},
 			result: false,
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchNotIn",
@@ -320,6 +327,15 @@ func TestMatchKeyNames(t *testing.T) {
 			input:  I{"key1": {}, "key2": {}},
 			result: true,
 			output: O{{"Name": "key2"}},
+			err:    assert.Nil,
+		},
+		{
+			name:   "error",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchExists, Value: nfdv1alpha1.MatchValue{"key1"}},
+			input:  I{"key1": {}, "key2": {}},
+			result: false,
+			output: nil,
+			err:    assert.NotNil,
 		},
 	}
 
@@ -328,7 +344,7 @@ func TestMatchKeyNames(t *testing.T) {
 			res, ret, err := api.MatchKeyNames(tc.me, tc.input)
 			assert.Equal(t, tc.result, res)
 			assert.Equal(t, tc.output, ret)
-			assert.Nil(t, err)
+			tc.err(t, err)
 		})
 	}
 }
@@ -343,6 +359,7 @@ func TestMatchValueNames(t *testing.T) {
 		input  I
 		result bool
 		output O
+		err    ValueAssertionFunc
 	}
 
 	tcs := []TC{
@@ -352,6 +369,7 @@ func TestMatchValueNames(t *testing.T) {
 			input:  I{},
 			result: false,
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchExists",
@@ -359,6 +377,7 @@ func TestMatchValueNames(t *testing.T) {
 			input:  I{"key1": "val1", "key2": "val2"},
 			result: true,
 			output: O{{"Name": "key1", "Value": "val1"}, {"Name": "key2", "Value": "val2"}},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchDoesNotExist",
@@ -366,6 +385,7 @@ func TestMatchValueNames(t *testing.T) {
 			input:  I{"key1": "val1", "key2": "val2"},
 			result: false,
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchIn matches",
@@ -373,6 +393,7 @@ func TestMatchValueNames(t *testing.T) {
 			input:  I{"key1": "val1", "key2": "val2"},
 			result: true,
 			output: O{{"Name": "key1", "Value": "val1"}},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchIn no match",
@@ -380,6 +401,7 @@ func TestMatchValueNames(t *testing.T) {
 			input:  I{"key1": "val1", "key2": "val2"},
 			result: false,
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name:   "MatchNotIn",
@@ -387,6 +409,15 @@ func TestMatchValueNames(t *testing.T) {
 			input:  I{"key1": "val1", "key2": "val2"},
 			result: true,
 			output: O{{"Name": "key2", "Value": "val2"}},
+			err:    assert.Nil,
+		},
+		{
+			name:   "error",
+			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchNotIn},
+			input:  I{"key1": "val1", "key2": "val2"},
+			result: false,
+			output: nil,
+			err:    assert.NotNil,
 		},
 	}
 
@@ -395,7 +426,7 @@ func TestMatchValueNames(t *testing.T) {
 			res, ret, err := api.MatchValueNames(tc.me, tc.input)
 			assert.Equal(t, tc.result, res)
 			assert.Equal(t, tc.output, ret)
-			assert.Nil(t, err)
+			tc.err(t, err)
 		})
 	}
 }
@@ -410,6 +441,7 @@ func TestMatchInstanceAttributeNames(t *testing.T) {
 		me     *nfdv1alpha1.MatchExpression
 		input  I
 		output O
+		err    ValueAssertionFunc
 	}
 
 	tcs := []TC{
@@ -418,6 +450,7 @@ func TestMatchInstanceAttributeNames(t *testing.T) {
 			me:     &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchAny},
 			input:  I{},
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name: "no match",
@@ -430,6 +463,7 @@ func TestMatchInstanceAttributeNames(t *testing.T) {
 				{Attributes: A{"baz": "2"}},
 			},
 			output: O{},
+			err:    assert.Nil,
 		},
 		{
 			name: "match",
@@ -446,6 +480,18 @@ func TestMatchInstanceAttributeNames(t *testing.T) {
 				{"foo": "1"},
 				{"foo": "3", "baz": "4"},
 			},
+			err: assert.Nil,
+		},
+		{
+			name: "error",
+			me: &nfdv1alpha1.MatchExpression{
+				Op: nfdv1alpha1.MatchIn,
+			},
+			input: I{
+				{Attributes: A{"foo": "1"}},
+			},
+			output: nil,
+			err:    assert.NotNil,
 		},
 	}
 
@@ -453,7 +499,7 @@ func TestMatchInstanceAttributeNames(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			matched, err := api.MatchInstanceAttributeNames(tc.me, tc.input)
 			assert.Equal(t, tc.output, matched)
-			assert.Nil(t, err)
+			tc.err(t, err)
 		})
 	}
 }
