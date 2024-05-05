@@ -12,7 +12,7 @@ require (
 	github.com/k8stopologyawareschedwg/podfingerprint v0.1.2
 	github.com/klauspost/cpuid/v2 v2.2.6
 	github.com/onsi/ginkgo/v2 v2.17.2
-	github.com/onsi/gomega v1.33.0
+	github.com/onsi/gomega v1.33.1
 	github.com/opencontainers/runc v1.1.12
 	github.com/prometheus/client_golang v1.18.0
 	github.com/smartystreets/goconvey v1.8.1
