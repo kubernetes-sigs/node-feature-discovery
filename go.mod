@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/jaypipes/ghw v0.12.0
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.0
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
 	github.com/k8stopologyawareschedwg/podfingerprint v0.1.2
 	github.com/klauspost/cpuid/v2 v2.2.7
 	github.com/onsi/ginkgo/v2 v2.17.2
