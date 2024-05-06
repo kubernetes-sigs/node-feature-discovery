@@ -32,14 +32,11 @@ func SelinuxEnabled() (bool, error) {
 		return false, err
 	}
 
-	selinuxBase := filepath.Join(sysfsBase, "selinux")
-	if _, err := os.Stat(selinuxBase); os.IsNotExist(err) {
+	status, err := os.ReadFile(filepath.Join(sysfsBase, "selinux", "enforce"))
+	if os.IsNotExist(err) {
 		klog.V(1).InfoS("selinux not available on the system")
 		return false, nil
-	}
-
-	status, err := os.ReadFile(filepath.Join(selinuxBase, "enforce"))
-	if err != nil {
+	} else if err != nil {
 		return false, err
 	}
 	if status[0] == byte('1') {
