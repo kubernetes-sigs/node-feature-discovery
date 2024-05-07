@@ -38,6 +38,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - cert-manager.io
   resources:
   - certificates
@@ -150,6 +162,32 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - policy
   resourceNames:
