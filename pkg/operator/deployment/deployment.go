@@ -262,11 +262,8 @@ func getLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		InitialDelaySeconds: 10,
 		ProbeHandler: corev1.ProbeHandler{
-			Exec: &corev1.ExecAction{
-				Command: []string{
-					"/usr/bin/grpc_health_probe",
-					"-addr=:12000",
-				},
+			GRPC: &corev1.GRPCAction{
+				Port: 8082,
 			},
 		},
 	}
@@ -277,11 +274,8 @@ func getReadinessProbe() *corev1.Probe {
 		InitialDelaySeconds: 5,
 		FailureThreshold:    10,
 		ProbeHandler: corev1.ProbeHandler{
-			Exec: &corev1.ExecAction{
-				Command: []string{
-					"/usr/bin/grpc_health_probe",
-					"-addr=:12000",
-				},
+			GRPC: &corev1.GRPCAction{
+				Port: 8082,
 			},
 		},
 	}
