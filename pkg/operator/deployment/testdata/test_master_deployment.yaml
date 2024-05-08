@@ -70,15 +70,11 @@ spec:
               - ALL
             readOnlyRootFilesystem: true
           livenessProbe:
-            exec:
-              command:
-              - /usr/bin/grpc_health_probe
-              - -addr=:12000
+            grpc:
+              port: 8082
             initialDelaySeconds: 10
           readinessProbe:
-            exec:
-              command:
-              - /usr/bin/grpc_health_probe
-              - -addr=:12000
+            grpc:
+              port: 8082
             failureThreshold: 10
             initialDelaySeconds: 5
