@@ -28,7 +28,11 @@ spec:
           - name: NODE_NAME
             valueFrom:
               fieldRef:
-                fieldPath: spec.nodeName      
+                fieldPath: spec.nodeName
+          - name: NODE_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
           image: test-image
           imagePullPolicy: Always
           command:
