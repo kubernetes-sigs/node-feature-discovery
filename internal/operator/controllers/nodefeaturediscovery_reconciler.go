@@ -51,9 +51,9 @@ type nodeFeatureDiscoveryReconciler struct {
 }
 
 func NewNodeFeatureDiscoveryReconciler(client client.Client, deploymentAPI deployment.DeploymentAPI, daemonsetAPI daemonset.DaemonsetAPI,
-	configmapAPI configmap.ConfigMapAPI, jobAPI job.JobAPI, scheme *runtime.Scheme) nodeFeatureDiscoveryReconciler {
+	configmapAPI configmap.ConfigMapAPI, jobAPI job.JobAPI, scheme *runtime.Scheme) *nodeFeatureDiscoveryReconciler {
 	helper := newNodeFeatureDiscoveryHelperAPI(client, deploymentAPI, daemonsetAPI, configmapAPI, jobAPI, scheme)
-	return nodeFeatureDiscoveryReconciler{
+	return &nodeFeatureDiscoveryReconciler{
 		helper: helper,
 	}
 }
@@ -99,7 +99,11 @@ func isControlledByNFD(obj client.Object) bool {
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=nfd.k8s-sigs.io,resources=nodefeaturerules,verbs=get;list;watch
+// +kubebuilder:rbac:groups=nfd.kubernetes.io,resources=nodefeaturediscoveries,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=nfd.kubernetes.io,resources=nodefeaturediscoveries/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=nfd.kubernetes.io,resources=nodefeaturediscoveries/finalizers,verbs=update
 
 // Reconcile moves the current state of the cluster closer to the desired state.
 // It creates/pataches the NFD components ( master, worker, topology, prune, GC) in accordance with

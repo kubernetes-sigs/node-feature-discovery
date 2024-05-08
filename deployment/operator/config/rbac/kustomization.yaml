@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
 - core/
-
 - gc/
 - master/
 - prune/
