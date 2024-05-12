@@ -85,10 +85,18 @@ spec:
         - "-feature-gates={{ $key }}={{ $value }}"
 {{- end }}
         - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
+        {{- if .Values.spiffe.enable }}
+        - "-enable-spiffe"
+        {{- end }}
         ports:
           - name: metrics
             containerPort: {{ .Values.worker.metricsPort | default "8081"}}
         volumeMounts:
+        {{- if .Values.spiffe.enable }}
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+        {{- end }}
         - name: host-boot
           mountPath: "/host-boot"
           readOnly: true
@@ -127,6 +135,12 @@ spec:
           readOnly: true
 {{- end }}
       volumes:
+        {{- if .Values.spiffe.enable }}
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
+        {{- end }}
         - name: host-boot
           hostPath:
             path: "/boot"

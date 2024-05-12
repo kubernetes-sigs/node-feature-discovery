@@ -15,6 +15,9 @@ featureGates:
 
 priorityClassName: ""
 
+spiffe:
+  enable: true
+
 master:
   enable: true
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
@@ -26,6 +29,7 @@ master:
     # enableTaints: false
     # labelWhiteList: "foo"
     # resyncPeriod: "2h"
+    # enableSpiffe: true
     # klog:
     #    addDirHeader: false
     #    alsologtostderr: false
@@ -144,6 +148,7 @@ worker:
     #  labelWhiteList:
     #  noPublish: false
     #  sleepInterval: 60s
+    #  enableSpiffe: true
     #  featureSources: [all]
     #  labelSources: [all]
     #  klog:

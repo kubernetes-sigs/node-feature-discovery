@@ -50,10 +50,12 @@ import (
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+	spiffe "sigs.k8s.io/node-feature-discovery/pkg/utils/spiffe"
 
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
 
+	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
@@ -62,6 +64,9 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
+
+// SocketPath specifies Spiffe Socket Path
+const SocketPath = "unix:///run/spire/sockets/agent.sock"
 
 // Labels are a Kubernetes representation of discovered features.
 type Labels map[string]string
@@ -85,6 +90,7 @@ type NFDConfig struct {
 	LeaderElection    LeaderElectionConfig
 	NfdApiParallelism int
 	Klog              klogutils.KlogConfigOpts
+	EnableSpiffe      bool
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -104,6 +110,7 @@ type ConfigOverrideArgs struct {
 	NoPublish         *bool
 	ResyncPeriod      *utils.DurationVal
 	NfdApiParallelism *int
+	EnableSpiffe      *bool
 }
 
 // Args holds command line arguments
@@ -155,7 +162,8 @@ type nfdMaster struct {
 	k8sClient       k8sclient.Interface
 	nodeUpdaterPool *nodeUpdaterPool
 	deniedNs
-	config *NFDConfig
+	config       *NFDConfig
+	spiffeClient *spiffe.SpiffeClient
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -212,6 +220,12 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 
 	nfd.nodeUpdaterPool = newNodeUpdaterPool(nfd)
 
+	spiffeClient, err := spiffe.NewSpiffeClient(SocketPath)
+	if err != nil {
+		return nfd, err
+	}
+	nfd.spiffeClient = spiffeClient
+
 	return nfd, nil
 }
 
@@ -254,7 +268,8 @@ func newDefaultConfig() *NFDConfig {
 			RetryPeriod:   utils.DurationVal{Duration: time.Duration(2) * time.Second},
 			RenewDeadline: utils.DurationVal{Duration: time.Duration(10) * time.Second},
 		},
-		Klog: make(map[string]string),
+		Klog:         make(map[string]string),
+		EnableSpiffe: false,
 	}
 }
 
@@ -791,6 +806,14 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 		return objs[i].Namespace < objs[j].Namespace
 	})
 
+	// If spiffe is enabled, we should filter out the non verified NFD objects
+	if m.config.EnableSpiffe {
+		objs, err = m.getVerifiedNFDObjects(objs)
+		if err != nil {
+			return err
+		}
+	}
+
 	klog.V(1).InfoS("processing of node initiated by NodeFeature API", "nodeName", node.Name)
 
 	features := nfdv1alpha1.NewNodeFeatureSpec()
@@ -1261,6 +1284,9 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	if m.args.Overrides.NfdApiParallelism != nil {
 		c.NfdApiParallelism = *m.args.Overrides.NfdApiParallelism
 	}
+	if m.args.Overrides.EnableSpiffe != nil {
+		c.EnableSpiffe = *m.args.Overrides.EnableSpiffe
+	}
 
 	if c.NfdApiParallelism <= 0 {
 		return fmt.Errorf("the maximum number of concurrent labelers should be a non-zero positive number")
@@ -1449,4 +1475,34 @@ func patchNode(cli k8sclient.Interface, nodeName string, patches []utils.JsonPat
 
 func patchNodeStatus(cli k8sclient.Interface, nodeName string, patches []utils.JsonPatch) error {
 	return patchNode(cli, nodeName, patches, "status")
+}
+
+func (m *nfdMaster) getVerifiedNFDObjects(objs []*v1alpha1.NodeFeature) ([]*v1alpha1.NodeFeature, error) {
+	verifiedObjects := []*v1alpha1.NodeFeature{}
+
+	workerPrivateKey, workerPublicKey, err := m.spiffeClient.GetWorkerKeys()
+	if err != nil {
+		return verifiedObjects, err
+	}
+
+	for _, obj := range objs {
+		spiffeObj := spiffe.SpiffeObject{
+			Spec:      obj.Spec,
+			Name:      obj.Name,
+			Namespace: obj.Namespace,
+			Labels:    obj.Labels,
+		}
+		isSignatureVerified, err := spiffe.VerifyDataSignature(spiffeObj, obj.Annotations["signature"], workerPrivateKey, workerPublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to verify NodeFeature signature: %w", err)
+		}
+
+		if isSignatureVerified {
+			klog.InfoS("NodeFeature verified", "NodeFeature name", obj.Name)
+			verifiedObjects = append(verifiedObjects, obj)
+		} else {
+			klog.InfoS("NodeFeature not verified, skipping...", "NodeFeature name", obj.Name)
+		}
+	}
+	return verifiedObjects, nil
 }

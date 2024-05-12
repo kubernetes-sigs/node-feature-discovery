@@ -115,10 +115,18 @@ spec:
             - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
             - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
+            {{- if .Values.spiffe.enable }}
+            - "-enable-spiffe"
+            {{- end }}
           volumeMounts:
             {{- if .Values.tls.enable }}
             - name: nfd-master-cert
               mountPath: "/etc/kubernetes/node-feature-discovery/certs"
+              readOnly: true
+            {{- end }}
+            {{- if .Values.spiffe.enable }}
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
               readOnly: true
             {{- end }}
             - name: nfd-master-conf
@@ -129,6 +137,12 @@ spec:
         - name: nfd-master-cert
           secret:
             secretName: nfd-master-cert
+        {{- end }}
+        {{- if .Values.spiffe.enable }}
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
         {{- end }}
         - name: nfd-master-conf
           configMap:

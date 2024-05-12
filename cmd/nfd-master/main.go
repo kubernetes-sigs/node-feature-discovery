@@ -91,6 +91,8 @@ func main() {
 			klog.InfoS("-port is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "verify-node-name":
 			klog.InfoS("-verify-node-name is deprecated, will be removed in a future release along with the deprecated gRPC API")
+		case "enable-spiffe":
+			args.Overrides.EnableSpiffe = overrides.EnableSpiffe
 		}
 	})
 
@@ -188,6 +190,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 			"It does not have effect when the NodeFeature API has been disabled (with -feature-gates NodeFeatureAPI=false).")
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
 		"Can be used for the throttling mechanism. It does not have effect if NodeFeatureAPI feature gate is disabled.")
+	overrides.EnableSpiffe = flagset.Bool("enable-spiffe", false,
+		"Enables the Spiffe signature verification of created CRDs. This is still an EXPERIMENTAL feature.")
 
 	return args, overrides
 }
