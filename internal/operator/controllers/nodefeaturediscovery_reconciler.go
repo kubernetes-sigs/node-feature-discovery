@@ -330,23 +330,17 @@ func (nfdh *nodeFeatureDiscoveryHelper) handlePrune(ctx context.Context, nfdInst
 		return false, fmt.Errorf("failed to get nfd-prune job: %w", err)
 	}
 
-	deleteJob := false
 	var returnErr error
 	done := false
 	if pruneJob.Status.Succeeded > 0 {
-		deleteJob = true
 		done = true
 	}
 	if pruneJob.Status.Failed > 0 {
-		deleteJob = true
 		returnErr = fmt.Errorf("prune job's pod has failed")
 	}
-	if deleteJob {
-		err = nfdh.jobAPI.DeleteJob(ctx, pruneJob)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete nfd-prune job: %w", err)
-		}
-	}
+
+	// no need to explicitly delete Prune job,
+	// it will be deleted by K8S scheduler once NFD CR is deleted from etcd
 	return done, returnErr
 }
 

@@ -54,20 +54,6 @@ func (mr *MockJobAPIMockRecorder) CreatePruneJob(ctx, nfdInstance any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePruneJob", reflect.TypeOf((*MockJobAPI)(nil).CreatePruneJob), ctx, nfdInstance)
 }
 
-// DeleteJob mocks base method.
-func (m *MockJobAPI) DeleteJob(ctx context.Context, j *v1.Job) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteJob", ctx, j)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteJob indicates an expected call of DeleteJob.
-func (mr *MockJobAPIMockRecorder) DeleteJob(ctx, j any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteJob", reflect.TypeOf((*MockJobAPI)(nil).DeleteJob), ctx, j)
-}
-
 // GetJob mocks base method.
 func (m *MockJobAPI) GetJob(ctx context.Context, namespace, name string) (*v1.Job, error) {
 	m.ctrl.T.Helper()
