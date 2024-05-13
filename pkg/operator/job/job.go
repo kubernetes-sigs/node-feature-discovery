@@ -37,7 +37,6 @@ import (
 type JobAPI interface {
 	GetJob(ctx context.Context, namespace, name string) (*batchv1.Job, error)
 	CreatePruneJob(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error
-	DeleteJob(ctx context.Context, j *batchv1.Job) error
 }
 
 type job struct {
@@ -104,14 +103,6 @@ func (j *job) CreatePruneJob(ctx context.Context, nfdInstance *nfdv1.NodeFeature
 	}
 
 	return j.client.Create(ctx, &pruneJob)
-}
-
-func (j *job) DeleteJob(ctx context.Context, job *batchv1.Job) error {
-	err := j.client.Delete(ctx, job)
-	if err != nil && client.IgnoreNotFound(err) != nil {
-		return fmt.Errorf("failed to delete job %s/%s: %w", job.Namespace, job.Name, err)
-	}
-	return nil
 }
 
 func getPodsTolerations() []corev1.Toleration {
