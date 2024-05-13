@@ -758,7 +758,7 @@ var _ = Describe("handlePrune", func() {
 		Expect(done).To(BeFalse())
 	})
 
-	DescribeTable("prune job exsists flows", func(podFailed, podSucceeded, deleteFailed bool) {
+	DescribeTable("prune job exsists flows", func(podFailed, podSucceeded bool) {
 		nfdCR.Spec.PruneOnDelete = true
 		foundJob := batchv1.Job{}
 		if podFailed {
@@ -768,13 +768,6 @@ var _ = Describe("handlePrune", func() {
 			foundJob.Status.Succeeded = 1
 		}
 		mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(&foundJob, nil)
-		if podFailed || podSucceeded {
-			if deleteFailed {
-				mockJob.EXPECT().DeleteJob(ctx, &foundJob).Return(fmt.Errorf("some error"))
-			} else {
-				mockJob.EXPECT().DeleteJob(ctx, &foundJob).Return(nil)
-			}
-		}
 
 		done, err := nfdh.handlePrune(ctx, &nfdCR)
 
@@ -782,24 +775,16 @@ var _ = Describe("handlePrune", func() {
 		case !podFailed && !podSucceeded:
 			Expect(err).To(BeNil())
 			Expect(done).To(BeFalse())
-		case podFailed && !deleteFailed:
+		case podFailed:
 			Expect(err).To(HaveOccurred())
 			Expect(done).To(BeFalse())
-		case podFailed && deleteFailed:
-			Expect(err).To(HaveOccurred())
-			Expect(done).To(BeFalse())
-		case podSucceeded && !deleteFailed:
+		case podSucceeded:
 			Expect(err).To(BeNil())
 			Expect(done).To(BeTrue())
-		case podSucceeded && deleteFailed:
-			Expect(err).To(HaveOccurred())
-			Expect(done).To(BeFalse())
 		}
 	},
-		Entry("job has not finished yet", false, false, false),
-		Entry("job finished, its pod successfull, delete successfull", false, true, false),
-		Entry("job finished, its pod successfull, delete failed", false, true, true),
-		Entry("job finished, its pod failed, delete succeessful", true, false, false),
-		Entry("job finished, its pod failed, delete failed", true, false, true),
+		Entry("job has not finished yet", false, false),
+		Entry("job finished, its pod successfull", false, true),
+		Entry("job finished, its pod failed", true, false),
 	)
 })

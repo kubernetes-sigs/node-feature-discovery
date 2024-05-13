@@ -25,9 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 	batchv1 "k8s.io/api/batch/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
@@ -105,44 +103,5 @@ var _ = Describe("CreatePruneJob", func() {
 
 		err = jobAPI.CreatePruneJob(ctx, &nfdCR)
 		Expect(err).To(BeNil())
-	})
-})
-
-var _ = Describe("DeleteJob", func() {
-	var (
-		ctrl   *gomock.Controller
-		clnt   *client.MockClient
-		jobAPI JobAPI
-	)
-
-	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
-		clnt = client.NewMockClient(ctrl)
-		jobAPI = NewJobAPI(clnt, scheme)
-	})
-
-	ctx := context.Background()
-
-	deleteJob := batchv1.Job{}
-
-	It("successfull deletion", func() {
-		clnt.EXPECT().Delete(ctx, &deleteJob).Return(nil)
-
-		err := jobAPI.DeleteJob(ctx, &deleteJob)
-		Expect(err).To(BeNil())
-	})
-
-	It("job does not exist, function should return no error", func() {
-		clnt.EXPECT().Delete(ctx, &deleteJob).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever"))
-
-		err := jobAPI.DeleteJob(ctx, &deleteJob)
-		Expect(err).To(BeNil())
-	})
-
-	It("delete fails, function should return error", func() {
-		clnt.EXPECT().Delete(ctx, &deleteJob).Return(fmt.Errorf("some error"))
-
-		err := jobAPI.DeleteJob(ctx, &deleteJob)
-		Expect(err).To(HaveOccurred())
 	})
 })
