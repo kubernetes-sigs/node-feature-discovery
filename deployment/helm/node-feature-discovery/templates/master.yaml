@@ -73,7 +73,7 @@ spec:
             {{- if .Values.master.instance | empty | not }}
             - "-instance={{ .Values.master.instance }}"
             {{- end }}
-            {{- if not .Values.featureGates.NodeFeatureAPI }}
+            {{- if not (and .Values.featureGates.NodeFeatureAPI .Values.enableNodeFeatureApi) }}
             - "-port={{ .Values.master.port | default "8080" }}"
             {{- else if gt (int .Values.master.replicaCount) 1 }}
             - "-enable-leader-election"
