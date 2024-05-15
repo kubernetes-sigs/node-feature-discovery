@@ -57,7 +57,7 @@ import (
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
-	"sigs.k8s.io/node-feature-discovery/pkg/features"
+	nfdfeatures "sigs.k8s.io/node-feature-discovery/pkg/features"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -318,7 +318,7 @@ func (m *nfdMaster) Run() error {
 	grpcErr := make(chan error)
 	// If the NodeFeature API is enabled, don'tregister the labeler API
 	// server. Otherwise, register the labeler server.
-	if !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
+	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
 		go m.runGrpcServer(grpcErr)
 	}
 
@@ -373,7 +373,7 @@ func (m *nfdMaster) Run() error {
 			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
 
 			// Update all nodes when the configuration changes
-			if m.nfdController != nil && features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
+			if m.nfdController != nil && nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
 
@@ -471,7 +471,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 func (m *nfdMaster) nfdAPIUpdateHandler() {
 	// We want to unconditionally update all nodes at startup if gRPC is
 	// disabled (i.e. NodeFeature API is enabled)
-	updateAll := features.NFDFeatureGate.Enabled(features.NodeFeatureAPI)
+	updateAll := nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI)
 	updateNodes := make(map[string]struct{})
 	rateLimit := time.After(time.Second)
 	for {
@@ -801,12 +801,12 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 		// NOTE: changing the rule api to support handle multiple objects instead
 		// of merging would probably perform better with lot less data to copy.
 		features = objs[0].Spec.DeepCopy()
-		if m.config.AutoDefaultNs {
+		if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
 			features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
 		}
 		for _, o := range objs[1:] {
 			s := o.Spec.DeepCopy()
-			if m.config.AutoDefaultNs {
+			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
 				s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
 			}
 			s.MergeInto(features)
@@ -864,7 +864,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features) error {
-	if m.config.AutoDefaultNs {
+	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
 		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 	} else if labels == nil {
 		labels = make(map[string]string)
@@ -1041,7 +1041,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			l := ruleOut.Labels
 			e := ruleOut.ExtendedResources
 			a := ruleOut.Annotations
-			if m.config.AutoDefaultNs {
+			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
 				l = addNsToMapKeys(ruleOut.Labels, nfdv1alpha1.FeatureLabelNs)
 				e = addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs)
 				a = addNsToMapKeys(ruleOut.Annotations, nfdv1alpha1.FeatureAnnotationNs)
@@ -1363,7 +1363,7 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI),
+		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
 		ResyncPeriod:       m.config.ResyncPeriod.Duration,
 	})
 	if err != nil {
