@@ -22,7 +22,7 @@ import (
 	"os"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/textlogger"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -34,7 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	nfdkubernetesiov1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
-	"sigs.k8s.io/node-feature-discovery-operator/controllers"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/configmap"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/controllers"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
 	"sigs.k8s.io/node-feature-discovery-operator/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery-operator/pkg/version"
 	// +kubebuilder:scaffold:imports
@@ -71,12 +75,17 @@ func main() {
 	printVersion := flags.Bool("version", false, "Print version and exit.")
 
 	args := initFlags(flags)
-	// Inject klog flags
-	klog.InitFlags(flags)
+
+	logConfig := textlogger.NewConfig()
+	logConfig.AddFlags(flag.CommandLine)
+	logger := textlogger.NewLogger(logConfig).WithName("nfd")
+
+	ctrl.SetLogger(logger)
+	setupLogger := logger.WithName("setup")
 
 	_ = flags.Parse(os.Args[1:])
 	if len(flags.Args()) > 0 {
-		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
+		setupLogger.Info("unknown command line argument", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
 	}
@@ -88,7 +97,7 @@ func main() {
 
 	watchNamespace, envSet := utils.GetWatchNamespace()
 	if !envSet {
-		klog.Info("unable to get WatchNamespace, " +
+		setupLogger.Info("unable to get WatchNamespace, " +
 			"the manager will watch and manage resources in all namespaces")
 	}
 
@@ -112,15 +121,25 @@ func main() {
 	})
 
 	if err != nil {
-		klog.Error(err, "unable to start manager")
+		setupLogger.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	if err = (&controllers.NodeFeatureDiscoveryReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "controller", "NodeFeatureDiscovery")
+	client := mgr.GetClient()
+	scheme := mgr.GetScheme()
+
+	deploymentAPI := deployment.NewDeploymentAPI(client, scheme)
+	daemonsetAPI := daemonset.NewDaemonsetAPI(client, scheme)
+	configmapAPI := configmap.NewConfigMapAPI(client, scheme)
+	jobAPI := job.NewJobAPI(client, scheme)
+
+	if err = new_controllers.NewNodeFeatureDiscoveryReconciler(client,
+		deploymentAPI,
+		daemonsetAPI,
+		configmapAPI,
+		jobAPI,
+		scheme).SetupWithManager(mgr); err != nil {
+		setupLogger.Error(err, "unable to create controller", "controller", "NodeFeatureDiscovery")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
@@ -128,21 +147,21 @@ func main() {
 	// Next, add a Healthz checker to the manager. Healthz is a health and liveness package
 	// that the operator will use to periodically check the health of its pods, etc.
 	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
-		klog.Error(err, "unable to set up health check")
+		setupLogger.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
 
 	// Now add a ReadyZ checker to the manager as well. It is important to ensure that the
 	// API server's readiness is checked when the operator is installed and running.
 	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
-		klog.Error(err, "unable to set up ready check")
+		setupLogger.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
 	// Register signal handler for SIGINT and SIGTERM to terminate the manager
-	klog.Info("starting manager")
+	setupLogger.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		klog.Error(err, "problem running manager")
+		setupLogger.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
