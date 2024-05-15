@@ -57,7 +57,7 @@ import (
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
-	"sigs.k8s.io/node-feature-discovery/pkg/features"
+	nfdfeatures "sigs.k8s.io/node-feature-discovery/pkg/features"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -318,7 +318,7 @@ func (m *nfdMaster) Run() error {
 	grpcErr := make(chan error)
 	// If the NodeFeature API is enabled, don'tregister the labeler API
 	// server. Otherwise, register the labeler server.
-	if !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
+	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
 		go m.runGrpcServer(grpcErr)
 	}
 
@@ -373,7 +373,7 @@ func (m *nfdMaster) Run() error {
 			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
 
 			// Update all nodes when the configuration changes
-			if m.nfdController != nil && features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
+			if m.nfdController != nil && nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
 
@@ -471,7 +471,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 func (m *nfdMaster) nfdAPIUpdateHandler() {
 	// We want to unconditionally update all nodes at startup if gRPC is
 	// disabled (i.e. NodeFeature API is enabled)
-	updateAll := features.NFDFeatureGate.Enabled(features.NodeFeatureAPI)
+	updateAll := nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI)
 	updateNodes := make(map[string]struct{})
 	rateLimit := time.After(time.Second)
 	for {
@@ -1363,7 +1363,7 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI),
+		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
 		ResyncPeriod:       m.config.ResyncPeriod.Duration,
 	})
 	if err != nil {
