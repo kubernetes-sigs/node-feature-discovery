@@ -333,6 +333,10 @@ func TestRemovingExtResources(t *testing.T) {
 
 func TestSetLabels(t *testing.T) {
 	Convey("When servicing SetLabels request", t, func() {
+		// Add feature gates as running nfd-master depends on that
+		err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates)
+		So(err, ShouldBeNil)
+
 		testNode := newTestNode()
 		// We need to populate the node with some annotations or the patching in the fake client fails
 		testNode.Labels["feature.node.kubernetes.io/foo"] = "bar"

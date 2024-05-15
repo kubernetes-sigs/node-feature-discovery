@@ -70,6 +70,9 @@ denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
 
 ## autoDefaultNs
 
+**DEPRECATED**: Will be removed in NFD v0.17. Use the
+[DisableAutoPrefix](feature-gates.md#disableautoprefix) feature gate instead.
+
 The `autoDefaultNs` option controls the automatic prefixing of names. When set
 to true (the default in NFD version {{ site.version }}) nfd-master
 automatically adds the default `feature.node.kubernetes.io/` prefix to
