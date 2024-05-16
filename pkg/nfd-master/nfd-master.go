@@ -108,15 +108,16 @@ type ConfigOverrideArgs struct {
 
 // Args holds command line arguments
 type Args struct {
-	CaFile        string
-	CertFile      string
-	ConfigFile    string
-	Instance      string
-	KeyFile       string
-	Klog          map[string]*utils.KlogFlagVal
-	Kubeconfig    string
-	CrdController bool
-	Port          int
+	CaFile               string
+	CertFile             string
+	ConfigFile           string
+	Instance             string
+	KeyFile              string
+	Klog                 map[string]*utils.KlogFlagVal
+	Kubeconfig           string
+	CrdController        bool
+	EnableNodeFeatureApi bool
+	Port                 int
 	// GrpcHealthPort is only needed to avoid races between tests (by skipping the health server).
 	// Could be removed when gRPC labler service is dropped (when nfd-worker tests stop running nfd-master).
 	GrpcHealthPort       int
@@ -318,7 +319,7 @@ func (m *nfdMaster) Run() error {
 	grpcErr := make(chan error)
 	// If the NodeFeature API is enabled, don'tregister the labeler API
 	// server. Otherwise, register the labeler server.
-	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
+	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) || !m.args.EnableNodeFeatureApi {
 		go m.runGrpcServer(grpcErr)
 	}
 
@@ -373,7 +374,7 @@ func (m *nfdMaster) Run() error {
 			m.nodeUpdaterPool.start(m.config.NfdApiParallelism)
 
 			// Update all nodes when the configuration changes
-			if m.nfdController != nil && nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
+			if m.nfdController != nil && nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) && m.args.EnableNodeFeatureApi {
 				m.nfdController.updateAllNodesChan <- struct{}{}
 			}
 
@@ -471,7 +472,7 @@ func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
 func (m *nfdMaster) nfdAPIUpdateHandler() {
 	// We want to unconditionally update all nodes at startup if gRPC is
 	// disabled (i.e. NodeFeature API is enabled)
-	updateAll := nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI)
+	updateAll := nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) && m.args.EnableNodeFeatureApi
 	updateNodes := make(map[string]struct{})
 	rateLimit := time.After(time.Second)
 	for {
@@ -1363,7 +1364,7 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
+		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) || !m.args.EnableNodeFeatureApi,
 		ResyncPeriod:       m.config.ResyncPeriod.Duration,
 	})
 	if err != nil {
