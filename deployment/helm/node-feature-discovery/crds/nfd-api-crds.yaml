@@ -39,7 +39,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: NodeFeatureSpec describes a NodeFeature object.
+            description: Specification of the NodeFeature, containing features discovered
+              for a node.
             properties:
               features:
                 description: Features is the full "raw" features data that has been
@@ -53,6 +54,7 @@ spec:
                         elements:
                           additionalProperties:
                             type: string
+                          description: Individual features of the feature set.
                           type: object
                       required:
                       - elements
@@ -70,6 +72,7 @@ spec:
                             description: Nil is a dummy empty struct for protobuf
                               compatibility
                             type: object
+                          description: Individual features of the feature set.
                           type: object
                       required:
                       - elements
@@ -83,6 +86,7 @@ spec:
                         which is an instance having multiple attributes.
                       properties:
                         elements:
+                          description: Individual features of the feature set.
                           items:
                             description: InstanceFeature represents one instance of
                               a complex features, e.g. a device.
@@ -90,6 +94,7 @@ spec:
                               attributes:
                                 additionalProperties:
                                   type: string
+                                description: Attributes of the instance feature.
                                 type: object
                             required:
                             - attributes
@@ -155,9 +160,11 @@ spec:
           metadata:
             type: object
           spec:
-            description: NodeFeatureGroupSpec describes a NodeFeatureGroup object.
+            description: Spec defines the rules to be evaluated.
             properties:
               featureGroupRules:
+                description: List of rules to evaluate to determine nodes that belong
+                  in this group.
                 items:
                   description: GroupRule defines a rule for nodegroup filtering.
                   properties:
@@ -356,6 +363,9 @@ spec:
             - featureGroupRules
             type: object
           status:
+            description: |-
+              Status of the NodeFeatureGroup after the most recent evaluation of the
+              specification.
             properties:
               nodes:
                 description: Nodes is a list of FeatureGroupNode in the cluster that
@@ -363,6 +373,7 @@ spec:
                 items:
                   properties:
                     name:
+                      description: Name of the node.
                       type: string
                   required:
                   - name
@@ -422,7 +433,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: NodeFeatureRuleSpec describes a NodeFeatureRule.
+            description: Spec defines the rules to be evaluated.
             properties:
               rules:
                 description: Rules is a list of node customization rules.
