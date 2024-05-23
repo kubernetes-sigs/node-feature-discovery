@@ -28,6 +28,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
 	"sigs.k8s.io/yaml"
@@ -164,5 +165,45 @@ var _ = Describe("DeleteDaemonSet", func() {
 
 		err := daemonsetAPI.DeleteDaemonSet(ctx, namespace, name)
 		Expect(err).To(BeNil())
+	})
+})
+
+var _ = Describe("GetDaemonSet", func() {
+	var (
+		ctrl         *gomock.Controller
+		clnt         *client.MockClient
+		daemonsetAPI DaemonsetAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		daemonsetAPI = NewDaemonsetAPI(clnt, scheme)
+	})
+
+	ctx := context.Background()
+	testName := "test-name"
+	testNamespace := "test-namespace"
+
+	It("good flow", func() {
+		expectedDS := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testName},
+		}
+		clnt.EXPECT().Get(ctx, ctrlclient.ObjectKey{Namespace: testNamespace, Name: testName}, gomock.Any()).DoAndReturn(
+			func(_ interface{}, _ interface{}, ds *appsv1.DaemonSet, _ ...ctrlclient.GetOption) error {
+				ds.SetName(testName)
+				ds.SetNamespace(testNamespace)
+				return nil
+			},
+		)
+		res, err := daemonsetAPI.GetDaemonSet(ctx, testNamespace, testName)
+		Expect(err).To(BeNil())
+		Expect(res).To(Equal(expectedDS))
+	})
+
+	It("error flow", func() {
+		clnt.EXPECT().Get(ctx, ctrlclient.ObjectKey{Namespace: testNamespace, Name: testName}, gomock.Any()).Return(fmt.Errorf("some error"))
+		_, err := daemonsetAPI.GetDaemonSet(ctx, testNamespace, testName)
+		Expect(err).To(HaveOccurred())
 	})
 })
