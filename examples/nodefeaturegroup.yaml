@@ -1,0 +1,11 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: node-feature-group-example
+spec:
+  featureGroupRules:
+    - name: "kernel version"
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: In, value: ["6"]}

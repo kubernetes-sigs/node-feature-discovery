@@ -123,6 +123,21 @@ func CreateNodeFeatureRulesFromFile(ctx context.Context, cli nfdclientset.Interf
 	return nil
 }
 
+// CreateNodeFeatureGroupsFromFile creates a NodeFeatureGroup object from a given file located under test data directory.
+func CreateNodeFeatureGroupsFromFile(ctx context.Context, cli nfdclientset.Interface, namespace, filename string) error {
+	objs, err := nodeFeatureGroupsFromFile(filepath.Join(packagePath, "..", "data", filename))
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		if _, err = cli.NfdV1alpha1().NodeFeatureGroups(namespace).Create(ctx, obj, metav1.CreateOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // UpdateNodeFeatureRulesFromFile updates existing NodeFeatureRule object from a given file located under test data directory.
 func UpdateNodeFeatureRulesFromFile(ctx context.Context, cli nfdclientset.Interface, filename string) error {
 	objs, err := nodeFeatureRulesFromFile(filepath.Join(packagePath, "..", "data", filename))
@@ -230,6 +245,25 @@ func nodeFeatureRulesFromFile(path string) ([]*nfdv1alpha1.NodeFeatureRule, erro
 	for i, obj := range objs {
 		var ok bool
 		crs[i], ok = obj.(*nfdv1alpha1.NodeFeatureRule)
+		if !ok {
+			return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
+		}
+	}
+
+	return crs, nil
+}
+
+func nodeFeatureGroupsFromFile(path string) ([]*nfdv1alpha1.NodeFeatureGroup, error) {
+	objs, err := apiObjsFromFile(path, nfdscheme.Codecs.UniversalDeserializer())
+	if err != nil {
+		return nil, err
+	}
+
+	crs := make([]*nfdv1alpha1.NodeFeatureGroup, len(objs))
+
+	for i, obj := range objs {
+		var ok bool
+		crs[i], ok = obj.(*nfdv1alpha1.NodeFeatureGroup)
 		if !ok {
 			return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
 		}

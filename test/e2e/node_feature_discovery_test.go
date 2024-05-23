@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"maps"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -181,6 +182,19 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 			}()).NotTo(HaveOccurred())
 		}
 	}
+
+	// Drop NodeFeatureGroup objects
+	nfgs, err := cli.NfdV1alpha1().NodeFeatureGroups(namespace).List(ctx, metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	if len(nfgs.Items) != 0 {
+		By("Deleting NodeFeatureGroup objects from namespace " + namespace)
+		for _, nfg := range nfgs.Items {
+			err = cli.NfdV1alpha1().NodeFeatureGroups(namespace).Delete(ctx, nfg.Name, metav1.DeleteOptions{})
+			Expect(err).NotTo(HaveOccurred())
+		}
+	}
+
 }
 
 // Actual test suite
@@ -870,6 +884,61 @@ core:
 						}
 						eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchLabels(expectedLabels, nodes))
 					}
+				})
+			})
+
+			// Test NodeFeatureGroups
+			Context("and NodeFeatureGroups objects deployed", Label("nodefeaturegroup"), func() {
+				BeforeEach(func(ctx context.Context) {
+					// We need a NodeFeature from the node, can't be a fake one
+					if !useNodeFeatureApi {
+						Skip("NodeFeature API not enabled")
+					}
+					// enable the node feature group api
+					extraMasterPodSpecOpts = []testpod.SpecOption{
+						testpod.SpecWithContainerExtraArgs(
+							"--feature-gates=NodeFeatureGroupAPI=true",
+						),
+					}
+				})
+				It("custom NodeFeatureGroup should be updated", func(ctx context.Context) {
+					By("Creating nfd-worker daemonset")
+					podSpecOpts := createPodSpecOpts(
+						testpod.SpecWithContainerImage(dockerImage()),
+					)
+					workerDS := testds.NFDWorker(podSpecOpts...)
+					workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Waiting for worker daemonset pods to be ready")
+					Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+
+					nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Creating NodeFeatureGroups #1")
+					Expect(testutils.CreateNodeFeatureGroupsFromFile(ctx, nfdClient, f.Namespace.Name, "nodefeaturegroup-1.yaml")).NotTo(HaveOccurred())
+
+					By("Verifying NodeFeatureGroups #1")
+					targetNodes := make([]nfdv1alpha1.FeatureGroupNode, 0)
+					for _, node := range nodes {
+						targetNodes = append(targetNodes, nfdv1alpha1.FeatureGroupNode{
+							Name: node.Name,
+						})
+					}
+
+					expectedGroup := nfdv1alpha1.NodeFeatureGroup{
+						Status: nfdv1alpha1.NodeFeatureGroupStatus{
+							Nodes: targetNodes,
+						},
+					}
+					Eventually(func() bool {
+						group, err := nfdClient.NfdV1alpha1().NodeFeatureGroups(f.Namespace.Name).Get(ctx, "e2e-test-1", metav1.GetOptions{})
+						if err != nil {
+							return false
+						}
+						return reflect.DeepEqual(group.Status, expectedGroup.Status)
+					}, 5*time.Minute, 5*time.Second).Should(BeTrue())
 				})
 			})
 

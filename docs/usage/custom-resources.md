@@ -51,6 +51,28 @@ spec:
     vendor-xpu-present: "true"
 ```
 
+## NodeFeatureGroup
+
+NodeFeatureGroup is an NFD-specific custom resource that is designed for
+grouping nodes based on their features. NFD-Master watches for NodeFeatureGroup
+objects in the cluster and updates the status of the NodeFeatureGroup object
+with the list of nodes that match the feature group rules. The NodeFeatureGroup
+rules follow the same syntax as the NodeFeatureRule rules.
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: node-feature-group-example
+spec:
+  featureGroupRules:
+    - name: "node has kernel version discovered"
+      matchFeatures:
+        - feature: kernel.version
+          matchExpressions:
+            major: {op: Exists}
+```
+
 ## NodeFeatureRule
 
 NodeFeatureRule is an NFD-specific custom resource that is designed for

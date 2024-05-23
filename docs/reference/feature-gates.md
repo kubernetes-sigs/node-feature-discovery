@@ -18,6 +18,7 @@ The feature gates are set using the `-feature-gates` command line flag or
 | --------------------- | ------- | ------ | ------- | ------ |
 | `NodeFeatureAPI`      | true    | Beta   | V0.14   |        |
 | `DisableAutoPrefix`   | false   | Alpha  | V0.16   |        |
+| `NodeFeatureGroupAPI` | false   | Alpha  | V0.16   |        |
 
 ## NodeFeatureAPI
 
@@ -26,6 +27,14 @@ When enabled, NFD will register the Node Feature API with the Kubernetes API
 server. The Node Feature API is used to expose node-specific hardware and
 software features to the Kubernetes scheduler. The Node Feature API is a beta
 feature and is enabled by default.
+
+## NodeFeatureGroupAPI
+
+The `NodeFeatureGroupAPI` feature gate enables the Node Feature Group API.
+When enabled, NFD will register the Node Feature Group API with the Kubernetes API
+server. The Node Feature Group API is used to create node groups based on
+hardware and software features. The Node Feature Group API is an alpha feature
+and is disabled by default.
 
 ## DisableAutoPrefix
 

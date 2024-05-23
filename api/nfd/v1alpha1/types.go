@@ -131,6 +131,63 @@ type NodeFeatureRuleSpec struct {
 	Rules []Rule `json:"rules"`
 }
 
+// NodeFeatureGroup resource holds Node pools by featureGroup
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced,shortName=nfg
+// +kubebuilder:subresource:status
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient
+type NodeFeatureGroup struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   NodeFeatureGroupSpec   `json:"spec"`
+	Status NodeFeatureGroupStatus `json:"status,omitempty"`
+}
+
+// NodeFeatureGroupSpec describes a NodeFeatureGroup object.
+type NodeFeatureGroupSpec struct {
+	Rules []GroupRule `json:"featureGroupRules"`
+}
+
+type NodeFeatureGroupStatus struct {
+	// Nodes is a list of FeatureGroupNode in the cluster that match the featureGroupRules
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	Nodes []FeatureGroupNode `json:"nodes"`
+}
+
+type FeatureGroupNode struct {
+	Name string `json:"name"`
+}
+
+// NodeFeatureGroupList contains a list of NodeFeatureGroup objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureGroupList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NodeFeatureGroup `json:"items"`
+}
+
+// GroupRule defines a rule for nodegroup filtering.
+type GroupRule struct {
+	// Name of the rule.
+	Name string `json:"name"`
+
+	// MatchFeatures specifies a set of matcher terms all of which must match.
+	// +optional
+	MatchFeatures FeatureMatcher `json:"matchFeatures"`
+
+	// MatchAny specifies a list of matchers one of which must match.
+	// +optional
+	MatchAny []MatchAnyElem `json:"matchAny"`
+}
+
 // Rule defines a rule for node customization such as labeling.
 type Rule struct {
 	// Name of the rule.
