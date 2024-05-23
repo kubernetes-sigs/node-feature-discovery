@@ -42,6 +42,7 @@ type DeploymentAPI interface {
 	SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error
 	SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, gcDep *v1.Deployment) error
 	DeleteDeployment(ctx context.Context, namespace, name string) error
+	GetDeployment(ctx context.Context, namespace, name string) (*v1.Deployment, error)
 }
 
 type deployment struct {
@@ -142,6 +143,12 @@ func (d *deployment) DeleteDeployment(ctx context.Context, namespace, name strin
 		return fmt.Errorf("failed to delete deployment %s/%s: %w", namespace, name, err)
 	}
 	return nil
+}
+
+func (d *deployment) GetDeployment(ctx context.Context, namespace, name string) (*v1.Deployment, error) {
+	dep := &v1.Deployment{}
+	err := d.client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, dep)
+	return dep, err
 }
 
 func getPodsTolerations() []corev1.Toleration {
