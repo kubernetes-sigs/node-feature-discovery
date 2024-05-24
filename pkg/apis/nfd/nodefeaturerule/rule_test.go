@@ -133,7 +133,7 @@ func TestRule(t *testing.T) {
 	assert.Equal(t, r3.Labels, m.Labels, "values should have matched")
 
 	// Match "instance" features
-	r4 := &nfdv1alpha1.Rule{
+	r3 = &nfdv1alpha1.Rule{
 		Labels: map[string]string{"label-4": "label-val-4"},
 		MatchFeatures: nfdv1alpha1.FeatureMatcher{
 			nfdv1alpha1.FeatureMatcherTerm{
@@ -144,17 +144,90 @@ func TestRule(t *testing.T) {
 			},
 		},
 	}
-	m, err = Execute(r4, f)
+	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "instances should not have matched")
 
 	f.Instances["domain-1.if-1"].Elements[0].Attributes["attr-1"] = "val-1"
-	m, err = Execute(r4, f)
+	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
-	assert.Equal(t, r4.Labels, m.Labels, "instances should have matched")
+	assert.Equal(t, r3.Labels, m.Labels, "instances should have matched")
+
+	// Match "multi-type" features
+	f2 := nfdv1alpha1.NewFeatures()
+	f2.Flags["dom.feat"] = nfdv1alpha1.NewFlagFeatures("k-1", "k-2")
+	f2.Attributes["dom.feat"] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"a-1": "v-1", "a-2": "v-2"})
+	f2.Instances["dom.feat"] = nfdv1alpha1.NewInstanceFeatures(
+		*nfdv1alpha1.NewInstanceFeature(map[string]string{"ia-1": "iv-1"}),
+		*nfdv1alpha1.NewInstanceFeature(map[string]string{"ia-2": "iv-2"}),
+	)
+
+	r3 = &nfdv1alpha1.Rule{
+		Labels: map[string]string{"feat": "val-1"},
+		MatchFeatures: nfdv1alpha1.FeatureMatcher{
+			nfdv1alpha1.FeatureMatcherTerm{
+				Feature: "dom.feat",
+				MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+					"k-1": newMatchExpression(nfdv1alpha1.MatchExists),
+				},
+			},
+		},
+	}
+	m, err = Execute(r3, f2)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r3.Labels, m.Labels, "key in multi-type feature should have matched")
+
+	r3.MatchFeatures = nfdv1alpha1.FeatureMatcher{
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature: "dom.feat",
+			MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+				"a-1": newMatchExpression(nfdv1alpha1.MatchIn, "v-1"),
+			},
+		},
+	}
+	m, err = Execute(r3, f2)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r3.Labels, m.Labels, "attribute in multi-type feature should have matched")
+
+	r3.MatchFeatures = nfdv1alpha1.FeatureMatcher{
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature: "dom.feat",
+			MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+				"ia-1": newMatchExpression(nfdv1alpha1.MatchIn, "iv-1"),
+			},
+		},
+	}
+	m, err = Execute(r3, f2)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r3.Labels, m.Labels, "attribute in multi-type feature should have matched")
+
+	r3.MatchFeatures = nfdv1alpha1.FeatureMatcher{
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature: "dom.feat",
+			MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+				"k-2": newMatchExpression(nfdv1alpha1.MatchExists),
+				"a-2": newMatchExpression(nfdv1alpha1.MatchIn, "v-2"),
+			},
+		},
+	}
+	m, err = Execute(r3, f2)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r3.Labels, m.Labels, "features in multi-type feature should have matched flags and attributes")
+
+	r3.MatchFeatures = nfdv1alpha1.FeatureMatcher{
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature: "dom.feat",
+			MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+				"ia-2": newMatchExpression(nfdv1alpha1.MatchIn, "iv-2"),
+			},
+		},
+	}
+	m, err = Execute(r3, f2)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, r3.Labels, m.Labels, "features in multi-type feature should have matched instance")
 
 	// Test multiple feature matchers
-	r5 := &nfdv1alpha1.Rule{
+	r3 = &nfdv1alpha1.Rule{
 		Labels: map[string]string{"label-5": "label-val-5"},
 		MatchFeatures: nfdv1alpha1.FeatureMatcher{
 			nfdv1alpha1.FeatureMatcherTerm{
@@ -171,17 +244,17 @@ func TestRule(t *testing.T) {
 			},
 		},
 	}
-	m, err = Execute(r5, f)
+	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "instances should not have matched")
 
-	(*r5.MatchFeatures[0].MatchExpressions)["key-1"] = newMatchExpression(nfdv1alpha1.MatchIn, "val-1")
-	m, err = Execute(r5, f)
+	(*r3.MatchFeatures[0].MatchExpressions)["key-1"] = newMatchExpression(nfdv1alpha1.MatchIn, "val-1")
+	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
-	assert.Equal(t, r5.Labels, m.Labels, "instances should have matched")
+	assert.Equal(t, r3.Labels, m.Labels, "instances should have matched")
 
 	// Test MatchAny
-	r5.MatchAny = []nfdv1alpha1.MatchAnyElem{
+	r3.MatchAny = []nfdv1alpha1.MatchAnyElem{
 		{
 			MatchFeatures: nfdv1alpha1.FeatureMatcher{
 				nfdv1alpha1.FeatureMatcherTerm{
@@ -193,11 +266,11 @@ func TestRule(t *testing.T) {
 			},
 		},
 	}
-	m, err = Execute(r5, f)
+	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Nil(t, m.Labels, "instances should not have matched")
 
-	r5.MatchAny = append(r5.MatchAny,
+	r3.MatchAny = append(r3.MatchAny,
 		nfdv1alpha1.MatchAnyElem{
 			MatchFeatures: nfdv1alpha1.FeatureMatcher{
 				nfdv1alpha1.FeatureMatcherTerm{
@@ -208,16 +281,23 @@ func TestRule(t *testing.T) {
 				},
 			},
 		})
-	(*r5.MatchFeatures[0].MatchExpressions)["key-1"] = newMatchExpression(nfdv1alpha1.MatchIn, "val-1")
-	m, err = Execute(r5, f)
+	(*r3.MatchFeatures[0].MatchExpressions)["key-1"] = newMatchExpression(nfdv1alpha1.MatchIn, "val-1")
+	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
-	assert.Equal(t, r5.Labels, m.Labels, "instances should have matched")
+	assert.Equal(t, r3.Labels, m.Labels, "instances should have matched")
 }
 
 func TestTemplating(t *testing.T) {
 	f := &nfdv1alpha1.Features{
 		Flags: map[string]nfdv1alpha1.FlagFeatureSet{
 			"domain_1.kf_1": {
+				Elements: map[string]nfdv1alpha1.Nil{
+					"key-a": {},
+					"key-b": {},
+					"key-c": {},
+				},
+			},
+			"domain.mf": {
 				Elements: map[string]nfdv1alpha1.Nil{
 					"key-a": {},
 					"key-b": {},
@@ -232,6 +312,12 @@ func TestTemplating(t *testing.T) {
 					"keu-2": "val-2",
 					"key-3": "val-3",
 					"key-4": "val-4",
+				},
+			},
+			"domain.mf": {
+				Elements: map[string]string{
+					"key-d": "val-d",
+					"key-e": "val-e",
 				},
 			},
 		},
@@ -352,6 +438,32 @@ var-2=
 	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
 	assert.Equal(t, expectedVars, m.Vars, "instances should have matched")
 
+	m, err = Execute(r3, f)
+	assert.Nilf(t, err, "unexpected error: %v", err)
+	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")
+	assert.Equal(t, expectedVars, m.Vars, "instances should have matched")
+
+	// Test "multi-type" feature
+	r3 = &nfdv1alpha1.Rule{
+		LabelsTemplate: `
+{{range .domain.mf}}mf-{{.Name}}=found
+{{end}}`,
+		MatchFeatures: nfdv1alpha1.FeatureMatcher{
+			nfdv1alpha1.FeatureMatcherTerm{
+				Feature: "domain.mf",
+				MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+					"key-a": newMatchExpression(nfdv1alpha1.MatchExists),
+					"key-d": newMatchExpression(nfdv1alpha1.MatchIn, "val-d"),
+				},
+			},
+		},
+	}
+
+	expectedLabels = map[string]string{
+		"mf-key-a": "found",
+		"mf-key-d": "found",
+	}
+	expectedVars = map[string]string{}
 	m, err = Execute(r3, f)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, expectedLabels, m.Labels, "instances should have matched")

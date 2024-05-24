@@ -113,12 +113,9 @@ func TestInstanceFeatureSet(t *testing.T) {
 func TestFeature(t *testing.T) {
 	f := Features{}
 
-	// Test Exists() and InsertAttributeFeatures()
-	assert.Empty(t, f.Exists("dom.attr"), "empty features shouldn't contain anything")
-
+	// Test InsertAttributeFeatures()
 	f.InsertAttributeFeatures("dom", "attr", map[string]string{"k1": "v1", "k2": "v2"})
 	expectedAttributes := map[string]string{"k1": "v1", "k2": "v2"}
-	assert.Equal(t, "attribute", f.Exists("dom.attr"), "attribute feature should exist")
 	assert.Equal(t, expectedAttributes, f.Attributes["dom.attr"].Elements)
 
 	f.InsertAttributeFeatures("dom", "attr", map[string]string{"k2": "v2.override", "k3": "v3"})

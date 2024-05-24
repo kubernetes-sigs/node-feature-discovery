@@ -214,39 +214,24 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 		var isMatch = true
 		var matchedElems []MatchedElement
 		var err error
-		if f, ok := features.Flags[featureName]; ok {
-			if term.MatchExpressions != nil {
-				isMatch, matchedElems, err = MatchGetKeys(term.MatchExpressions, f.Elements)
-			}
-			var meTmp []MatchedElement
-			if err == nil && isMatch && term.MatchName != nil {
-				isMatch, meTmp, err = MatchKeyNames(term.MatchName, f.Elements)
-				matchedElems = append(matchedElems, meTmp...)
-			}
-		} else if f, ok := features.Attributes[featureName]; ok {
-			if term.MatchExpressions != nil {
-				isMatch, matchedElems, err = MatchGetValues(term.MatchExpressions, f.Elements)
-			}
-			var meTmp []MatchedElement
-			if err == nil && isMatch && term.MatchName != nil {
-				isMatch, meTmp, err = MatchValueNames(term.MatchName, f.Elements)
-				matchedElems = append(matchedElems, meTmp...)
-			}
-		} else if f, ok := features.Instances[featureName]; ok {
-			if term.MatchExpressions != nil {
-				matchedElems, err = MatchGetInstances(term.MatchExpressions, f.Elements)
-				isMatch = len(matchedElems) > 0
-			}
-			var meTmp []MatchedElement
-			if err == nil && isMatch && term.MatchName != nil {
-				meTmp, err = MatchInstanceAttributeNames(term.MatchName, f.Elements)
-				isMatch = len(meTmp) > 0
-				matchedElems = append(matchedElems, meTmp...)
 
-			}
-		} else {
+		fF, okF := features.Flags[featureName]
+		fA, okA := features.Attributes[featureName]
+		fI, okI := features.Instances[featureName]
+		if !okF && !okA && !okI {
 			return false, nil, fmt.Errorf("feature %q not available", featureName)
 		}
+
+		if term.MatchExpressions != nil {
+			isMatch, matchedElems, err = MatchMulti(term.MatchExpressions, fF.Elements, fA.Elements, fI.Elements)
+		}
+
+		if err == nil && isMatch && term.MatchName != nil {
+			var meTmp []MatchedElement
+			isMatch, meTmp, err = MatchNamesMulti(term.MatchName, fF.Elements, fA.Elements, fI.Elements)
+			matchedElems = append(matchedElems, meTmp...)
+		}
+
 		matches[dom][nam] = append(matches[dom][nam], matchedElems...)
 
 		if err != nil {

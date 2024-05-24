@@ -101,7 +101,7 @@ NodeFeature object as NFD uses it to determine the node which it is targeting.
 
 ### Feature types
 
-Features are divided into three different types:
+Features have three different types:
 
 - **flag** features: a set of names without any associated values, e.g. CPUID
   flags or loaded kernel modules
@@ -955,7 +955,7 @@ true).
 
 The following features are available for matching:
 
-| Feature          | [Feature type](#feature-types) | Elements | Value type | Description |
+| Feature          | [Feature types](#feature-types) | Elements | Value type | Description |
 | ---------------- | ------------ | -------- | ---------- | ----------- |
 | **`cpu.cpuid`**  | flag         |          |            | Supported CPU capabilities |
 |                  |              | **`<cpuid-flag>`** |  | CPUID flag is present |
