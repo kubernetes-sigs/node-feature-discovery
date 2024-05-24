@@ -28,6 +28,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
 	"sigs.k8s.io/yaml"
@@ -159,5 +160,45 @@ var _ = Describe("DeleteDeployment", func() {
 
 		err := deploymentAPI.DeleteDeployment(ctx, namespace, name)
 		Expect(err).To(BeNil())
+	})
+})
+
+var _ = Describe("GetDeployment", func() {
+	var (
+		ctrl          *gomock.Controller
+		clnt          *client.MockClient
+		deploymentAPI DeploymentAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		deploymentAPI = NewDeploymentAPI(clnt, scheme)
+	})
+
+	ctx := context.Background()
+	testName := "test-name"
+	testNamespace := "test-namespace"
+
+	It("good flow", func() {
+		expectedDep := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testName},
+		}
+		clnt.EXPECT().Get(ctx, ctrlclient.ObjectKey{Namespace: testNamespace, Name: testName}, gomock.Any()).DoAndReturn(
+			func(_ interface{}, _ interface{}, dep *appsv1.Deployment, _ ...ctrlclient.GetOption) error {
+				dep.SetName(testName)
+				dep.SetNamespace(testNamespace)
+				return nil
+			},
+		)
+		res, err := deploymentAPI.GetDeployment(ctx, testNamespace, testName)
+		Expect(err).To(BeNil())
+		Expect(res).To(Equal(expectedDep))
+	})
+
+	It("error flow", func() {
+		clnt.EXPECT().Get(ctx, ctrlclient.ObjectKey{Namespace: testNamespace, Name: testName}, gomock.Any()).Return(fmt.Errorf("some error"))
+		_, err := deploymentAPI.GetDeployment(ctx, testNamespace, testName)
+		Expect(err).To(HaveOccurred())
 	})
 })

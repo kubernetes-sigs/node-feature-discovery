@@ -37,6 +37,7 @@ type DaemonsetAPI interface {
 	SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, topologyDS *appsv1.DaemonSet) error
 	SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error
 	DeleteDaemonSet(ctx context.Context, namespace, name string) error
+	GetDaemonSet(ctx context.Context, namespace, name string) (*appsv1.DaemonSet, error)
 }
 
 type daemonset struct {
@@ -99,6 +100,12 @@ func (d *daemonset) DeleteDaemonSet(ctx context.Context, namespace, name string)
 		return fmt.Errorf("failed to delete daemonset %s/%s: %w", namespace, name, err)
 	}
 	return nil
+}
+
+func (d *daemonset) GetDaemonSet(ctx context.Context, namespace, name string) (*appsv1.DaemonSet, error) {
+	ds := &appsv1.DaemonSet{}
+	err := d.client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, ds)
+	return ds, err
 }
 
 func getImagePullPolicy(nfdInstance *nfdv1.NodeFeatureDiscovery) corev1.PullPolicy {
