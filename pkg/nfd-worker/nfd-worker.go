@@ -122,18 +122,19 @@ type ConfigOverrideArgs struct {
 }
 
 type nfdWorker struct {
-	args                Args
-	certWatch           *utils.FsWatcher
-	clientConn          *grpc.ClientConn
-	configFilePath      string
-	config              *NFDConfig
-	kubernetesNamespace string
-	grpcClient          pb.LabelerClient
-	healthServer        *grpc.Server
-	nfdClient           *nfdclient.Clientset
-	stop                chan struct{} // channel for signaling stop
-	featureSources      []source.FeatureSource
-	labelSources        []source.LabelSource
+	args                        Args
+	certWatch                   *utils.FsWatcher
+	clientConn                  *grpc.ClientConn
+	configFilePath              string
+	config                      *NFDConfig
+	kubernetesNamespace         string
+	grpcClient                  pb.LabelerClient
+	healthServer                *grpc.Server
+	nfdClient                   *nfdclient.Clientset
+	stop                        chan struct{} // channel for signaling stop
+	featureSources              []source.FeatureSource
+	numberOfFeatureSourceErrors int
+	labelSources                []source.LabelSource
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -219,9 +220,11 @@ func (w *nfdWorker) startGrpcHealthServer(errChan chan<- error) error {
 // Run feature discovery.
 func (w *nfdWorker) runFeatureDiscovery() error {
 	discoveryStart := time.Now()
+	w.numberOfFeatureSourceErrors = 0
 	for _, s := range w.featureSources {
 		currentSourceStart := time.Now()
 		if err := s.Discover(); err != nil {
+			w.numberOfFeatureSourceErrors++
 			klog.ErrorS(err, "feature discovery failed", "source", s.Name())
 		}
 		klog.V(3).InfoS("feature discovery completed", "featureSource", s.Name(), "duration", time.Since(currentSourceStart))
@@ -748,6 +751,12 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Labels:   labels,
 			},
 		}
+		nfr.Status = nfdv1alpha1.NodeFeatureStatus{
+			LastAppliedAt:         metav1.Time{Time: time.Now().UTC()},
+			NumberOfFeatures:      len(m.featureSources),
+			NumberOfFeatureErrors: m.numberOfFeatureSourceErrors,
+			NumberOfLabels:        len(m.labelSources),
+		}
 
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
 		if err != nil {
@@ -766,7 +775,12 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 			Features: *features,
 			Labels:   labels,
 		}
-
+		nfrUpdated.Status = nfdv1alpha1.NodeFeatureStatus{
+			LastAppliedAt:         metav1.Time{Time: time.Now().UTC()},
+			NumberOfFeatures:      len(m.featureSources),
+			NumberOfFeatureErrors: m.numberOfFeatureSourceErrors,
+			NumberOfLabels:        len(m.labelSources),
+		}
 		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
 			klog.InfoS("updating NodeFeature object", "nodefeature", klog.KObj(nfr))
 			nfrUpdated, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), nfrUpdated, metav1.UpdateOptions{})
