@@ -735,7 +735,6 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 	// TODO: we could implement some simple caching of the object, only get it
 	// every 10 minutes or so because nobody else should really be modifying it
 	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
-		klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
 		nfr = &nfdv1alpha1.NodeFeature{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            nodename,
@@ -748,6 +747,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Labels:   labels,
 			},
 		}
+		klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
 
 		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
 		if err != nil {
