@@ -54,6 +54,21 @@ func (mr *MockDaemonsetAPIMockRecorder) DeleteDaemonSet(ctx, namespace, name any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDaemonSet", reflect.TypeOf((*MockDaemonsetAPI)(nil).DeleteDaemonSet), ctx, namespace, name)
 }
 
+// GetDaemonSet mocks base method.
+func (m *MockDaemonsetAPI) GetDaemonSet(ctx context.Context, namespace, name string) (*v1.DaemonSet, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDaemonSet", ctx, namespace, name)
+	ret0, _ := ret[0].(*v1.DaemonSet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDaemonSet indicates an expected call of GetDaemonSet.
+func (mr *MockDaemonsetAPIMockRecorder) GetDaemonSet(ctx, namespace, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDaemonSet", reflect.TypeOf((*MockDaemonsetAPI)(nil).GetDaemonSet), ctx, namespace, name)
+}
+
 // SetTopologyDaemonsetAsDesired mocks base method.
 func (m *MockDaemonsetAPI) SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *v10.NodeFeatureDiscovery, topologyDS *v1.DaemonSet) error {
 	m.ctrl.T.Helper()

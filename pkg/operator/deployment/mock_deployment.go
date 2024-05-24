@@ -54,6 +54,21 @@ func (mr *MockDeploymentAPIMockRecorder) DeleteDeployment(ctx, namespace, name a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployment", reflect.TypeOf((*MockDeploymentAPI)(nil).DeleteDeployment), ctx, namespace, name)
 }
 
+// GetDeployment mocks base method.
+func (m *MockDeploymentAPI) GetDeployment(ctx context.Context, namespace, name string) (*v1.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeployment", ctx, namespace, name)
+	ret0, _ := ret[0].(*v1.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeployment indicates an expected call of GetDeployment.
+func (mr *MockDeploymentAPIMockRecorder) GetDeployment(ctx, namespace, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployment", reflect.TypeOf((*MockDeploymentAPI)(nil).GetDeployment), ctx, namespace, name)
+}
+
 // SetGCDeploymentAsDesired mocks base method.
 func (m *MockDeploymentAPI) SetGCDeploymentAsDesired(nfdInstance *v10.NodeFeatureDiscovery, gcDep *v1.Deployment) error {
 	m.ctrl.T.Helper()
