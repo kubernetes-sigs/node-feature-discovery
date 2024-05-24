@@ -95,3 +95,5 @@ func getCpuidFlags() []string {
 	}
 	return r
 }
+
+func getCpuidAttributes() map[string]string { return nil }

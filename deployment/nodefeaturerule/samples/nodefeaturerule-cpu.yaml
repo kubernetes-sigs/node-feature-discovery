@@ -41,6 +41,17 @@ spec:
               - "SSE42"
               - "SSSE3"
 
+    - name: "nfd built-in cpu-cpuid non-bool labels"
+      labelsTemplate: |
+        {{ range .cpu.cpuid }}cpu-cpuid.{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: cpu.cpuid
+          matchName:
+            op: In
+            value:
+              - "AVX10_VERSION"
+
     - name: "nfd built-in cpu-hardware_multithreading label"
       labelsTemplate: |
         {{ range .cpu.topology }}cpu-{{ .Name }}={{ .Value }}

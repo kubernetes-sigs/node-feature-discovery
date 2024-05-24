@@ -47,6 +47,7 @@ feature.node.kubernetes.io/<feature> = <value>
 | Feature name                        | Value  | Description                                                                 |
 | ----------------------------------- | ------ | --------------------------------------------------------------------------- |
 | **`cpu-cpuid.<cpuid-flag>`**        | true   | CPU capability is supported. **NOTE:** the capability might be supported but not enabled. |
+| **`cpu-cpuid.<cpuid-attribute>`**   | string | CPU attribute value |
 | **`cpu-hardware_multithreading`**   | true   | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs) |
 | **`cpu-coprocessor.nx_gzip`**       | true   | Nest Accelerator for GZIP is supported(Power). |
 | **`cpu-power.sst_bf.enabled`**      | true   | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled |
@@ -122,6 +123,12 @@ RDTSCP, SGX, SSE, SSE2, SSE3, SSE4, SSE42, SSSE3 and TDX_GUEST. See
 configuration options to change the behavior.
 
 See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
+
+#### X86 CPUID attributes
+
+| Attribute          | Description                                             |
+| ------------------ | ------------------------------------------------------- |
+| AVX10_VERSION      | AVX10 vector ISA version (if supported)                 |
 
 #### Arm CPUID flags (partial list)
 
