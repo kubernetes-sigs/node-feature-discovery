@@ -64,6 +64,7 @@ func newDefaultConfig() *Config {
 	return &Config{
 		cpuidConfig{
 			AttributeBlacklist: []string{
+				"AVX10",
 				"BMI1",
 				"BMI2",
 				"CLMUL",

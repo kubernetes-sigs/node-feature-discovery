@@ -16,6 +16,7 @@ spec:
           matchName:
             op: NotIn
             value:
+              - "AVX10"
               - "BMI1"
               - "BMI2"
               - "CLMUL"
