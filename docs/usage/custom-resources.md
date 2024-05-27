@@ -73,6 +73,10 @@ spec:
             major: {op: Exists}
 ```
 
+NodeFeatureGroup API is an alpha feature and disabled by default in NFD version
+{{ site.version }}. For more details and examples see the
+[customization guide](customization-guide.md#nodefeaturegroup-custom-resource).
+
 ## NodeFeatureRule
 
 NodeFeatureRule is an NFD-specific custom resource that is designed for

@@ -189,6 +189,11 @@ to specify taints in the NodeFeatureRule object.
 
 ## NodeFeatureGroup custom resource
 
+NodeFeatureGroup API is an alpha feature and disabled by default in NFD version
+{{ site.version }}. Use the
+[NodeFeatureAPI](../reference/feature-gates.md#nodefeaturegroupapi) feature
+gate to enable it.
+
 `NodeFeatureGroup` objects provide a way to create node groups that share the
 same set of features. The `NodeFeatureGroup` object spec consists of a list of
 `NodeFeatureRule` that follow the same format as the `NodeFeatureRule`,
