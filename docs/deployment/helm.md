@@ -143,6 +143,7 @@ API's you need to install the prometheus operator in your cluster.
 | `master.deploymentAnnotations` | dict | {}                                      | NFD master deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) |
 | `master.nfdApiParallelism` | integer | 10                                      | Specifies the maximum number of concurrent node updates. |
 | `master.config`            | dict    |                                         | NFD master [configuration](../reference/master-configuration-reference) |
+| `master.args`              | array   | []                                      | Additional [command line arguments](../reference/master-commandline-reference.md) to pass to nfd-master |
 
 ### Worker pod parameters
 
@@ -166,6 +167,7 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.priorityClassName`        | string |         | NFD worker pod [priority class](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/)                                                                                    |
 | `worker.annotations`              | dict   | {}      | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                         |
 | `worker.daemonsetAnnotations`     | dict   | {}      | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                  |
+| `worker.args`                     | array   | []     | Additional [command line arguments](../reference/worker-commandline-reference.md) to pass to nfd-worker |
 
 ### Topology updater parameters
 
@@ -195,6 +197,7 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.config`                      | dict   |                  | [configuration](../reference/topology-updater-configuration-reference)                                                                                                                                |
 | `topologyUpdater.podSetFingerprint`           | bool   | true             | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
 | `topologyUpdater.kubeletStateDir`             | string | /var/lib/kubelet | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                          |
+| `topologyUpdater.args`                        | array   | []              | Additional [command line arguments](../reference/topology-updater-commandline-reference.md) to pass to nfd-topology-updater |
 
 ### Garbage collector parameters
 
@@ -216,6 +219,7 @@ API's you need to install the prometheus operator in your cluster.
 | `gc.annotations`                      | dict   | {}      | Garbage collector pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                  |
 | `gc.deploymentAnnotations`            | dict   | {}      | Garbage collector deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)          |
 | `gc.affinity`                         | dict   | {}      | Garbage collector pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)    |
+| `gc.args`                             | array   | []     | Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc |
 
 <!-- Links -->
 [rbac]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
