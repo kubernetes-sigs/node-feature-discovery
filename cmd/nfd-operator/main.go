@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/status"
 	"sigs.k8s.io/node-feature-discovery-operator/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery-operator/pkg/version"
 	// +kubebuilder:scaffold:imports
@@ -132,12 +133,14 @@ func main() {
 	daemonsetAPI := daemonset.NewDaemonsetAPI(client, scheme)
 	configmapAPI := configmap.NewConfigMapAPI(client, scheme)
 	jobAPI := job.NewJobAPI(client, scheme)
+	statusAPI := status.NewStatusAPI(deploymentAPI, daemonsetAPI)
 
 	if err = new_controllers.NewNodeFeatureDiscoveryReconciler(client,
 		deploymentAPI,
 		daemonsetAPI,
 		configmapAPI,
 		jobAPI,
+		statusAPI,
 		scheme).SetupWithManager(mgr); err != nil {
 		setupLogger.Error(err, "unable to create controller", "controller", "NodeFeatureDiscovery")
 		os.Exit(1)
