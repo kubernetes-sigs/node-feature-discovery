@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
+	"sigs.k8s.io/node-feature-discovery-operator/internal/status"
 )
 
 var _ = Describe("Reconcile", func() {
@@ -179,7 +180,7 @@ var _ = Describe("handleMaster", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -248,7 +249,7 @@ var _ = Describe("handleWorker", func() {
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 		mockCM = configmap.NewMockConfigMapAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, mockCM, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, mockCM, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -344,7 +345,7 @@ var _ = Describe("handleTopology", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, nil, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -429,7 +430,7 @@ var _ = Describe("handleGC", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -485,7 +486,7 @@ var _ = Describe("handleGC", func() {
 
 var _ = Describe("hasFinalizer", func() {
 	It("checking return status whether finalizer set or not", func() {
-		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil, nil)
+		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil, nil, nil)
 
 		By("finalizers was empty")
 		nfdCR := nfdv1.NodeFeatureDiscovery{
@@ -529,7 +530,7 @@ var _ = Describe("setFinalizer", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil)
 	})
 
 	It("checking the return status of setFinalizer function", func() {
@@ -588,7 +589,7 @@ var _ = Describe("finalizeComponents", func() {
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 		mockCM = configmap.NewMockConfigMapAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -663,7 +664,7 @@ var _ = Describe("removeFinalizer", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -707,7 +708,7 @@ var _ = Describe("handlePrune", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockJob = job.NewMockJobAPI(ctrl)
-		nfdh = newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, mockJob, scheme)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, mockJob, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -787,4 +788,74 @@ var _ = Describe("handlePrune", func() {
 		Entry("job finished, its pod successfull", false, true),
 		Entry("job finished, its pod failed", true, false),
 	)
+})
+
+var _ = Describe("handleStatus", func() {
+	var (
+		ctrl       *gomock.Controller
+		clnt       *client.MockClient
+		mockStatus *status.MockStatusAPI
+		nfdh       nodeFeatureDiscoveryHelperAPI
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		clnt = client.NewMockClient(ctrl)
+		mockStatus = status.NewMockStatusAPI(ctrl)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, mockStatus, scheme)
+	})
+
+	ctx := context.Background()
+	nfdCR := nfdv1.NodeFeatureDiscovery{
+		Status: nfdv1.NodeFeatureDiscoveryStatus{
+			Conditions: []metav1.Condition{},
+		},
+	}
+	newConditions := []metav1.Condition{}
+
+	It("conditions are equal, no status update is needed", func() {
+		gomock.InOrder(
+			mockStatus.EXPECT().GetConditions(ctx, &nfdCR).Return(newConditions),
+			mockStatus.EXPECT().AreConditionsEqual(newConditions, nfdCR.Status.Conditions).Return(true),
+		)
+
+		err := nfdh.handleStatus(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+
+	It("conditions are not equal, status update is needed", func() {
+		statusWriter := client.NewMockStatusWriter(ctrl)
+		expectedNFD := nfdv1.NodeFeatureDiscovery{
+			Status: nfdv1.NodeFeatureDiscoveryStatus{
+				Conditions: newConditions,
+			},
+		}
+		gomock.InOrder(
+			mockStatus.EXPECT().GetConditions(ctx, &nfdCR).Return(newConditions),
+			mockStatus.EXPECT().AreConditionsEqual(newConditions, nfdCR.Status.Conditions).Return(false),
+			clnt.EXPECT().Status().Return(statusWriter),
+			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(nil),
+		)
+
+		err := nfdh.handleStatus(ctx, &nfdCR)
+		Expect(err).To(BeNil())
+	})
+
+	It("conditions are not equal, status update failed", func() {
+		statusWriter := client.NewMockStatusWriter(ctrl)
+		expectedNFD := nfdv1.NodeFeatureDiscovery{
+			Status: nfdv1.NodeFeatureDiscoveryStatus{
+				Conditions: newConditions,
+			},
+		}
+		gomock.InOrder(
+			mockStatus.EXPECT().GetConditions(ctx, &nfdCR).Return(newConditions),
+			mockStatus.EXPECT().AreConditionsEqual(newConditions, nfdCR.Status.Conditions).Return(false),
+			clnt.EXPECT().Status().Return(statusWriter),
+			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(fmt.Errorf("some error")),
+		)
+
+		err := nfdh.handleStatus(ctx, &nfdCR)
+		Expect(err).To(HaveOccurred())
+	})
 })
