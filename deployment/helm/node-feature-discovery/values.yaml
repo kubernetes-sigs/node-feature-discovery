@@ -54,7 +54,7 @@ master:
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   # The TCP port that nfd-master listens for incoming requests. Default: 8080
   # Deprecated this parameter is related to the deprecated gRPC API and will
-  # be removed with it in a future release  
+  # be removed with it in a future release
   port: 8080
   metricsPort: 8081
   instance:
@@ -99,14 +99,13 @@ master:
 
   resources:
     limits:
-      cpu: 300m
       memory: 4Gi
     requests:
       cpu: 100m
       # You may want to use the same value for `requests.memory` and `limits.memory`. The “requests” value affects scheduling to accommodate pods on nodes.
       # If there is a large difference between “requests” and “limits” and nodes experience memory pressure, the kernel may invoke
       # the OOM Killer, even if the memory does not exceed the “limits” threshold. This can cause unexpected pod evictions. Memory
-      # cannot be compressed and once allocated to a pod, it can only be reclaimed by killing the pod. 
+      # cannot be compressed and once allocated to a pod, it can only be reclaimed by killing the pod.
       # Natan Yellin 22/09/2022 https://home.robusta.dev/blog/kubernetes-memory-limit
       memory: 128Mi
 
@@ -432,7 +431,6 @@ worker:
 
   resources:
     limits:
-      cpu: 200m
       memory: 512Mi
     requests:
       cpu: 5m
@@ -500,7 +498,6 @@ topologyUpdater:
 
   resources:
     limits:
-      cpu: 100m
       memory: 60Mi
     requests:
       cpu: 50m
@@ -530,7 +527,6 @@ gc:
 
   resources:
     limits:
-      cpu: 20m
       memory: 1Gi
     requests:
       cpu: 10m
