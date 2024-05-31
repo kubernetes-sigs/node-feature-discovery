@@ -70,6 +70,12 @@ type NodeFeatureDiscoverySpec struct {
 	// as annotations, extended resources and taints) from the cluster nodes.
 	// +optional
 	PruneOnDelete bool `json:"prunerOnDelete"`
+
+	// EnableTaints enables the enable the experimental tainting feature
+	// This allows keeping nodes with specialized hardware away from running general workload i
+	// and instead leave them for workloads that need the specialized hardware.
+	// +optional
+	EnableTaints bool `json:"enableTaints"`
 }
 
 // OperandSpec describes configuration options for the operand
