@@ -1,4 +1,4 @@
-apiVersion: nfd.kubernetes.io/v1alpha1
+apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeatureRule
 metadata:
   name: my-sample-rule-object
