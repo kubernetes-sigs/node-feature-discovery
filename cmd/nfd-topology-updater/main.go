@@ -19,8 +19,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -91,6 +93,10 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) (*topology.Args, *resource
 				"please either define the NODE_ADDRESS environment variable or specify endpoint with the -kubelet-config-uri flag\n", kubeletSecurePort)
 			os.Exit(1)
 		}
+		if isIPv6(nodeAddress) {
+			// With IPv6 we need to wrap the IP address in brackets as we append :port below
+			nodeAddress = "[" + nodeAddress + "]"
+		}
 		resourcemonitorArgs.KubeletConfigURI = fmt.Sprintf("https://%s:%d/configz", nodeAddress, kubeletSecurePort)
 	}
 
@@ -127,4 +133,9 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	klog.InitFlags(flagset)
 
 	return args, resourcemonitorArgs
+}
+
+func isIPv6(addr string) bool {
+	ip := net.ParseIP(addr)
+	return ip != nil && strings.Count(ip.String(), ":") >= 2
 }
