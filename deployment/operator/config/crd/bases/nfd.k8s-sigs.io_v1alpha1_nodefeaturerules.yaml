@@ -43,6 +43,16 @@ spec:
                   description: Rule defines a rule for node customization such as
                     labeling.
                   properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations to create if the rule matches.
+                      type: object
+                    extendedResources:
+                      additionalProperties:
+                        type: string
+                      description: ExtendedResources to create if the rule matches.
+                      type: object
                     labels:
                       additionalProperties:
                         type: string
@@ -118,6 +128,38 @@ spec:
                                     MatchExpressions, each of which is evaluated against
                                     a set of input values.
                                   type: object
+                                matchName:
+                                  description: |-
+                                    MatchName in an expression that is matched against the name of each
+                                    element in the feature set.
+                                  properties:
+                                    op:
+                                      description: Op is the operator to be applied.
+                                      enum:
+                                      - In
+                                      - NotIn
+                                      - InRegexp
+                                      - Exists
+                                      - DoesNotExist
+                                      - Gt
+                                      - Lt
+                                      - GtLt
+                                      - IsTrue
+                                      - IsFalse
+                                      type: string
+                                    value:
+                                      description: |-
+                                        Value is the list of values that the operand evaluates the input
+                                        against. Value should be empty if the operator is Exists, DoesNotExist,
+                                        IsTrue or IsFalse. Value should contain exactly one element if the
+                                        operator is Gt or Lt and exactly two elements if the operator is GtLt.
+                                        In other cases Value should contain at least one element.
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - op
+                                  type: object
                               required:
                               - feature
                               - matchExpressions
@@ -179,6 +221,38 @@ spec:
                               type: object
                             description: MatchExpressionSet contains a set of MatchExpressions,
                               each of which is evaluated against a set of input values.
+                            type: object
+                          matchName:
+                            description: |-
+                              MatchName in an expression that is matched against the name of each
+                              element in the feature set.
+                            properties:
+                              op:
+                                description: Op is the operator to be applied.
+                                enum:
+                                - In
+                                - NotIn
+                                - InRegexp
+                                - Exists
+                                - DoesNotExist
+                                - Gt
+                                - Lt
+                                - GtLt
+                                - IsTrue
+                                - IsFalse
+                                type: string
+                              value:
+                                description: |-
+                                  Value is the list of values that the operand evaluates the input
+                                  against. Value should be empty if the operator is Exists, DoesNotExist,
+                                  IsTrue or IsFalse. Value should contain exactly one element if the
+                                  operator is Gt or Lt and exactly two elements if the operator is GtLt.
+                                  In other cases Value should contain at least one element.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - op
                             type: object
                         required:
                         - feature
