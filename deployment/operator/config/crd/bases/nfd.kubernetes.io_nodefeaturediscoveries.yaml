@@ -36,6 +36,12 @@ spec:
           spec:
             description: NodeFeatureDiscoverySpec defines the desired state of NodeFeatureDiscovery
             properties:
+              enableTaints:
+                description: EnableTaints enables the enable the experimental tainting
+                  feature This allows keeping nodes with specialized hardware away
+                  from running general workload i and instead leave them for workloads
+                  that need the specialized hardware.
+                type: boolean
               extraLabelNs:
                 description: ExtraLabelNs defines the list of of allowed extra label
                   namespaces By default, only allow labels in the default `feature.node.kubernetes.io`

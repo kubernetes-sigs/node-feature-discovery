@@ -5,6 +5,8 @@ metadata:
   namespace: node-feature-discovery-operator
 spec:
   instance: "" # instance is empty by default
+  ## NOTE: Taints support is experimental.
+  #enableTaints: true
   #labelWhiteList: ""
   #extraLabelNs:
   #  - "example.com"

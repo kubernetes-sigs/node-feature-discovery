@@ -224,6 +224,10 @@ func getArgs(nfdInstance *nfdv1.NodeFeatureDiscovery) []string {
 		args = append(args, fmt.Sprintf("--label-whitelist=%s", nfdInstance.Spec.LabelWhiteList))
 	}
 
+	if nfdInstance.Spec.EnableTaints {
+		args = append(args, "--enable-taints")
+	}
+
 	return args
 }
 
