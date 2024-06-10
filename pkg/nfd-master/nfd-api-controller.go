@@ -161,6 +161,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 
 	// Start informers
 	informerFactory.Start(c.stopChan)
+	informerFactory.WaitForCacheSync(c.stopChan)
 
 	return c, nil
 }
