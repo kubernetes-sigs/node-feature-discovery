@@ -40,13 +40,13 @@ import (
 	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
 	"sigs.k8s.io/node-feature-discovery-operator/internal/status"
-	"sigs.k8s.io/node-feature-discovery-operator/pkg/version"
 	// +kubebuilder:scaffold:imports
 )
 
 var (
 	// scheme holds a new scheme for the operator
-	scheme = runtime.NewScheme()
+	scheme  = runtime.NewScheme()
+	version = "undefined"
 )
 
 const (
@@ -92,7 +92,7 @@ func main() {
 	}
 
 	if *printVersion {
-		fmt.Println(ProgramName, version.Get())
+		fmt.Println(ProgramName, version)
 		os.Exit(0)
 	}
 
