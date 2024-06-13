@@ -7,6 +7,7 @@ resources:
 - bases/nfd.k8s-sigs.io_v1alpha1_nodefeaturerules.yaml
 - bases/node.k8s.io_v1alpha1_noderesourcetopologies.yaml
 - bases/nfd.k8s-sigs.io_nodefeatures.yaml
+- bases/nfd.k8s-sigs.io_nodefeaturegroups.yaml
 
 commonAnnotations:
   api-approved.kubernetes.io: "unapproved, experimental-only"

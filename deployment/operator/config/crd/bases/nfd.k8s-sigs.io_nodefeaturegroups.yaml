@@ -1,0 +1,271 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: nodefeaturegroups.nfd.k8s-sigs.io
+spec:
+  group: nfd.k8s-sigs.io
+  names:
+    kind: NodeFeatureGroup
+    listKind: NodeFeatureGroupList
+    plural: nodefeaturegroups
+    shortNames:
+    - nfg
+    singular: nodefeaturegroup
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NodeFeatureGroup resource holds Node pools by featureGroup
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the rules to be evaluated.
+            properties:
+              featureGroupRules:
+                description: List of rules to evaluate to determine nodes that belong
+                  in this group.
+                items:
+                  description: GroupRule defines a rule for nodegroup filtering.
+                  properties:
+                    matchAny:
+                      description: MatchAny specifies a list of matchers one of which
+                        must match.
+                      items:
+                        description: MatchAnyElem specifies one sub-matcher of MatchAny.
+                        properties:
+                          matchFeatures:
+                            description: MatchFeatures specifies a set of matcher
+                              terms all of which must match.
+                            items:
+                              description: |-
+                                FeatureMatcherTerm defines requirements against one feature set. All
+                                requirements (specified as MatchExpressions) are evaluated against each
+                                element in the feature set.
+                              properties:
+                                feature:
+                                  description: Feature is the name of the feature
+                                    set to match against.
+                                  type: string
+                                matchExpressions:
+                                  additionalProperties:
+                                    description: |-
+                                      MatchExpression specifies an expression to evaluate against a set of input
+                                      values. It contains an operator that is applied when matching the input and
+                                      an array of values that the operator evaluates the input against.
+                                    properties:
+                                      op:
+                                        description: Op is the operator to be applied.
+                                        enum:
+                                        - In
+                                        - NotIn
+                                        - InRegexp
+                                        - Exists
+                                        - DoesNotExist
+                                        - Gt
+                                        - Lt
+                                        - GtLt
+                                        - IsTrue
+                                        - IsFalse
+                                        type: string
+                                      value:
+                                        description: |-
+                                          Value is the list of values that the operand evaluates the input
+                                          against. Value should be empty if the operator is Exists, DoesNotExist,
+                                          IsTrue or IsFalse. Value should contain exactly one element if the
+                                          operator is Gt or Lt and exactly two elements if the operator is GtLt.
+                                          In other cases Value should contain at least one element.
+                                        items:
+                                          type: string
+                                        type: array
+                                    required:
+                                    - op
+                                    type: object
+                                  description: |-
+                                    MatchExpressions is the set of per-element expressions evaluated. These
+                                    match against the value of the specified elements.
+                                  type: object
+                                matchName:
+                                  description: |-
+                                    MatchName in an expression that is matched against the name of each
+                                    element in the feature set.
+                                  properties:
+                                    op:
+                                      description: Op is the operator to be applied.
+                                      enum:
+                                      - In
+                                      - NotIn
+                                      - InRegexp
+                                      - Exists
+                                      - DoesNotExist
+                                      - Gt
+                                      - Lt
+                                      - GtLt
+                                      - IsTrue
+                                      - IsFalse
+                                      type: string
+                                    value:
+                                      description: |-
+                                        Value is the list of values that the operand evaluates the input
+                                        against. Value should be empty if the operator is Exists, DoesNotExist,
+                                        IsTrue or IsFalse. Value should contain exactly one element if the
+                                        operator is Gt or Lt and exactly two elements if the operator is GtLt.
+                                        In other cases Value should contain at least one element.
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - op
+                                  type: object
+                              required:
+                              - feature
+                              type: object
+                            type: array
+                        required:
+                        - matchFeatures
+                        type: object
+                      type: array
+                    matchFeatures:
+                      description: MatchFeatures specifies a set of matcher terms
+                        all of which must match.
+                      items:
+                        description: |-
+                          FeatureMatcherTerm defines requirements against one feature set. All
+                          requirements (specified as MatchExpressions) are evaluated against each
+                          element in the feature set.
+                        properties:
+                          feature:
+                            description: Feature is the name of the feature set to
+                              match against.
+                            type: string
+                          matchExpressions:
+                            additionalProperties:
+                              description: |-
+                                MatchExpression specifies an expression to evaluate against a set of input
+                                values. It contains an operator that is applied when matching the input and
+                                an array of values that the operator evaluates the input against.
+                              properties:
+                                op:
+                                  description: Op is the operator to be applied.
+                                  enum:
+                                  - In
+                                  - NotIn
+                                  - InRegexp
+                                  - Exists
+                                  - DoesNotExist
+                                  - Gt
+                                  - Lt
+                                  - GtLt
+                                  - IsTrue
+                                  - IsFalse
+                                  type: string
+                                value:
+                                  description: |-
+                                    Value is the list of values that the operand evaluates the input
+                                    against. Value should be empty if the operator is Exists, DoesNotExist,
+                                    IsTrue or IsFalse. Value should contain exactly one element if the
+                                    operator is Gt or Lt and exactly two elements if the operator is GtLt.
+                                    In other cases Value should contain at least one element.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - op
+                              type: object
+                            description: |-
+                              MatchExpressions is the set of per-element expressions evaluated. These
+                              match against the value of the specified elements.
+                            type: object
+                          matchName:
+                            description: |-
+                              MatchName in an expression that is matched against the name of each
+                              element in the feature set.
+                            properties:
+                              op:
+                                description: Op is the operator to be applied.
+                                enum:
+                                - In
+                                - NotIn
+                                - InRegexp
+                                - Exists
+                                - DoesNotExist
+                                - Gt
+                                - Lt
+                                - GtLt
+                                - IsTrue
+                                - IsFalse
+                                type: string
+                              value:
+                                description: |-
+                                  Value is the list of values that the operand evaluates the input
+                                  against. Value should be empty if the operator is Exists, DoesNotExist,
+                                  IsTrue or IsFalse. Value should contain exactly one element if the
+                                  operator is Gt or Lt and exactly two elements if the operator is GtLt.
+                                  In other cases Value should contain at least one element.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - op
+                            type: object
+                        required:
+                        - feature
+                        type: object
+                      type: array
+                    name:
+                      description: Name of the rule.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            required:
+            - featureGroupRules
+            type: object
+          status:
+            description: |-
+              Status of the NodeFeatureGroup after the most recent evaluation of the
+              specification.
+            properties:
+              nodes:
+                description: Nodes is a list of FeatureGroupNode in the cluster that
+                  match the featureGroupRules
+                items:
+                  properties:
+                    name:
+                      description: Name of the node.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
