@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "node-feature-discovery-operator.fullname" . }}-prune
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "node-feature-discovery-operator.fullname" . }}-prune
+subjects:
+- kind: ServiceAccount
+  name: nfd-prune
+  namespace: {{ include "node-feature-discovery-operator.namespace" . }}
