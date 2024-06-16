@@ -13,7 +13,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.7
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/opencontainers/runc v1.1.12
+	github.com/opencontainers/runc v1.1.13
 	github.com/prometheus/client_golang v1.18.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.8.0
