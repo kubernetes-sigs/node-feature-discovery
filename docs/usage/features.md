@@ -106,6 +106,7 @@ configuration options for details.
 | AVX512VPOPCNTDQ    | AVX-512 vector population count doubleword and quadword |
 | AVXNECONVERT       | AVX-NE-CONVERT instructions |
 | AVXVNNIINT8        | AVX-VNNI-INT8 instructions |
+| AVXVNNIINT16       | AVX-VNNI-INT16 instructions |
 | CMPCCXADD          | CMPCCXADD instructions |
 | ENQCMD             | Enqueue Command |
 | GFNI               | Galois Field New Instructions |
