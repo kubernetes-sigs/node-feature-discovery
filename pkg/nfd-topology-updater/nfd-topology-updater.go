@@ -37,6 +37,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
+	nfdgc "sigs.k8s.io/node-feature-discovery/pkg/nfd-gc"
 	"sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater/kubeletnotifier"
 	"sigs.k8s.io/node-feature-discovery/pkg/podres"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
@@ -294,6 +295,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 		nrtNew := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            w.nodeName,
+				Labels:          map[string]string{nfdgc.NRTOwnerPodLabel: fmt.Sprintf("%s/%s", w.kubernetesNamespace, os.Getenv("POD_NAME"))},
 				OwnerReferences: w.ownerRefs,
 			},
 			Zones:      zoneInfo,

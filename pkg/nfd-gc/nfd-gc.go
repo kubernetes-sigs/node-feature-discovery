@@ -18,6 +18,7 @@ package nfdgarbagecollector
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
@@ -35,6 +37,10 @@ import (
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
+)
+
+const (
+	NRTOwnerPodLabel = "nfd.node.kubernetes.io/owner-pod"
 )
 
 // Args are the command line arguments
@@ -52,6 +58,7 @@ type NfdGarbageCollector interface {
 type nfdGarbageCollector struct {
 	args       *Args
 	stopChan   chan struct{}
+	k8sClient  k8sclient.Interface
 	nfdClient  nfdclientset.Interface
 	topoClient topologyclientset.Interface
 	factory    informers.SharedInformerFactory
@@ -71,6 +78,7 @@ func New(args *Args) (NfdGarbageCollector, error) {
 		topoClient: topologyclientset.NewForConfigOrDie(kubeconfig),
 		nfdClient:  nfdclientset.NewForConfigOrDie(kubeconfig),
 		factory:    informers.NewSharedInformerFactory(clientset, 5*time.Minute),
+		k8sClient:  clientset,
 	}, nil
 }
 
@@ -172,7 +180,26 @@ func (n *nfdGarbageCollector) garbageCollect() {
 		klog.ErrorS(err, "failed to list NodeResourceTopology objects")
 	} else {
 		for _, nrt := range nrts.Items {
+			delete := false
+
 			if !nodeNames.Has(nrt.Name) {
+				delete = true
+			}
+
+			if label, ok := nrt.Labels[NRTOwnerPodLabel]; ok {
+				if s := strings.Split(string(label), "/"); len(s) == 2 {
+					ns := s[0]
+					pod := s[1]
+					_, err := n.k8sClient.CoreV1().Pods(ns).Get(context.TODO(), pod, metav1.GetOptions{})
+					if errors.IsNotFound(err) {
+						delete = true
+					} else if err != nil {
+						klog.ErrorS(err, "failed to get Pod object")
+					}
+				}
+			}
+
+			if delete {
 				n.deleteNRT(nrt.Name)
 			}
 		}
