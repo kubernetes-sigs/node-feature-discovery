@@ -20,6 +20,7 @@ priorityClassName: ""
 
 master:
   enable: true
+  args: []
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
     # autoDefaultNs: true
@@ -141,6 +142,7 @@ master:
 
 worker:
   enable: true
+  args: []
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:
@@ -458,6 +460,7 @@ topologyUpdater:
 ### <NFD-TOPOLOGY-UPDATER-CONF-END-DO-NOT-REMOVE>
 
   enable: false
+  args: []
   createCRDs: false
 
   serviceAccount:
@@ -512,6 +515,7 @@ topologyUpdater:
 
 gc:
   enable: true
+  args: []
   replicaCount: 1
 
   serviceAccount:
