@@ -49,6 +49,8 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-cpuid.<cpuid-flag>`**        | true   | CPU capability is supported. **NOTE:** the capability might be supported but not enabled. |
 | **`cpu-cpuid.<cpuid-attribute>`**   | string | CPU attribute value |
 | **`cpu-hardware_multithreading`**   | true   | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs) |
+| **`cpu-e_cores`**                   | string | List of E core CPU IDs |
+| **`cpu-p_cores`**                   | string | List of P core CPU IDs |
 | **`cpu-coprocessor.nx_gzip`**       | true   | Nest Accelerator for GZIP is supported(Power). |
 | **`cpu-power.sst_bf.enabled`**      | true   | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled |
 | **`cpu-pstate.status`**             | string | The status of the [Intel pstate][intel-pstate] driver when in use and enabled, either 'active' or 'passive'. |
