@@ -3,7 +3,7 @@ ARG BASE_IMAGE_FULL
 ARG BASE_IMAGE_MINIMAL
 
 # Build node feature discovery
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # Get (cache) deps in a separate layer
 COPY go.mod go.sum /go/node-feature-discovery/
@@ -22,7 +22,7 @@ ARG HOSTMOUNT_PREFIX
 RUN make install VERSION=$VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
 
 # Create full variant of the production image
-FROM ${BASE_IMAGE_FULL} as full
+FROM ${BASE_IMAGE_FULL} AS full
 
 # Run as unprivileged user
 USER 65534:65534
@@ -34,7 +34,7 @@ COPY --from=builder /go/node-feature-discovery/deployment/components/worker-conf
 COPY --from=builder /go/bin/* /usr/bin/
 
 # Create minimal variant of the production image
-FROM ${BASE_IMAGE_MINIMAL} as minimal
+FROM ${BASE_IMAGE_MINIMAL} AS minimal
 
 # Run as unprivileged user
 USER 65534:65534
