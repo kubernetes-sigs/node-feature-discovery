@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
@@ -129,6 +130,7 @@ type nfdWorker struct {
 	stop                chan struct{} // channel for signaling stop
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
+	ownerReference      []metav1.OwnerReference
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -242,6 +244,36 @@ func (w *nfdWorker) Run() error {
 	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
+
+	// Get pod owner reference
+	podName := os.Getenv("POD_NAME")
+	client, err := w.getKubeClient()
+	if err != nil {
+		return fmt.Errorf("failed to get kube client: %w", err)
+	}
+
+	selfPod, err := client.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get pod %q: %w", podName, err)
+	}
+
+	// Create owner ref
+	ownerReference := selfPod.OwnerReferences
+
+	// Add pod owner reference if it exists
+	podUID := os.Getenv("POD_UID")
+	if podName != "" && podUID != "" {
+		isTrue := true
+		ownerReference = append(ownerReference, metav1.OwnerReference{
+			APIVersion: "v1",
+			Kind:       "Pod",
+			Name:       podName,
+			UID:        types.UID(podUID),
+			Controller: &isTrue,
+		})
+	}
+
+	w.ownerReference = ownerReference
 
 	// Register to metrics server
 	if w.args.MetricsPort > 0 {
@@ -673,25 +705,6 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 
 	features := source.GetAllFeatures()
 
-	// Create owner ref
-	ownerRefs := []metav1.OwnerReference{}
-	podName := os.Getenv("POD_NAME")
-	podUID := os.Getenv("POD_UID")
-	if podName != "" && podUID != "" {
-		isTrue := true
-		ownerRefs = []metav1.OwnerReference{
-			{
-				APIVersion: "v1",
-				Kind:       "Pod",
-				Name:       podName,
-				UID:        types.UID(podUID),
-				Controller: &isTrue,
-			},
-		}
-	} else {
-		klog.InfoS("Cannot set NodeFeature owner reference, POD_NAME and/or POD_UID not specified")
-	}
-
 	// TODO: we could implement some simple caching of the object, only get it
 	// every 10 minutes or so because nobody else should really be modifying it
 	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
@@ -701,7 +714,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Name:            nodename,
 				Annotations:     map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
 				Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
-				OwnerReferences: ownerRefs,
+				OwnerReferences: m.ownerReference,
 			},
 			Spec: nfdv1alpha1.NodeFeatureSpec{
 				Features: *features,
@@ -721,7 +734,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		nfrUpdated := nfr.DeepCopy()
 		nfrUpdated.Annotations = map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()}
 		nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
-		nfrUpdated.OwnerReferences = ownerRefs
+		nfrUpdated.OwnerReferences = m.ownerReference
 		nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
 			Features: *features,
 			Labels:   labels,
@@ -759,6 +772,22 @@ func (m *nfdWorker) getNfdClient() (*nfdclient.Clientset, error) {
 
 	m.nfdClient = c
 	return c, nil
+}
+
+func (m *nfdWorker) getKubeClient() (*kubernetes.Clientset, error) {
+	// creates the in-cluster config
+	kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientset, nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
