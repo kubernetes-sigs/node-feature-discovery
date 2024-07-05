@@ -73,7 +73,7 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new NfdWorker instance
-	instance, err := worker.NewNfdWorker(args)
+	instance, err := worker.NewNfdWorker(worker.WithArgs(args))
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdWorker instance")
 		os.Exit(1)
