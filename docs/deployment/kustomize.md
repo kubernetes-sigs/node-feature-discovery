@@ -20,7 +20,7 @@ deploy NFD. Customization of the deployment is done by maintaining
 declarative overlays on top of the base overlays in NFD.
 
 To follow the deployment instructions here,
-[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) v1.21 or
+[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl) v1.24 or
 later is required.
 
 The kustomize overlays provided in the repo can be used directly:
