@@ -85,6 +85,9 @@ spec:
         - "-feature-gates={{ $key }}={{ $value }}"
 {{- end }}
         - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
+        {{- with .Values.gc.args }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         ports:
           - name: metrics
             containerPort: {{ .Values.worker.metricsPort | default "8081"}}
