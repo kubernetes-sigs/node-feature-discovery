@@ -27,6 +27,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
@@ -97,7 +98,8 @@ func makeFakeFeatures(names []string) (source.FeatureLabels, Labels) {
 
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration", t, func() {
-		w, err := NewNfdWorker(&Args{})
+		w, err := NewNfdWorker(WithArgs(&Args{}),
+			WithKubernetesClient(fakeclient.NewSimpleClientset()))
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
 		overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
@@ -222,13 +224,13 @@ core:
 `)
 
 		noPublish := true
-		w, err := NewNfdWorker(&Args{
+		w, err := NewNfdWorker(WithArgs(&Args{
 			ConfigFile: configFile,
 			Overrides: ConfigOverrideArgs{
 				FeatureSources: &utils.StringSliceVal{"fake"},
 				LabelSources:   &utils.StringSliceVal{"fake"},
 				NoPublish:      &noPublish},
-		})
+		}), WithKubernetesClient(fakeclient.NewSimpleClientset()))
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
 
@@ -307,7 +309,8 @@ func TestNewNfdWorker(t *testing.T) {
 
 		Convey("without any args specified", func() {
 			args := &Args{}
-			w, err := NewNfdWorker(args)
+			w, err := NewNfdWorker(WithArgs(args),
+				WithKubernetesClient(fakeclient.NewSimpleClientset()))
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
@@ -324,7 +327,8 @@ func TestNewNfdWorker(t *testing.T) {
 			args := &Args{Overrides: ConfigOverrideArgs{
 				LabelSources:   &utils.StringSliceVal{"fake"},
 				FeatureSources: &utils.StringSliceVal{"cpu"}}}
-			w, err := NewNfdWorker(args)
+			w, err := NewNfdWorker(WithArgs(args),
+				WithKubernetesClient(fakeclient.NewSimpleClientset()))
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
@@ -373,7 +377,7 @@ func TestCreateFeatureLabels(t *testing.T) {
 
 func TestAdvertiseFeatureLabels(t *testing.T) {
 	Convey("When advertising labels", t, func() {
-		w, err := NewNfdWorker(&Args{})
+		w, err := NewNfdWorker(WithArgs(&Args{}), WithKubernetesClient(fakeclient.NewSimpleClientset()))
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
 

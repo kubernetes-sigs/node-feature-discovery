@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
@@ -130,10 +131,12 @@ type nfdWorker struct {
 	kubernetesNamespace string
 	grpcClient          pb.LabelerClient
 	healthServer        *grpc.Server
+	k8sClient           k8sclient.Interface
 	nfdClient           *nfdclient.Clientset
 	stop                chan struct{} // channel for signaling stop
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
+	ownerReference      []metav1.OwnerReference
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -141,30 +144,70 @@ type infiniteTicker struct {
 	*time.Ticker
 }
 
+// NfdWorkerOption sets properties of the NfdWorker instance.
+type NfdWorkerOption interface {
+	apply(*nfdWorker)
+}
+
+// WithArgs is used for passing settings from command line arguments.
+func WithArgs(args *Args) NfdWorkerOption {
+	return &nfdMWorkerOpt{f: func(n *nfdWorker) { n.args = *args }}
+}
+
+// WithKuberneteClient forces to use the given kubernetes client, without
+// initializing one from kubeconfig.
+func WithKubernetesClient(cli k8sclient.Interface) NfdWorkerOption {
+	return &nfdMWorkerOpt{f: func(n *nfdWorker) { n.k8sClient = cli }}
+}
+
+type nfdMWorkerOpt struct {
+	f func(*nfdWorker)
+}
+
+func (f *nfdMWorkerOpt) apply(n *nfdWorker) {
+	f.f(n)
+}
+
 // NewNfdWorker creates new NfdWorker instance.
-func NewNfdWorker(args *Args) (NfdWorker, error) {
+func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 	nfd := &nfdWorker{
-		args:                *args,
 		config:              &NFDConfig{},
 		kubernetesNamespace: utils.GetKubernetesNamespace(),
 		stop:                make(chan struct{}),
 	}
 
+	for _, o := range opts {
+		o.apply(nfd)
+	}
+
 	// Check TLS related args
-	if args.CertFile != "" || args.KeyFile != "" || args.CaFile != "" {
-		if args.CertFile == "" {
+	if nfd.args.CertFile != "" || nfd.args.KeyFile != "" || nfd.args.CaFile != "" {
+		if nfd.args.CertFile == "" {
 			return nfd, fmt.Errorf("-cert-file needs to be specified alongside -key-file and -ca-file")
 		}
-		if args.KeyFile == "" {
+		if nfd.args.KeyFile == "" {
 			return nfd, fmt.Errorf("-key-file needs to be specified alongside -cert-file and -ca-file")
 		}
-		if args.CaFile == "" {
+		if nfd.args.CaFile == "" {
 			return nfd, fmt.Errorf("-ca-file needs to be specified alongside -cert-file and -key-file")
 		}
 	}
 
-	if args.ConfigFile != "" {
-		nfd.configFilePath = filepath.Clean(args.ConfigFile)
+	if nfd.args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
+	}
+
+	// k8sClient might've been set via opts by tests
+	if nfd.k8sClient == nil {
+		kubeconfig, err := utils.GetKubeconfig(nfd.args.Kubeconfig)
+		if err != nil {
+			return nfd, err
+		}
+		cli, err := k8sclient.NewForConfig(kubeconfig)
+		if err != nil {
+			return nfd, err
+		}
+		nfd.k8sClient = cli
 	}
 
 	return nfd, nil
@@ -270,6 +313,37 @@ func (w *nfdWorker) Run() error {
 	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
+
+	// Create owner ref
+	ownerReference := []metav1.OwnerReference{}
+	// Get pod owner reference
+	podName := os.Getenv("POD_NAME")
+
+	// Add pod owner reference if it exists
+	if podName != "" {
+		if selfPod, err := w.k8sClient.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
+			klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
+			return err
+		} else {
+			ownerReference = append(ownerReference, selfPod.OwnerReferences...)
+		}
+
+		podUID := os.Getenv("POD_UID")
+		if podUID != "" {
+			ownerReference = append(ownerReference, metav1.OwnerReference{
+				APIVersion: "v1",
+				Kind:       "Pod",
+				Name:       podName,
+				UID:        types.UID(podUID),
+			})
+		} else {
+			klog.InfoS("Cannot append POD ownerReference to NodeFeature, POD_UID not specified")
+		}
+	} else {
+		klog.InfoS("Cannot set NodeFeature owner references, POD_NAME not specified")
+	}
+
+	w.ownerReference = ownerReference
 
 	// Register to metrics server
 	if w.args.MetricsPort > 0 {
@@ -713,25 +787,6 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 
 	features := source.GetAllFeatures()
 
-	// Create owner ref
-	ownerRefs := []metav1.OwnerReference{}
-	podName := os.Getenv("POD_NAME")
-	podUID := os.Getenv("POD_UID")
-	if podName != "" && podUID != "" {
-		isTrue := true
-		ownerRefs = []metav1.OwnerReference{
-			{
-				APIVersion: "v1",
-				Kind:       "Pod",
-				Name:       podName,
-				UID:        types.UID(podUID),
-				Controller: &isTrue,
-			},
-		}
-	} else {
-		klog.InfoS("Cannot set NodeFeature owner reference, POD_NAME and/or POD_UID not specified")
-	}
-
 	// TODO: we could implement some simple caching of the object, only get it
 	// every 10 minutes or so because nobody else should really be modifying it
 	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
@@ -740,7 +795,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 				Name:            nodename,
 				Annotations:     map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()},
 				Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
-				OwnerReferences: ownerRefs,
+				OwnerReferences: m.ownerReference,
 			},
 			Spec: nfdv1alpha1.NodeFeatureSpec{
 				Features: *features,
@@ -761,7 +816,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		nfrUpdated := nfr.DeepCopy()
 		nfrUpdated.Annotations = map[string]string{nfdv1alpha1.WorkerVersionAnnotation: version.Get()}
 		nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
-		nfrUpdated.OwnerReferences = ownerRefs
+		nfrUpdated.OwnerReferences = m.ownerReference
 		nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
 			Features: *features,
 			Labels:   labels,

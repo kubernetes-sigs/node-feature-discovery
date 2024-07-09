@@ -224,6 +224,11 @@ func createRoleWorker(ctx context.Context, cs clientset.Interface, ns string) (*
 				Resources: []string{"nodefeatures"},
 				Verbs:     []string{"create", "get", "update"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get"},
+			},
 		},
 	}
 	return cs.RbacV1().Roles(ns).Update(ctx, cr, metav1.UpdateOptions{})
