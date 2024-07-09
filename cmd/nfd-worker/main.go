@@ -83,7 +83,7 @@ func main() {
 
 	// Get new NfdWorker instance
 	args.GrpcHealthPort = GrpcHealthPort
-	instance, err := worker.NewNfdWorker(args)
+	instance, err := worker.NewNfdWorker(worker.WithArgs(args))
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdWorker instance")
 		os.Exit(1)
