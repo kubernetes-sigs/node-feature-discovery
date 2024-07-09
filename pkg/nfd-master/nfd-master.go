@@ -1059,7 +1059,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 // nodeFeatureRule custom resorce. If empty list of taints is passed, currently
 // NFD owned taints and annotations are removed from the node.
 func setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node) error {
-	// De-serialize the taints annotation into corev1.Taint type for comparision below.
+	// De-serialize the taints annotation into corev1.Taint type for comparison below.
 	var err error
 	oldTaints := []corev1.Taint{}
 	if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok {
@@ -1482,7 +1482,7 @@ func stringToNsNames(cslist, ns string) []string {
 	return names
 }
 
-// Seperate denied namespaces into two lists:
+// Separate denied namespaces into two lists:
 // one contains wildcard namespaces the other contains normal namespaces
 func preProcessDeniedNamespaces(deniedNs map[string]struct{}) (normalDeniedNs map[string]struct{}, wildcardDeniedNs map[string]struct{}) {
 	normalDeniedNs = map[string]struct{}{}
