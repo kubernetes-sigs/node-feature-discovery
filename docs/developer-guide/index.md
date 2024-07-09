@@ -238,13 +238,6 @@ the Kubernetes API, pass the `-no-publish` flag to nfd-topology-updater.
 > run stand-alone directly with `docker run`. See
 > the [template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater/topologyupdater-mounts.yaml)
 > for up-to-date information about the required volume mounts.
->
-> [PodResource API][podresource-api] is a prerequisite for
-> nfd-topology-updater.  Preceding Kubernetes v1.23, the `kubelet` must be
-> started with the following flag:
-> `--feature-gates=KubeletPodResourcesGetAllocatable=true`. Starting
-> Kubernetes v1.23, the `GetAllocatableResources` is enabled by default through
-> `KubeletPodResourcesGetAllocatable` [feature gate][feature-gate].
 
 ## Running with Tilt
 
