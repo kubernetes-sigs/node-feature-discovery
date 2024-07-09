@@ -8,6 +8,20 @@ export KUBECONFIG=`pwd`/kubeconfig
 export IMAGE_REGISTRY="gcr.io/k8s-staging-nfd"
 export E2E_TEST_FULL_IMAGE=true
 
+# Install kind
+go install sigs.k8s.io/kind@$KIND_VERSION
+
+# create a cluster with the local registry enabled in containerd
+cat <<EOF | kind create cluster --kubeconfig $KUBECONFIG --image $KIND_NODE_IMAGE --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: $CLUSTER_NAME
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+EOF
+
 # Wait for the image to be built and published
 i=1
 while true; do
