@@ -24,7 +24,7 @@ import (
 // e.g RMDA related features. NFD configuration file may extend these custom features by adding rules.
 func getStaticRules() []nfdv1alpha1.Rule {
 	return []nfdv1alpha1.Rule{
-		nfdv1alpha1.Rule{
+		{
 			Name:   "RDMA capable static rule",
 			Labels: map[string]string{"rdma.capable": "true"},
 			MatchFeatures: nfdv1alpha1.FeatureMatcher{
@@ -38,7 +38,7 @@ func getStaticRules() []nfdv1alpha1.Rule {
 				},
 			},
 		},
-		nfdv1alpha1.Rule{
+		{
 			Name:   "RDMA available static rule",
 			Labels: map[string]string{"rdma.available": "true"},
 			MatchFeatures: nfdv1alpha1.FeatureMatcher{

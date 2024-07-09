@@ -146,13 +146,13 @@ func TestFeature(t *testing.T) {
 	f2.Instances["dom.inst"] = NewInstanceFeatures(*NewInstanceFeature(map[string]string{"a1": "v3.1", "a3": "v3.3"}))
 	f2.MergeInto(&f)
 	expectedFeatures = *NewFeatures()
-	expectedFeatures.Flags["dom.flag"] = FlagFeatureSet{Elements: map[string]Nil{"k1": Nil{}, "k2": Nil{}, "k3": Nil{}}}
+	expectedFeatures.Flags["dom.flag"] = FlagFeatureSet{Elements: map[string]Nil{"k1": {}, "k2": {}, "k3": {}}}
 	expectedFeatures.Attributes["dom.attr"] = AttributeFeatureSet{Elements: map[string]string{"k1": "v1.override", "k2": "v2"}}
 	expectedFeatures.Instances["dom.inst"] = InstanceFeatureSet{
 		Elements: []InstanceFeature{
-			InstanceFeature{Attributes: map[string]string{"a1": "v1.1", "a2": "v1.2"}},
-			InstanceFeature{Attributes: map[string]string{"a1": "v2.1", "a2": "v2.2"}},
-			InstanceFeature{Attributes: map[string]string{"a1": "v3.1", "a3": "v3.3"}},
+			{Attributes: map[string]string{"a1": "v1.1", "a2": "v1.2"}},
+			{Attributes: map[string]string{"a1": "v2.1", "a2": "v2.2"}},
+			{Attributes: map[string]string{"a1": "v3.1", "a3": "v3.3"}},
 		},
 	}
 	assert.Equal(t, expectedFeatures, f)
@@ -184,7 +184,7 @@ func TestFeatureSpec(t *testing.T) {
 
 	expectedFeatures.Labels["l1"] = "v1.override"
 	expectedFeatures.Labels["l3"] = "v3"
-	expectedFeatures.Features.Flags["dom.flag2"] = FlagFeatureSet{Elements: map[string]Nil{"k3": Nil{}}}
+	expectedFeatures.Features.Flags["dom.flag2"] = FlagFeatureSet{Elements: map[string]Nil{"k3": {}}}
 
 	f2.MergeInto(&f)
 	assert.Equal(t, expectedFeatures, f)

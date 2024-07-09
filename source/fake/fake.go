@@ -62,20 +62,20 @@ func newDefaultConfig() *Config {
 			"attr_3": "10",
 		},
 		InstanceFeatures: []FakeInstance{
-			FakeInstance{
+			{
 				"name":   "instance_1",
 				"attr_1": "true",
 				"attr_2": "false",
 				"attr_3": "10",
 				"attr_4": "foobar",
 			},
-			FakeInstance{
+			{
 				"name":   "instance_2",
 				"attr_1": "true",
 				"attr_2": "true",
 				"attr_3": "100",
 			},
-			FakeInstance{
+			{
 				"name": "instance_3",
 			},
 		},
