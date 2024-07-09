@@ -213,14 +213,14 @@ func TestMatchInstances(t *testing.T) {
 
 		{name: "2", input: []I{}, output: O{}, result: assert.False, err: assert.Nil}, // zero instances -> false
 
-		{name: "3", input: []I{I{Attributes: A{}}}, output: O{A{}}, result: assert.True, err: assert.Nil}, // one "empty" instance
+		{name: "3", input: []I{{Attributes: A{}}}, output: O{A{}}, result: assert.True, err: assert.Nil}, // one "empty" instance
 
 		{name: "4",
 			mes: `
 foo: { op: Exists }
 bar: { op: Lt, value: ["10"] }
 `,
-			input:  []I{I{Attributes: A{"foo": "1"}}, I{Attributes: A{"bar": "1"}}},
+			input:  []I{{Attributes: A{"foo": "1"}}, {Attributes: A{"bar": "1"}}},
 			output: O{},
 			result: assert.False, err: assert.Nil},
 
@@ -229,7 +229,7 @@ bar: { op: Lt, value: ["10"] }
 foo: { op: Exists }
 bar: { op: Lt, value: ["10"] }
 `,
-			input:  []I{I{Attributes: A{"foo": "1"}}, I{Attributes: A{"foo": "2", "bar": "1"}}},
+			input:  []I{{Attributes: A{"foo": "1"}}, {Attributes: A{"foo": "2", "bar": "1"}}},
 			output: O{A{"foo": "2", "bar": "1"}},
 			result: assert.True, err: assert.Nil},
 
@@ -237,7 +237,7 @@ bar: { op: Lt, value: ["10"] }
 			mes: `
 bar: { op: Lt, value: ["10"] }
 `,
-			input:  []I{I{Attributes: A{"foo": "1"}}, I{Attributes: A{"bar": "0x1"}}},
+			input:  []I{{Attributes: A{"foo": "1"}}, {Attributes: A{"bar": "0x1"}}},
 			result: assert.False, err: assert.NotNil},
 	}
 

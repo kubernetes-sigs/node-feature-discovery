@@ -49,16 +49,16 @@ func TestPciSource(t *testing.T) {
 	// Specify expected "raw" features. These are always the same for the same
 	// mocked sysfs.
 	expectedFeatures := map[string]*nfdv1alpha1.Features{
-		"rootfs-empty": &nfdv1alpha1.Features{
+		"rootfs-empty": {
 			Flags:      map[string]nfdv1alpha1.FlagFeatureSet{},
 			Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{},
 			Instances:  map[string]nfdv1alpha1.InstanceFeatureSet{},
 		},
-		"rootfs-1": &nfdv1alpha1.Features{
+		"rootfs-1": {
 			Flags:      map[string]nfdv1alpha1.FlagFeatureSet{},
 			Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{},
 			Instances: map[string]nfdv1alpha1.InstanceFeatureSet{
-				"device": nfdv1alpha1.InstanceFeatureSet{
+				"device": {
 					Elements: []nfdv1alpha1.InstanceFeature{
 						{
 							Attributes: map[string]string{
