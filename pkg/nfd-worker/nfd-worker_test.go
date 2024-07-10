@@ -24,6 +24,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
 
 	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
@@ -78,9 +79,12 @@ func teardownTest(ctx testContext) {
 func TestNewNfdWorker(t *testing.T) {
 	Convey("When initializing new NfdWorker instance", t, func() {
 		Convey("When one of -cert-file, -key-file or -ca-file is missing", func() {
-			_, err := worker.NewNfdWorker(&worker.Args{CertFile: "crt", KeyFile: "key"})
-			_, err2 := worker.NewNfdWorker(&worker.Args{KeyFile: "key", CaFile: "ca"})
-			_, err3 := worker.NewNfdWorker(&worker.Args{CertFile: "crt", CaFile: "ca"})
+			_, err := worker.NewNfdWorker(worker.WithArgs(&worker.Args{CertFile: "crt", KeyFile: "key"}),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
+			_, err2 := worker.NewNfdWorker(worker.WithArgs(&worker.Args{KeyFile: "key", CaFile: "ca"}),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
+			_, err3 := worker.NewNfdWorker(worker.WithArgs(&worker.Args{CertFile: "crt", CaFile: "ca"}),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
 			Convey("An error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err2, ShouldNotBeNil)
@@ -100,7 +104,8 @@ func TestRun(t *testing.T) {
 				Oneshot:   true,
 				Overrides: worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
 			}
-			fooasdf, _ := worker.NewNfdWorker(args)
+			fooasdf, _ := worker.NewNfdWorker(worker.WithArgs(args),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
 			err := fooasdf.Run()
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -129,7 +134,8 @@ func TestRunTls(t *testing.T) {
 				Oneshot:            true,
 				Overrides:          worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
 			}
-			w, _ := worker.NewNfdWorker(&workerArgs)
+			w, _ := worker.NewNfdWorker(worker.WithArgs(&workerArgs),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
 			err := w.Run()
 			Convey("No error should be returned", func() {
 				So(err, ShouldBeNil)
