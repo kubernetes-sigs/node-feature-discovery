@@ -131,7 +131,7 @@ func (s *memorySource) GetFeatures() *nfdv1alpha1.Features {
 // detectSwap detects Swap node information
 func detectSwap() (map[string]string, error) {
 	procBasePath := hostpath.ProcDir.Path("swaps")
-	lines, err := getNumberOfLinesFromFile(procBasePath)
+	lines, err := getNumberOfNonEmptyLinesFromFile(procBasePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read swaps file: %w", err)
 	}
@@ -195,12 +195,18 @@ func readNdDeviceInfo(path string) nfdv1alpha1.InstanceFeature {
 	return *nfdv1alpha1.NewInstanceFeature(attrs)
 }
 
-func getNumberOfLinesFromFile(path string) (int, error) {
+func getNumberOfNonEmptyLinesFromFile(path string) (int, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
 	}
-	return len(strings.Split(string(data), "\n")), nil
+	length := 0
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.TrimSpace(line) != "" {
+			length++
+		}
+	}
+	return length, nil
 }
 
 func init() {
