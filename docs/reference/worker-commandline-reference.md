@@ -39,7 +39,7 @@ documentation](../feature-gates.md).
 Example:
 
 ```bash
-nfd-master -feature-gates NodeFeatureAPI=false
+nfd-master -feature-gates NodeFeatureGroupAPI=true
 ```
 
 ### -config
@@ -152,9 +152,6 @@ The `-kubeconfig` flag specifies the kubeconfig to use for connecting to the
 Kubernetes API server. It is needed for manipulating
 [NodeFeature](../usage/custom-resources.md#nodefeature) objects. An empty value
 (which is also the default) implies in-cluster kubeconfig.
-
-Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
-feature gate is disabled.
 
 Default: *empty*
 

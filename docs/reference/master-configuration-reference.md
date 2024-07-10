@@ -156,9 +156,6 @@ The resync means nfd-master replaying all NodeFeature and NodeFeatureRule object
 thus effectively re-syncing all nodes in the cluster (i.e. ensuring labels, annotations,
 extended resources and taints are in place).
 
-Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
-feature gate is disabled.
-
 Default: 1 hour.
 
 Example:
@@ -230,9 +227,6 @@ leaderElection:
 
 The `nfdApiParallelism` option can be used to specify the maximum
 number of concurrent node updates.
-
-Does not have effect if the [NodeFeatureAPI](feature-gates.md#nodefeatureapi)
-feature gate is disabled.
 
 Default: 10
 

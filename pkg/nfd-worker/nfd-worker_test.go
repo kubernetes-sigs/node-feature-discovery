@@ -208,7 +208,10 @@ func TestRun(t *testing.T) {
 	})
 }
 
+// TODO: remove this test with the rest of the TLS code and docs.
+// Also drop the certs from test/data/.
 func TestRunTls(t *testing.T) {
+	t.Skip("gRPC cannot be enabled, NodeFeatureAPI GA")
 	masterArgs := &master.Args{
 		CaFile:         data.FilePath("ca.crt"),
 		CertFile:       data.FilePath("nfd-test-master.crt"),

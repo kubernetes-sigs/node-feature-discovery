@@ -35,7 +35,7 @@ var (
 )
 
 var DefaultNFDFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	NodeFeatureAPI:      {Default: true, PreRelease: featuregate.Beta},
+	NodeFeatureAPI:      {Default: true, PreRelease: featuregate.GA, LockToDefault: true},
 	DisableAutoPrefix:   {Default: false, PreRelease: featuregate.Alpha},
 	NodeFeatureGroupAPI: {Default: false, PreRelease: featuregate.Alpha},
 }

@@ -24,7 +24,6 @@ default garbage collector interval is set to 1h which is the value when no
 
 ## Configuration
 
-In Helm deployments (see
-[garbage collector parameters](../deployment/helm.md#garbage-collector-parameters))
-NFD-GC will only be deployed when `featureGates.NodeFeatureAPI` or
-`topologyUpdater.enable` is set to true.
+In Helm deployments see
+[garbage collector parameters](../deployment/helm.md#garbage-collector-parameters)
+for altering the nfd-gc configuration.
