@@ -72,7 +72,7 @@ spec:
         command:
         - "nfd-worker"
         args:
-{{- if not (and .Values.featureGates.NodeFeatureAPI .Values.enableNodeFeatureApi)   }}
+{{- if not .Values.featureGates.NodeFeatureAPI }}
         - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
 {{- end }}
 {{- if .Values.tls.enable }}

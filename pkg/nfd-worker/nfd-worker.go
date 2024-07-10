@@ -97,19 +97,18 @@ type Labels map[string]string
 
 // Args are the command line arguments of NfdWorker.
 type Args struct {
-	CaFile               string
-	CertFile             string
-	ConfigFile           string
-	EnableNodeFeatureApi bool
-	KeyFile              string
-	Klog                 map[string]*utils.KlogFlagVal
-	Kubeconfig           string
-	Oneshot              bool
-	Options              string
-	Server               string
-	ServerNameOverride   string
-	MetricsPort          int
-	GrpcHealthPort       int
+	CaFile             string
+	CertFile           string
+	ConfigFile         string
+	KeyFile            string
+	Klog               map[string]*utils.KlogFlagVal
+	Kubeconfig         string
+	Oneshot            bool
+	Options            string
+	Server             string
+	ServerNameOverride string
+	MetricsPort        int
+	GrpcHealthPort     int
 
 	Overrides ConfigOverrideArgs
 }
@@ -391,7 +390,7 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 			// Manage connection to master
-			if w.config.Core.NoPublish || !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) || !w.args.EnableNodeFeatureApi {
+			if w.config.Core.NoPublish || !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
 				w.grpcDisconnect()
 			}
 
@@ -735,7 +734,7 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 
 // advertiseFeatures advertises the features of a Kubernetes node
 func (w *nfdWorker) advertiseFeatures(labels Labels) error {
-	if features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) && w.args.EnableNodeFeatureApi {
+	if features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
 		// Create/update NodeFeature CR object
 		if err := w.updateNodeFeatureObject(labels); err != nil {
 			return fmt.Errorf("failed to advertise features (via CRD API): %w", err)

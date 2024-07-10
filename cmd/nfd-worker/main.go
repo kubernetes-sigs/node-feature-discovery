@@ -69,8 +69,6 @@ func main() {
 			klog.InfoS("-cert-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "key-file":
 			klog.InfoS("-key-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "enable-nodefeature-api":
-			klog.InfoS("-enable-nodefeature-api is deprecated and will be removed in the next release, use -feature-gate NodeFeatureAPI instead")
 		case "server":
 			klog.InfoS("-server is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "server-name-override":
@@ -134,9 +132,6 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.StringVar(&args.KeyFile, "key-file", "",
 		"Private key matching -cert-file."+
 			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
-	flagset.BoolVar(&args.EnableNodeFeatureApi, "enable-nodefeature-api", true,
-		"Enable the NodeFeature CRD API for communicating with nfd-master. This will automatically disable the gRPC communication."+
-			" DEPRECATED: will be removed in NFD v0.17. Use -feature-gate NodeFeatureAPI instead.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
