@@ -144,6 +144,7 @@ API's you need to install the prometheus operator in your cluster.
 | `master.nfdApiParallelism` | integer | 10                                      | Specifies the maximum number of concurrent node updates. |
 | `master.config`            | dict    |                                         | NFD master [configuration](../reference/master-configuration-reference) |
 | `master.args`              | array   | []                                      | Additional [command line arguments](../reference/master-commandline-reference.md) to pass to nfd-master |
+| `master.revisionHistoryLimit` | integer |                                      | Specify how many old ReplicaSets for this Deployment you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit) |
 
 ### Worker pod parameters
 
@@ -217,9 +218,10 @@ API's you need to install the prometheus operator in your cluster.
 | `gc.nodeSelector`                     | dict   | {}      | Garbage collector pod [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector)         |
 | `gc.tolerations`                      | dict   | {}      | Garbage collector pod [node tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)              |
 | `gc.annotations`                      | dict   | {}      | Garbage collector pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                  |
-| `gc.deploymentAnnotations`            | dict   | {}      | Garbage collector deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)          |
+| `gc.deploymentAnnotations`            | dict   | {}      | Garbage collector deployment [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)           |
 | `gc.affinity`                         | dict   | {}      | Garbage collector pod [affinity](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/)    |
-| `gc.args`                             | array   | []     | Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc |
+| `gc.args`                             | array  | []      | Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc |
+| `gc.revisionHistoryLimit`             | integer |        | Specify how many old ReplicaSets for this Deployment you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit) |
 
 <!-- Links -->
 [rbac]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
