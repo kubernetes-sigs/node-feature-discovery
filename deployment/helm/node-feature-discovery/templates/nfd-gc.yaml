@@ -1,4 +1,4 @@
-{{- if and .Values.gc.enable (or (and .Values.featureGates.NodeFeatureAPI .Values.enableNodeFeatureApi) .Values.topologyUpdater.enable) -}}
+{{- if and .Values.gc.enable (or .Values.featureGates.NodeFeatureAPI .Values.topologyUpdater.enable) -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

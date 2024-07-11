@@ -175,27 +175,6 @@ nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
     -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
 ```
 
-### -enable-nodefeature-api
-
-**DEPRECATED**: will be removed in NFD v0.17. Use'
-[`-feature-gates`](#-feature-gates)
-[NodeFeatureAPI](feature-gates.md#nodefeatureapi) instead.
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-
-The `-enable-nodefeature-api` flag enables/disables the
-[NodeFeature](../usage/custom-resources.md#nodefeature) CRD API for receiving
-feature requests. This will also automatically disable/enable the gRPC
-interface.
-
-Default: true
-
-Example:
-
-```bash
-nfd-master -enable-nodefeature-api=false
-```
-
 ### -enable-leader-election
 
 The `-enable-leader-election` flag enables leader election for NFD-Master.

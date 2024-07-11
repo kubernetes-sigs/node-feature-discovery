@@ -10,8 +10,6 @@ nameOverride: ""
 fullnameOverride: ""
 namespaceOverride: ""
 
-enableNodeFeatureApi: true
-
 featureGates:
   NodeFeatureAPI: true
   NodeFeatureGroupAPI: false
