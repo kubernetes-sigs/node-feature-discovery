@@ -131,7 +131,7 @@ type nfdWorker struct {
 	grpcClient          pb.LabelerClient
 	healthServer        *grpc.Server
 	k8sClient           k8sclient.Interface
-	nfdClient           *nfdclient.Clientset
+	nfdClient           nfdclient.Interface
 	stop                chan struct{} // channel for signaling stop
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
@@ -150,20 +150,26 @@ type NfdWorkerOption interface {
 
 // WithArgs is used for passing settings from command line arguments.
 func WithArgs(args *Args) NfdWorkerOption {
-	return &nfdMWorkerOpt{f: func(n *nfdWorker) { n.args = *args }}
+	return &nfdWorkerOpt{f: func(n *nfdWorker) { n.args = *args }}
 }
 
 // WithKuberneteClient forces to use the given kubernetes client, without
 // initializing one from kubeconfig.
 func WithKubernetesClient(cli k8sclient.Interface) NfdWorkerOption {
-	return &nfdMWorkerOpt{f: func(n *nfdWorker) { n.k8sClient = cli }}
+	return &nfdWorkerOpt{f: func(n *nfdWorker) { n.k8sClient = cli }}
 }
 
-type nfdMWorkerOpt struct {
+// WithNFDClient forces to use the given client for the NFD API, without
+// initializing one from kubeconfig.
+func WithNFDClient(cli nfdclient.Interface) NfdWorkerOption {
+	return &nfdWorkerOpt{f: func(n *nfdWorker) { n.nfdClient = cli }}
+}
+
+type nfdWorkerOpt struct {
 	f func(*nfdWorker)
 }
 
-func (f *nfdMWorkerOpt) apply(n *nfdWorker) {
+func (f *nfdWorkerOpt) apply(n *nfdWorker) {
 	f.f(n)
 }
 
@@ -836,7 +842,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 }
 
 // getNfdClient returns the clientset for using the nfd CRD api
-func (m *nfdWorker) getNfdClient() (*nfdclient.Clientset, error) {
+func (m *nfdWorker) getNfdClient() (nfdclient.Interface, error) {
 	if m.nfdClient != nil {
 		return m.nfdClient, nil
 	}
