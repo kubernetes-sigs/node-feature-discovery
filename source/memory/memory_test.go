@@ -54,7 +54,7 @@ func TestGetNumberofLinesFromFile(t *testing.T) {
 		},
 	}
 	for _, tc := range tc {
-		actual, err := getNumberOfLinesFromFile(tc.path)
+		actual, err := getNumberOfNonEmptyLinesFromFile(tc.path)
 		if tc.expectErr {
 			assert.NotNil(t, err, "should get an error")
 		}
