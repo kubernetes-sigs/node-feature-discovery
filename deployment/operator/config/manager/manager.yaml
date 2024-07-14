@@ -22,6 +22,7 @@ spec:
       labels:
         control-plane: nfd-controller-manager
     spec:
+      serviceAccountName: nfd-manager
       containers:
         - name: manager
           securityContext:
