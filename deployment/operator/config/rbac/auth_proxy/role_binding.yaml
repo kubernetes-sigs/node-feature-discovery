@@ -8,5 +8,5 @@ roleRef:
   name: nfd-proxy-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: nfd-manager
   namespace: node-feature-discovery-operator
