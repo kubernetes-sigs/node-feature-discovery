@@ -8,6 +8,7 @@ resources:
 - prune/
 - topologyupdater/
 - worker/
+- manager/
 # Comment the following line if you want to disable
 # the auth proxy (https://github.com/brancz/kube-rbac-proxy)
 # which protects your /metrics endpoint.
