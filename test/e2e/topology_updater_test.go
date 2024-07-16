@@ -402,6 +402,7 @@ excludeList:
 
 			podSpecOpts := []testpod.SpecOption{
 				testpod.SpecWithContainerImage(dockerImage()),
+				testpod.SpecWithContainerExtraArgs("-sleep-interval=5s"),
 				testpod.SpecWithConfigMap(cm.Name, "/etc/kubernetes/node-feature-discovery"),
 			}
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
