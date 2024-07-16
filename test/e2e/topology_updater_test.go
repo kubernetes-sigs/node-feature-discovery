@@ -474,6 +474,7 @@ excludeList:
 			podSpecOpts := []testpod.SpecOption{
 				testpod.SpecWithContainerImage(dockerImage()),
 				testpod.SpecWithContainerExtraArgs("-pods-fingerprint"),
+				testpod.SpecWithContainerExtraArgs("-sleep-interval=5s"),
 			}
 			topologyUpdaterDaemonSet = testds.NFDTopologyUpdater(kcfg, podSpecOpts...)
 		})
