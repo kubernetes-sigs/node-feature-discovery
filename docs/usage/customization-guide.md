@@ -40,14 +40,6 @@ labels directly.
 Note that RBAC rules must be created for each extension for them to be able to
 create and manipulate NodeFeature objects in their namespace.
 
-The NodeFeature CRD API can be disabled with the
-[NodeFeatureAPI](../reference/feature-gates.md#nodefeatureapi) feature gate
-(`-feature-gates NodeFeatureAPI=false` on command line). The `-feature-gates`
-command line flag must be specified for both nfd-master and nfd-worker as it
-will enable the gRPC communication between them. Note that the gRPC API is
-**DEPRECATED** and will be removed in a future release, at which point the
-NodeFeature API cannot be disabled.
-
 ### A NodeFeature example
 
 Consider the following referential example:
