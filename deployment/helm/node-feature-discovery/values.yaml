@@ -471,6 +471,10 @@ topologyUpdater:
     create: true
     annotations: {}
     name:
+
+  # specify how many old ControllerRevisions for the DaemonSet to retain.
+  revisionHistoryLimit:
+
   rbac:
     create: true
 

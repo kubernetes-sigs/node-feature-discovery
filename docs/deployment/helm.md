@@ -199,6 +199,7 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.podSetFingerprint`           | bool    | true                     | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                    |
 | `topologyUpdater.kubeletStateDir`             | string  | /var/lib/kubelet         | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                     |
 | `topologyUpdater.args`                        | array   | []                       | Additional [command line arguments](../reference/topology-updater-commandline-reference.md) to pass to nfd-topology-updater                                                                      |
+| `topologyUpdater.revisionHistoryLimit`       | integer |                                  | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec)          |
 
 ### Garbage collector parameters
 
