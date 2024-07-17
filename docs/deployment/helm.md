@@ -168,6 +168,7 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.annotations`                | dict   | {}                      | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                         |
 | `worker.daemonsetAnnotations`       | dict   | {}                      | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                   |
 | `worker.args`                       | array  | []                      | Additional [command line arguments](../reference/worker-commandline-reference.md) to pass to nfd-worker                                                                                              |
+| `worker.revisionHistoryLimit`       | integer |                                  | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec)          |
 
 ### Topology updater parameters
 
