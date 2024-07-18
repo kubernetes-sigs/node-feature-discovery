@@ -425,6 +425,9 @@ worker:
     # If not set and create is true, a name is generated using the fullname template
     name:
 
+  # specify how many old ControllerRevisions for the DaemonSet to retain.
+  revisionHistoryLimit:
+
   rbac:
     create: true
 
@@ -468,6 +471,10 @@ topologyUpdater:
     create: true
     annotations: {}
     name:
+
+  # specify how many old ControllerRevisions for the DaemonSet to retain.
+  revisionHistoryLimit:
+
   rbac:
     create: true
 
