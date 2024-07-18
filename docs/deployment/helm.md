@@ -167,6 +167,7 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.priorityClassName`        | string |         | NFD worker pod [priority class](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/)                                                                                    |
 | `worker.annotations`              | dict   | {}      | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                         |
 | `worker.daemonsetAnnotations`     | dict   | {}      | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                  |
+| `worker.revisionHistoryLimit`     | integer |                        | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec)          |
 
 ### Topology updater parameters
 
@@ -196,6 +197,7 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.config`                      | dict   |                  | [configuration](../reference/topology-updater-configuration-reference)                                                                                                                                |
 | `topologyUpdater.podSetFingerprint`           | bool   | true             | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
 | `topologyUpdater.kubeletStateDir`             | string | /var/lib/kubelet | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                          |
+| `topologyUpdater.revisionHistoryLimit`        | integer |                 | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec)          |
 
 ### Garbage collector parameters
 
