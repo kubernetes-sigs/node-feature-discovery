@@ -11,7 +11,8 @@ COPY api/nfd/go.mod api/nfd/go.sum /go/node-feature-discovery/api/nfd/
 
 WORKDIR /go/node-feature-discovery
 
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    go mod download
 
 # Do actual build
 COPY . /go/node-feature-discovery
@@ -19,7 +20,8 @@ COPY . /go/node-feature-discovery
 ARG VERSION
 ARG HOSTMOUNT_PREFIX
 
-RUN make install VERSION=$VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    make install VERSION=$VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
 
 # Create full variant of the production image
 FROM ${BASE_IMAGE_FULL} AS full
