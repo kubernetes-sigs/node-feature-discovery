@@ -29,6 +29,7 @@ import (
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
+	nfdinformersv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions/nfd/v1alpha1"
 	nfdlisters "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -67,13 +68,23 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
+
 	klog.V(2).InfoS("initializing new NFD API controller", "options", utils.DelayedDumper(nfdApiControllerOptions))
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.ResyncPeriod)
 
 	// Add informer for NodeFeature objects
 	if !nfdApiControllerOptions.DisableNodeFeature {
-		featureInformer := informerFactory.Nfd().V1alpha1().NodeFeatures()
+		tweakListOpts := func(opts *metav1.ListOptions) {
+			// Tweak list opts on initial sync to avoid timeouts on the apiserver.
+			// NodeFeature objects are huge and the Kubernetes apiserver
+			// (v1.30) experiences http handler timeouts when the resource
+			// version is set to some non-empty value (TODO: find out why).
+			if opts.ResourceVersion == "0" {
+				opts.ResourceVersion = ""
+			}
+		}
+		featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
 		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				nfr := obj.(*nfdv1alpha1.NodeFeature)
