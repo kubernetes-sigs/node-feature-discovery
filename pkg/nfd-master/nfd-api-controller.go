@@ -161,7 +161,15 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 
 	// Start informers
 	informerFactory.Start(c.stopChan)
-	informerFactory.WaitForCacheSync(c.stopChan)
+	now := time.Now()
+	ret := informerFactory.WaitForCacheSync(c.stopChan)
+	for res, ok := range ret {
+		if !ok {
+			return nil, fmt.Errorf("informer cache failed to sync resource %s", res)
+		}
+	}
+
+	klog.InfoS("informer caches synced", "duration", time.Since(now))
 
 	return c, nil
 }
