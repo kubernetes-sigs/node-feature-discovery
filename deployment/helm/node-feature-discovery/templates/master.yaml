@@ -47,6 +47,21 @@ spec:
             {{- toYaml .Values.master.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          startupProbe:
+            grpc:
+              port: {{ .Values.master.healthPort | default "8082" }}
+          {{- with .Values.master.startupProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.startupProbe.failureThreshold }}
+            failureThreshold: {{ . }}
+          {{- end }}
+          {{- with .Values.master.startupProbe.periodSeconds }}
+            periodSeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.startupProbe.timeoutSeconds }}
+            timeoutSeconds: {{ . }}
+          {{- end }}
           livenessProbe:
             grpc:
               port: {{ .Values.master.healthPort | default "8082" }}

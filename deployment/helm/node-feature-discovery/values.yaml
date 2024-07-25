@@ -152,18 +152,23 @@ master:
                 operator: In
                 values: [""]
                 
+  startupProbe:
+    grpc:
+      port: 8082
+    failureThreshold: 30
+    # periodSeconds: 10
   livenessProbe:
     grpc:
       port: 8082
-    initialDelaySeconds: 10
     # failureThreshold: 3
+    # initialDelaySeconds: 0
     # periodSeconds: 10
     # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
-    initialDelaySeconds: 5
     failureThreshold: 10
+    # initialDelaySeconds: 0
     # periodSeconds: 10
     # timeoutSeconds: 1
     # successThreshold: 1
