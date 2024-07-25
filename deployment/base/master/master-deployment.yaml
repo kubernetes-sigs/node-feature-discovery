@@ -28,16 +28,16 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+          startupProbe:
+            grpc:
+              port: 8082
+            failureThreshold: 30
           livenessProbe:
             grpc:
               port: 8082
-            initialDelaySeconds: 10
-            periodSeconds: 10
           readinessProbe:
             grpc:
               port: 8082
-            initialDelaySeconds: 5
-            periodSeconds: 10
             failureThreshold: 10
           command:
             - "nfd-master"

@@ -144,8 +144,9 @@ API's you need to install the prometheus operator in your cluster.
 | `master.config`                     | dict    |                                  | NFD master [configuration](../reference/master-configuration-reference)                                                                                                                                |
 | `master.args`                       | array   | []                               | Additional [command line arguments](../reference/master-commandline-reference.md) to pass to nfd-master                                                                                                |
 | `master.revisionHistoryLimit`       | integer |                                  | Specify how many old ReplicaSets for this Deployment you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit)          |
-| `master.livenessProbe`              | dict    | {"grpc":{"port":8082},"initialDelaySeconds":10}                       | NFD master pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)  |
-| `master.readinessProbe`             | dict    | {"grpc":{"port":8082},"initialDelaySeconds":5,"failureThreshold": 10} | NFD master pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)|
+| `master.startupProbe`               | dict    | {"grpc":{"port":8082},"failureThreshold": 30} | NFD master pod [startup probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)   |
+| `master.livenessProbe`              | dict    | {"grpc":{"port":8082}}                        | NFD master pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)   |
+| `master.readinessProbe`             | dict    | {"grpc":{"port":8082},"failureThreshold": 10} | NFD master pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe) |
 
 ### Worker pod parameters
 
