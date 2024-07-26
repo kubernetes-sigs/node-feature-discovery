@@ -18,6 +18,7 @@ package nfdgarbagecollector
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -42,7 +43,7 @@ func TestNRTGC(t *testing.T) {
 		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
 
-		So(waitForNRT(gc.client), ShouldBeTrue)
+		So(gc.client, shouldEventuallyHaveNRTs)
 
 		gc.Stop()
 		So(<-errChan, ShouldBeNil)
@@ -53,7 +54,7 @@ func TestNRTGC(t *testing.T) {
 		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
 
-		So(waitForNRT(gc.client, "node1"), ShouldBeTrue)
+		So(gc.client, shouldEventuallyHaveNRTs, "node1")
 
 		gc.Stop()
 		So(<-errChan, ShouldBeNil)
@@ -68,7 +69,7 @@ func TestNRTGC(t *testing.T) {
 		err := gc.client.Resource(gvr).Delete(context.TODO(), "node1", metav1.DeleteOptions{})
 		So(err, ShouldBeNil)
 
-		So(waitForNRT(gc.client, "node2"), ShouldBeTrue)
+		So(gc.client, shouldEventuallyHaveNRTs, "node2")
 	})
 	Convey("periodic GC should remove obsolete NRT", t, func() {
 		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
@@ -84,7 +85,7 @@ func TestNRTGC(t *testing.T) {
 		_, err := gc.client.Resource(gvr).(fake.MetadataClient).CreateFake(nrt, metav1.CreateOptions{})
 		So(err, ShouldBeNil)
 
-		So(waitForNRT(gc.client, "node1", "node2"), ShouldBeTrue)
+		So(gc.client, shouldEventuallyHaveNRTs, "node1", "node2")
 	})
 }
 
@@ -133,22 +134,29 @@ type mockGC struct {
 	client metadataclient.Interface
 }
 
-func waitForNRT(cli metadataclient.Interface, names ...string) bool {
-	nameSet := sets.NewString(names...)
+func shouldEventuallyHaveNRTs(actualI interface{}, expectedI ...interface{}) string {
+	cli := actualI.(metadataclient.Interface)
+	expected := sets.Set[string]{}
+	for _, e := range expectedI {
+		expected.Insert(e.(string))
+	}
+	actual := sets.Set[string]{}
 	gvr := topologyv1alpha2.SchemeGroupVersion.WithResource("noderesourcetopologies")
 	for i := 0; i < 2; i++ {
 		rsp, err := cli.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
-		So(err, ShouldBeNil)
-
-		nrtNames := sets.NewString()
-		for _, meta := range rsp.Items {
-			nrtNames.Insert(meta.Name)
+		if err != nil {
+			return fmt.Sprintf("failed to list: %v", err)
 		}
 
-		if nrtNames.Equal(nameSet) {
-			return true
+		actual = sets.New[string]()
+		for _, meta := range rsp.Items {
+			actual.Insert(meta.Name)
+		}
+
+		if actual.Equal(expected) {
+			return ""
 		}
 		time.Sleep(1 * time.Second)
 	}
-	return false
+	return fmt.Sprintf("Expected: %v\nActual: %v", sets.List(expected), sets.List(actual))
 }
