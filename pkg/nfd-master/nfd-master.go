@@ -172,7 +172,7 @@ func (s *customHealthServer) SetK8sClient(client k8sclient.Interface) {
 	s.k8sclient = client
 }
 
-// HealthCheck method for customHealthServer
+// Check method for customHealthServer
 func (s *customHealthServer) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
 	klog.InfoS("Check request received")
 	metricServerStatus, err := s.CheckPods("kube-system", "k8s-app=metrics-server")
