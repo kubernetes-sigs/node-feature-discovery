@@ -18,6 +18,7 @@ package nfdgarbagecollector
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
@@ -208,7 +209,15 @@ func (n *nfdGarbageCollector) startNodeInformer() error {
 
 	// start informers
 	n.factory.Start(n.stopChan)
-	n.factory.WaitForCacheSync(n.stopChan)
+
+	start := time.Now()
+	ret := n.factory.WaitForCacheSync(n.stopChan)
+	for res, ok := range ret {
+		if !ok {
+			return fmt.Errorf("node informer cache failed to sync (%s)", res)
+		}
+	}
+	klog.InfoS("node informer cache synced", "duration", time.Since(start))
 
 	return nil
 }
