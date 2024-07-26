@@ -36,12 +36,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -160,6 +160,64 @@ type nfdMaster struct {
 	updaterPool    *updaterPool
 	deniedNs
 	config *NFDConfig
+}
+
+// customHealthServer implements grpc_health_v1.HealthServer
+type customHealthServer struct {
+	grpc_health_v1.UnimplementedHealthServer
+	k8sclient k8sclient.Interface
+}
+
+func (s *customHealthServer) SetK8sClient(client k8sclient.Interface) {
+	s.k8sclient = client
+}
+
+// HealthCheck method for customHealthServer
+func (s *customHealthServer) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
+	klog.InfoS("Check request received")
+	metricServerStatus, err := s.CheckPods("kube-system", "k8s-app=metrics-server")
+	if err != nil {
+		klog.ErrorS(err, "Error getting metricserver pods")
+	}
+	klog.InfoS("Metric serverstatus", "status", metricServerStatus)
+	if !metricServerStatus {
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
+	}
+
+	
+	return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
+}
+
+// Watch method for customHealthServer
+func (s *customHealthServer) Watch(req *grpc_health_v1.HealthCheckRequest, srv grpc_health_v1.Health_WatchServer) error {
+	klog.InfoS("Watch request received")
+	return nil
+}
+
+func (s *customHealthServer) CheckPods(namespace string, labelSelector string) (bool, error) {
+	pods, err := getPods(s.k8sclient, namespace, labelSelector)
+	if err != nil {
+		return false, err
+	}
+	// TODO: print if items is empty
+
+	status := false
+	for _, pod := range pods.Items {
+		klog.InfoS("Found pod name", "name", pod.Name)
+		if pod.Status.Phase != "Running" {
+			klog.InfoS("Pod is not in running state", "name", pod.Name)
+		} else {
+			klog.InfoS("Pod is in running state", "name", pod.Name)
+			status = true
+			// can stop here : return status, nil
+			// not stopping for logs.
+		}
+	}
+	return status, nil
+}
+
+func (s *customHealthServer) CheckNfdApiController() (bool, error) {
+
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -412,7 +470,11 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 	}
 
 	s := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	klog.InfoS("Creating health server")
+	healthCheckServer := &customHealthServer{}
+	grpc_health_v1.RegisterHealthServer(s, healthCheckServer)
+	klog.InfoS("Setting the client to the healthCheckServer")
+	healthCheckServer.SetK8sClient(m.k8sClient)
 	klog.InfoS("gRPC health server serving", "port", m.args.GrpcHealthPort)
 
 	go func() {
@@ -1601,4 +1663,14 @@ func patchNode(cli k8sclient.Interface, nodeName string, patches []utils.JsonPat
 
 func patchNodeStatus(cli k8sclient.Interface, nodeName string, patches []utils.JsonPatch) error {
 	return patchNode(cli, nodeName, patches, "status")
+}
+
+func getPod(cli k8sclient.Interface, namespace string, podName string) (*corev1.Pod, error) {
+	return cli.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+}
+
+func getPods(cli k8sclient.Interface, namespace string, labelSelector string) (*corev1.PodList, error) {
+	return cli.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
 }
