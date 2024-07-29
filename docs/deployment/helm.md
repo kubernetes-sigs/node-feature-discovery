@@ -144,6 +144,8 @@ API's you need to install the prometheus operator in your cluster.
 | `master.nfdApiParallelism` | integer | 10                                      | Specifies the maximum number of concurrent node updates. |
 | `master.config`            | dict    |                                         | NFD master [configuration](../reference/master-configuration-reference) |
 | `master.revisionHistoryLimit` | integer |                                      | Specify how many old ReplicaSets for this Deployment you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit) |
+| `master.livenessProbe`        | dict    | {"grpc":{"port":8082},"initialDelaySeconds":10}                       | NFD master pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)  |
+| `master.readinessProbe`       | dict    | {"grpc":{"port":8082},"initialDelaySeconds":5,"failureThreshold": 10} | NFD master pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)|
 
 ### Worker pod parameters
 
@@ -168,6 +170,8 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.annotations`              | dict   | {}      | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                         |
 | `worker.daemonsetAnnotations`     | dict   | {}      | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                  |
 | `worker.revisionHistoryLimit`     | integer |                        | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec)          |
+| `worker.livenessProbe`            | dict    | {"grpc":{"port":8082},"initialDelaySeconds":10}                       | NFD worker pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)  |
+| `worker.readinessProbe`           | dict    | {"grpc":{"port":8082},"initialDelaySeconds":5,"failureThreshold": 10} | NFD worker pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)|
 
 ### Topology updater parameters
 
@@ -198,6 +202,8 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.podSetFingerprint`           | bool   | true             | Enables compute and report of pod fingerprint in NRT objects.                                                                                                                                         |
 | `topologyUpdater.kubeletStateDir`             | string | /var/lib/kubelet | Specifies kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.                                                                          |
 | `topologyUpdater.revisionHistoryLimit`        | integer |                 | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec)          |
+| `topologyUpdater.livenessProbe`               | dict    | {"grpc":{"port":8082},"initialDelaySeconds":10}                       | Topology updater pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)  |
+| `topologyUpdater.readinessProbe`              | dict    | {"grpc":{"port":8082},"initialDelaySeconds":5,"failureThreshold": 10} | Topology updater pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)|
 
 ### Garbage collector parameters
 
