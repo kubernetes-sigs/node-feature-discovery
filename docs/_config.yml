@@ -29,6 +29,11 @@ kramdown:
 remote_theme: rundocs/jekyll-rtd-theme@v2.0.10
 plugins:
   - jekyll-remote-theme
+  - jekyll-relative-links
+
+relative_links:
+  enabled:     true
+  collections: true
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
