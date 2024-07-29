@@ -34,7 +34,7 @@ Print version and exit.
 
 The `-feature-gates` flag is used to enable or disable non GA features.
 The list of available feature gates can be found in the [feature gates
-documentation](../feature-gates.md).
+documentation](feature-gates.md).
 
 Example:
 
