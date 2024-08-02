@@ -168,6 +168,7 @@ type customHealthServer struct {
 	grpc_health_v1.UnimplementedHealthServer
 	k8sclient          k8sclient.Interface
 	metricServerStatus bool
+	nodeUpdaterStatus  bool
 }
 
 func (s *customHealthServer) SetMetricServerStatus(status bool) {
@@ -184,9 +185,15 @@ func (s *customHealthServer) Check(ctx context.Context, req *grpc_health_v1.Heal
 	if !metricServerStatus {
 		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
 	}
+
+	klog.InfoS("Checking nfd's node updater pool")
+	nodeUpdaterStatus := s.nodeUpdaterStatus
+	klog.InfoS("nfd master's node updater pool status", "status", nodeUpdaterStatus)
+	if !nodeUpdaterStatus {
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
+	}
 	return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
 
-	//TODO: Watch the goroutines of node updater pool 
 }
 
 // Watch method for customHealthServer
@@ -496,7 +503,7 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 }
 
 func (m *nfdMaster) createCustomHealthServer() {
-	m.customHealthServer = &customHealthServer{k8sclient: m.k8sClient, metricServerStatus: false}
+	m.customHealthServer = &customHealthServer{k8sclient: m.k8sClient, metricServerStatus: false, nodeUpdaterStatus: true}
 }
 
 func (m *nfdMaster) runGrpcServer(errChan chan<- error) {

@@ -77,9 +77,11 @@ func (u *updaterPool) processNodeUpdateRequest(cli k8sclient.Interface, queue wo
 }
 
 func (u *updaterPool) runNodeUpdater(queue workqueue.RateLimitingInterface) {
+	defer u.handlePanic()
 	var cli k8sclient.Interface
 	if u.nfdMaster.kubeconfig != nil {
 		// For normal execution, initialize a separate api client for each updater
+		// catch the panic if the kubeconfig is invalid
 		cli = k8sclient.NewForConfigOrDie(u.nfdMaster.kubeconfig)
 	} else {
 		// For tests, re-use the api client from nfd-master
@@ -119,6 +121,7 @@ func (u *updaterPool) processNodeFeatureGroupUpdateRequest(cli nfdclientset.Inte
 }
 
 func (u *updaterPool) runNodeFeatureGroupUpdater(ngfQueue workqueue.RateLimitingInterface) {
+	defer u.handlePanic()
 	cli := nfdclientset.NewForConfigOrDie(u.nfdMaster.kubeconfig)
 	for u.processNodeFeatureGroupUpdateRequest(cli, ngfQueue) {
 	}
@@ -191,4 +194,11 @@ func (u *updaterPool) addNodeFeatureGroup(nodeFeatureGroupName string) {
 	u.RLock()
 	defer u.RUnlock()
 	u.nfgQueue.Add(nodeFeatureGroupName)
+}
+
+func (u *updaterPool) handlePanic() {
+	if err := recover(); err != nil {
+		klog.ErrorS(nil, "panic in node updater", "error", err)
+		u.nfdMaster.customHealthServer.nodeUpdaterStatus = false
+	}
 }
