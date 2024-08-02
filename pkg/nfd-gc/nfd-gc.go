@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	metadataclient "k8s.io/client-go/metadata"
 	"k8s.io/client-go/metadata/metadatainformer"
@@ -152,37 +153,47 @@ func (n *nfdGarbageCollector) garbageCollect() {
 		nodeNames.Insert(meta.Name)
 	}
 
-	// Handle NodeFeature objects
-	objMetas, err := n.client.Resource(gvrNF).List(context.TODO(), metav1.ListOptions{})
-	if errors.IsNotFound(err) {
-		klog.V(2).InfoS("NodeFeature CRD does not exist")
-	} else if err != nil {
-		klog.ErrorS(err, "failed to list NodeFeature objects")
-	} else {
-		for _, nf := range objMetas.Items {
-			nodeName, ok := nf.GetLabels()[nfdv1alpha1.NodeFeatureObjNodeNameLabel]
-			if !ok {
-				klog.InfoS("node name label missing from NodeFeature object", "nodefeature", klog.KObj(&nf))
+	listAndHandle := func(gvr schema.GroupVersionResource, handler func(metav1.PartialObjectMetadata)) {
+		opts := metav1.ListOptions{
+			Limit: 200,
+		}
+		for {
+			rsp, err := n.client.Resource(gvr).List(context.TODO(), opts)
+			if errors.IsNotFound(err) {
+				klog.V(2).InfoS("resource does not exist", "resource", gvr)
+				break
+			} else if err != nil {
+				klog.ErrorS(err, "failed to list objects", "resource", gvr)
+				break
 			}
-			if !nodeNames.Has(nodeName) {
-				n.deleteNodeFeature(nf.Namespace, nf.Name)
+			for _, item := range rsp.Items {
+				handler(item)
 			}
+
+			if rsp.ListMeta.Continue == "" {
+				break
+			}
+			opts.Continue = rsp.ListMeta.Continue
 		}
 	}
 
-	// Handle NodeResourceTopology objects
-	objMetas, err = n.client.Resource(gvrNRT).List(context.TODO(), metav1.ListOptions{})
-	if errors.IsNotFound(err) {
-		klog.V(2).InfoS("NodeResourceTopology CRD does not exist")
-	} else if err != nil {
-		klog.ErrorS(err, "failed to list NodeResourceTopology objects")
-	} else {
-		for _, nrt := range objMetas.Items {
-			if !nodeNames.Has(nrt.Name) {
-				n.deleteNRT(nrt.Name)
-			}
+	// Handle NodeFeature objects
+	listAndHandle(gvrNF, func(meta metav1.PartialObjectMetadata) {
+		nodeName, ok := meta.GetLabels()[nfdv1alpha1.NodeFeatureObjNodeNameLabel]
+		if !ok {
+			klog.InfoS("node name label missing from NodeFeature object", "nodefeature", klog.KObj(&meta))
 		}
-	}
+		if !nodeNames.Has(nodeName) {
+			n.deleteNodeFeature(meta.Namespace, meta.Name)
+		}
+	})
+
+	// Handle NodeResourceTopology objects
+	listAndHandle(gvrNRT, func(meta metav1.PartialObjectMetadata) {
+		if !nodeNames.Has(meta.Name) {
+			n.deleteNRT(meta.Name)
+		}
+	})
 }
 
 // periodicGC runs garbage collector at every gcPeriod to make sure we haven't missed any node
