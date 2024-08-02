@@ -159,33 +159,34 @@ type nfdMaster struct {
 	nfdClient      *nfdclientset.Clientset
 	updaterPool    *updaterPool
 	deniedNs
-	config *NFDConfig
+	config             *NFDConfig
+	customHealthServer *customHealthServer
 }
 
 // customHealthServer implements grpc_health_v1.HealthServer
 type customHealthServer struct {
 	grpc_health_v1.UnimplementedHealthServer
-	k8sclient k8sclient.Interface
+	k8sclient          k8sclient.Interface
+	metricServerStatus bool
 }
 
-func (s *customHealthServer) SetK8sClient(client k8sclient.Interface) {
-	s.k8sclient = client
+func (s *customHealthServer) SetMetricServerStatus(status bool) {
+	s.metricServerStatus = status
 }
 
 // Check method for customHealthServer
 func (s *customHealthServer) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
 	klog.InfoS("Check request received")
-	metricServerStatus, err := s.CheckPods("kube-system", "k8s-app=metrics-server")
-	if err != nil {
-		klog.ErrorS(err, "Error getting metricserver pods")
-	}
-	klog.InfoS("Metric serverstatus", "status", metricServerStatus)
+
+	klog.InfoS("Checking nfd's metric server")
+	metricServerStatus := s.metricServerStatus
+	klog.InfoS("nfd master's metric server status", "status", metricServerStatus)
 	if !metricServerStatus {
 		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
 	}
-
-	
 	return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
+
+	//TODO: Watch the goroutines of node updater pool 
 }
 
 // Watch method for customHealthServer
@@ -216,9 +217,9 @@ func (s *customHealthServer) CheckPods(namespace string, labelSelector string) (
 	return status, nil
 }
 
-func (s *customHealthServer) CheckNfdApiController() (bool, error) {
-
-}
+// func (s *customHealthServer) CheckNfdApiController() (bool, error) {
+// TODO
+// }
 
 // NewNfdMaster creates a new NfdMaster server instance.
 func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
@@ -373,9 +374,13 @@ func (m *nfdMaster) Run() error {
 		}
 	}
 
+	// Create a custom health server
+	klog.InfoS("Creating custom health server for gRPC health server")
+	m.createCustomHealthServer()
+
 	// Register to metrics server
 	if m.args.MetricsPort > 0 {
-		m := utils.CreateMetricsServer(m.args.MetricsPort,
+		server := utils.CreateMetricsServer(m.args.MetricsPort,
 			buildInfo,
 			nodeUpdateRequests,
 			nodeUpdates,
@@ -385,9 +390,13 @@ func (m *nfdMaster) Run() error {
 			nodeTaintsRejected,
 			nfrProcessingTime,
 			nfrProcessingErrors)
-		go m.Run()
+		// Set metric server status to true
+		m.customHealthServer.SetMetricServerStatus(true)
+		go server.Run()
 		registerVersion(version.Get())
-		defer m.Stop()
+		defer server.Stop()
+		// Set metric server status to false when the server stops
+		defer m.customHealthServer.SetMetricServerStatus(false)
 	}
 
 	// Run gRPC server
@@ -470,11 +479,7 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 	}
 
 	s := grpc.NewServer()
-	klog.InfoS("Creating health server")
-	healthCheckServer := &customHealthServer{}
-	grpc_health_v1.RegisterHealthServer(s, healthCheckServer)
-	klog.InfoS("Setting the client to the healthCheckServer")
-	healthCheckServer.SetK8sClient(m.k8sClient)
+	grpc_health_v1.RegisterHealthServer(s, m.customHealthServer)
 	klog.InfoS("gRPC health server serving", "port", m.args.GrpcHealthPort)
 
 	go func() {
@@ -488,6 +493,10 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 	}()
 	m.healthServer = s
 	return nil
+}
+
+func (m *nfdMaster) createCustomHealthServer() {
+	m.customHealthServer = &customHealthServer{k8sclient: m.k8sClient, metricServerStatus: false}
 }
 
 func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
