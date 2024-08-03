@@ -174,19 +174,21 @@ type customHealthServer struct {
 func (s *customHealthServer) SetMetricServerStatus(status bool) {
 	s.metricServerStatus = status
 }
+func (s *customHealthServer) SetNodeUpdaterStatus(status bool) {
+	s.nodeUpdaterStatus = status
+}
 
 // Check method for customHealthServer
 func (s *customHealthServer) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
-	klog.InfoS("Check request received")
 
-	klog.InfoS("Checking nfd's metric server")
+	// nfd metrics server status
 	metricServerStatus := s.metricServerStatus
 	klog.InfoS("nfd master's metric server status", "status", metricServerStatus)
 	if !metricServerStatus {
 		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
 	}
 
-	klog.InfoS("Checking nfd's node updater pool")
+	// ndf node updater pool status
 	nodeUpdaterStatus := s.nodeUpdaterStatus
 	klog.InfoS("nfd master's node updater pool status", "status", nodeUpdaterStatus)
 	if !nodeUpdaterStatus {
@@ -201,32 +203,6 @@ func (s *customHealthServer) Watch(req *grpc_health_v1.HealthCheckRequest, srv g
 	klog.InfoS("Watch request received")
 	return nil
 }
-
-func (s *customHealthServer) CheckPods(namespace string, labelSelector string) (bool, error) {
-	pods, err := getPods(s.k8sclient, namespace, labelSelector)
-	if err != nil {
-		return false, err
-	}
-	// TODO: print if items is empty
-
-	status := false
-	for _, pod := range pods.Items {
-		klog.InfoS("Found pod name", "name", pod.Name)
-		if pod.Status.Phase != "Running" {
-			klog.InfoS("Pod is not in running state", "name", pod.Name)
-		} else {
-			klog.InfoS("Pod is in running state", "name", pod.Name)
-			status = true
-			// can stop here : return status, nil
-			// not stopping for logs.
-		}
-	}
-	return status, nil
-}
-
-// func (s *customHealthServer) CheckNfdApiController() (bool, error) {
-// TODO
-// }
 
 // NewNfdMaster creates a new NfdMaster server instance.
 func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
@@ -293,8 +269,11 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 		}
 		nfd.nfdClient = nfdClient
 	}
-
+	
 	nfd.updaterPool = newUpdaterPool(nfd)
+	
+	// customHealthServer
+	nfd.customHealthServer = &customHealthServer{k8sclient: nfd.k8sClient, metricServerStatus: false, nodeUpdaterStatus: true}
 
 	return nfd, nil
 }
@@ -380,10 +359,6 @@ func (m *nfdMaster) Run() error {
 			return fmt.Errorf("failed to update master node: %w", err)
 		}
 	}
-
-	// Create a custom health server
-	klog.InfoS("Creating custom health server for gRPC health server")
-	m.createCustomHealthServer()
 
 	// Register to metrics server
 	if m.args.MetricsPort > 0 {
@@ -500,10 +475,6 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 	}()
 	m.healthServer = s
 	return nil
-}
-
-func (m *nfdMaster) createCustomHealthServer() {
-	m.customHealthServer = &customHealthServer{k8sclient: m.k8sClient, metricServerStatus: false, nodeUpdaterStatus: true}
 }
 
 func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
