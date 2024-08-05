@@ -65,6 +65,67 @@ export NFD_NS=node-feature-discovery
 helm install nfd/node-feature-discovery --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace $NFD_NS --create-namespace
 ```
 
+## Upgrading the chart
+
+To upgrade the `node-feature-discovery` deployment to {{ site.release }} via Helm.
+
+### From v0.7 and older
+
+Please see the [uninstallation guide](https://kubernetes-sigs.github.io/node-feature-discovery/v0.7/get-started/deployment-and-usage.html#uninstallation).
+And then follow the standard [deployment instructions](#deployment).
+
+### From v0.8 - v0.11
+
+Helm deployment of NFD was introduced in v0.8.0.
+
+```bash
+export NFD_NS=node-feature-discovery
+# Uninstall the old NFD deployment
+helm uninstall node-feature-discovery --namespace $NFD_NS
+# Update Helm repository
+helm repo update
+# Install the new NFD deployment
+helm upgrade --install node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=false
+# Wait for NFD Worker to be ready
+kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
+# Enable the NFD Master
+helm upgrade --install node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=true
+```
+
+### From v0.12 - v0.13
+
+In v0.12 the `NodeFeature` CRD was introduced as experimental.
+The API was not enabled by default.
+
+```bash
+export NFD_NS=node-feature-discovery
+# Update Helm repository
+helm repo update
+# Install and upgrade CRD's
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/deployment/base/nfd-crds/nfd-api-crds.yaml
+# Install the new NFD deployment
+helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=false
+# Wait for NFD Worker to be ready
+kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
+# Enable the NFD Master
+helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=true
+```
+
+### From v0.14+
+
+As of version v0.14 the Helm chart is the primary deployment method for NFD,
+and the CRD `NodeFeature` is enabled by default.
+
+```bash
+export NFD_NS=node-feature-discovery
+# Update Helm repository
+helm repo update
+# Install and upgrade CRD's
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/deployment/base/nfd-crds/nfd-api-crds.yaml
+# Install the new NFD deployment
+helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS
+```
+
 ## Uninstalling the chart
 
 To uninstall the `node-feature-discovery` deployment:
