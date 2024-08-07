@@ -2,7 +2,7 @@
 
 BASE_IMAGE_MINIMAL="gcr.io/distroless/base"
 BASE_IMAGE_FULL="debian:bullseye-slim"
-BUILDER_IMAGE="golang:1.19-bullseye"
+BUILDER_IMAGE="golang:1.22-bullseye"
 HOSTMOUNT_PREFIX="/host-"
 IMAGE_TAG_NAME = os.getenv('IMAGE_TAG_NAME', "master")
 IMAGE_REGISTRY = os.getenv('IMAGE_REGISTRY', "gcr.io/k8s-staging-nfd")
@@ -12,6 +12,7 @@ IMAGE_NAME = os.getenv('IMAGE_NAME', "node-feature-discovery")
 # registry.k8s.io/nfd/node-feature-discovery:master
 IMAGE = "/".join([IMAGE_REGISTRY, IMAGE_NAME])
 TAGGED_IMAGE = ":".join([IMAGE, IMAGE_TAG_NAME])
+allow_k8s_contexts('kubernetes-admin@kubernetes')
 
 # Builds container image
 def build_image():
