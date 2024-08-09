@@ -198,6 +198,16 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["coprocessor.nx_gzip"] = v
 	}
 
+	// E cores
+	if v, ok := features.Attributes[TopologyFeature].Elements["e_cores"]; ok {
+		labels["e_cores"] = v
+	}
+
+	// P cores
+	if v, ok := features.Attributes[TopologyFeature].Elements["p_cores"]; ok {
+		labels["p_cores"] = v
+	}
+
 	return labels, nil
 }
 
@@ -266,6 +276,27 @@ func getCPUModel() map[string]string {
 	return cpuModelInfo
 }
 
+func getCPUID(name string) int {
+	id := 0
+	base := 1
+	for idx := len(name) - 1; idx > 0; idx-- {
+		d := name[idx]
+
+		if '0' <= d && d <= '9' {
+			id += base * (int(d) - '0')
+			base *= 10
+		} else {
+			if base > 1 {
+				return id
+			}
+
+			return -1
+		}
+	}
+
+	return -1
+}
+
 func discoverTopology() map[string]string {
 	features := make(map[string]string)
 
@@ -277,8 +308,13 @@ func discoverTopology() map[string]string {
 
 	ht := false
 	uniquePhysicalIDs := sets.NewString()
+	coreIDs := sets.NewString()
+	pCoreIDs := sets.NewString()
+	eCoreIDs := sets.NewString()
 
 	for _, file := range files {
+		coreIDs.Insert(strconv.Itoa(getCPUID(file.Name())))
+
 		// Try to read siblings from topology
 		siblings, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", file.Name(), "topology/thread_siblings_list"))
 		if err != nil {
@@ -305,6 +341,31 @@ func discoverTopology() map[string]string {
 
 	features["hardware_multithreading"] = strconv.FormatBool(ht)
 	features["socket_count"] = strconv.FormatInt(int64(uniquePhysicalIDs.Len()), 10)
+
+	for _, entry := range files {
+
+		// Try to read core_cpus_list from topology
+		cpus, err := os.ReadFile(hostpath.SysfsDir.Path("bus/cpu/devices", entry.Name(), "topology/core_cpus_list"))
+		if err != nil {
+			klog.ErrorS(err, "error reading core_cpus_list file")
+			return map[string]string{}
+		}
+
+		if id := strings.Split(string(cpus), "-"); len(id) == 2 {
+			if _, ok := coreIDs[id[0]]; ok {
+				pCoreIDs.Insert(id[0])
+			}
+			if _, ok := coreIDs[id[1]]; ok {
+				pCoreIDs.Insert(id[1])
+			}
+		} else {
+			id1 := strings.Split(string(id[0]), "\n")
+			eCoreIDs.Insert(id1[0])
+		}
+	}
+
+	features["e_cores"] = strings.Join(eCoreIDs.List(), "_")
+	features["p_cores"] = strings.Join(pCoreIDs.List(), "_")
 
 	return features
 }
