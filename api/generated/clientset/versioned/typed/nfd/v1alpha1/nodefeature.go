@@ -40,6 +40,7 @@ type NodeFeaturesGetter interface {
 type NodeFeatureInterface interface {
 	Create(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.CreateOptions) (*v1alpha1.NodeFeature, error)
 	Update(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (*v1alpha1.NodeFeature, error)
+	UpdateStatus(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (*v1alpha1.NodeFeature, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.NodeFeature, error)
@@ -128,6 +129,22 @@ func (c *nodeFeatures) Update(ctx context.Context, nodeFeature *v1alpha1.NodeFea
 		Namespace(c.ns).
 		Resource("nodefeatures").
 		Name(nodeFeature.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(nodeFeature).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *nodeFeatures) UpdateStatus(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (result *v1alpha1.NodeFeature, err error) {
+	result = &v1alpha1.NodeFeature{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("nodefeatures").
+		Name(nodeFeature.Name).
+		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(nodeFeature).
 		Do(ctx).
