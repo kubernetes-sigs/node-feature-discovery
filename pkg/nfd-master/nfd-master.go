@@ -36,12 +36,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -159,7 +159,49 @@ type nfdMaster struct {
 	nfdClient      *nfdclientset.Clientset
 	updaterPool    *updaterPool
 	deniedNs
-	config *NFDConfig
+	config             *NFDConfig
+	customHealthServer *customHealthServer
+}
+
+// customHealthServer implements grpc_health_v1.HealthServer
+type customHealthServer struct {
+	grpc_health_v1.UnimplementedHealthServer
+	k8sclient          k8sclient.Interface
+	metricServerStatus bool
+	nodeUpdaterStatus  bool
+}
+
+func (s *customHealthServer) SetMetricServerStatus(status bool) {
+	s.metricServerStatus = status
+}
+func (s *customHealthServer) SetNodeUpdaterStatus(status bool) {
+	s.nodeUpdaterStatus = status
+}
+
+// Check method for customHealthServer
+func (s *customHealthServer) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
+
+	// nfd metrics server status
+	metricServerStatus := s.metricServerStatus
+	klog.InfoS("nfd master's metric server status", "status", metricServerStatus)
+	if !metricServerStatus {
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
+	}
+
+	// ndf node updater pool status
+	nodeUpdaterStatus := s.nodeUpdaterStatus
+	klog.InfoS("nfd master's node updater pool status", "status", nodeUpdaterStatus)
+	if !nodeUpdaterStatus {
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
+	}
+	return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
+
+}
+
+// Watch method for customHealthServer
+func (s *customHealthServer) Watch(req *grpc_health_v1.HealthCheckRequest, srv grpc_health_v1.Health_WatchServer) error {
+	klog.InfoS("Watch request received")
+	return nil
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -227,8 +269,11 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 		}
 		nfd.nfdClient = nfdClient
 	}
-
+	
 	nfd.updaterPool = newUpdaterPool(nfd)
+	
+	// customHealthServer
+	nfd.customHealthServer = &customHealthServer{k8sclient: nfd.k8sClient, metricServerStatus: false, nodeUpdaterStatus: true}
 
 	return nfd, nil
 }
@@ -317,7 +362,7 @@ func (m *nfdMaster) Run() error {
 
 	// Register to metrics server
 	if m.args.MetricsPort > 0 {
-		m := utils.CreateMetricsServer(m.args.MetricsPort,
+		server := utils.CreateMetricsServer(m.args.MetricsPort,
 			buildInfo,
 			nodeUpdateRequests,
 			nodeUpdates,
@@ -327,9 +372,13 @@ func (m *nfdMaster) Run() error {
 			nodeTaintsRejected,
 			nfrProcessingTime,
 			nfrProcessingErrors)
-		go m.Run()
+		// Set metric server status to true
+		m.customHealthServer.SetMetricServerStatus(true)
+		go server.Run()
 		registerVersion(version.Get())
-		defer m.Stop()
+		defer server.Stop()
+		// Set metric server status to false when the server stops
+		defer m.customHealthServer.SetMetricServerStatus(false)
 	}
 
 	// Run gRPC server
@@ -412,7 +461,7 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 	}
 
 	s := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	grpc_health_v1.RegisterHealthServer(s, m.customHealthServer)
 	klog.InfoS("gRPC health server serving", "port", m.args.GrpcHealthPort)
 
 	go func() {
@@ -1601,4 +1650,14 @@ func patchNode(cli k8sclient.Interface, nodeName string, patches []utils.JsonPat
 
 func patchNodeStatus(cli k8sclient.Interface, nodeName string, patches []utils.JsonPatch) error {
 	return patchNode(cli, nodeName, patches, "status")
+}
+
+func getPod(cli k8sclient.Interface, namespace string, podName string) (*corev1.Pod, error) {
+	return cli.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+}
+
+func getPods(cli k8sclient.Interface, namespace string, labelSelector string) (*corev1.PodList, error) {
+	return cli.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
 }
