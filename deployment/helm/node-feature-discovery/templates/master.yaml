@@ -45,6 +45,8 @@ spec:
             {{- toYaml .Values.master.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          startupProbe:
+            {{- toYaml .Values.master.startupProbe | nindent 12 }}
           livenessProbe:
             {{- toYaml .Values.master.livenessProbe | nindent 12 }}
           readinessProbe:
