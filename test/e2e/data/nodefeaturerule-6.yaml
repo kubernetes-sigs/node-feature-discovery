@@ -1,0 +1,18 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: e2e-test-6
+spec:
+  rules:
+    - name: "e2e-restrictions-test-1"
+      taints:
+        - effect: PreferNoSchedule
+          key: "feature.node.kubernetes.io/fake-special-cpu"
+          value: "true"
+      labels:
+        e2e.feature.node.kubernetes.io/restricted-label-1: "true"
+      annotations:
+        e2e.feature.node.kubernetes.io/restricted-annoation-1: "yes"
+      extendedResources:
+        e2e.feature.node.kubernetes.io/restricted-er-1: "2"
+      matchFeatures:

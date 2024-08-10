@@ -4,7 +4,7 @@ apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeature
 metadata:
   labels:
-    nfd.node.kubernetes.io/node-name: nfd-control-plane
+    nfd.node.kubernetes.io/node-name: example-node
   name: example-node
   namespace: node-feature-discovery
 spec:

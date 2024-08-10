@@ -20,11 +20,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
-	fakeclient "k8s.io/client-go/kubernetes/fake"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	fakeclient "k8s.io/client-go/kubernetes/fake"
+	clienttesting "k8s.io/client-go/testing"
+
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 func TestGetNodeNameForObj(t *testing.T) {
@@ -45,7 +47,7 @@ func TestGetNodeNameForObj(t *testing.T) {
 	assert.Equal(t, n, "node-1")
 }
 
-func newTestNamespace(name string) *corev1.Namespace{
+func newTestNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -56,11 +58,19 @@ func newTestNamespace(name string) *corev1.Namespace{
 	}
 }
 
-func TestIsNamespaceAllowed(t *testing.T) {
+func TestIsNamespaceSelected(t *testing.T) {
 	fakeCli := fakeclient.NewSimpleClientset(newTestNamespace("fake"))
-	c := &nfdController{
-		k8sClient: fakeCli,
-	}
+	fakeCli.PrependWatchReactor("*", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
+		gvr := action.GetResource()
+		ns := action.GetNamespace()
+		watch, err := fakeCli.Tracker().Watch(gvr, ns)
+		if err != nil {
+			return false, nil, err
+		}
+		return true, watch, nil
+	})
+
+	c := &nfdController{}
 
 	testcases := []struct {
 		name                         string
@@ -69,8 +79,8 @@ func TestIsNamespaceAllowed(t *testing.T) {
 		expectedResult               bool
 	}{
 		{
-			name:                         "namespace not allowed",
-			objectNamespace:              "random",
+			name:            "namespace not selected",
+			objectNamespace: "random",
 			nodeFeatureNamespaceSelector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
@@ -80,21 +90,22 @@ func TestIsNamespaceAllowed(t *testing.T) {
 					},
 				},
 			},
-			expectedResult:               false,
+			expectedResult: false,
 		},
 		{
-			name:                         "namespace is allowed",
-			objectNamespace:              "fake",
+			name:            "namespace is selected",
+			objectNamespace: "fake",
 			nodeFeatureNamespaceSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"name": "fake"},
 			},
-			expectedResult:               false,
+			expectedResult: true,
 		},
 	}
 
 	for _, tc := range testcases {
-		c.nodeFeatureNamespaceSelector = tc.nodeFeatureNamespaceSelector
-		res := c.isNamespaceSelected(tc.name)
+		labelMap, _ := metav1.LabelSelectorAsSelector(tc.nodeFeatureNamespaceSelector)
+		c.namespaceLister = newNamespaceLister(fakeCli, labelMap)
+		res := c.isNamespaceSelected(tc.objectNamespace)
 		assert.Equal(t, res, tc.expectedResult)
 	}
 }

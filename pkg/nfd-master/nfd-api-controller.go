@@ -17,16 +17,17 @@ limitations under the License.
 package nfdmaster
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
+	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
 	nfdinformersv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions/nfd/v1alpha1"
@@ -46,12 +47,16 @@ type nfdController struct {
 	updateOneNodeChan              chan string
 	updateAllNodeFeatureGroupsChan chan struct{}
 	updateNodeFeatureGroupChan     chan string
+
+	namespaceLister *NamespaceLister
 }
 
 type nfdApiControllerOptions struct {
-	DisableNodeFeature      bool
-	DisableNodeFeatureGroup bool
-	ResyncPeriod            time.Duration
+	DisableNodeFeature           bool
+	DisableNodeFeatureGroup      bool
+	ResyncPeriod                 time.Duration
+	K8sClient                    k8sclient.Interface
+	NodeFeatureNamespaceSelector *metav1.LabelSelector
 }
 
 func init() {
@@ -65,12 +70,18 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		updateOneNodeChan:              make(chan string),
 		updateAllNodeFeatureGroupsChan: make(chan struct{}, 1),
 		updateNodeFeatureGroupChan:     make(chan string),
-		k8sClient:                      nfdApiControllerOptions.K8sClient,
-		nodeFeatureNamespaceSelector:   nfdApiControllerOptions.NodeFeatureNamespaceSelector,
+	}
+
+	if nfdApiControllerOptions.NodeFeatureNamespaceSelector != nil {
+		labelMap, err := metav1.LabelSelectorAsSelector(nfdApiControllerOptions.NodeFeatureNamespaceSelector)
+		if err != nil {
+			klog.ErrorS(err, "failed to convert label selector to map", "selector", nfdApiControllerOptions.NodeFeatureNamespaceSelector)
+			return nil, err
+		}
+		c.namespaceLister = newNamespaceLister(nfdApiControllerOptions.K8sClient, labelMap)
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
-
 	klog.V(2).InfoS("initializing new NFD API controller", "options", utils.DelayedDumper(nfdApiControllerOptions))
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.ResyncPeriod)
@@ -94,25 +105,26 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				if c.isNamespaceSelected(nfr.Namespace) {
 					c.updateOneNode("NodeFeature", nfr)
 				} else {
-					klog.InfoS("NodeFeature not in selected namespace", "namespace", nfr.Namespace, "name", nfr.Name)
+					klog.V(2).InfoS("NodeFeature namespace is not selected, skipping", "nodefeature", klog.KObj(nfr))
+				}
+				if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+					c.updateAllNodeFeatureGroups()
 				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				nfr := newObj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
-				if c.isNamespaceSelected(nfr.Namespace) {
-					c.updateOneNode("NodeFeature", nfr)
-				} else {
-					klog.InfoS("NodeFeature not in selected namespace", "namespace", nfr.Namespace, "name", nfr.Name)
+				c.updateOneNode("NodeFeature", nfr)
+				if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+					c.updateAllNodeFeatureGroups()
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				nfr := obj.(*nfdv1alpha1.NodeFeature)
 				klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
-				if c.isNamespaceSelected(nfr.Namespace) {
-					c.updateOneNode("NodeFeature", nfr)
-				} else {
-					klog.InfoS("NodeFeature not in selected namespace", "namespace", nfr.Namespace, "name", nfr.Name)
+				c.updateOneNode("NodeFeature", nfr)
+				if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+					c.updateAllNodeFeatureGroups()
 				}
 			},
 		}); err != nil {
@@ -192,6 +204,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 
 func (c *nfdController) stop() {
 	close(c.stopChan)
+	c.namespaceLister.stop()
 }
 
 func getNodeNameForObj(obj metav1.Object) (string, error) {
@@ -215,28 +228,19 @@ func (c *nfdController) updateOneNode(typ string, obj metav1.Object) {
 }
 
 func (c *nfdController) isNamespaceSelected(namespace string) bool {
-	// no namespace restrictions are made here
-	if c.nodeFeatureNamespaceSelector == nil {
+	// this means that the user didn't specify any namespace selector
+	// which means that we allow all namespaces
+	if c.namespaceLister == nil {
 		return true
 	}
 
-	labelMap, err := metav1.LabelSelectorAsSelector(c.nodeFeatureNamespaceSelector)
+	namespaces, err := c.namespaceLister.list()
 	if err != nil {
-		klog.ErrorS(err, "failed to convert label selector to map", "selector", c.nodeFeatureNamespaceSelector)
+		klog.ErrorS(err, "failed to query namespaces by the namespace lister")
 		return false
 	}
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labelMap.String(),
-	}
-
-	namespaces, err := c.k8sClient.CoreV1().Namespaces().List(context.Background(), listOptions)
-	if err != nil {
-		klog.ErrorS(err, "failed to query namespaces", "listOptions", listOptions)
-		return false
-	}
-
-	for _, ns := range namespaces.Items {
+	for _, ns := range namespaces {
 		if ns.Name == namespace {
 			return true
 		}
