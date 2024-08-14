@@ -29,7 +29,6 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/config"
-	"k8s.io/kubernetes/test/e2e/framework/testfiles"
 )
 
 var (
@@ -55,15 +54,6 @@ func TestMain(m *testing.M) {
 	handleFlags()
 
 	framework.AfterReadingAllFlags(&framework.TestContext)
-
-	// TODO: Deprecating repo-root over time... instead just use gobindata_util.go , see #23987.
-	// Right now it is still needed, for example by
-	// test/e2e/framework/ingress/ingress_utils.go
-	// for providing the optional secret.yaml file and by
-	// test/e2e/framework/util.go for cluster/log-dump.
-	if framework.TestContext.RepoRoot != "" {
-		testfiles.AddFileSource(testfiles.RootFileSource{Root: framework.TestContext.RepoRoot})
-	}
 
 	os.Exit(m.Run())
 }
