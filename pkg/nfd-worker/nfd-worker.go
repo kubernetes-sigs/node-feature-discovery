@@ -34,7 +34,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -121,6 +120,41 @@ type ConfigOverrideArgs struct {
 	LabelSources   *utils.StringSliceVal
 }
 
+// CustomHealthServer implements grpc_health_v1.HealthServer
+type CustomHealthServer struct {
+	grpc_health_v1.UnimplementedHealthServer
+	featureDiscoveryStatus bool
+	nodeFeatureObject      bool
+}
+
+func (s *CustomHealthServer) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
+	switch req.Service {
+	case "liveness":
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
+
+	case "readiness":
+		if !s.featureDiscoveryStatus {
+			klog.InfoS("Feature discovery status is false", "featureDiscoveryStatus", s.featureDiscoveryStatus)
+			return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
+		}
+		if features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) && !s.nodeFeatureObject {
+			klog.InfoS("NodeFeature object status is false", "nodeFeatureObject", s.nodeFeatureObject)
+			return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING}, nil
+		}
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil
+
+	default:
+		klog.InfoS("Unknown service", "service", req.Service)
+		return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVICE_UNKNOWN}, nil
+	}
+
+}
+
+// Watch method for the health server not needed.
+func (s *CustomHealthServer) Watch(req *grpc_health_v1.HealthCheckRequest, srv grpc_health_v1.Health_WatchServer) error {
+	return nil
+}
+
 type nfdWorker struct {
 	args                Args
 	certWatch           *utils.FsWatcher
@@ -136,6 +170,7 @@ type nfdWorker struct {
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
+	customHealthServer  *CustomHealthServer
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -179,6 +214,7 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 		config:              &NFDConfig{},
 		kubernetesNamespace: utils.GetKubernetesNamespace(),
 		stop:                make(chan struct{}),
+		customHealthServer:  &CustomHealthServer{featureDiscoveryStatus: false, nodeFeatureObject: false},
 	}
 
 	for _, o := range opts {
@@ -248,7 +284,7 @@ func (w *nfdWorker) startGrpcHealthServer(errChan chan<- error) error {
 	}
 
 	s := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	grpc_health_v1.RegisterHealthServer(s, w.customHealthServer)
 	klog.InfoS("gRPC health server serving", "port", w.args.GrpcHealthPort)
 
 	go func() {
@@ -271,8 +307,10 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 		currentSourceStart := time.Now()
 		if err := s.Discover(); err != nil {
 			klog.ErrorS(err, "feature discovery failed", "source", s.Name())
+			w.customHealthServer.featureDiscoveryStatus = false
 		}
 		klog.V(3).InfoS("feature discovery completed", "featureSource", s.Name(), "duration", time.Since(currentSourceStart))
+		w.customHealthServer.featureDiscoveryStatus = true
 	}
 
 	discoveryDuration := time.Since(discoveryStart)
@@ -743,8 +781,10 @@ func (w *nfdWorker) advertiseFeatures(labels Labels) error {
 	if features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
 		// Create/update NodeFeature CR object
 		if err := w.updateNodeFeatureObject(labels); err != nil {
+			w.customHealthServer.nodeFeatureObject = false
 			return fmt.Errorf("failed to advertise features (via CRD API): %w", err)
 		}
+		w.customHealthServer.nodeFeatureObject = true
 	} else {
 		// Create/update feature labels through gRPC connection to nfd-master
 		if err := w.advertiseFeatureLabels(labels); err != nil {

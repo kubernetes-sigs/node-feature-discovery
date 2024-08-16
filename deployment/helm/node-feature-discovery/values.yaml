@@ -417,12 +417,14 @@ worker:
   livenessProbe:
     grpc:
       port: 8082
+      service: "liveness"
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
   readinessProbe:
     grpc:
       port: 8082
+      service: "readiness"
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
