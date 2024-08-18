@@ -200,6 +200,16 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["coprocessor.nx_gzip"] = v
 	}
 
+	_, err := os.ReadFile(hostpath.SysfsDir.Path("sys/devices/cpu_atom/cpus"))
+	if err == nil {
+		labels["cpu_atom"] = true
+	}
+
+	_, err = os.ReadFile(hostpath.SysfsDir.Path("sys/devices/cpu_core/cpus"))
+	if err == nil {
+		labels["cpu_core"] = true
+	}
+
 	return labels, nil
 }
 
