@@ -61,9 +61,9 @@ func init() {
 func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
 	c := &nfdController{
 		stopChan:                       make(chan struct{}),
-		updateAllNodesChan:             make(chan struct{}, 1),
+		updateAllNodesChan:             make(chan struct{}),
 		updateOneNodeChan:              make(chan string),
-		updateAllNodeFeatureGroupsChan: make(chan struct{}, 1),
+		updateAllNodeFeatureGroupsChan: make(chan struct{}),
 		updateNodeFeatureGroupChan:     make(chan string),
 	}
 
