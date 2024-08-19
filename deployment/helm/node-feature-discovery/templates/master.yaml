@@ -23,10 +23,11 @@ spec:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
         role: master
-      {{- with .Values.master.annotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/nfd-master-conf.yaml") . | sha256sum }}
+        {{- with .Values.master.annotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
     {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}

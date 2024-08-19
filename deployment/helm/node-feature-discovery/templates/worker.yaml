@@ -22,10 +22,11 @@ spec:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
         role: worker
-      {{- with .Values.worker.annotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/nfd-worker-conf.yaml") . | sha256sum }}
+        {{- with .Values.worker.annotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       dnsPolicy: ClusterFirstWithHostNet
     {{- with .Values.priorityClassName }}

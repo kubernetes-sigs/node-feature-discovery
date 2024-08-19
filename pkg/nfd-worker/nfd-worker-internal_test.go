@@ -18,7 +18,6 @@ package nfdworker
 
 import (
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -193,113 +192,6 @@ sources:
 			})
 		})
 	})
-}
-
-func TestDynamicConfig(t *testing.T) {
-	Convey("When running nfd-worker", t, func() {
-		tmpDir, err := os.MkdirTemp("", "*.nfd-test")
-		So(err, ShouldBeNil)
-		defer os.RemoveAll(tmpDir)
-
-		// Create (temporary) dir for config
-		configDir := filepath.Join(tmpDir, "subdir-1", "subdir-2", "worker.conf")
-		err = os.MkdirAll(configDir, 0755)
-		So(err, ShouldBeNil)
-
-		// Create config file
-		configFile := filepath.Join(configDir, "worker.conf")
-
-		writeConfig := func(data string) {
-			f, err := os.Create(configFile)
-			So(err, ShouldBeNil)
-			_, err = f.WriteString(data)
-			So(err, ShouldBeNil)
-			err = f.Close()
-			So(err, ShouldBeNil)
-
-		}
-		writeConfig(`
-core:
-  labelWhiteList: "fake"
-`)
-
-		noPublish := true
-		w, err := NewNfdWorker(WithArgs(&Args{
-			ConfigFile: configFile,
-			Overrides: ConfigOverrideArgs{
-				FeatureSources: &utils.StringSliceVal{"fake"},
-				LabelSources:   &utils.StringSliceVal{"fake"},
-				NoPublish:      &noPublish},
-		}), WithKubernetesClient(fakeclient.NewSimpleClientset()))
-		So(err, ShouldBeNil)
-		worker := w.(*nfdWorker)
-
-		Convey("config file updates should take effect", func() {
-			go func() { _ = w.Run() }()
-			defer w.Stop()
-
-			// Check initial config
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
-				withTimeout, 2*time.Second, ShouldEqual, "fake")
-
-			// Update config and verify the effect
-			writeConfig(`
-core:
-  labelWhiteList: "foo"
-`)
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
-				withTimeout, 2*time.Second, ShouldEqual, "foo")
-
-			// Removing config file should get back our defaults
-			err = os.RemoveAll(tmpDir)
-			So(err, ShouldBeNil)
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
-				withTimeout, 2*time.Second, ShouldEqual, "")
-
-			// Re-creating config dir and file should change the config
-			err = os.MkdirAll(configDir, 0755)
-			So(err, ShouldBeNil)
-			writeConfig(`
-core:
-  labelWhiteList: "bar"
-`)
-			So(func() interface{} { return worker.config.Core.LabelWhiteList.String() },
-				withTimeout, 2*time.Second, ShouldEqual, "bar")
-		})
-	})
-}
-
-// withTimeout is a custom assertion for polling a value asynchronously
-// actual is a function for getting the actual value
-// expected[0] is a time.Duration value specifying the timeout
-// expected[1] is  the "real" assertion function to be called
-// expected[2:] are the arguments for the "real" assertion function
-func withTimeout(actual interface{}, expected ...interface{}) string {
-	getter, ok := actual.(func() interface{})
-	if !ok {
-		return "not getterFunc"
-	}
-	t, ok := expected[0].(time.Duration)
-	if !ok {
-		return "not time.Duration"
-	}
-	f, ok := expected[1].(func(interface{}, ...interface{}) string)
-	if !ok {
-		return "not an assert func"
-	}
-
-	timeout := time.After(t)
-	for {
-		result := f(getter(), expected[2:]...)
-		if result == "" {
-			return ""
-		}
-		select {
-		case <-timeout:
-			return result
-		case <-time.After(10 * time.Millisecond):
-		}
-	}
 }
 
 func TestNewNfdWorker(t *testing.T) {

@@ -32,28 +32,27 @@ received from nfd-worker instances through
 
 ## Master configuration
 
-NFD-Master supports dynamic configuration through a configuration file. The
+NFD-Master supports configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-master.conf`,
 but, this can be changed by specifying the`-config` command line flag.
-Configuration file is re-read whenever it is modified which makes run-time
-re-configuration of nfd-master straightforward.
 
 Master configuration file is read inside the container, and thus, Volumes and
 VolumeMounts are needed to make your configuration available for NFD. The
 preferred method is to use a ConfigMap which provides easy deployment and
 re-configurability.
 
-The provided nfd-master deployment templates create an empty configmap and
-mount it inside the nfd-master containers. In kustomize deployments,
-configuration can be edited with:
-
-```bash
-kubectl -n ${NFD_NS} edit configmap nfd-master-conf
-```
+The provided deployment methods (Helm and Kustomize) create an empty configmap
+and mount it inside the nfd-master containers.
 
 In Helm deployments,
 [Master pod parameter](../deployment/helm.md#master-pod-parameters)
 `master.config` can be used to edit the respective configuration.
+
+In Kustomize deployments, modify the `nfd-master-conf` ConfigMap with a custom
+overlay.
+
+> **NOTE:** dynamic run-time reconfiguration was dropped in NFD v0.17.
+> Re-configuration is handled by pod restarts.
 
 See
 [nfd-master configuration file reference](../reference/master-configuration-reference.md)

@@ -940,24 +940,6 @@ denyLabelNs: ["*.denied.ns","random.unwanted.ns"]
 				By("Deleting NodeFeature object")
 				err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
 				Expect(err).NotTo(HaveOccurred())
-
-				// TODO: Find a better way to handle the timeout that happens to reflect the configmap changes
-				Skip("Testing the master dynamic configuration")
-				// Verify that config changes were applied
-				By("Updating the master config")
-				Expect(testutils.UpdateConfigMap(ctx, f.ClientSet, "nfd-master-conf", f.Namespace.Name, "nfd-master.conf", `
-denyLabelNs: []
-`))
-				By("Verifying that denied labels were removed")
-				expectedLabels = map[string]k8sLabels{
-					targetNodeName: {
-						nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-4": "obj-4",
-						"custom.vendor.io/e2e-nodefeature-test-3":              "vendor-ns",
-						"random.denied.ns/e2e-nodefeature-test-1":              "denied-ns",
-						"random.unwanted.ns/e2e-nodefeature-test-2":            "unwanted-ns",
-					},
-				}
-				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
 			})
 		})
 
