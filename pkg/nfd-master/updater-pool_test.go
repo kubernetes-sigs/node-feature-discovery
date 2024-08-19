@@ -37,8 +37,15 @@ func TestUpdaterStart(t *testing.T) {
 	fakeMaster := newFakeMaster()
 	updaterPool := newFakeupdaterPool(fakeMaster)
 
+	Convey("New node updater pool should report running=false", t, func() {
+		So(updaterPool.running(), ShouldBeFalse)
+	})
+
 	Convey("When starting the node updater pool", t, func() {
 		updaterPool.start(10)
+		Convey("Running node updater pool should report running=true", func() {
+			So(updaterPool.running(), ShouldBeTrue)
+		})
 		q := updaterPool.queue
 		Convey("Node updater pool queue properties should change", func() {
 			So(q, ShouldNotBeNil)
@@ -57,9 +64,15 @@ func TestNodeUpdaterStop(t *testing.T) {
 	updaterPool := newFakeupdaterPool(fakeMaster)
 
 	updaterPool.start(10)
+	Convey("Running node updater pool should report running=true", t, func() {
+		So(updaterPool.running(), ShouldBeTrue)
+	})
 
 	Convey("When stoping the node updater pool", t, func() {
 		updaterPool.stop()
+		Convey("Stopped node updater pool should report running=false", func() {
+			So(updaterPool.running(), ShouldBeFalse)
+		})
 		Convey("Node updater pool queue should be removed", func() {
 			// Wait for the wg.Done()
 			So(func() interface{} {

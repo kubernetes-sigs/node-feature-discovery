@@ -31,6 +31,7 @@ import (
 )
 
 type updaterPool struct {
+	started  bool
 	queue    workqueue.RateLimitingInterface
 	nfgQueue workqueue.RateLimitingInterface
 	sync.RWMutex
@@ -129,13 +130,8 @@ func (u *updaterPool) start(parallelism int) {
 	u.Lock()
 	defer u.Unlock()
 
-	if u.queue != nil && !u.queue.ShuttingDown() {
+	if u.started {
 		klog.InfoS("the NFD master updater pool is already running.")
-		return
-	}
-
-	if u.nfgQueue != nil && !u.nfgQueue.ShuttingDown() {
-		klog.InfoS("the NFD master node feature group updater pool is already running.")
 		return
 	}
 
@@ -158,18 +154,14 @@ func (u *updaterPool) start(parallelism int) {
 			go u.runNodeFeatureGroupUpdater(u.nfgQueue)
 		}
 	}
+	u.started = true
 }
 
 func (u *updaterPool) stop() {
 	u.Lock()
 	defer u.Unlock()
 
-	if u.queue == nil || u.queue.ShuttingDown() {
-		klog.InfoS("the NFD master updater pool is not running.")
-		return
-	}
-
-	if u.nfgQueue == nil || u.nfgQueue.ShuttingDown() {
+	if !u.started {
 		klog.InfoS("the NFD master updater pool is not running.")
 		return
 	}
@@ -179,6 +171,13 @@ func (u *updaterPool) stop() {
 	u.wg.Wait()
 	u.nfgQueue.ShutDown()
 	u.nfgWg.Wait()
+	u.started = false
+}
+
+func (u *updaterPool) running() bool {
+	u.RLock()
+	defer u.RUnlock()
+	return u.started
 }
 
 func (u *updaterPool) addNode(nodeName string) {
