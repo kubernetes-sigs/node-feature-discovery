@@ -187,7 +187,10 @@ func (c *nfdController) updateOneNode(typ string, obj metav1.Object) {
 		klog.ErrorS(err, "failed to determine node name for object", "type", typ, "object", klog.KObj(obj))
 		return
 	}
-	c.updateOneNodeChan <- nodeName
+	select {
+	case c.updateOneNodeChan <- nodeName:
+	case <-c.stopChan:
+	}
 }
 
 func (c *nfdController) updateAllNodes() {
@@ -198,7 +201,10 @@ func (c *nfdController) updateAllNodes() {
 }
 
 func (c *nfdController) updateNodeFeatureGroup(nodeFeatureGroup string) {
-	c.updateNodeFeatureGroupChan <- nodeFeatureGroup
+	select {
+	case c.updateNodeFeatureGroupChan <- nodeFeatureGroup:
+	case <-c.stopChan:
+	}
 }
 
 func (c *nfdController) updateAllNodeFeatureGroups() {

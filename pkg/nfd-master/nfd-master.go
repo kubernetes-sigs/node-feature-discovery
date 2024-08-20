@@ -393,7 +393,7 @@ func (m *nfdMaster) Run() error {
 
 			// Update all nodes when the configuration changes
 			if m.nfdController != nil && nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) && m.args.EnableNodeFeatureApi {
-				m.nfdController.updateAllNodesChan <- struct{}{}
+				m.nfdController.updateAllNodes()
 			}
 
 		case <-m.stop:
