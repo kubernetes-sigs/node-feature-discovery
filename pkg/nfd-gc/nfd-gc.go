@@ -19,6 +19,7 @@ package nfdgarbagecollector
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	topologyv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
@@ -34,6 +35,7 @@ import (
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
@@ -42,6 +44,7 @@ var (
 	gvrNF   = nfdv1alpha1.SchemeGroupVersion.WithResource("nodefeatures")
 	gvrNRT  = topologyv1alpha2.SchemeGroupVersion.WithResource("noderesourcetopologies")
 	gvrNode = corev1.SchemeGroupVersion.WithResource("nodes")
+	gvrPod  = corev1.SchemeGroupVersion.WithResource("pods")
 )
 
 // Args are the command line arguments
@@ -61,6 +64,8 @@ type nfdGarbageCollector struct {
 	stopChan chan struct{}
 	client   metadataclient.Interface
 	factory  metadatainformer.SharedInformerFactory
+	// gcNRTs holds owner-pod and namespace information for detecting stale NRT objects
+	gcNRTs map[string]string
 }
 
 func New(args *Args) (NfdGarbageCollector, error) {
@@ -76,6 +81,7 @@ func New(args *Args) (NfdGarbageCollector, error) {
 		stopChan: make(chan struct{}),
 		client:   cli,
 		factory:  metadatainformer.NewSharedInformerFactory(cli, 0),
+		gcNRTs:   make(map[string]string),
 	}, nil
 }
 
@@ -190,7 +196,30 @@ func (n *nfdGarbageCollector) garbageCollect() {
 
 	// Handle NodeResourceTopology objects
 	listAndHandle(gvrNRT, func(meta metav1.PartialObjectMetadata) {
-		if !nodeNames.Has(meta.Name) {
+		deleteNRT := false
+
+		if objRef, ok := meta.Annotations[nfdtopologyupdater.NRTOwnerPodAnnotation]; ok {
+			if s := strings.Split(objRef, "/"); len(s) == 2 {
+				pod := s[1]
+				_, err := n.client.Resource(gvrPod).Get(context.TODO(), pod, metav1.GetOptions{})
+				if errors.IsNotFound(err) {
+					if val, ok := n.gcNRTs[meta.Name]; !ok {
+						n.gcNRTs[meta.Name] = objRef
+					} else {
+						if val != objRef {
+							n.gcNRTs[meta.Name] = objRef
+						} else {
+							delete(n.gcNRTs, meta.Name)
+							deleteNRT = true
+						}
+					}
+				} else if err != nil {
+					klog.ErrorS(err, "failed to get Pod object")
+				}
+			}
+		}
+
+		if !nodeNames.Has(meta.Name) || deleteNRT {
 			n.deleteNRT(meta.Name)
 		}
 	})

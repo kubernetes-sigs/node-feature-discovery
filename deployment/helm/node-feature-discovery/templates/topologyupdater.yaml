@@ -57,6 +57,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
       {{- with .Values.topologyUpdater.extraEnvs }}
         {{- toYaml . | nindent 8 }}
       {{- end}}
