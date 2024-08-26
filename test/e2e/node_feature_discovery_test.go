@@ -200,6 +200,8 @@ func cleanupCRs(ctx context.Context, cli *nfdclient.Clientset, namespace string)
 // Actual test suite
 var _ = NFDDescribe(Label("nfd-master"), func() {
 	f := framework.NewDefaultFramework("node-feature-discovery")
+	// nfd-worker needs host mounts
+	f.NamespacePodSecurityLevel = admissionapi.LevelPrivileged
 
 	Context("when deploying a single nfd-master pod", Ordered, func() {
 		var (
@@ -234,14 +236,6 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 		})
 
 		JustBeforeEach(func(ctx context.Context) {
-			// Drop the pod security admission label as nfd-worker needs host mounts
-			if _, ok := f.Namespace.Labels[admissionapi.EnforceLevelLabel]; ok {
-				framework.Logf("Deleting %s label from the test namespace", admissionapi.EnforceLevelLabel)
-				delete(f.Namespace.Labels, admissionapi.EnforceLevelLabel)
-				_, err := f.ClientSet.CoreV1().Namespaces().Update(ctx, f.Namespace, metav1.UpdateOptions{})
-				Expect(err).NotTo(HaveOccurred())
-			}
-
 			err := testutils.ConfigureRBAC(ctx, f.ClientSet, f.Namespace.Name)
 			Expect(err).NotTo(HaveOccurred())
 
