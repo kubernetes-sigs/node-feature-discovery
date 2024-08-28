@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -128,6 +129,10 @@ func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, []nfdv1alpha1.InstanceFe
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to list network interfaces: %w", err)
 	}
+
+	ifaces = slices.DeleteFunc(ifaces, func(iface os.DirEntry) bool {
+		return iface.Name() == "bonding_masters"
+	})
 
 	// Iterate over devices
 	devIfacesinfo := make([]nfdv1alpha1.InstanceFeature, 0, len(ifaces))
