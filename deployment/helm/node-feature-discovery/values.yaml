@@ -177,6 +177,7 @@ worker:
     #core:
     #  labelWhiteList:
     #  noPublish: false
+    #  noOwnerRefs: false
     #  sleepInterval: 60s
     #  featureSources: [all]
     #  labelSources: [all]
