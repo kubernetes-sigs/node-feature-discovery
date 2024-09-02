@@ -159,6 +159,42 @@ func UpdateNodeFeatureRulesFromFile(ctx context.Context, cli nfdclientset.Interf
 	return nil
 }
 
+// CreateNodeFeatureGroupsFromFile creates a NodeFeatureGroup object from a given file located under test data directory.
+func CreateNodeFeatureWorkerConfigFromFile(ctx context.Context, cli nfdclientset.Interface, namespace, filename string) error {
+	objs, err := workerConfigFromFile(filepath.Join(packagePath, "..", "data", filename))
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		if _, err = cli.NfdV1alpha1().NodeFeatureWorkerConfigs(namespace).Create(ctx, obj, metav1.CreateOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// UpdateNodeFeatureWorkerConfigFromFile updates existing NodeFeatureWorkerConfig object from a given file located under test data directory.
+func UpdateNodeFeatureWorkerConfigFromFile(ctx context.Context, cli nfdclientset.Interface, namespace, filename string) error {
+	objs, err := workerConfigFromFile(filepath.Join(packagePath, "..", "data", filename))
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		var cfg *nfdv1alpha1.NodeFeatureWorkerConfig
+		if cfg, err = cli.NfdV1alpha1().NodeFeatureWorkerConfigs(namespace).Get(ctx, obj.Name, metav1.GetOptions{}); err != nil {
+			return fmt.Errorf("failed to get NodeFeatureWorkerConfig %w", err)
+		}
+
+		obj.SetResourceVersion(cfg.GetResourceVersion())
+		if _, err = cli.NfdV1alpha1().NodeFeatureWorkerConfigs(namespace).Update(ctx, obj, metav1.UpdateOptions{}); err != nil {
+			return fmt.Errorf("failed to update NodeFeatureWorkerConfig %w", err)
+		}
+	}
+	return nil
+}
+
 // CreateNodeFeature creates a dummy NodeFeature object for a node
 func CreateNodeFeature(ctx context.Context, cli nfdclientset.Interface, namespace, name, nodeName string) error {
 	nr := &nfdv1alpha1.NodeFeature{
@@ -264,6 +300,25 @@ func nodeFeatureGroupsFromFile(path string) ([]*nfdv1alpha1.NodeFeatureGroup, er
 	for i, obj := range objs {
 		var ok bool
 		crs[i], ok = obj.(*nfdv1alpha1.NodeFeatureGroup)
+		if !ok {
+			return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
+		}
+	}
+
+	return crs, nil
+}
+
+func workerConfigFromFile(path string) ([]*nfdv1alpha1.NodeFeatureWorkerConfig, error) {
+	objs, err := apiObjsFromFile(path, nfdscheme.Codecs.UniversalDeserializer())
+	if err != nil {
+		return nil, err
+	}
+
+	crs := make([]*nfdv1alpha1.NodeFeatureWorkerConfig, len(objs))
+
+	for i, obj := range objs {
+		var ok bool
+		crs[i], ok = obj.(*nfdv1alpha1.NodeFeatureWorkerConfig)
 		if !ok {
 			return nil, fmt.Errorf("unexpected type %t when reading %q", obj, path)
 		}

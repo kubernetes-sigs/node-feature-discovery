@@ -23,3 +23,5 @@ type NodeFeatureExpansion interface{}
 type NodeFeatureGroupExpansion interface{}
 
 type NodeFeatureRuleExpansion interface{}
+
+type NodeFeatureWorkerConfigExpansion interface{}

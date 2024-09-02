@@ -139,6 +139,55 @@ type NodeFeatureRuleSpec struct {
 	Rules []Rule `json:"rules"`
 }
 
+// NodeFeatureWorkerConfig resource holds the configuration for NFD worker
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureWorkerConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Specification of the WorkerConfig, containing configuration data
+	Spec NodeFeatureWorkerConfigSpec `json:"spec"`
+}
+
+// NodeFeatureWorkerConfigSpec holds configuration data
+type NodeFeatureWorkerConfigSpec struct {
+	// +optional
+	Core WorkerCoreConfigCore `json:"core"`
+	// +optional
+	Sources map[string]map[string]string `json:"sources"`
+}
+
+type WorkerCoreConfigCore struct {
+	// +optional
+	Klog map[string]string `json:"klog"`
+	// +optional
+	LabelWhiteList string `json:"labelWhitelist"`
+	// +optional
+	NoPublish bool `json:"noPublish"`
+	// +optional
+	FeatureSources []string `json:"featureSources"`
+	// +optional
+	Sources *[]string `json:"sources"`
+	// +optional
+	LabelSources []string `json:"labelSources"`
+	// +optional
+	SleepInterval int `json:"sleepInterval"`
+}
+
+// NodeFeatureWorkerConfigList contains a list of WorkerConfig objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureWorkerConfigList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	// List of NodeFeatureWorkerConfigs
+	Items []NodeFeatureWorkerConfig `json:"items"`
+}
+
 // NodeFeatureGroup resource holds Node pools by featureGroup
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,shortName=nfg

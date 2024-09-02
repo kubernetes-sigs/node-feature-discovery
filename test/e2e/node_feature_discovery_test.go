@@ -312,6 +312,47 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 			})
 		})
 
+		// Test NodeFeatureWorkerConfig
+		Context("and NodeFeatureWorkerConfig objects deployed", Label("workerconfig"), func() {
+			It("custom WorkerConfgig should be updated", func(ctx context.Context) {
+				By("Creating nfd-worker daemonset")
+				podSpecOpts := []testpod.SpecOption{
+					testpod.SpecWithContainerImage(dockerImage()),
+				}
+				workerDS := testds.NFDWorker(podSpecOpts...)
+				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for worker daemonset pods to be ready")
+				Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+
+				nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+				Expect(err).NotTo(HaveOccurred())
+				nodes = nodes
+
+				By("Creating NodeFeatureWorkerConfig #1")
+				Expect(testutils.CreateNodeFeatureWorkerConfigFromFile(ctx, nfdClient, f.Namespace.Name, "workerconfig-1.yaml")).NotTo(HaveOccurred())
+				By("Updating NodeFeatureWorkerConfig #1")
+				Expect(testutils.UpdateNodeFeatureWorkerConfigFromFile(ctx, nfdClient, f.Namespace.Name, "workerconfig-2.yaml")).NotTo(HaveOccurred())
+				expectedConfig := nfdv1alpha1.NodeFeatureWorkerConfig{
+					Spec: nfdv1alpha1.NodeFeatureWorkerConfigSpec{
+						Core: nfdv1alpha1.WorkerCoreConfigCore{
+							NoPublish: true,
+						},
+					},
+				}
+				Eventually(func() bool {
+					By("Verifying NodeFeatureWorkerConfig #1")
+					config, err := nfdClient.NfdV1alpha1().NodeFeatureWorkerConfigs(f.Namespace.Name).Get(ctx, "e2e-worker-config-1", metav1.GetOptions{})
+					if err != nil {
+						return false
+					}
+
+					return config.Spec.Core.NoPublish == expectedConfig.Spec.Core.NoPublish
+				}, 1*time.Minute, 5*time.Second).Should(BeTrue())
+			})
+		})
+
 		//
 		// More comprehensive test when --e2e-node-config is enabled
 		//
