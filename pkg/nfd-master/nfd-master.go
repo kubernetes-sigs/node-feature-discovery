@@ -284,7 +284,7 @@ func (m *nfdMaster) Run() error {
 		klog.InfoS("Master instance", "instance", m.args.Instance)
 	}
 
-	// Read initial configuration
+	// Read configuration
 	if err := m.configure(m.configFilePath, m.args.Options); err != nil {
 		return err
 	}
@@ -301,12 +301,6 @@ func (m *nfdMaster) Run() error {
 	}
 
 	m.updaterPool.start(m.config.NfdApiParallelism)
-
-	// Create watcher for config file
-	configWatch, err := utils.CreateFsWatcher(time.Second, m.configFilePath)
-	if err != nil {
-		return err
-	}
 
 	if !m.config.NoPublish {
 		err := m.updateMasterNode()
@@ -364,36 +358,6 @@ func (m *nfdMaster) Run() error {
 		select {
 		case err := <-grpcErr:
 			return fmt.Errorf("error in serving gRPC: %w", err)
-
-		case <-configWatch.Events:
-			klog.InfoS("reloading configuration")
-			if err := m.configure(m.configFilePath, m.args.Options); err != nil {
-				return err
-			}
-
-			// Stop the updaterPool so that no node updates are underway
-			// while we reconfigure the NFD API controller (including the
-			// listers) below
-			m.updaterPool.stop()
-
-			// restart NFD API controller
-			if m.nfdController != nil {
-				klog.InfoS("stopping the nfd api controller")
-				m.nfdController.stop()
-			}
-			if m.args.CrdController {
-				err := m.startNfdApiController()
-				if err != nil {
-					return nil
-				}
-			}
-			// Restart the updaterPool
-			m.updaterPool.start(m.config.NfdApiParallelism)
-
-			// Update all nodes when the configuration changes
-			if m.nfdController != nil && nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
-				m.nfdController.updateAllNodes()
-			}
 
 		case <-m.stop:
 			klog.InfoS("shutting down nfd-master")

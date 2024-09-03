@@ -297,12 +297,9 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 func (w *nfdWorker) Run() error {
 	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
 
-	// Create watcher for config file and read initial configuration
-	configWatch, err := utils.CreateFsWatcher(time.Second, w.configFilePath)
+	// Read configuration file
+	err := w.configure(w.configFilePath, w.args.Options)
 	if err != nil {
-		return err
-	}
-	if err := w.configure(w.configFilePath, w.args.Options); err != nil {
 		return err
 	}
 
@@ -390,24 +387,6 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 
-		case <-configWatch.Events:
-			klog.InfoS("reloading configuration")
-			if err := w.configure(w.configFilePath, w.args.Options); err != nil {
-				return err
-			}
-			// Manage connection to master
-			if w.config.Core.NoPublish || !features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
-				w.grpcDisconnect()
-			}
-
-			// Always re-label after a re-config event. This way the new config
-			// comes into effect even if the sleep interval is long (or infinite)
-			labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
-			err = w.runFeatureDiscovery()
-			if err != nil {
-				return err
-			}
-
 		case <-w.certWatch.Events:
 			klog.InfoS("TLS certificate update, renewing connection to nfd-master")
 			w.grpcDisconnect()
@@ -417,7 +396,6 @@ func (w *nfdWorker) Run() error {
 			if w.healthServer != nil {
 				w.healthServer.GracefulStop()
 			}
-			configWatch.Close()
 			w.certWatch.Close()
 			return nil
 		}

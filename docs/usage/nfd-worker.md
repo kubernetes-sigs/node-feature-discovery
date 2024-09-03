@@ -19,13 +19,9 @@ This can be changed by using the
 [`core.sleepInterval`](../reference/worker-configuration-reference.md#coresleepinterval)
 config option.
 
-The worker configuration file is watched and re-read on every change which
-provides a mechanism of dynamic run-time reconfiguration. See
-[worker configuration](#worker-configuration) for more details.
-
 ## Worker configuration
 
-NFD-Worker supports dynamic configuration through a configuration file. The
+NFD-Worker supports configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`,
 but, this can be changed by specifying the`-config` command line flag.
 Configuration file is re-read whenever it is modified which makes run-time
@@ -36,17 +32,18 @@ VolumeMounts are needed to make your configuration available for NFD. The
 preferred method is to use a ConfigMap which provides easy deployment and
 re-configurability.
 
-The provided nfd-worker deployment templates create an empty configmap and
-mount it inside the nfd-worker containers. In kustomize deployments,
-configuration can be edited with:
-
-```bash
-kubectl -n ${NFD_NS} edit configmap nfd-worker-conf
-```
+The provided deployment methods (Helm and Kustomize) create an empty configmap
+and mount it inside the nfd-master containers.
 
 In Helm deployments,
 [Worker pod parameter](../deployment/helm.md#worker-pod-parameters)
 `worker.config` can be used to edit the respective configuration.
+
+In Kustomize deployments, modify the `nfd-worker-conf` ConfigMap with a custom
+overlay.
+
+> **NOTE:** dynamic run-time reconfiguration was dropped in NFD v0.17.
+> Re-configuration is handled by pod restarts.
 
 See
 [nfd-worker configuration file reference](../reference/worker-configuration-reference)

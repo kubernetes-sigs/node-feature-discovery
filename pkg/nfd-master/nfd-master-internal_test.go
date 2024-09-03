@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"maps"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -661,96 +660,6 @@ leaderElection:
 				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"added.ns.io": struct{}{}}) // from overrides
 				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}}) // from cmdline
 			})
-		})
-	})
-}
-
-func TestDynamicConfig(t *testing.T) {
-	Convey("When running nfd-master", t, func() {
-		// Add feature gates as running nfd-master depends on that
-		err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates)
-		So(err, ShouldBeNil)
-
-		tmpDir, err := os.MkdirTemp("", "*.nfd-test")
-		So(err, ShouldBeNil)
-		defer os.RemoveAll(tmpDir)
-
-		// Create (temporary) dir for config
-		configDir := filepath.Join(tmpDir, "subdir-1", "subdir-2", "master.conf")
-		err = os.MkdirAll(configDir, 0755)
-		So(err, ShouldBeNil)
-
-		// Create config file
-		configFile := filepath.Clean(filepath.Join(configDir, "master.conf"))
-
-		writeConfig := func(data string) {
-			f, err := os.Create(configFile)
-			So(err, ShouldBeNil)
-			_, err = f.WriteString(data)
-			So(err, ShouldBeNil)
-			err = f.Close()
-			So(err, ShouldBeNil)
-		}
-		writeConfig(`
-klog:
-  v: "4"
-extraLabelNs: ["added.ns.io"]
-`)
-
-		master := newFakeMaster(
-			WithArgs(&Args{ConfigFile: configFile}),
-			WithKubernetesClient(fakeclient.NewSimpleClientset(newTestNode())))
-
-		Convey("config file updates should take effect", func() {
-			go func() {
-				Convey("nfd-master should exit gracefully", t, func() {
-					err = master.Run()
-					So(err, ShouldBeNil)
-				})
-			}()
-			defer master.Stop()
-			// Check initial config
-			time.Sleep(10 * time.Second)
-			So(func() interface{} { return master.config.ExtraLabelNs },
-				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"added.ns.io": struct{}{}})
-
-			// Update config and verify the effect
-			writeConfig(`
-extraLabelNs: ["override.ns.io"]
-resyncPeriod: '2h'
-nfdApiParallelism: 300
-`)
-			So(func() interface{} { return master.config.ExtraLabelNs },
-				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"override.ns.io": struct{}{}})
-			So(func() interface{} { return master.config.ResyncPeriod.Duration },
-				withTimeout, 2*time.Second, ShouldResemble, time.Duration(2)*time.Hour)
-			So(func() interface{} { return master.config.NfdApiParallelism },
-				withTimeout, 2*time.Second, ShouldResemble, 300)
-
-			// Removing config file should get back our defaults
-			err = os.RemoveAll(tmpDir)
-			So(err, ShouldBeNil)
-			So(func() interface{} { return master.config.ExtraLabelNs },
-				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{})
-			So(func() interface{} { return master.config.ResyncPeriod.Duration },
-				withTimeout, 2*time.Second, ShouldResemble, time.Duration(1)*time.Hour)
-			So(func() interface{} { return master.config.NfdApiParallelism },
-				withTimeout, 2*time.Second, ShouldResemble, 10)
-
-			// Re-creating config dir and file should change the config
-			err = os.MkdirAll(configDir, 0755)
-			So(err, ShouldBeNil)
-			writeConfig(`
-extraLabelNs: ["another.override.ns"]
-resyncPeriod: '3m'
-nfdApiParallelism: 100
-`)
-			So(func() interface{} { return master.config.ExtraLabelNs },
-				withTimeout, 2*time.Second, ShouldResemble, utils.StringSetVal{"another.override.ns": struct{}{}})
-			So(func() interface{} { return master.config.ResyncPeriod.Duration },
-				withTimeout, 2*time.Second, ShouldResemble, time.Duration(3)*time.Minute)
-			So(func() interface{} { return master.config.NfdApiParallelism },
-				withTimeout, 2*time.Second, ShouldResemble, 100)
 		})
 	})
 }

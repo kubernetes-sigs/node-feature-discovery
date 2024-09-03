@@ -62,26 +62,21 @@ NFD-Topology-Updater supports configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/topology-updater.conf`,
 but, this can be changed by specifying the`-config` command line flag.
 
-> **NOTE:** unlike nfd-worker, dynamic configuration updates are not supported.
-
 Topology-Updater configuration file is read inside the container,
 and thus, Volumes and VolumeMounts are needed
 to make your configuration available for NFD.
 The preferred method is to use a ConfigMap
 which provides easy deployment and re-configurability.
 
-The provided nfd-topology-updater deployment templates
-create an empty configmap
+The provided deployment templates create an empty configmap
 and mount it inside the nfd-topology-updater containers.
-In kustomize deployments, configuration can be edited with:
-
-```bash
-kubectl -n ${NFD_NS} edit configmap nfd-topology-updater-conf
-```
 
 In Helm deployments,
 [Topology Updater parameters](../deployment/helm.md#topology-updater-parameters)
 `toplogyUpdater.config` can be used to edit the respective configuration.
+
+In Kustomize deployments, modify the `nfd-worker-conf` ConfigMap with a custom
+overlay.
 
 See
 [nfd-topology-updater configuration file reference](../reference/topology-updater-configuration-reference.md)

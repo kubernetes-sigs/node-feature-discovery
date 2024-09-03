@@ -22,10 +22,11 @@ spec:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
         role: topology-updater
-      {{- with .Values.topologyUpdater.annotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/nfd-topologyupdater-conf.yaml") . | sha256sum }}
+        {{- with .Values.topologyUpdater.annotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       serviceAccountName: {{ include "node-feature-discovery.topologyUpdater.serviceAccountName" . }}
       dnsPolicy: ClusterFirstWithHostNet
