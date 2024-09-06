@@ -1,0 +1,59 @@
+{
+  "compatibilities": [
+    {
+      "labels": {
+          "cpu-model.vendor_id": "Intel"
+      },
+      "description": "required cpu vendor"
+    },
+    {
+      "labels": {
+        "kernel-config.CONFIG_CGROUP_BPF": "y",
+        "kernel-config.CONFIG_XFRM_INTERFACE": "y",
+        "kernel-config.CONFIG_NF_TABLES": "y",
+        "kernel-config.CONFIG_NETFILTER_XT_TARGET_NOTRACK": "y",
+        "kernel-config.CONFIG_NET_ACT_BPF": "y",
+        "kernel-config.CONFIG_MPLS_ROUTING": "y",
+        "kernel-config.CONFIG_MPLS_IPTUNNEL": "y",
+        "kernel-config.CONFIG_PPPOE": "y",
+        "kernel-loadedmodule.br_netfilter": true,
+        "kernel-loadedmodule.ebtables": true,
+        "kernel-loadedmodule.ifb": true,
+        "kernel-loadedmodule.ip6_tables": true,
+        "kernel-loadedmodule.ip_tables": true,
+        "kernel-loadedmodule.mpls_iptunnel": true,
+        "kernel-loadedmodule.mpls_router": true,
+        "kernel-loadedmodule.nf_conntrack": true,
+        "kernel-loadedmodule.overlay": true,
+        "kernel-loadedmodule.ppp_generic": true,
+        "kernel-loadedmodule.vfio-pci": true,
+        "kernel-loadedmodule.vhost-net": true,
+        "kernel-loadedmodule.vrf": true
+      },
+      "description": "required kernel configuration"
+    },
+    {
+      "labels": {
+        "system-os.release.ID": "ubuntu",
+        "system-os.release.VERSION_ID": "20.04;22.04"
+      },
+      "description": "required configuration for ubuntu",
+      "tags": ["ubuntu-os"]
+    },
+    {
+      "labels": {
+        "system-os.release.ID": "rhel",
+        "system-os.release.VERSION_ID": "8"
+      },
+      "description": "required configuration for rhel",
+      "tags": ["rhel-os"]
+    },
+    {
+      "labels": {
+        "network-sriov.capable": true,
+        "network-sriov.configured": true
+      },
+      "description": "required network configuration"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ module sigs.k8s.io/node-feature-discovery
 go 1.23.0
 
 require (
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
@@ -11,9 +12,16 @@ require (
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
 	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
 	github.com/klauspost/cpuid/v2 v2.2.8
+<<<<<<< HEAD
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
 	github.com/opencontainers/runc v1.1.14
+=======
+	github.com/onsi/ginkgo/v2 v2.20.0
+	github.com/onsi/gomega v1.34.1
+	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/runc v1.1.13
+>>>>>>> 4ef5f4b6 (NFD compatibility client prototype)
 	github.com/prometheus/client_golang v1.18.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.8.1
@@ -36,6 +44,7 @@ require (
 	k8s.io/kubernetes v1.30.3
 	k8s.io/pod-security-admission v0.30.3
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
+	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/yaml v1.4.0
 )
