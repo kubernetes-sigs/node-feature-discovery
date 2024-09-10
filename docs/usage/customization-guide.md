@@ -1027,6 +1027,7 @@ The following features are available for matching:
 |                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release` |
 | **`system.dmiid`** | attribute |       |            | DMI identification data from `/sys/devices/virtual/dmi/id/` |
 |                  |              | **`sys_vendor`** | string | Vendor name from `/sys/devices/virtual/dmi/id/sys_vendor` |
+|                  |              | **`product_name`** | string | Product name from `/sys/devices/virtual/dmi/id/product_name` |
 | **`system.name`** | attribute   |          |            | System name information |
 |                  |              | **`nodename`** | string | Name of the kubernetes node object |
 | **`usb.device`** | instance     |          |            | USB devices present in the system |

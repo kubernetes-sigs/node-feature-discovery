@@ -103,7 +103,7 @@ func (s *systemSource) Discover() error {
 	}
 
 	// Get DMI ID attributes
-	dmiIDAttributeNames := []string{"sys_vendor"}
+	dmiIDAttributeNames := []string{"sys_vendor", "product_name"}
 	dmiAttrs := make(map[string]string)
 	for _, name := range dmiIDAttributeNames {
 		val, err := getDmiIDAttribute(name)
