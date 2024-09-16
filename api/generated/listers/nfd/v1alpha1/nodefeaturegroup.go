@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
@@ -38,25 +38,17 @@ type NodeFeatureGroupLister interface {
 
 // nodeFeatureGroupLister implements the NodeFeatureGroupLister interface.
 type nodeFeatureGroupLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.NodeFeatureGroup]
 }
 
 // NewNodeFeatureGroupLister returns a new NodeFeatureGroupLister.
 func NewNodeFeatureGroupLister(indexer cache.Indexer) NodeFeatureGroupLister {
-	return &nodeFeatureGroupLister{indexer: indexer}
-}
-
-// List lists all NodeFeatureGroups in the indexer.
-func (s *nodeFeatureGroupLister) List(selector labels.Selector) (ret []*v1alpha1.NodeFeatureGroup, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NodeFeatureGroup))
-	})
-	return ret, err
+	return &nodeFeatureGroupLister{listers.New[*v1alpha1.NodeFeatureGroup](indexer, v1alpha1.Resource("nodefeaturegroup"))}
 }
 
 // NodeFeatureGroups returns an object that can list and get NodeFeatureGroups.
 func (s *nodeFeatureGroupLister) NodeFeatureGroups(namespace string) NodeFeatureGroupNamespaceLister {
-	return nodeFeatureGroupNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return nodeFeatureGroupNamespaceLister{listers.NewNamespaced[*v1alpha1.NodeFeatureGroup](s.ResourceIndexer, namespace)}
 }
 
 // NodeFeatureGroupNamespaceLister helps list and get NodeFeatureGroups.
@@ -74,26 +66,5 @@ type NodeFeatureGroupNamespaceLister interface {
 // nodeFeatureGroupNamespaceLister implements the NodeFeatureGroupNamespaceLister
 // interface.
 type nodeFeatureGroupNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all NodeFeatureGroups in the indexer for a given namespace.
-func (s nodeFeatureGroupNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.NodeFeatureGroup, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NodeFeatureGroup))
-	})
-	return ret, err
-}
-
-// Get retrieves the NodeFeatureGroup from the indexer for a given namespace and name.
-func (s nodeFeatureGroupNamespaceLister) Get(name string) (*v1alpha1.NodeFeatureGroup, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("nodefeaturegroup"), name)
-	}
-	return obj.(*v1alpha1.NodeFeatureGroup), nil
+	listers.ResourceIndexer[*v1alpha1.NodeFeatureGroup]
 }
