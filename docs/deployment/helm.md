@@ -231,9 +231,9 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.annotations`                | dict   | {}                      | NFD worker pod [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                         |
 | `worker.daemonsetAnnotations`       | dict   | {}                      | NFD worker daemonset [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)                                                                                   |
 | `worker.args`                       | array  | []                      | Additional [command line arguments](../reference/worker-commandline-reference.md) to pass to nfd-worker                                                                                              |
-| `worker.revisionHistoryLimit`       | integer |                        | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/ #DaemonSetSpec)          |
-| `worker.livenessProbe`              | dict    | {"grpc":{"port":8082},"initialDelaySeconds":10}                       | NFD worker pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)  |
-| `worker.readinessProbe`             | dict    | {"grpc":{"port":8082},"initialDelaySeconds":5,"failureThreshold": 10} | NFD worker pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)|
+| `worker.revisionHistoryLimit`       | integer |                        | Specify how many old ControllerRevisions for this DaemonSet you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/ #DaemonSetSpec)|
+| `worker.livenessProbe`              | dict    | {"grpc":{"port":8082,"service":"liveness"},"initialDelaySeconds":10}                       | NFD worker pod [liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#liveness-probe)|
+| `worker.readinessProbe`             | dict    | {"grpc":{"port":8082,"service":"readiness"},"initialDelaySeconds":5,"failureThreshold": 10} | NFD worker pod [readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/#readiness-probe)|
 
 ### Topology updater parameters
 
