@@ -41,22 +41,24 @@ var nodefeaturesKind = v1alpha1.SchemeGroupVersion.WithKind("NodeFeature")
 
 // Get takes name of the nodeFeature, and returns the corresponding nodeFeature object, and an error if there is any.
 func (c *FakeNodeFeatures) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NodeFeature, err error) {
+	emptyResult := &v1alpha1.NodeFeature{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(nodefeaturesResource, c.ns, name), &v1alpha1.NodeFeature{})
+		Invokes(testing.NewGetActionWithOptions(nodefeaturesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeature), err
 }
 
 // List takes label and field selectors, and returns the list of NodeFeatures that match those selectors.
 func (c *FakeNodeFeatures) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.NodeFeatureList, err error) {
+	emptyResult := &v1alpha1.NodeFeatureList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(nodefeaturesResource, nodefeaturesKind, c.ns, opts), &v1alpha1.NodeFeatureList{})
+		Invokes(testing.NewListActionWithOptions(nodefeaturesResource, nodefeaturesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -75,28 +77,30 @@ func (c *FakeNodeFeatures) List(ctx context.Context, opts v1.ListOptions) (resul
 // Watch returns a watch.Interface that watches the requested nodeFeatures.
 func (c *FakeNodeFeatures) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(nodefeaturesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(nodefeaturesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a nodeFeature and creates it.  Returns the server's representation of the nodeFeature, and an error, if there is any.
 func (c *FakeNodeFeatures) Create(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.CreateOptions) (result *v1alpha1.NodeFeature, err error) {
+	emptyResult := &v1alpha1.NodeFeature{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(nodefeaturesResource, c.ns, nodeFeature), &v1alpha1.NodeFeature{})
+		Invokes(testing.NewCreateActionWithOptions(nodefeaturesResource, c.ns, nodeFeature, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeature), err
 }
 
 // Update takes the representation of a nodeFeature and updates it. Returns the server's representation of the nodeFeature, and an error, if there is any.
 func (c *FakeNodeFeatures) Update(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (result *v1alpha1.NodeFeature, err error) {
+	emptyResult := &v1alpha1.NodeFeature{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(nodefeaturesResource, c.ns, nodeFeature), &v1alpha1.NodeFeature{})
+		Invokes(testing.NewUpdateActionWithOptions(nodefeaturesResource, c.ns, nodeFeature, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeature), err
 }
@@ -111,7 +115,7 @@ func (c *FakeNodeFeatures) Delete(ctx context.Context, name string, opts v1.Dele
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeNodeFeatures) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(nodefeaturesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(nodefeaturesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.NodeFeatureList{})
 	return err
@@ -119,11 +123,12 @@ func (c *FakeNodeFeatures) DeleteCollection(ctx context.Context, opts v1.DeleteO
 
 // Patch applies the patch and returns the patched nodeFeature.
 func (c *FakeNodeFeatures) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NodeFeature, err error) {
+	emptyResult := &v1alpha1.NodeFeature{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(nodefeaturesResource, c.ns, name, pt, data, subresources...), &v1alpha1.NodeFeature{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(nodefeaturesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeature), err
 }
