@@ -19,6 +19,8 @@ priorityClassName: ""
 master:
   enable: true
   extraArgs: []
+  extraEnvs: []
+  hostNetwork: false
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
     # autoDefaultNs: true
@@ -157,6 +159,8 @@ master:
 worker:
   enable: true
   extraArgs: []
+  extraEnvs: []
+  hostNetwork: false
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:
@@ -476,8 +480,10 @@ topologyUpdater:
 ### <NFD-TOPOLOGY-UPDATER-CONF-END-DO-NOT-REMOVE>
 
   enable: false
-  extraArgs: []
   createCRDs: false
+  extraArgs: []
+  extraEnvs: []
+  hostNetwork: false
 
   serviceAccount:
     create: true
@@ -535,6 +541,8 @@ topologyUpdater:
 gc:
   enable: true
   extraArgs: []
+  extraEnvs: []
+  hostNetwork: false
   replicaCount: 1
 
   serviceAccount:
