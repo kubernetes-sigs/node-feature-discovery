@@ -54,7 +54,7 @@ spec:
           {{- if .Values.gc.interval | empty | not }}
           - "-gc-interval={{ .Values.gc.interval }}"
           {{- end }}
-          {{- with .Values.gc.args }}
+          {{- with .Values.gc.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         resources:

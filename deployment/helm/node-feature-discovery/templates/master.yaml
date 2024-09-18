@@ -110,7 +110,7 @@ spec:
             - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
             - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
-            {{- with .Values.master.args }}
+            {{- with .Values.master.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:

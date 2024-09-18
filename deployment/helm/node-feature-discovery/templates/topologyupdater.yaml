@@ -86,7 +86,7 @@ spec:
           - "-kubelet-state-dir="
           {{- end }}
           - -metrics={{ .Values.topologyUpdater.metricsPort | default "8081"}}
-          {{- with .Values.topologyUpdater.args }}
+          {{- with .Values.topologyUpdater.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         ports:
