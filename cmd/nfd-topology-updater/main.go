@@ -38,7 +38,6 @@ const (
 	// ProgramName is the canonical name of this program
 	ProgramName       = "nfd-topology-updater"
 	kubeletSecurePort = 10250
-	GrpcHealthPort    = 8082
 )
 
 var DefaultKubeletStateDir = path.Join(string(hostpath.VarDir), "lib", "kubelet")
@@ -57,7 +56,6 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new TopologyUpdater instance
-	args.GrpcHealthPort = GrpcHealthPort
 	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs)
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize topology updater instance")
@@ -115,6 +113,8 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Kube config file.")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
 		"Port on which to expose metrics.")
+	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
+		"Port on which to expose the grpc health endpoint.")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
 		"Time to sleep between CR updates. zero means no CR updates on interval basis. [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",

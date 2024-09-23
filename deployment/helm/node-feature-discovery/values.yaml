@@ -58,6 +58,7 @@ master:
   # be removed with it in a future release
   port: 8080
   metricsPort: 8081
+  healthPort: 8082
   instance:
   featureApi:
   resyncPeriod:
@@ -406,6 +407,7 @@ worker:
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
   metricsPort: 8081
+  healthPort: 8082
   daemonsetAnnotations: {}
   podSecurityContext: {}
     # fsGroup: 2000
@@ -497,6 +499,7 @@ topologyUpdater:
     create: true
 
   metricsPort: 8081
+  healthPort: 8082
   kubeletConfigPath:
   kubeletPodResourcesSockPath:
   updateInterval: 60s
