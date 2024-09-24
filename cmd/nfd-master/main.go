@@ -33,8 +33,7 @@ import (
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName    = "nfd-master"
-	GrpcHealthPort = 8082
+	ProgramName = "nfd-master"
 )
 
 func main() {
@@ -108,7 +107,6 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new NfdMaster instance
-	args.GrpcHealthPort = GrpcHealthPort
 	instance, err := master.NewNfdMaster(master.WithArgs(args))
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdMaster instance")
@@ -149,6 +147,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
 		"Port on which to expose metrics.")
+	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
+		"Port on which to expose the grpc health endpoint.")
 	flagset.BoolVar(&args.Prune, "prune", false,
 		"Prune all NFD related attributes from all nodes of the cluster and exit.")
 	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,

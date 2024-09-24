@@ -32,8 +32,7 @@ import (
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName    = "nfd-worker"
-	GrpcHealthPort = 8082
+	ProgramName = "nfd-worker"
 )
 
 func main() {
@@ -80,7 +79,6 @@ func main() {
 	utils.ConfigureGrpcKlog()
 
 	// Get new NfdWorker instance
-	args.GrpcHealthPort = GrpcHealthPort
 	instance, err := worker.NewNfdWorker(worker.WithArgs(args))
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize NfdWorker instance")
@@ -138,6 +136,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Do not publish feature labels")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
 		"Port on which to expose metrics.")
+	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
+		"Port on which to expose the grpc health endpoint.")
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")

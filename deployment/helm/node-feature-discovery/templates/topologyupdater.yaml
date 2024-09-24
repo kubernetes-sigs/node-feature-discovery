@@ -89,7 +89,8 @@ spec:
           # Disable kubelet state tracking by giving an empty path
           - "-kubelet-state-dir="
           {{- end }}
-          - -metrics={{ .Values.topologyUpdater.metricsPort | default "8081"}}
+          - "-metrics={{ .Values.topologyUpdater.metricsPort | default "8081"}}"
+          - "-grpc-health={{ .Values.topologyUpdater.healthPort  | default "8082" }}"
           {{- with .Values.topologyUpdater.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

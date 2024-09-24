@@ -71,19 +71,20 @@ spec:
         command:
         - "nfd-worker"
         args:
-{{- if not .Values.featureGates.NodeFeatureAPI }}
+        {{- if not .Values.featureGates.NodeFeatureAPI }}
         - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
-{{- end }}
-{{- if .Values.tls.enable }}
+        {{- end }}
+        {{- if .Values.tls.enable }}
         - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
         - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
         - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
-{{- end }}
-# Go over featureGate and add the feature-gate flag
-{{- range $key, $value := .Values.featureGates }}
+        {{- end }}
+        # Go over featureGate and add the feature-gate flag
+        {{- range $key, $value := .Values.featureGates }}
         - "-feature-gates={{ $key }}={{ $value }}"
-{{- end }}
+        {{- end }}
         - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
+        - "-grpc-health={{ .Values.worker.healthPort  | default "8082" }}"
         {{- with .Values.gc.extraArgs }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -125,11 +126,11 @@ spec:
         - name: nfd-worker-conf
           mountPath: "/etc/kubernetes/node-feature-discovery"
           readOnly: true
-{{- if .Values.tls.enable }}
+        {{- if .Values.tls.enable }}
         - name: nfd-worker-cert
           mountPath: "/etc/kubernetes/node-feature-discovery/certs"
           readOnly: true
-{{- end }}
+        {{- end }}
       volumes:
         - name: host-boot
           hostPath:
@@ -166,12 +167,12 @@ spec:
             items:
               - key: nfd-worker.conf
                 path: nfd-worker.conf
-{{- if .Values.tls.enable }}
+        {{- if .Values.tls.enable }}
         - name: nfd-worker-cert
           secret:
             secretName: nfd-worker-cert
-{{- end }}
-    {{- with .Values.worker.nodeSelector }}
+        {{- end }}
+      {{- with .Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
