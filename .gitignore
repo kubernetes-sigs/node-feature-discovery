@@ -3,3 +3,4 @@ demo/helper-scripts/*.pdf
 demo/helper-scripts/*.log
 /kustomization.yaml
 coverage.out
+.idea/
