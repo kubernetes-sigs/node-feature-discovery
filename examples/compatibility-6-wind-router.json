@@ -36,7 +36,7 @@
       "labels": {
         "system-os_release.ID": "linuxmint",
         "system-os_release.VERSION_ID": "21.0;21.2",
-        "kernel-version.full": ">=5.0.0-x-generic,<6.10.0-x-generic"
+        "kernel-version.full": ">=5.15.0-.*-generic,<6.10.0-.*-generic"
       },
       "description": "required configuration for linux mint",
       "tags": ["mint-os"]
@@ -45,7 +45,7 @@
       "labels": {
         "system-os_release.ID": "ubuntu",
         "system-os_release.VERSION_ID": "20.04;22.04",
-        "kernel-version.full": ">=5.0.0-x-gcp,<6.10.0-x-gcp"
+        "kernel-version.full": ">=5.0.0-.*-gcp,<6.10.0-.*-gcp"
       },
       "description": "required configuration for GCP ubuntu version",
       "tags": ["ubuntu-gcp-os"]

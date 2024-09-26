@@ -18,11 +18,14 @@ package parser
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 
 	semver "github.com/Masterminds/semver/v3"
 
 	"sigs.k8s.io/node-feature-discovery/source"
+	"sigs.k8s.io/node-feature-discovery/source/kernel"
 )
 
 type ValueType string
@@ -120,31 +123,85 @@ func (c *CompatibilityEntry) equalTo(val interface{}) (bool, error) {
 	}
 }
 
-func (c *CompatibilityEntry) inRange(val interface{}) (bool, error) {
-	val, ok := val.(string)
+func (c *CompatibilityEntry) inRange(iface interface{}) (bool, error) {
+	val, ok := iface.(string)
 	if !ok {
 		return false, fmt.Errorf("only string type is allowed to compare value to ranges")
 	}
+	if c.Source() == kernel.Name && c.Feature() == kernel.VersionFeature {
+		return c.inRangeKernelVersion(val)
+	}
+	return c.inRangeSemanticVersion(val)
+}
 
-	// TODO: fix kernel versions comparison - this not gonna work for very
-	// flavor of the kernel has to be cut and compared separately,
-	// currently it's treated as a pre-release which is wrong!
-	v, err := semver.NewVersion(val.(string))
+func (c *CompatibilityEntry) inRangeKernelVersion(val string) (bool, error) {
+	kernelVersion, kernelFlavor := parseKernelVersion(val)
+	v, err := semver.NewVersion(kernelVersion)
 	if err != nil {
 		return false, err
 	}
 
-	for _, constraint := range c.value.intervals {
-		c, err := semver.NewConstraint(constraint)
+	for _, interval := range c.value.intervals {
+		s := strings.SplitN(interval, ",", 2)
+		start, sFlavor := parseKernelVersion(s[0])
+		constraint := start
+
+		if len(s) > 1 {
+			end, eFlavor := parseKernelVersion(s[1])
+			constraint += fmt.Sprintf(",%s", end)
+			if sFlavor != eFlavor {
+				return false, fmt.Errorf("flavor of the kernel must be the same in the specified interval, currnently have %q", interval)
+			}
+		}
+
+		flavorMatched, err := regexp.MatchString(sFlavor, kernelFlavor)
+		if err != nil {
+			return false, err
+		} else if !flavorMatched {
+			continue
+		}
+
+		nc, err := semver.NewConstraint(constraint)
 		if err != nil {
 			return false, err
 		}
-
-		valid, _ := c.Validate(v)
+		valid, _ := nc.Validate(v)
 		if valid {
 			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+func (c *CompatibilityEntry) inRangeSemanticVersion(val string) (bool, error) {
+	v, err := semver.NewVersion(val)
+	if err != nil {
+		return false, err
+	}
+
+	for _, constraint := range c.value.intervals {
+		nc, err := semver.NewConstraint(constraint)
+		if err != nil {
+			return false, err
+		}
+
+		valid, _ := nc.Validate(v)
+		if valid {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func parseKernelVersion(raw string) (version string, flavor string) {
+	s := strings.SplitN(raw, "-", 2)
+	version = s[0]
+
+	if len(s) > 1 {
+		flavor = s[1]
+	}
+
+	return
 }
