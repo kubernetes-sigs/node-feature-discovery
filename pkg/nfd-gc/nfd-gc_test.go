@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	metadataclient "k8s.io/client-go/metadata"
 	"k8s.io/client-go/metadata/fake"
-	fakemetadataclient "k8s.io/client-go/metadata/fake"
 	"k8s.io/client-go/metadata/metadatainformer"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -100,7 +99,7 @@ func newMockGC(nodes, nrts []string) *mockGC {
 
 	scheme := fake.NewTestScheme()
 	_ = metav1.AddMetaToScheme(scheme)
-	cli := fakemetadataclient.NewSimpleMetadataClient(scheme, objs...)
+	cli := fake.NewSimpleMetadataClient(scheme, objs...)
 	return &mockGC{
 		nfdGarbageCollector: nfdGarbageCollector{
 			factory:  metadatainformer.NewSharedInformerFactory(cli, 0),
