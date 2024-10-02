@@ -12,7 +12,7 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.16.4
+$ kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.16.4"
   namespace/node-feature-discovery created
   customresourcedefinition.apiextensions.k8s.io/nodefeaturerules.nfd.k8s-sigs.io created
   customresourcedefinition.apiextensions.k8s.io/nodefeatures.nfd.k8s-sigs.io created
@@ -38,7 +38,7 @@ $ kubectl -n node-feature-discovery get all
   pod/nfd-worker-nwdp6              1/1     Running   0          18s
 ...
 
-$ kubectl get no -o json | jq '.items[].metadata.labels'
+$ kubectl get no -o json | jq ".items[].metadata.labels"
   {
     "kubernetes.io/arch": "amd64",
     "kubernetes.io/os": "linux",
