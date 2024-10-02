@@ -26,7 +26,7 @@ later is required.
 The kustomize overlays provided in the repo can be used directly:
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
 ```
 
 This will required RBAC rules and deploy nfd-master (as a deployment) and
@@ -77,7 +77,7 @@ The `default-job` overlay may be used to achieve this:
 
 ```bash
 NUM_NODES=$(kubectl get no -o jsonpath='{.items[*].metadata.name}' | wc -w)
-kubectl kustomize https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default-job?ref={{ site.release }} | \
+kubectl kustomize "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default-job?ref={{ site.release }}" | \
     sed s"/NUM_NODES/$NUM_NODES/" | \
     kubectl apply -f -
 ```
@@ -94,7 +94,7 @@ deployed as separate pods. The `master-worker-topologyupdater` overlay may be
 used to achieve this:
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/master-worker-topologyupdater?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/master-worker-topologyupdater?ref={{ site.release }}"
 
 ```
 
@@ -104,7 +104,7 @@ To deploy just nfd-topology-updater (without nfd-master and nfd-worker)
 use the `topologyupdater` overlay:
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}"
 
 ```
 
@@ -114,8 +114,8 @@ are deployed as separate pods;
 
 ```bash
 
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}"
 
 ```
 
@@ -126,8 +126,8 @@ to scrape metrics from node-feature-discovery,
 run the following command:
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prometheus?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/prometheus?ref={{ site.release }}"
 ```
 
 ## Uninstallation

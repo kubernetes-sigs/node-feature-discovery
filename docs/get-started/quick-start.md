@@ -14,7 +14,7 @@ Deploy with kustomize -- creates a new namespace, service and required RBAC
 rules and deploys nfd-master and nfd-worker daemons.
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
 ```
 
 ## Verify
@@ -34,7 +34,7 @@ deployment.apps/nfd-master   1/1     1            1           17s
 Check that NFD feature labels have been created
 
 ```bash
-$ kubectl get no -o json | jq '.items[].metadata.labels'
+$ kubectl get no -o json | jq ".items[].metadata.labels"
 {
   "kubernetes.io/arch": "amd64",
   "kubernetes.io/os": "linux",
@@ -82,7 +82,7 @@ To deploy nfd-topology-updater use the `topologyupdater` kustomize
 overlay.
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}"
 ```
 
 ### Verify nfd-topology-updater
