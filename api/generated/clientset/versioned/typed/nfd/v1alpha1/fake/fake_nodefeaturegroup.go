@@ -41,22 +41,24 @@ var nodefeaturegroupsKind = v1alpha1.SchemeGroupVersion.WithKind("NodeFeatureGro
 
 // Get takes name of the nodeFeatureGroup, and returns the corresponding nodeFeatureGroup object, and an error if there is any.
 func (c *FakeNodeFeatureGroups) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NodeFeatureGroup, err error) {
+	emptyResult := &v1alpha1.NodeFeatureGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(nodefeaturegroupsResource, c.ns, name), &v1alpha1.NodeFeatureGroup{})
+		Invokes(testing.NewGetActionWithOptions(nodefeaturegroupsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeatureGroup), err
 }
 
 // List takes label and field selectors, and returns the list of NodeFeatureGroups that match those selectors.
 func (c *FakeNodeFeatureGroups) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.NodeFeatureGroupList, err error) {
+	emptyResult := &v1alpha1.NodeFeatureGroupList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(nodefeaturegroupsResource, nodefeaturegroupsKind, c.ns, opts), &v1alpha1.NodeFeatureGroupList{})
+		Invokes(testing.NewListActionWithOptions(nodefeaturegroupsResource, nodefeaturegroupsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -75,40 +77,43 @@ func (c *FakeNodeFeatureGroups) List(ctx context.Context, opts v1.ListOptions) (
 // Watch returns a watch.Interface that watches the requested nodeFeatureGroups.
 func (c *FakeNodeFeatureGroups) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(nodefeaturegroupsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(nodefeaturegroupsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a nodeFeatureGroup and creates it.  Returns the server's representation of the nodeFeatureGroup, and an error, if there is any.
 func (c *FakeNodeFeatureGroups) Create(ctx context.Context, nodeFeatureGroup *v1alpha1.NodeFeatureGroup, opts v1.CreateOptions) (result *v1alpha1.NodeFeatureGroup, err error) {
+	emptyResult := &v1alpha1.NodeFeatureGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(nodefeaturegroupsResource, c.ns, nodeFeatureGroup), &v1alpha1.NodeFeatureGroup{})
+		Invokes(testing.NewCreateActionWithOptions(nodefeaturegroupsResource, c.ns, nodeFeatureGroup, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeatureGroup), err
 }
 
 // Update takes the representation of a nodeFeatureGroup and updates it. Returns the server's representation of the nodeFeatureGroup, and an error, if there is any.
 func (c *FakeNodeFeatureGroups) Update(ctx context.Context, nodeFeatureGroup *v1alpha1.NodeFeatureGroup, opts v1.UpdateOptions) (result *v1alpha1.NodeFeatureGroup, err error) {
+	emptyResult := &v1alpha1.NodeFeatureGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(nodefeaturegroupsResource, c.ns, nodeFeatureGroup), &v1alpha1.NodeFeatureGroup{})
+		Invokes(testing.NewUpdateActionWithOptions(nodefeaturegroupsResource, c.ns, nodeFeatureGroup, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeatureGroup), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeNodeFeatureGroups) UpdateStatus(ctx context.Context, nodeFeatureGroup *v1alpha1.NodeFeatureGroup, opts v1.UpdateOptions) (*v1alpha1.NodeFeatureGroup, error) {
+func (c *FakeNodeFeatureGroups) UpdateStatus(ctx context.Context, nodeFeatureGroup *v1alpha1.NodeFeatureGroup, opts v1.UpdateOptions) (result *v1alpha1.NodeFeatureGroup, err error) {
+	emptyResult := &v1alpha1.NodeFeatureGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(nodefeaturegroupsResource, "status", c.ns, nodeFeatureGroup), &v1alpha1.NodeFeatureGroup{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(nodefeaturegroupsResource, "status", c.ns, nodeFeatureGroup, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeatureGroup), err
 }
@@ -123,7 +128,7 @@ func (c *FakeNodeFeatureGroups) Delete(ctx context.Context, name string, opts v1
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeNodeFeatureGroups) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(nodefeaturegroupsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(nodefeaturegroupsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.NodeFeatureGroupList{})
 	return err
@@ -131,11 +136,12 @@ func (c *FakeNodeFeatureGroups) DeleteCollection(ctx context.Context, opts v1.De
 
 // Patch applies the patch and returns the patched nodeFeatureGroup.
 func (c *FakeNodeFeatureGroups) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NodeFeatureGroup, err error) {
+	emptyResult := &v1alpha1.NodeFeatureGroup{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(nodefeaturegroupsResource, c.ns, name, pt, data, subresources...), &v1alpha1.NodeFeatureGroup{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(nodefeaturegroupsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NodeFeatureGroup), err
 }

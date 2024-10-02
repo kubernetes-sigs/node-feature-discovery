@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
@@ -38,25 +38,17 @@ type NodeFeatureLister interface {
 
 // nodeFeatureLister implements the NodeFeatureLister interface.
 type nodeFeatureLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.NodeFeature]
 }
 
 // NewNodeFeatureLister returns a new NodeFeatureLister.
 func NewNodeFeatureLister(indexer cache.Indexer) NodeFeatureLister {
-	return &nodeFeatureLister{indexer: indexer}
-}
-
-// List lists all NodeFeatures in the indexer.
-func (s *nodeFeatureLister) List(selector labels.Selector) (ret []*v1alpha1.NodeFeature, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NodeFeature))
-	})
-	return ret, err
+	return &nodeFeatureLister{listers.New[*v1alpha1.NodeFeature](indexer, v1alpha1.Resource("nodefeature"))}
 }
 
 // NodeFeatures returns an object that can list and get NodeFeatures.
 func (s *nodeFeatureLister) NodeFeatures(namespace string) NodeFeatureNamespaceLister {
-	return nodeFeatureNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return nodeFeatureNamespaceLister{listers.NewNamespaced[*v1alpha1.NodeFeature](s.ResourceIndexer, namespace)}
 }
 
 // NodeFeatureNamespaceLister helps list and get NodeFeatures.
@@ -74,26 +66,5 @@ type NodeFeatureNamespaceLister interface {
 // nodeFeatureNamespaceLister implements the NodeFeatureNamespaceLister
 // interface.
 type nodeFeatureNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all NodeFeatures in the indexer for a given namespace.
-func (s nodeFeatureNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.NodeFeature, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NodeFeature))
-	})
-	return ret, err
-}
-
-// Get retrieves the NodeFeature from the indexer for a given namespace and name.
-func (s nodeFeatureNamespaceLister) Get(name string) (*v1alpha1.NodeFeature, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("nodefeature"), name)
-	}
-	return obj.(*v1alpha1.NodeFeature), nil
+	listers.ResourceIndexer[*v1alpha1.NodeFeature]
 }
