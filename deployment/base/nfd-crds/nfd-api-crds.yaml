@@ -704,8 +704,30 @@ spec:
             required:
             - rules
             type: object
+          status:
+            description: NodeFeatureRuleStatus represents the status of a NodeFeatureRule
+            properties:
+              rules:
+                items:
+                  description: RuleStatus contains information on matched rules and
+                    nodes
+                  properties:
+                    matchedNodes:
+                      items:
+                        type: string
+                      type: array
+                    name:
+                      type: string
+                  required:
+                  - matchedNodes
+                  - name
+                  type: object
+                type: array
+            type: object
         required:
         - spec
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}

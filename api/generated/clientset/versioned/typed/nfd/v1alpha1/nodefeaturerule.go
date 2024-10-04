@@ -1,5 +1,5 @@
 /*
-Copyright 2024 The Kubernetes Authors.
+Copyright 2025 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ type NodeFeatureRulesGetter interface {
 type NodeFeatureRuleInterface interface {
 	Create(ctx context.Context, nodeFeatureRule *nfdv1alpha1.NodeFeatureRule, opts v1.CreateOptions) (*nfdv1alpha1.NodeFeatureRule, error)
 	Update(ctx context.Context, nodeFeatureRule *nfdv1alpha1.NodeFeatureRule, opts v1.UpdateOptions) (*nfdv1alpha1.NodeFeatureRule, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, nodeFeatureRule *nfdv1alpha1.NodeFeatureRule, opts v1.UpdateOptions) (*nfdv1alpha1.NodeFeatureRule, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*nfdv1alpha1.NodeFeatureRule, error)
