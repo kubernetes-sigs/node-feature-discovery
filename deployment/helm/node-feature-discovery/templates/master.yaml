@@ -109,6 +109,7 @@ spec:
             - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
             - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
+            - "-grpc-health={{ .Values.master.healthPort  | default "8082" }}"
           volumeMounts:
             {{- if .Values.tls.enable }}
             - name: nfd-master-cert

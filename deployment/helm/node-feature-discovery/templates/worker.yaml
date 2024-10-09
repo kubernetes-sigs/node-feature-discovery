@@ -79,6 +79,7 @@ spec:
         - "-feature-gates={{ $key }}={{ $value }}"
 {{- end }}
         - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
+        - "-grpc-health={{ .Values.worker.healthPort  | default "8082" }}"
         ports:
           - name: metrics
             containerPort: {{ .Values.worker.metricsPort | default "8081"}}
