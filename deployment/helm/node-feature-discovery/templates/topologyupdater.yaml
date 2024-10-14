@@ -93,7 +93,7 @@ spec:
         ports:
           - containerPort: {{ .Values.topologyUpdater.metricsPort | default "8081"}}
             name: metrics
-          - containerPort: 8082
+          - containerPort: {{ .Values.topologyUpdater.healthPort  | default "8082" }}
             name: health
         volumeMounts:
         {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
