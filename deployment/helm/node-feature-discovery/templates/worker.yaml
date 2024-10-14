@@ -91,7 +91,7 @@ spec:
         ports:
           - containerPort: {{ .Values.worker.metricsPort | default "8081"}}
             name: metrics
-          - containerPort: 8082
+          - containerPort: {{ .Values.worker.healthPort  | default "8082" }}
             name: health
         volumeMounts:
         - name: host-boot
