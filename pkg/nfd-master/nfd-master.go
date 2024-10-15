@@ -1134,6 +1134,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 	// Process all rule CRs
 	processStart := time.Now()
 	for _, spec := range ruleSpecs {
+		spec.Status.Rules = []nfdv1alpha1.RuleStatus{}
 		t := time.Now()
 		switch {
 		case klog.V(3).Enabled():
@@ -1165,6 +1166,22 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			// Feed back rule output to features map for subsequent rules to match
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
+
+			if ruleOut.Matched {
+				r := nfdv1alpha1.RuleStatus{
+					Name: rule.Name,
+					MatchedNodes: []string{
+						nodeName,
+					},
+				}
+				spec.Status.Rules = append(spec.Status.Rules, r)
+			}
+		}
+		if len(spec.Status.Rules) > 0 {
+			_, err = m.nfdClient.NfdV1alpha1().NodeFeatureRules().Update(context.TODO(), spec, metav1.UpdateOptions{})
+			if err != nil {
+				klog.ErrorS(err, "failed to update rule status", "nodefeaturerule", klog.KObj(spec))
+			}
 		}
 		nfrProcessingTime.WithLabelValues(spec.Name, nodeName).Observe(time.Since(t).Seconds())
 	}
