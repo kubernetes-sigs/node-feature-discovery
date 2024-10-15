@@ -21,6 +21,34 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// WorkerConfig resource holds the configuration for NFD worker
+// +kubebuilder:object:root=true
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type WorkerConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Specification of the WorkerConfig, containing configuration data
+	Spec WorkerConfigSpec `json:"spec"`
+}
+
+// WorkerConfigSpec holds configuration data
+type WorkerConfigSpec struct {
+	Data map[string]string `json:"data"`
+}
+
+// WorkerConfigList contains a list of WorkerConfig objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type WorkerConfigList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	// List of WorkerConfigs
+	Items []WorkerConfig `json:"items"`
+}
+
 // NodeFeatureList contains a list of NodeFeature objects.
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
