@@ -114,8 +114,40 @@ spec:
                   be created.
                 type: object
             type: object
+          status:
+            description: NodeFeatureStatus holds the status of a NodeFeature object
+            properties:
+              apiVersion:
+                description: |-
+                  APIVersion defines the versioned schema of this representation of an object.
+                  Servers should convert recognized schemas to the latest internal value, and
+                  may reject unrecognized values.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+                type: string
+              kind:
+                description: |-
+                  Kind is a string value representing the REST resource this object represents.
+                  Servers may infer this from the endpoint the client submits requests to.
+                  Cannot be updated.
+                  In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                type: string
+              lastAppliedAt:
+                description: UTC time when the NodeFeature object was last updated.
+                format: date-time
+                type: string
+              metadata:
+                type: object
+              numberOfFeatures:
+                description: Number of features discovered.
+                type: integer
+              numberOfLabels:
+                description: Number of labels created.
+                type: integer
+            type: object
         required:
         - spec
+        - status
         type: object
     served: true
     storage: true
@@ -708,3 +740,58 @@ spec:
         type: object
     served: true
     storage: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: nodefeaturestatuses.nfd.k8s-sigs.io
+spec:
+  group: nfd.k8s-sigs.io
+  names:
+    kind: NodeFeatureStatus
+    listKind: NodeFeatureStatusList
+    plural: nodefeaturestatuses
+    shortNames:
+    - nfs
+    singular: nodefeaturestatus
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NodeFeatureStatus holds the status of a NodeFeature object
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          lastAppliedAt:
+            description: UTC time when the NodeFeature object was last updated.
+            format: date-time
+            type: string
+          metadata:
+            type: object
+          numberOfFeatures:
+            description: Number of features discovered.
+            type: integer
+          numberOfLabels:
+            description: Number of labels created.
+            type: integer
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
