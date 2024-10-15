@@ -34,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	fakecorev1client "k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	clienttesting "k8s.io/client-go/testing"
@@ -111,7 +112,7 @@ func withConfig(config *NFDConfig) NfdMasterOption {
 func newFakeMaster(opts ...NfdMasterOption) *nfdMaster {
 	defaultOpts := []NfdMasterOption{
 		withNodeName(testNodeName),
-		withConfig(&NFDConfig{}),
+		withConfig(&NFDConfig{Restrictions: Restrictions{AllowOverwrite: true}}),
 		WithKubernetesClient(fakeclient.NewSimpleClientset()),
 	}
 	m, err := NewNfdMaster(append(defaultOpts, opts...)...)
@@ -508,15 +509,16 @@ func TestFilterLabels(t *testing.T) {
 func TestCreatePatches(t *testing.T) {
 	Convey("When creating JSON patches", t, func() {
 		existingItems := map[string]string{"key-1": "val-1", "key-2": "val-2", "key-3": "val-3"}
+		overwriteKeys := true
 		jsonPath := "/root"
 
-		Convey("When when there are neither itmes to remoe nor to add or update", func() {
-			p := createPatches([]string{"foo", "bar"}, existingItems, map[string]string{}, jsonPath)
+		Convey("When there are neither itmes to remoe nor to add or update", func() {
+			p := createPatches(sets.New([]string{"foo", "bar"}...), existingItems, map[string]string{}, jsonPath, overwriteKeys)
 			So(len(p), ShouldEqual, 0)
 		})
 
-		Convey("When when there are itmes to remoe but none to add or update", func() {
-			p := createPatches([]string{"key-2", "key-3", "foo"}, existingItems, map[string]string{}, jsonPath)
+		Convey("When there are itmes to remoe but none to add or update", func() {
+			p := createPatches(sets.New([]string{"key-2", "key-3", "foo"}...), existingItems, map[string]string{}, jsonPath, overwriteKeys)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("remove", jsonPath, "key-2", ""),
 				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
@@ -524,9 +526,9 @@ func TestCreatePatches(t *testing.T) {
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
 
-		Convey("When when there are no itmes to remove but new items to add", func() {
+		Convey("When there are no itmes to remove but new items to add", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-1": "new-1"}
-			p := createPatches([]string{"key-1"}, existingItems, newItems, jsonPath)
+			p := createPatches(sets.New([]string{"key-1"}...), existingItems, newItems, jsonPath, overwriteKeys)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
 				utils.NewJsonPatch("replace", jsonPath, "key-1", newItems["key-1"]),
@@ -534,15 +536,26 @@ func TestCreatePatches(t *testing.T) {
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})
 
-		Convey("When when there are items to remove add and update", func() {
+		Convey("When there are items to remove add and update", func() {
 			newItems := map[string]string{"new-key": "new-val", "key-2": "new-2", "key-4": "val-4"}
-			p := createPatches([]string{"key-1", "key-2", "key-3", "foo"}, existingItems, newItems, jsonPath)
+			p := createPatches(sets.New([]string{"key-1", "key-2", "key-3", "foo"}...), existingItems, newItems, jsonPath, overwriteKeys)
 			expected := []utils.JsonPatch{
 				utils.NewJsonPatch("add", jsonPath, "new-key", newItems["new-key"]),
 				utils.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),
 				utils.NewJsonPatch("replace", jsonPath, "key-2", newItems["key-2"]),
 				utils.NewJsonPatch("remove", jsonPath, "key-1", ""),
 				utils.NewJsonPatch("remove", jsonPath, "key-3", ""),
+			}
+			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
+		})
+
+		Convey("When overwrite of keys is denied and there is already an existant key", func() {
+			overwriteKeys = false
+			newItems := map[string]string{"key-1": "new-2", "key-4": "val-4"}
+			p := createPatches(sets.New([]string{}...), existingItems, newItems, jsonPath, overwriteKeys)
+			expected := []utils.JsonPatch{
+				utils.NewJsonPatch("add", jsonPath, "key-4", newItems["key-4"]),
+				utils.NewJsonPatch("replace", jsonPath, "key-1", newItems["key-1"]),
 			}
 			So(sortJsonPatches(p), ShouldResemble, sortJsonPatches(expected))
 		})

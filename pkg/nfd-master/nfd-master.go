@@ -45,14 +45,13 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
-	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
-
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
 
@@ -63,6 +62,7 @@ import (
 	nfdfeatures "sigs.k8s.io/node-feature-discovery/pkg/features"
 	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -74,6 +74,16 @@ type ExtendedResources map[string]string
 
 // Annotations are used for NFD-related node metadata
 type Annotations map[string]string
+
+// Restrictions contains the restrictions on the NF and NFR Crs
+type Restrictions struct {
+	NodeFeatureNamespaceSelector *metav1.LabelSelector
+	DisableLabels                bool
+	DisableExtendedResources     bool
+	DisableAnnotations           bool
+	DenyNodeFeatureLabels        bool
+	AllowOverwrite               bool
+}
 
 // NFDConfig contains the configuration settings of NfdMaster.
 type NFDConfig struct {
@@ -88,6 +98,7 @@ type NFDConfig struct {
 	LeaderElection    LeaderElectionConfig
 	NfdApiParallelism int
 	Klog              klogutils.KlogConfigOpts
+	Restrictions      Restrictions
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -273,6 +284,13 @@ func newDefaultConfig() *NFDConfig {
 			RenewDeadline: utils.DurationVal{Duration: time.Duration(10) * time.Second},
 		},
 		Klog: make(map[string]string),
+		Restrictions: Restrictions{
+			DisableLabels:            false,
+			DisableExtendedResources: false,
+			DisableAnnotations:       false,
+			AllowOverwrite:           true,
+			DenyNodeFeatureLabels:    false,
+		},
 	}
 }
 
@@ -581,10 +599,10 @@ func (m *nfdMaster) updateMasterNode() error {
 	}
 
 	// Advertise NFD version as an annotation
-	p := createPatches([]string{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation)},
+	p := createPatches(sets.New([]string{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation)}...),
 		node.Annotations,
 		nil,
-		"/metadata/annotations")
+		"/metadata/annotations", m.config.Restrictions.AllowOverwrite)
 
 	err = patchNode(m.k8sClient, node.Name, p)
 	if err != nil {
@@ -623,6 +641,11 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 			extendedResources[extendedResourceName] = value
 			delete(outLabels, extendedResourceName)
 		}
+	}
+
+	if len(outLabels) > 0 && m.config.Restrictions.DisableLabels {
+		klog.V(2).InfoS("node labels are disabled in configuration (restrictions.disableLabels=true)")
+		outLabels = Labels{}
 	}
 
 	return outLabels, extendedResources
@@ -690,6 +713,7 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 			outTaints = append(outTaints, taint)
 		}
 	}
+
 	return outTaints
 }
 
@@ -781,42 +805,62 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 		return &nfdv1alpha1.NodeFeature{}, fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
 	}
 
+	filteredObjs := []*nfdv1alpha1.NodeFeature{}
+	for _, obj := range objs {
+		if m.isNamespaceSelected(obj.Namespace) {
+			filteredObjs = append(filteredObjs, obj)
+		}
+	}
+
 	// Node without a running NFD-Worker
-	if len(objs) == 0 {
+	if len(filteredObjs) == 0 {
 		return &nfdv1alpha1.NodeFeature{}, nil
 	}
 
 	// Sort our objects
-	sort.Slice(objs, func(i, j int) bool {
+	sort.Slice(filteredObjs, func(i, j int) bool {
 		// Objects in our nfd namespace gets into the beginning of the list
-		if objs[i].Namespace == m.namespace && objs[j].Namespace != m.namespace {
+		if filteredObjs[i].Namespace == m.namespace && filteredObjs[j].Namespace != m.namespace {
 			return true
 		}
-		if objs[i].Namespace != m.namespace && objs[j].Namespace == m.namespace {
+		if filteredObjs[i].Namespace != m.namespace && filteredObjs[j].Namespace == m.namespace {
 			return false
 		}
 		// After the nfd namespace, sort objects by their name
-		if objs[i].Name != objs[j].Name {
-			return objs[i].Name < objs[j].Name
+		if filteredObjs[i].Name != filteredObjs[j].Name {
+			return filteredObjs[i].Name < filteredObjs[j].Name
 		}
 		// Objects with the same name are sorted by their namespace
-		return objs[i].Namespace < objs[j].Namespace
+		return filteredObjs[i].Namespace < filteredObjs[j].Namespace
 	})
 
-	if len(objs) > 0 {
+	if len(filteredObjs) > 0 {
 		// Merge in features
 		//
 		// NOTE: changing the rule api to support handle multiple objects instead
 		// of merging would probably perform better with lot less data to copy.
-		features := objs[0].Spec.DeepCopy()
+		features := filteredObjs[0].Spec.DeepCopy()
+
+		if m.config.Restrictions.DenyNodeFeatureLabels && m.isThirdPartyNodeFeature(*filteredObjs[0], nodeName, m.namespace) {
+			klog.V(2).InfoS("node feature labels are disabled in configuration (restrictions.denyNodeFeatureLabels=true)")
+			features.Labels = nil
+		}
+
 		if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
 			features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
 		}
-		for _, o := range objs[1:] {
+
+		for _, o := range filteredObjs[1:] {
 			s := o.Spec.DeepCopy()
+			if m.config.Restrictions.DenyNodeFeatureLabels && m.isThirdPartyNodeFeature(*o, nodeName, m.namespace) {
+				klog.V(2).InfoS("node feature labels are disabled in configuration (restrictions.denyNodeFeatureLabels=true)")
+				s.Labels = nil
+			}
+
 			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
 				s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
 			}
+
 			s.MergeInto(features)
 		}
 
@@ -827,6 +871,11 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 	}
 
 	return nodeFeatures, nil
+}
+
+// isThirdPartyNodeFeature determines whether a node feature is a third party one or created by nfd-worker
+func (m *nfdMaster) isThirdPartyNodeFeature(nodeFeature nfdv1alpha1.NodeFeature, nodeName, namespace string) bool {
+	return nodeFeature.Namespace != namespace || nodeFeature.Name != nodeName
 }
 
 func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.Node) error {
@@ -995,6 +1044,11 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 	maps.Copy(extendedResources, crExtendedResources)
 	extendedResources = m.filterExtendedResources(features, extendedResources)
 
+	if len(extendedResources) > 0 && m.config.Restrictions.DisableExtendedResources {
+		klog.V(2).InfoS("extended resources are disabled in configuration (restrictions.disableExtendedResources=true)")
+		extendedResources = map[string]string{}
+	}
+
 	// Annotations
 	annotations := m.filterFeatureAnnotations(crAnnotations)
 
@@ -1021,8 +1075,8 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 // setTaints sets node taints and annotations based on the taints passed via
 // nodeFeatureRule custom resorce. If empty list of taints is passed, currently
 // NFD owned taints and annotations are removed from the node.
-func setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node) error {
-	// De-serialize the taints annotation into corev1.Taint type for comparison below.
+func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node) error {
+	// De-serialize the taints annotation into corev1.Taint type for comparision below.
 	var err error
 	oldTaints := []corev1.Taint{}
 	if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok {
@@ -1078,7 +1132,11 @@ func setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node
 		newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
 	}
 
-	patches := createPatches([]string{nfdv1alpha1.NodeTaintsAnnotation}, node.Annotations, newAnnotations, "/metadata/annotations")
+	patches := createPatches(sets.New([]string{nfdv1alpha1.NodeTaintsAnnotation}...),
+		node.Annotations, newAnnotations,
+		"/metadata/annotations",
+		m.config.Restrictions.AllowOverwrite,
+	)
 	if len(patches) > 0 {
 		if err := patchNode(cli, node.Name, patches); err != nil {
 			return fmt.Errorf("error while patching node object: %w", err)
@@ -1218,7 +1276,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
 	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
-	patches := createPatches(oldLabels, node.Labels, labels, "/metadata/labels")
+	patches := createPatches(sets.New(oldLabels...), node.Labels, labels, "/metadata/labels", m.config.Restrictions.AllowOverwrite)
 	oldAnnotations = append(oldAnnotations, []string{
 		m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
 		m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
@@ -1226,7 +1284,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		// Clean up deprecated/stale nfd version annotations
 		m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
 		m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation)}...)
-	patches = append(patches, createPatches(oldAnnotations, node.Annotations, annotations, "/metadata/annotations")...)
+	patches = append(patches, createPatches(sets.New(oldAnnotations...), node.Annotations, annotations, "/metadata/annotations", m.config.Restrictions.AllowOverwrite)...)
 
 	// patch node status with extended resource changes
 	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
@@ -1249,7 +1307,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	}
 
 	// Set taints
-	err = setTaints(cli, taints, node)
+	err = m.setTaints(cli, taints, node)
 	if err != nil {
 		return err
 	}
@@ -1258,11 +1316,11 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 }
 
 // createPatches is a generic helper that returns json patch operations to perform
-func createPatches(removeKeys []string, oldItems map[string]string, newItems map[string]string, jsonPath string) []utils.JsonPatch {
+func createPatches(removeKeys sets.Set[string], oldItems map[string]string, newItems map[string]string, jsonPath string, overwrite bool) []utils.JsonPatch {
 	patches := []utils.JsonPatch{}
 
 	// Determine items to remove
-	for _, key := range removeKeys {
+	for key := range removeKeys {
 		if _, ok := oldItems[key]; ok {
 			if _, ok := newItems[key]; !ok {
 				patches = append(patches, utils.NewJsonPatch("remove", jsonPath, key, ""))
@@ -1273,7 +1331,7 @@ func createPatches(removeKeys []string, oldItems map[string]string, newItems map
 	// Determine items to add or replace
 	for key, newVal := range newItems {
 		if oldVal, ok := oldItems[key]; ok {
-			if newVal != oldVal {
+			if newVal != oldVal && (!removeKeys.Has(key) || overwrite) {
 				patches = append(patches, utils.NewJsonPatch("replace", jsonPath, key, newVal))
 			}
 		} else {
@@ -1475,8 +1533,10 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
-		ResyncPeriod:       m.config.ResyncPeriod.Duration,
+		DisableNodeFeature:           !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
+		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
+		K8sClient:                    m.k8sClient,
+		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
@@ -1537,6 +1597,12 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 
 		outAnnotations[annotation] = value
 	}
+
+	if len(outAnnotations) > 0 && m.config.Restrictions.DisableAnnotations {
+		klog.V(2).InfoS("node annotations are disabled in configuration (restrictions.disableAnnotations=true)")
+		outAnnotations = map[string]string{}
+	}
+
 	return outAnnotations
 }
 

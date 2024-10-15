@@ -30,6 +30,21 @@ master:
     # enableTaints: false
     # labelWhiteList: "foo"
     # resyncPeriod: "2h"
+    # restrictions:
+    #   disableLabels: true
+    #   disableTaints: true
+    #   disableExtendedResources: true
+    #   disableAnnotations: true
+    #   allowOverwrite: false
+    #   denyNodeFeatureLabels: true
+    #   nodeFeatureNamespaceSelector:
+    #    matchLabels:
+    #      kubernetes.io/metadata.name: "node-feature-discovery"
+    #    matchExpressions:
+    #      - key: "kubernetes.io/metadata.name"
+    #        operator: "In"
+    #        values:
+    #           - "node-feature-discovery"
     # klog:
     #    addDirHeader: false
     #    alsologtostderr: false
