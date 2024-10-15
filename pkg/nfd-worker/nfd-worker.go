@@ -84,6 +84,7 @@ type coreConfig struct {
 	Klog           klogutils.KlogConfigOpts
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
+	NoOwnerRefs    bool
 	FeatureSources []string
 	Sources        *[]string
 	LabelSources   []string
@@ -103,6 +104,7 @@ type Args struct {
 	KeyFile            string
 	Klog               map[string]*utils.KlogFlagVal
 	Kubeconfig         string
+	NoOwnerRefs        bool
 	Oneshot            bool
 	Options            string
 	Server             string
@@ -292,32 +294,9 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	return nil
 }
 
-// Run NfdWorker client. Returns if a fatal error is encountered, or, after
-// one request if OneShot is set to 'true' in the worker args.
-func (w *nfdWorker) Run() error {
-	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
-
-	// Read configuration file
-	err := w.configure(w.configFilePath, w.args.Options)
-	if err != nil {
-		return err
-	}
-
-	// Create watcher for TLS certificates
-	w.certWatch, err = utils.CreateFsWatcher(time.Second, w.args.CaFile, w.args.CertFile, w.args.KeyFile)
-	if err != nil {
-		return err
-	}
-
-	defer w.grpcDisconnect()
-
-	// Create ticker for feature discovery and run feature discovery once before the loop.
-	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
-	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
-	defer labelTrigger.Stop()
-
-	// Create owner ref
+func (w *nfdWorker) addOwnerReference() error {
 	ownerReference := []metav1.OwnerReference{}
+
 	// Get pod owner reference
 	podName := os.Getenv("POD_NAME")
 
@@ -346,6 +325,40 @@ func (w *nfdWorker) Run() error {
 	}
 
 	w.ownerReference = ownerReference
+
+	return nil
+}
+
+// Run NfdWorker client. Returns if a fatal error is encountered, or, after
+// one request if OneShot is set to 'true' in the worker args.
+func (w *nfdWorker) Run() error {
+	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
+
+	// Read configuration file
+	err := w.configure(w.configFilePath, w.args.Options)
+	if err != nil {
+		return err
+	}
+
+	// Create watcher for TLS certificates
+	w.certWatch, err = utils.CreateFsWatcher(time.Second, w.args.CaFile, w.args.CertFile, w.args.KeyFile)
+	if err != nil {
+		return err
+	}
+
+	defer w.grpcDisconnect()
+
+	// Create ticker for feature discovery and run feature discovery once before the loop.
+	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
+	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
+	defer labelTrigger.Stop()
+
+	if !w.config.Core.NoOwnerRefs {
+		err := w.addOwnerReference()
+		if err != nil {
+			return err
+		}
+	}
 
 	// Register to metrics server
 	if w.args.MetricsPort > 0 {
