@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -42,6 +43,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/kubeconf"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
@@ -337,6 +339,39 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 	return nil
 }
 
+// Dicsover E/P cores
+func discoverCpuCores() v1alpha2.AttributeList {
+	attrList := v1alpha2.AttributeList{}
+
+	cpu_atom, err := os.ReadFile(hostpath.SysfsDir.Path("sys/devices/cpu_atom", "cpus"))
+	if err != nil {
+		klog.ErrorS(err, "error reading cpu_atom/cpus file")
+		return v1alpha2.AttributeList{}
+	}
+
+	attrAtom := v1alpha2.AttributeInfo{
+		Name:  "cpu_atom",
+		Value: strings.TrimSpace(string(cpu_atom)),
+	}
+
+	attrList = append(attrList, attrAtom)
+
+	cpu_core, err := os.ReadFile(hostpath.SysfsDir.Path("sys/devices/cpu_core", "cpus"))
+	if err != nil {
+		klog.ErrorS(err, "error reading cpu_core/cpus file")
+		return v1alpha2.AttributeList{}
+	}
+
+	attrCore := v1alpha2.AttributeInfo{
+		Name:  "cpu_core",
+		Value: strings.TrimSpace(string(cpu_core)),
+	}
+
+	attrList = append(attrList, attrCore)
+
+	return attrList
+}
+
 func (w *nfdTopologyUpdater) updateNRTTopologyManagerInfo(nrt *v1alpha2.NodeResourceTopology) error {
 	policy, scope, err := w.detectTopologyPolicyAndScope()
 	if err != nil {
@@ -348,6 +383,9 @@ func (w *nfdTopologyUpdater) updateNRTTopologyManagerInfo(nrt *v1alpha2.NodeReso
 
 	updateAttributes(&nrt.Attributes, tmAttributes)
 	nrt.TopologyPolicies = deprecatedTopologyPolicies
+
+	attrList := discoverCpuCores()
+	updateAttributes(&nrt.Attributes, attrList)
 
 	return nil
 }
