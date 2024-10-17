@@ -80,16 +80,6 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
-		case "ca-file":
-			klog.InfoS("-ca-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "cert-file":
-			klog.InfoS("-cert-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "key-file":
-			klog.InfoS("-key-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "port":
-			klog.InfoS("-port is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "verify-node-name":
-			klog.InfoS("-verify-node-name is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		}
 	})
 
@@ -130,12 +120,6 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Kubeconfig to use")
 	flagset.BoolVar(&args.CrdController, "featurerules-controller", true,
 		"Enable NFD CRD API controller. DEPRECATED: use -crd-controller instead")
-	flagset.BoolVar(&args.CrdController, "crd-controller", true,
-		"Enable NFD CRD API controller for processing NodeFeature and NodeFeatureRule objects."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
-	flagset.IntVar(&args.Port, "port", 8080,
-		"Port on which to listen for gRPC connections."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
 		"Port on which to expose metrics.")
 	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,

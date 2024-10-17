@@ -59,22 +59,6 @@ func main() {
 		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
 	}
 
-	// Check deprecated flags
-	flags.Visit(func(f *flag.Flag) {
-		switch f.Name {
-		case "ca-file":
-			klog.InfoS("-ca-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "cert-file":
-			klog.InfoS("-cert-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "key-file":
-			klog.InfoS("-key-file is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "server":
-			klog.InfoS("-server is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		case "server-name-override":
-			klog.InfoS("-server-name-override is deprecated, will be removed in a future release along with the deprecated gRPC API")
-		}
-	})
-
 	// Plug klog into grpc logging infrastructure
 	utils.ConfigureGrpcKlog()
 
@@ -119,17 +103,8 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs) {
 	args := &worker.Args{}
 
-	flagset.StringVar(&args.CaFile, "ca-file", "",
-		"Root certificate for verifying connections."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
-	flagset.StringVar(&args.CertFile, "cert-file", "",
-		"Certificate used for authenticating connections."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-worker.conf",
 		"Config file to use.")
-	flagset.StringVar(&args.KeyFile, "key-file", "",
-		"Private key matching -cert-file."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
@@ -141,12 +116,6 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
-	flagset.StringVar(&args.Server, "server", "localhost:8080",
-		"NFD server address to connecto to."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
-	flagset.StringVar(&args.ServerNameOverride, "server-name-override", "",
-		"Hostname expected from server certificate, useful in testing."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 
 	args.Klog = klogutils.InitKlogFlags(flagset)
 
