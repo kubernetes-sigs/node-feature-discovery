@@ -106,11 +106,6 @@ spec:
             {{- if .Values.master.nfdApiParallelism | empty | not }}
             - "-nfd-api-parallelism={{ .Values.master.nfdApiParallelism }}"
             {{- end }}
-            {{- if .Values.tls.enable }}
-            - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-            - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-            - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
-            {{- end }}
             # Go over featureGates and add the feature-gate flag
             {{- range $key, $value := .Values.featureGates }}
             - "-feature-gates={{ $key }}={{ $value }}"
@@ -121,20 +116,10 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            {{- if .Values.tls.enable }}
-            - name: nfd-master-cert
-              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
-              readOnly: true
-            {{- end }}
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
       volumes:
-        {{- if .Values.tls.enable }}
-        - name: nfd-master-cert
-          secret:
-            secretName: nfd-master-cert
-        {{- end }}
         - name: nfd-master-conf
           configMap:
             name: {{ include "node-feature-discovery.fullname" . }}-master-conf

@@ -122,17 +122,8 @@ func main() {
 func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs) {
 	args := &master.Args{}
 
-	flagset.StringVar(&args.CaFile, "ca-file", "",
-		"Root certificate for verifying connections."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
-	flagset.StringVar(&args.CertFile, "cert-file", "",
-		"Certificate used for authenticating connections."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Instance, "instance", "",
 		"Instance name. Used to separate annotation namespaces for multiple parallel deployments.")
-	flagset.StringVar(&args.KeyFile, "key-file", "",
-		"Private key matching -cert-file."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-master.conf",
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
@@ -151,10 +142,6 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Port on which to expose the grpc health endpoint.")
 	flagset.BoolVar(&args.Prune, "prune", false,
 		"Prune all NFD related attributes from all nodes of the cluster and exit.")
-	flagset.BoolVar(&args.VerifyNodeName, "verify-node-name", false,
-		"Verify worker node name against the worker's TLS certificate. "+
-			"Only takes effect when TLS authentication has been enabled."+
-			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
