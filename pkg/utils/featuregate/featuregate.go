@@ -121,6 +121,7 @@ func NewFeatureGate() *featureGate {
 		featureGateName: nfdfg,
 	}
 
+	f.known.Store(map[Feature]FeatureSpec{})
 	f.enabled.Store(map[Feature]bool{})
 
 	return f

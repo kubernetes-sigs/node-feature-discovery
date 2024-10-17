@@ -27,7 +27,6 @@ import (
 	"k8s.io/klog/v2"
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
-	"sigs.k8s.io/node-feature-discovery/pkg/features"
 )
 
 type updaterPool struct {
@@ -120,7 +119,14 @@ func (u *updaterPool) processNodeFeatureGroupUpdateRequest(cli nfdclientset.Inte
 }
 
 func (u *updaterPool) runNodeFeatureGroupUpdater() {
-	cli := nfdclientset.NewForConfigOrDie(u.nfdMaster.kubeconfig)
+	var cli nfdclientset.Interface
+	if u.nfdMaster.kubeconfig != nil {
+		// For normal execution, initialize a separate api client for each updater
+		cli = nfdclientset.NewForConfigOrDie(u.nfdMaster.kubeconfig)
+	} else {
+		// For tests, re-use the api client from nfd-master
+		cli = u.nfdMaster.nfdClient
+	}
 	for u.processNodeFeatureGroupUpdateRequest(cli) {
 	}
 	u.nfgWg.Done()
@@ -149,10 +155,8 @@ func (u *updaterPool) start(parallelism int) {
 	for i := 0; i < parallelism; i++ {
 		u.wg.Add(1)
 		go u.runNodeUpdater()
-		if features.NFDFeatureGate.Enabled(features.NodeFeatureGroupAPI) {
-			u.nfgWg.Add(1)
-			go u.runNodeFeatureGroupUpdater()
-		}
+		u.nfgWg.Add(1)
+		go u.runNodeFeatureGroupUpdater()
 	}
 	u.started = true
 }

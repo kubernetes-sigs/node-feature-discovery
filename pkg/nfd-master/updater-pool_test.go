@@ -99,7 +99,7 @@ func TestRunNodeUpdater(t *testing.T) {
 }
 
 func TestRunNodeFeatureGroupUpdater(t *testing.T) {
-	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewSimpleClientset()))
+	fakeMaster := newFakeMaster()
 	fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
 	updaterPool := newFakeupdaterPool(fakeMaster)
 

@@ -17,8 +17,6 @@ limitations under the License.
 package nfdworker
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -32,8 +30,6 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -48,8 +44,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	nfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
-	"sigs.k8s.io/node-feature-discovery/pkg/features"
-	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -124,11 +118,9 @@ type ConfigOverrideArgs struct {
 type nfdWorker struct {
 	args                Args
 	certWatch           *utils.FsWatcher
-	clientConn          *grpc.ClientConn
 	configFilePath      string
 	config              *NFDConfig
 	kubernetesNamespace string
-	grpcClient          pb.LabelerClient
 	healthServer        *grpc.Server
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
@@ -303,14 +295,6 @@ func (w *nfdWorker) Run() error {
 		return err
 	}
 
-	// Create watcher for TLS certificates
-	w.certWatch, err = utils.CreateFsWatcher(time.Second, w.args.CaFile, w.args.CertFile, w.args.KeyFile)
-	if err != nil {
-		return err
-	}
-
-	defer w.grpcDisconnect()
-
 	// Create ticker for feature discovery and run feature discovery once before the loop.
 	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
@@ -387,10 +371,6 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 
-		case <-w.certWatch.Events:
-			klog.InfoS("TLS certificate update, renewing connection to nfd-master")
-			w.grpcDisconnect()
-
 		case <-w.stop:
 			klog.InfoS("shutting down nfd-worker")
 			if w.healthServer != nil {
@@ -407,69 +387,6 @@ func (w *nfdWorker) Stop() {
 	close(w.stop)
 }
 
-// getGrpcClient returns client connection to the NFD gRPC server. It creates a
-// connection if one hasn't yet been established,.
-func (w *nfdWorker) getGrpcClient() (pb.LabelerClient, error) {
-	if w.grpcClient != nil {
-		return w.grpcClient, nil
-	}
-
-	// Check that if a connection already exists
-	if w.clientConn != nil {
-		return nil, fmt.Errorf("client connection already exists")
-	}
-
-	// Dial and create a client
-	dialCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	dialOpts := []grpc.DialOption{grpc.WithBlock()}
-	if w.args.CaFile != "" || w.args.CertFile != "" || w.args.KeyFile != "" {
-		// Load client cert for client authentication
-		cert, err := tls.LoadX509KeyPair(w.args.CertFile, w.args.KeyFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load client certificate: %v", err)
-		}
-		// Load CA cert for server cert verification
-		caCert, err := os.ReadFile(w.args.CaFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read root certificate file: %v", err)
-		}
-		caPool := x509.NewCertPool()
-		if ok := caPool.AppendCertsFromPEM(caCert); !ok {
-			return nil, fmt.Errorf("failed to add certificate from '%s'", w.args.CaFile)
-		}
-		// Create TLS config
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			RootCAs:      caPool,
-			ServerName:   w.args.ServerNameOverride,
-			MinVersion:   tls.VersionTLS13,
-		}
-		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	} else {
-		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-	klog.InfoS("connecting to nfd-master", "address", w.args.Server)
-	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...)
-	if err != nil {
-		return nil, err
-	}
-	w.clientConn = conn
-
-	w.grpcClient = pb.NewLabelerClient(w.clientConn)
-
-	return w.grpcClient, nil
-}
-
-// grpcDisconnect closes the gRPC connection to NFD master
-func (w *nfdWorker) grpcDisconnect() {
-	if w.clientConn != nil {
-		klog.InfoS("closing connection to nfd-master")
-		w.clientConn.Close()
-	}
-	w.clientConn = nil
-	w.grpcClient = nil
-}
 func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
 		klog.InfoS("too short sleep interval specified, forcing to 1s",
@@ -718,42 +635,9 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 
 // advertiseFeatures advertises the features of a Kubernetes node
 func (w *nfdWorker) advertiseFeatures(labels Labels) error {
-	if features.NFDFeatureGate.Enabled(features.NodeFeatureAPI) {
-		// Create/update NodeFeature CR object
-		if err := w.updateNodeFeatureObject(labels); err != nil {
-			return fmt.Errorf("failed to advertise features (via CRD API): %w", err)
-		}
-	} else {
-		// Create/update feature labels through gRPC connection to nfd-master
-		if err := w.advertiseFeatureLabels(labels); err != nil {
-			return fmt.Errorf("failed to advertise features (via gRPC): %w", err)
-		}
-	}
-	return nil
-}
-
-// advertiseFeatureLabels advertises the feature labels to a Kubernetes node
-// via the NFD server.
-func (w *nfdWorker) advertiseFeatureLabels(labels Labels) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	klog.InfoS("sending labeling request to nfd-master")
-
-	labelReq := pb.SetLabelsRequest{Labels: labels,
-		Features:   source.GetAllFeatures(),
-		NfdVersion: version.Get(),
-		NodeName:   utils.NodeName()}
-
-	cli, err := w.getGrpcClient()
-	if err != nil {
-		return err
-	}
-
-	_, err = cli.SetLabels(ctx, &labelReq)
-	if err != nil {
-		klog.ErrorS(err, "failed to label node")
-		return err
+	// Create/update NodeFeature CR object
+	if err := w.updateNodeFeatureObject(labels); err != nil {
+		return fmt.Errorf("failed to advertise features (via CRD API): %w", err)
 	}
 
 	return nil

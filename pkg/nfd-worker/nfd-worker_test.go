@@ -212,12 +212,7 @@ func TestRun(t *testing.T) {
 // Also drop the certs from test/data/.
 func TestRunTls(t *testing.T) {
 	t.Skip("gRPC cannot be enabled, NodeFeatureAPI GA")
-	masterArgs := &master.Args{
-		CaFile:         data.FilePath("ca.crt"),
-		CertFile:       data.FilePath("nfd-test-master.crt"),
-		KeyFile:        data.FilePath("nfd-test-master.key"),
-		VerifyNodeName: false,
-	}
+	masterArgs := &master.Args{}
 	ctx := setupTest(masterArgs)
 	defer teardownTest(ctx)
 	Convey("When running nfd-worker against nfd-master with mutual TLS auth enabled", t, func() {
