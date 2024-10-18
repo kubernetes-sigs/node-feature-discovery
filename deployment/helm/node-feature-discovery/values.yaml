@@ -150,12 +150,15 @@ master:
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
+    # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
 
 worker:
   enable: true
@@ -426,12 +429,15 @@ worker:
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
+    # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
 
   serviceAccount:
     # Specifies whether a service account should be created.
@@ -520,12 +526,15 @@ topologyUpdater:
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
+    # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
 
   resources:
     limits:
