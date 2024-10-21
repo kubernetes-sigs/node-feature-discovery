@@ -166,7 +166,7 @@ gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')
 
 gofmt-verify:
-	@out=`$(GO_FMT) -w -l -d $$(find . -name '*.go')`; \
+	@out=`$(GO_FMT) -w -l -d $$(find . -path './vendor' -prune -o -name '*.go' -print)`; \
 	if [ -n "$$out" ]; then \
 	    echo "$$out"; \
 	    exit 1; \
