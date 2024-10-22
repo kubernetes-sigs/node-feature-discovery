@@ -18,7 +18,6 @@ package pci
 
 import (
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,13 +25,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
-
-var packagePath string
-
-func init() {
-	_, thisFile, _, _ := runtime.Caller(0)
-	packagePath = filepath.Dir(thisFile)
-}
 
 func TestSingletonPciSource(t *testing.T) {
 	assert.Equal(t, src.Name(), Name)
@@ -232,7 +224,8 @@ func TestPciSource(t *testing.T) {
 	// Run test cases
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			hostpath.SysfsDir = hostpath.HostDir(filepath.Join(packagePath, "testdata", tc.rootfs, "sys"))
+			mockSysfsPath := filepath.Join("..", "..", "testdata", "source", "pci", tc.rootfs, "sys")
+			hostpath.SysfsDir = hostpath.HostDir(mockSysfsPath)
 
 			config := tc.config
 			if config == nil {
