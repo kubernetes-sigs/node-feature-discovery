@@ -47,6 +47,9 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
         {{- with .Values.worker.livenessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -60,6 +63,9 @@ spec:
           timeoutSeconds: {{ . }}
         {{- end }}
         readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
         {{- with .Values.worker.readinessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
