@@ -1,7 +1,7 @@
 ---
 title: "Uninstallation"
 layout: default
-sort: 6
+sort: 5
 ---
 
 # Uninstallation
