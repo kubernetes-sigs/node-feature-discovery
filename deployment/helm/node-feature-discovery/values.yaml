@@ -418,7 +418,7 @@ worker:
     #          matchName: {op: In, value: ["SWAP", "X86", "ARM"]}
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
-  metricsPort: 8081
+  port: 8080
   daemonsetAnnotations: {}
   podSecurityContext: {}
     # fsGroup: 2000

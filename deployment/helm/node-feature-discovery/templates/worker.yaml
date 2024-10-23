@@ -100,13 +100,13 @@ spec:
         {{- range $key, $value := .Values.featureGates }}
         - "-feature-gates={{ $key }}={{ $value }}"
         {{- end }}
-        - "-metrics={{ .Values.worker.metricsPort | default "8081"}}"
+        - "-port={{ .Values.worker.port | default "8080"}}"
         {{- with .Values.worker.extraArgs }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         ports:
-          - containerPort: {{ .Values.worker.metricsPort | default "8081"}}
-            name: metrics
+          - containerPort: {{ .Values.worker.port | default "8080"}}
+            name: http
         volumeMounts:
         - name: host-boot
           mountPath: "/host-boot"

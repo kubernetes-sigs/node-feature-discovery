@@ -19,6 +19,7 @@ package nfdworker
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -26,6 +27,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/exp/maps"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -94,7 +97,7 @@ type Args struct {
 	Kubeconfig  string
 	Oneshot     bool
 	Options     string
-	MetricsPort int
+	Port        int
 	NoOwnerRefs bool
 
 	Overrides ConfigOverrideArgs
@@ -295,15 +298,13 @@ func (w *nfdWorker) Run() error {
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
 
+	httpMux := http.NewServeMux()
+
 	// Register to metrics server
-	if w.args.MetricsPort > 0 {
-		m := utils.CreateMetricsServer(w.args.MetricsPort,
-			buildInfo,
-			featureDiscoveryDuration)
-		go m.Run()
-		registerVersion(version.Get())
-		defer m.Stop()
-	}
+	promRegistry := prometheus.NewRegistry()
+	promRegistry.MustRegister(buildInfo, featureDiscoveryDuration)
+	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
+	registerVersion(version.Get())
 
 	err = w.runFeatureDiscovery()
 	if err != nil {
@@ -316,6 +317,14 @@ func (w *nfdWorker) Run() error {
 	}
 
 	// Start readiness probe (at this point we're "ready and live")
+
+	// Start HTTP server
+	httpServer := http.Server{Addr: fmt.Sprintf(":%d", w.args.Port), Handler: httpMux}
+	go func() {
+		klog.InfoS("http server starting", "port", httpServer.Addr)
+		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
+	}()
+	defer httpServer.Close()
 
 	for {
 		select {
