@@ -6,10 +6,15 @@ on:
 concurrency:
   group: gh-pages
 
+permissions:
+  contents: read
+
 jobs:
   update-helm-repo:
     name: Update gh-pages helm repo index
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: Install Helm
       uses: azure/setup-helm@v3
