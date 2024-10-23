@@ -21,7 +21,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -34,8 +33,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -108,7 +105,6 @@ type Args struct {
 	Server             string
 	ServerNameOverride string
 	MetricsPort        int
-	GrpcHealthPort     int
 
 	Overrides ConfigOverrideArgs
 }
@@ -241,29 +237,6 @@ func (i *infiniteTicker) Reset(d time.Duration) {
 	}
 }
 
-func (w *nfdWorker) startGrpcHealthServer(errChan chan<- error) error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", w.args.GrpcHealthPort))
-	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
-	}
-
-	s := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
-	klog.InfoS("gRPC health server serving", "port", w.args.GrpcHealthPort)
-
-	go func() {
-		defer func() {
-			lis.Close()
-		}()
-		if err := s.Serve(lis); err != nil {
-			errChan <- fmt.Errorf("gRPC health server exited with an error: %w", err)
-		}
-		klog.InfoS("gRPC health server stopped")
-	}()
-	w.healthServer = s
-	return nil
-}
-
 // Run feature discovery.
 func (w *nfdWorker) runFeatureDiscovery() error {
 	discoveryStart := time.Now()
@@ -369,12 +342,7 @@ func (w *nfdWorker) Run() error {
 
 	grpcErr := make(chan error)
 
-	// Start gRPC server for liveness probe (at this point we're "live")
-	if w.args.GrpcHealthPort != 0 {
-		if err := w.startGrpcHealthServer(grpcErr); err != nil {
-			return fmt.Errorf("failed to start gRPC health server: %w", err)
-		}
-	}
+	// Start readiness probe (at this point we're "ready and live")
 
 	for {
 		select {
