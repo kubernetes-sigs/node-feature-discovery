@@ -229,6 +229,10 @@ func newDefaultConfig() *NFDConfig {
 	}
 }
 
+func (w *nfdWorker) Healthz(writer http.ResponseWriter, _ *http.Request) {
+	writer.WriteHeader(http.StatusOK)
+}
+
 func (i *infiniteTicker) Reset(d time.Duration) {
 	switch {
 	case d > 0:
@@ -343,7 +347,8 @@ func (w *nfdWorker) Run() error {
 
 	grpcErr := make(chan error)
 
-	// Start readiness probe (at this point we're "ready and live")
+	// Register health probe (at this point we're "ready and live")
+	httpMux.HandleFunc("/healthz", w.Healthz)
 
 	// Start HTTP server
 	httpServer := http.Server{Addr: fmt.Sprintf(":%d", w.args.Port), Handler: httpMux}
