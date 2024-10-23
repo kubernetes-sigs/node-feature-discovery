@@ -108,8 +108,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Kubeconfig to use")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Do not publish feature labels")
-	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
-		"Port on which to expose metrics.")
+	flagset.IntVar(&args.Port, "port", 8080,
+		"Port on which to metrics and healthz endpoints are served")
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
