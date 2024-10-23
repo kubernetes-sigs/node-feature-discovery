@@ -45,9 +45,38 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         livenessProbe:
-          {{- toYaml .Values.topologyUpdater.livenessProbe | nindent 10 }}
+          grpc:
+            port: {{ .Values.topologyUpdater.healthPort | default "8082" }}
+        {{- with .Values.topologyUpdater.livenessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.livenessProbe.failureThreshold }}
+          failureThreshold: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.livenessProbe.periodSeconds }}
+          periodSeconds: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.livenessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ . }}
+        {{- end }}
         readinessProbe:
-          {{- toYaml .Values.topologyUpdater.readinessProbe | nindent 10 }}
+          grpc:
+            port: {{ .Values.topologyUpdater.healthPort | default "8082" }}
+        {{- with .Values.topologyUpdater.readinessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.readinessProbe.failureThreshold }}
+          failureThreshold: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.readinessProbe.periodSeconds }}
+          periodSeconds: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.readinessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ . }}
+        {{- end }}
+        {{- with .Values.topologyUpdater.readinessProbe.successThreshold }}
+          successThreshold: {{ . }}
+        {{- end }}
         env:
         - name: NODE_NAME
           valueFrom:
@@ -90,14 +119,14 @@ spec:
           - "-kubelet-state-dir="
           {{- end }}
           - "-metrics={{ .Values.topologyUpdater.metricsPort | default "8081"}}"
-          - "-grpc-health={{ .Values.topologyUpdater.healthPort  | default "8082" }}"
+          - "-grpc-health={{ .Values.topologyUpdater.healthPort | default "8082" }}"
           {{- with .Values.topologyUpdater.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         ports:
           - containerPort: {{ .Values.topologyUpdater.metricsPort | default "8081"}}
             name: metrics
-          - containerPort: {{ .Values.topologyUpdater.healthPort  | default "8082" }}
+          - containerPort: {{ .Values.topologyUpdater.healthPort | default "8082" }}
             name: health
         volumeMounts:
         {{- if .Values.topologyUpdater.kubeletConfigPath | empty | not }}
