@@ -52,6 +52,7 @@ const (
 	TopologyManagerPolicyAttributeName = "topologyManagerPolicy"
 	// TopologyManagerScopeAttributeName represents an attribute which defines Topology Manager Policy Scope
 	TopologyManagerScopeAttributeName = "topologyManagerScope"
+	NRTOwnerPodAnnotation             = "nfd.node.kubernetes.io/owner-pod"
 )
 
 // Args are the command line arguments
@@ -294,6 +295,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 		nrtNew := v1alpha2.NodeResourceTopology{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            w.nodeName,
+				Annotations:     map[string]string{NRTOwnerPodAnnotation: fmt.Sprintf("%s/%s", w.kubernetesNamespace, os.Getenv("POD_NAME"))},
 				OwnerReferences: w.ownerRefs,
 			},
 			Zones:      zoneInfo,
@@ -317,6 +319,7 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 	nrtMutated := nrt.DeepCopy()
 	nrtMutated.Zones = zoneInfo
 	nrtMutated.OwnerReferences = w.ownerRefs
+	nrtMutated.Annotations[NRTOwnerPodAnnotation] = fmt.Sprintf("%s/%s", w.kubernetesNamespace, os.Getenv("POD_NAME"))
 
 	attributes := scanResponse.Attributes
 

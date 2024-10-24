@@ -36,7 +36,7 @@ import (
 
 func TestNRTGC(t *testing.T) {
 	Convey("When theres is old NRT ", t, func() {
-		gc := newMockGC(nil, []string{"node1"})
+		gc := newMockGC(nil, []string{"node1"}, []string{"pod1"})
 
 		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
@@ -47,7 +47,7 @@ func TestNRTGC(t *testing.T) {
 		So(<-errChan, ShouldBeNil)
 	})
 	Convey("When theres is one old NRT and one up to date", t, func() {
-		gc := newMockGC([]string{"node1"}, []string{"node1", "node2"})
+		gc := newMockGC([]string{"node1"}, []string{"node1", "node2"}, []string{"pod1", "pod2"})
 
 		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
@@ -58,7 +58,7 @@ func TestNRTGC(t *testing.T) {
 		So(<-errChan, ShouldBeNil)
 	})
 	Convey("Should react to delete event", t, func() {
-		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
+		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"}, []string{"pod1", "pod2"})
 
 		errChan := make(chan error)
 		go func() { errChan <- gc.Run() }()
@@ -70,7 +70,7 @@ func TestNRTGC(t *testing.T) {
 		So(waitForNRT(gc.client, "node2"), ShouldBeTrue)
 	})
 	Convey("periodic GC should remove obsolete NRT", t, func() {
-		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"})
+		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"}, []string{"pod1", "pod2"})
 		// Override period to run fast
 		gc.args.GCPeriod = 100 * time.Millisecond
 
@@ -85,16 +85,38 @@ func TestNRTGC(t *testing.T) {
 
 		So(waitForNRT(gc.client, "node1", "node2"), ShouldBeTrue)
 	})
+	Convey("periodic GC should remove stale NRT", t, func() {
+		gc := newMockGC([]string{"node1", "node2"}, []string{"node1", "node2"}, []string{"pod1", "pod2"})
+		// Override period to run fast
+		gc.args.GCPeriod = 100 * time.Millisecond
+
+		nrt := createPartialObjectMetadata("topology.node.k8s.io/v1alpha2", "NodeResourceTopology", "", "not-existing")
+		nrt.ObjectMeta.Annotations = map[string]string{"owner-pod": "pod4"}
+
+		errChan := make(chan error)
+		go func() { errChan <- gc.Run() }()
+
+		gvr := topologyv1alpha2.SchemeGroupVersion.WithResource("noderesourcetopologies")
+		_, err := gc.client.Resource(gvr).(fake.MetadataClient).CreateFake(nrt, metav1.CreateOptions{})
+		So(err, ShouldBeNil)
+
+		So(waitForNrtPodsGC(gc.client, "pod1", "pod2"), ShouldBeTrue)
+	})
 }
 
-func newMockGC(nodes, nrts []string) *mockGC {
+func newMockGC(nodes, nrts, pods []string) *mockGC {
 	// Create fake objects
 	objs := []runtime.Object{}
+	for _, name := range pods {
+		objs = append(objs, createPartialObjectMetadata("v1", "Pod", "", name))
+	}
 	for _, name := range nodes {
 		objs = append(objs, createPartialObjectMetadata("v1", "Node", "", name))
 	}
-	for _, name := range nrts {
-		objs = append(objs, createPartialObjectMetadata("topology.node.k8s.io/v1alpha2", "NodeResourceTopology", "", name))
+	for i, name := range nrts {
+		nrt := createPartialObjectMetadata("topology.node.k8s.io/v1alpha2", "NodeResourceTopology", "", name)
+		nrt.ObjectMeta.Annotations = map[string]string{"owner-pod": pods[i]}
+		objs = append(objs, nrt)
 	}
 
 	scheme := fake.NewTestScheme()
@@ -108,6 +130,7 @@ func newMockGC(nodes, nrts []string) *mockGC {
 			args: &Args{
 				GCPeriod: 10 * time.Minute,
 			},
+			gcNRTs: make(map[string]string),
 		},
 		client: cli,
 	}
@@ -145,6 +168,26 @@ func waitForNRT(cli metadataclient.Interface, names ...string) bool {
 		}
 
 		if nrtNames.Equal(nameSet) {
+			return true
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return false
+}
+
+func waitForNrtPodsGC(cli metadataclient.Interface, pods ...string) bool {
+	podsSet := sets.NewString(pods...)
+	gvr := topologyv1alpha2.SchemeGroupVersion.WithResource("noderesourcetopologies")
+	for i := 0; i < 2; i++ {
+		rsp, err := cli.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+		So(err, ShouldBeNil)
+
+		nrtPods := sets.NewString()
+		for _, nrt := range rsp.Items {
+			nrtPods.Insert(nrt.Annotations["owner-pod"])
+		}
+
+		if nrtPods.Equal(podsSet) {
 			return true
 		}
 		time.Sleep(1 * time.Second)
