@@ -31,6 +31,7 @@ type NfdV1alpha1Interface interface {
 	NodeFeaturesGetter
 	NodeFeatureGroupsGetter
 	NodeFeatureRulesGetter
+	NodeFeatureRuleStatusesGetter
 }
 
 // NfdV1alpha1Client is used to interact with features provided by the nfd.k8s-sigs.io group.
@@ -48,6 +49,10 @@ func (c *NfdV1alpha1Client) NodeFeatureGroups(namespace string) NodeFeatureGroup
 
 func (c *NfdV1alpha1Client) NodeFeatureRules() NodeFeatureRuleInterface {
 	return newNodeFeatureRules(c)
+}
+
+func (c *NfdV1alpha1Client) NodeFeatureRuleStatuses(namespace string) NodeFeatureRuleStatusInterface {
+	return newNodeFeatureRuleStatuses(c, namespace)
 }
 
 // NewForConfig creates a new NfdV1alpha1Client for the given config.

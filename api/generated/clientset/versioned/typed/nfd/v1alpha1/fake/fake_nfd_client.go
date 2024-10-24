@@ -40,6 +40,10 @@ func (c *FakeNfdV1alpha1) NodeFeatureRules() v1alpha1.NodeFeatureRuleInterface {
 	return &FakeNodeFeatureRules{c}
 }
 
+func (c *FakeNfdV1alpha1) NodeFeatureRuleStatuses(namespace string) v1alpha1.NodeFeatureRuleStatusInterface {
+	return &FakeNodeFeatureRuleStatuses{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeNfdV1alpha1) RESTClient() rest.Interface {

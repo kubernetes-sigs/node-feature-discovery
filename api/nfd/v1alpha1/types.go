@@ -130,13 +130,45 @@ type NodeFeatureRule struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the rules to be evaluated.
-	Spec NodeFeatureRuleSpec `json:"spec"`
+	Spec   NodeFeatureRuleSpec   `json:"spec"`
+	// +optional
+	Status NodeFeatureRuleStatus `json:"status"`
 }
 
 // NodeFeatureRuleSpec describes a NodeFeatureRule.
 type NodeFeatureRuleSpec struct {
 	// Rules is a list of node customization rules.
 	Rules []Rule `json:"rules"`
+}
+
+// NodeFeatureRuleStatus represents the status of a NodeFeatureRule
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced,shortName=nfs
+// +kubebuilder:subresource:status
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient
+type NodeFeatureRuleStatus struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +optional
+	Rules []RuleStatus `json:"rules"`
+}
+
+// RuleStatus contains information on matched rules and nodes
+type RuleStatus struct {
+	Name         string   `json:"name"`
+	MatchedNodes []string `json:"matchedNodes"`
+}
+
+// NodeFeatureRuleStatusList contains a list of NodeFeatureRuleStatus objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureRuleStatusList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NodeFeatureRuleStatus `json:"items"`
 }
 
 // NodeFeatureGroup resource holds Node pools by featureGroup
