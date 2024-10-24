@@ -122,6 +122,8 @@ type ConfigOverrideArgs struct {
 }
 
 type nfdWorker struct {
+	*nfdController
+
 	args                Args
 	certWatch           *utils.FsWatcher
 	clientConn          *grpc.ClientConn
@@ -309,6 +311,8 @@ func (w *nfdWorker) Run() error {
 		return err
 	}
 
+	w.startNfdApiController()
+
 	defer w.grpcDisconnect()
 
 	// Create ticker for feature discovery and run feature discovery once before the loop.
@@ -386,6 +390,9 @@ func (w *nfdWorker) Run() error {
 			if err != nil {
 				return err
 			}
+
+		case <-w.nfdController.updateConfigChan:
+			klog.InfoS("reloading configuration")
 
 		case <-w.certWatch.Events:
 			klog.InfoS("TLS certificate update, renewing connection to nfd-master")
@@ -815,6 +822,21 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		} else {
 			klog.V(1).InfoS("no changes in NodeFeature object, not updating", "nodefeature", klog.KObj(nfr))
 		}
+	}
+	return nil
+}
+
+func (m *nfdWorker) startNfdApiController() error {
+	kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	klog.InfoS("starting the nfd api controller")
+	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
+		//ResyncPeriod:       m.config.ResyncPeriod.Duration,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to initialize CRD controller: %w", err)
 	}
 	return nil
 }
