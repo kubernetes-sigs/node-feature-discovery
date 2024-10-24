@@ -48,15 +48,44 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
-            {{- toYaml .Values.master.livenessProbe | nindent 12 }}
+            grpc:
+              port: {{ .Values.master.healthPort | default "8082" }}
+          {{- with .Values.master.livenessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.livenessProbe.failureThreshold }}
+            failureThreshold: {{ . }}
+          {{- end }}
+          {{- with .Values.master.livenessProbe.periodSeconds }}
+            periodSeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ . }}
+          {{- end }}
           readinessProbe:
-            {{- toYaml .Values.master.readinessProbe | nindent 12 }}
+            grpc:
+              port: {{ .Values.master.healthPort | default "8082" }}
+          {{- with .Values.master.readinessProbe.initialDelaySeconds }}
+            initialDelaySeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.readinessProbe.failureThreshold }}
+            failureThreshold: {{ . }}
+          {{- end }}
+          {{- with .Values.master.readinessProbe.periodSeconds }}
+            periodSeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ . }}
+          {{- end }}
+          {{- with .Values.master.readinessProbe.successThreshold }}
+            successThreshold: {{ . }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.master.port | default "8080" }}
             name: grpc
           - containerPort: {{ .Values.master.metricsPort | default "8081" }}
             name: metrics
-          - containerPort: {{ .Values.master.healthPort  | default "8082" }}
+          - containerPort: {{ .Values.master.healthPort | default "8082" }}
             name: health
           env:
           - name: NODE_NAME
@@ -116,7 +145,7 @@ spec:
             - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
             - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
-            - "-grpc-health={{ .Values.master.healthPort  | default "8082" }}"
+            - "-grpc-health={{ .Values.master.healthPort | default "8082" }}"
             {{- with .Values.master.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

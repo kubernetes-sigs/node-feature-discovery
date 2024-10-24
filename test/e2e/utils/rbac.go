@@ -178,6 +178,11 @@ func createClusterRoleMaster(ctx context.Context, cs clientset.Interface) (*rbac
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{""},
 				Resources: []string{"nodes", "nodes/status"},
 				Verbs:     []string{"get", "list", "patch", "update"},
 			},

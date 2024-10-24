@@ -338,3 +338,104 @@ Comma-separated list of `pattern=N` settings for file-filtered logging.
 Default: *empty*
 
 Run-time configurable: yes
+
+## restrictions (EXPERIMENTAL)
+
+The following options specify the restrictions that can be applied by the
+nfd-master on the deployed Custom Resources in the cluster.
+
+### restrictions.nodeFeatureNamespaceSelector
+
+The `nodeFeatureNamespaceSelector` option specifies the NodeFeatures namespaces
+to watch, which can be selected by using `metav1.LabelSelector` as a type for
+this option. An empty value selects all namespaces to be watched.
+
+Default: *empty*
+
+Example:
+
+```yaml
+restrictions:
+  nodeFeatureNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: "node-feature-discovery"
+    matchExpressions:
+      - key: "kubernetes.io/metadata.name"
+        operator: "In"
+        values:
+          - "node-feature-discovery"
+```
+
+### restrictions.disableLabels
+
+The `disableLabels` option controls whether to allow creation of node labels
+from NodeFeature and NodeFeatureRule CRs or not.
+
+Default: false
+
+Example:
+
+```yaml
+restrictions:
+  disableLabels: true
+```
+
+### restrictions.disableExtendedResources
+
+The `disableExtendedResources` option controls whether to allow creation of
+node extended resources from NodeFeatureRule CR or not.
+
+Default: false
+
+Example:
+
+```yaml
+restrictions:
+  disableExtendedResources: true
+```
+
+### restrictions.disableAnnotations
+
+he `disableAnnotations` option controls whether to allow creation of node annotations
+from NodeFeatureRule CR or not.
+
+Default: false
+
+Example:
+
+```yaml
+restrictions:
+  disableAnnotations: true
+```
+
+### restrictions.allowOverwrite
+
+The `allowOverwrite` option controls whether NFD is allowed to overwrite and
+take over management of existing node labels, annotations, and extended resources.
+Labels, annotations and extended resources created by NFD itself are not affected
+(overwrite cannot be disabled). NFD tracks the labels, annotations and extended
+resources that it manages with specific
+[node annotations](../get-started/introduction.md#node-annotations).
+
+Default: true
+
+Example:
+
+```yaml
+restrictions:
+  allowOverwrite: false
+```
+
+### restrictions.denyNodeFeatureLabels
+
+The `denyNodeFeatureLabels` option specifies whether to deny labels from 3rd party
+NodeFeature objects or not. NodeFeature objects created by nfd-worker are not affected.
+
+Default: false
+
+Example:
+
+```yaml
+restrictions:
+  denyNodeFeatureLabels: true
+```

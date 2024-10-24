@@ -37,6 +37,21 @@ master:
     # enableTaints: false
     # labelWhiteList: "foo"
     # resyncPeriod: "2h"
+    # restrictions:
+    #   disableLabels: true
+    #   disableTaints: true
+    #   disableExtendedResources: true
+    #   disableAnnotations: true
+    #   allowOverwrite: false
+    #   denyNodeFeatureLabels: true
+    #   nodeFeatureNamespaceSelector:
+    #    matchLabels:
+    #      kubernetes.io/metadata.name: "node-feature-discovery"
+    #    matchExpressions:
+    #      - key: "kubernetes.io/metadata.name"
+    #        operator: "In"
+    #        values:
+    #           - "node-feature-discovery"
     # klog:
     #    addDirHeader: false
     #    alsologtostderr: false
@@ -157,12 +172,15 @@ master:
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
+    # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
 
 worker:
   enable: true
@@ -433,12 +451,15 @@ worker:
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
+    # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
 
   serviceAccount:
     # Specifies whether a service account should be created.
@@ -527,12 +548,15 @@ topologyUpdater:
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
+    # timeoutSeconds: 1
   readinessProbe:
     grpc:
       port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
 
   resources:
     limits:
