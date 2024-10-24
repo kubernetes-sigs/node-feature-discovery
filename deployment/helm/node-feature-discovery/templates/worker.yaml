@@ -103,11 +103,6 @@ spec:
         {{- if not .Values.featureGates.NodeFeatureAPI }}
         - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
         {{- end }}
-        {{- if .Values.tls.enable }}
-        - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-        - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-        - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
-        {{- end }}
         # Go over featureGate and add the feature-gate flag
         {{- range $key, $value := .Values.featureGates }}
         - "-feature-gates={{ $key }}={{ $value }}"
@@ -155,11 +150,6 @@ spec:
         - name: nfd-worker-conf
           mountPath: "/etc/kubernetes/node-feature-discovery"
           readOnly: true
-        {{- if .Values.tls.enable }}
-        - name: nfd-worker-cert
-          mountPath: "/etc/kubernetes/node-feature-discovery/certs"
-          readOnly: true
-        {{- end }}
       volumes:
         - name: host-boot
           hostPath:
@@ -196,11 +186,6 @@ spec:
             items:
               - key: nfd-worker.conf
                 path: nfd-worker.conf
-        {{- if .Values.tls.enable }}
-        - name: nfd-worker-cert
-          secret:
-            secretName: nfd-worker-cert
-        {{- end }}
       {{- with .Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

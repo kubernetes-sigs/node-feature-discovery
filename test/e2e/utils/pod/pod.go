@@ -256,7 +256,7 @@ func nfdWorkerSpec(opts ...SpecOption) *corev1.PodSpec {
 				Name:            "node-feature-discovery",
 				ImagePullPolicy: pullPolicy(),
 				Command:         []string{"nfd-worker"},
-				Args:            []string{"-server=nfd-master-e2e:8080"},
+				Args:            []string{},
 				Env: []corev1.EnvVar{
 					{
 						Name: "NODE_NAME",
