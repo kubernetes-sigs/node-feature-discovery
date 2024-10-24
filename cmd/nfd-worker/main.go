@@ -132,6 +132,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 			" DEPRECATED: will be removed in a future release along with the deprecated gRPC API.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
+	flagset.BoolVar(&args.NoOwnerRefs, "no-owner-refs", false,
+		"Do not set owner references for NodeFeature object")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Do not publish feature labels")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
