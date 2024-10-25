@@ -17,11 +17,8 @@ limitations under the License.
 package nfdworker_test
 
 import (
-	"fmt"
 	"os"
-	"regexp"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -33,85 +30,15 @@ import (
 	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
-	master "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
-	"sigs.k8s.io/node-feature-discovery/test/data"
 )
-
-type testContext struct {
-	master master.NfdMaster
-	errs   chan error
-}
 
 func initializeFeatureGates() {
 	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
 		klog.ErrorS(err, "failed to add default feature gates")
 		os.Exit(1)
 	}
-}
-
-func setupTest(args *master.Args) testContext {
-	// Fixed port and no-publish, for convenience
-	publish := true
-	args.Overrides = master.ConfigOverrideArgs{
-		NoPublish:      &publish,
-		LabelWhiteList: &utils.RegexpVal{Regexp: *regexp.MustCompile("")},
-	}
-	args.Port = 8192
-	// Add FeatureGates flag
-	initializeFeatureGates()
-	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureAPI, false)
-	_ = features.NFDMutableFeatureGate.OverrideDefault(features.NodeFeatureGroupAPI, false)
-	m, err := master.NewNfdMaster(
-		master.WithArgs(args),
-		master.WithKubernetesClient(fakeclient.NewSimpleClientset()))
-	if err != nil {
-		fmt.Printf("Test setup failed: %v\n", err)
-		os.Exit(1)
-	}
-	ctx := testContext{master: m, errs: make(chan error)}
-
-	// Run nfd-master instance, intended to be used as the server counterpart
-	go func() {
-		ctx.errs <- ctx.master.Run()
-		close(ctx.errs)
-	}()
-	ready := ctx.master.WaitForReady(5 * time.Second)
-	if !ready {
-		fmt.Println("Test setup failed: timeout while waiting for nfd-master")
-		os.Exit(1)
-	}
-
-	return ctx
-}
-
-func teardownTest(ctx testContext) {
-	ctx.master.Stop()
-	for e := range ctx.errs {
-		if e != nil {
-			fmt.Printf("Error in test context: %v\n", e)
-			os.Exit(1)
-		}
-	}
-}
-
-func TestNewNfdWorker(t *testing.T) {
-	Convey("When initializing new NfdWorker instance", t, func() {
-		Convey("When one of -cert-file, -key-file or -ca-file is missing", func() {
-			_, err := worker.NewNfdWorker(worker.WithArgs(&worker.Args{CertFile: "crt", KeyFile: "key"}),
-				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
-			_, err2 := worker.NewNfdWorker(worker.WithArgs(&worker.Args{KeyFile: "key", CaFile: "ca"}),
-				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
-			_, err3 := worker.NewNfdWorker(worker.WithArgs(&worker.Args{CertFile: "crt", CaFile: "ca"}),
-				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
-			Convey("An error should be returned", func() {
-				So(err, ShouldNotBeNil)
-				So(err2, ShouldNotBeNil)
-				So(err3, ShouldNotBeNil)
-			})
-		})
-	})
 }
 
 func TestRun(t *testing.T) {
@@ -203,39 +130,6 @@ func TestRun(t *testing.T) {
 					},
 				}
 				So(nf, ShouldResemble, nfExpected)
-			})
-		})
-	})
-}
-
-// TODO: remove this test with the rest of the TLS code and docs.
-// Also drop the certs from test/data/.
-func TestRunTls(t *testing.T) {
-	t.Skip("gRPC cannot be enabled, NodeFeatureAPI GA")
-	masterArgs := &master.Args{
-		CaFile:         data.FilePath("ca.crt"),
-		CertFile:       data.FilePath("nfd-test-master.crt"),
-		KeyFile:        data.FilePath("nfd-test-master.key"),
-		VerifyNodeName: false,
-	}
-	ctx := setupTest(masterArgs)
-	defer teardownTest(ctx)
-	Convey("When running nfd-worker against nfd-master with mutual TLS auth enabled", t, func() {
-		Convey("When publishing features from fake source", func() {
-			workerArgs := worker.Args{
-				CaFile:             data.FilePath("ca.crt"),
-				CertFile:           data.FilePath("nfd-test-worker.crt"),
-				KeyFile:            data.FilePath("nfd-test-worker.key"),
-				Server:             "localhost:8192",
-				ServerNameOverride: "nfd-test-master",
-				Oneshot:            true,
-				Overrides:          worker.ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"fake"}},
-			}
-			w, _ := worker.NewNfdWorker(worker.WithArgs(&workerArgs),
-				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()))
-			err := w.Run()
-			Convey("No error should be returned", func() {
-				So(err, ShouldBeNil)
 			})
 		})
 	})

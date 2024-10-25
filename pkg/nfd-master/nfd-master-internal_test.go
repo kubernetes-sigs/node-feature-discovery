@@ -40,12 +40,12 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
 
+	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	fakenfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
-	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
@@ -109,14 +109,26 @@ func withConfig(config *NFDConfig) NfdMasterOption {
 	return &nfdMasterOpt{f: func(n *nfdMaster) { n.config = config }}
 }
 
+// withNFDClient forces to use the given client for the NFD API, without
+// initializing one from kubeconfig.
+func withNFDClient(cli nfdclientset.Interface) NfdMasterOption {
+	return &nfdMasterOpt{f: func(n *nfdMaster) { n.nfdClient = cli }}
+}
+
 func newFakeMaster(opts ...NfdMasterOption) *nfdMaster {
+	nfdCli := fakenfdclient.NewSimpleClientset()
 	defaultOpts := []NfdMasterOption{
 		withNodeName(testNodeName),
 		withConfig(&NFDConfig{Restrictions: Restrictions{AllowOverwrite: true}}),
 		WithKubernetesClient(fakeclient.NewSimpleClientset()),
+		withNFDClient(nfdCli),
 	}
 	m, err := NewNfdMaster(append(defaultOpts, opts...)...)
 	if err != nil {
+		panic(err)
+	}
+	// Add FeatureGates
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
 		panic(err)
 	}
 	return m.(*nfdMaster)
@@ -327,90 +339,6 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
 			So(len(patches), ShouldBeGreaterThan, 0)
-		})
-	})
-}
-
-func TestSetLabels(t *testing.T) {
-	Convey("When servicing SetLabels request", t, func() {
-		// Add feature gates as running nfd-master depends on that
-		err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates)
-		So(err, ShouldBeNil)
-
-		testNode := newTestNode()
-		// We need to populate the node with some annotations or the patching in the fake client fails
-		testNode.Labels["feature.node.kubernetes.io/foo"] = "bar"
-		testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "foo"
-
-		ctx := context.Background()
-		// In the gRPC request the label names may omit the default ns
-		featureLabels := map[string]string{
-			"feature.node.kubernetes.io/feature-1": "1",
-			"example.io/feature-2":                 "val-2",
-			"feature.node.kubernetes.io/feature-3": "3",
-		}
-		req := &labeler.SetLabelsRequest{NodeName: testNodeName, NfdVersion: "0.1-test", Labels: featureLabels}
-
-		Convey("When node update succeeds", func() {
-			fakeCli := fakeclient.NewSimpleClientset(testNode)
-			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
-
-			_, err := fakeMaster.SetLabels(ctx, req)
-			Convey("No error should be returned", func() {
-				So(err, ShouldBeNil)
-			})
-			Convey("Node object should be updated", func() {
-				updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
-				So(err, ShouldBeNil)
-				So(updatedNode.Labels, ShouldEqual, featureLabels)
-			})
-		})
-
-		Convey("When -resource-labels is specified", func() {
-			fakeCli := fakeclient.NewSimpleClientset(testNode)
-			fakeMaster := newFakeMaster(
-				WithKubernetesClient(fakeCli),
-				withConfig(&NFDConfig{
-					ResourceLabels: map[string]struct{}{
-						"feature.node.kubernetes.io/feature-3": {},
-						"feature-1":                            {}},
-				}))
-
-			_, err := fakeMaster.SetLabels(ctx, req)
-			Convey("Error is nil", func() {
-				So(err, ShouldBeNil)
-			})
-
-			Convey("Node object should be updated", func() {
-				updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
-				So(err, ShouldBeNil)
-				So(updatedNode.Labels, ShouldEqual, map[string]string{"example.io/feature-2": "val-2"})
-			})
-		})
-
-		Convey("When node update fails", func() {
-			fakeCli := fakeclient.NewSimpleClientset(testNode)
-			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
-
-			fakeErr := errors.New("Fake error when patching node")
-			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-				return true, &corev1.Node{}, fakeErr
-			})
-			_, err := fakeMaster.SetLabels(ctx, req)
-			Convey("An error should be returned", func() {
-				So(err, ShouldWrap, fakeErr)
-			})
-		})
-
-		Convey("With '-no-publish'", func() {
-			fakeCli := fakeclient.NewSimpleClientset(testNode)
-			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
-
-			fakeMaster.config.NoPublish = true
-			_, err := fakeMaster.SetLabels(ctx, req)
-			Convey("Operation should succeed", func() {
-				So(err, ShouldBeNil)
-			})
 		})
 	})
 }
