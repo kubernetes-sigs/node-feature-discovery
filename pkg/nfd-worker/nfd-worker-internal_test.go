@@ -24,12 +24,10 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/mock"
 	"github.com/vektra/errors"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
-	"sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
 	"sigs.k8s.io/node-feature-discovery/source/cpu"
@@ -262,35 +260,6 @@ func TestCreateFeatureLabels(t *testing.T) {
 				So(labels, ShouldNotContainKey, "fake-fakefeature1")
 				So(labels, ShouldNotContainKey, "fake-fakefeature2")
 				So(labels, ShouldNotContainKey, "fake-fakefeature3")
-			})
-		})
-	})
-}
-
-func TestAdvertiseFeatureLabels(t *testing.T) {
-	Convey("When advertising labels", t, func() {
-		w, err := NewNfdWorker(WithArgs(&Args{}), WithKubernetesClient(fakeclient.NewSimpleClientset()))
-		So(err, ShouldBeNil)
-		worker := w.(*nfdWorker)
-
-		mockClient := &labeler.MockLabelerClient{}
-		worker.grpcClient = mockClient
-
-		labels := map[string]string{"feature-1": "value-1"}
-
-		Convey("Correct labeling request is sent", func() {
-			mockClient.On("SetLabels", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*labeler.SetLabelsRequest")).Return(&labeler.SetLabelsReply{}, nil)
-			err := worker.advertiseFeatureLabels(labels)
-			Convey("There should be no error", func() {
-				So(err, ShouldBeNil)
-			})
-		})
-		Convey("Labeling request fails", func() {
-			mockErr := errors.New("mock-error")
-			mockClient.On("SetLabels", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*labeler.SetLabelsRequest")).Return(&labeler.SetLabelsReply{}, mockErr)
-			err := worker.advertiseFeatureLabels(labels)
-			Convey("An error should be returned", func() {
-				So(err, ShouldEqual, mockErr)
 			})
 		})
 	})

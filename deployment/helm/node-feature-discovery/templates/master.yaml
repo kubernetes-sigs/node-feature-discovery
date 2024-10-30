@@ -103,11 +103,7 @@ spec:
             {{- if .Values.master.instance | empty | not }}
             - "-instance={{ .Values.master.instance }}"
             {{- end }}
-            {{- if not .Values.featureGates.NodeFeatureAPI }}
-            - "-port={{ .Values.master.port | default "8080" }}"
-            {{- else if gt (int .Values.master.replicaCount) 1 }}
             - "-enable-leader-election"
-            {{- end }}
             {{- if .Values.master.extraLabelNs | empty | not }}
             - "-extra-label-ns={{- join "," .Values.master.extraLabelNs }}"
             {{- end }}
@@ -120,12 +116,6 @@ spec:
             {{- if .Values.master.enableTaints }}
             - "-enable-taints"
             {{- end }}
-            {{- if .Values.master.crdController | kindIs "invalid" | not }}
-            - "-crd-controller={{ .Values.master.crdController }}"
-            {{- else }}
-            ## By default, disable crd controller for other than the default instances
-            - "-crd-controller={{ .Values.master.instance | empty }}"
-            {{- end }}
             {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
             - "-featurerules-controller={{ .Values.master.featureRulesController }}"
             {{- end }}
@@ -134,11 +124,6 @@ spec:
             {{- end }}
             {{- if .Values.master.nfdApiParallelism | empty | not }}
             - "-nfd-api-parallelism={{ .Values.master.nfdApiParallelism }}"
-            {{- end }}
-            {{- if .Values.tls.enable }}
-            - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-            - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-            - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
             {{- end }}
             # Go over featureGates and add the feature-gate flag
             {{- range $key, $value := .Values.featureGates }}
@@ -150,20 +135,10 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            {{- if .Values.tls.enable }}
-            - name: nfd-master-cert
-              mountPath: "/etc/kubernetes/node-feature-discovery/certs"
-              readOnly: true
-            {{- end }}
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
       volumes:
-        {{- if .Values.tls.enable }}
-        - name: nfd-master-cert
-          secret:
-            secretName: nfd-master-cert
-        {{- end }}
         - name: nfd-master-conf
           configMap:
             name: {{ include "node-feature-discovery.fullname" . }}-master-conf

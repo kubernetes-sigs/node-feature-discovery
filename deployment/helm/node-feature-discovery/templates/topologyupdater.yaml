@@ -103,11 +103,6 @@ spec:
           {{- else }}
           - "-watch-namespace=*"
           {{- end }}
-          {{- if .Values.tls.enable }}
-          - "-ca-file=/etc/kubernetes/node-feature-discovery/certs/ca.crt"
-          - "-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
-          - "-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
-          {{- end }}
           {{- if not .Values.topologyUpdater.podSetFingerprint }}
           - "-pods-fingerprint=false"
           {{- end }}
@@ -140,11 +135,6 @@ spec:
         {{- if .Values.topologyUpdater.kubeletStateDir | empty | not }}
         - name: kubelet-state-files
           mountPath: /host-var/lib/kubelet
-          readOnly: true
-        {{- end }}
-        {{- if .Values.tls.enable }}
-        - name: nfd-topology-updater-cert
-          mountPath: "/etc/kubernetes/node-feature-discovery/certs"
           readOnly: true
         {{- end }}
         - name: nfd-topology-updater-conf
@@ -182,12 +172,6 @@ spec:
           items:
             - key: nfd-topology-updater.conf
               path: nfd-topology-updater.conf
-      {{- if .Values.tls.enable }}
-      - name: nfd-topology-updater-cert
-        secret:
-          secretName: nfd-topology-updater-cert
-      {{- end }}
-
 
     {{- with .Values.topologyUpdater.nodeSelector }}
       nodeSelector:
