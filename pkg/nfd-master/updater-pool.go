@@ -31,8 +31,8 @@ import (
 
 type updaterPool struct {
 	started  bool
-	queue    workqueue.RateLimitingInterface
-	nfgQueue workqueue.RateLimitingInterface
+	queue    workqueue.TypedRateLimitingInterface[string]
+	nfgQueue workqueue.TypedRateLimitingInterface[string]
 	sync.RWMutex
 
 	wg        sync.WaitGroup
@@ -48,11 +48,10 @@ func newUpdaterPool(nfdMaster *nfdMaster) *updaterPool {
 }
 
 func (u *updaterPool) processNodeUpdateRequest(cli k8sclient.Interface) bool {
-	n, quit := u.queue.Get()
+	nodeName, quit := u.queue.Get()
 	if quit {
 		return false
 	}
-	nodeName := n.(string)
 
 	defer u.queue.Done(nodeName)
 
@@ -102,7 +101,7 @@ func (u *updaterPool) processNodeFeatureGroupUpdateRequest(cli nfdclientset.Inte
 	// Check if NodeFeatureGroup exists
 	var nfg *nfdv1alpha1.NodeFeatureGroup
 	var err error
-	if nfg, err = getNodeFeatureGroup(cli, u.nfdMaster.namespace, nfgName.(string)); apierrors.IsNotFound(err) {
+	if nfg, err = getNodeFeatureGroup(cli, u.nfdMaster.namespace, nfgName); apierrors.IsNotFound(err) {
 		klog.InfoS("NodeFeatureGroup not found, skip update", "NodeFeatureGroupName", nfgName)
 	} else if err := u.nfdMaster.nfdAPIUpdateNodeFeatureGroup(u.nfdMaster.nfdClient, nfg); err != nil {
 		if n := u.nfgQueue.NumRequeues(nfgName); n < 15 {
@@ -145,12 +144,12 @@ func (u *updaterPool) start(parallelism int) {
 
 	// Create ratelimiter. Mimic workqueue.DefaultControllerRateLimiter() but
 	// with modified per-item (node) rate limiting parameters.
-	rl := workqueue.NewMaxOfRateLimiter(
-		workqueue.NewItemExponentialFailureRateLimiter(50*time.Millisecond, 100*time.Second),
-		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+	rl := workqueue.NewTypedMaxOfRateLimiter[string](
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](50*time.Millisecond, 100*time.Second),
+		&workqueue.TypedBucketRateLimiter[string]{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 	)
-	u.queue = workqueue.NewRateLimitingQueue(rl)
-	u.nfgQueue = workqueue.NewRateLimitingQueue(rl)
+	u.queue = workqueue.NewTypedRateLimitingQueue[string](rl)
+	u.nfgQueue = workqueue.NewTypedRateLimitingQueue[string](rl)
 
 	for i := 0; i < parallelism; i++ {
 		u.wg.Add(1)
