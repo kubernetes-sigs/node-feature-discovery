@@ -156,8 +156,6 @@ available fields and how to write labeling rules.
 
 ### Node tainting
 
-This feature is experimental.
-
 In some circumstances, it is desirable to keep nodes with specialized hardware
 away from running general workload and instead leave them for workloads that
 need the specialized hardware. One way to achieve it is to taint the nodes with
