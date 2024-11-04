@@ -171,29 +171,15 @@ e2e-tests:
 | E2E_GINKGO_LABEL_FILTER    | Ginkgo label filter to use for running e2e tests                  | *empty* |
 | OPENSHIFT                  | Non-empty value enables OpenShift specific support (only affects e2e tests) | *empty* |
 
-## Running locally
-
-> ****DEPRECATED**: Running NFD locally is deprecated and will be removed in a
-> future release. It depends on the gRPC API which is deprecated and will be
-> removed in a future release. To run NFD locally, disable the NodeFeature API
-> with `-feature-gates NodeFeatureAPI=false` flag.
-
-You can run NFD locally, either directly on your host OS or in containers for
-testing and development purposes. This may be useful e.g. for checking
-features-detection.
-
 ### NFD-Master
 
 When running as a standalone container labeling is expected to fail because
-Kubernetes API is not available. Thus, it is recommended to use `-no-publish`
-Also specify `-crd-controller=false` and `-feature-gates NodeFeatureAPI=false`
-command line flags to disable CRD controller and enable gRPC. E.g.
+Kubernetes API is not available. Thus, it is recommended to use `-no-publish`.
 
 ```bash
 $ export NFD_CONTAINER_IMAGE={{ site.container_image }}
 $ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish -crd-controller=false -feature-gates NodeFeatureAPI=false
 2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
-2019/02/01 14:48:21 gRPC server serving on port: 8080
 ```
 
 ### NFD-Worker

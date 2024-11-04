@@ -273,8 +273,7 @@ func createClusterRoleTopologyUpdater(ctx context.Context, cs clientset.Interfac
 			Name: "nfd-topology-updater-e2e",
 		},
 		// the Topology Updater doesn't need to access any kube object:
-		// it reads from the podresources socket and it sends updates to the
-		// nfd-master using the gRPC interface.
+		// it reads from the podresources socket and it updates the noderesourcetopologies
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},

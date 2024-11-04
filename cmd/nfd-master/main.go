@@ -59,10 +59,6 @@ func main() {
 	// Check deprecated flags
 	flags.Visit(func(f *flag.Flag) {
 		switch f.Name {
-		case "featurerules-controller":
-			klog.InfoS("-featurerules-controller is deprecated, use '-crd-controller' flag instead")
-		case "crd-controller":
-			klog.InfoS("-crd-controller is deprecated, will be removed in a future release along with the deprecated gRPC API")
 		case "extra-label-ns":
 			args.Overrides.ExtraLabelNs = overrides.ExtraLabelNs
 		case "deny-label-ns":

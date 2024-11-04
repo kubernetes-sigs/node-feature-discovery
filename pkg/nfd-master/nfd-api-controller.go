@@ -141,21 +141,18 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			if !nfdApiControllerOptions.DisableNodeFeature {
 				c.updateAllNodes()
 			}
-			// else: rules will be processed only when gRPC requests are received
 		},
 		UpdateFunc: func(oldObject, newObject interface{}) {
 			klog.V(2).InfoS("NodeFeatureRule updated", "nodefeaturerule", klog.KObj(newObject.(metav1.Object)))
 			if !nfdApiControllerOptions.DisableNodeFeature {
 				c.updateAllNodes()
 			}
-			// else: rules will be processed only when gRPC requests are received
 		},
 		DeleteFunc: func(object interface{}) {
 			klog.V(2).InfoS("NodeFeatureRule deleted", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
 			if !nfdApiControllerOptions.DisableNodeFeature {
 				c.updateAllNodes()
 			}
-			// else: rules will be processed only when gRPC requests are received
 		},
 	}); err != nil {
 		return nil, err
