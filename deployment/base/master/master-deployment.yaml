@@ -33,14 +33,16 @@ spec:
               port: 8082
             failureThreshold: 30
           livenessProbe:
-            grpc:
-              port: 8082
+            httpGet:
+              path: /healthz
+              port: http
           readinessProbe:
-            grpc:
-              port: 8082
+            httpGet:
+              path: /healthz
+              port: http
             failureThreshold: 10
           command:
             - "nfd-master"
           ports:
-            - name: metrics
-              containerPort: 8081
+            - name: http
+              containerPort: 8080

@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
-	"net"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -31,10 +31,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,18 +114,14 @@ type ConfigOverrideArgs struct {
 
 // Args holds command line arguments
 type Args struct {
-	ConfigFile string
-	Instance   string
-	Klog       map[string]*utils.KlogFlagVal
-	Kubeconfig string
-	Port       int
-	// GrpcHealthPort is only needed to avoid races between tests (by skipping the health server).
-	// Could be removed when gRPC labler service is dropped (when nfd-worker tests stop running nfd-master).
-	GrpcHealthPort       int
+	ConfigFile           string
+	Instance             string
+	Klog                 map[string]*utils.KlogFlagVal
+	Kubeconfig           string
+	Port                 int
 	Prune                bool
 	Options              string
 	EnableLeaderElection bool
-	MetricsPort          int
 
 	Overrides ConfigOverrideArgs
 }
@@ -139,7 +134,6 @@ type deniedNs struct {
 type NfdMaster interface {
 	Run() error
 	Stop()
-	WaitForReady(time.Duration) bool
 }
 
 type nfdMaster struct {
@@ -149,10 +143,7 @@ type nfdMaster struct {
 	namespace      string
 	nodeName       string
 	configFilePath string
-	server         *grpc.Server
-	healthServer   *grpc.Server
 	stop           chan struct{}
-	ready          chan struct{}
 	kubeconfig     *restclient.Config
 	k8sClient      k8sclient.Interface
 	nfdClient      nfdclientset.Interface
@@ -166,7 +157,6 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 	nfd := &nfdMaster{
 		nodeName:  utils.NodeName(),
 		namespace: utils.GetKubernetesNamespace(),
-		ready:     make(chan struct{}),
 		stop:      make(chan struct{}),
 	}
 
@@ -298,22 +288,22 @@ func (m *nfdMaster) Run() error {
 		}
 	}
 
+	httpMux := http.NewServeMux()
+
 	// Register to metrics server
-	if m.args.MetricsPort > 0 {
-		m := utils.CreateMetricsServer(m.args.MetricsPort,
-			buildInfo,
-			nodeUpdateRequests,
-			nodeUpdates,
-			nodeUpdateFailures,
-			nodeLabelsRejected,
-			nodeERsRejected,
-			nodeTaintsRejected,
-			nfrProcessingTime,
-			nfrProcessingErrors)
-		go m.Run()
-		registerVersion(version.Get())
-		defer m.Stop()
-	}
+	promRegistry := prometheus.NewRegistry()
+	promRegistry.MustRegister(
+		buildInfo,
+		nodeUpdateRequests,
+		nodeUpdates,
+		nodeUpdateFailures,
+		nodeLabelsRejected,
+		nodeERsRejected,
+		nodeTaintsRejected,
+		nfrProcessingTime,
+		nfrProcessingErrors)
+	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
+	registerVersion(version.Get())
 
 	// Run updater that handles events from the nfd CRD API.
 	if m.nfdController != nil {
@@ -324,60 +314,29 @@ func (m *nfdMaster) Run() error {
 		}
 	}
 
-	// Start gRPC server for liveness probe (at this point we're "live")
-	grpcErr := make(chan error)
-	if m.args.GrpcHealthPort != 0 {
-		if err := m.startGrpcHealthServer(grpcErr); err != nil {
-			return fmt.Errorf("failed to start gRPC health server: %w", err)
-		}
-	}
+	// Register health probe (at this point we're "ready and live")
+	httpMux.HandleFunc("/healthz", m.Healthz)
 
-	// Notify that we're ready to accept connections
-	close(m.ready)
+	// Start HTTP server
+	httpServer := http.Server{Addr: fmt.Sprintf(":%d", m.args.Port), Handler: httpMux}
+	go func() {
+		klog.InfoS("http server starting", "port", httpServer.Addr)
+		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
+	}()
+	defer httpServer.Close()
 
-	// NFD-Master main event loop
-	for {
-		select {
-		case err := <-grpcErr:
-			return fmt.Errorf("error in serving gRPC: %w", err)
-
-		case <-m.stop:
-			klog.InfoS("shutting down nfd-master")
-			return nil
-		}
-	}
+	<-m.stop
+	klog.InfoS("shutting down nfd-master")
+	return nil
 }
 
-// startGrpcHealthServer starts a gRPC health server for Kubernetes readiness/liveness probes.
-// TODO: improve status checking e.g. with watchdog in the main event loop and
-// cheking that node updater pool is alive.
-func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.GrpcHealthPort))
-	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
-	}
-
-	s := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
-	klog.InfoS("gRPC health server serving", "port", m.args.GrpcHealthPort)
-
-	go func() {
-		defer func() {
-			lis.Close()
-		}()
-		if err := s.Serve(lis); err != nil {
-			errChan <- fmt.Errorf("gRPC health server exited with an error: %w", err)
-		}
-		klog.InfoS("gRPC health server stopped")
-	}()
-	m.healthServer = s
-	return nil
+func (m *nfdMaster) Healthz(writer http.ResponseWriter, _ *http.Request) {
+	writer.WriteHeader(http.StatusOK)
 }
 
 // nfdAPIUpdateHandler handles events from the nfd API controller.
 func (m *nfdMaster) nfdAPIUpdateHandler() {
-	// We want to unconditionally update all nodes at startup if gRPC is
-	// disabled (i.e. NodeFeature API is enabled)
+	// We want to unconditionally update all nodes at startup
 	updateAll := true
 	updateNodes := make(map[string]struct{})
 	nodeFeatureGroup := make(map[string]struct{})
@@ -431,13 +390,6 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 
 // Stop NfdMaster
 func (m *nfdMaster) Stop() {
-	if m.server != nil {
-		m.server.GracefulStop()
-	}
-	if m.healthServer != nil {
-		m.healthServer.GracefulStop()
-	}
-
 	if m.nfdController != nil {
 		m.nfdController.stop()
 	}
@@ -445,16 +397,6 @@ func (m *nfdMaster) Stop() {
 	m.updaterPool.stop()
 
 	close(m.stop)
-}
-
-// Wait until NfdMaster is able able to accept connections.
-func (m *nfdMaster) WaitForReady(timeout time.Duration) bool {
-	select {
-	case <-m.ready:
-		return true
-	case <-time.After(timeout):
-	}
-	return false
 }
 
 // Prune erases all NFD related properties from the node objects of the cluster.
