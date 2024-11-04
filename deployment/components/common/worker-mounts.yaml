@@ -19,9 +19,6 @@
   - name: host-lib
     hostPath:
       path: "/lib"
-  - name: source-d
-    hostPath:
-      path: "/etc/kubernetes/node-feature-discovery/source.d/"
   - name: features-d
     hostPath:
       path: "/etc/kubernetes/node-feature-discovery/features.d/"
@@ -49,9 +46,6 @@
     readOnly: true
   - name: host-lib
     mountPath: "/host-lib"
-    readOnly: true
-  - name: source-d
-    mountPath: "/etc/kubernetes/node-feature-discovery/source.d/"
     readOnly: true
   - name: features-d
     mountPath: "/etc/kubernetes/node-feature-discovery/features.d/"

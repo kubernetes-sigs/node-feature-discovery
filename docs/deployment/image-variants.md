@@ -24,8 +24,8 @@ For backwards compatibility a container image tag with suffix `-minimal`
 ## Full
 
 This image is based on [debian:bookworm-slim](https://hub.docker.com/_/debian)
-and contains a full Linux system for running shell-based nfd-worker hooks and
-doing live debugging and diagnosis of the NFD images.
+and contains a full Linux system for doing live debugging and diagnosis
+of the NFD images.
 
 The container image tag has suffix `-full`
 (e.g. `{{ site.container_image }}-full`).

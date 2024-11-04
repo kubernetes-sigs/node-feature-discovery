@@ -572,7 +572,7 @@ func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 		name := k
 		switch sourceName := source.Name(); sourceName {
 		case "local", "custom":
-			// No mangling of labels from the custom rules, hooks or feature files
+			// No mangling of labels from the custom rules or feature files
 		default:
 			// Prefix for labels from other sources
 			if !strings.Contains(name, "/") {

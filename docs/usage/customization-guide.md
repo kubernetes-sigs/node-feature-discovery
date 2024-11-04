@@ -26,7 +26,7 @@ labeling:
 - [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects provide a way to
   deploy custom labeling rules via the Kubernetes API.
 - [`local`](#local-feature-source) feature source of nfd-worker creates
-  labels by reading text files and executing hooks.
+  labels by reading text files.
 - [`custom`](#custom-feature-source) feature source of nfd-worker creates
   labels based on user-specified rules.
 
@@ -232,13 +232,12 @@ point for external feature detectors. It provides a mechanism for pluggable
 extensions, allowing the creation of new user-specific features and even
 overriding built-in labels.
 
-The `local` feature source has two methods for detecting features, feature
-files and hooks (hooks are deprecated and slated for removal in NFD v0.17). The
-features discovered by the `local` source can further be used in label rules
-specified in [`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and
+The `local` feature source uses feature files. The features discovered by the
+`local` source can further be used in label rules specified in
+[`NodeFeatureRule`](#nodefeaturerule-custom-resource) objects and
 the [`custom`](#custom-feature-source) feature source.
 
-> **NOTE:** Be careful when creating and/or updating hook or feature files
+> **NOTE:** Be careful when creating and/or updating feature files
 > while NFD is running. To avoid race conditions you should write
 > into a temporary file, and atomically create/update the original file by
 > doing a file rename operation. NFD ignores dot files,
@@ -250,9 +249,7 @@ the [`custom`](#custom-feature-source) feature source.
 
 Consider a plaintext file
 `/etc/kubernetes/node-feature-discovery/features.d/my-features`
-having the following contents (or alternatively a shell script
-`/etc/kubernetes/node-feature-discovery/source.d/my-hook.sh` having the
-following stdout output):
+having the following contents:
 
 ```plaintext
 feature.node.kubernetes.io/my-feature.1
@@ -274,47 +271,9 @@ The `local` source reads files found in
 `/etc/kubernetes/node-feature-discovery/features.d/`. File content is parsed
 and translated into node labels, see the [input format below](#input-format).
 
-### Hooks
-
-**DEPRECATED** Hooks are deprecated and will be completely removed in NFD
-v0.17.
-
-The `local` source executes hooks found in
-`/etc/kubernetes/node-feature-discovery/source.d/`. The hook files must be
-executable and they are supposed to print all discovered features in `stdout`.
-Since NFD v0.13 the default container image only supports statically linked ELF
-binaries.
-
-`stderr` output of hooks is propagated to NFD log so it can be used for
-debugging and logging.
-
-NFD tries to execute any regular files found from the hooks directory.
-Any additional data files the hook might need (e.g. a configuration file)
-should be placed in a separate directory to avoid NFD unnecessarily
-trying to execute them. A subdirectory under the hooks directory can be used,
-for example `/etc/kubernetes/node-feature-discovery/source.d/conf/`.
-
-> **NOTE:** Starting from release v0.14 hooks are disabled by default and can
-> be enabled via `sources.local.hooksEnabled` field in the worker
-> configuration.
-
-```yaml
-sources:
-  local:
-    hooksEnabled: true  # true by default at this point
-```
-
-> **NOTE:** NFD will blindly run any executables placed/mounted in the hooks
-> directory. It is the user's responsibility to review the hooks for e.g.
-> possible security implications.
->
-> **NOTE:** The [full](../deployment/image-variants.md#full) image variant
-> provides backwards-compatibility with older NFD versions by including a more
-> expanded environment, supporting bash and perl runtimes.
-
 ### Input format
 
-The hook stdout and feature files are expected to contain features in simple
+The feature files are expected to contain features in simple
 key-value pairs, separated by newlines:
 
 ```plaintext
@@ -410,19 +369,16 @@ vendor.io/my-feature=value
 ### Mounts
 
 The standard NFD deployments contain `hostPath` mounts for
-`/etc/kubernetes/node-feature-discovery/source.d/` and
 `/etc/kubernetes/node-feature-discovery/features.d/`, making these directories
 from the host available inside the nfd-worker container.
 
 #### Injecting labels from other pods
 
-One use case for the feature files and hooks is detecting features in other
+One use case for the feature files is detecting features in other
 Pods outside NFD, e.g. in Kubernetes device plugins. By using the same
-`hostPath` mounts for `/etc/kubernetes/node-feature-discovery/source.d/` and
-`/etc/kubernetes/node-feature-discovery/features.d/` in the side-car (e.g.
-device plugin) creates a shared area for deploying feature files and hooks to
-NFD. NFD periodically scans the directories and reads any feature files and
-runs any hooks it finds.
+`hostPath` mounts `/etc/kubernetes/node-feature-discovery/features.d/`
+in the side-car (e.g. device plugin) creates a shared area for
+deploying feature files to NFD.
 
 ## Custom feature source
 
@@ -1000,8 +956,8 @@ The following features are available for matching:
 |                  |              | **`major`** | int     | First component of the kernel version (e.g. ‘4') |
 |                  |              | **`minor`** | int     | Second component of the kernel version (e.g. ‘5') |
 |                  |              | **`revision`** | int  | Third component of the kernel version (e.g. ‘6') |
-| **`local.label`** | attribute   |           |           | Labels from feature files and hooks, i.e. labels from the [*local* feature source](#local-feature-source) |
-| **`local.feature`** | attribute   |           |         | Features from feature files and hooks, i.e. features from the [*local* feature source](#local-feature-source) |
+| **`local.label`** | attribute   |           |           | Labels from feature files, i.e. labels from the [*local* feature source](#local-feature-source) |
+| **`local.feature`** | attribute   |           |         | Features from feature files, i.e. features from the [*local* feature source](#local-feature-source) |
 |                  |              | **`<label-name>`** | string | Label `<label-name>` created by the local feature source, value equals the value of the label |
 | **`memory.nv`**  | instance     |          |            | NVDIMM devices present in the system |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `devtype`, `mode` |
