@@ -29,7 +29,6 @@ import (
 
 	topology "sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
-	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
@@ -51,9 +50,6 @@ func main() {
 	if version.Undefined() {
 		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always --match 'v*'`\" during build or run.")
 	}
-
-	// Plug klog into grpc logging infrastructure
-	utils.ConfigureGrpcKlog()
 
 	// Get new TopologyUpdater instance
 	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs)
@@ -111,10 +107,8 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Do not create or update NodeResourceTopology objects.")
 	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
 		"Kube config file.")
-	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
-		"Port on which to expose metrics.")
-	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
-		"Port on which to expose the grpc health endpoint.")
+	flagset.IntVar(&args.Port, "port", 8080,
+		"Port on which to metrics and healthz endpoints are served")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
 		"Time to sleep between CR updates. zero means no CR updates on interval basis. [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",
