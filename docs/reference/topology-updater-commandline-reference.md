@@ -74,6 +74,8 @@ nfd-topology-updater -oneshot -no-publish
 
 ### -metrics
 
+**DEPRECATED**: Will be removed in NFD v0.17 and replaced by `-port`.
+
 The `-metrics` flag specifies the port on which to expose
 [Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the
 metrics server on nfd-topology-updater.
