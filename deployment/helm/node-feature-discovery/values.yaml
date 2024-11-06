@@ -68,8 +68,7 @@ master:
     #   retryPeriod: 2s
     # nfdApiParallelism: 10
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
-  metricsPort: 8081
-  healthPort: 8082
+  port: 8080
   instance:
   featureApi:
   resyncPeriod:
@@ -153,17 +152,13 @@ master:
               - key: "node-role.kubernetes.io/control-plane"
                 operator: In
                 values: [""]
-                
+
   livenessProbe:
-    grpc:
-      port: 8082
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
     # timeoutSeconds: 1
   readinessProbe:
-    grpc:
-      port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
