@@ -242,19 +242,27 @@ the steps below.
 1. Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
 1. Install [tilt](https://docs.tilt.dev/install.html)
 1. Create a local Kubernetes cluster
+    - Create image registry first
+    - Create a Kubernetes cluster. Please note that docker containers will be
+      served as controller node and worker nodes, and NFD-worker will run as a
+      DaemonSet in nested container. Therefore, to make sure the NFD-worker can
+      discover the host features, the host folders "/boot" and "/lib" should be
+      mounted into worker node docker containers when creating the Kubernetes
+      cluster.
+1. Start up node feature discovery development environment
+    To start up your Tilt development environment, run at the root of your
+    local NFD codebase.
 
-To start up your Tilt development environment, run
+    ```shell
+    tilt up
+    ```
 
-```shell
-tilt up
-```
-
-at the root of your local NFD codebase. Tilt will start a web interface in the
-localhost and port 10350. From the web interface, you are able to see how NFD worker
-and master are progressing,  watch their build and runtime logs. Once your code changes
-are saved locally, Tilt will notice it and re-build the container image from the
-current code, push the image to the registry and re-deploy NFD pods with the latest
-container image.
+    Tilt will start a web interface in the localhost and port 10350. From the
+    web interface, you are able to see how NFD worker and master are
+    progressing, watch their build and runtime logs. Once your code changes are
+    saved locally, Tilt will notice it and re-build the container image from
+    the current code, push the image to the registry and re-deploy NFD pods
+    with the latest container image.
 
 ### Environment variables
 
