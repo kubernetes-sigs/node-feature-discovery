@@ -110,9 +110,6 @@ spec:
             {{- if .Values.master.denyLabelNs | empty | not }}
             - "-deny-label-ns={{- join "," .Values.master.denyLabelNs }}"
             {{- end }}
-            {{- if .Values.master.resourceLabels | empty | not }}
-            - "-resource-labels={{- join "," .Values.master.resourceLabels }}"
-            {{- end }}
             {{- if .Values.master.enableTaints }}
             - "-enable-taints"
             {{- end }}

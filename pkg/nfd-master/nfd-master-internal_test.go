@@ -272,39 +272,39 @@ func TestAddingExtResources(t *testing.T) {
 		fakeMaster := newFakeMaster()
 		Convey("When there are no matching labels", func() {
 			testNode := newTestNode()
-			resourceLabels := ExtendedResources{}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			extendedResources := ExtendedResources{}
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(len(patches), ShouldEqual, 0)
 		})
 
 		Convey("When there are matching labels", func() {
 			testNode := newTestNode()
-			resourceLabels := ExtendedResources{"feature-1": "1", "feature-2": "2"}
+			extendedResources := ExtendedResources{"feature-1": "1", "feature-2": "2"}
 			expectedPatches := []utils.JsonPatch{
 				utils.NewJsonPatch("add", "/status/capacity", "feature-1", "1"),
 				utils.NewJsonPatch("add", "/status/capacity", "feature-2", "2"),
 			}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 
 		Convey("When the resource already exists", func() {
 			testNode := newTestNode()
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
-			resourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1"}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1"}
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(len(patches), ShouldEqual, 0)
 		})
 
 		Convey("When the resource already exists but its capacity has changed", func() {
 			testNode := newTestNode()
 			testNode.Status.Capacity[corev1.ResourceName("feature-1")] = *resource.NewQuantity(2, resource.BinarySI)
-			resourceLabels := ExtendedResources{"feature-1": "1"}
+			extendedResources := ExtendedResources{"feature-1": "1"}
 			expectedPatches := []utils.JsonPatch{
 				utils.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
 				utils.NewJsonPatch("replace", "/status/allocatable", "feature-1", "1"),
 			}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 	})
@@ -315,29 +315,29 @@ func TestRemovingExtResources(t *testing.T) {
 		fakeMaster := newFakeMaster()
 		Convey("When none are removed", func() {
 			testNode := newTestNode()
-			resourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1", nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
+			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1", nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(len(patches), ShouldEqual, 0)
 		})
 		Convey("When the related label is gone", func() {
 			testNode := newTestNode()
-			resourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-4": "", nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
+			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-4": "", nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-4,feature-2"
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
 			testNode := newTestNode()
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			resourceLabels := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
+			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
-			patches := fakeMaster.createExtendedResourcePatches(testNode, resourceLabels)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 	})
@@ -528,7 +528,7 @@ func TestRemoveLabelsWithPrefix(t *testing.T) {
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration", t, func() {
 		master := newFakeMaster()
-		overrides := `{"noPublish": true, "enableTaints": true, "extraLabelNs": ["added.ns.io","added.kubernetes.io"], "denyLabelNs": ["denied.ns.io","denied.kubernetes.io"], "resourceLabels": ["vendor-1.com/feature-1","vendor-2.io/feature-2"], "labelWhiteList": "foo"}`
+		overrides := `{"noPublish": true, "enableTaints": true, "extraLabelNs": ["added.ns.io","added.kubernetes.io"], "denyLabelNs": ["denied.ns.io","denied.kubernetes.io"], "labelWhiteList": "foo"}`
 
 		Convey("and no core cmdline flags have been specified", func() {
 			So(master.configure("non-existing-file", overrides), ShouldBeNil)
@@ -537,7 +537,6 @@ func TestConfigParse(t *testing.T) {
 				So(master.config.EnableTaints, ShouldResemble, true)
 				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"added.ns.io": struct{}{}, "added.kubernetes.io": struct{}{}})
 				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}, "denied.kubernetes.io": struct{}{}})
-				So(master.config.ResourceLabels, ShouldResemble, utils.StringSetVal{"vendor-1.com/feature-1": struct{}{}, "vendor-2.io/feature-2": struct{}{}})
 				So(master.config.LabelWhiteList.String(), ShouldEqual, "foo")
 			})
 		})
@@ -563,7 +562,6 @@ func TestConfigParse(t *testing.T) {
 		_, err = f.WriteString(`
 noPublish: true
 denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
-resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
 enableTaints: false
 labelWhiteList: "foo"
 leaderElection:
@@ -582,7 +580,6 @@ leaderElection:
 				So(master.config.NoPublish, ShouldBeTrue)
 				So(master.config.EnableTaints, ShouldBeFalse)
 				So(master.config.ExtraLabelNs, ShouldResemble, utils.StringSetVal{"override.added.ns.io": struct{}{}})
-				So(master.config.ResourceLabels, ShouldResemble, utils.StringSetVal{"vendor-1.com/feature-1": struct{}{}, "vendor-2.io/feature-2": struct{}{}}) // from cmdline
 				So(master.config.DenyLabelNs, ShouldResemble, utils.StringSetVal{"denied.ns.io": struct{}{}, "denied.kubernetes.io": struct{}{}})
 				So(master.config.LabelWhiteList.String(), ShouldEqual, "foo")
 				So(master.config.LeaderElection.LeaseDuration.Seconds(), ShouldEqual, float64(20))
