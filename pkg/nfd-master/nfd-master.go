@@ -87,7 +87,6 @@ type NFDConfig struct {
 	ExtraLabelNs      utils.StringSetVal
 	LabelWhiteList    *regexp.Regexp
 	NoPublish         bool
-	ResourceLabels    utils.StringSetVal
 	EnableTaints      bool
 	ResyncPeriod      utils.DurationVal
 	LeaderElection    LeaderElectionConfig
@@ -108,7 +107,6 @@ type ConfigOverrideArgs struct {
 	DenyLabelNs       *utils.StringSetVal
 	ExtraLabelNs      *utils.StringSetVal
 	LabelWhiteList    *utils.RegexpVal
-	ResourceLabels    *utils.StringSetVal
 	EnableTaints      *bool
 	NoPublish         *bool
 	ResyncPeriod      *utils.DurationVal
@@ -252,7 +250,6 @@ func newDefaultConfig() *NFDConfig {
 		NoPublish:         false,
 		AutoDefaultNs:     true,
 		NfdApiParallelism: 10,
-		ResourceLabels:    utils.StringSetVal{},
 		EnableTaints:      false,
 		ResyncPeriod:      utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 		LeaderElection: LeaderElectionConfig{
@@ -526,7 +523,7 @@ func (m *nfdMaster) updateMasterNode() error {
 // into extended resources. This function also handles proper namespacing of
 // labels and ERs, i.e. adds the possibly missing default namespace for labels
 // arriving through the gRPC API.
-func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) (Labels, ExtendedResources) {
+func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) Labels {
 	outLabels := Labels{}
 	for name, value := range labels {
 		if value, err := m.filterFeatureLabel(name, value, features); err != nil {
@@ -537,28 +534,12 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 		}
 	}
 
-	// Remove labels which are intended to be extended resources
-	extendedResources := ExtendedResources{}
-	for extendedResourceName := range m.config.ResourceLabels {
-		extendedResourceName := addNs(extendedResourceName, nfdv1alpha1.FeatureLabelNs)
-		if value, ok := outLabels[extendedResourceName]; ok {
-			if _, err := strconv.Atoi(value); err != nil {
-				klog.ErrorS(err, "bad label value encountered for extended resource", "labelKey", extendedResourceName, "labelValue", value)
-				nodeERsRejected.Inc()
-				continue // non-numeric label can't be used
-			}
-
-			extendedResources[extendedResourceName] = value
-			delete(outLabels, extendedResourceName)
-		}
-	}
-
 	if len(outLabels) > 0 && m.config.Restrictions.DisableLabels {
 		klog.V(2).InfoS("node labels are disabled in configuration (restrictions.disableLabels=true)")
 		outLabels = Labels{}
 	}
 
-	return outLabels, extendedResources
+	return outLabels
 }
 
 func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1.Features) (string, error) {
@@ -899,16 +880,12 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 
 	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(node.Name, features)
 
-	// Mix in CR-originated labels
+	// Labels
 	maps.Copy(labels, crLabels)
+	labels = m.filterFeatureLabels(labels, features)
 
-	// Remove labels which are intended to be extended resources via
-	// -resource-labels or their NS is not whitelisted
-	labels, extendedResources := m.filterFeatureLabels(labels, features)
-
-	// Mix in CR-originated extended resources with -resource-labels
-	maps.Copy(extendedResources, crExtendedResources)
-	extendedResources = m.filterExtendedResources(features, extendedResources)
+	// Extended resources
+	extendedResources := m.filterExtendedResources(features, crExtendedResources)
 
 	if len(extendedResources) > 0 && m.config.Restrictions.DisableExtendedResources {
 		klog.V(2).InfoS("extended resources are disabled in configuration (restrictions.disableExtendedResources=true)")
@@ -1257,9 +1234,6 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	}
 	if m.args.Overrides.ExtraLabelNs != nil {
 		c.ExtraLabelNs = *m.args.Overrides.ExtraLabelNs
-	}
-	if m.args.Overrides.ResourceLabels != nil {
-		c.ResourceLabels = *m.args.Overrides.ResourceLabels
 	}
 	if m.args.Overrides.EnableTaints != nil {
 		c.EnableTaints = *m.args.Overrides.EnableTaints

@@ -143,9 +143,6 @@ other vendor or application specific namespaces for custom labels from the
 local and custom feature sources, even though these labels were denied using
 the `deny-label-ns` flag.
 
-The same namespace control and this flag applies Extended Resources (created
-with `-resource-labels`), too.
-
 Default: *empty*
 
 Example:
@@ -174,23 +171,6 @@ Example:
 
 ```bash
 nfd-master -deny-label-ns=*.vendor.com,vendor-2.io
-```
-
-### -resource-labels
-
-**DEPRECATED**: [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)
-should be used for managing extended resources in NFD.
-
-The `-resource-labels` flag specifies a comma-separated list of features to be
-advertised as extended resources instead of labels. Features that have integer
-values can be published as Extended Resources by listing them in this flag.
-
-Default: *empty*
-
-Example:
-
-```bash
-nfd-master -resource-labels=vendor-1.com/feature-1,vendor-2.io/feature-2
 ```
 
 ### -config
