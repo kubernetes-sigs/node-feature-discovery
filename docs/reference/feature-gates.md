@@ -16,7 +16,7 @@ The feature gates are set using the `-feature-gates` command line flag or
 
 | Name                  | Default | Stage  | Since   | Until  |
 | --------------------- | ------- | ------ | ------- | ------ |
-| `NodeFeatureAPI`      | true    | Beta   | V0.14   |        |
+| `NodeFeatureAPI`      | true    | Beta   | V0.14   | v0.16  |
 | `NodeFeatureAPI`      | true    | GA     | V0.17   |        |
 | `DisableAutoPrefix`   | false   | Alpha  | V0.16   |        |
 | `NodeFeatureGroupAPI` | false   | Alpha  | V0.16   |        |
