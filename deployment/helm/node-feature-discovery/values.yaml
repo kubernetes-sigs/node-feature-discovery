@@ -33,7 +33,6 @@ master:
     # autoDefaultNs: true
     # extraLabelNs: ["added.ns.io","added.kubernets.io"]
     # denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
-    # resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
     # enableTaints: false
     # labelWhiteList: "foo"
     # resyncPeriod: "2h"
@@ -75,10 +74,6 @@ master:
     #   retryPeriod: 2s
     # nfdApiParallelism: 10
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
-  # The TCP port that nfd-master listens for incoming requests. Default: 8080
-  # Deprecated this parameter is related to the deprecated gRPC API and will
-  # be removed with it in a future release
-  port: 8080
   metricsPort: 8081
   healthPort: 8082
   instance:
@@ -86,9 +81,7 @@ master:
   resyncPeriod:
   denyLabelNs: []
   extraLabelNs: []
-  resourceLabels: []
   enableTaints: false
-  crdController: null
   featureRulesController: null
   nfdApiParallelism: null
   deploymentAnnotations: {}
@@ -267,8 +260,6 @@ worker:
     #      - "class"
     #      - "vendor"
     #      - "device"
-    #  local:
-    #    hooksEnabled: false
     #  custom:
     #    # The following feature demonstrates the capabilities of the matchFeatures
     #    - name: "my custom rule"
@@ -607,18 +598,6 @@ gc:
 
   # specify how many old ReplicaSets for the Deployment to retain.
   revisionHistoryLimit:
-
-# Optionally use encryption for worker <--> master comms
-# TODO: verify hostname is not yet supported
-#
-# If you do not enable certManager (and have it installed) you will
-# need to manually, or otherwise, provision the TLS certs as secrets
-tls:
-  enable: false
-  certManager: false
-  certManagerCertificate:
-    issuerKind:
-    issuerName:
 
 prometheus:
   enable: false

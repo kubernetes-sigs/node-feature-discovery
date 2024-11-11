@@ -47,19 +47,9 @@ The `-prune` flag is a sub-command like option for cleaning up the cluster. It
 causes nfd-master to remove all NFD related labels, annotations and extended
 resources from all Node objects of the cluster and exit.
 
-### -port
-
-The `-port` flag specifies the TCP port that nfd-master listens for incoming requests.
-
-Default: 8080
-
-Example:
-
-```bash
-nfd-master -port=443
-```
-
 ### -metrics
+
+**DEPRECATED**: Will be removed in NFD v0.17 and replaced by `-port`.
 
 The `-metrics` flag specifies the port on which to expose
 [Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the
@@ -87,91 +77,6 @@ Example:
 
 ```bash
 nfd-master -instance=network
-```
-
-### -ca-file
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-ca-file` is one of the three flags (together with `-cert-file` and
-`-key-file`) controlling master-worker mutual TLS authentication on the
-nfd-master side. This flag specifies the TLS root certificate that is used for
-authenticating incoming connections. NFD-Worker side needs to have matching key
-and cert files configured for the incoming requests to be accepted.
-
-Default: *empty*
-
-> **NOTE:** Must be specified together with `-cert-file` and `-key-file`
-
-Example:
-
-```bash
-nfd-master -ca-file=/opt/nfd/ca.crt -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
-```
-
-### -cert-file
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-cert-file` is one of the three flags (together with `-ca-file` and
-`-key-file`) controlling master-worker mutual TLS authentication on the
-nfd-master side. This flag specifies the TLS certificate presented for
-authenticating outgoing traffic towards nfd-worker.
-
-Default: *empty*
-
-> **NOTE:** Must be specified together with `-ca-file` and `-key-file`
-
-Example:
-
-```bash
-nfd-master -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key -ca-file=/opt/nfd/ca.crt
-```
-
-### -key-file
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-key-file` is one of the three flags (together with `-ca-file` and
-`-cert-file`) controlling master-worker mutual TLS authentication on the
-nfd-master side. This flag specifies the private key corresponding the given
-certificate file (`-cert-file`) that is used for authenticating outgoing
-traffic.
-
-Default: *empty*
-
-> **NOTE:** Must be specified together with `-cert-file` and `-ca-file`
-
-Example:
-
-```bash
-nfd-master -key-file=/opt/nfd/master.key -cert-file=/opt/nfd/master.crt -ca-file=/opt/nfd/ca.crt
-```
-
-### -verify-node-name
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-verify-node-name` flag controls the NodeName based authorization of
-incoming requests and only has effect when mTLS authentication has been enabled
-(with `-ca-file`, `-cert-file` and `-key-file`). If enabled, the worker node
-name of the incoming must match with the CN or a SAN in its TLS certificate. Thus,
-workers are only able to label the node they are running on (or the node whose
-certificate they present).
-
-Node Name based authorization is disabled by default.
-
-Default: *false*
-
-Example:
-
-```bash
-nfd-master -verify-node-name -ca-file=/opt/nfd/ca.crt \
-    -cert-file=/opt/nfd/master.crt -key-file=/opt/nfd/master.key
 ```
 
 ### -enable-leader-election
@@ -212,28 +117,6 @@ Example:
 nfd-master -no-publish
 ```
 
-### -crd-controller
-
-> **NOTE** This flag will be removed in a future release at the same time with
-> the deprecated gRPC API.
-
-The `-crd-controller` flag specifies whether the NFD CRD API controller is
-enabled or not. The controller is responsible for processing
-[NodeFeature](../usage/custom-resources.md#nodefeature) and
-[NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule) objects.
-
-Default: *true*
-
-Example:
-
-```bash
-nfd-master -crd-controller=false
-```
-
-### -featurerules-controller
-
-**DEPRECATED**: use [`-crd-controller`](#-crd-controller) instead.
-
 ### -label-whitelist
 
 The `-label-whitelist` specifies a regular expression for filtering feature
@@ -259,9 +142,6 @@ label namespaces. This option can be used to allow
 other vendor or application specific namespaces for custom labels from the
 local and custom feature sources, even though these labels were denied using
 the `deny-label-ns` flag.
-
-The same namespace control and this flag applies Extended Resources (created
-with `-resource-labels`), too.
 
 Default: *empty*
 
@@ -291,23 +171,6 @@ Example:
 
 ```bash
 nfd-master -deny-label-ns=*.vendor.com,vendor-2.io
-```
-
-### -resource-labels
-
-**DEPRECATED**: [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)
-should be used for managing extended resources in NFD.
-
-The `-resource-labels` flag specifies a comma-separated list of features to be
-advertised as extended resources instead of labels. Features that have integer
-values can be published as Extended Resources by listing them in this flag.
-
-Default: *empty*
-
-Example:
-
-```bash
-nfd-master -resource-labels=vendor-1.com/feature-1,vendor-2.io/feature-2
 ```
 
 ### -config

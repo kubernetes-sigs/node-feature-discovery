@@ -69,82 +69,6 @@ Example:
 nfd-worker -options='{"sources":{"cpu":{"cpuid":{"attributeWhitelist":["AVX","AVX2"]}}}}'
 ```
 
-### -server
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-server` flag specifies the address of the nfd-master endpoint where to
-connect to.
-
-Default: localhost:8080
-
-Example:
-
-```bash
-nfd-worker -server=nfd-master.nfd.svc.cluster.local:443
-```
-
-### -ca-file
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-ca-file` is one of the three flags (together with `-cert-file` and
-`-key-file`) controlling the mutual TLS authentication on the worker side.
-This flag specifies the TLS root certificate that is used for verifying the
-authenticity of nfd-master.
-
-Default: *empty*
-
-> **NOTE:** Must be specified together with `-cert-file` and `-key-file`
-
-Example:
-
-```bash
-nfd-worker -ca-file=/opt/nfd/ca.crt -cert-file=/opt/nfd/worker.crt -key-file=/opt/nfd/worker.key
-```
-
-### -cert-file
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-cert-file` is one of the three flags (together with `-ca-file` and
-`-key-file`) controlling mutual TLS authentication on the worker side. This
-flag specifies the TLS certificate presented for authenticating outgoing
-requests.
-
-Default: *empty*
-
-> **NOTE:** Must be specified together with `-ca-file` and `-key-file`
-
-Example:
-
-```bash
-nfd-workerr -cert-file=/opt/nfd/worker.crt -key-file=/opt/nfd/worker.key -ca-file=/opt/nfd/ca.crt
-```
-
-### -key-file
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-key-file` is one of the three flags (together with `-ca-file` and
-`-cert-file`) controlling the mutual TLS authentication on the worker side.
-This flag specifies the private key corresponding the given certificate file
-(`-cert-file`) that is used for authenticating outgoing requests.
-
-Default: *empty*
-
-> **NOTE:** Must be specified together with `-cert-file` and `-ca-file`
-
-Example:
-
-```bash
-nfd-worker -key-file=/opt/nfd/worker.key -cert-file=/opt/nfd/worker.crt -ca-file=/opt/nfd/ca.crt
-```
-
 ### -kubeconfig
 
 The `-kubeconfig` flag specifies the kubeconfig to use for connecting to the
@@ -158,23 +82,6 @@ Example:
 
 ```bash
 nfd-worker -kubeconfig ${HOME}/.kube/config
-```
-
-### -server-name-override
-
-> **NOTE** the gRPC API is deprecated and will be removed in a future release.
-> and this flag will be removed as well.
-
-The `-server-name-override` flag specifies the common name (CN) which to
-expect from the nfd-master TLS certificate. This flag is mostly intended for
-development and debugging purposes.
-
-Default: *empty*
-
-Example:
-
-```bash
-nfd-worker -server-name-override=localhost
 ```
 
 ### -feature-sources
@@ -220,6 +127,8 @@ nfd-worker -label-sources=kernel,system,local
 ```
 
 ### -metrics
+
+**DEPRECATED**: Will be removed in NFD v0.17 and replaced by `-port`.
 
 The `-metrics` flag specifies the port on which to expose
 [Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the

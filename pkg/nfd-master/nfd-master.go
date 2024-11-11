@@ -17,8 +17,6 @@ limitations under the License.
 package nfdmaster
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -35,10 +33,8 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/peer"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +56,6 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
 	nfdfeatures "sigs.k8s.io/node-feature-discovery/pkg/features"
-	pb "sigs.k8s.io/node-feature-discovery/pkg/labeler"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -92,7 +87,6 @@ type NFDConfig struct {
 	ExtraLabelNs      utils.StringSetVal
 	LabelWhiteList    *regexp.Regexp
 	NoPublish         bool
-	ResourceLabels    utils.StringSetVal
 	EnableTaints      bool
 	ResyncPeriod      utils.DurationVal
 	LeaderElection    LeaderElectionConfig
@@ -113,7 +107,6 @@ type ConfigOverrideArgs struct {
 	DenyLabelNs       *utils.StringSetVal
 	ExtraLabelNs      *utils.StringSetVal
 	LabelWhiteList    *utils.RegexpVal
-	ResourceLabels    *utils.StringSetVal
 	EnableTaints      *bool
 	NoPublish         *bool
 	ResyncPeriod      *utils.DurationVal
@@ -122,20 +115,15 @@ type ConfigOverrideArgs struct {
 
 // Args holds command line arguments
 type Args struct {
-	CaFile        string
-	CertFile      string
-	ConfigFile    string
-	Instance      string
-	KeyFile       string
-	Klog          map[string]*utils.KlogFlagVal
-	Kubeconfig    string
-	CrdController bool
-	Port          int
+	ConfigFile string
+	Instance   string
+	Klog       map[string]*utils.KlogFlagVal
+	Kubeconfig string
+	Port       int
 	// GrpcHealthPort is only needed to avoid races between tests (by skipping the health server).
 	// Could be removed when gRPC labler service is dropped (when nfd-worker tests stop running nfd-master).
 	GrpcHealthPort       int
 	Prune                bool
-	VerifyNodeName       bool
 	Options              string
 	EnableLeaderElection bool
 	MetricsPort          int
@@ -167,7 +155,7 @@ type nfdMaster struct {
 	ready          chan struct{}
 	kubeconfig     *restclient.Config
 	k8sClient      k8sclient.Interface
-	nfdClient      *nfdclientset.Clientset
+	nfdClient      nfdclientset.Interface
 	updaterPool    *updaterPool
 	deniedNs
 	config *NFDConfig
@@ -191,19 +179,6 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 			return nfd, fmt.Errorf("invalid -instance %q: instance name "+
 				"must start and end with an alphanumeric character and may only contain "+
 				"alphanumerics, `-`, `_` or `.`", nfd.args.Instance)
-		}
-	}
-
-	// Check TLS related args
-	if nfd.args.CertFile != "" || nfd.args.KeyFile != "" || nfd.args.CaFile != "" {
-		if nfd.args.CertFile == "" {
-			return nfd, fmt.Errorf("-cert-file needs to be specified alongside -key-file and -ca-file")
-		}
-		if nfd.args.KeyFile == "" {
-			return nfd, fmt.Errorf("-key-file needs to be specified alongside -cert-file and -ca-file")
-		}
-		if nfd.args.CaFile == "" {
-			return nfd, fmt.Errorf("-ca-file needs to be specified alongside -cert-file and -key-file")
 		}
 	}
 
@@ -232,11 +207,11 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 			return nfd, err
 		}
 		nfd.kubeconfig = kubeconfig
-		nfdClient, err := nfdclientset.NewForConfig(nfd.kubeconfig)
+		c, err := nfdclientset.NewForConfig(nfd.kubeconfig)
 		if err != nil {
 			return nfd, err
 		}
-		nfd.nfdClient = nfdClient
+		nfd.nfdClient = c
 	}
 
 	nfd.updaterPool = newUpdaterPool(nfd)
@@ -275,7 +250,6 @@ func newDefaultConfig() *NFDConfig {
 		NoPublish:         false,
 		AutoDefaultNs:     true,
 		NfdApiParallelism: 10,
-		ResourceLabels:    utils.StringSetVal{},
 		EnableTaints:      false,
 		ResyncPeriod:      utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 		LeaderElection: LeaderElectionConfig{
@@ -311,11 +285,8 @@ func (m *nfdMaster) Run() error {
 		return m.prune()
 	}
 
-	if m.args.CrdController {
-		err := m.startNfdApiController()
-		if err != nil {
-			return err
-		}
+	if err := m.startNfdApiController(); err != nil {
+		return err
 	}
 
 	m.updaterPool.start(m.config.NfdApiParallelism)
@@ -344,14 +315,6 @@ func (m *nfdMaster) Run() error {
 		defer m.Stop()
 	}
 
-	// Run gRPC server
-	grpcErr := make(chan error)
-	// If the NodeFeature API is enabled, don'tregister the labeler API
-	// server. Otherwise, register the labeler server.
-	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) {
-		go m.runGrpcServer(grpcErr)
-	}
-
 	// Run updater that handles events from the nfd CRD API.
 	if m.nfdController != nil {
 		if m.args.EnableLeaderElection {
@@ -362,6 +325,7 @@ func (m *nfdMaster) Run() error {
 	}
 
 	// Start gRPC server for liveness probe (at this point we're "live")
+	grpcErr := make(chan error)
 	if m.args.GrpcHealthPort != 0 {
 		if err := m.startGrpcHealthServer(grpcErr); err != nil {
 			return fmt.Errorf("failed to start gRPC health server: %w", err)
@@ -410,68 +374,11 @@ func (m *nfdMaster) startGrpcHealthServer(errChan chan<- error) error {
 	return nil
 }
 
-func (m *nfdMaster) runGrpcServer(errChan chan<- error) {
-	// Create server listening for TCP connections
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", m.args.Port))
-	if err != nil {
-		errChan <- fmt.Errorf("failed to listen: %w", err)
-		return
-	}
-
-	serverOpts := []grpc.ServerOption{}
-	tlsConfig := utils.TlsConfig{}
-	// Create watcher for TLS cert files
-	certWatch, err := utils.CreateFsWatcher(time.Second, m.args.CertFile, m.args.KeyFile, m.args.CaFile)
-	if err != nil {
-		errChan <- err
-		return
-	}
-	// Enable mutual TLS authentication if -cert-file, -key-file or -ca-file
-	// is defined
-	if m.args.CertFile != "" || m.args.KeyFile != "" || m.args.CaFile != "" {
-		if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {
-			errChan <- err
-			return
-		}
-
-		tlsConfig := &tls.Config{GetConfigForClient: tlsConfig.GetConfig}
-		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
-	}
-	m.server = grpc.NewServer(serverOpts...)
-
-	pb.RegisterLabelerServer(m.server, m)
-
-	klog.InfoS("gRPC server serving", "port", m.args.Port)
-
-	// Run gRPC server
-	grpcErr := make(chan error)
-	go func() {
-		defer lis.Close()
-		grpcErr <- m.server.Serve(lis)
-	}()
-
-	for {
-		select {
-		case <-certWatch.Events:
-			klog.InfoS("reloading TLS certificates")
-			if err := tlsConfig.UpdateConfig(m.args.CertFile, m.args.KeyFile, m.args.CaFile); err != nil {
-				errChan <- err
-			}
-
-		case err := <-grpcErr:
-			if err != nil {
-				errChan <- fmt.Errorf("gRPC server exited with an error: %w", err)
-			}
-			klog.InfoS("gRPC server stopped")
-		}
-	}
-}
-
 // nfdAPIUpdateHandler handles events from the nfd API controller.
 func (m *nfdMaster) nfdAPIUpdateHandler() {
 	// We want to unconditionally update all nodes at startup if gRPC is
 	// disabled (i.e. NodeFeature API is enabled)
-	updateAll := nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI)
+	updateAll := true
 	updateNodes := make(map[string]struct{})
 	nodeFeatureGroup := make(map[string]struct{})
 	updateAllNodeFeatureGroups := false
@@ -616,7 +523,7 @@ func (m *nfdMaster) updateMasterNode() error {
 // into extended resources. This function also handles proper namespacing of
 // labels and ERs, i.e. adds the possibly missing default namespace for labels
 // arriving through the gRPC API.
-func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) (Labels, ExtendedResources) {
+func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) Labels {
 	outLabels := Labels{}
 	for name, value := range labels {
 		if value, err := m.filterFeatureLabel(name, value, features); err != nil {
@@ -627,28 +534,12 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 		}
 	}
 
-	// Remove labels which are intended to be extended resources
-	extendedResources := ExtendedResources{}
-	for extendedResourceName := range m.config.ResourceLabels {
-		extendedResourceName := addNs(extendedResourceName, nfdv1alpha1.FeatureLabelNs)
-		if value, ok := outLabels[extendedResourceName]; ok {
-			if _, err := strconv.Atoi(value); err != nil {
-				klog.ErrorS(err, "bad label value encountered for extended resource", "labelKey", extendedResourceName, "labelValue", value)
-				nodeERsRejected.Inc()
-				continue // non-numeric label can't be used
-			}
-
-			extendedResources[extendedResourceName] = value
-			delete(outLabels, extendedResourceName)
-		}
-	}
-
 	if len(outLabels) > 0 && m.config.Restrictions.DisableLabels {
 		klog.V(2).InfoS("node labels are disabled in configuration (restrictions.disableLabels=true)")
 		outLabels = Labels{}
 	}
 
-	return outLabels, extendedResources
+	return outLabels
 }
 
 func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1.Features) (string, error) {
@@ -717,18 +608,6 @@ func filterTaints(taints []corev1.Taint) []corev1.Taint {
 	return outTaints
 }
 
-func verifyNodeName(cert *x509.Certificate, nodeName string) error {
-	if cert.Subject.CommonName == nodeName {
-		return nil
-	}
-
-	err := cert.VerifyHostname(nodeName)
-	if err != nil {
-		return fmt.Errorf("certificate %q not valid for node %q: %v", cert.Subject.CommonName, nodeName, err)
-	}
-	return nil
-}
-
 func isNamespaceDenied(labelNs string, wildcardDeniedNs map[string]struct{}, normalDeniedNs map[string]struct{}) bool {
 	for deniedNs := range normalDeniedNs {
 		if labelNs == deniedNs {
@@ -741,38 +620,6 @@ func isNamespaceDenied(labelNs string, wildcardDeniedNs map[string]struct{}, nor
 		}
 	}
 	return false
-}
-
-// SetLabels implements LabelerServer
-func (m *nfdMaster) SetLabels(c context.Context, r *pb.SetLabelsRequest) (*pb.SetLabelsReply, error) {
-	nodeUpdateRequests.Inc()
-	err := authorizeClient(c, m.args.VerifyNodeName, r.NodeName)
-	if err != nil {
-		klog.ErrorS(err, "gRPC client authorization failed", "nodeName", r.NodeName)
-		return &pb.SetLabelsReply{}, err
-	}
-
-	switch {
-	case klog.V(4).Enabled():
-		klog.InfoS("gRPC SetLabels request received", "setLabelsRequest", utils.DelayedDumper(r))
-	case klog.V(1).Enabled():
-		klog.InfoS("gRPC SetLabels request received", "nodeName", r.NodeName, "nfdVersion", r.NfdVersion, "labels", r.Labels)
-	default:
-		klog.InfoS("gRPC SetLabels request received", "nodeName", r.NodeName)
-	}
-	if !m.config.NoPublish {
-		// Fetch the node object.
-		node, err := getNode(m.k8sClient, r.NodeName)
-		if err != nil {
-			return &pb.SetLabelsReply{}, err
-		}
-		// Create labels et al
-		if err := m.refreshNodeFeatures(m.k8sClient, node, r.GetLabels(), r.GetFeatures()); err != nil {
-			nodeUpdateFailures.Inc()
-			return &pb.SetLabelsReply{}, err
-		}
-	}
-	return &pb.SetLabelsReply{}, nil
 }
 
 func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
@@ -918,7 +765,7 @@ func (m *nfdMaster) nfdAPIUpdateAllNodeFeatureGroups() error {
 	return nil
 }
 
-func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient *nfdclientset.Clientset, nodeFeatureGroup *nfdv1alpha1.NodeFeatureGroup) error {
+func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interface, nodeFeatureGroup *nfdv1alpha1.NodeFeatureGroup) error {
 	klog.V(2).InfoS("evaluating NodeFeatureGroup", "nodeFeatureGroup", klog.KObj(nodeFeatureGroup))
 	if m.nfdController == nil || m.nfdController.featureLister == nil {
 		return nil
@@ -1033,16 +880,12 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 
 	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(node.Name, features)
 
-	// Mix in CR-originated labels
+	// Labels
 	maps.Copy(labels, crLabels)
+	labels = m.filterFeatureLabels(labels, features)
 
-	// Remove labels which are intended to be extended resources via
-	// -resource-labels or their NS is not whitelisted
-	labels, extendedResources := m.filterFeatureLabels(labels, features)
-
-	// Mix in CR-originated extended resources with -resource-labels
-	maps.Copy(extendedResources, crExtendedResources)
-	extendedResources = m.filterExtendedResources(features, extendedResources)
+	// Extended resources
+	extendedResources := m.filterExtendedResources(features, crExtendedResources)
 
 	if len(extendedResources) > 0 && m.config.Restrictions.DisableExtendedResources {
 		klog.V(2).InfoS("extended resources are disabled in configuration (restrictions.disableExtendedResources=true)")
@@ -1142,30 +985,6 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 			return fmt.Errorf("error while patching node object: %w", err)
 		}
 		klog.V(1).InfoS("patched node annotations for taints", "nodeName", node.Name)
-	}
-	return nil
-}
-
-func authorizeClient(c context.Context, checkNodeName bool, nodeName string) error {
-	if checkNodeName {
-		// Client authorization.
-		// Check that the node name matches the CN from the TLS cert
-		client, ok := peer.FromContext(c)
-		if !ok {
-			return fmt.Errorf("failed to get peer (client)")
-		}
-		tlsAuth, ok := client.AuthInfo.(credentials.TLSInfo)
-		if !ok {
-			return fmt.Errorf("incorrect client credentials")
-		}
-		if len(tlsAuth.State.VerifiedChains) == 0 || len(tlsAuth.State.VerifiedChains[0]) == 0 {
-			return fmt.Errorf("client certificate verification failed")
-		}
-
-		err := verifyNodeName(tlsAuth.State.VerifiedChains[0][0], nodeName)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -1416,9 +1235,6 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	if m.args.Overrides.ExtraLabelNs != nil {
 		c.ExtraLabelNs = *m.args.Overrides.ExtraLabelNs
 	}
-	if m.args.Overrides.ResourceLabels != nil {
-		c.ResourceLabels = *m.args.Overrides.ResourceLabels
-	}
 	if m.args.Overrides.EnableTaints != nil {
 		c.EnableTaints = *m.args.Overrides.EnableTaints
 	}
@@ -1533,7 +1349,6 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature:           !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI),
 		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
 		K8sClient:                    m.k8sClient,
 		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,

@@ -40,9 +40,6 @@ other vendor or application specific namespaces for custom labels from the
 local and custom feature sources, even though these labels were denied using
 the `denyLabelNs` parameter.
 
-The same namespace control and this option applies to Extended Resources (created
-with `resourceLabels`), too.
-
 Default: *empty*
 
 Example:
@@ -102,23 +99,6 @@ Example:
 
 ```yaml
 autoDefaultNs: false
-```
-
-## resourceLabels
-
-**DEPRECATED**: [NodeFeatureRule](../usage/custom-resources.md#nodefeaturerule)
-should be used for managing extended resources in NFD.
-
-The `resourceLabels` option specifies a list of features to be
-advertised as extended resources instead of labels. Features that have integer
-values can be published as Extended Resources by listing them in this option.
-
-Default: *empty*
-
-Example:
-
-```yaml
-resourceLabels: ["vendor-1.com/feature-1","vendor-2.io/feature-2"]
 ```
 
 ## enableTaints

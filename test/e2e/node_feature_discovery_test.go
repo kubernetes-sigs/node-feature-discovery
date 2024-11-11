@@ -112,9 +112,8 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 
 		// Remove extended resources
 		for key := range node.Status.Capacity {
-			// We check for FeatureLabelNs as -resource-labels can create ERs there
 			_, ok := nfdERs[string(key)]
-			if ok || strings.HasPrefix(string(key), nfdv1alpha1.FeatureLabelNs) {
+			if ok || strings.HasPrefix(string(key), nfdv1alpha1.ExtendedResourceNs) {
 				delete(node.Status.Capacity, key)
 				delete(node.Status.Allocatable, key)
 				updateStatus = true

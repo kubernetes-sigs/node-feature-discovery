@@ -171,29 +171,15 @@ e2e-tests:
 | E2E_GINKGO_LABEL_FILTER    | Ginkgo label filter to use for running e2e tests                  | *empty* |
 | OPENSHIFT                  | Non-empty value enables OpenShift specific support (only affects e2e tests) | *empty* |
 
-## Running locally
-
-> ****DEPRECATED**: Running NFD locally is deprecated and will be removed in a
-> future release. It depends on the gRPC API which is deprecated and will be
-> removed in a future release. To run NFD locally, disable the NodeFeature API
-> with `-feature-gates NodeFeatureAPI=false` flag.
-
-You can run NFD locally, either directly on your host OS or in containers for
-testing and development purposes. This may be useful e.g. for checking
-features-detection.
-
 ### NFD-Master
 
 When running as a standalone container labeling is expected to fail because
-Kubernetes API is not available. Thus, it is recommended to use `-no-publish`
-Also specify `-crd-controller=false` and `-feature-gates NodeFeatureAPI=false`
-command line flags to disable CRD controller and enable gRPC. E.g.
+Kubernetes API is not available. Thus, it is recommended to use `-no-publish`.
 
 ```bash
 $ export NFD_CONTAINER_IMAGE={{ site.container_image }}
 $ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish -crd-controller=false -feature-gates NodeFeatureAPI=false
 2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
-2019/02/01 14:48:21 gRPC server serving on port: 8080
 ```
 
 ### NFD-Worker
@@ -256,19 +242,27 @@ the steps below.
 1. Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
 1. Install [tilt](https://docs.tilt.dev/install.html)
 1. Create a local Kubernetes cluster
+    - Create image registry first
+    - Create a Kubernetes cluster. Please note that docker containers will be
+      served as controller node and worker nodes, and NFD-worker will run as a
+      DaemonSet in nested container. Therefore, to make sure the NFD-worker can
+      discover the host features, the host folders "/boot" and "/lib" should be
+      mounted into worker node docker containers when creating the Kubernetes
+      cluster.
+1. Start up node feature discovery development environment
+    To start up your Tilt development environment, run at the root of your
+    local NFD codebase.
 
-To start up your Tilt development environment, run
+    ```shell
+    tilt up
+    ```
 
-```shell
-tilt up
-```
-
-at the root of your local NFD codebase. Tilt will start a web interface in the
-localhost and port 10350. From the web interface, you are able to see how NFD worker
-and master are progressing,  watch their build and runtime logs. Once your code changes
-are saved locally, Tilt will notice it and re-build the container image from the
-current code, push the image to the registry and re-deploy NFD pods with the latest
-container image.
+    Tilt will start a web interface in the localhost and port 10350. From the
+    web interface, you are able to see how NFD worker and master are
+    progressing, watch their build and runtime logs. Once your code changes are
+    saved locally, Tilt will notice it and re-build the container image from
+    the current code, push the image to the registry and re-deploy NFD pods
+    with the latest container image.
 
 ### Environment variables
 

@@ -59,11 +59,6 @@ scenarios under
 - [`prune`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/prune):
   clean up the cluster after uninstallation, see
   [Removing feature labels](uninstallation.md#removing-feature-labels)
-- [`samples/cert-manager`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/samples/cert-manager):
-  an example for supplementing the default deployment with cert-manager for TLS
-  authentication, see
-  [Automated TLS certificate management using cert-manager](tls.md)
-  for details
 - [`samples/custom-rules`](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/overlays/samples/custom-rules):
   an example for spicing up the default deployment with a separately managed
   configmap of custom labeling rules, see
