@@ -151,6 +151,8 @@ master:
               - key: "node-role.kubernetes.io/control-plane"
                 operator: In
                 values: [""]
+
+  topologySpreadConstraints: []
                 
   livenessProbe:
     grpc:
@@ -588,6 +590,7 @@ gc:
   annotations: {}
   deploymentAnnotations: {}
   affinity: {}
+  topologySpreadConstraints: []
 
   # specify how many old ReplicaSets for the Deployment to retain.
   revisionHistoryLimit:
