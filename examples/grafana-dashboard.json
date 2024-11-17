@@ -391,7 +391,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "nfd_node_updates_total",
+          "expr": "nfd_master_node_updates_total",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -586,7 +586,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "nfd_node_update_failures_total",
+          "expr": "nfd_master_node_update_failures_total",
           "legendFormat": "total",
           "range": true,
           "refId": "A"
@@ -679,7 +679,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "nfd_nodefeaturerule_processing_errors_total",
+          "expr": "nfd_master_nodefeaturerule_processing_errors_total",
           "hide": false,
           "legendFormat": "total",
           "range": true,
@@ -940,7 +940,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "sum by(le) (nfd_feature_discovery_duration_seconds_bucket)",
+          "expr": "sum by(le) (nfd_worker_feature_discovery_duration_seconds_bucket)",
           "format": "heatmap",
           "legendFormat": "__auto",
           "range": true,
@@ -1007,7 +1007,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "sum by(le) (nfd_nodefeaturerule_processing_duration_seconds_bucket)",
+          "expr": "sum by(le) (nfd_master_nodefeaturerule_processing_duration_seconds_bucket)",
           "format": "heatmap",
           "legendFormat": "__auto",
           "range": true,
@@ -1101,7 +1101,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "nfd_node_labels_rejected_total",
+          "expr": "nfd_master_node_labels_rejected_total",
           "legendFormat": "total",
           "range": true,
           "refId": "A"
@@ -1194,7 +1194,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "nfd_node_extendedresources_rejected_total",
+          "expr": "nfd_master_node_extendedresources_rejected_total",
           "hide": false,
           "legendFormat": "total",
           "range": true,
@@ -1288,7 +1288,7 @@
             "uid": "prometheus"
           },
           "editorMode": "builder",
-          "expr": "nfd_node_taints_rejected_total",
+          "expr": "nfd_master_node_taints_rejected_total",
           "hide": false,
           "legendFormat": "total",
           "range": true,

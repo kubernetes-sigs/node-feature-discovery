@@ -23,21 +23,28 @@ import (
 
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
-	buildInfoQuery  = "nfd_topology_updater_build_info"
-	scanErrorsQuery = "nfd_topology_updater_scan_errors_total"
+	buildInfoQuery  = "build_info"
+	scanErrorsQuery = "scan_errors_total"
+)
+
+const (
+	// nfdTopologyUpdaterPrefix - subsystem name used by nfd topology updater.
+	nfdTopologyUpdaterPrefix = "nfd_topology_updater"
 )
 
 var (
 	buildInfo = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: buildInfoQuery,
-		Help: "Version from which Node Feature Discovery was built.",
+		Subsystem: nfdTopologyUpdaterPrefix,
+		Name:      buildInfoQuery,
+		Help:      "Version from which Node Feature Discovery was built.",
 		ConstLabels: map[string]string{
 			"version": version.Get(),
 		},
 	})
 	scanErrors = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: scanErrorsQuery,
-		Help: "Number of errors in scanning resource allocation of pods.",
+		Subsystem: nfdTopologyUpdaterPrefix,
+		Name:      scanErrorsQuery,
+		Help:      "Number of errors in scanning resource allocation of pods.",
 	})
 )
 

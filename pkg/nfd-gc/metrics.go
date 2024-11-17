@@ -23,27 +23,35 @@ import (
 
 // When adding metric names, see https://prometheus.io/docs/practices/naming/#metric-names
 const (
-	buildInfoQuery          = "nfd_gc_build_info"
-	objectsDeletedQuery     = "nfd_gc_objects_deleted_total"
-	objectDeleteErrorsQuery = "nfd_gc_object_delete_failures_total"
+	buildInfoQuery          = "build_info"
+	objectsDeletedQuery     = "objects_deleted_total"
+	objectDeleteErrorsQuery = "object_delete_failures_total"
+)
+
+const (
+	// nfdGCPrefix - subsystem name used by nfd gc.
+	nfdGCPrefix = "nfd_gc"
 )
 
 var (
 	buildInfo = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: buildInfoQuery,
-		Help: "Version from which Node Feature Discovery was built.",
+		Subsystem: nfdGCPrefix,
+		Name:      buildInfoQuery,
+		Help:      "Version from which Node Feature Discovery was built.",
 		ConstLabels: map[string]string{
 			"version": version.Get(),
 		},
 	})
 	objectsDeleted = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: objectsDeletedQuery,
-		Help: "Number of NodeFeature and NodeResourceTopology objects garbage collected."},
+		Subsystem: nfdGCPrefix,
+		Name:      objectsDeletedQuery,
+		Help:      "Number of NodeFeature and NodeResourceTopology objects garbage collected."},
 		[]string{"kind"},
 	)
 	objectDeleteErrors = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: objectDeleteErrorsQuery,
-		Help: "Number of errors in deleting NodeFeature and NodeResourceTopology objects."},
+		Subsystem: nfdGCPrefix,
+		Name:      objectDeleteErrorsQuery,
+		Help:      "Number of errors in deleting NodeFeature and NodeResourceTopology objects."},
 		[]string{"kind"},
 	)
 )
