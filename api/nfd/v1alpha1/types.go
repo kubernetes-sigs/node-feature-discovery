@@ -324,9 +324,9 @@ func (m *MatchExpression) MarshalJSON() ([]byte, error) {
 
 func (m *MatchExpression) String() string {
 	if len(m.Value) < 1 {
-		return fmt.Sprintf("{op: %s}", m.Op)
+		return fmt.Sprintf("{op: %q}", m.Op)
 	}
-	return fmt.Sprintf("{op: %s, value: %s}", m.Op, m.Value)
+	return fmt.Sprintf("{op: %q, value: %q}", m.Op, m.Value)
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a
