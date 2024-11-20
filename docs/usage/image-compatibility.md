@@ -15,7 +15,7 @@ sort: 11
 
 ---
 
-## Image Compatibility (experimental)
+## Image Compatibility
 
 Image compatibility metadata enables container image authors to define their
 image requirements using [Node Feature Rules](./custom-resources.md#nodefeaturerule).
@@ -144,6 +144,3 @@ directly within the tool rather than using a separate command.
 
 For more information about the available commands and flags, refer to
 [the client documentation](../reference/node-feature-client-reference.md).
-
-**Note**: The client is an experimental implementation and currently does not
-support registry authentication.
