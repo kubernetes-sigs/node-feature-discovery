@@ -10,7 +10,7 @@ require (
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
 	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
 	github.com/klauspost/cpuid/v2 v2.2.9
-	github.com/onsi/ginkgo/v2 v2.21.0
+	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.35.1
 	github.com/opencontainers/runc v1.2.2
 	github.com/prometheus/client_golang v1.19.1
