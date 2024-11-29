@@ -16,6 +16,7 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"fmt"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/client-go/informers"
 	k8sclient "k8s.io/client-go/kubernetes"
 	v1lister "k8s.io/client-go/listers/core/v1"
+	"k8s.io/klog/v2"
 )
 
 // NamespaceLister lists kubernetes namespaces.
@@ -32,19 +34,27 @@ type NamespaceLister struct {
 	stopChan        chan struct{}
 }
 
-func newNamespaceLister(k8sClient k8sclient.Interface, labelsSelector labels.Selector) *NamespaceLister {
+func newNamespaceLister(k8sClient k8sclient.Interface, labelsSelector labels.Selector) (*NamespaceLister, error) {
 	factory := informers.NewSharedInformerFactory(k8sClient, time.Hour)
 	namespaceLister := factory.Core().V1().Namespaces().Lister()
 
 	stopChan := make(chan struct{})
 	factory.Start(stopChan) // runs in background
-	factory.WaitForCacheSync(stopChan)
+
+	start := time.Now()
+	ret := factory.WaitForCacheSync(stopChan)
+	for res, ok := range ret {
+		if !ok {
+			return &NamespaceLister{}, fmt.Errorf("namespace informer cache failed to sync (%s)", res)
+		}
+	}
+	klog.InfoS("namespace informer cache synced", "duration", time.Since(start))
 
 	return &NamespaceLister{
 		namespaceLister: namespaceLister,
 		labelsSelector:  labelsSelector,
 		stopChan:        stopChan,
-	}
+	}, nil
 }
 
 // list returns all kubernetes namespaces.

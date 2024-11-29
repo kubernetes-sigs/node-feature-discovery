@@ -104,7 +104,9 @@ func TestIsNamespaceSelected(t *testing.T) {
 
 	for _, tc := range testcases {
 		labelMap, _ := metav1.LabelSelectorAsSelector(tc.nodeFeatureNamespaceSelector)
-		c.namespaceLister = newNamespaceLister(fakeCli, labelMap)
+		lister, err := newNamespaceLister(fakeCli, labelMap)
+		assert.Nil(t, err)
+		c.namespaceLister = lister
 		res := c.isNamespaceSelected(tc.objectNamespace)
 		assert.Equal(t, res, tc.expectedResult)
 	}
