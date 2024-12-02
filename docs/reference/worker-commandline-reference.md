@@ -162,6 +162,23 @@ Example:
 nfd-worker -no-publish
 ```
 
+### -no-owner-refs
+
+The `-no-owner-refs` flag disables setting the owner references to Pod
+of the NodeFeature object.
+
+> **NOTE:** This flag takes precedence over the
+> [`core.noOwnerRefs`](worker-configuration-reference.md#corenoownerrefs)
+> configuration file option.
+
+Default: *false*
+
+Example:
+
+```bash
+nfd-worker -no-owner-refs
+```
+
 ### -oneshot
 
 The `-oneshot` flag causes nfd-worker to exit after one pass of feature
