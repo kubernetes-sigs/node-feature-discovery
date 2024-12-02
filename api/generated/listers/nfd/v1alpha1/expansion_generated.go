@@ -37,3 +37,11 @@ type NodeFeatureGroupNamespaceListerExpansion interface{}
 // NodeFeatureRuleListerExpansion allows custom methods to be added to
 // NodeFeatureRuleLister.
 type NodeFeatureRuleListerExpansion interface{}
+
+// NodeFeatureWorkerConfigListerExpansion allows custom methods to be added to
+// NodeFeatureWorkerConfigLister.
+type NodeFeatureWorkerConfigListerExpansion interface{}
+
+// NodeFeatureWorkerConfigNamespaceListerExpansion allows custom methods to be added to
+// NodeFeatureWorkerConfigNamespaceLister.
+type NodeFeatureWorkerConfigNamespaceListerExpansion interface{}
