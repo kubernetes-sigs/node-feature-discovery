@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -296,6 +299,34 @@ type MatchExpression struct {
 	// In other cases Value should contain at least one element.
 	// +optional
 	Value MatchValue `json:"value,omitempty"`
+
+	// IsMatch indicates whether the processed expression matches the host.
+	// This field should not be exposed in the CRD or used by users.
+	// It is for informational purposes only.
+	IsMatch bool `json:"-"`
+}
+
+// MarshalJSON to hide the IsMatch field,
+// preventing users from accessing it and avoiding potential API confusion.
+// This field is returned only after rule processing to indicate if the expression matched the host.
+func (m *MatchExpression) MarshalJSON() ([]byte, error) {
+	if m.IsMatch {
+		return json.Marshal(struct {
+			MatchExpression
+			IsMatch bool `json:"isMatch"`
+		}{
+			*m, m.IsMatch,
+		})
+	}
+
+	return json.Marshal(*m)
+}
+
+func (m *MatchExpression) String() string {
+	if len(m.Value) < 1 {
+		return fmt.Sprintf("{op: %q}", m.Op)
+	}
+	return fmt.Sprintf("{op: %q, value: %q}", m.Op, m.Value)
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a
