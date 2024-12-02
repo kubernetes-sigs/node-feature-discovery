@@ -152,6 +152,29 @@ func (noderesourceData *nodeResources) Aggregate(podResData []PodResources) topo
 				available:   int64(0),
 				capacity:    int64(len(noderesourceData.reservedCPUIDPerNUMA[nodeID])),
 			}
+
+			for resName, allocatable := range nodeRes {
+				perNuma[nodeID][resName] = &resourceData{
+					allocatable: allocatable,
+					available:   allocatable,
+					capacity:    allocatable,
+				}
+
+				rn := string(resName)
+				noderesourceData.resourceID2NUMAID[rn] = make(map[string]int)
+
+				for _, podRes := range podResData {
+					for _, contRes := range podRes.Containers {
+						for _, res := range contRes.Resources {
+							if res.Name == resName {
+								for _, deviceID := range res.Data {
+									noderesourceData.resourceID2NUMAID[rn][deviceID] = nodeID
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
