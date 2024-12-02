@@ -306,7 +306,7 @@ type MatchExpression struct {
 	IsMatch bool `json:"-"`
 }
 
-// Override MarshalJSON to hide the IsMatch field,
+// MarshalJSON to hide the IsMatch field,
 // preventing users from accessing it and avoiding potential API confusion.
 // This field is returned only after rule processing to indicate if the expression matched the host.
 func (m *MatchExpression) MarshalJSON() ([]byte, error) {

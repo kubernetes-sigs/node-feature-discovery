@@ -54,7 +54,7 @@ the host.
   - **description** - *string*  
     This OPTIONAL property provides a brief description of a compatibility set.
 
-### Example
+#### Example
 
 ```yaml
 version: v1alpha1
