@@ -31,6 +31,36 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
+// RunStrategy controls the processing of Node Feature Rules.
+type RunStrategy interface {
+	// ContinueExec controls the execution of Node Feature Rules.
+	// Based on certain conditions, it either stops or allows
+	// the continuation of NFR processing.
+	ContinueExec() bool
+}
+
+// RunAllStrategy always process all Node Feature Rules.
+// The strategy does not stop on the first failure.
+// +k8s:deepcopy-gen=false
+type RunAllStrategy struct{}
+
+// ContinueExec executes all Node Feature Rules.
+// The execution continues even if there is a feature mismatch.
+func (r RunAllStrategy) ContinueExec() bool {
+	return true
+}
+
+// FailFastStrategy stops Node Features Rules
+// processing upon the first feature mismatch.
+// +k8s:deepcopy-gen=false
+type FailFastStrategy struct{}
+
+// ContinueExec stops Node Feature Rules execution
+// at the first feature mismatch.
+func (f FailFastStrategy) ContinueExec() bool {
+	return false
+}
+
 // RuleOutput contains the output out rule execution.
 // +k8s:deepcopy-gen=false
 type RuleOutput struct {
@@ -39,10 +69,16 @@ type RuleOutput struct {
 	Annotations       map[string]string
 	Vars              map[string]string
 	Taints            []corev1.Taint
+	IsMatch           bool
 }
 
 // Execute the rule against a set of input features.
-func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, error) {
+func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, runStrategy RunStrategy) (RuleOutput, error) {
+	var (
+		matches matchedFeatures
+		isMatch bool
+		err     error
+	)
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
@@ -50,13 +86,13 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 		// Logical OR over the matchAny matchers
 		matched := false
 		for _, matcher := range r.MatchAny {
-			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features); err != nil {
+			if matched, matches, err = evaluateMatchAnyElem(&matcher, features, runStrategy); err != nil {
 				return RuleOutput{}, err
-			} else if isMatch {
-				matched = true
+			} else if matched {
+				isMatch = true
 				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
 
-				if r.LabelsTemplate == "" && r.VarsTemplate == "" {
+				if r.LabelsTemplate == "" && r.VarsTemplate == "" && !runStrategy.ContinueExec() {
 					// there's no need to evaluate other matchers in MatchAny
 					// if there are no templates to be executed on them - so
 					// short-circuit and stop on first match here
@@ -71,14 +107,15 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 				}
 			}
 		}
-		if !matched {
+
+		if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{}, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, matches, err := evaluateFeatureMatcher(&r.MatchFeatures, features); err != nil {
+		if isMatch, matches, err = evaluateFeatureMatcher(&r.MatchFeatures, features, runStrategy); err != nil {
 			return RuleOutput{}, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
@@ -103,6 +140,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 		Annotations:       maps.Clone(r.Annotations),
 		ExtendedResources: maps.Clone(r.ExtendedResources),
 		Taints:            slices.Clone(r.Taints),
+		IsMatch:           isMatch,
 	}
 	klog.V(2).InfoS("rule matched", "ruleName", r.Name, "ruleOutput", utils.DelayedDumper(ret))
 	return ret, nil
@@ -110,12 +148,12 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 
 // ExecuteGroupRule executes the GroupRule against a set of input features, and return true if the
 // rule matches.
-func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features) (bool, error) {
+func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, runStrategy RunStrategy) (bool, error) {
 	matched := false
 	if len(r.MatchAny) > 0 {
 		// Logical OR over the matchAny matchers
 		for _, matcher := range r.MatchAny {
-			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features); err != nil {
+			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features, runStrategy); err != nil {
 				return false, err
 			} else if isMatch {
 				matched = true
@@ -131,7 +169,7 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features) 
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, _, err := evaluateFeatureMatcher(&r.MatchFeatures, features); err != nil {
+		if isMatch, _, err := evaluateFeatureMatcher(&r.MatchFeatures, features, runStrategy); err != nil {
 			return false, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
@@ -187,11 +225,15 @@ type matchedFeatures map[string]domainMatchedFeatures
 
 type domainMatchedFeatures map[string][]MatchedElement
 
-func evaluateMatchAnyElem(e *nfdv1alpha1.MatchAnyElem, features *nfdv1alpha1.Features) (bool, matchedFeatures, error) {
-	return evaluateFeatureMatcher(&e.MatchFeatures, features)
+func evaluateMatchAnyElem(e *nfdv1alpha1.MatchAnyElem, features *nfdv1alpha1.Features, runStrategy RunStrategy) (bool, matchedFeatures, error) {
+	return evaluateFeatureMatcher(&e.MatchFeatures, features, runStrategy)
 }
 
-func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1.Features) (bool, matchedFeatures, error) {
+func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1.Features, runStrategy RunStrategy) (bool, matchedFeatures, error) {
+	var (
+		isMatch     = true
+		isTermMatch = true
+	)
 	matches := make(matchedFeatures, len(*m))
 
 	// Logical AND over the terms
@@ -211,7 +253,6 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 			matches[dom] = make(domainMatchedFeatures)
 		}
 
-		var isMatch = true
 		var matchedElems []MatchedElement
 		var err error
 
@@ -223,12 +264,12 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 		}
 
 		if term.MatchExpressions != nil {
-			isMatch, matchedElems, err = MatchMulti(term.MatchExpressions, fF.Elements, fA.Elements, fI.Elements)
+			isTermMatch, matchedElems, err = MatchMulti(term.MatchExpressions, fF.Elements, fA.Elements, fI.Elements, runStrategy)
 		}
 
-		if err == nil && isMatch && term.MatchName != nil {
+		if err == nil && isTermMatch && term.MatchName != nil {
 			var meTmp []MatchedElement
-			isMatch, meTmp, err = MatchNamesMulti(term.MatchName, fF.Elements, fA.Elements, fI.Elements)
+			isTermMatch, meTmp, err = MatchNamesMulti(term.MatchName, fF.Elements, fA.Elements, fI.Elements)
 			matchedElems = append(matchedElems, meTmp...)
 		}
 
@@ -236,11 +277,15 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 
 		if err != nil {
 			return false, nil, err
-		} else if !isMatch {
-			return false, nil, nil
+		} else if !isTermMatch {
+			if runStrategy.ContinueExec() {
+				isMatch = false
+			} else {
+				return false, matches, nil
+			}
 		}
 	}
-	return true, matches, nil
+	return isMatch, matches, nil
 }
 
 type templateHelper struct {
