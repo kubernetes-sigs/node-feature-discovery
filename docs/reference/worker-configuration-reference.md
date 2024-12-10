@@ -149,6 +149,24 @@ core:
   noPublish: true
 ```
 
+### core.noOwnerRefs
+
+Setting `core.noOwnerRefs` to `true` disables setting the owner references
+of the NodeFeature object created by the nfd-worker.
+
+> **NOTE:** Overridden by the
+> [`-no-owner-refs`](worker-commandline-reference.md#-no-owner-refs)
+> command line flag (if specified).
+
+Default: `false`
+
+Example:
+
+```yaml
+core:
+  noOwnerRefs: true
+```
+
 ### core.klog
 
 The following options specify the logger configuration.
