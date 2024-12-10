@@ -42,7 +42,8 @@ type NodeFeature struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Specification of the NodeFeature, containing features discovered for a node.
-	Spec NodeFeatureSpec `json:"spec"`
+	Spec   NodeFeatureSpec   `json:"spec"`
+	Status NodeFeatureStatus `json:"status"`
 }
 
 // NodeFeatureSpec describes a NodeFeature object.
@@ -53,6 +54,37 @@ type NodeFeatureSpec struct {
 	// Labels is the set of node labels that are requested to be created.
 	// +optional
 	Labels map[string]string `json:"labels"`
+}
+
+// NodeFeatureStatus holds the status of a NodeFeature object
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced,shortName=nfs
+// +kubebuilder:subresource:status
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient
+type NodeFeatureStatus struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// UTC time when the NodeFeature object was last updated.
+	// +optional
+	LastAppliedAt metav1.Time `json:"lastAppliedAt,omitempty"`
+	// +optional
+	// Number of features discovered.
+	NumberOfFeatures int `json:"numberOfFeatures,omitempty"`
+	// +optional
+	// Number of labels created.
+	NumberOfLabels int `json:"numberOfLabels,omitempty"`
+}
+
+// NodeFeatureStatusList contains a list of NodeFeatureStatus objects.
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type NodeFeatureStatusList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NodeFeatureStatus `json:"items"`
 }
 
 // Features is the collection of all discovered features.
