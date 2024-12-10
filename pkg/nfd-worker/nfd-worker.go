@@ -111,6 +111,8 @@ type ConfigOverrideArgs struct {
 }
 
 type nfdWorker struct {
+	*nfdController
+
 	args                Args
 	configFilePath      string
 	config              *NFDConfig
@@ -270,6 +272,10 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 func (w *nfdWorker) Run() error {
 	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
 
+	if err := w.startNfdApiController(); err != nil {
+		return err
+	}
+
 	// Read configuration file
 	err := w.configure(w.configFilePath, w.args.Options)
 	if err != nil {
@@ -351,6 +357,10 @@ func (w *nfdWorker) Run() error {
 			if err != nil {
 				return err
 			}
+
+		case cfg := <-w.nfdController.updateConfigChan:
+			klog.InfoS("updating configuration", "cfg", cfg)
+			w.configureFromAPI(&cfg)
 
 		case <-w.stop:
 			klog.InfoS("shutting down nfd-worker")
@@ -535,6 +545,44 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	return nil
 }
 
+func (w *nfdWorker) configureFromAPI(c *nfdv1alpha1.NodeFeatureWorkerConfig) error {
+	klog.InfoS("configuring from API", "configuration", *c)
+
+	if len(c.Spec.Core.LabelWhiteList) > 0 {
+		w.config.Core.LabelWhiteList = utils.RegexpVal{Regexp: *regexp.MustCompile(c.Spec.Core.LabelWhiteList)}
+	}
+
+	if len(c.Spec.Core.FeatureSources) > 0 {
+		w.config.Core.FeatureSources = c.Spec.Core.FeatureSources
+	}
+
+	if len(c.Spec.Core.LabelSources) > 0 {
+		w.config.Core.LabelSources = c.Spec.Core.LabelSources
+	}
+
+	if c.Spec.Core.NoPublish != w.config.Core.NoPublish {
+		w.config.Core.NoPublish = c.Spec.Core.NoPublish
+	}
+
+	if c.Spec.Core.SleepInterval != 0 {
+		w.config.Core.SleepInterval = utils.DurationVal{Duration: time.Duration(c.Spec.Core.SleepInterval) * time.Second}
+	}
+
+	if err := w.configureCore(w.config.Core); err != nil {
+		return err
+	}
+
+	confSources := source.GetAllConfigurableSources()
+
+	// (Re-)configure sources
+	for _, s := range confSources {
+		s.SetConfig(w.config.Sources[s.Name()])
+	}
+
+	klog.InfoS("configuration successfully updated", "configuration", w.config)
+	return nil
+}
+
 // createFeatureLabels returns the set of feature labels from the enabled
 // sources and the whitelist argument.
 func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels) {
@@ -679,6 +727,21 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		} else {
 			klog.V(1).InfoS("no changes in NodeFeature object, not updating", "nodefeature", klog.KObj(nfr))
 		}
+	}
+	return nil
+}
+
+func (m *nfdWorker) startNfdApiController() error {
+	kubeconfig, err := utils.GetKubeconfig(m.args.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	klog.InfoS("starting the nfd api controller")
+	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
+		ResyncPeriod: time.Duration(1) * time.Hour,
+	}, m.kubernetesNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to initialize CRD controller: %w", err)
 	}
 	return nil
 }
