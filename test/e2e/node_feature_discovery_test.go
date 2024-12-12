@@ -38,7 +38,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"k8s.io/kubernetes/test/e2e/framework"
-	e2enetwork "k8s.io/kubernetes/test/e2e/framework/network"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	admissionapi "k8s.io/pod-security-admission/api"
 
@@ -242,19 +241,13 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 			cleanupNode(ctx, f.ClientSet)
 
 			// Launch nfd-master
-			By("Creating nfd master pod and nfd-master service")
+			By("Creating nfd master pod")
 			podSpecOpts := append(extraMasterPodSpecOpts, testpod.SpecWithContainerImage(dockerImage()))
 
 			masterPod := e2epod.NewPodClient(f).CreateSync(ctx, testpod.NFDMaster(podSpecOpts...))
 
-			// Create nfd-master service
-			nfdSvc, err := testutils.CreateService(ctx, f.ClientSet, f.Namespace.Name)
-			Expect(err).NotTo(HaveOccurred())
-
 			By("Waiting for the nfd-master pod to be running")
 			Expect(e2epod.WaitTimeoutForPodRunningInNamespace(ctx, f.ClientSet, masterPod.Name, masterPod.Namespace, time.Minute)).NotTo(HaveOccurred())
-			By("Waiting for the nfd-master service to be up")
-			Expect(e2enetwork.WaitForService(ctx, f.ClientSet, f.Namespace.Name, nfdSvc.Name, true, time.Second, 10*time.Second)).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func(ctx context.Context) {

@@ -521,8 +521,7 @@ func (m *nfdMaster) updateMasterNode() error {
 
 // Filter labels by namespace and name whitelist, and, turn selected labels
 // into extended resources. This function also handles proper namespacing of
-// labels and ERs, i.e. adds the possibly missing default namespace for labels
-// arriving through the gRPC API.
+// labels and ERs, i.e. adds the possibly missing default namespace for labels.
 func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Features) Labels {
 	outLabels := Labels{}
 	for name, value := range labels {

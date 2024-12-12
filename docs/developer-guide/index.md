@@ -173,57 +173,52 @@ e2e-tests:
 
 ### NFD-Master
 
-When running as a standalone container labeling is expected to fail because
-Kubernetes API is not available. Thus, it is recommended to use `-no-publish`.
+For development and debugging it is possible to run nfd-master as a stand-alone
+binary outside the cluster. The `-no-publish` flag can be used to prevent
+nfd-master making changes to the nodes. If `-no-publish` is not set, nfd-master
+also requires the `NODE_NAME` environment variable to be set for cleaning up
+stale annotations.
 
 ```bash
-$ export NFD_CONTAINER_IMAGE={{ site.container_image }}
-$ docker run --rm --name=nfd-test ${NFD_CONTAINER_IMAGE} nfd-master -no-publish -crd-controller=false -feature-gates NodeFeatureAPI=false
-2019/02/01 14:48:21 Node Feature Discovery Master <NFD_VERSION>
+make build
+NODE_NAME=<EXISTING_NODE> ./nfd-master -no-publish -kubeconfig ~/.kube/config
 ```
 
 ### NFD-Worker
 
-To run nfd-worker as a "stand-alone" container you need to run it in the same
-network namespace as the nfd-master container:
+For development and debugging it is possible to run nfd-worker as a stand-alone
+binary outside the cluster. The `-no-publish` flag can be used to prevent
+nfd-worker from creating NodeFeature objects in the target cluster. If the
+`-no-publish` is not set, nfd-worker also requires the `NODE_NAME` and
+`KUBERNETES_NAMESPACE` environment variables to be defined to create the
+NodeFeature object in the target cluster.
 
 ```bash
-$ docker run --rm --network=container:nfd-test ${NFD_CONTAINER_IMAGE} nfd-worker -feature-gates NodeFeatureAPI=false
-2019/02/01 14:48:56 Node Feature Discovery Worker <NFD_VERSION>
-...
+make build
+KUBERNETES_NAMESPACE=default NODE_NAME=nonexistent-node ./bin/nfd-worker -kubeconfig ~/.kube/config
 ```
 
-If you just want to try out feature discovery without connecting to nfd-master,
-pass the `-no-publish` flag to nfd-worker.
-
-> **NOTE:** Some feature sources need certain directories and/or files from the
-> host mounted inside the NFD container. Thus, you need to provide Docker with
-> the correct `--volume` options for them to work correctly when run
-> stand-alone directly with `docker run`. See
-> the [default deployment](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/common/worker-mounts.yaml)
-> for up-to-date information about the required volume mounts.
+> **NOTE:** Running nfd-worker locally this way discovers and publishes
+> features of the local development system you're running nfd-worker on.
 
 ### NFD-Topology-Updater
 
-To run nfd-topology-updater as a "stand-alone" container
-you need to run it in with the `-no-publish` flag to disable communication to
-the Kubernetes apiserver.
+For development and debugging it is possible to run nfd-topology-updater as a
+stand-alone binary outside the cluster. However, it requires access to the
+kubelet's local pod-resources socket and the kubelet http api so in practice it
+needs to be run on a host acting as a Kubernetes node and thus running
+kubelet. Running kubelet with `--read-only-port=10255` (or `readOnlyPort:
+10255` in config) makes it possible to connect to kubelet without auth-token
+(never do this in a production cluster). Also, the `-no-publish` flag can be
+used to prevent nfd-topology-updater from creating NodeResourceTopology objects
+in the target cluster. If the `-no-publish` is not set, nfd-topology-updater
+also requires the `NODE_NAME` and `KUBERNETES_NAMESPACE` environment variables
+to be defined.
 
 ```bash
-$ docker run --rm ${NFD_CONTAINER_IMAGE} nfd-topology-updater -no-publish
-2019/02/01 14:48:56 Node Feature Discovery Topology Updater <NFD_VERSION>
-...
+make build
+KUBERNETES_NAMESPACE=default NODE_NAME=nonexistent-node ./bin/nfd-topology-updater -kubeconfig ~/.kube/config -kubelet-config-uri http://127.0.0.1:10255
 ```
-
-If you just want to try out resource topology discovery without connecting to
-the Kubernetes API, pass the `-no-publish` flag to nfd-topology-updater.
-
-> **NOTE:** NFD topology updater needs certain directories and/or files from
-> the host mounted inside the NFD container. Thus, you need to provide Docker
-> with the correct `--volume` options for them to work correctly when
-> run stand-alone directly with `docker run`. See
-> the [template spec](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater/topologyupdater-mounts.yaml)
-> for up-to-date information about the required volume mounts.
 
 ## Running with Tilt
 

@@ -39,8 +39,6 @@ spec:
             requests:
               cpu: 5m
               memory: 64Mi
-          args:
-            - "-server=nfd-master:8080"
           ports:
             - name: metrics
               containerPort: 8081

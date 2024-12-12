@@ -26,7 +26,6 @@ $ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/dep
   clusterrole.rbac.authorization.k8s.io/nfd-master created
   clusterrolebinding.rbac.authorization.k8s.io/nfd-master created
   configmap/nfd-worker-conf created
-  service/nfd-master created
   deployment.apps/nfd-master created
   daemonset.apps/nfd-worker created
 

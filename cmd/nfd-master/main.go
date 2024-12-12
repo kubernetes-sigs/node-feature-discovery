@@ -142,11 +142,9 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Do not publish feature labels")
 	flagset.Var(overrides.DenyLabelNs, "deny-label-ns",
 		"Comma separated list of denied label namespaces")
-	flagset.Var(overrides.ResyncPeriod, "resync-period",
-		"Specify the NFD API controller resync period."+
-			"It does not have effect when the NodeFeature API has been disabled (with -feature-gates NodeFeatureAPI=false).")
+	flagset.Var(overrides.ResyncPeriod, "resync-period", "Specify the NFD API controller resync period.")
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
-		"Can be used for the throttling mechanism. It does not have effect if NodeFeatureAPI feature gate is disabled.")
+		"Can be used for the throttling mechanism.")
 
 	return args, overrides
 }
