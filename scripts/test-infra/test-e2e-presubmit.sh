@@ -7,7 +7,7 @@ export KIND_NODE_IMAGE="kindest/node:v1.30.2"
 export CLUSTER_NAME="nfd-e2e"
 export KUBECONFIG="/tmp/kubeconfig_$CLUSTER_NAME"
 export IMAGE_REPO="registry.local/node-feature-discovery"
-export IMAGE_TAG_NAME=$(git describe --tags --dirty --always)
+export IMAGE_TAG_NAME=$(git describe --tags --dirty --always --match "v*")
 
 # Install kind
 go install sigs.k8s.io/kind@$KIND_VERSION
