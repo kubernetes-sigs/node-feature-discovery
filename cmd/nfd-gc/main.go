@@ -47,7 +47,7 @@ func main() {
 
 	// Assert that the version is known
 	if version.Undefined() {
-		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always`\" during build or run.")
+		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always --match 'v*'`\" during build or run.")
 	}
 
 	// Get new garbage collector instance
