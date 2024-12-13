@@ -43,12 +43,14 @@ func TestParseArgs(t *testing.T) {
 		Convey("When all override args are specified", func() {
 			args := parseArgs(flags,
 				"-no-publish",
+				"-no-owner-refs",
 				"-feature-sources=cpu",
 				"-label-sources=fake1,fake2,fake3")
 
 			Convey("args.sources is set to appropriate values", func() {
 				So(args.Oneshot, ShouldBeFalse)
 				So(*args.Overrides.NoPublish, ShouldBeTrue)
+				So(*args.Overrides.NoOwnerRefs, ShouldBeTrue)
 				So(*args.Overrides.FeatureSources, ShouldResemble, utils.StringSliceVal{"cpu"})
 				So(*args.Overrides.LabelSources, ShouldResemble, utils.StringSliceVal{"fake1", "fake2", "fake3"})
 			})

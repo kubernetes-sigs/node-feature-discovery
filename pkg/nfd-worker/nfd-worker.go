@@ -78,6 +78,7 @@ type coreConfig struct {
 	Klog           klogutils.KlogConfigOpts
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
+	NoOwnerRefs    bool
 	FeatureSources []string
 	Sources        *[]string
 	LabelSources   []string
@@ -98,14 +99,15 @@ type Args struct {
 	Options        string
 	MetricsPort    int
 	GrpcHealthPort int
+	NoOwnerRefs    bool
 
 	Overrides ConfigOverrideArgs
 }
 
 // ConfigOverrideArgs are args that override config file options
 type ConfigOverrideArgs struct {
-	NoPublish *bool
-
+	NoPublish      *bool
+	NoOwnerRefs    *bool
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
 }
@@ -265,7 +267,44 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	return nil
 }
 
-// Run NfdWorker client. Returns if a fatal error is encountered, or, after
+// Set owner ref
+func (w *nfdWorker) setOwnerReference() error {
+	ownerReference := []metav1.OwnerReference{}
+
+	if !w.config.Core.NoOwnerRefs {
+		// Get pod owner reference
+		podName := os.Getenv("POD_NAME")
+		// Add pod owner reference if it exists
+		if podName != "" {
+			if selfPod, err := w.k8sClient.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
+				klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
+				return err
+			} else {
+				ownerReference = append(ownerReference, selfPod.OwnerReferences...)
+			}
+
+			podUID := os.Getenv("POD_UID")
+			if podUID != "" {
+				ownerReference = append(ownerReference, metav1.OwnerReference{
+					APIVersion: "v1",
+					Kind:       "Pod",
+					Name:       podName,
+					UID:        types.UID(podUID),
+				})
+			} else {
+				klog.InfoS("Cannot append POD ownerReference to NodeFeature, POD_UID not specified")
+			}
+		} else {
+			klog.InfoS("Cannot set NodeFeature owner references, POD_NAME not specified")
+		}
+	}
+
+	w.ownerReference = ownerReference
+
+	return nil
+}
+
+// Run NfdWorker client. Returns an error if a fatal error is encountered, or, after
 // one request if OneShot is set to 'true' in the worker args.
 func (w *nfdWorker) Run() error {
 	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
@@ -280,37 +319,6 @@ func (w *nfdWorker) Run() error {
 	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
-
-	// Create owner ref
-	ownerReference := []metav1.OwnerReference{}
-	// Get pod owner reference
-	podName := os.Getenv("POD_NAME")
-
-	// Add pod owner reference if it exists
-	if podName != "" {
-		if selfPod, err := w.k8sClient.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
-			klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
-			return err
-		} else {
-			ownerReference = append(ownerReference, selfPod.OwnerReferences...)
-		}
-
-		podUID := os.Getenv("POD_UID")
-		if podUID != "" {
-			ownerReference = append(ownerReference, metav1.OwnerReference{
-				APIVersion: "v1",
-				Kind:       "Pod",
-				Name:       podName,
-				UID:        types.UID(podUID),
-			})
-		} else {
-			klog.InfoS("Cannot append POD ownerReference to NodeFeature, POD_UID not specified")
-		}
-	} else {
-		klog.InfoS("Cannot set NodeFeature owner references, POD_NAME not specified")
-	}
-
-	w.ownerReference = ownerReference
 
 	// Register to metrics server
 	if w.args.MetricsPort > 0 {
@@ -466,6 +474,11 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		klogV.InfoS("enabled label sources", "labelSources", n)
 	}
 
+	err = w.setOwnerReference()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -510,6 +523,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 	if w.args.Overrides.NoPublish != nil {
 		c.Core.NoPublish = *w.args.Overrides.NoPublish
+	}
+	if w.args.Overrides.NoOwnerRefs != nil {
+		c.Core.NoOwnerRefs = *w.args.Overrides.NoOwnerRefs
 	}
 	if w.args.Overrides.FeatureSources != nil {
 		c.Core.FeatureSources = *w.args.Overrides.FeatureSources
