@@ -105,13 +105,13 @@ site_subdir=${site_subdir:-master}
 
 # Check if this ref is for a released version
 if [ "$site_subdir" != "master" ]; then
-    _base_tag=`git describe --abbrev=0 || :`
+    _base_tag=`git describe --abbrev=0 --match "v*" || :`
     case "$_base_tag" in
         $site_subdir*)
             ;;
         *)
             echo "Not a released version. Parsed release branch is $site_subdir but based on tag $_base_tag. Stopping here."
-            echo "SHA `git describe` (`git rev-parse HEAD`)"
+            echo "SHA `git describe` (`git rev-parse --match 'v*' HEAD`)"
             exit 0
             ;;
     esac
@@ -130,7 +130,7 @@ make site-build
 if [ -n "$_GIT_TAG" ]; then
     commit_hash=${GIT_TAG:10}
 else
-    commit_hash=`git describe --tags --dirty --always`
+    commit_hash=`git describe --tags --dirty --always --match "v*"`
 fi
 
 # Sync OWNERS file from master branch

@@ -4,7 +4,7 @@ set -o pipefail
 # Configure environment
 KIND_IMAGE="kindest/node:v1.25.3"
 export IMAGE_REGISTRY="localhost:5001"
-export CLUSTER_NAME=$(git describe --tags --dirty --always)
+export CLUSTER_NAME=$(git describe --tags --dirty --always --match "v*")
 export KUBECONFIG="/tmp/kubeconfig_$CLUSTER_NAME"
 
 # create registry container unless it already exists
