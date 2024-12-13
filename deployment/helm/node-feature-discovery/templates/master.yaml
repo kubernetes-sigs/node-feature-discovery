@@ -96,8 +96,6 @@ spec:
             successThreshold: {{ . }}
           {{- end }}
           ports:
-          - containerPort: {{ .Values.master.port | default "8080" }}
-            name: grpc
           - containerPort: {{ .Values.master.metricsPort | default "8081" }}
             name: metrics
           - containerPort: {{ .Values.master.healthPort | default "8082" }}

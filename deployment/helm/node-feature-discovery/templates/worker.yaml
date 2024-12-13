@@ -100,9 +100,6 @@ spec:
         command:
         - "nfd-worker"
         args:
-        {{- if not .Values.featureGates.NodeFeatureAPI }}
-        - "-server={{ include "node-feature-discovery.fullname" . }}-master:{{ .Values.master.service.port }}"
-        {{- end }}
         # Go over featureGate and add the feature-gate flag
         {{- range $key, $value := .Values.featureGates }}
         - "-feature-gates={{ $key }}={{ $value }}"

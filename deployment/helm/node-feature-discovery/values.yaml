@@ -11,7 +11,6 @@ fullnameOverride: ""
 namespaceOverride: ""
 
 featureGates:
-  NodeFeatureAPI: true
   NodeFeatureGroupAPI: false
 
 priorityClassName: ""
@@ -105,10 +104,6 @@ master:
 
   rbac:
     create: true
-
-  service:
-    type: ClusterIP
-    port: 8080
 
   resources:
     limits:
