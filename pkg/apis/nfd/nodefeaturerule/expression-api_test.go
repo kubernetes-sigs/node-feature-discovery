@@ -116,7 +116,7 @@ bar: { op: Exists }
 				t.Fatal("failed to parse data of test case")
 			}
 
-			res, out, err := api.MatchGetKeys(mes, tc.input)
+			res, out, _, err := api.MatchGetKeys(mes, tc.input)
 			tc.result(t, res)
 			assert.Equal(t, tc.output, out)
 			tc.err(t, err)
@@ -183,12 +183,12 @@ baz: { op: Gt, value: ["10"] }
 				t.Fatal("failed to parse data of test case")
 			}
 
-			res, out, err := api.MatchGetValues(mes, tc.input)
+			res, out, _, err := api.MatchGetValues(mes, tc.input, true)
 			tc.result(t, res)
 			assert.Equal(t, tc.output, out)
 			tc.err(t, err)
 
-			res, err = api.MatchValues(mes, tc.input)
+			res, _, err = api.MatchValues(mes, tc.input, true)
 			tc.result(t, res)
 			tc.err(t, err)
 		})
@@ -248,12 +248,12 @@ bar: { op: Lt, value: ["10"] }
 				t.Fatal("failed to parse data of test case")
 			}
 
-			res, out, err := api.MatchGetInstances(mes, tc.input)
+			res, out, _, err := api.MatchGetInstances(mes, tc.input, true)
 			assert.Equal(t, tc.output, out)
 			tc.result(t, res)
 			tc.err(t, err)
 
-			res, err = api.MatchInstances(mes, tc.input)
+			res, err = api.MatchInstances(mes, tc.input, true)
 			tc.result(t, res)
 			tc.err(t, err)
 		})
@@ -745,7 +745,7 @@ func TestMatchMulti(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			res, out, err := api.MatchMulti(tc.mes, tc.inputKeys, tc.inputValues, tc.inputInstances)
+			res, out, _, err := api.MatchMulti(tc.mes, tc.inputKeys, tc.inputValues, tc.inputInstances, true)
 			if tc.expectErr {
 				assert.NotNil(t, err)
 			} else {

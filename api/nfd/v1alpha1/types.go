@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -296,6 +298,13 @@ type MatchExpression struct {
 	// In other cases Value should contain at least one element.
 	// +optional
 	Value MatchValue `json:"value,omitempty"`
+}
+
+func (m MatchExpression) String() string {
+	if len(m.Value) < 1 {
+		return fmt.Sprintf("{op: %q}", m.Op)
+	}
+	return fmt.Sprintf("{op: %q, value: %q}", m.Op, m.Value)
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a

@@ -70,7 +70,7 @@ func processNodeFeatureRule(nodeFeatureRule nfdv1alpha1.NodeFeatureRule, nodeFea
 
 	for _, rule := range nodeFeatureRule.Spec.Rules {
 		fmt.Println("Processing rule: ", rule.Name)
-		ruleOut, err := nodefeaturerule.Execute(&rule, &nodeFeature.Features)
+		ruleOut, err := nodefeaturerule.Execute(&rule, &nodeFeature.Features, true)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to process rule: %q - %w", rule.Name, err))
 			continue
