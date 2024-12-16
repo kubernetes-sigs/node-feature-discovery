@@ -90,7 +90,7 @@ IMAGE_BUILD_ARGS_MINIMAL = --target minimal \
 
 all: image
 
-BUILD_BINARIES := nfd-master nfd-worker nfd-topology-updater nfd-gc kubectl-nfd
+BUILD_BINARIES := nfd-master nfd-worker nfd-topology-updater nfd-gc kubectl-nfd nfd
 
 build-%:
 	$(GO_CMD) build -v -o bin/ $(BUILD_FLAGS) ./cmd/$*
