@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,15 +28,15 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 	versioned "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	internalinterfaces "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
+	apinfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // NodeFeatureInformer provides access to a shared informer and lister for
 // NodeFeatures.
 type NodeFeatureInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.NodeFeatureLister
+	Lister() nfdv1alpha1.NodeFeatureLister
 }
 
 type nodeFeatureInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredNodeFeatureInformer(client versioned.Interface, namespace string
 				return client.NfdV1alpha1().NodeFeatures(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&nfdv1alpha1.NodeFeature{},
+		&apinfdv1alpha1.NodeFeature{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *nodeFeatureInformer) defaultInformer(client versioned.Interface, resync
 }
 
 func (f *nodeFeatureInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&nfdv1alpha1.NodeFeature{}, f.defaultInformer)
+	return f.factory.InformerFor(&apinfdv1alpha1.NodeFeature{}, f.defaultInformer)
 }
 
-func (f *nodeFeatureInformer) Lister() v1alpha1.NodeFeatureLister {
-	return v1alpha1.NewNodeFeatureLister(f.Informer().GetIndexer())
+func (f *nodeFeatureInformer) Lister() nfdv1alpha1.NodeFeatureLister {
+	return nfdv1alpha1.NewNodeFeatureLister(f.Informer().GetIndexer())
 }
