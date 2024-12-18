@@ -52,14 +52,14 @@ set on the compatibility objects.
 
 The `--output-json` flag prints the output as a JSON object.
 
-#### --reg-username
+#### --registry-username
 
-The `--reg-username` flag specifies the username for the registry.
+The `--registry-username` flag specifies the username for the registry.
 
-#### --reg-password-stdin
+#### --registry-password-stdin
 
-The `--reg-password-stdin` flag enables reading of registry password from stdin.
+The `--registry-password-stdin` flag enables reading of registry password from stdin.
 
-#### --reg-token-stdin
+#### --registry-token-stdin
 
-The `--reg-token-stdin` flag enables reading of registry token from stdin.
+The `--registry-token-stdin` flag enables reading of registry token from stdin.
