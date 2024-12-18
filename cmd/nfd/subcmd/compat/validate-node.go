@@ -62,7 +62,7 @@ var validateNodeCmd = &cobra.Command{
 		}
 
 		if readAccessToken && readPassword {
-			return fmt.Errorf("cannot use --read-access-token and --read-password at the same time")
+			return fmt.Errorf("cannot use --registry-token-stdin and --registry-password-stdin at the same time")
 		} else if readAccessToken {
 			accessToken, err = readStdin()
 			if err != nil {
@@ -214,9 +214,9 @@ func init() {
 	validateNodeCmd.Flags().StringVar(&platform.PlatformStr, "platform", "", "the artifact platform in the format os[/arch][/variant][:os_version]")
 	validateNodeCmd.Flags().BoolVar(&plainHTTP, "plain-http", false, "use of HTTP protocol for all registry communications")
 	validateNodeCmd.Flags().BoolVar(&outputJSON, "output-json", false, "print a JSON object")
-	validateNodeCmd.Flags().StringVar(&username, "reg-username", "", "registry username")
-	validateNodeCmd.Flags().BoolVar(&readPassword, "reg-password-stdin", false, "read registry password from stdin")
-	validateNodeCmd.Flags().BoolVar(&readAccessToken, "reg-token-stdin", false, "read registry access token from stdin")
+	validateNodeCmd.Flags().StringVar(&username, "registry-username", "", "registry username")
+	validateNodeCmd.Flags().BoolVar(&readPassword, "registry-password-stdin", false, "read registry password from stdin")
+	validateNodeCmd.Flags().BoolVar(&readAccessToken, "registry-token-stdin", false, "read registry access token from stdin")
 
 	if err := validateNodeCmd.MarkFlagRequired("image"); err != nil {
 		panic(err)

@@ -15,7 +15,9 @@ sort: 11
 
 ---
 
-## Image Compatibility (experimental: v1alpha1 version)
+## Image Compatibility
+
+**Image Compatibility is in the experimental `v1alpha1` version.**
 
 Image compatibility metadata enables container image authors to define their
 image requirements using [Node Feature Rules](./custom-resources.md#nodefeaturerule).

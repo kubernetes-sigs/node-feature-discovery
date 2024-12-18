@@ -14,6 +14,7 @@ sort: 9
 {:toc}
 
 ---
+**The client is in the experimental `v1alpha1` version.**
 
 To quickly view available command line flags execute `nfd --help`.
 
