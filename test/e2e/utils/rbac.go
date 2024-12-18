@@ -201,6 +201,11 @@ func createClusterRoleMaster(ctx context.Context, cs clientset.Interface) (*rbac
 				Resources: []string{"nodefeaturegroups/status"},
 				Verbs:     []string{"patch", "update"},
 			},
+			{
+				APIGroups: []string{"nfd.k8s-sigs.io"},
+				Resources: []string{"workerconfigs"},
+				Verbs:     []string{"get", "watch", "update"},
+			},
 		},
 	}
 	if *openShift {
@@ -233,6 +238,11 @@ func createRoleWorker(ctx context.Context, cs clientset.Interface, ns string) (*
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{"nfd.k8s-sigs.io"},
+				Resources: []string{"workerconfigs"},
+				Verbs:     []string{"get", "list", "watch", "update"},
 			},
 		},
 	}
