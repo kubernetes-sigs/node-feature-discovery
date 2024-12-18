@@ -105,6 +105,19 @@ func (c *FakeNodeFeatures) Update(ctx context.Context, nodeFeature *v1alpha1.Nod
 	return obj.(*v1alpha1.NodeFeature), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeNodeFeatures) UpdateStatus(ctx context.Context, nodeFeature *v1alpha1.NodeFeature, opts v1.UpdateOptions) (result *v1alpha1.NodeFeature, err error) {
+	emptyResult := &v1alpha1.NodeFeature{}
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(nodefeaturesResource, "status", c.ns, nodeFeature, opts), emptyResult)
+
+	if obj == nil {
+		return emptyResult, err
+	}
+	return obj.(*v1alpha1.NodeFeature), err
+}
+
 // Delete takes name of the nodeFeature and deletes it. Returns an error if one occurs.
 func (c *FakeNodeFeatures) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.

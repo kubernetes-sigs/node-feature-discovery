@@ -30,6 +30,8 @@ type Interface interface {
 	NodeFeatureGroups() NodeFeatureGroupInformer
 	// NodeFeatureRules returns a NodeFeatureRuleInformer.
 	NodeFeatureRules() NodeFeatureRuleInformer
+	// NodeFeatureStatuses returns a NodeFeatureStatusInformer.
+	NodeFeatureStatuses() NodeFeatureStatusInformer
 }
 
 type version struct {
@@ -56,4 +58,9 @@ func (v *version) NodeFeatureGroups() NodeFeatureGroupInformer {
 // NodeFeatureRules returns a NodeFeatureRuleInformer.
 func (v *version) NodeFeatureRules() NodeFeatureRuleInformer {
 	return &nodeFeatureRuleInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// NodeFeatureStatuses returns a NodeFeatureStatusInformer.
+func (v *version) NodeFeatureStatuses() NodeFeatureStatusInformer {
+	return &nodeFeatureStatusInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
