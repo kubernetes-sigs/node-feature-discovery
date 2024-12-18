@@ -7,11 +7,13 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/jaypipes/ghw v0.13.0
+	github.com/jedib0t/go-pretty/v6 v6.6.1
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
 	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
 	github.com/klauspost/cpuid/v2 v2.2.9
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
+	github.com/opencontainers/image-spec v1.1.0
 	github.com/opencontainers/runc v1.2.3
 	github.com/prometheus/client_golang v1.19.1
 	github.com/smartystreets/goconvey v1.8.1
@@ -34,6 +36,7 @@ require (
 	k8s.io/kubernetes v1.32.0
 	k8s.io/pod-security-admission v0.32.0
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
+	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -92,6 +95,7 @@ require (
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/karrick/godirwalk v1.17.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
@@ -109,6 +113,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smarty/assertions v1.15.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

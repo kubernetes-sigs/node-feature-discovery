@@ -794,7 +794,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 	nodeGroupValidator := make(map[string]bool)
 	for _, rule := range nodeFeatureGroup.Spec.Rules {
 		for _, feature := range nodeFeaturesList {
-			match, err := nodefeaturerule.ExecuteGroupRule(&rule, &feature.Spec.Features)
+			match, err := nodefeaturerule.ExecuteGroupRule(&rule, &feature.Spec.Features, true)
 			if err != nil {
 				klog.ErrorS(err, "failed to evaluate rule", "ruleName", rule.Name)
 				continue
@@ -1018,7 +1018,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			klog.InfoS("executing NodeFeatureRule", "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName)
 		}
 		for _, rule := range spec.Spec.Rules {
-			ruleOut, err := nodefeaturerule.Execute(&rule, features)
+			ruleOut, err := nodefeaturerule.Execute(&rule, features, true)
 			if err != nil {
 				klog.ErrorS(err, "failed to process rule", "ruleName", rule.Name, "nodefeaturerule", klog.KObj(spec), "nodeName", nodeName)
 				nfrProcessingErrors.Inc()

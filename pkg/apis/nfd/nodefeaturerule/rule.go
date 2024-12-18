@@ -31,6 +31,31 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
+// MatchStatus represents the status of a processed rule.
+// It includes information about successful expressions and their results, which are the matched host features.
+// For example, for the expression: cpu.cpuid: {op: "InRegexp", value: ["^AVX"]},
+// the result could include matched host features such as AVX, AVX2, AVX512 etc.
+// +k8s:deepcopy-gen=false
+type MatchStatus struct {
+	*MatchFeatureStatus
+
+	// IsMatch informes whether a rule succeeded or failed.
+	IsMatch bool
+	// MatchAny represents an array of logical OR conditions between MatchFeatureStatus entries.
+	MatchAny []*MatchFeatureStatus
+}
+
+// MatchFeatureStatus represents a matched expression
+// with its result, which is matched host features.
+// +k8s:deepcopy-gen=false
+type MatchFeatureStatus struct {
+	// MatchedFeatures represents the features matched on the host,
+	// which is a result of the FeatureMatcher.
+	MatchedFeatures matchedFeatures
+	// MatchedFeaturesTerms represents the expressions that successfully matched on the host.
+	MatchedFeaturesTerms nfdv1alpha1.FeatureMatcher
+}
+
 // RuleOutput contains the output out rule execution.
 // +k8s:deepcopy-gen=false
 type RuleOutput struct {
@@ -39,56 +64,69 @@ type RuleOutput struct {
 	Annotations       map[string]string
 	Vars              map[string]string
 	Taints            []corev1.Taint
+	MatchStatus       *MatchStatus
 }
 
 // Execute the rule against a set of input features.
-func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, error) {
+func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool) (RuleOutput, error) {
+	var (
+		matchStatus MatchStatus
+		isMatch     bool
+		err         error
+	)
 	labels := make(map[string]string)
 	vars := make(map[string]string)
 
-	if len(r.MatchAny) > 0 {
+	if n := len(r.MatchAny); n > 0 {
+		matchStatus.MatchAny = make([]*MatchFeatureStatus, 0, n)
 		// Logical OR over the matchAny matchers
-		matched := false
+		var (
+			featureStatus *MatchFeatureStatus
+			matched       bool
+		)
 		for _, matcher := range r.MatchAny {
-			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features); err != nil {
+			if matched, featureStatus, err = evaluateMatchAnyElem(&matcher, features, failFast); err != nil {
 				return RuleOutput{}, err
-			} else if isMatch {
-				matched = true
-				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
+			} else if matched {
+				isMatch = true
+				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(featureStatus.MatchedFeatures))
 
-				if r.LabelsTemplate == "" && r.VarsTemplate == "" {
+				if r.LabelsTemplate == "" && r.VarsTemplate == "" && failFast {
 					// there's no need to evaluate other matchers in MatchAny
 					// if there are no templates to be executed on them - so
 					// short-circuit and stop on first match here
 					break
 				}
 
-				if err := executeLabelsTemplate(r, matches, labels); err != nil {
+				if err := executeLabelsTemplate(r, featureStatus.MatchedFeatures, labels); err != nil {
 					return RuleOutput{}, err
 				}
-				if err := executeVarsTemplate(r, matches, vars); err != nil {
+				if err := executeVarsTemplate(r, featureStatus.MatchedFeatures, vars); err != nil {
 					return RuleOutput{}, err
 				}
 			}
+
+			matchStatus.MatchAny = append(matchStatus.MatchAny, featureStatus)
 		}
-		if !matched {
+
+		if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
-			return RuleOutput{}, nil
+			return RuleOutput{MatchStatus: &matchStatus}, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, matches, err := evaluateFeatureMatcher(&r.MatchFeatures, features); err != nil {
+		if isMatch, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
 			return RuleOutput{}, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
-			return RuleOutput{}, nil
+			return RuleOutput{MatchStatus: &matchStatus}, nil
 		} else {
-			klog.V(4).InfoS("matchFeatures matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
-			if err := executeLabelsTemplate(r, matches, labels); err != nil {
+			klog.V(4).InfoS("matchFeatures matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matchStatus.MatchedFeatures))
+			if err := executeLabelsTemplate(r, matchStatus.MatchedFeatures, labels); err != nil {
 				return RuleOutput{}, err
 			}
-			if err := executeVarsTemplate(r, matches, vars); err != nil {
+			if err := executeVarsTemplate(r, matchStatus.MatchedFeatures, vars); err != nil {
 				return RuleOutput{}, err
 			}
 		}
@@ -96,6 +134,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 
 	maps.Copy(labels, r.Labels)
 	maps.Copy(vars, r.Vars)
+	matchStatus.IsMatch = true
 
 	ret := RuleOutput{
 		Labels:            labels,
@@ -103,6 +142,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 		Annotations:       maps.Clone(r.Annotations),
 		ExtendedResources: maps.Clone(r.ExtendedResources),
 		Taints:            slices.Clone(r.Taints),
+		MatchStatus:       &matchStatus,
 	}
 	klog.V(2).InfoS("rule matched", "ruleName", r.Name, "ruleOutput", utils.DelayedDumper(ret))
 	return ret, nil
@@ -110,12 +150,12 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 
 // ExecuteGroupRule executes the GroupRule against a set of input features, and return true if the
 // rule matches.
-func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features) (bool, error) {
+func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, failFast bool) (bool, error) {
 	matched := false
 	if len(r.MatchAny) > 0 {
 		// Logical OR over the matchAny matchers
 		for _, matcher := range r.MatchAny {
-			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features); err != nil {
+			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features, failFast); err != nil {
 				return false, err
 			} else if isMatch {
 				matched = true
@@ -131,7 +171,7 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features) 
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, _, err := evaluateFeatureMatcher(&r.MatchFeatures, features); err != nil {
+		if isMatch, _, err := evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
 			return false, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
@@ -187,12 +227,18 @@ type matchedFeatures map[string]domainMatchedFeatures
 
 type domainMatchedFeatures map[string][]MatchedElement
 
-func evaluateMatchAnyElem(e *nfdv1alpha1.MatchAnyElem, features *nfdv1alpha1.Features) (bool, matchedFeatures, error) {
-	return evaluateFeatureMatcher(&e.MatchFeatures, features)
+func evaluateMatchAnyElem(e *nfdv1alpha1.MatchAnyElem, features *nfdv1alpha1.Features, failFast bool) (bool, *MatchFeatureStatus, error) {
+	return evaluateFeatureMatcher(&e.MatchFeatures, features, failFast)
 }
 
-func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1.Features) (bool, matchedFeatures, error) {
-	matches := make(matchedFeatures, len(*m))
+func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1.Features, failFast bool) (bool, *MatchFeatureStatus, error) {
+	var (
+		isMatch     = true
+		isTermMatch = true
+	)
+	status := &MatchFeatureStatus{
+		MatchedFeatures: make(matchedFeatures, len(*m)),
+	}
 
 	// Logical AND over the terms
 	for _, term := range *m {
@@ -207,14 +253,17 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 
 		dom := nameSplit[0]
 		nam := nameSplit[1]
-		if _, ok := matches[dom]; !ok {
-			matches[dom] = make(domainMatchedFeatures)
+		if _, ok := status.MatchedFeatures[dom]; !ok {
+			status.MatchedFeatures[dom] = make(domainMatchedFeatures)
 		}
 
-		var isMatch = true
 		var matchedElems []MatchedElement
+		var matchedExpressions *nfdv1alpha1.MatchExpressionSet
 		var err error
 
+		matchedFeatureTerm := nfdv1alpha1.FeatureMatcherTerm{
+			Feature: featureName,
+		}
 		fF, okF := features.Flags[featureName]
 		fA, okA := features.Attributes[featureName]
 		fI, okI := features.Instances[featureName]
@@ -223,24 +272,37 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 		}
 
 		if term.MatchExpressions != nil {
-			isMatch, matchedElems, err = MatchMulti(term.MatchExpressions, fF.Elements, fA.Elements, fI.Elements)
+			isTermMatch, matchedElems, matchedExpressions, err = MatchMulti(term.MatchExpressions, fF.Elements, fA.Elements, fI.Elements, failFast)
+			matchedFeatureTerm.MatchExpressions = matchedExpressions
 		}
 
-		if err == nil && isMatch && term.MatchName != nil {
+		if err == nil && isTermMatch && term.MatchName != nil {
 			var meTmp []MatchedElement
-			isMatch, meTmp, err = MatchNamesMulti(term.MatchName, fF.Elements, fA.Elements, fI.Elements)
+			isTermMatch, meTmp, err = MatchNamesMulti(term.MatchName, fF.Elements, fA.Elements, fI.Elements)
 			matchedElems = append(matchedElems, meTmp...)
+			// MatchName has only one expression, in this case it's enough to check the isTermMatch flag
+			// to judge if the expression succeeded on the host.
+			if isTermMatch {
+				matchedFeatureTerm.MatchName = term.MatchName
+			}
 		}
 
-		matches[dom][nam] = append(matches[dom][nam], matchedElems...)
+		status.MatchedFeatures[dom][nam] = append(status.MatchedFeatures[dom][nam], matchedElems...)
+		if matchedFeatureTerm.MatchName != nil || (matchedFeatureTerm.MatchExpressions != nil && len(*matchedFeatureTerm.MatchExpressions) > 0) {
+			status.MatchedFeaturesTerms = append(status.MatchedFeaturesTerms, matchedFeatureTerm)
+		}
 
 		if err != nil {
 			return false, nil, err
-		} else if !isMatch {
-			return false, nil, nil
+		} else if !isTermMatch {
+			if !failFast {
+				isMatch = false
+			} else {
+				return false, status, nil
+			}
 		}
 	}
-	return true, matches, nil
+	return isMatch, status, nil
 }
 
 type templateHelper struct {

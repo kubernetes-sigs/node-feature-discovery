@@ -1,0 +1,27 @@
+version: v1alpha1
+compatibilities:
+- description: "my image requirements"
+  rules:
+  - name: "kernel and cpu"
+    matchFeatures:
+    - feature: kernel.loadedmodule
+      matchExpressions:
+        vfio-pci: {op: Exists}
+        ip_tables: {op: Exists}
+    - feature: cpu.model
+      matchExpressions:
+        vendor_id: {op: In, value: ["Intel", "AMD"]}
+    - feature: cpu.cpuid
+      matchName: {op: InRegexp, value: ["^AVX"]}
+  - name: "one of available nics"
+    matchAny:
+    - matchFeatures:
+      - feature: pci.device
+        matchExpressions:
+          vendor: {op: In, value: ["0eee"]}
+          class: {op: In, value: ["0200"]}
+    - matchFeatures:
+      - feature: pci.device
+        matchExpressions:
+          vendor: {op: In, value: ["0fff"]}
+          class: {op: In, value: ["0200"]}
