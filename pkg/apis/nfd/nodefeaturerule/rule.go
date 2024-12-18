@@ -39,6 +39,7 @@ type RuleOutput struct {
 	Annotations       map[string]string
 	Vars              map[string]string
 	Taints            []corev1.Taint
+	Matched           bool
 }
 
 // Execute the rule against a set of input features.
@@ -103,6 +104,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features) (RuleOutput, e
 		Annotations:       maps.Clone(r.Annotations),
 		ExtendedResources: maps.Clone(r.ExtendedResources),
 		Taints:            slices.Clone(r.Taints),
+		Matched:           true,
 	}
 	klog.V(2).InfoS("rule matched", "ruleName", r.Name, "ruleOutput", utils.DelayedDumper(ret))
 	return ret, nil
