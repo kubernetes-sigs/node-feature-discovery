@@ -21,6 +21,11 @@ import (
 	"strings"
 )
 
+const (
+	JSONAddOperation    = "add"
+	JSONRemoveOperation = "remove"
+)
+
 // JsonPatch is a json marshaling helper used for patching API objects
 type JsonPatch struct {
 	Op    string `json:"op"`
