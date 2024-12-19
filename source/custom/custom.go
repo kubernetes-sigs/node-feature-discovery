@@ -93,7 +93,7 @@ func (s *customSource) GetLabels() (source.FeatureLabels, error) {
 	klog.V(2).InfoS("resolving custom features", "configuration", utils.DelayedDumper(allFeatureConfig))
 	// Iterate over features
 	for _, rule := range allFeatureConfig {
-		ruleOut, err := nodefeaturerule.Execute(&rule, features)
+		ruleOut, err := nodefeaturerule.Execute(&rule, features, true)
 		if err != nil {
 			klog.ErrorS(err, "failed to execute rule")
 			continue
