@@ -108,7 +108,7 @@ func hasExclusiveCPUs(pod *corev1.Pod) bool {
 	}
 
 	//No CPUs requested in all the containers in the pod
-	return totalCPU != 0
+	return false
 }
 
 // hasIntegralCPUs returns true if a container in pod is requesting integral CPUs else returns false
@@ -152,7 +152,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 	for _, podResource := range respPodResources {
 		klog.InfoS("scanning pod", "podName", podResource.GetName())
 		hasDevice := hasDevice(podResource)
-		isWatchable, _, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
+		isWatchable, isIntegralGuaranteed, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
 		if err != nil {
 			return ScanResponse{}, fmt.Errorf("checking if pod in a namespace is watchable, namespace:%v, pod name %v: %w", podResource.GetNamespace(), podResource.GetName(), err)
 		}
@@ -171,7 +171,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 			}
 
 			cpuIDs := container.GetCpuIds()
-			if len(cpuIDs) > 0 {
+			if len(cpuIDs) > 0 && isIntegralGuaranteed {
 				var resCPUs []string
 				for _, cpuID := range container.GetCpuIds() {
 					resCPUs = append(resCPUs, strconv.FormatInt(cpuID, 10))
