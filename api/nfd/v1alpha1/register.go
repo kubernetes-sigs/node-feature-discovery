@@ -43,6 +43,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&NodeFeature{},
 		&NodeFeatureRule{},
 		&NodeFeatureGroup{},
+		&NodeFeatureWorkerConfig{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
