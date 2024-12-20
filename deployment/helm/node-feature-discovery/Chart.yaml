@@ -13,3 +13,7 @@ keywords:
   - node-labels
 type: application
 version: 0.2.1
+dependencies:
+  - name: crds
+    version: 0.0.0
+    condition: crds.install
