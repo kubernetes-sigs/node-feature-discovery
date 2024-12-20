@@ -268,7 +268,8 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 		fA, okA := features.Attributes[featureName]
 		fI, okI := features.Instances[featureName]
 		if !okF && !okA && !okI {
-			return false, nil, fmt.Errorf("feature %q not available", featureName)
+			klog.V(2).InfoS("feature not available", "featureName", featureName)
+			return false, nil, nil
 		}
 
 		if term.MatchExpressions != nil {

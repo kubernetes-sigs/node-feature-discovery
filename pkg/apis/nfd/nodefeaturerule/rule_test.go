@@ -53,8 +53,10 @@ func TestRule(t *testing.T) {
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r1.Labels, m.Labels, "empty matcher should have matched empty features")
 
-	_, err = Execute(r2, f, true)
-	assert.Error(t, err, "matching against a missing feature should have returned an error")
+	m, err = Execute(r2, f, true)
+	assert.NoError(t, err, "matching against a missing feature should not have returned an error")
+	assert.Empty(t, m.Labels)
+	assert.Empty(t, m.Vars)
 
 	// Test properly initialized empty features
 	f = nfdv1alpha1.NewFeatures()
@@ -64,8 +66,10 @@ func TestRule(t *testing.T) {
 	assert.Equal(t, r1.Labels, m.Labels, "empty matcher should have matched empty features")
 	assert.Empty(t, r1.Vars, "vars should be empty")
 
-	_, err = Execute(r2, f, true)
-	assert.Error(t, err, "matching against a missing feature type should have returned an error")
+	m, err = Execute(r2, f, true)
+	assert.NoError(t, err, "matching against a missing feature should not have returned an error")
+	assert.Empty(t, m.Labels)
+	assert.Empty(t, m.Vars)
 
 	// Test empty feature sets
 	f.Flags["domain-1.kf-1"] = nfdv1alpha1.NewFlagFeatures()
