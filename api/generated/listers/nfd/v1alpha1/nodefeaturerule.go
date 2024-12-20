@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // NodeFeatureRuleLister helps list NodeFeatureRules.
@@ -30,19 +30,19 @@ import (
 type NodeFeatureRuleLister interface {
 	// List lists all NodeFeatureRules in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NodeFeatureRule, err error)
+	List(selector labels.Selector) (ret []*nfdv1alpha1.NodeFeatureRule, err error)
 	// Get retrieves the NodeFeatureRule from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.NodeFeatureRule, error)
+	Get(name string) (*nfdv1alpha1.NodeFeatureRule, error)
 	NodeFeatureRuleListerExpansion
 }
 
 // nodeFeatureRuleLister implements the NodeFeatureRuleLister interface.
 type nodeFeatureRuleLister struct {
-	listers.ResourceIndexer[*v1alpha1.NodeFeatureRule]
+	listers.ResourceIndexer[*nfdv1alpha1.NodeFeatureRule]
 }
 
 // NewNodeFeatureRuleLister returns a new NodeFeatureRuleLister.
 func NewNodeFeatureRuleLister(indexer cache.Indexer) NodeFeatureRuleLister {
-	return &nodeFeatureRuleLister{listers.New[*v1alpha1.NodeFeatureRule](indexer, v1alpha1.Resource("nodefeaturerule"))}
+	return &nodeFeatureRuleLister{listers.New[*nfdv1alpha1.NodeFeatureRule](indexer, nfdv1alpha1.Resource("nodefeaturerule"))}
 }

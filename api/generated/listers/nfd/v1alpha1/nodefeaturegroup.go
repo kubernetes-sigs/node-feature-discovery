@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // NodeFeatureGroupLister helps list NodeFeatureGroups.
@@ -30,7 +30,7 @@ import (
 type NodeFeatureGroupLister interface {
 	// List lists all NodeFeatureGroups in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NodeFeatureGroup, err error)
+	List(selector labels.Selector) (ret []*nfdv1alpha1.NodeFeatureGroup, err error)
 	// NodeFeatureGroups returns an object that can list and get NodeFeatureGroups.
 	NodeFeatureGroups(namespace string) NodeFeatureGroupNamespaceLister
 	NodeFeatureGroupListerExpansion
@@ -38,17 +38,17 @@ type NodeFeatureGroupLister interface {
 
 // nodeFeatureGroupLister implements the NodeFeatureGroupLister interface.
 type nodeFeatureGroupLister struct {
-	listers.ResourceIndexer[*v1alpha1.NodeFeatureGroup]
+	listers.ResourceIndexer[*nfdv1alpha1.NodeFeatureGroup]
 }
 
 // NewNodeFeatureGroupLister returns a new NodeFeatureGroupLister.
 func NewNodeFeatureGroupLister(indexer cache.Indexer) NodeFeatureGroupLister {
-	return &nodeFeatureGroupLister{listers.New[*v1alpha1.NodeFeatureGroup](indexer, v1alpha1.Resource("nodefeaturegroup"))}
+	return &nodeFeatureGroupLister{listers.New[*nfdv1alpha1.NodeFeatureGroup](indexer, nfdv1alpha1.Resource("nodefeaturegroup"))}
 }
 
 // NodeFeatureGroups returns an object that can list and get NodeFeatureGroups.
 func (s *nodeFeatureGroupLister) NodeFeatureGroups(namespace string) NodeFeatureGroupNamespaceLister {
-	return nodeFeatureGroupNamespaceLister{listers.NewNamespaced[*v1alpha1.NodeFeatureGroup](s.ResourceIndexer, namespace)}
+	return nodeFeatureGroupNamespaceLister{listers.NewNamespaced[*nfdv1alpha1.NodeFeatureGroup](s.ResourceIndexer, namespace)}
 }
 
 // NodeFeatureGroupNamespaceLister helps list and get NodeFeatureGroups.
@@ -56,15 +56,15 @@ func (s *nodeFeatureGroupLister) NodeFeatureGroups(namespace string) NodeFeature
 type NodeFeatureGroupNamespaceLister interface {
 	// List lists all NodeFeatureGroups in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NodeFeatureGroup, err error)
+	List(selector labels.Selector) (ret []*nfdv1alpha1.NodeFeatureGroup, err error)
 	// Get retrieves the NodeFeatureGroup from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.NodeFeatureGroup, error)
+	Get(name string) (*nfdv1alpha1.NodeFeatureGroup, error)
 	NodeFeatureGroupNamespaceListerExpansion
 }
 
 // nodeFeatureGroupNamespaceLister implements the NodeFeatureGroupNamespaceLister
 // interface.
 type nodeFeatureGroupNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.NodeFeatureGroup]
+	listers.ResourceIndexer[*nfdv1alpha1.NodeFeatureGroup]
 }

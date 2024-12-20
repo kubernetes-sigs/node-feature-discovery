@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,15 +28,15 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 	versioned "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	internalinterfaces "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
+	apinfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // NodeFeatureRuleInformer provides access to a shared informer and lister for
 // NodeFeatureRules.
 type NodeFeatureRuleInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.NodeFeatureRuleLister
+	Lister() nfdv1alpha1.NodeFeatureRuleLister
 }
 
 type nodeFeatureRuleInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredNodeFeatureRuleInformer(client versioned.Interface, resyncPeriod
 				return client.NfdV1alpha1().NodeFeatureRules().Watch(context.TODO(), options)
 			},
 		},
-		&nfdv1alpha1.NodeFeatureRule{},
+		&apinfdv1alpha1.NodeFeatureRule{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *nodeFeatureRuleInformer) defaultInformer(client versioned.Interface, re
 }
 
 func (f *nodeFeatureRuleInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&nfdv1alpha1.NodeFeatureRule{}, f.defaultInformer)
+	return f.factory.InformerFor(&apinfdv1alpha1.NodeFeatureRule{}, f.defaultInformer)
 }
 
-func (f *nodeFeatureRuleInformer) Lister() v1alpha1.NodeFeatureRuleLister {
-	return v1alpha1.NewNodeFeatureRuleLister(f.Informer().GetIndexer())
+func (f *nodeFeatureRuleInformer) Lister() nfdv1alpha1.NodeFeatureRuleLister {
+	return nfdv1alpha1.NewNodeFeatureRuleLister(f.Informer().GetIndexer())
 }

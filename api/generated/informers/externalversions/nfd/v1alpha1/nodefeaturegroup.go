@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,15 +28,15 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 	versioned "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	internalinterfaces "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
+	apinfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // NodeFeatureGroupInformer provides access to a shared informer and lister for
 // NodeFeatureGroups.
 type NodeFeatureGroupInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.NodeFeatureGroupLister
+	Lister() nfdv1alpha1.NodeFeatureGroupLister
 }
 
 type nodeFeatureGroupInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredNodeFeatureGroupInformer(client versioned.Interface, namespace s
 				return client.NfdV1alpha1().NodeFeatureGroups(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&nfdv1alpha1.NodeFeatureGroup{},
+		&apinfdv1alpha1.NodeFeatureGroup{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *nodeFeatureGroupInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *nodeFeatureGroupInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&nfdv1alpha1.NodeFeatureGroup{}, f.defaultInformer)
+	return f.factory.InformerFor(&apinfdv1alpha1.NodeFeatureGroup{}, f.defaultInformer)
 }
 
-func (f *nodeFeatureGroupInformer) Lister() v1alpha1.NodeFeatureGroupLister {
-	return v1alpha1.NewNodeFeatureGroupLister(f.Informer().GetIndexer())
+func (f *nodeFeatureGroupInformer) Lister() nfdv1alpha1.NodeFeatureGroupLister {
+	return nfdv1alpha1.NewNodeFeatureGroupLister(f.Informer().GetIndexer())
 }

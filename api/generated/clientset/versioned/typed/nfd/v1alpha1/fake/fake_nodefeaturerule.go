@@ -19,108 +19,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	gentype "k8s.io/client-go/gentype"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/typed/nfd/v1alpha1"
 	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
-// FakeNodeFeatureRules implements NodeFeatureRuleInterface
-type FakeNodeFeatureRules struct {
+// fakeNodeFeatureRules implements NodeFeatureRuleInterface
+type fakeNodeFeatureRules struct {
+	*gentype.FakeClientWithList[*v1alpha1.NodeFeatureRule, *v1alpha1.NodeFeatureRuleList]
 	Fake *FakeNfdV1alpha1
 }
 
-var nodefeaturerulesResource = v1alpha1.SchemeGroupVersion.WithResource("nodefeaturerules")
-
-var nodefeaturerulesKind = v1alpha1.SchemeGroupVersion.WithKind("NodeFeatureRule")
-
-// Get takes name of the nodeFeatureRule, and returns the corresponding nodeFeatureRule object, and an error if there is any.
-func (c *FakeNodeFeatureRules) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NodeFeatureRule, err error) {
-	emptyResult := &v1alpha1.NodeFeatureRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootGetActionWithOptions(nodefeaturerulesResource, name, options), emptyResult)
-	if obj == nil {
-		return emptyResult, err
+func newFakeNodeFeatureRules(fake *FakeNfdV1alpha1) nfdv1alpha1.NodeFeatureRuleInterface {
+	return &fakeNodeFeatureRules{
+		gentype.NewFakeClientWithList[*v1alpha1.NodeFeatureRule, *v1alpha1.NodeFeatureRuleList](
+			fake.Fake,
+			"",
+			v1alpha1.SchemeGroupVersion.WithResource("nodefeaturerules"),
+			v1alpha1.SchemeGroupVersion.WithKind("NodeFeatureRule"),
+			func() *v1alpha1.NodeFeatureRule { return &v1alpha1.NodeFeatureRule{} },
+			func() *v1alpha1.NodeFeatureRuleList { return &v1alpha1.NodeFeatureRuleList{} },
+			func(dst, src *v1alpha1.NodeFeatureRuleList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.NodeFeatureRuleList) []*v1alpha1.NodeFeatureRule {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.NodeFeatureRuleList, items []*v1alpha1.NodeFeatureRule) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.NodeFeatureRule), err
-}
-
-// List takes label and field selectors, and returns the list of NodeFeatureRules that match those selectors.
-func (c *FakeNodeFeatureRules) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.NodeFeatureRuleList, err error) {
-	emptyResult := &v1alpha1.NodeFeatureRuleList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootListActionWithOptions(nodefeaturerulesResource, nodefeaturerulesKind, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.NodeFeatureRuleList{ListMeta: obj.(*v1alpha1.NodeFeatureRuleList).ListMeta}
-	for _, item := range obj.(*v1alpha1.NodeFeatureRuleList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested nodeFeatureRules.
-func (c *FakeNodeFeatureRules) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewRootWatchActionWithOptions(nodefeaturerulesResource, opts))
-}
-
-// Create takes the representation of a nodeFeatureRule and creates it.  Returns the server's representation of the nodeFeatureRule, and an error, if there is any.
-func (c *FakeNodeFeatureRules) Create(ctx context.Context, nodeFeatureRule *v1alpha1.NodeFeatureRule, opts v1.CreateOptions) (result *v1alpha1.NodeFeatureRule, err error) {
-	emptyResult := &v1alpha1.NodeFeatureRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateActionWithOptions(nodefeaturerulesResource, nodeFeatureRule, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.NodeFeatureRule), err
-}
-
-// Update takes the representation of a nodeFeatureRule and updates it. Returns the server's representation of the nodeFeatureRule, and an error, if there is any.
-func (c *FakeNodeFeatureRules) Update(ctx context.Context, nodeFeatureRule *v1alpha1.NodeFeatureRule, opts v1.UpdateOptions) (result *v1alpha1.NodeFeatureRule, err error) {
-	emptyResult := &v1alpha1.NodeFeatureRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateActionWithOptions(nodefeaturerulesResource, nodeFeatureRule, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.NodeFeatureRule), err
-}
-
-// Delete takes name of the nodeFeatureRule and deletes it. Returns an error if one occurs.
-func (c *FakeNodeFeatureRules) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(nodefeaturerulesResource, name, opts), &v1alpha1.NodeFeatureRule{})
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeNodeFeatureRules) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionActionWithOptions(nodefeaturerulesResource, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.NodeFeatureRuleList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched nodeFeatureRule.
-func (c *FakeNodeFeatureRules) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NodeFeatureRule, err error) {
-	emptyResult := &v1alpha1.NodeFeatureRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceActionWithOptions(nodefeaturerulesResource, name, pt, data, opts, subresources...), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.NodeFeatureRule), err
 }

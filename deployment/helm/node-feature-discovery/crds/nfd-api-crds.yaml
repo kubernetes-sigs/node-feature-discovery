@@ -69,8 +69,9 @@ spec:
                       properties:
                         elements:
                           additionalProperties:
-                            description: Nil is a dummy empty struct for protobuf
-                              compatibility
+                            description: |-
+                              Nil is a dummy empty struct for protobuf compatibility.
+                              NOTE: protobuf definitions have been removed but this is kept for API compatibility.
                             type: object
                           description: Individual features of the feature set.
                           type: object

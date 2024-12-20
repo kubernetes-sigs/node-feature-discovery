@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
-	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // NodeFeatureLister helps list NodeFeatures.
@@ -30,7 +30,7 @@ import (
 type NodeFeatureLister interface {
 	// List lists all NodeFeatures in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NodeFeature, err error)
+	List(selector labels.Selector) (ret []*nfdv1alpha1.NodeFeature, err error)
 	// NodeFeatures returns an object that can list and get NodeFeatures.
 	NodeFeatures(namespace string) NodeFeatureNamespaceLister
 	NodeFeatureListerExpansion
@@ -38,17 +38,17 @@ type NodeFeatureLister interface {
 
 // nodeFeatureLister implements the NodeFeatureLister interface.
 type nodeFeatureLister struct {
-	listers.ResourceIndexer[*v1alpha1.NodeFeature]
+	listers.ResourceIndexer[*nfdv1alpha1.NodeFeature]
 }
 
 // NewNodeFeatureLister returns a new NodeFeatureLister.
 func NewNodeFeatureLister(indexer cache.Indexer) NodeFeatureLister {
-	return &nodeFeatureLister{listers.New[*v1alpha1.NodeFeature](indexer, v1alpha1.Resource("nodefeature"))}
+	return &nodeFeatureLister{listers.New[*nfdv1alpha1.NodeFeature](indexer, nfdv1alpha1.Resource("nodefeature"))}
 }
 
 // NodeFeatures returns an object that can list and get NodeFeatures.
 func (s *nodeFeatureLister) NodeFeatures(namespace string) NodeFeatureNamespaceLister {
-	return nodeFeatureNamespaceLister{listers.NewNamespaced[*v1alpha1.NodeFeature](s.ResourceIndexer, namespace)}
+	return nodeFeatureNamespaceLister{listers.NewNamespaced[*nfdv1alpha1.NodeFeature](s.ResourceIndexer, namespace)}
 }
 
 // NodeFeatureNamespaceLister helps list and get NodeFeatures.
@@ -56,15 +56,15 @@ func (s *nodeFeatureLister) NodeFeatures(namespace string) NodeFeatureNamespaceL
 type NodeFeatureNamespaceLister interface {
 	// List lists all NodeFeatures in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NodeFeature, err error)
+	List(selector labels.Selector) (ret []*nfdv1alpha1.NodeFeature, err error)
 	// Get retrieves the NodeFeature from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.NodeFeature, error)
+	Get(name string) (*nfdv1alpha1.NodeFeature, error)
 	NodeFeatureNamespaceListerExpansion
 }
 
 // nodeFeatureNamespaceLister implements the NodeFeatureNamespaceLister
 // interface.
 type nodeFeatureNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.NodeFeature]
+	listers.ResourceIndexer[*nfdv1alpha1.NodeFeature]
 }
