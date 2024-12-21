@@ -3,7 +3,7 @@ image:
   # This should be set to 'IfNotPresent' for released version
   pullPolicy: Always
   # tag, if defined will use the given image tag, else Chart.AppVersion will be used
-  # tag
+  tag: v0.16.5
 imagePullSecrets: []
 
 nameOverride: ""
@@ -43,6 +43,7 @@ master:
     #        operator: "In"
     #        values:
     #           - "node-feature-discovery"
+    # enableSpiffe: true
     # klog:
     #    addDirHeader: false
     #    alsologtostderr: false
@@ -179,6 +180,7 @@ worker:
     #  noPublish: false
     #  noOwnerRefs: false
     #  sleepInterval: 60s
+    #  enableSpiffe: true
     #  featureSources: [all]
     #  labelSources: [all]
     #  klog:
@@ -597,3 +599,29 @@ prometheus:
   enable: false
   scrapeInterval: 10s
   labels: {}
+
+spire:
+  enabled: true
+  global:
+    spire:
+      clusterName: "nfd"
+      trustDomain: "nfd.io"
+  spire-agent:
+    kubeletConnectByHostname: "true"
+    workloadAttestors:
+      unix:
+        enabled: true
+  spire-server:
+    caSubject:
+      commonName: "nfd.io"
+      country: "US"
+      organization: "SPIFFE"
+
+  upstream:
+    enabled: false
+  spiffe-csi-driver:
+    enabled: false
+  spiffe-oidc-discovery-provider:
+    enabled: false
+  tornjak-frontend:
+    enabled: false

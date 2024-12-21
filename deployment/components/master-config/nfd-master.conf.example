@@ -20,6 +20,7 @@
 #        operator: "In"
 #        values:
 #           - "node-feature-discovery"
+# enableSpiffe: true
 # klog:
 #    addDirHeader: false
 #    alsologtostderr: false
