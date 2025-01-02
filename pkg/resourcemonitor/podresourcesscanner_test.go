@@ -165,6 +165,9 @@ func TestPodScanner(t *testing.T) {
 						},
 					},
 				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
+				},
 			}
 
 			fakeCli := fakeclient.NewSimpleClientset(pod)
@@ -280,6 +283,9 @@ func TestPodScanner(t *testing.T) {
 						},
 					},
 				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
+				},
 			}
 
 			fakeCli = fakeclient.NewSimpleClientset(pod)
@@ -367,6 +373,9 @@ func TestPodScanner(t *testing.T) {
 							},
 						},
 					},
+				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
@@ -458,6 +467,9 @@ func TestPodScanner(t *testing.T) {
 						},
 					},
 				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
+				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
@@ -535,6 +547,9 @@ func TestPodScanner(t *testing.T) {
 							},
 						},
 					},
+				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
@@ -627,6 +642,9 @@ func TestPodScanner(t *testing.T) {
 							},
 						},
 					},
+				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
@@ -824,6 +842,9 @@ func TestPodScanner(t *testing.T) {
 							},
 						},
 					},
+				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
@@ -1029,6 +1050,9 @@ func TestPodScanner(t *testing.T) {
 						},
 					},
 				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
+				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
@@ -1113,6 +1137,9 @@ func TestPodScanner(t *testing.T) {
 						},
 					},
 				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
+				},
 			}
 			fakeCli = fakeclient.NewSimpleClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
@@ -1132,6 +1159,130 @@ func TestPodScanner(t *testing.T) {
 					Containers: []ContainerResources{
 						{
 							Name: "test-cnt-0",
+							Resources: []ResourceInfo{
+								{
+									Name: "fake.io/resource",
+									Data: []string{"devA"},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(reflect.DeepEqual(res.PodResources, expected), ShouldBeTrue)
+		})
+
+		Convey("When I successfully get valid response for guaranteed pods with not cpu pin containers", func() {
+			resp := &v1.ListPodResourcesResponse{
+				PodResources: []*v1.PodResources{
+					{
+						Name:      "test-pod-0",
+						Namespace: "pod-res-test",
+						Containers: []*v1.ContainerResources{
+							{
+								Name:   "test-cnt-0",
+								CpuIds: []int64{0, 1},
+								Devices: []*v1.ContainerDevices{
+									{
+										ResourceName: "fake.io/resource",
+										DeviceIds:    []string{"devA"},
+									},
+								},
+							},
+							{
+								Name: "test-cnt-1",
+								Devices: []*v1.ContainerDevices{
+									{
+										ResourceName: "fake.io/resource",
+										DeviceIds:    []string{"devA"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
+			pod := &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-pod-0",
+					Namespace: "pod-res-test",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-cnt-0",
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+
+									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
+									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
+									corev1.ResourceCPU:                      resource.MustParse("2"),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
+									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
+									corev1.ResourceCPU:                      resource.MustParse("2"),
+								},
+							},
+						},
+						{
+							Name: "test-cnt-1",
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+
+									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
+									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
+									corev1.ResourceCPU:                      resource.MustParse("1500m"),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceName("fake.io/resource"): *resource.NewQuantity(1, resource.DecimalSI),
+									corev1.ResourceMemory:                   *resource.NewQuantity(100, resource.DecimalSI),
+									corev1.ResourceCPU:                      resource.MustParse("1500m"),
+								},
+							},
+						},
+					},
+				},
+				Status: corev1.PodStatus{
+					QOSClass: corev1.PodQOSGuaranteed,
+				},
+			}
+			fakeCli = fakeclient.NewSimpleClientset(pod)
+			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			res, err := resScan.Scan()
+
+			Convey("Error is nil", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Return PodResources should have values", func() {
+				So(len(res.PodResources), ShouldBeGreaterThan, 0)
+			})
+
+			expected := []PodResources{
+				{
+					Name:      "test-pod-0",
+					Namespace: "pod-res-test",
+					Containers: []ContainerResources{
+						{
+							Name: "test-cnt-0",
+							Resources: []ResourceInfo{
+								{
+									Name: corev1.ResourceCPU,
+									Data: []string{"0", "1"},
+								},
+								{
+									Name: "fake.io/resource",
+									Data: []string{"devA"},
+								},
+							},
+						},
+						{
+							Name: "test-cnt-1",
 							Resources: []ResourceInfo{
 								{
 									Name: "fake.io/resource",

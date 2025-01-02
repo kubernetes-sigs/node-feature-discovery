@@ -63,6 +63,11 @@ func (resMon *PodResourcesScanner) isWatchable(podNamespace string, podName stri
 		return false, false, err
 	}
 
+	// Check Pod is guaranteed QOS class and has exclusive CPUs or devices
+	if pod.Status.QOSClass != corev1.PodQOSGuaranteed {
+		return false, false, nil
+	}
+
 	isIntegralGuaranteed := hasExclusiveCPUs(pod)
 
 	if resMon.namespace == "*" && (isIntegralGuaranteed || hasDevice) {
@@ -85,9 +90,9 @@ func hasExclusiveCPUs(pod *corev1.Pod) bool {
 			continue
 		}
 		totalCPU += cpuQuantity.Value()
-		isInitContainerGuaranteed := hasIntegralCPUs(pod, &container)
-		if !isInitContainerGuaranteed {
-			return false
+		isInitContainerGuaranteed := hasIntegralCPUs(&container)
+		if isInitContainerGuaranteed {
+			return true
 		}
 	}
 	for _, container := range pod.Spec.Containers {
@@ -96,18 +101,18 @@ func hasExclusiveCPUs(pod *corev1.Pod) bool {
 			continue
 		}
 		totalCPU += cpuQuantity.Value()
-		isAppContainerGuaranteed := hasIntegralCPUs(pod, &container)
-		if !isAppContainerGuaranteed {
-			return false
+		isAppContainerGuaranteed := hasIntegralCPUs(&container)
+		if isAppContainerGuaranteed {
+			return true
 		}
 	}
 
 	//No CPUs requested in all the containers in the pod
-	return totalCPU != 0
+	return false
 }
 
 // hasIntegralCPUs returns true if a container in pod is requesting integral CPUs else returns false
-func hasIntegralCPUs(pod *corev1.Pod, container *corev1.Container) bool {
+func hasIntegralCPUs(container *corev1.Container) bool {
 	cpuQuantity := container.Resources.Requests[corev1.ResourceCPU]
 	return cpuQuantity.Value()*1000 == cpuQuantity.MilliValue()
 }
@@ -165,19 +170,17 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 				Name: container.Name,
 			}
 
-			if isIntegralGuaranteed {
-				cpuIDs := container.GetCpuIds()
-				if len(cpuIDs) > 0 {
-					var resCPUs []string
-					for _, cpuID := range container.GetCpuIds() {
-						resCPUs = append(resCPUs, strconv.FormatInt(cpuID, 10))
-					}
-					contRes.Resources = []ResourceInfo{
-						{
-							Name: corev1.ResourceCPU,
-							Data: resCPUs,
-						},
-					}
+			cpuIDs := container.GetCpuIds()
+			if len(cpuIDs) > 0 && isIntegralGuaranteed {
+				var resCPUs []string
+				for _, cpuID := range container.GetCpuIds() {
+					resCPUs = append(resCPUs, strconv.FormatInt(cpuID, 10))
+				}
+				contRes.Resources = []ResourceInfo{
+					{
+						Name: corev1.ResourceCPU,
+						Data: resCPUs,
+					},
 				}
 			}
 
