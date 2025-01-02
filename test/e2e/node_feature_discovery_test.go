@@ -479,6 +479,19 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 				}
 				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
 
+				By("Verifying the CRD status")
+				nf, err := nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Get(ctx, targetNodeName, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred(), "Error getting NodeFeature object: %q", err)
+
+				expectedStatus := nfdv1alpha1.NodeFeatureStatus{
+					LastAppliedAt:         nf.Status.LastAppliedAt,
+					NumberOfFeatures:      nf.Status.NumberOfFeatures,
+					NumberOfFeatureErrors: 0,
+					NumberOfLabels:        len(expectedLabels[targetNodeName]) - 1,
+				}
+				isEqual := (expectedStatus == nf.Status)
+				Expect(isEqual).To(BeTrue())
+
 				By("Deleting nfd-worker daemonset")
 				err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Delete(ctx, workerDS.Name, metav1.DeleteOptions{})
 				Expect(err).NotTo(HaveOccurred())

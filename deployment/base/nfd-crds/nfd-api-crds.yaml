@@ -115,8 +115,26 @@ spec:
                   be created.
                 type: object
             type: object
+          status:
+            description: Status of a NodeFeature object.
+            properties:
+              lastAppliedAt:
+                description: UTC time when the NodeFeature object was last updated.
+                format: date-time
+                type: string
+              numberOfFeatureErrors:
+                description: Number of errors during last feature discovery.
+                type: integer
+              numberOfFeatures:
+                description: Number of features discovered.
+                type: integer
+              numberOfLabels:
+                description: Number of labels created.
+                type: integer
+            type: object
         required:
         - spec
+        - status
         type: object
     served: true
     storage: true
