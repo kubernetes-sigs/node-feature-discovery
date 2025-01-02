@@ -59,9 +59,6 @@ func main() {
 		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always --match 'v*'`\" during build or run.")
 	}
 
-	// Plug klog into grpc logging infrastructure
-	utils.ConfigureGrpcKlog()
-
 	// Get new NfdWorker instance
 	instance, err := worker.NewNfdWorker(worker.WithArgs(args))
 	if err != nil {
@@ -111,10 +108,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Kubeconfig to use")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Do not publish feature labels")
-	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
-		"Port on which to expose metrics.")
-	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
-		"Port on which to expose the grpc health endpoint.")
+	flagset.IntVar(&args.Port, "port", 8080,
+		"Port on which to metrics and healthz endpoints are served")
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
