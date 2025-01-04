@@ -85,6 +85,8 @@ func initFlags(flagset *flag.FlagSet) *nfdgarbagecollector.Args {
 		"Kubeconfig to use")
 	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
 		"Port on which to expose metrics.")
+	flagset.Int64Var(&args.ListSize, "list-size", 200,
+		"the pagination size used when listing node features")
 
 	klog.InitFlags(flagset)
 
