@@ -45,7 +45,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
@@ -122,6 +121,8 @@ type Args struct {
 	Prune                bool
 	Options              string
 	EnableLeaderElection bool
+	MetricsPort          int
+	ListSize             int64
 
 	Overrides ConfigOverrideArgs
 }
@@ -1295,6 +1296,7 @@ func (m *nfdMaster) startNfdApiController() error {
 		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
 		K8sClient:                    m.k8sClient,
 		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
+		ListSize:                     m.args.ListSize,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
