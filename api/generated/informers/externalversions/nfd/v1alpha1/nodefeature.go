@@ -20,6 +20,7 @@ package v1alpha1
 
 import (
 	context "context"
+	"go.uber.org/zap"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,7 +63,23 @@ func NewFilteredNodeFeatureInformer(client versioned.Interface, namespace string
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NfdV1alpha1().NodeFeatures(namespace).List(context.TODO(), options)
+				if options.Limit == 0 {
+					return client.NfdV1alpha1().NodeFeatures(namespace).List(context.TODO(), options)
+				}
+				featureList := &apinfdv1alpha1.NodeFeatureList{}
+				// do paginated list
+				for {
+					features, err := client.NfdV1alpha1().NodeFeatures(namespace).List(context.TODO(), options)
+					if err != nil {
+						return nil, err
+					}
+					featureList.Items = append(featureList.Items, features.Items...)
+					if features.Continue == "" {
+						break
+					}
+					options.Continue = features.Continue
+				}
+				return featureList, nil
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
