@@ -102,9 +102,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			if opts.ResourceVersion == "0" {
 				opts.ResourceVersion = ""
 			}
-			if nfdApiControllerOptions.ListSize != 0 {
-				opts.Limit = nfdApiControllerOptions.ListSize
-			}
+			opts.Limit = nfdApiControllerOptions.ListSize // value of 0 disables pagination
 		}
 		featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
 		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
