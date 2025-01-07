@@ -29,7 +29,6 @@ import (
 
 	topology "sigs.k8s.io/node-feature-discovery/pkg/nfd-topology-updater"
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
-	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
@@ -51,9 +50,6 @@ func main() {
 	if version.Undefined() {
 		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always --match 'v*'`\" during build or run.")
 	}
-
-	// Plug klog into grpc logging infrastructure
-	utils.ConfigureGrpcKlog()
 
 	// Get new TopologyUpdater instance
 	instance, err := topology.NewTopologyUpdater(*args, *resourcemonitorArgs)

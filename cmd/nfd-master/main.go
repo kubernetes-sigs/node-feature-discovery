@@ -86,9 +86,6 @@ func main() {
 		klog.InfoS("version not set! Set -ldflags \"-X sigs.k8s.io/node-feature-discovery/pkg/version.version=`git describe --tags --dirty --always --match 'v*'`\" during build or run.")
 	}
 
-	// Plug klog into grpc logging infrastructure
-	utils.ConfigureGrpcKlog()
-
 	// Get new NfdMaster instance
 	instance, err := master.NewNfdMaster(master.WithArgs(args))
 	if err != nil {
