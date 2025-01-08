@@ -97,6 +97,7 @@ func (nv *nodeValidator) Execute(ctx context.Context) ([]*CompatibilityStatus, e
 }
 
 func evaluateRuleStatus(rule *nfdv1alpha1.Rule, matchStatus *nodefeaturerule.MatchStatus) ProcessedRuleStatus {
+	var matchedFeatureTerms nfdv1alpha1.FeatureMatcher
 	out := ProcessedRuleStatus{Name: rule.Name, IsMatch: matchStatus.IsMatch}
 
 	evaluateFeatureMatcher := func(featureMatcher, matchedFeatureTerms nfdv1alpha1.FeatureMatcher) []MatchedExpression {
@@ -163,11 +164,17 @@ func evaluateRuleStatus(rule *nfdv1alpha1.Rule, matchStatus *nodefeaturerule.Mat
 	}
 
 	if matchFeatures := rule.MatchFeatures; matchFeatures != nil {
-		out.MatchedExpressions = evaluateFeatureMatcher(matchFeatures, matchStatus.MatchedFeaturesTerms)
+		if matchStatus.MatchFeatureStatus != nil {
+			matchedFeatureTerms = matchStatus.MatchFeatureStatus.MatchedFeaturesTerms
+		}
+		out.MatchedExpressions = evaluateFeatureMatcher(matchFeatures, matchedFeatureTerms)
 	}
 
 	for i, matchAnyElem := range rule.MatchAny {
-		matchedExpressions := evaluateFeatureMatcher(matchAnyElem.MatchFeatures, matchStatus.MatchAny[i].MatchedFeaturesTerms)
+		if matchStatus.MatchAny[i].MatchedFeaturesTerms != nil {
+			matchedFeatureTerms = matchStatus.MatchAny[i].MatchedFeaturesTerms
+		}
+		matchedExpressions := evaluateFeatureMatcher(matchAnyElem.MatchFeatures, matchedFeatureTerms)
 		out.MatchedAny = append(out.MatchedAny, MatchAnyElem{MatchedExpressions: matchedExpressions})
 	}
 
