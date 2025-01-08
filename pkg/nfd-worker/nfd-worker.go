@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
 
@@ -280,7 +281,10 @@ func (w *nfdWorker) setOwnerReference() error {
 				klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
 				return err
 			} else {
-				ownerReference = append(ownerReference, selfPod.OwnerReferences...)
+				for _, owner := range selfPod.OwnerReferences {
+					owner.BlockOwnerDeletion = ptr.To(false)
+					ownerReference = append(ownerReference, owner)
+				}
 			}
 
 			podUID := os.Getenv("POD_UID")
