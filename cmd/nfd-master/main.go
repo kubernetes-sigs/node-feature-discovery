@@ -123,7 +123,7 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.BoolVar(&args.EnableLeaderElection, "enable-leader-election", false,
 		"Enables a leader election. Enable this when running more than one replica on nfd master.")
 	flagset.Int64Var(&args.ListSize, "informer-list-size", 200,
-		"The list size to use when listing node features to sync informer cache.")
+		"The list size to use when listing NodeFeature objects to sync informer cache.")
 
 	args.Klog = klogutils.InitKlogFlags(flagset)
 
