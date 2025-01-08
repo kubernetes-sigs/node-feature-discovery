@@ -22,6 +22,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
+	"time"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	oras "oras.land/oras-go/v2"
@@ -32,6 +34,10 @@ import (
 	"sigs.k8s.io/yaml"
 
 	compatv1alpha1 "sigs.k8s.io/node-feature-discovery/api/image-compatibility/v1alpha1"
+)
+
+const (
+	ArtifactCreationTimestampKey = "org.opencontainers.image.created"
 )
 
 // ArtifactClient interface contain set of functions to manipulate compatibility artfact.
@@ -90,6 +96,14 @@ func (c *Client) FetchCompatibilitySpec(ctx context.Context) (*compatv1alpha1.Sp
 	} else if len(descs) < 1 {
 		return nil, fmt.Errorf("compatibility artifact not found")
 	}
+
+	// Sort the artifacts in desc order.
+	// If the artifact does not have creation timestamp it will be moved to the top of the slice.
+	slices.SortFunc(descs, func(i, j ocispec.Descriptor) int {
+		it, _ := time.Parse(time.RFC3339, i.Annotations[ArtifactCreationTimestampKey])
+		jt, _ := time.Parse(time.RFC3339, j.Annotations[ArtifactCreationTimestampKey])
+		return it.Compare(jt)
+	})
 	artifactDesc := descs[len(descs)-1]
 
 	_, content, err := oras.FetchBytes(ctx, repo.Manifests(), artifactDesc.Digest.String(), oras.DefaultFetchBytesOptions)
