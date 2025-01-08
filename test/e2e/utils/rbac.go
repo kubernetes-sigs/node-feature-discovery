@@ -227,7 +227,7 @@ func createRoleWorker(ctx context.Context, cs clientset.Interface, ns string) (*
 			{
 				APIGroups: []string{"nfd.k8s-sigs.io"},
 				Resources: []string{"nodefeatures"},
-				Verbs:     []string{"create", "get", "update"},
+				Verbs:     []string{"create", "get", "update", "delete"},
 			},
 			{
 				APIGroups: []string{""},
