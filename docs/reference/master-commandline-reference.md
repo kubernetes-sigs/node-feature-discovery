@@ -173,9 +173,9 @@ Example:
 nfd-master -deny-label-ns=*.vendor.com,vendor-2.io
 ```
 
-### -informer-list-size
+### -informer-page-size
 
-The `-informer-list-size` flag is used to control pagination during informer cache sync on nfd-master startup.
+The `-informer-page-size` flag is used to control pagination during informer cache sync on nfd-master startup.
 This is useful to control load on api-server/etcd as listing NodeFeature objects can be expensive, especially in large clusters.
 
 Default: 200
@@ -183,7 +183,7 @@ Default: 200
 Example:
 
 ```bash
-nfd-master -informer-list-size=200
+nfd-master -informer-page-size=20
 ```
 
 ### -config
