@@ -114,6 +114,17 @@ func TestNodeValidator(t *testing.T) {
 								},
 							},
 						},
+						{
+							Name: "fake_5",
+							MatchFeatures: v1alpha1.FeatureMatcher{
+								{
+									Feature: "unknown.unknown",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -216,6 +227,19 @@ func TestNodeValidator(t *testing.T) {
 										IsMatch:     false,
 									},
 								},
+							},
+						},
+					},
+					{
+						Name:    "fake_5",
+						IsMatch: false,
+						MatchedExpressions: []MatchedExpression{
+							{
+								Feature:     "unknown.unknown",
+								Name:        "name",
+								Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+								MatcherType: MatchExpressionType,
+								IsMatch:     false,
 							},
 						},
 					},
