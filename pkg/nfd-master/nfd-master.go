@@ -127,6 +127,7 @@ type Args struct {
 	Options              string
 	EnableLeaderElection bool
 	MetricsPort          int
+	ListSize             int64
 
 	Overrides ConfigOverrideArgs
 }
@@ -1351,6 +1352,7 @@ func (m *nfdMaster) startNfdApiController() error {
 		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
 		K8sClient:                    m.k8sClient,
 		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
+		ListSize:                     m.args.ListSize,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)

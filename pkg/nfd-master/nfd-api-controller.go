@@ -57,6 +57,7 @@ type nfdApiControllerOptions struct {
 	ResyncPeriod                 time.Duration
 	K8sClient                    k8sclient.Interface
 	NodeFeatureNamespaceSelector *metav1.LabelSelector
+	ListSize                     int64
 }
 
 func init() {
@@ -101,6 +102,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			if opts.ResourceVersion == "0" {
 				opts.ResourceVersion = ""
 			}
+			opts.Limit = nfdApiControllerOptions.ListSize // value of 0 disables pagination
 		}
 		featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
 		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
