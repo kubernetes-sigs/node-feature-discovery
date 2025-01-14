@@ -633,6 +633,12 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 		m.updaterPool.addNode(node.Name)
 	}
 
+	err = m.updateRuleStatus()
+	if err != nil {
+		klog.ErrorS(err, "failed to update rule status")
+		return err
+	}
+
 	return nil
 }
 
@@ -877,7 +883,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 		labels = make(map[string]string)
 	}
 
-	crLabels, crAnnotations, crExtendedResources, crTaints := m.processNodeFeatureRule(node.Name, features)
+	crLabels, crAnnotations, crExtendedResources, crTaints, _ := m.processNodeFeatureRule(node.Name, features)
 
 	// Labels
 	maps.Copy(labels, crLabels)
@@ -988,9 +994,9 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 	return nil
 }
 
-func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, Annotations, ExtendedResources, []corev1.Taint) {
+func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha1.Features) (Labels, Annotations, ExtendedResources, []corev1.Taint, []*nfdv1alpha1.NodeFeatureRule) {
 	if m.nfdController == nil {
-		return nil, nil, nil, nil
+		return nil, nil, nil, nil, nil
 	}
 
 	extendedResources := ExtendedResources{}
@@ -1004,12 +1010,13 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 
 	if err != nil {
 		klog.ErrorS(err, "failed to list NodeFeatureRule resources")
-		return nil, nil, nil, nil
+		return nil, nil, nil, nil, nil
 	}
 
 	// Process all rule CRs
 	processStart := time.Now()
 	for _, spec := range ruleSpecs {
+		spec.Status.Rules = []nfdv1alpha1.RuleStatus{}
 		t := time.Now()
 		switch {
 		case klog.V(3).Enabled():
@@ -1041,13 +1048,91 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			// Feed back rule output to features map for subsequent rules to match
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
+
+			if ruleOut.Matched {
+				r := nfdv1alpha1.RuleStatus{
+					Name: rule.Name,
+					MatchedNodes: []string{
+						nodeName,
+					},
+				}
+				spec.Status.Rules = append(spec.Status.Rules, r)
+			}
 		}
 		nfrProcessingTime.WithLabelValues(spec.Name, nodeName).Observe(time.Since(t).Seconds())
 	}
 	processingTime := time.Since(processStart)
 	klog.V(2).InfoS("processed NodeFeatureRule objects", "nodeName", nodeName, "objectCount", len(ruleSpecs), "duration", processingTime)
 
-	return labels, annotations, extendedResources, taints
+	return labels, annotations, extendedResources, taints, ruleSpecs
+}
+
+func findRuleByName(ruleSpecs []*nfdv1alpha1.NodeFeatureRule, name string) *nfdv1alpha1.NodeFeatureRule {
+	var spec *nfdv1alpha1.NodeFeatureRule
+	for _, r := range ruleSpecs {
+		if r.Name == name {
+			spec = r
+			break
+		}
+	}
+	return spec
+}
+
+func findStatusRuleByName(status *[]nfdv1alpha1.RuleStatus, name string) *nfdv1alpha1.RuleStatus {
+	var rule *nfdv1alpha1.RuleStatus
+	for _, r := range *status {
+		if r.Name == name {
+			rule = &r
+			break
+		}
+	}
+	return rule
+}
+
+func (m *nfdMaster) updateRuleStatus() error {
+	nodes, err := getNodes(m.k8sClient)
+	if err != nil {
+		return err
+	}
+
+	var ruleSpecs []*nfdv1alpha1.NodeFeatureRule
+	var outSpecs []*nfdv1alpha1.NodeFeatureRule
+
+	for _, node := range nodes.Items {
+		nodeFeatures, err := m.getAndMergeNodeFeatures(node.Name)
+		if err != nil {
+			return fmt.Errorf("failed to merge NodeFeature objects for node %q: %w", node.Name, err)
+		}
+
+		_, _, _, _, ruleSpecs = m.processNodeFeatureRule(node.Name, &nodeFeatures.Spec.Features)
+	}
+
+	for _, spec := range ruleSpecs {
+		if len(spec.Status.Rules) > 0 {
+			s := findRuleByName(outSpecs, spec.Name)
+			if s != nil {
+				for _, r := range spec.Status.Rules {
+					s.Status.Rules = append(s.Status.Rules, r)
+
+					sr := findStatusRuleByName(&s.Status.Rules, r.Name)
+					if sr != nil {
+						sr.MatchedNodes = append(sr.MatchedNodes, r.MatchedNodes...)
+					}
+				}
+			} else {
+				outSpecs = append(outSpecs, spec)
+			}
+		}
+	}
+
+	for _, spec := range outSpecs {
+		_, err = m.nfdClient.NfdV1alpha1().NodeFeatureRules().Update(context.TODO(), spec, metav1.UpdateOptions{})
+		if err != nil {
+			klog.ErrorS(err, "failed to update rule status", "nodefeaturerule", klog.KObj(spec))
+		}
+	}
+
+	return nil
 }
 
 // updateNodeObject ensures the Kubernetes node object is up to date,
