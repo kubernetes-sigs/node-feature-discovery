@@ -33,7 +33,7 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.32.0
 	k8s.io/kubelet v0.32.0
-	k8s.io/kubernetes v1.32.0
+	k8s.io/kubernetes v1.32.1
 	k8s.io/pod-security-admission v0.32.0
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	oras.land/oras-go/v2 v2.5.0
