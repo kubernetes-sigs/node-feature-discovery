@@ -213,6 +213,7 @@ API's you need to install the prometheus operator in your cluster.
 | `master.readinessProbe.periodSeconds`       | integer | 10 (by Kubernetes)               | Specifies how often (in seconds) to perform the readiness probe.                                                                                                                                      |
 | `master.readinessProbe.timeoutSeconds`      | integer | 1 (by Kubernetes)                | Specifies the number of seconds after which the probe times out.                                                                                                                                      |
 | `master.readinessProbe.successThreshold`    | integer | 1 (by Kubernetes)                | Specifies the number of consecutive successes of readiness probes before considering the pod as ready.                                                                                                |
+| `master.dnsPolicy`                          | array   | ClusterFirstWithHostNet                               | NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy)                                                                                 |
 
 > `[0]` Additional info for `master.resources.requests`: \
 > You may want to use the same value for `requests.memory` and `limits.memory`.
@@ -261,6 +262,7 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.readinessProbe.periodSeconds`       | integer | 10 (by Kubernetes)      | Specifies how often (in seconds) to perform the readiness probe.                                                                                                                                             |
 | `worker.readinessProbe.timeoutSeconds`      | integer | 1 (by Kubernetes)       | Specifies the number of seconds after which the probe times out.                                                                                                                                             |
 | `worker.readinessProbe.successThreshold`    | integer | 1 (by Kubernetes)       | Specifies the number of consecutive successes of readiness probes before considering the pod as ready.                                                                                                       |
+| `worker.dnsPolicy`                          | array   | ClusterFirstWithHostNet                               | NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy)                                                                                        |
 
 ### Topology updater parameters
 
@@ -304,6 +306,7 @@ API's you need to install the prometheus operator in your cluster.
 | `topologyUpdater.readinessProbe.periodSeconds`       | integer | 10 (by Kubernetes)       | Specifies how often (in seconds) to perform the readiness probe.                                                                                                                                            |
 | `topologyUpdater.readinessProbe.timeoutSeconds`      | integer | 1 (by Kubernetes)        | Specifies the number of seconds after which the probe times out.                                                                                                                                            |
 | `topologyUpdater.readinessProbe.successThreshold`    | integer | 1 (by Kubernetes)        | Specifies the number of consecutive successes of readiness probes before considering the pod as ready.                                                                                                      |
+| `topologyUpdater.dnsPolicy`                          | array   | ClusterFirstWithHostNet                               | Topology updater pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy)                                                                       |
 
 ### Garbage collector parameters
 
@@ -329,6 +332,7 @@ API's you need to install the prometheus operator in your cluster.
 | `gc.extraArgs`                  | array   | []                        | Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc                                                                                                       |
 | `gc.extraEnvs`                  | array   | []                        | Additional environment variables to pass to nfd-gc                                                                                                                                                    |
 | `gc.revisionHistoryLimit`       | integer |                           | Specify how many old ReplicaSets for this Deployment you want to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit)         |
+| `gc.dnsPolicy`                  | array   | ClusterFirstWithHostNet                               | Garbage collector pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy)                                                                          |
 
 <!-- Links -->
 
