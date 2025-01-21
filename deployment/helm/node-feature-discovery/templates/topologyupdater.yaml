@@ -29,7 +29,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "node-feature-discovery.topologyUpdater.serviceAccountName" . }}
-      dnsPolicy: ClusterFirstWithHostNet
+      dnsPolicy: {{ .Values.topologyUpdater.dnsPolicy }}
     {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
     {{- end }}
