@@ -20,6 +20,7 @@ master:
   extraArgs: []
   extraEnvs: []
   hostNetwork: false
+  dnsPolicy: ClusterFirstWithHostNet
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
     # autoDefaultNs: true
@@ -173,6 +174,7 @@ worker:
   extraArgs: []
   extraEnvs: []
   hostNetwork: false
+  dnsPolicy: ClusterFirstWithHostNet
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:
@@ -499,6 +501,7 @@ topologyUpdater:
   extraArgs: []
   extraEnvs: []
   hostNetwork: false
+  dnsPolicy: ClusterFirstWithHostNet
 
   serviceAccount:
     create: true
@@ -563,6 +566,7 @@ gc:
   extraEnvs: []
   hostNetwork: false
   replicaCount: 1
+  dnsPolicy: ClusterFirstWithHostNet
 
   serviceAccount:
     create: true
