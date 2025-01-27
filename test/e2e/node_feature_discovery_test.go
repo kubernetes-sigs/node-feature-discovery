@@ -47,6 +47,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source/custom"
 	testutils "sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 	testds "sigs.k8s.io/node-feature-discovery/test/e2e/utils/daemonset"
+	"sigs.k8s.io/node-feature-discovery/test/e2e/utils/namespace"
 	testpod "sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
@@ -1011,20 +1012,7 @@ resyncPeriod: "1s"
 				Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
 
 				// label the namespace in which node feature object is created
-				// TODO(TessaIO): add a utility for this.
-				patches, err := json.Marshal(
-					[]utils.JsonPatch{
-						utils.NewJsonPatch(
-							"add",
-							"/metadata/labels",
-							"e2etest",
-							"fake",
-						),
-					},
-				)
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = f.ClientSet.CoreV1().Namespaces().Patch(ctx, f.Namespace.Name, types.JSONPatchType, patches, metav1.PatchOptions{})
+				err = namespace.PatchLabels(f.Namespace.Name, "e2etest", "fake", utils.JSONAddOperation, ctx, f)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Apply Node Feature object
@@ -1044,20 +1032,9 @@ resyncPeriod: "1s"
 				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
 
 				// remove label the namespace in which node feature object is created
-				patches, err = json.Marshal(
-					[]utils.JsonPatch{
-						utils.NewJsonPatch(
-							"remove",
-							"/metadata/labels",
-							"e2etest",
-							"fake",
-						),
-					},
-				)
+				err = namespace.PatchLabels(f.Namespace.Name, "e2etest", "fake", utils.JSONRemoveOperation, ctx, f)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = f.ClientSet.CoreV1().Namespaces().Patch(ctx, f.Namespace.Name, types.JSONPatchType, patches, metav1.PatchOptions{})
-				Expect(err).NotTo(HaveOccurred())
 				By("Verifying node labels from NodeFeature object #1 are not created")
 				// No labels should be created since the f.Namespace is not in the selected Namespaces
 				expectedLabels = map[string]k8sLabels{
@@ -1207,6 +1184,19 @@ restrictions:
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("No feature labels should be created", func(ctx context.Context) {
+				// deploy worker to make sure that labels created by worker are not ignored by denyNodeFeatureLabels restriction
+				By("Creating nfd-worker daemonset")
+				podSpecOpts := []testpod.SpecOption{
+					testpod.SpecWithContainerImage(dockerImage()),
+					testpod.SpecWithContainerExtraArgs("-label-sources=fake"),
+				}
+				workerDS := testds.NFDWorker(podSpecOpts...)
+				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Create(ctx, workerDS, metav1.CreateOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for worker daemonset pods to be ready")
+				Expect(testpod.WaitForReady(ctx, f.ClientSet, f.Namespace.Name, workerDS.Spec.Template.Labels["name"], 2)).NotTo(HaveOccurred())
+
 				// deploy node feature object
 				nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
 				Expect(err).NotTo(HaveOccurred())
@@ -1234,7 +1224,7 @@ restrictions:
 						"e2e.feature.node.kubernetes.io/restricted-annoation-1": "yes",
 						"nfd.node.kubernetes.io/feature-annotations":            "e2e.feature.node.kubernetes.io/restricted-annoation-1",
 						"nfd.node.kubernetes.io/extended-resources":             "e2e.feature.node.kubernetes.io/restricted-er-1",
-						"nfd.node.kubernetes.io/feature-labels":                 "e2e.feature.node.kubernetes.io/restricted-label-1",
+						"nfd.node.kubernetes.io/feature-labels":                 "e2e.feature.node.kubernetes.io/restricted-label-1,fake-fakefeature1,fake-fakefeature2,fake-fakefeature3",
 					},
 				}
 				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchAnnotations(expectedAnnotations, nodes))
@@ -1246,11 +1236,12 @@ restrictions:
 				}
 				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).WithTimeout(1 * time.Minute).Should(MatchCapacity(expectedCapacity, nodes))
 
-				// TODO(TessaIO): we need one more test where we deploy nfd-worker that would create
-				// a non 3rd-party NF that shouldn't be ignored by this restriction
 				By("Verifying node labels from NodeFeature object #6 are not created")
 				expectedLabels := map[string]k8sLabels{
 					"*": {
+						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature1":   "true",
+						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature2":   "true",
+						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3":   "true",
 						"e2e.feature.node.kubernetes.io/restricted-label-1": "true",
 					},
 				}
