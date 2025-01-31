@@ -418,8 +418,7 @@ worker:
     #          matchName: {op: In, value: ["SWAP", "X86", "ARM"]}
 ### <NFD-WORKER-CONF-END-DO-NOT-REMOVE>
 
-  metricsPort: 8081
-  healthPort: 8082
+  port: 8080
   daemonsetAnnotations: {}
   podSecurityContext: {}
     # fsGroup: 2000
@@ -433,15 +432,11 @@ worker:
     # runAsUser: 1000
 
   livenessProbe:
-    grpc:
-      port: 8082
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
     # timeoutSeconds: 1
   readinessProbe:
-    grpc:
-      port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
