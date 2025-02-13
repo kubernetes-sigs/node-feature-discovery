@@ -25,8 +25,6 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
-
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
@@ -98,7 +96,13 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			// Tweak list opts on initial sync to avoid timeouts on the apiserver.
 			// NodeFeature objects are huge and the Kubernetes apiserver
 			// (v1.30) experiences http handler timeouts when the resource
-			// version is set to some non-empty value (TODO: find out why).
+			// version is set to some non-empty value
+			// https://github.com/kubernetes/kubernetes/blob/ace55542575fb098b3e413692bbe2bc20d2348ba/staging/src/k8s.io/apiserver/pkg/storage/cacher/cacher.go#L600-L616 if you set resource version to 0
+			// it serves the request from apiservers cache and doesn't use pagination otherwise pagination will default to 500
+			// so that's why this is required on large clusters
+			// So by setting this we're making it go to ETCD instead of from api-server cache, there's some WIP in k/k
+			// that seems to imply they're working on improving this behavior where you'll be able to paginate from apiserver cache
+			// it's not supported yet (2/2025), would be good to track this though kubernetes/kubernetes#108003
 			if opts.ResourceVersion == "0" {
 				opts.ResourceVersion = ""
 			}
