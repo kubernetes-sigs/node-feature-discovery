@@ -117,8 +117,6 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 			"in the same format as in the config file (i.e. json or yaml). These options")
 	flagset.BoolVar(&args.EnableLeaderElection, "enable-leader-election", false,
 		"Enables a leader election. Enable this when running more than one replica on nfd master.")
-	flagset.Int64Var(&args.ListSize, "informer-page-size", 200,
-		"The list size to use when listing NodeFeature objects to sync informer cache.")
 
 	args.Klog = klogutils.InitKlogFlags(flagset)
 
@@ -142,6 +140,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.Var(overrides.ResyncPeriod, "resync-period", "Specify the NFD API controller resync period.")
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
 		"Can be used for the throttling mechanism.")
+	overrides.InformerPageSize = flagset.Int64("informer-page-size", 200,
+		"The list size to use when listing NodeFeature objects to sync informer cache.")
 
 	return args, overrides
 }
