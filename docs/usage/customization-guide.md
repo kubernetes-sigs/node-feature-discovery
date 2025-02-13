@@ -968,10 +968,10 @@ The following features are available for matching:
 |                  |              | **`enabled`** | bool  | `true` if swap partition detected, `false` otherwise |
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs` |
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`, `mtu` |
 | **`network.virtual`** | instance |          |            | Virtual network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
-|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed` |
+|                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `mtu` |
 | **`pci.device`** | instance     |          |            | PCI devices present in the system |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`, `iommu/intel-iommu/version` |
 | **`storage.block`** | instance |          |             | Block storage devices present in the system |
