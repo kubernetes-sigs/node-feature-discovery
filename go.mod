@@ -1,6 +1,6 @@
 module sigs.k8s.io/node-feature-discovery
 
-go 1.23.0
+go 1.24
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0
@@ -28,7 +28,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.32.1
 	k8s.io/apimachinery v0.32.1
 	k8s.io/client-go v0.32.1
-	k8s.io/code-generator v0.32.1
 	k8s.io/component-base v0.32.1
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.32.1
@@ -153,6 +152,7 @@ require (
 	howett.net/plist v1.0.0 // indirect
 	k8s.io/apiserver v0.32.1 // indirect
 	k8s.io/cloud-provider v0.32.1 // indirect
+	k8s.io/code-generator v0.32.1 // indirect
 	k8s.io/component-helpers v0.32.1 // indirect
 	k8s.io/controller-manager v0.32.1 // indirect
 	k8s.io/cri-api v0.32.1 // indirect
@@ -201,3 +201,5 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.32.1
 	sigs.k8s.io/node-feature-discovery/api/nfd => ./api/nfd
 )
+
+tool k8s.io/code-generator
