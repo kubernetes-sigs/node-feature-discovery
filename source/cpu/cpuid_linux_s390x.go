@@ -25,6 +25,13 @@ unsigned long gethwcap() {
 */
 import "C"
 
+import (
+	"os"
+	"strings"
+
+	"k8s.io/klog/v2"
+)
+
 /*
 all special features for s390x should be defined here; canonical list:
 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/s390/include/asm/elf.h
@@ -96,4 +103,35 @@ func getCpuidFlags() []string {
 	return r
 }
 
-func getCpuidAttributes() map[string]string { return nil }
+func getCpuidAttributes() map[string]string {
+	ret := make(map[string]string)
+
+	hypervisor, err := getHypervisor()
+	if err != nil {
+		klog.ErrorS(err, "failed to detect hypervisor")
+		return ret
+	}
+	ret["hypervisor"] = hypervisor
+
+	return ret
+}
+
+func getHypervisor() (string, error) {
+	data, err := os.ReadFile("/proc/sysinfo")
+	if err != nil {
+		return "", err
+	}
+
+	hypervisor := "PR/SM"
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.Contains(line, "Control Program:") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				hypervisor = strings.TrimSpace(parts[1])
+			}
+			break
+		}
+	}
+
+	return hypervisor, nil
+}
