@@ -108,10 +108,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
-	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
-		"Port on which to expose metrics.")
-	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
-		"Port on which to expose the grpc health endpoint.")
+	flagset.IntVar(&args.Port, "port", 8080,
+		"Port which metrics and healthz endpoints are served on")
 	flagset.BoolVar(&args.Prune, "prune", false,
 		"Prune all NFD related attributes from all nodes of the cluster and exit.")
 	flagset.StringVar(&args.Options, "options", "",

@@ -67,8 +67,7 @@ master:
     #   retryPeriod: 2s
     # nfdApiParallelism: 10
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
-  metricsPort: 8081
-  healthPort: 8082
+  port: 8080
   instance:
   featureApi:
   resyncPeriod:
@@ -149,20 +148,14 @@ master:
                 values: [""]
                 
   startupProbe:
-    grpc:
-      port: 8082
     failureThreshold: 30
     # periodSeconds: 10
-  livenessProbe:
-    grpc:
-      port: 8082
+  livenessProbe: {}
     # failureThreshold: 3
     # initialDelaySeconds: 0
     # periodSeconds: 10
     # timeoutSeconds: 1
   readinessProbe:
-    grpc:
-      port: 8082
     failureThreshold: 10
     # initialDelaySeconds: 0
     # periodSeconds: 10

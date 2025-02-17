@@ -49,8 +49,9 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           startupProbe:
-            grpc:
-              port: {{ .Values.master.healthPort | default "8082" }}
+            httpGet:
+              path: /healthz
+              port: http
           {{- with .Values.master.startupProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ . }}
           {{- end }}
@@ -64,8 +65,9 @@ spec:
             timeoutSeconds: {{ . }}
           {{- end }}
           livenessProbe:
-            grpc:
-              port: {{ .Values.master.healthPort | default "8082" }}
+            httpGet:
+              path: /healthz
+              port: http
           {{- with .Values.master.livenessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ . }}
           {{- end }}
@@ -79,8 +81,9 @@ spec:
             timeoutSeconds: {{ . }}
           {{- end }}
           readinessProbe:
-            grpc:
-              port: {{ .Values.master.healthPort | default "8082" }}
+            httpGet:
+              path: /healthz
+              port: http
           {{- with .Values.master.readinessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ . }}
           {{- end }}
@@ -97,10 +100,8 @@ spec:
             successThreshold: {{ . }}
           {{- end }}
           ports:
-          - containerPort: {{ .Values.master.metricsPort | default "8081" }}
-            name: metrics
-          - containerPort: {{ .Values.master.healthPort | default "8082" }}
-            name: health
+          - containerPort: {{ .Values.master.port | default "8080" }}
+            name: http
           env:
           - name: NODE_NAME
             valueFrom:
@@ -140,8 +141,7 @@ spec:
             {{- range $key, $value := .Values.featureGates }}
             - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
-            - "-metrics={{ .Values.master.metricsPort  | default "8081" }}"
-            - "-grpc-health={{ .Values.master.healthPort | default "8082" }}"
+            - "-port={{ .Values.master.port | default "8080" }}"
             {{- with .Values.master.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
