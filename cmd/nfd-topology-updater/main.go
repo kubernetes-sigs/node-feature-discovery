@@ -107,10 +107,8 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 		"Do not create or update NodeResourceTopology objects.")
 	flagset.StringVar(&args.KubeConfigFile, "kubeconfig", "",
 		"Kube config file.")
-	flagset.IntVar(&args.MetricsPort, "metrics", 8081,
-		"Port on which to expose metrics.")
-	flagset.IntVar(&args.GrpcHealthPort, "grpc-health", 8082,
-		"Port on which to expose the grpc health endpoint.")
+	flagset.IntVar(&args.Port, "port", 8080,
+		"Port which metrics and healthz endpoints are served on")
 	flagset.DurationVar(&resourcemonitorArgs.SleepInterval, "sleep-interval", time.Duration(60)*time.Second,
 		"Time to sleep between CR updates. zero means no CR updates on interval basis. [Default: 60s]")
 	flagset.StringVar(&resourcemonitorArgs.Namespace, "watch-namespace", "*",

@@ -502,8 +502,7 @@ topologyUpdater:
   rbac:
     create: true
 
-  metricsPort: 8081
-  healthPort: 8082
+  port: 8080
   kubeletConfigPath:
   kubeletPodResourcesSockPath:
   updateInterval: 60s
@@ -517,17 +516,13 @@ topologyUpdater:
       drop: [ "ALL" ]
     readOnlyRootFilesystem: true
     runAsUser: 0
-  
+
   livenessProbe:
-    grpc:
-      port: 8082
     initialDelaySeconds: 10
     # failureThreshold: 3
     # periodSeconds: 10
     # timeoutSeconds: 1
   readinessProbe:
-    grpc:
-      port: 8082
     initialDelaySeconds: 5
     failureThreshold: 10
     # periodSeconds: 10
