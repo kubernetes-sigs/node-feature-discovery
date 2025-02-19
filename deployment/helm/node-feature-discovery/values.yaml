@@ -66,6 +66,7 @@ master:
     #   # this value has to be greater than 0
     #   retryPeriod: 2s
     # nfdApiParallelism: 10
+    # informerPageSize: 50
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   port: 8080
   instance:
