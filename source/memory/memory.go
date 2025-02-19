@@ -17,12 +17,15 @@ limitations under the License.
 package memory
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
@@ -40,8 +43,11 @@ const NvFeature = "nv"
 // NumaFeature is the name of the feature set that holds all NUMA related features.
 const NumaFeature = "numa"
 
-// SwapFeature is the name of the feature set that holds all Swap related features
+// SwapFeature is the name of the feature set that holds all Swap related features.
 const SwapFeature = "swap"
+
+// HugePages is the name of the feature set that holds information about huge pages.
+const HugePages = "hugepages"
 
 // memorySource implements the FeatureSource and LabelSource interfaces.
 type memorySource struct {
@@ -115,6 +121,13 @@ func (s *memorySource) Discover() error {
 		s.features.Instances[NvFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: nv}
 	}
 
+	// Detect Huge Pages
+	if hp, err := detectHugePages(); err != nil {
+		klog.ErrorS(err, "failed to detect huge pages")
+	} else {
+		s.features.Attributes[HugePages] = nfdv1alpha1.AttributeFeatureSet{Elements: hp}
+	}
+
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
@@ -177,6 +190,46 @@ func detectNv() ([]nfdv1alpha1.InstanceFeature, error) {
 	}
 
 	return info, nil
+}
+
+// detectHugePages checks whether huge pages are enabled on the node
+// and retrieves the configured huge page sizes.
+func detectHugePages() (map[string]string, error) {
+	hugePages := map[string]string{
+		"enabled": "false",
+	}
+
+	subdirs, err := os.ReadDir(hostpath.SysfsDir.Path("kernel/mm/hugepages"))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return hugePages, nil
+		}
+		return nil, fmt.Errorf("unable to read huge pages size: %w", err)
+	}
+
+	if len(subdirs) > 0 {
+		hugePages["enabled"] = "true"
+	}
+
+	reg := regexp.MustCompile(`hugepages-(\d+)`)
+	for _, entry := range subdirs {
+		matches := reg.FindStringSubmatch(entry.Name())
+		if len(matches) != 2 {
+			klog.ErrorS(fmt.Errorf("unexpected directory format"), "unexpectedDir", entry.Name())
+			continue
+		}
+
+		sizeFormat := matches[1] + "Ki"
+		quantity, err := resource.ParseQuantity(sizeFormat)
+		if err != nil {
+			klog.ErrorS(err, "Skipping invalid size format", "sizeFormat", sizeFormat)
+			continue
+		}
+
+		hugePages["hugepages-"+quantity.String()] = "true"
+	}
+
+	return hugePages, nil
 }
 
 // ndDevAttrs is the list of sysfs files (under each nd device) that we're trying to read
