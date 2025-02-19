@@ -19,13 +19,13 @@ package validate
 import (
 	"fmt"
 	"strings"
-	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
 	k8sQuantity "k8s.io/apimachinery/pkg/api/resource"
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/template"
 )
 
 var (
@@ -70,11 +70,10 @@ func MatchFeatures(matchFeature nfdv1alpha1.FeatureMatcher) []error {
 // template is invalid.
 func Template(labelsTemplate string) []error {
 	var validationErr []error
-
-	// Validate template
-	_, err := template.New("").Option("missingkey=error").Parse(labelsTemplate)
+	// Only validate template
+	_, err := template.NewHelper(labelsTemplate)
 	if err != nil {
-		validationErr = append(validationErr, fmt.Errorf("invalid template: %w", err))
+		validationErr = append(validationErr, err)
 	}
 	return validationErr
 }

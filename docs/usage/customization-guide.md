@@ -1100,14 +1100,17 @@ these separate expansions would be created, i.e. the end result would be a
 union of all the individual expansions.
 
 Rule templates use the Golang [text/template](https://pkg.go.dev/text/template)
-package and all its built-in functionality (e.g. pipelines and functions) can
+package along with [Sprig functions](https://masterminds.github.io/sprig/)
+and all their functionality (e.g. pipelines and functions) can
 be used. An example template taking use of the built-in `len` function,
-advertising the number of PCI network controllers from a specific vendor:
+advertising the number of PCI network controllers from a specific vendor,
+and using Sprig's `first`, `trim` and `substr` to advertise the first one's class:
 <!-- {% raw %} -->
 
 ```yaml
     labelsTemplate: |
       num-intel-network-controllers={{ .pci.device | len }}
+      first-intel-network-controllers={{ (.pci.device | first).class | trim | substr 0 63 }}
     matchFeatures:
       - feature: pci.device
         matchExpressions:
@@ -1117,6 +1120,7 @@ advertising the number of PCI network controllers from a specific vendor:
 ```
 
 <!-- {% endraw %} -->
+
 Imaginative template pipelines are possible, but care must be taken to
 produce understandable and maintainable rule sets.
 
