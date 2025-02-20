@@ -17,17 +17,16 @@ limitations under the License.
 package nodefeaturerule
 
 import (
-	"bytes"
 	"fmt"
 	"maps"
 	"slices"
 	"strings"
-	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/template"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
@@ -188,12 +187,12 @@ func executeLabelsTemplate(r *nfdv1alpha1.Rule, in matchedFeatures, out map[stri
 		return nil
 	}
 
-	th, err := newTemplateHelper(r.LabelsTemplate)
+	th, err := template.NewHelper(r.LabelsTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse LabelsTemplate: %w", err)
 	}
 
-	labels, err := th.expandMap(in)
+	labels, err := th.ExpandMap(in)
 	if err != nil {
 		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
 	}
@@ -208,12 +207,12 @@ func executeVarsTemplate(r *nfdv1alpha1.Rule, in matchedFeatures, out map[string
 		return nil
 	}
 
-	th, err := newTemplateHelper(r.VarsTemplate)
+	th, err := template.NewHelper(r.VarsTemplate)
 	if err != nil {
 		return err
 	}
 
-	vars, err := th.expandMap(in)
+	vars, err := th.ExpandMap(in)
 	if err != nil {
 		return err
 	}
@@ -308,48 +307,4 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 		}
 	}
 	return isMatch, status, nil
-}
-
-type templateHelper struct {
-	template *template.Template
-}
-
-func newTemplateHelper(name string) (*templateHelper, error) {
-	tmpl, err := template.New("").Option("missingkey=error").Parse(name)
-	if err != nil {
-		return nil, fmt.Errorf("invalid template: %w", err)
-	}
-	return &templateHelper{template: tmpl}, nil
-}
-
-func (h *templateHelper) execute(data interface{}) (string, error) {
-	var tmp bytes.Buffer
-	if err := h.template.Execute(&tmp, data); err != nil {
-		return "", err
-	}
-	return tmp.String(), nil
-}
-
-// expandMap is a helper for expanding a template in to a map of strings. Data
-// after executing the template is expexted to be key=value pairs separated by
-// newlines.
-func (h *templateHelper) expandMap(data interface{}) (map[string]string, error) {
-	expanded, err := h.execute(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Split out individual key-value pairs
-	out := make(map[string]string)
-	for _, item := range strings.Split(expanded, "\n") {
-		// Remove leading/trailing whitespace and skip empty lines
-		if trimmed := strings.TrimSpace(item); trimmed != "" {
-			split := strings.SplitN(trimmed, "=", 2)
-			if len(split) == 1 {
-				return nil, fmt.Errorf("missing value in expanded template line %q, (format must be '<key>=<value>')", trimmed)
-			}
-			out[split[0]] = split[1]
-		}
-	}
-	return out, nil
 }
