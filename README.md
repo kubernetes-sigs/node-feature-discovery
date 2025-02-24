@@ -12,8 +12,9 @@ features and system configuration!
 #### Quick-start – the short-short version
 
 ```bash
-$ kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.17.1
+$ kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.17.2"
   namespace/node-feature-discovery created
+  customresourcedefinition.apiextensions.k8s.io/nodefeaturegroups.nfd.k8s-sigs.io created
   customresourcedefinition.apiextensions.k8s.io/nodefeaturerules.nfd.k8s-sigs.io created
   customresourcedefinition.apiextensions.k8s.io/nodefeatures.nfd.k8s-sigs.io created
   serviceaccount/nfd-gc created
@@ -25,8 +26,8 @@ $ kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/de
   rolebinding.rbac.authorization.k8s.io/nfd-worker created
   clusterrolebinding.rbac.authorization.k8s.io/nfd-gc created
   clusterrolebinding.rbac.authorization.k8s.io/nfd-master created
-  configmap/nfd-master-conf created
-  configmap/nfd-worker-conf created
+  configmap/nfd-master-conf-9mfc26f2tc created
+  configmap/nfd-worker-conf-c2mbm9t788 created
   deployment.apps/nfd-gc created
   deployment.apps/nfd-master created
   daemonset.apps/nfd-worker created
