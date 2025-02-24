@@ -237,7 +237,7 @@ func getHugePageSize(basePath, dirName string, reg *regexp.Regexp) (string, erro
 	totalPagesFile := filepath.Join(basePath, dirName, "nr_hugepages")
 	totalPagesRaw, err := os.ReadFile(totalPagesFile)
 	if err != nil {
-		return "", fmt.Errorf("unable to read total number of huge pages from the file name: %s", totalPagesFile)
+		return "", fmt.Errorf("unable to read total number of huge pages from the file: %s", totalPagesFile)
 	}
 
 	totalPages, err := strconv.Atoi(strings.TrimSpace(string(totalPagesRaw)))
