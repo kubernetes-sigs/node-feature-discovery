@@ -155,3 +155,5 @@ func getCpuidFlags() []string {
 }
 
 func getCpuidAttributes() map[string]string { return nil }
+
+func getHypervisor() string { return "" }
