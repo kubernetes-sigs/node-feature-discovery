@@ -72,7 +72,11 @@ func detectPstate() (map[string]string, error) {
 	cpufreqDir := filepath.Join(sysfsBase, "cpufreq")
 	policies, err := os.ReadDir(cpufreqDir)
 	if err != nil {
-		klog.ErrorS(err, "failed to read cpufreq directory")
+		if os.IsNotExist(err) {
+			klog.V(2).InfoS("cpufreq driver not enabled")
+		} else {
+			klog.ErrorS(err, "failed to read cpufreq directory")
+		}
 		return features, nil
 	}
 
