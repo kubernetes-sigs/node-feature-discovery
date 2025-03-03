@@ -147,50 +147,71 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 	return ret, nil
 }
 
+// GroupRuleOutput contains the output of group rule execution.
+type GroupRuleOutput struct {
+	Vars        map[string]string
+	MatchStatus *MatchStatus
+}
+
 // ExecuteGroupRule executes the GroupRule against a set of input features, and return true if the
 // rule matches.
-func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, failFast bool) (MatchStatus, error) {
+func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, failFast bool) (GroupRuleOutput, error) {
 	var (
 		matchStatus MatchStatus
 		isMatch     bool
 	)
+	vars := make(map[string]string)
+
 	if n := len(r.MatchAny); n > 0 {
 		matchStatus.MatchAny = make([]*MatchFeatureStatus, 0, n)
 		// Logical OR over the matchAny matchers
 		for _, matcher := range r.MatchAny {
 			matched, featureStatus, err := evaluateMatchAnyElem(&matcher, features, failFast)
 			if err != nil {
-				return matchStatus, err
+				return GroupRuleOutput{}, err
 			} else if matched {
 				isMatch = true
 				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(featureStatus.MatchedFeatures))
 
-				if failFast {
+				if r.VarsTemplate == "" && failFast {
 					// there's no need to evaluate other matchers in MatchAny
+					// if there are no templates to be executed on them
 					break
+				}
+
+				if err := executeTemplate(r.VarsTemplate, featureStatus.MatchedFeatures, vars); err != nil {
+					return GroupRuleOutput{}, err
 				}
 			}
 			matchStatus.MatchAny = append(matchStatus.MatchAny, featureStatus)
 		}
 		if !isMatch && failFast {
-			return matchStatus, nil
+			return GroupRuleOutput{MatchStatus: &matchStatus}, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
 		var err error
 		if isMatch, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
-			return matchStatus, err
+			return GroupRuleOutput{}, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
-			return matchStatus, nil
+			return GroupRuleOutput{MatchStatus: &matchStatus}, nil
+		}
+		if err := executeTemplate(r.VarsTemplate, matchStatus.MatchedFeatures, vars); err != nil {
+			return GroupRuleOutput{}, err
 		}
 	}
 
+	maps.Copy(vars, r.Vars)
 	matchStatus.IsMatch = true
 
-	klog.V(2).InfoS("rule matched", "ruleName", r.Name)
-	return matchStatus, nil
+	ret := GroupRuleOutput{
+		Vars:        vars,
+		MatchStatus: &matchStatus,
+	}
+	klog.V(2).InfoS("rule matched", "ruleName", r.Name, "ruleOutput", utils.DelayedDumper(ret))
+	return ret, nil
 }
 
 func executeTemplate(tmpl string, in matchedFeatures, out map[string]string) error {

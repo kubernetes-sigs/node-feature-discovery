@@ -717,7 +717,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 	if err != nil {
 		return fmt.Errorf("failed to get nodes: %w", err)
 	}
-	nodeFeaturesList := make([]*nfdv1alpha1.NodeFeature, 0)
+	nodeFeaturesList := make([]*nfdv1alpha1.Features, 0)
 	for _, node := range nodes.Items {
 		// Merge all NodeFeature objects into a single NodeFeatureSpec
 		nodeFeatures, err := m.getAndMergeNodeFeatures(node.Name)
@@ -728,22 +728,22 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 			// Nothing to do for this node
 			continue
 		}
-		nodeFeaturesList = append(nodeFeaturesList, nodeFeatures)
+		nodeFeaturesList = append(nodeFeaturesList, &nodeFeatures.Spec.Features)
 	}
 
 	// Execute rules and create matching groups
 	nodePool := make([]nfdv1alpha1.FeatureGroupNode, 0)
 	nodeGroupValidator := make(map[string]bool)
-	for _, rule := range nodeFeatureGroup.Spec.Rules {
-		for _, feature := range nodeFeaturesList {
-			match, err := nodefeaturerule.ExecuteGroupRule(&rule, &feature.Spec.Features, true)
+	for _, features := range nodeFeaturesList {
+		for _, rule := range nodeFeatureGroup.Spec.Rules {
+			ruleOut, err := nodefeaturerule.ExecuteGroupRule(&rule, features, true)
 			if err != nil {
 				klog.ErrorS(err, "failed to evaluate rule", "ruleName", rule.Name)
 				continue
 			}
 
-			if match.IsMatch {
-				system := feature.Spec.Features.Attributes["system.name"]
+			if ruleOut.MatchStatus.IsMatch {
+				system := features.Attributes["system.name"]
 				nodeName := system.Elements["nodename"]
 				if _, ok := nodeGroupValidator[nodeName]; !ok {
 					nodePool = append(nodePool, nfdv1alpha1.FeatureGroupNode{
@@ -752,6 +752,9 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 					nodeGroupValidator[nodeName] = true
 				}
 			}
+
+			// Feed back vars from rule output to features map for subsequent rules to match
+			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 		}
 	}
 
