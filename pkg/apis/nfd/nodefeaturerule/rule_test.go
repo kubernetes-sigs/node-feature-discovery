@@ -64,7 +64,7 @@ func TestRule(t *testing.T) {
 	m, err = Execute(r1, f, true)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, r1.Labels, m.Labels, "empty matcher should have matched empty features")
-	assert.Empty(t, r1.Vars, "vars should be empty")
+	assert.Empty(t, m.Vars, "vars should be empty")
 
 	m, err = Execute(r2, f, true)
 	assert.NoError(t, err, "matching against a missing feature should not have returned an error")
