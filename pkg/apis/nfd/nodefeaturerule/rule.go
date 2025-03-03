@@ -108,7 +108,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 			matchStatus.MatchAny = append(matchStatus.MatchAny, featureStatus)
 		}
 
-		if !isMatch {
+		if !isMatch && failFast {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{MatchStatus: &matchStatus}, nil
 		}

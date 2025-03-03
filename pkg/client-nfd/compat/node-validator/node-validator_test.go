@@ -311,6 +311,86 @@ func TestNodeValidator(t *testing.T) {
 			assertOutput(ctx, spec, expectedOutput)
 		})
 
+		Convey("That contains matchAny and matchFeatures in one spec", func() {
+			spec := buildDefaultSpec([]v1alpha1.Rule{
+				{
+					Name: "fake_6",
+					MatchAny: []v1alpha1.MatchAnyElem{
+						{
+							MatchFeatures: v1alpha1.FeatureMatcher{
+								{
+									Feature: "fake.instance",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+									},
+								},
+							},
+						},
+						{
+							MatchFeatures: v1alpha1.FeatureMatcher{
+								{
+									Feature: "fake.instance",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
+									},
+								},
+							},
+						},
+					},
+					MatchFeatures: v1alpha1.FeatureMatcher{
+						{
+							Feature: "fake.attribute",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"attr_1": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							},
+						},
+					},
+				},
+			})
+
+			expectedOutput := buildDefaultExpectedOutput([]ProcessedRuleStatus{
+				{
+					Name:    "fake_6",
+					IsMatch: true,
+					MatchedAny: []MatchAnyElem{
+						{
+							MatchedExpressions: []MatchedExpression{
+								{
+									Feature:     "fake.instance",
+									Name:        "name",
+									Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+									MatcherType: MatchExpressionType,
+									IsMatch:     true,
+								},
+							},
+						},
+						{
+							MatchedExpressions: []MatchedExpression{
+								{
+									Feature:     "fake.instance",
+									Name:        "name",
+									Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
+									MatcherType: MatchExpressionType,
+									IsMatch:     false,
+								},
+							},
+						},
+					},
+					MatchedExpressions: []MatchedExpression{
+						{
+							Feature:     "fake.attribute",
+							Name:        "attr_1",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+					},
+				},
+			})
+
+			assertOutput(ctx, spec, expectedOutput)
+		})
+
 	})
 
 	Convey("With multiple compatibility sets", t, func() {
