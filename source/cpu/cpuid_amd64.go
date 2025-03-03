@@ -36,3 +36,5 @@ func getCpuidAttributes() map[string]string {
 
 	return ret
 }
+
+func getHypervisor() string { return "" }
