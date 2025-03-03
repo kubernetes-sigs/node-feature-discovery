@@ -17,12 +17,15 @@ limitations under the License.
 package memory
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
@@ -40,8 +43,11 @@ const NvFeature = "nv"
 // NumaFeature is the name of the feature set that holds all NUMA related features.
 const NumaFeature = "numa"
 
-// SwapFeature is the name of the feature set that holds all Swap related features
+// SwapFeature is the name of the feature set that holds all Swap related features.
 const SwapFeature = "swap"
+
+// HugePages is the name of the feature set that holds information about huge pages.
+const HugePages = "hugepages"
 
 // memorySource implements the FeatureSource and LabelSource interfaces.
 type memorySource struct {
@@ -115,6 +121,13 @@ func (s *memorySource) Discover() error {
 		s.features.Instances[NvFeature] = nfdv1alpha1.InstanceFeatureSet{Elements: nv}
 	}
 
+	// Detect Huge Pages
+	if hp, err := detectHugePages(); err != nil {
+		klog.ErrorS(err, "failed to detect huge pages")
+	} else {
+		s.features.Attributes[HugePages] = nfdv1alpha1.AttributeFeatureSet{Elements: hp}
+	}
+
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
 	return nil
@@ -177,6 +190,57 @@ func detectNv() ([]nfdv1alpha1.InstanceFeature, error) {
 	}
 
 	return info, nil
+}
+
+// detectHugePages checks whether huge pages are enabled on the node
+// and retrieves the configured huge page sizes.
+func detectHugePages() (map[string]string, error) {
+	hugePages := map[string]string{
+		"enabled": "false",
+	}
+
+	basePath := hostpath.SysfsDir.Path("kernel/mm/hugepages")
+	subdirs, err := os.ReadDir(basePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return hugePages, nil
+		}
+		return nil, fmt.Errorf("unable to read huge pages size: %w", err)
+	}
+
+	for _, entry := range subdirs {
+		if !entry.IsDir() {
+			continue
+		}
+
+		totalPages, err := getHugePagesTotalCount(basePath, entry.Name())
+		if err != nil {
+			klog.ErrorS(err, "unable to read hugepages total count", "hugepages", entry.Name())
+		}
+		pageSize := strings.TrimRight(strings.TrimPrefix(entry.Name(), "hugepages-"), "kB")
+		quantity, err := resource.ParseQuantity(pageSize + "Ki")
+		if err != nil {
+			klog.ErrorS(err, "unable to parse quantity", "hugepages", entry.Name(), "pageSize", pageSize)
+			continue
+		}
+
+		hugePages[corev1.ResourceHugePagesPrefix+quantity.String()] = totalPages
+		if v, err := strconv.Atoi(totalPages); err == nil && v > 0 {
+			hugePages["enabled"] = "true"
+		}
+	}
+
+	return hugePages, nil
+}
+
+func getHugePagesTotalCount(basePath, dirname string) (string, error) {
+	totalPagesFile := filepath.Join(basePath, dirname, "nr_hugepages")
+	totalPages, err := os.ReadFile(totalPagesFile)
+	if err != nil {
+		return "", fmt.Errorf("unable to read total number of huge pages from the file: %s", totalPagesFile)
+	}
+
+	return strings.TrimSpace(string(totalPages)), nil
 }
 
 // ndDevAttrs is the list of sysfs files (under each nd device) that we're trying to read

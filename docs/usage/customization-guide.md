@@ -966,6 +966,9 @@ The following features are available for matching:
 |                  |              | **`node_count`** | int | Number of NUMA nodes |
 | **`memory.swap`**  | attribute  |          |            | Swap enabled on node |
 |                  |              | **`enabled`** | bool  | `true` if swap partition detected, `false` otherwise |
+| **`memory.hugepages`**  | attribute  |          |       | Discovery of supported huge pages size on node |
+|                  |              | **`enabled`** | bool  | `true` if total number of huge pages (of any page size) have been configured, otherwise `false` |
+|                  |              | **`hugepages-<page-size>`** | string   | total number of huge pages (e.g., `hugepages-1Gi=16`) |
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs` |
