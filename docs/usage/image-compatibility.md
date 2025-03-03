@@ -20,7 +20,8 @@ sort: 11
 **Image Compatibility is in the experimental `v1alpha1` version.**
 
 Image compatibility metadata enables container image authors to define their
-image requirements using [Node Feature Rules](./custom-resources.md#nodefeaturerule).
+image requirements using a spec similar to
+[Node Feature Groups](./custom-resources.md#nodefeaturegroup).
 This complementary solution allows features discovered on nodes to be matched
 directly from images. As a result, container requirements become discoverable
 and programmable, supporting various consumers and use cases where applications
@@ -29,9 +30,9 @@ need a specific compatible environment.
 ### Compatibility Specification
 
 The compatibility specification is a list of compatibility objects that contain
-[Node Feature Rules](./custom-resources.md#nodefeaturerule), along with
-additional fields to control the execution of validation between the image and
-the host.
+rules similar to [Node Feature Groups](./custom-resources.md#nodefeaturegroup),
+along with additional fields to control the execution of validation between the
+image and the host.
 
 ### Schema
 
@@ -42,9 +43,9 @@ the host.
   This REQUIRED property is a list of compatibility sets.
 
   - **rules** - *object*  
-    This REQUIRED property is a reference to the spec of the [NodeFeatureRule API](./custom-resources.md#nodefeaturerule).
+    This REQUIRED property is a reference to the spec of the [NodeFeatureGroup API](./custom-resources.md#nodefeaturegroup).
     The spec allows image requirements to be described using the features
-    discovered from NFD sources. For more details, please refer to [the documentation](./custom-resources.md#nodefeaturerule).
+    discovered from NFD sources. For more details, please refer to [the documentation](./custom-resources.md#nodefeaturegroup).
 
   - **weight** - *int*  
     This OPTIONAL property specifies the [node affinity weight](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity-weight).

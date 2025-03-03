@@ -34,7 +34,7 @@ func init() {
 	fs.SetConfig(fs.NewConfig())
 }
 
-func buildDefaultSpec(rules []v1alpha1.Rule) *compatv1alpha1.Spec {
+func buildDefaultSpec(rules []v1alpha1.GroupRule) *compatv1alpha1.Spec {
 	return &compatv1alpha1.Spec{
 		Version: compatv1alpha1.Version,
 		Compatibilties: []compatv1alpha1.Compatibility{
@@ -73,7 +73,7 @@ func TestNodeValidator(t *testing.T) {
 	Convey("With a single compatibility set", t, func() {
 
 		Convey("That contains flag which results in match", func() {
-			spec := buildDefaultSpec([]v1alpha1.Rule{
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_1",
 					MatchFeatures: v1alpha1.FeatureMatcher{
@@ -105,7 +105,7 @@ func TestNodeValidator(t *testing.T) {
 		})
 
 		Convey("That contains flags and attribute which result in mismatch", func() {
-			spec := buildDefaultSpec([]v1alpha1.Rule{
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_2",
 					MatchFeatures: v1alpha1.FeatureMatcher{
@@ -152,7 +152,7 @@ func TestNodeValidator(t *testing.T) {
 		})
 
 		Convey("That contains instances which results in mismatch", func() {
-			spec := buildDefaultSpec([]v1alpha1.Rule{
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_3",
 					MatchFeatures: v1alpha1.FeatureMatcher{
@@ -215,7 +215,7 @@ func TestNodeValidator(t *testing.T) {
 		})
 
 		Convey("That contains instances which results in match", func() {
-			spec := buildDefaultSpec([]v1alpha1.Rule{
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_4",
 					MatchAny: []v1alpha1.MatchAnyElem{
@@ -278,7 +278,7 @@ func TestNodeValidator(t *testing.T) {
 		})
 
 		Convey("That contains spec with zero matches which results in mismatch", func() {
-			spec := buildDefaultSpec([]v1alpha1.Rule{
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_5",
 					MatchFeatures: v1alpha1.FeatureMatcher{
@@ -312,7 +312,7 @@ func TestNodeValidator(t *testing.T) {
 		})
 
 		Convey("That contains matchAny and matchFeatures in one spec", func() {
-			spec := buildDefaultSpec([]v1alpha1.Rule{
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_6",
 					MatchAny: []v1alpha1.MatchAnyElem{
@@ -401,7 +401,7 @@ func TestNodeValidator(t *testing.T) {
 					Tag:         "prefered",
 					Weight:      90,
 					Description: "Fake compatibility 1",
-					Rules: []v1alpha1.Rule{
+					Rules: []v1alpha1.GroupRule{
 						{
 							Name: "fake_1",
 							MatchFeatures: v1alpha1.FeatureMatcher{
@@ -419,7 +419,7 @@ func TestNodeValidator(t *testing.T) {
 					Tag:         "fallback",
 					Weight:      40,
 					Description: "Fake compatibility 2",
-					Rules: []v1alpha1.Rule{
+					Rules: []v1alpha1.GroupRule{
 						{
 							Name: "fake_1",
 							MatchFeatures: v1alpha1.FeatureMatcher{
@@ -498,7 +498,7 @@ func TestNodeValidator(t *testing.T) {
 					Tag:         "prefered",
 					Weight:      90,
 					Description: "Fake compatibility 1",
-					Rules: []v1alpha1.Rule{
+					Rules: []v1alpha1.GroupRule{
 						{
 							Name: "fake_1",
 							MatchFeatures: v1alpha1.FeatureMatcher{
@@ -516,7 +516,7 @@ func TestNodeValidator(t *testing.T) {
 					Tag:         "fallback",
 					Weight:      40,
 					Description: "Fake compatibility 2",
-					Rules: []v1alpha1.Rule{
+					Rules: []v1alpha1.GroupRule{
 						{
 							Name: "fake_1",
 							MatchFeatures: v1alpha1.FeatureMatcher{
