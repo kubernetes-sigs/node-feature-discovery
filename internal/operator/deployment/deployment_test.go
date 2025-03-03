@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -200,5 +201,79 @@ var _ = Describe("GetDeployment", func() {
 		clnt.EXPECT().Get(ctx, ctrlclient.ObjectKey{Namespace: testNamespace, Name: testName}, gomock.Any()).Return(fmt.Errorf("some error"))
 		_, err := deploymentAPI.GetDeployment(ctx, testNamespace, testName)
 		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("getPodsTolerations", func() {
+	It("no tolerations defined in the NFD CR", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{},
+			},
+		}
+		expectedTolerations := []corev1.Toleration{
+			{
+				Key:      "node-role.kubernetes.io/master",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+			{
+				Key:      "node-role.kubernetes.io/control-plane",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+		}
+
+		res := getPodsTolerations(&nfdCR)
+		Expect(res).To(Equal(expectedTolerations))
+	})
+
+	It("tolerations defined in the NFD CR", func() {
+		masterTolerations := []corev1.Toleration{
+			{
+				Key:      "key1",
+				Value:    "value1",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+			{
+				Key:      "key1",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+		}
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					MasterTolerations: masterTolerations,
+				},
+			},
+		}
+		expectedTolerations := []corev1.Toleration{
+			{
+				Key:      "node-role.kubernetes.io/master",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+			{
+				Key:      "node-role.kubernetes.io/control-plane",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+			{
+				Key:      "key1",
+				Value:    "value1",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+			{
+				Key:      "key1",
+				Operator: corev1.TolerationOpEqual,
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+		}
+
+		res := getPodsTolerations(&nfdCR)
+		Expect(res).To(Equal(expectedTolerations))
 	})
 })
