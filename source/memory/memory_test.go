@@ -17,7 +17,6 @@ limitations under the License.
 package memory
 
 import (
-	"regexp"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,7 +72,8 @@ func TestDetectHugePages(t *testing.T) {
 
 		expectedHugePages := map[string]string{
 			"enabled":       "true",
-			"hugepages-1Gi": "true",
+			"hugepages-1Gi": "2",
+			"hugepages-2Mi": "0",
 		}
 		hugePages, err := detectHugePages()
 		assert.Nil(t, err)
@@ -93,25 +93,23 @@ func TestDetectHugePages(t *testing.T) {
 
 }
 
-func TestGetHugePagesSize(t *testing.T) {
-
-	re := regexp.MustCompile(`hugepages-(\d+)`)
+func TestGetHugePagesTotalCount(t *testing.T) {
 
 	Convey("With configured total huge pages", t, func() {
-		hugePage, err := getHugePageSize("testdata/hugepages/kernel/mm/hugepages", "hugepages-1048576kB", re)
-		assert.Equal(t, "hugepages-1Gi", hugePage)
+		totalPages, err := getHugePagesTotalCount("testdata/hugepages/kernel/mm/hugepages", "hugepages-1048576kB")
+		assert.Equal(t, "2", totalPages)
 		assert.Nil(t, err)
 	})
 
 	Convey("With not configured total huge pages", t, func() {
-		hugePage, err := getHugePageSize("testdata/hugepages/kernel/mm/hugepages", "hugepages-2048kB", re)
-		assert.Equal(t, "", hugePage)
-		assert.NotNil(t, err)
+		totalPages, err := getHugePagesTotalCount("testdata/hugepages/kernel/mm/hugepages", "hugepages-2048kB")
+		assert.Equal(t, "0", totalPages)
+		assert.Nil(t, err)
 	})
 
 	Convey("With invalid huge page directory", t, func() {
-		hugePage, err := getHugePageSize("testdata/hugepages/kernel/mm/hugepages", "hugepages-invalid", re)
-		assert.Equal(t, "", hugePage)
+		totalPages, err := getHugePagesTotalCount("testdata/hugepages/kernel/mm/hugepages", "hugepages-invalid")
+		assert.Equal(t, "", totalPages)
 		assert.NotNil(t, err)
 	})
 

@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 
@@ -208,53 +208,39 @@ func detectHugePages() (map[string]string, error) {
 		return nil, fmt.Errorf("unable to read huge pages size: %w", err)
 	}
 
-	reg := regexp.MustCompile(`hugepages-(\d+)`)
 	for _, entry := range subdirs {
 		if !entry.IsDir() {
 			continue
 		}
 
-		pageSize, err := getHugePageSize(basePath, entry.Name(), reg)
+		totalPages, err := getHugePagesTotalCount(basePath, entry.Name())
 		if err != nil {
-			klog.ErrorS(err, "skipping huge page entry", "entry", entry.Name())
+			klog.ErrorS(err, "unable to read hugepages total count", "hugepages", entry.Name())
+		}
+		pageSize := strings.TrimRight(strings.TrimPrefix(entry.Name(), "hugepages-"), "kB")
+		quantity, err := resource.ParseQuantity(pageSize + "Ki")
+		if err != nil {
+			klog.ErrorS(err, "unable to parse quantity", "hugepages", entry.Name(), "pageSize", pageSize)
 			continue
 		}
-		if pageSize != "" {
+
+		hugePages[corev1.ResourceHugePagesPrefix+quantity.String()] = totalPages
+		if v, err := strconv.Atoi(totalPages); err == nil && v > 0 {
 			hugePages["enabled"] = "true"
-			hugePages[pageSize] = "true"
 		}
 	}
 
 	return hugePages, nil
 }
 
-func getHugePageSize(basePath, dirName string, reg *regexp.Regexp) (string, error) {
-	matches := reg.FindStringSubmatch(dirName)
-	if len(matches) != 2 {
-		return "", fmt.Errorf("unexpected directory format: %s", dirName)
-	}
-
-	totalPagesFile := filepath.Join(basePath, dirName, "nr_hugepages")
-	totalPagesRaw, err := os.ReadFile(totalPagesFile)
+func getHugePagesTotalCount(basePath, dirname string) (string, error) {
+	totalPagesFile := filepath.Join(basePath, dirname, "nr_hugepages")
+	totalPages, err := os.ReadFile(totalPagesFile)
 	if err != nil {
 		return "", fmt.Errorf("unable to read total number of huge pages from the file: %s", totalPagesFile)
 	}
 
-	totalPages, err := strconv.Atoi(strings.TrimSpace(string(totalPagesRaw)))
-	if err != nil {
-		return "", fmt.Errorf("unable to convert total pages to integer - %s: %s", totalPagesFile, totalPagesRaw)
-	}
-	if totalPages < 1 {
-		return "", nil
-	}
-
-	sizeFormat := matches[1] + "Ki"
-	quantity, err := resource.ParseQuantity(sizeFormat)
-	if err != nil {
-		return "", fmt.Errorf("invalid size format: %s", sizeFormat)
-	}
-
-	return "hugepages-" + quantity.String(), nil
+	return strings.TrimSpace(string(totalPages)), nil
 }
 
 // ndDevAttrs is the list of sysfs files (under each nd device) that we're trying to read
