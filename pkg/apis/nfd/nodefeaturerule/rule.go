@@ -97,10 +97,10 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 					break
 				}
 
-				if err := executeLabelsTemplate(r, featureStatus.MatchedFeatures, labels); err != nil {
+				if err := executeTemplate(r.LabelsTemplate, featureStatus.MatchedFeatures, labels); err != nil {
 					return RuleOutput{}, err
 				}
-				if err := executeVarsTemplate(r, featureStatus.MatchedFeatures, vars); err != nil {
+				if err := executeTemplate(r.VarsTemplate, featureStatus.MatchedFeatures, vars); err != nil {
 					return RuleOutput{}, err
 				}
 			}
@@ -122,10 +122,10 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 			return RuleOutput{MatchStatus: &matchStatus}, nil
 		} else {
 			klog.V(4).InfoS("matchFeatures matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matchStatus.MatchedFeatures))
-			if err := executeLabelsTemplate(r, matchStatus.MatchedFeatures, labels); err != nil {
+			if err := executeTemplate(r.LabelsTemplate, matchStatus.MatchedFeatures, labels); err != nil {
 				return RuleOutput{}, err
 			}
-			if err := executeVarsTemplate(r, matchStatus.MatchedFeatures, vars); err != nil {
+			if err := executeTemplate(r.VarsTemplate, matchStatus.MatchedFeatures, vars); err != nil {
 				return RuleOutput{}, err
 			}
 		}
@@ -182,43 +182,21 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, 
 	return true, nil
 }
 
-func executeLabelsTemplate(r *nfdv1alpha1.Rule, in matchedFeatures, out map[string]string) error {
-	if r.LabelsTemplate == "" {
+func executeTemplate(tmpl string, in matchedFeatures, out map[string]string) error {
+	if tmpl == "" {
 		return nil
 	}
 
-	th, err := template.NewHelper(r.LabelsTemplate)
+	th, err := template.NewHelper(tmpl)
 	if err != nil {
-		return fmt.Errorf("failed to parse LabelsTemplate: %w", err)
+		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	labels, err := th.ExpandMap(in)
+	values, err := th.ExpandMap(in)
 	if err != nil {
-		return fmt.Errorf("failed to expand LabelsTemplate: %w", err)
+		return fmt.Errorf("failed to expand template: %w", err)
 	}
-	for k, v := range labels {
-		out[k] = v
-	}
-	return nil
-}
-
-func executeVarsTemplate(r *nfdv1alpha1.Rule, in matchedFeatures, out map[string]string) error {
-	if r.VarsTemplate == "" {
-		return nil
-	}
-
-	th, err := template.NewHelper(r.VarsTemplate)
-	if err != nil {
-		return err
-	}
-
-	vars, err := th.ExpandMap(in)
-	if err != nil {
-		return err
-	}
-	for k, v := range vars {
-		out[k] = v
-	}
+	maps.Copy(out, values)
 	return nil
 }
 
