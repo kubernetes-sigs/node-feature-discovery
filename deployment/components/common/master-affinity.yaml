@@ -6,23 +6,9 @@
       - weight: 1
         preference:
           matchExpressions:
-          - key: "node-role.kubernetes.io/master"
-            operator: In
-            values: [""]
-      - weight: 1
-        preference:
-          matchExpressions:
           - key: node-role.kubernetes.io/control-plane
             operator: In
             values: [""]
-
-- op: add
-  path: /spec/template/spec/tolerations/-
-  value:
-    key: "node-role.kubernetes.io/master"
-    operator: "Equal"
-    value: ""
-    effect: "NoSchedule"
 
 - op: add
   path: /spec/template/spec/tolerations/-
