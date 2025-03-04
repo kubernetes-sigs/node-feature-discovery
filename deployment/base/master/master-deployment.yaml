@@ -28,10 +28,6 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          startupProbe:
-            grpc:
-              port: 8082
-            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /healthz
