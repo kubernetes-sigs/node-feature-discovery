@@ -809,8 +809,11 @@ below.
 |  `Exists`       | 0            | The key exists |
 |  `DoesNotExist` | 0            | The key does not exists |
 |  `Gt`           | 1            | Input is greater than the value. Both the input and value must be integer numbers. |
+|  `Ge`           | 1            | Input is greater than or equal to the value. Both the input and value must be integer numbers. |
 |  `Lt`           | 1            | Input is less than the value. Both the input and value must be integer numbers. |
+|  `Le`           | 1            | Input is less than or equal to the value. Both the input and value must be integer numbers. |
 |  `GtLt`         | 2            | Input is between two values. Both the input and value must be integer numbers. |
+|  `GeLe`         | 2            | Input falls within a range that includes the boundary values. Both the input and value must be integer numbers. |
 |  `IsTrue`       | 0            | Input is equal to "true" |
 |  `IsFalse`      | 0            | Input is equal "false" |
 
@@ -968,7 +971,7 @@ The following features are available for matching:
 |                  |              | **`enabled`** | bool  | `true` if swap partition detected, `false` otherwise |
 | **`memory.hugepages`**  | attribute  |          |       | Discovery of supported huge pages size on node |
 |                  |              | **`enabled`** | bool  | `true` if total number of huge pages (of any page size) have been configured, otherwise `false` |
-|                  |              | **`hugepages-<page-size>`** | string   | total number of huge pages (e.g., `hugepages-1Gi=16`) |
+|                  |              | **`hugepages-<page-size>`** | string   | Total number of huge pages (e.g., `hugepages-1Gi=16`) |
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs` |
