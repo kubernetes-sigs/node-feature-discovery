@@ -149,37 +149,48 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 
 // ExecuteGroupRule executes the GroupRule against a set of input features, and return true if the
 // rule matches.
-func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, failFast bool) (bool, error) {
-	matched := false
-	if len(r.MatchAny) > 0 {
+func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, failFast bool) (MatchStatus, error) {
+	var (
+		matchStatus MatchStatus
+		isMatch     bool
+	)
+	if n := len(r.MatchAny); n > 0 {
+		matchStatus.MatchAny = make([]*MatchFeatureStatus, 0, n)
 		// Logical OR over the matchAny matchers
 		for _, matcher := range r.MatchAny {
-			if isMatch, matches, err := evaluateMatchAnyElem(&matcher, features, failFast); err != nil {
-				return false, err
-			} else if isMatch {
-				matched = true
-				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(matches))
-				// there's no need to evaluate other matchers in MatchAny
-				// One match is enough for MatchAny
-				break
+			matched, featureStatus, err := evaluateMatchAnyElem(&matcher, features, failFast)
+			if err != nil {
+				return matchStatus, err
+			} else if matched {
+				isMatch = true
+				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(featureStatus.MatchedFeatures))
+
+				if failFast {
+					// there's no need to evaluate other matchers in MatchAny
+					break
+				}
 			}
+			matchStatus.MatchAny = append(matchStatus.MatchAny, featureStatus)
 		}
-		if !matched {
-			return false, nil
+		if !isMatch && failFast {
+			return matchStatus, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, _, err := evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
-			return false, err
+		var err error
+		if isMatch, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
+			return matchStatus, err
 		} else if !isMatch {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
-			return false, nil
+			return matchStatus, nil
 		}
 	}
 
+	matchStatus.IsMatch = true
+
 	klog.V(2).InfoS("rule matched", "ruleName", r.Name)
-	return true, nil
+	return matchStatus, nil
 }
 
 func executeTemplate(tmpl string, in matchedFeatures, out map[string]string) error {

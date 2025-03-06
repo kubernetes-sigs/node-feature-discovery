@@ -742,8 +742,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 				continue
 			}
 
-			if match {
-				klog.ErrorS(err, "failed to evaluate rule", "ruleName", rule.Name, "nodeName", feature.Name)
+			if match.IsMatch {
 				system := feature.Spec.Features.Attributes["system.name"]
 				nodeName := system.Elements["nodename"]
 				if _, ok := nodeGroupValidator[nodeName]; !ok {
