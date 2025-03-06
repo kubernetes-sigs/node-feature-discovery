@@ -24,6 +24,12 @@ unsigned long gethwcap() {
 }
 */
 import "C"
+import (
+	"os"
+	"strings"
+
+	"k8s.io/klog/v2"
+)
 
 /*
 all special features for s390x should be defined here; canonical list:
@@ -96,4 +102,29 @@ func getCpuidFlags() []string {
 	return r
 }
 
-func getCpuidAttributes() map[string]string { return nil }
+func getCpuidAttributes() map[string]string {
+	ret := make(map[string]string)
+	ret["hypervisor"] = getHypervisor()
+
+	return ret
+}
+
+func getHypervisor() string {
+	data, err := os.ReadFile("/proc/sysinfo")
+	if err != nil {
+		klog.ErrorS(err, "failed to read /proc/sysinfo")
+		return ""
+	}
+
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.Contains(line, "Control Program:") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				return strings.TrimSpace(parts[1])
+			}
+		}
+	}
+
+	// if Control Program not found, we determine that the node is PR/SM(LPAR)
+	return "PR/SM"
+}
