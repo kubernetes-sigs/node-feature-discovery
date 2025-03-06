@@ -44,8 +44,11 @@ var matchOps = map[nfdv1alpha1.MatchOp]struct{}{
 	nfdv1alpha1.MatchExists:       {},
 	nfdv1alpha1.MatchDoesNotExist: {},
 	nfdv1alpha1.MatchGt:           {},
+	nfdv1alpha1.MatchGe:           {},
 	nfdv1alpha1.MatchLt:           {},
+	nfdv1alpha1.MatchLe:           {},
 	nfdv1alpha1.MatchGtLt:         {},
+	nfdv1alpha1.MatchGeLe:         {},
 	nfdv1alpha1.MatchIsTrue:       {},
 	nfdv1alpha1.MatchIsFalse:      {},
 }
@@ -113,7 +116,7 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 					return true, nil
 				}
 			}
-		case nfdv1alpha1.MatchGt, nfdv1alpha1.MatchLt:
+		case nfdv1alpha1.MatchGt, nfdv1alpha1.MatchGe, nfdv1alpha1.MatchLt, nfdv1alpha1.MatchLe:
 			if len(m.Value) != 1 {
 				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly one element for Op %q (have %v)", m.Op, m.Value)
 			}
@@ -127,10 +130,11 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 				return false, fmt.Errorf("not a number %q in %v", m.Value[0], m)
 			}
 
-			if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l > r && m.Op == nfdv1alpha1.MatchGt) {
+			if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l <= r && m.Op == nfdv1alpha1.MatchLe) ||
+				(l > r && m.Op == nfdv1alpha1.MatchGt) || (l >= r && m.Op == nfdv1alpha1.MatchGe) {
 				return true, nil
 			}
-		case nfdv1alpha1.MatchGtLt:
+		case nfdv1alpha1.MatchGtLt, nfdv1alpha1.MatchGeLe:
 			if len(m.Value) != 2 {
 				return false, fmt.Errorf("invalid expression, value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
 			}
@@ -148,7 +152,8 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 			if lr[0] >= lr[1] {
 				return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
 			}
-			return v > lr[0] && v < lr[1], nil
+			return (v > lr[0] && v < lr[1] && m.Op == nfdv1alpha1.MatchGtLt) ||
+				(v >= lr[0] && v <= lr[1] && m.Op == nfdv1alpha1.MatchGeLe), nil
 		case nfdv1alpha1.MatchIsTrue:
 			if len(m.Value) != 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)

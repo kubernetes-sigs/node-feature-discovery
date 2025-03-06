@@ -232,23 +232,39 @@ func TestEvaluateMatchExpressionValues(t *testing.T) {
 		{name: "17", op: nfdv1alpha1.MatchGt, values: V{"2"}, key: "foo", input: I{"bar": "3", "foo": "3"}, result: assert.True, err: assert.Nil},
 		{name: "18", op: nfdv1alpha1.MatchGt, values: V{"2"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
 
-		{name: "19", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "1"}, result: assert.False, err: assert.Nil},
-		{name: "20", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "1", "foo": "2"}, result: assert.False, err: assert.Nil},
-		{name: "21", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.True, err: assert.Nil},
-		{name: "22", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
+		{name: "19", op: nfdv1alpha1.MatchGe, values: V{"2"}, key: "foo", input: I{"bar": "3"}, result: assert.False, err: assert.Nil},
+		{name: "20", op: nfdv1alpha1.MatchGe, values: V{"2"}, key: "foo", input: I{"bar": "3", "foo": "2"}, result: assert.True, err: assert.Nil},
+		{name: "21", op: nfdv1alpha1.MatchGe, values: V{"2"}, key: "foo", input: I{"bar": "3", "foo": "3"}, result: assert.True, err: assert.Nil},
+		{name: "22", op: nfdv1alpha1.MatchGe, values: V{"2"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
 
-		{name: "23", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1"}, result: assert.False, err: assert.Nil},
-		{name: "24", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "11"}, result: assert.False, err: assert.Nil},
-		{name: "25", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "-11"}, result: assert.False, err: assert.Nil},
-		{name: "26", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.True, err: assert.Nil},
-		{name: "27", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
+		{name: "23", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "1"}, result: assert.False, err: assert.Nil},
+		{name: "24", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "1", "foo": "2"}, result: assert.False, err: assert.Nil},
+		{name: "25", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.True, err: assert.Nil},
+		{name: "26", op: nfdv1alpha1.MatchLt, values: V{"2"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
 
-		{name: "28", op: nfdv1alpha1.MatchIsTrue, key: "foo", result: assert.False, err: assert.Nil},
-		{name: "29", op: nfdv1alpha1.MatchIsTrue, key: "foo", input: I{"foo": "1"}, result: assert.False, err: assert.Nil},
-		{name: "30", op: nfdv1alpha1.MatchIsTrue, key: "foo", input: I{"foo": "true"}, result: assert.True, err: assert.Nil},
+		{name: "27", op: nfdv1alpha1.MatchLe, values: V{"2"}, key: "foo", input: I{"bar": "1"}, result: assert.False, err: assert.Nil},
+		{name: "28", op: nfdv1alpha1.MatchLe, values: V{"2"}, key: "foo", input: I{"bar": "1", "foo": "2"}, result: assert.True, err: assert.Nil},
+		{name: "29", op: nfdv1alpha1.MatchLe, values: V{"2"}, key: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.True, err: assert.Nil},
+		{name: "30", op: nfdv1alpha1.MatchLe, values: V{"2"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
 
-		{name: "31", op: nfdv1alpha1.MatchIsFalse, key: "foo", input: I{"foo": "true"}, result: assert.False, err: assert.Nil},
-		{name: "32", op: nfdv1alpha1.MatchIsFalse, key: "foo", input: I{"foo": "false"}, result: assert.True, err: assert.Nil},
+		{name: "31", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1"}, result: assert.False, err: assert.Nil},
+		{name: "32", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "11"}, result: assert.False, err: assert.Nil},
+		{name: "33", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "-11"}, result: assert.False, err: assert.Nil},
+		{name: "34", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.True, err: assert.Nil},
+		{name: "35", op: nfdv1alpha1.MatchGtLt, values: V{"-10", "10"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
+
+		{name: "36", op: nfdv1alpha1.MatchGeLe, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1"}, result: assert.False, err: assert.Nil},
+		{name: "37", op: nfdv1alpha1.MatchGeLe, values: V{"-10", "10"}, key: "foo", input: I{"bar": "-10", "foo": "10"}, result: assert.True, err: assert.Nil},
+		{name: "38", op: nfdv1alpha1.MatchGeLe, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "-11"}, result: assert.False, err: assert.Nil},
+		{name: "39", op: nfdv1alpha1.MatchGeLe, values: V{"-10", "10"}, key: "foo", input: I{"bar": "1", "foo": "1"}, result: assert.True, err: assert.Nil},
+		{name: "40", op: nfdv1alpha1.MatchGeLe, values: V{"-10", "10"}, key: "foo", input: I{"bar": "str", "foo": "str"}, result: assert.False, err: assert.NotNil},
+
+		{name: "41", op: nfdv1alpha1.MatchIsTrue, key: "foo", result: assert.False, err: assert.Nil},
+		{name: "42", op: nfdv1alpha1.MatchIsTrue, key: "foo", input: I{"foo": "1"}, result: assert.False, err: assert.Nil},
+		{name: "43", op: nfdv1alpha1.MatchIsTrue, key: "foo", input: I{"foo": "true"}, result: assert.True, err: assert.Nil},
+
+		{name: "44", op: nfdv1alpha1.MatchIsFalse, key: "foo", input: I{"foo": "true"}, result: assert.False, err: assert.Nil},
+		{name: "45", op: nfdv1alpha1.MatchIsFalse, key: "foo", input: I{"foo": "false"}, result: assert.True, err: assert.Nil},
 	}
 
 	for _, tc := range tcs {
