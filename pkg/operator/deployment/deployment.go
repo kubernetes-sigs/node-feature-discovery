@@ -74,7 +74,7 @@ func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeature
 				ServiceAccountName: "nfd-master",
 				DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
 				RestartPolicy:      corev1.RestartPolicyAlways,
-				Tolerations:        getPodsTolerations(),
+				Tolerations:        getPodsTolerations(nfdInstance),
 				Affinity:           getPodsAffinity(),
 				Containers: []corev1.Container{
 					{
@@ -151,8 +151,8 @@ func (d *deployment) GetDeployment(ctx context.Context, namespace, name string) 
 	return dep, err
 }
 
-func getPodsTolerations() []corev1.Toleration {
-	return []corev1.Toleration{
+func getPodsTolerations(nfdInstance *nfdv1.NodeFeatureDiscovery) []corev1.Toleration {
+	basicTolerations := []corev1.Toleration{
 		{
 			Key:      "node-role.kubernetes.io/master",
 			Operator: corev1.TolerationOpEqual,
@@ -164,6 +164,8 @@ func getPodsTolerations() []corev1.Toleration {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
+
+	return append(basicTolerations, nfdInstance.Spec.Operand.MasterTolerations...)
 }
 
 func getPodsAffinity() *corev1.Affinity {
