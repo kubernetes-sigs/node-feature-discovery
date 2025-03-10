@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	client "k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
@@ -69,16 +68,16 @@ func (resMon *PodResourcesScanner) isWatchable(podResource *podresourcesapi.PodR
 		return false, false, err
 	}
 
-	podHasExclusiveCPUs := hasExclusiveCPUs(pod)
+	isPodHasIntegralCPUs := podHasIntegralCPUs(pod)
 	isPodGuaranteed := qos.GetPodQOS(pod) == corev1.PodQOSGuaranteed
 
-	return isPodGuaranteed || hasDevice(podResource), podHasExclusiveCPUs, nil
+	return isPodGuaranteed || hasDevice(podResource), isPodHasIntegralCPUs, nil
 }
 
-// hasExclusiveCPUs returns true if a guaranteed pod is allocated exclusive CPUs else returns false.
+// podHasIntegralCPUs returns true if a guaranteed pod is allocated exclusive CPUs else returns false.
 // In isWatchable() function we check for the pod QoS and proceed if it is guaranteed (i.e. request == limit)
 // and hence we only check for request in the function below.
-func hasExclusiveCPUs(pod *corev1.Pod) bool {
+func podHasIntegralCPUs(pod *corev1.Pod) bool {
 	for _, container := range pod.Spec.InitContainers {
 		if hasIntegralCPUs(&container) {
 			return true
