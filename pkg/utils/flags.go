@@ -21,11 +21,12 @@ import (
 	"flag"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
+	"maps"
 )
 
 // RegexpVal is a wrapper for regexp command line flags
@@ -60,7 +61,7 @@ func (a *StringSetVal) String() string {
 	if *a == nil {
 		return ""
 	}
-	vals := maps.Keys(*a)
+	vals := slices.Collect(maps.Keys(*a))
 	sort.Strings(vals)
 	return strings.Join(vals, ",")
 }

@@ -23,13 +23,15 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
 
+	"maps"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/exp/maps"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -394,7 +396,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		}
 	}
 
-	w.featureSources = maps.Values(featureSources)
+	w.featureSources = slices.Collect(maps.Values(featureSources))
 
 	sort.Slice(w.featureSources, func(i, j int) bool { return w.featureSources[i].Name() < w.featureSources[j].Name() })
 
@@ -426,7 +428,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		}
 	}
 
-	w.labelSources = maps.Values(labelSources)
+	w.labelSources = slices.Collect(maps.Values(labelSources))
 
 	sort.Slice(w.labelSources, func(i, j int) bool {
 		iP, jP := w.labelSources[i].Priority(), w.labelSources[j].Priority()
