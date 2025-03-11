@@ -101,6 +101,12 @@ type OperandSpec struct {
 
 	// MasterTolerations defines tolerations to be applied to the master deployment
 	MasterTolerations []corev1.Toleration `json:"masterTolerations,omitempty"`
+
+	// WorkerEnv defines environment variables to be added to the worker Daemonset
+	WorkerEnvs []corev1.EnvVar `json:"workerEnvs,omitempty"`
+
+	// MasterEnv defines environment variables to be added to the master deployment
+	MasterEnvs []corev1.EnvVar `json:"masterEnvs,omitempty"`
 }
 
 // ConfigMap describes configuration options for the NFD worker
