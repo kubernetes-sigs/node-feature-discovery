@@ -277,3 +277,54 @@ var _ = Describe("getPodsTolerations", func() {
 		Expect(res).To(Equal(expectedTolerations))
 	})
 })
+
+var _ = Describe("getMasterEnvs", func() {
+	It("master envs not defined (nil)", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					MasterEnvs: nil,
+				},
+			},
+		}
+
+		res := getMasterEnvs(&nfdCR)
+		Expect(res).To(Equal(getEnvs()))
+	})
+
+	It("master envs is an empty slice", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					MasterEnvs: []corev1.EnvVar{},
+				},
+			},
+		}
+
+		res := getMasterEnvs(&nfdCR)
+		Expect(res).To(Equal(getEnvs()))
+	})
+
+	It("master envs contains value", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					MasterEnvs: []corev1.EnvVar{
+						{
+							Name:  "name1",
+							Value: "value1",
+						},
+						{
+							Name:  "name2",
+							Value: "value2",
+						},
+					},
+				},
+			},
+		}
+		expectedRes := append(getEnvs(), nfdCR.Spec.Operand.MasterEnvs[0], nfdCR.Spec.Operand.MasterEnvs[1])
+
+		res := getMasterEnvs(&nfdCR)
+		Expect(res).To(Equal(expectedRes))
+	})
+})

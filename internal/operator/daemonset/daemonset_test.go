@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -205,5 +206,57 @@ var _ = Describe("GetDaemonSet", func() {
 		clnt.EXPECT().Get(ctx, ctrlclient.ObjectKey{Namespace: testNamespace, Name: testName}, gomock.Any()).Return(fmt.Errorf("some error"))
 		_, err := daemonsetAPI.GetDaemonSet(ctx, testNamespace, testName)
 		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("getWorkerEnvs", func() {
+
+	It("worker envs not defined (nil)", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					WorkerEnvs: nil,
+				},
+			},
+		}
+
+		res := getWorkerEnvs(&nfdCR)
+		Expect(res).To(Equal(getBasicEnvs()))
+	})
+
+	It("worker envs is an empty slice", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					WorkerEnvs: []corev1.EnvVar{},
+				},
+			},
+		}
+
+		res := getWorkerEnvs(&nfdCR)
+		Expect(res).To(Equal(getBasicEnvs()))
+	})
+
+	It("worker envs contains value", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					WorkerEnvs: []corev1.EnvVar{
+						{
+							Name:  "name1",
+							Value: "value1",
+						},
+						{
+							Name:  "name2",
+							Value: "value2",
+						},
+					},
+				},
+			},
+		}
+		expectedRes := append(getBasicEnvs(), nfdCR.Spec.Operand.WorkerEnvs[0], nfdCR.Spec.Operand.WorkerEnvs[1])
+
+		res := getWorkerEnvs(&nfdCR)
+		Expect(res).To(Equal(expectedRes))
 	})
 })
