@@ -122,7 +122,12 @@ func getArgs(nfdInstance *nfdv1.NodeFeatureDiscovery) []string {
 	}
 }
 
-func getWorkerEnvs() []corev1.EnvVar {
+func getWorkerEnvs(nfdInstance *nfdv1.NodeFeatureDiscovery) []corev1.EnvVar {
+	basicEnvVars := getBasicEnvs()
+	return append(basicEnvVars, nfdInstance.Spec.Operand.WorkerEnvs...)
+}
+
+func getBasicEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name: "NODE_NAME",
@@ -149,6 +154,7 @@ func getWorkerEnvs() []corev1.EnvVar {
 			},
 		},
 	}
+
 }
 
 func getTopologyEnvs() []corev1.EnvVar {
@@ -160,7 +166,7 @@ func getTopologyEnvs() []corev1.EnvVar {
 			},
 		},
 	}
-	return append(getWorkerEnvs(), nodeAddressEnv)
+	return append(getBasicEnvs(), nodeAddressEnv)
 }
 
 func getSecurityContext() *corev1.SecurityContext {
@@ -246,7 +252,7 @@ func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance
 				DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
 				Containers: []corev1.Container{
 					{
-						Env:             getWorkerEnvs(),
+						Env:             getWorkerEnvs(nfdInstance),
 						Image:           nfdInstance.Spec.Operand.ImagePath(),
 						Name:            "nfd-worker",
 						Command:         []string{"nfd-worker"},
