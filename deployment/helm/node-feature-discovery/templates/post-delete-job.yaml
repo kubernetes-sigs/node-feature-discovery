@@ -66,6 +66,10 @@ spec:
         role: prune
     spec:
       serviceAccountName: {{ include "node-feature-discovery.fullname" . }}-prune
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       containers:
         - name: nfd-master
           securityContext:
