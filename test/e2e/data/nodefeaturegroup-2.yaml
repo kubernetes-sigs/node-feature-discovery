@@ -1,0 +1,54 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureGroup
+metadata:
+  name: e2e-test-2
+spec:
+  featureGroupRules:
+    - name: "e2e-matchany-test-1"
+      vars:
+        e2e-matchany-test-1: "true"
+      matchAny:
+        - matchFeatures:
+            - feature: "fake.instance"
+              matchExpressions:
+                "attr_1": {op: In, value: ["nomatch"]}
+        - matchFeatures:
+            - feature: "fake.instance"
+              matchExpressions:
+                "attr_3": {op: In, value: ["100"]}
+
+    #
+    # Test templating
+    #
+    - name: "e2e-template-test-1"
+      varsTemplate: |
+        {{ range .fake.instance }}e2e-template-test-1-{{ .name }}=found
+        {{ end }}
+      matchFeatures:
+        - feature: "fake.instance"
+          matchExpressions:
+            "attr_1": {op: In, value: ["true"]}
+
+    - name: "e2e-template-test-2"
+      varsTemplate: |
+        {{ range .fake.attribute }}e2e-template-test-2-{{ .Name }}={{ .Value }}
+        {{ end }}
+      matchFeatures:
+        - feature: "fake.attribute"
+          matchExpressions:
+            # expect attr_2 overridden from nodefeature-1.yaml
+            "attr_2": {op: IsTrue}
+          matchName: {op: In, value: ["attr_3"]}
+
+    #
+    # Test backreference
+    #
+    - name: "e2e-backreference-test-1"
+      matchFeatures:
+        - feature: "rule.matched"
+          matchExpressions:
+            "e2e-matchany-test-1:": {op: IsTrue}
+            "e2e-template-test-1-instance_1": {op: In, value: ["found"]}
+            "e2e-template-test-1-instance_2": {op: Exists}
+            "e2e-template-test-2-attr_2": {op: IsTrue}
+            "e2e-template-test-2-attr_3": {op: In, value: ["10"]}
