@@ -19,6 +19,7 @@ package featuregate
 import (
 	"flag"
 	"fmt"
+	"maps"
 	"sort"
 	"strconv"
 	"strings"
@@ -130,7 +131,7 @@ func NewFeatureGate() *featureGate {
 // map[string]bool of known keys or returns an error.
 func (f *featureGate) Set(value string) error {
 	m := make(map[string]bool)
-	for _, s := range strings.Split(value, ",") {
+	for s := range strings.SplitSeq(value, ",") {
 		if len(s) == 0 {
 			continue
 		}
@@ -156,9 +157,8 @@ func (f *featureGate) SetFromMap(m map[string]bool) error {
 
 	// Copy existing state
 	known := map[Feature]FeatureSpec{}
-	for k, v := range f.known.Load().(map[Feature]FeatureSpec) {
-		known[k] = v
-	}
+	maps.Copy(known, f.known.Load().(map[Feature]FeatureSpec))
+
 	enabled := map[Feature]bool{}
 	for k, v := range f.enabled.Load().(map[Feature]bool) {
 		enabled[k] = v
@@ -317,13 +317,9 @@ func (f *featureGate) KnownFeatures() []string {
 func (f *featureGate) DeepCopy() MutableFeatureGate {
 	// Copy existing state.
 	known := map[Feature]FeatureSpec{}
-	for k, v := range f.known.Load().(map[Feature]FeatureSpec) {
-		known[k] = v
-	}
+	maps.Copy(known, f.known.Load().(map[Feature]FeatureSpec))
 	enabled := map[Feature]bool{}
-	for k, v := range f.enabled.Load().(map[Feature]bool) {
-		enabled[k] = v
-	}
+	maps.Copy(enabled, f.enabled.Load().(map[Feature]bool))
 
 	// Construct a new featureGate around the copied state.
 	// Note that specialFeatures is treated as immutable by convention,

@@ -69,7 +69,7 @@ func (m *MatchExpression) Validate() error {
 		}
 		var err error
 		v := make([]int, 2)
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			if v[i], err = strconv.Atoi(m.Value[i]); err != nil {
 				return fmt.Errorf("value must contain integers for Op %q (have %v)", m.Op, m.Value)
 			}

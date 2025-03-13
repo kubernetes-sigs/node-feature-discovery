@@ -63,19 +63,19 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 		updateStatus := false
 		// Gather info about all NFD-managed node assets outside the default prefix
 		nfdLabels := map[string]struct{}{}
-		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.FeatureLabelsAnnotation], ",") {
+		for name := range strings.SplitSeq(node.Annotations[nfdv1alpha1.FeatureLabelsAnnotation], ",") {
 			if strings.Contains(name, "/") {
 				nfdLabels[name] = struct{}{}
 			}
 		}
 		nfdAnnotations := map[string]struct{}{}
-		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.FeatureAnnotationsTrackingAnnotation], ",") {
+		for name := range strings.SplitSeq(node.Annotations[nfdv1alpha1.FeatureAnnotationsTrackingAnnotation], ",") {
 			if strings.Contains(name, "/") {
 				nfdAnnotations[name] = struct{}{}
 			}
 		}
 		nfdERs := map[string]struct{}{}
-		for _, name := range strings.Split(node.Annotations[nfdv1alpha1.ExtendedResourceAnnotation], ",") {
+		for name := range strings.SplitSeq(node.Annotations[nfdv1alpha1.ExtendedResourceAnnotation], ",") {
 			if strings.Contains(name, "/") {
 				nfdERs[name] = struct{}{}
 			}
@@ -142,7 +142,7 @@ func cleanupNode(ctx context.Context, cs clientset.Interface) {
 
 	for _, n := range nodeList.Items {
 		var err error
-		for retry := 0; retry < 5; retry++ {
+		for range 5 {
 			if err = cleanup(n.Name); err == nil {
 				break
 			}

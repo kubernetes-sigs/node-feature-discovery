@@ -151,7 +151,7 @@ func (u *updaterPool) start(parallelism int) {
 	u.queue = workqueue.NewTypedRateLimitingQueue[string](rl)
 	u.nfgQueue = workqueue.NewTypedRateLimitingQueue[string](rl)
 
-	for i := 0; i < parallelism; i++ {
+	for range parallelism {
 		u.wg.Add(1)
 		go u.runNodeUpdater()
 		u.nfgWg.Add(1)
