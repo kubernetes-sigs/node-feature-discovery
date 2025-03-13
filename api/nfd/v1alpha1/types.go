@@ -183,6 +183,17 @@ type GroupRule struct {
 	// Name of the rule.
 	Name string `json:"name"`
 
+	// Vars is the variables to store if the rule matches. Variables can be
+	// referenced from other rules enabling more complex rule hierarchies.
+	// +optional
+	Vars map[string]string `json:"vars"`
+
+	// VarsTemplate specifies a template to expand for dynamically generating
+	// multiple variables. Data (after template expansion) must be keys with an
+	// optional value (<key>[=<value>]) separated by newlines.
+	// +optional
+	VarsTemplate string `json:"varsTemplate"`
+
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`
