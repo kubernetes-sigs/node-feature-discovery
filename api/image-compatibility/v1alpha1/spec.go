@@ -38,7 +38,7 @@ type Spec struct {
 // that describe the image requirements for the host and OS.
 type Compatibility struct {
 	// Rules represents a list of Node Feature Rules.
-	Rules []nfdv1alpha1.Rule `json:"rules"`
+	Rules []nfdv1alpha1.GroupRule `json:"rules"`
 	// Weight indicates the priority of the compatibility set.
 	Weight int `json:"weight,omitempty"`
 	// Tag enables grouping or distinguishing between compatibility sets.

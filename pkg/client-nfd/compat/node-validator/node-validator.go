@@ -81,14 +81,13 @@ func (nv *nodeValidator) Execute(ctx context.Context) ([]*CompatibilityStatus, e
 		compat := newCompatibilityStatus(&c)
 
 		for _, r := range c.Rules {
-			ruleOut, err := nodefeaturerule.Execute(&r, features, false)
+			ruleOut, err := nodefeaturerule.ExecuteGroupRule(&r, features, false)
 			if err != nil {
 				return nil, err
 			}
 			compat.Rules = append(compat.Rules, nv.evaluateRuleStatus(&r, ruleOut.MatchStatus))
 
 			// Add the 'rule.matched' feature for backreference functionality
-			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Labels)
 			features.InsertAttributeFeatures(nfdv1alpha1.RuleBackrefDomain, nfdv1alpha1.RuleBackrefFeature, ruleOut.Vars)
 		}
 		compats = append(compats, &compat)
@@ -97,7 +96,7 @@ func (nv *nodeValidator) Execute(ctx context.Context) ([]*CompatibilityStatus, e
 	return compats, nil
 }
 
-func (nv *nodeValidator) evaluateRuleStatus(rule *nfdv1alpha1.Rule, matchStatus *nodefeaturerule.MatchStatus) ProcessedRuleStatus {
+func (nv *nodeValidator) evaluateRuleStatus(rule *nfdv1alpha1.GroupRule, matchStatus *nodefeaturerule.MatchStatus) ProcessedRuleStatus {
 	out := ProcessedRuleStatus{Name: rule.Name, IsMatch: matchStatus.IsMatch}
 
 	matchedFeatureTerms := nfdv1alpha1.FeatureMatcher{}
