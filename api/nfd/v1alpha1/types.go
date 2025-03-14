@@ -329,16 +329,31 @@ const (
 	// Both the input and value must be integer numbers, otherwise an error is
 	// returned.
 	MatchGt MatchOp = "Gt"
+	// MatchGe returns true if the input is greater than or equal to the value of the
+	// expression (number of values in the expression must be exactly one).
+	// Both the input and value must be integer numbers, otherwise an error is
+	// returned.
+	MatchGe MatchOp = "Ge"
 	// MatchLt returns true if the input is less  than the value of the
 	// expression (number of values in the expression must be exactly one).
 	// Both the input and value must be integer numbers, otherwise an error is
 	// returned.
 	MatchLt MatchOp = "Lt"
+	// MatchLe returns true if the input is less than or equal to the value of the
+	// expression (number of values in the expression must be exactly one).
+	// Both the input and value must be integer numbers, otherwise an error is
+	// returned.
+	MatchLe MatchOp = "Le"
 	// MatchGtLt returns true if the input is between two values, i.e. greater
 	// than the first value and less than the second value of the expression
 	// (number of values in the expression must be exactly two). Both the input
 	// and values must be integer numbers, otherwise an error is returned.
 	MatchGtLt MatchOp = "GtLt"
+	// MatchGeLe returns true if the input is between two values including the boundary values,
+	// i.e. greater than or equal to the first value and less than or equal to the second value
+	// of the expression (number of values in the expression must be exactly two). Both the input
+	// and values must be integer numbers, otherwise an error is returned.
+	MatchGeLe MatchOp = "GeLe"
 	// MatchIsTrue returns true if the input holds the value "true". The
 	// expression must not have any values.
 	MatchIsTrue MatchOp = "IsTrue"
