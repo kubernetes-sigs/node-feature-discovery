@@ -49,6 +49,7 @@ type Args struct {
 	GCPeriod    time.Duration
 	Kubeconfig  string
 	MetricsPort int
+	ListSize    int64
 }
 
 type NfdGarbageCollector interface {
@@ -155,7 +156,7 @@ func (n *nfdGarbageCollector) garbageCollect() {
 
 	listAndHandle := func(gvr schema.GroupVersionResource, handler func(metav1.PartialObjectMetadata)) {
 		opts := metav1.ListOptions{
-			Limit: 200,
+			Limit: n.args.ListSize,
 		}
 		for {
 			rsp, err := n.client.Resource(gvr).List(context.TODO(), opts)
