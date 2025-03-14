@@ -167,6 +167,24 @@ core:
   noOwnerRefs: true
 ```
 
+### core.ownerRefNode
+
+Setting `core.ownerRefNode` to `true` sets the owner reference
+of the NodeFeature object to Node for nfd-worker.
+
+> **NOTE:** Overridden by the
+> [`-owner-ref-node`](worker-commandline-reference.md#-owner-ref-node)
+> command line flag (if specified).
+
+Default: `false`
+
+Example:
+
+```yaml
+core:
+  ownerRefNode: true
+```
+
 ### core.klog
 
 The following options specify the logger configuration.
