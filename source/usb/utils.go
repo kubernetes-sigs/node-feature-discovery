@@ -18,6 +18,7 @@ package usb
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -90,9 +91,7 @@ func readUsbDevInfo(devPath string) ([]nfdv1alpha1.InstanceFeature, error) {
 			}
 
 			subdevAttrs := make(map[string]string, len(attrs))
-			for k, v := range attrs {
-				subdevAttrs[k] = v
-			}
+			maps.Copy(subdevAttrs, attrs)
 			subdevAttrs["class"] = attrVal
 
 			instances = append(instances, *nfdv1alpha1.NewInstanceFeature(subdevAttrs))

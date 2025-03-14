@@ -145,7 +145,7 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 				return false, fmt.Errorf("not a number %q", value)
 			}
 			lr := make([]int, 2)
-			for i := 0; i < 2; i++ {
+			for i := range 2 {
 				lr[i], err = strconv.Atoi(m.Value[i])
 				if err != nil {
 					return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)

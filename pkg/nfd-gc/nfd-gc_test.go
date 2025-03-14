@@ -141,7 +141,7 @@ func shouldEventuallyHaveNRTs(actualI interface{}, expectedI ...interface{}) str
 	}
 	actual := sets.Set[string]{}
 	gvr := topologyv1alpha2.SchemeGroupVersion.WithResource("noderesourcetopologies")
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		rsp, err := cli.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return fmt.Sprintf("failed to list: %v", err)

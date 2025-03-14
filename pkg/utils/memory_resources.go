@@ -128,7 +128,7 @@ func readTotalMemoryFromMeminfo(path string) (int64, error) {
 		return -1, err
 	}
 
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		split := strings.SplitN(line, ":", 2)
 		if len(split) != 2 {
 			continue

@@ -100,8 +100,8 @@ func parseKconfig(configPath string) (realKconfig, legacyKconfig map[string]stri
 	}
 
 	// Process data, line-by-line
-	lines := bytes.Split(raw, []byte("\n"))
-	for _, line := range lines {
+	lines := bytes.SplitSeq(raw, []byte("\n"))
+	for line := range lines {
 		str := string(line)
 		if strings.HasPrefix(str, "CONFIG_") {
 			split := strings.SplitN(str, "=", 2)
