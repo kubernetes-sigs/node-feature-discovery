@@ -7,7 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/jaypipes/ghw v0.14.0
+	github.com/jaypipes/ghw v0.15.0
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
 	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
@@ -121,7 +121,6 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/samber/lo v1.47.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smarty/assertions v1.15.1 // indirect
