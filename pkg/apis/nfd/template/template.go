@@ -57,7 +57,7 @@ func (h *Helper) ExpandMap(data interface{}) (map[string]string, error) {
 
 	// Split out individual key-value pairs
 	out := make(map[string]string)
-	for _, item := range strings.Split(expanded, "\n") {
+	for item := range strings.SplitSeq(expanded, "\n") {
 		// Remove leading/trailing whitespace and skip empty lines
 		if trimmed := strings.TrimSpace(item); trimmed != "" {
 			split := strings.SplitN(trimmed, "=", 2)

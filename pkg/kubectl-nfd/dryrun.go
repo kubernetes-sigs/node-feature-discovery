@@ -18,6 +18,7 @@ package kubectlnfd
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 
@@ -106,9 +107,7 @@ func processNodeFeatureRule(nodeFeatureRule nfdv1alpha1.NodeFeatureRule, nodeFea
 			extendedResources[k] = v
 		}
 		// annotations
-		for k, v := range ruleOut.Annotations {
-			annotations[k] = v
-		}
+		maps.Copy(annotations, ruleOut.Annotations)
 	}
 
 	if len(taints) > 0 {
