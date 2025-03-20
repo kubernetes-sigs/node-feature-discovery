@@ -29,6 +29,7 @@ import (
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 )
 
 const (
@@ -53,6 +54,7 @@ var matchOps = map[nfdv1alpha1.MatchOp]struct{}{
 	nfdv1alpha1.MatchGeLe:         {},
 	nfdv1alpha1.MatchIsTrue:       {},
 	nfdv1alpha1.MatchIsFalse:      {},
+	nfdv1alpha1.MatchVersionRange: {},
 }
 
 // evaluateMatchExpression evaluates the MatchExpression against a single input value.
@@ -166,6 +168,42 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
 			}
 			return value == "false", nil
+		case nfdv1alpha1.MatchVersionRange:
+			if len(m.Value) != 2 {
+				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
+			}
+			versions := map[string]string{
+				"min": m.Value[0],
+				"max": m.Value[1],
+			}
+
+			for k, v := range versions {
+				if v == "" {
+					continue
+				}
+				ver, err := utils.ExtractSemVer(v)
+				if err != nil {
+					return false, fmt.Errorf("invalid expression, 'value' field must contain semantic versions or empty string for Op %q (have: %v)", m.Op, m.Value)
+				}
+				versions[k] = ver
+			}
+
+			ver, err := utils.ExtractSemVer(value)
+			if err != nil {
+				return false, fmt.Errorf("invalid expression, the flag/attribute/instance value is not a semantic version %q", value)
+			}
+			versions["current"] = ver
+
+			if versions["min"] != "" && versions["max"] != "" && utils.CompareVersions(versions["min"], versions["max"]) == 1 {
+				return false, fmt.Errorf("invalid expressions, minVersion value %q is greater than maxVersion value %q", versions["min"], versions["max"])
+			}
+			if versions["min"] != "" && utils.CompareVersions(versions["current"], versions["min"]) < 0 {
+				return false, nil
+			}
+			if versions["max"] != "" && utils.CompareVersions(versions["current"], versions["max"]) > 0 {
+				return false, nil
+			}
+			return true, nil
 		default:
 			return false, fmt.Errorf("unsupported Op %q", m.Op)
 		}

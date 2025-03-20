@@ -360,6 +360,9 @@ const (
 	// MatchIsFalse returns true if the input holds the value "false". The
 	// expression must not have any values.
 	MatchIsFalse MatchOp = "IsFalse"
+	// MatchVersionRange returns true if the input is version that falls into the
+	// specified version range. Both the input and value must be semantic versions.
+	MatchVersionRange MatchOp = "VersionRange"
 )
 
 const (
