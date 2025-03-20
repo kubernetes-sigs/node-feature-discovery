@@ -887,6 +887,36 @@ core:
 					}
 					return reflect.DeepEqual(group.Status, expectedGroup.Status)
 				}, 5*time.Minute, 5*time.Second).Should(BeTrue())
+
+				// Deploy node feature object to have one different node
+				targetNodeName := nodes[0].Name
+				By("Creating NodeFeature object")
+				nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating NodeFeatureGroups #2")
+				Expect(testutils.CreateNodeFeatureGroupsFromFile(ctx, nfdClient, f.Namespace.Name, "nodefeaturegroup-2.yaml")).NotTo(HaveOccurred())
+
+				By("Verifying NodeFeatureGroups #2")
+				Eventually(func() bool {
+					group, err := nfdClient.NfdV1alpha1().NodeFeatureGroups(f.Namespace.Name).Get(ctx, "e2e-test-2", metav1.GetOptions{})
+					if err != nil {
+						return false
+					}
+					return len(group.Status.Nodes) == 1 && group.Status.Nodes[0].Name == targetNodeName
+				}, 1*time.Minute, 5*time.Second).Should(BeTrue())
+
+				By("Deleting NodeFeature object")
+				err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() bool {
+					group, err := nfdClient.NfdV1alpha1().NodeFeatureGroups(f.Namespace.Name).Get(ctx, "e2e-test-2", metav1.GetOptions{})
+					if err != nil {
+						return false
+					}
+					return len(group.Status.Nodes) == 0
+				}, 1*time.Minute, 5*time.Second).Should(BeTrue())
 			})
 		})
 

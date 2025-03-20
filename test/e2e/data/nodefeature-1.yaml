@@ -21,6 +21,7 @@ spec:
       fake.instance:
         elements:
         - attributes:
+            name: "instance-x"
             attr_1: "true"
             attr_2: "9"
   # Labels to be created
