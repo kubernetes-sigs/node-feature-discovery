@@ -80,13 +80,25 @@ func detectPci() ([]nfdv1alpha1.InstanceFeature, error) {
 
 	// Iterate over devices
 	devInfo := make([]nfdv1alpha1.InstanceFeature, 0, len(devices))
+	devGrouped := make(map[string]map[string]int)
 	for _, device := range devices {
 		info, err := readPciDevInfo(filepath.Join(sysfsBasePath, device.Name()))
 		if err != nil {
 			klog.ErrorS(err, "failed to read PCI device info")
 			continue
 		}
-		devInfo = append(devInfo, *info)
+		if _, ok := devGrouped[info.Attributes["vendor"]][info.Attributes["device"]]; !ok {
+			devGrouped[info.Attributes["vendor"]] = make(map[string]int)
+			devGrouped[info.Attributes["vendor"]][info.Attributes["device"]] = 1
+			devInfo = append(devInfo, *info)
+		} else {
+			devGrouped[info.Attributes["vendor"]][info.Attributes["device"]] += 1
+		}
+	}
+
+	for _, dev := range devInfo {
+		count := devGrouped[dev.Attributes["vendor"]][dev.Attributes["device"]]
+		dev.Attributes["count"] = string(count)
 	}
 
 	return devInfo, nil
