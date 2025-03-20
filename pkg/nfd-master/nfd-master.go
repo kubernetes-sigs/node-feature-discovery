@@ -1512,8 +1512,9 @@ func (m *nfdMaster) startNfdApiController() error {
 	}
 	klog.InfoS("starting the nfd api controller")
 	m.nfdController, err = newNfdController(kubeconfig, nfdApiControllerOptions{
-		DisableNodeFeature: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) || !m.args.EnableNodeFeatureApi,
-		ResyncPeriod:       m.config.ResyncPeriod.Duration,
+		DisableNodeFeature:      !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureAPI) || !m.args.EnableNodeFeatureApi,
+		ResyncPeriod:            m.config.ResyncPeriod.Duration,
+		DisableNodeFeatureGroup: !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureGroupAPI),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
