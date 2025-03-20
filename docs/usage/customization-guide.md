@@ -816,6 +816,7 @@ below.
 |  `GeLe`         | 2            | Input falls within a range that includes the boundary values. Both the input and value must be integer numbers. |
 |  `IsTrue`       | 0            | Input is equal to "true" |
 |  `IsFalse`      | 0            | Input is equal "false" |
+|  `VersionRange` | 2            | Input falls within a range that includes the boundary values. Both the input and value must contain semantic versions. |
 
 The `value` field of MatchExpression is a list of string arguments to the
 operator.

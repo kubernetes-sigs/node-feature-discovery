@@ -265,6 +265,28 @@ func TestEvaluateMatchExpressionValues(t *testing.T) {
 
 		{name: "44", op: nfdv1alpha1.MatchIsFalse, key: "foo", input: I{"foo": "true"}, result: assert.False, err: assert.Nil},
 		{name: "45", op: nfdv1alpha1.MatchIsFalse, key: "foo", input: I{"foo": "false"}, result: assert.True, err: assert.Nil},
+
+		{name: "46", op: nfdv1alpha1.MatchVersionRange, values: V{"", ""}, key: "foo", input: I{"foo": "3.5.0-flavor"}, result: assert.True, err: assert.Nil},
+		{name: "47", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5.0", "4.0.1"}, key: "foo", input: I{"foo": "3.5.0-flavor"}, result: assert.True, err: assert.Nil},
+		{name: "48", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5.0", "4.0.1"}, key: "foo", input: I{"foo": "3.5-flavor"}, result: assert.True, err: assert.Nil},
+		{name: "49", op: nfdv1alpha1.MatchVersionRange, values: V{"3.0.0", "4.0.1"}, key: "foo", input: I{"foo": "3-flavor"}, result: assert.True, err: assert.Nil},
+		{name: "50", op: nfdv1alpha1.MatchVersionRange, values: V{"3", "4"}, key: "foo", input: I{"foo": "3.5.0"}, result: assert.True, err: assert.Nil},
+		{name: "51", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5.0", "4.0.1"}, key: "foo", input: I{"foo": "3.5.0"}, result: assert.True, err: assert.Nil},
+		{name: "52", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5.0", "4.0.1"}, key: "foo", input: I{"foo": "3.5"}, result: assert.True, err: assert.Nil},
+		{name: "53", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5", "4.0"}, key: "foo", input: I{"foo": "3.5"}, result: assert.True, err: assert.Nil},
+		{name: "54", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5", "4.0"}, key: "foo", input: I{"foo": "3.5.2"}, result: assert.True, err: assert.Nil},
+		{name: "55", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5", ""}, key: "foo", input: I{"foo": "3.6.2"}, result: assert.True, err: assert.Nil},
+		{name: "56", op: nfdv1alpha1.MatchVersionRange, values: V{"3.6", ""}, key: "foo", input: I{"foo": "3.6.2"}, result: assert.True, err: assert.Nil},
+		{name: "57", op: nfdv1alpha1.MatchVersionRange, values: V{"3.6.2", ""}, key: "foo", input: I{"foo": "3.6.2"}, result: assert.True, err: assert.Nil},
+		{name: "58", op: nfdv1alpha1.MatchVersionRange, values: V{"", "4.5"}, key: "foo", input: I{"foo": "4.4.9"}, result: assert.True, err: assert.Nil},
+		{name: "59", op: nfdv1alpha1.MatchVersionRange, values: V{"", "4.4.9"}, key: "foo", input: I{"foo": "4.4.9"}, result: assert.True, err: assert.Nil},
+		{name: "60", op: nfdv1alpha1.MatchVersionRange, values: V{"invalid", "invalid"}, key: "foo", input: I{"foo": "3.5.0"}, result: assert.False, err: assert.NotNil},
+		{name: "61", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5.0", "4.0.1"}, key: "foo", input: I{"foo": "invalid"}, result: assert.False, err: assert.NotNil},
+		{name: "62", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5", ""}, key: "foo", input: I{"bar": "3.6"}, result: assert.False, err: assert.Nil},
+		{name: "63", op: nfdv1alpha1.MatchVersionRange, values: V{"3.5.9", ""}, key: "foo", input: I{"foo": "3.5.8"}, result: assert.False, err: assert.Nil},
+		{name: "64", op: nfdv1alpha1.MatchVersionRange, values: V{"", "4.5"}, key: "foo", input: I{"foo": "4.6"}, result: assert.False, err: assert.Nil},
+		{name: "65", op: nfdv1alpha1.MatchVersionRange, values: V{"", "4.4"}, key: "foo", input: I{"foo": "4.4.9"}, result: assert.False, err: assert.Nil},
+		{name: "66", op: nfdv1alpha1.MatchVersionRange, values: V{"5.0", "4.0"}, key: "foo", input: I{"foo": "4.5"}, result: assert.False, err: assert.NotNil},
 	}
 
 	for _, tc := range tcs {
