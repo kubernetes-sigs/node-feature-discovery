@@ -179,6 +179,23 @@ Example:
 nfd-worker -no-owner-refs
 ```
 
+### -owner-ref-node
+
+The `-owner-ref-node` flag sets the owner references
+of the NodeFeature object to Node.
+
+> **NOTE:** This flag takes precedence over the
+> [`core.OwnerRefNode`](worker-configuration-reference.md#coreownerrefnode)
+> configuration file option.
+
+Default: *false*
+
+Example:
+
+```bash
+nfd-worker -owner-ref-node
+```
+
 ### -oneshot
 
 The `-oneshot` flag causes nfd-worker to exit after one pass of feature
