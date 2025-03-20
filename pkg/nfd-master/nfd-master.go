@@ -1351,6 +1351,7 @@ func (m *nfdMaster) startNfdApiController() error {
 		ResyncPeriod:                 m.config.ResyncPeriod.Duration,
 		K8sClient:                    m.k8sClient,
 		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
+		DisableNodeFeatureGroup:      !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureGroupAPI),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
