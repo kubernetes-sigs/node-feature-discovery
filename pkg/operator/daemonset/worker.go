@@ -34,6 +34,11 @@ func getWorkerAffinity() *corev1.Affinity {
 								Key:      "node-role.kubernetes.io/master",
 								Operator: "DoesNotExist",
 							},
+							{
+								Key:      "kubernetes.io/os",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"linux"},
+							},
 						},
 					},
 					{
@@ -41,6 +46,11 @@ func getWorkerAffinity() *corev1.Affinity {
 							{
 								Key:      "node-role.kubernetes.io/node",
 								Operator: "Exists",
+							},
+							{
+								Key:      "kubernetes.io/os",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"linux"},
 							},
 						},
 					},
