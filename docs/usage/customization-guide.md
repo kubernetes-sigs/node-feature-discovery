@@ -921,6 +921,7 @@ The following features are available for matching:
 |                  |              | **`family`** | int    | CPU family |
 |                  |              | **`vendor_id`** | string | CPU vendor ID |
 |                  |              | **`id`** | int        | CPU model ID |
+|                  |              | **`hypervisor`** | string | Hypervisor type information from `/proc/sysinfo` (s390x-only feature) |
 | **`cpu.pstate`** | attribute    |          |            | State of the Intel pstate driver. Does not exist if the driver is not enabled. |
 |                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive' |
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false' |
