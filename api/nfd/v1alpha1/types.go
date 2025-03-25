@@ -296,15 +296,43 @@ type MatchExpression struct {
 	// In other cases Value should contain at least one element.
 	// +optional
 	Value MatchValue `json:"value,omitempty"`
+
+	// Type defines the value type for specific operators.
+	// The currently supported type is 'version' for Gt,Ge,Lt,Le,GtLt,GeLe operators.
+	// +optional
+	Type ValueType `json:"type,omitempty"`
 }
 
 // MatchOp is the match operator that is applied on values when evaluating a
 // MatchExpression.
-// +kubebuilder:validation:Enum="In";"NotIn";"InRegexp";"Exists";"DoesNotExist";"Gt";"Lt";"GtLt";"IsTrue";"IsFalse"
+// +kubebuilder:validation:Enum="In";"NotIn";"InRegexp";"Exists";"DoesNotExist";"Gt";"Ge";"Lt";"Le";"GtLt";"GeLe";"IsTrue";"IsFalse"
 type MatchOp string
 
 // MatchValue is the list of values associated with a MatchExpression.
 type MatchValue []string
+
+// VersionComparisonResult represents the output of versions comparison.
+type VersionComparisonResult int
+
+const (
+	// CmpGt returns 1 when version1 > version2
+	CmpGt VersionComparisonResult = 1
+	// CmpLt returns -1 when version1 < version2
+	CmpLt VersionComparisonResult = -1
+	// CmpEq returns 0 when version1 == version2
+	CmpEq VersionComparisonResult = 0
+)
+
+// ValueType represents the type of value in the expression.
+type ValueType string
+
+const (
+	// TypeVersion represents a version with the following supported formats:
+	// %d.%d.%d (e.g., 1.2.3),
+	// %d.%d (e.g., 1.2),
+	// %d (e.g., 1)
+	TypeVersion ValueType = "version"
+)
 
 const (
 	// MatchAny returns always true.
@@ -360,6 +388,9 @@ const (
 	// MatchIsFalse returns true if the input holds the value "false". The
 	// expression must not have any values.
 	MatchIsFalse MatchOp = "IsFalse"
+	// MatchVersionRange returns true if the input is version that falls into the
+	// specified version range. Both the input and value must be semantic versions.
+	MatchVersionRange MatchOp = "VersionRange"
 )
 
 const (
