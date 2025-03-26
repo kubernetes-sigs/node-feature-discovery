@@ -45,6 +45,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/klog/v2"
 	controller "k8s.io/kubernetes/pkg/controller"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"sigs.k8s.io/yaml"
