@@ -85,7 +85,6 @@ func TestInstanceFeatureSet(t *testing.T) {
 	assert.Equal(t, expectedElems, f1.Elements)
 
 	f2 = NewInstanceFeatures()
-	expectedElems = []InstanceFeature{}
 	f2.MergeInto(&f1)
 	assert.Equal(t, expectedElems, f1.Elements)
 
