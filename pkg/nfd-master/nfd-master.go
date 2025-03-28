@@ -482,7 +482,6 @@ func (m *nfdMaster) filterFeatureLabels(labels Labels, features *nfdv1alpha1.Fea
 
 	return outLabels
 }
-
 func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1.Features) (string, error) {
 	// Check if Value is dynamic
 	var filteredValue string
@@ -504,7 +503,9 @@ func (m *nfdMaster) filterFeatureLabel(name, value string, features *nfdv1alpha1
 			return "", fmt.Errorf("namespace %q is not allowed", ns)
 		}
 	} else if err != nil {
-		return "", err
+		if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) || err != validate.ErrUnprefixedKeysNotAllowed {
+			return "", err
+		}
 	}
 
 	// Skip if label doesn't match labelWhiteList
