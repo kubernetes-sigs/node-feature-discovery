@@ -122,40 +122,94 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 			if len(m.Value) != 1 {
 				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly one element for Op %q (have %v)", m.Op, m.Value)
 			}
-
-			l, err := strconv.Atoi(value)
-			if err != nil {
-				return false, fmt.Errorf("not a number %q", value)
-			}
-			r, err := strconv.Atoi(m.Value[0])
-			if err != nil {
-				return false, fmt.Errorf("not a number %q in %v", m.Value[0], m)
+			if m.Type != "" && m.Type != nfdv1alpha1.TypeVersion {
+				return false, fmt.Errorf("invalid expression, 'type' field only accepts %q value for Op %q (have %q)", nfdv1alpha1.TypeVersion, m.Op, m.Type)
 			}
 
-			if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l <= r && m.Op == nfdv1alpha1.MatchLe) ||
-				(l > r && m.Op == nfdv1alpha1.MatchGt) || (l >= r && m.Op == nfdv1alpha1.MatchGe) {
-				return true, nil
+			switch m.Type {
+			case nfdv1alpha1.TypeVersion:
+				l, err := nfdv1alpha1.ExtractVersion(value)
+				if err != nil {
+					return false, fmt.Errorf("not a version %q", value)
+				}
+
+				r, err := nfdv1alpha1.ExtractVersion(m.Value[0])
+				if err != nil {
+					return false, fmt.Errorf("not a version %q in %v", m.Value[0], m)
+				}
+
+				cmp := nfdv1alpha1.CompareVersions(l, r)
+				if (m.Op == nfdv1alpha1.MatchLt && cmp == nfdv1alpha1.CmpLt) ||
+					(m.Op == nfdv1alpha1.MatchGt && cmp == nfdv1alpha1.CmpGt) ||
+					(m.Op == nfdv1alpha1.MatchLe && (cmp == nfdv1alpha1.CmpLt || cmp == nfdv1alpha1.CmpEq)) ||
+					(m.Op == nfdv1alpha1.MatchGe && (cmp == nfdv1alpha1.CmpGt || cmp == nfdv1alpha1.CmpEq)) {
+					return true, nil
+				}
+				return false, nil
+			default:
+				l, err := strconv.Atoi(value)
+				if err != nil {
+					return false, fmt.Errorf("not a number %q", value)
+				}
+				r, err := strconv.Atoi(m.Value[0])
+				if err != nil {
+					return false, fmt.Errorf("not a number %q in %v", m.Value[0], m)
+				}
+
+				if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l <= r && m.Op == nfdv1alpha1.MatchLe) ||
+					(l > r && m.Op == nfdv1alpha1.MatchGt) || (l >= r && m.Op == nfdv1alpha1.MatchGe) {
+					return true, nil
+				}
 			}
 		case nfdv1alpha1.MatchGtLt, nfdv1alpha1.MatchGeLe:
 			if len(m.Value) != 2 {
-				return false, fmt.Errorf("invalid expression, value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
+				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
 			}
-			v, err := strconv.Atoi(value)
-			if err != nil {
-				return false, fmt.Errorf("not a number %q", value)
-			}
-			lr := make([]int, 2)
-			for i := range 2 {
-				lr[i], err = strconv.Atoi(m.Value[i])
+
+			switch m.Type {
+			case nfdv1alpha1.TypeVersion:
+				v, err := nfdv1alpha1.ExtractVersion(value)
 				if err != nil {
-					return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
+					return false, fmt.Errorf("not a version %q", value)
 				}
+				lr := make([]string, 2)
+				for i := range 2 {
+					lr[i], err = nfdv1alpha1.ExtractVersion(m.Value[i])
+					if err != nil {
+						return false, fmt.Errorf("not a version %q in %v", m.Value[i], m)
+					}
+				}
+
+				lRange := nfdv1alpha1.CompareVersions(v, lr[0])
+				rRange := nfdv1alpha1.CompareVersions(v, lr[1])
+
+				if (m.Op == nfdv1alpha1.MatchGtLt && lRange == nfdv1alpha1.CmpGt && rRange == nfdv1alpha1.CmpLt) ||
+					(m.Op == nfdv1alpha1.MatchGeLe &&
+						(lRange == nfdv1alpha1.CmpGt || lRange == nfdv1alpha1.CmpEq) &&
+						(rRange == nfdv1alpha1.CmpLt || rRange == nfdv1alpha1.CmpEq)) {
+					return true, nil
+				}
+
+				return false, nil
+
+			default:
+				v, err := strconv.Atoi(value)
+				if err != nil {
+					return false, fmt.Errorf("not a number %q", value)
+				}
+				lr := make([]int, 2)
+				for i := range 2 {
+					lr[i], err = strconv.Atoi(m.Value[i])
+					if err != nil {
+						return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
+					}
+				}
+				if lr[0] >= lr[1] {
+					return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
+				}
+				return (v > lr[0] && v < lr[1] && m.Op == nfdv1alpha1.MatchGtLt) ||
+					(v >= lr[0] && v <= lr[1] && m.Op == nfdv1alpha1.MatchGeLe), nil
 			}
-			if lr[0] >= lr[1] {
-				return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
-			}
-			return (v > lr[0] && v < lr[1] && m.Op == nfdv1alpha1.MatchGtLt) ||
-				(v >= lr[0] && v <= lr[1] && m.Op == nfdv1alpha1.MatchGeLe), nil
 		case nfdv1alpha1.MatchIsTrue:
 			if len(m.Value) != 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
