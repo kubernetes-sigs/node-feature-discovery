@@ -44,6 +44,10 @@ NFD_ROOT=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 controller-gen object crd output:crd:stdout paths=./api/... > deployment/base/nfd-crds/nfd-api-crds.yaml
 mkdir -p deployment/helm/node-feature-discovery/crds
 cp deployment/base/nfd-crds/nfd-api-crds.yaml deployment/helm/node-feature-discovery/crds
+mkdir -p deployment/helm/node-feature-discovery/charts/crds/templates
+for f in deployment/base/nfd-crds/*-crds.yaml; do
+  sed '/controller-gen.kubebuilder.io\/version/ r hack/crds.annotations.snippet.txt' ${f} > deployment/helm/node-feature-discovery/charts/crds/templates/${f##*/}
+done
 
 # Generate clientset and informers
 mv vendor ${TMP_VENDOR_DIR}
