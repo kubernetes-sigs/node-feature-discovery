@@ -179,6 +179,23 @@ Example:
 nfd-worker -no-owner-refs
 ```
 
+### -owner-ref-pod
+
+The `-owner-ref-pod` flag sets the owner references
+of the NodeFeature object to Pod.
+
+> **NOTE:** This flag takes precedence over the
+> [`core.OwnerRefNode`](worker-configuration-reference.md#coreownerrefpod)
+> configuration file option.
+
+Default: *false*
+
+Example:
+
+```bash
+nfd-worker -owner-ref-pod
+```
+
 ### -oneshot
 
 The `-oneshot` flag causes nfd-worker to exit after one pass of feature
