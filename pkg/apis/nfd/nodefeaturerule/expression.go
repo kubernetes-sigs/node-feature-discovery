@@ -53,7 +53,6 @@ var matchOps = map[nfdv1alpha1.MatchOp]struct{}{
 	nfdv1alpha1.MatchGeLe:         {},
 	nfdv1alpha1.MatchIsTrue:       {},
 	nfdv1alpha1.MatchIsFalse:      {},
-	nfdv1alpha1.MatchVersionRange: {},
 }
 
 // evaluateMatchExpression evaluates the MatchExpression against a single input value.
