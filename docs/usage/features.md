@@ -85,10 +85,12 @@ configuration options for details.
 | AVXIFMA            | AVX-IFMA instructions |
 | AVXVNNI            | AVX (VEX encoded) VNNI neural network instructions |
 | AMXBF16            | Advanced Matrix Extension, tile multiplication operations on BFLOAT16 numbers |
+| AMXCOMPLEX         | Advanced Matrix Extension, tile computational operations on complex numbers |
 | AMXINT8            | Advanced Matrix Extension, tile multiplication operations on 8-bit integers |
 | AMXFP16            | Advanced Matrix Extension, tile multiplication operations on FP16 numbers |
 | AMXFP8             | Advanced Matrix Extension, tile multiplication operations on FP8 numbers |
 | AMXTILE            | Advanced Matrix Extension, base tile architecture support |
+| AMXTF32            | Advanced Matrix Extension, matrix multiplication of TF32 tiles into packed single precision tile |
 | AVX512BF16         | AVX-512 BFLOAT16 instructions |
 | AVX512BITALG       | AVX-512 bit Algorithms |
 | AVX512BW           | AVX-512 byte and word Instructions |
