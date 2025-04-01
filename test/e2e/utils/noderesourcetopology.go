@@ -228,7 +228,7 @@ func IsValidNodeTopology(nodeTopology *v1alpha2.NodeResourceTopology, kubeletCon
 		return false
 	}
 
-	if nodeTopology.Zones == nil || len(nodeTopology.Zones) == 0 {
+	if len(nodeTopology.Zones) == 0 {
 		framework.Logf("failed to get topology zones from the node topology resource")
 		return false
 	}
