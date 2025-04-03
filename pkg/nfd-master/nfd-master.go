@@ -81,7 +81,6 @@ type Restrictions struct {
 
 // NFDConfig contains the configuration settings of NfdMaster.
 type NFDConfig struct {
-	AutoDefaultNs     bool
 	DenyLabelNs       utils.StringSetVal
 	ExtraLabelNs      utils.StringSetVal
 	LabelWhiteList    *regexp.Regexp
@@ -238,7 +237,6 @@ func newDefaultConfig() *NFDConfig {
 		DenyLabelNs:       utils.StringSetVal{},
 		ExtraLabelNs:      utils.StringSetVal{},
 		NoPublish:         false,
-		AutoDefaultNs:     true,
 		NfdApiParallelism: 10,
 		EnableTaints:      false,
 		ResyncPeriod:      utils.DurationVal{Duration: time.Duration(1) * time.Hour},
@@ -634,7 +632,7 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 			features.Labels = nil
 		}
 
-		if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
+		if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 			features.Labels = addNsToMapKeys(features.Labels, nfdv1alpha1.FeatureLabelNs)
 		}
 
@@ -645,7 +643,7 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 				s.Labels = nil
 			}
 
-			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
+			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 				s.Labels = addNsToMapKeys(s.Labels, nfdv1alpha1.FeatureLabelNs)
 			}
 
@@ -815,7 +813,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 }
 
 func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features) error {
-	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
+	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 	} else if labels == nil {
 		labels = make(map[string]string)
@@ -973,7 +971,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			l := ruleOut.Labels
 			e := ruleOut.ExtendedResources
 			a := ruleOut.Annotations
-			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) && m.config.AutoDefaultNs {
+			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 				l = addNsToMapKeys(ruleOut.Labels, nfdv1alpha1.FeatureLabelNs)
 				e = addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs)
 				a = addNsToMapKeys(ruleOut.Annotations, nfdv1alpha1.FeatureAnnotationNs)

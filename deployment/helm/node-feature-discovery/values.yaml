@@ -23,7 +23,6 @@ master:
   dnsPolicy: ClusterFirstWithHostNet
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
-    # autoDefaultNs: true
     # extraLabelNs: ["added.ns.io","added.kubernets.io"]
     # denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
     # enableTaints: false
