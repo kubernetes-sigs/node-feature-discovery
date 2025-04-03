@@ -26,6 +26,7 @@ import (
 
 	"maps"
 
+	semver "github.com/Masterminds/semver/v3"
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
@@ -123,39 +124,88 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly one element for Op %q (have %v)", m.Op, m.Value)
 			}
 
-			l, err := strconv.Atoi(value)
-			if err != nil {
-				return false, fmt.Errorf("not a number %q", value)
-			}
-			r, err := strconv.Atoi(m.Value[0])
-			if err != nil {
-				return false, fmt.Errorf("not a number %q in %v", m.Value[0], m)
+			switch m.Type {
+			case nfdv1alpha1.TypeVersion:
+				l, err := extractVersion(value)
+				if err != nil {
+					return false, fmt.Errorf("not a version %q", value)
+				}
+
+				r, err := extractVersion(m.Value[0])
+				if err != nil {
+					return false, fmt.Errorf("not a version %q in %v", m.Value[0], m)
+				}
+
+				if (m.Op == nfdv1alpha1.MatchLt && l.LessThan(r)) ||
+					(m.Op == nfdv1alpha1.MatchLe && l.LessThanEqual(r)) ||
+					(m.Op == nfdv1alpha1.MatchGt && l.GreaterThan(r)) ||
+					(m.Op == nfdv1alpha1.MatchGe && l.GreaterThanEqual(r)) {
+					return true, nil
+				}
+				return false, nil
+			case nfdv1alpha1.TypeEmpty:
+				l, err := strconv.Atoi(value)
+				if err != nil {
+					return false, fmt.Errorf("not a number %q", value)
+				}
+				r, err := strconv.Atoi(m.Value[0])
+				if err != nil {
+					return false, fmt.Errorf("not a number %q in %v", m.Value[0], m)
+				}
+
+				if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l <= r && m.Op == nfdv1alpha1.MatchLe) ||
+					(l > r && m.Op == nfdv1alpha1.MatchGt) || (l >= r && m.Op == nfdv1alpha1.MatchGe) {
+					return true, nil
+				}
+			default:
+				return false, fmt.Errorf("invalid expression, 'type' field only accepts %q value for Op %q (have %q)", nfdv1alpha1.TypeVersion, m.Op, m.Type)
 			}
 
-			if (l < r && m.Op == nfdv1alpha1.MatchLt) || (l <= r && m.Op == nfdv1alpha1.MatchLe) ||
-				(l > r && m.Op == nfdv1alpha1.MatchGt) || (l >= r && m.Op == nfdv1alpha1.MatchGe) {
-				return true, nil
-			}
 		case nfdv1alpha1.MatchGtLt, nfdv1alpha1.MatchGeLe:
 			if len(m.Value) != 2 {
-				return false, fmt.Errorf("invalid expression, value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
+				return false, fmt.Errorf("invalid expression, 'value' field must contain exactly two elements for Op %q (have %v)", m.Op, m.Value)
 			}
-			v, err := strconv.Atoi(value)
-			if err != nil {
-				return false, fmt.Errorf("not a number %q", value)
-			}
-			lr := make([]int, 2)
-			for i := range 2 {
-				lr[i], err = strconv.Atoi(m.Value[i])
+
+			switch m.Type {
+			case nfdv1alpha1.TypeVersion:
+				v, err := extractVersion(value)
 				if err != nil {
-					return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
+					return false, fmt.Errorf("not a version %q", value)
 				}
+				lr := make([]*semver.Version, 2)
+				for i := range 2 {
+					lr[i], err = extractVersion(m.Value[i])
+					if err != nil {
+						return false, fmt.Errorf("not a version %q in %v", m.Value[i], m)
+					}
+				}
+
+				if (m.Op == nfdv1alpha1.MatchGtLt && v.GreaterThan(lr[0]) && v.LessThan(lr[1])) ||
+					(m.Op == nfdv1alpha1.MatchGeLe && v.GreaterThanEqual(lr[0]) && v.LessThanEqual(lr[1])) {
+					return true, nil
+				}
+
+				return false, nil
+			case nfdv1alpha1.TypeEmpty:
+				v, err := strconv.Atoi(value)
+				if err != nil {
+					return false, fmt.Errorf("not a number %q", value)
+				}
+				lr := make([]int, 2)
+				for i := range 2 {
+					lr[i], err = strconv.Atoi(m.Value[i])
+					if err != nil {
+						return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
+					}
+				}
+				if lr[0] >= lr[1] {
+					return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
+				}
+				return (v > lr[0] && v < lr[1] && m.Op == nfdv1alpha1.MatchGtLt) ||
+					(v >= lr[0] && v <= lr[1] && m.Op == nfdv1alpha1.MatchGeLe), nil
+			default:
+				return false, fmt.Errorf("invalid expression, 'type' field only accepts %q value for Op %q (have %q)", nfdv1alpha1.TypeVersion, m.Op, m.Type)
 			}
-			if lr[0] >= lr[1] {
-				return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
-			}
-			return (v > lr[0] && v < lr[1] && m.Op == nfdv1alpha1.MatchGtLt) ||
-				(v >= lr[0] && v <= lr[1] && m.Op == nfdv1alpha1.MatchGeLe), nil
 		case nfdv1alpha1.MatchIsTrue:
 			if len(m.Value) != 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be empty for Op %q (have %v)", m.Op, m.Value)
@@ -539,4 +589,23 @@ func MatchNamesMulti(m *nfdv1alpha1.MatchExpression, keys map[string]nfdv1alpha1
 	}
 
 	return len(ret) > 0, ret, nil
+}
+
+func extractVersion(v string) (*semver.Version, error) {
+	version, err := semver.NewVersion(v)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: handle pre-release part of semver version
+	// additionally support kernel version flavors.
+	//
+	// Currently pre-release / flavor of the version is ignored
+	// that's why it's set to empty.
+	*version, err = version.SetPrerelease("")
+	if err != nil {
+		return nil, err
+	}
+
+	return version, nil
 }
