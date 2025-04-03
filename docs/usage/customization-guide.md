@@ -785,6 +785,7 @@ feature.
           value:
             - <value-1>
             - ...
+          type: <type>
 ```
 
 In each MatchExpression the `key` specifies the name of of the feature element
@@ -818,6 +819,13 @@ below.
 
 The `value` field of MatchExpression is a list of string arguments to the
 operator.
+
+Type optional `type` field specifies the type of the `value` field.
+Valid types for specific operators are described below.
+
+| Type      | Description | Supported Operators |
+| --------- | ----------- | ------------------- |
+| `version` | Input is recognized as a version in the following formats (major.minor.patch) `%d.%d.%d`, `%d.%d`, `%d` (e.g., "1.2.3", "1.2", "1") |`Gt`,`Ge`,`Lt`,`Le`,`GtLt`,`GeLe` |
 
 ##### matchName
 
