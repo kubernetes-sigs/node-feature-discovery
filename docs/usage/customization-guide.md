@@ -361,10 +361,9 @@ vendor.io/my-feature=value
 > **NOTE:** use of unprefixed label names (like `foo=bar`) should not be used.
 > In NFD {{ site.version }} unprefixed names will be automatically prefixed
 > with `feature.node.kubernetes.io/` but this will change in a future version
-> (see
-> [autoDefaultNs config option](../reference/master-configuration-reference.md#autoDefaultNs).
-> Unprefixed names for plain Features (tagged with `# +no-label`) can be used
-> without restrictions, however.
+> (see the [DisableAutoPrefix](../reference/feature-gates.md#disableautoprefix)
+> feature gate). Unprefixed names for plain Features (tagged with `#+no-label`)
+> can be used without restrictions, however.
 
 ### Mounts
 
@@ -608,8 +607,8 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
   (like `sub.ns.feature.node.kubernetes.io`)
 - unprefixed names (like `my-annotation`) should not be used. In NFD {{
   site.version }} unprefixed names will be automatically prefixed with
-  `feature.node.kubernetes.io/` but this will change in a future version (see
-  [autoDefaultNs config option](../reference/master-configuration-reference.md#autoDefaultNs).
+  `feature.node.kubernetes.io/` but this will change in a future version (see the
+  [DisableAutoPrefix](../reference/feature-gates.md#disableautoprefix) feature gate).
 
 > **NOTE:** The `annotations` field has will only advertise features via node
 > annotations the features won't be advertised as node labels unless they are
@@ -727,8 +726,8 @@ Resources names:
   (like `sub.ns.feature.node.kubernetes.io`)
 - unprefixed names (like `my-er`) site.version }} unprefixed names will be
   automatically prefixed with `feature.node.kubernetes.io/` but this will
-  change in a future version (see
-  [autoDefaultNs config option](../reference/master-configuration-reference.md#autoDefaultNs).
+  change in a future version (see the
+  [DisableAutoPrefix](../reference/feature-gates.md#disableautoprefix) feature gate).
 
 > **NOTE:** `.extendedResources` is not supported by the
 > [custom feature source](#custom-feature-source) -- it can only be used in
