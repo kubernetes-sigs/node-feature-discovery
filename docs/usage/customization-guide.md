@@ -997,6 +997,9 @@ The following features are available for matching:
 |                  |              | **`product_name`** | string | Product name from `/sys/devices/virtual/dmi/id/product_name` |
 | **`system.name`** | attribute   |          |            | System name information |
 |                  |              | **`nodename`** | string | Name of the kubernetes node object |
+| **`system.libc`** | attribute   |          |            | Libc information |
+|                  |              | **`name`** | string | Name of the libc |
+|                  |              | **`version`** | string | Version of the libc |
 | **`usb.device`** | instance     |          |            | USB devices present in the system |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `serial` |
 | **`rule.matched`** | attribute  |          |            | Previously matched rules |
