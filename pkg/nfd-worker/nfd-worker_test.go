@@ -48,9 +48,12 @@ func TestRun(t *testing.T) {
 		Convey("When publishing features from fake source", func() {
 			os.Setenv("NODE_NAME", "fake-node")
 			os.Setenv("KUBERNETES_NAMESPACE", "fake-ns")
+			b := true
 			args := &worker.Args{
-				Oneshot: true,
+				Oneshot:     true,
+				NoOwnerRefs: true,
 				Overrides: worker.ConfigOverrideArgs{
+					NoOwnerRefs:    &b,
 					FeatureSources: &utils.StringSliceVal{"fake"},
 					LabelSources:   &utils.StringSliceVal{"fake"},
 				},
