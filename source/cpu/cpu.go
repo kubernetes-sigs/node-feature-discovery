@@ -19,6 +19,7 @@ package cpu
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -263,7 +264,43 @@ func getCPUModel() map[string]string {
 	cpuModelInfo["family"] = strconv.Itoa(cpuid.CPU.Family)
 	cpuModelInfo["id"] = strconv.Itoa(cpuid.CPU.Model)
 
+	hypervisor, err := getHypervisor()
+	if err != nil {
+		klog.ErrorS(err, "failed to detect hypervisor")
+	} else if hypervisor != "" {
+		cpuModelInfo["hypervisor"] = hypervisor
+	}
+
 	return cpuModelInfo
+}
+
+// getHypervisor detects the hypervisor on s390x by reading /proc/sysinfo.
+// If the file does not exist, it returns an empty string with no error.
+func getHypervisor() (string, error) {
+	if _, err := os.Stat("/proc/sysinfo"); os.IsNotExist(err) {
+		return "", nil
+	}
+
+	data, err := os.ReadFile("/proc/sysinfo")
+	if err != nil {
+		return "", err
+	}
+
+	hypervisor := "PR/SM"
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.Contains(line, "Control Program:") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				hypervisor = strings.TrimSpace(parts[1])
+			}
+			break
+		}
+	}
+	// Replace forbidden symbols
+	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]+")
+	hypervisor = fullRegex.ReplaceAllString(hypervisor, "_")
+
+	return hypervisor, nil
 }
 
 func discoverTopology() map[string]string {
