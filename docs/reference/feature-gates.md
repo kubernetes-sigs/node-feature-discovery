@@ -55,8 +55,7 @@ to `false`, a NodeFeatureRule with
     foo: bar
 ```
 
-will turn into `feature.node.kubernetes.io/foo=bar` node label. With
-`DisableAutoPrefix` set to `true`, no prefix is added and the label will be
-filtered out.
-
-Note that taint keys are not affected by this feature gate.
+will be automatically prefixed, resulting in the node label
+`feature.node.kubernetes.io/foo=bar`. However, when `DisableAutoPrefix` is set
+to `true`, no prefix is added, and the label remains as `foo=bar`. Note that
+taint keys are not affected by this feature gate.
