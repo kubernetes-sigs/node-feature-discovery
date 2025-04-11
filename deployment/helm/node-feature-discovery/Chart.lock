@@ -1,0 +1,6 @@
+dependencies:
+- name: spire
+  repository: https://spiffe.github.io/helm-charts-hardened/
+  version: 0.24.1
+digest: sha256:f3b4dc973a59682bf3aa5ca9b53322f57935dd093081e82a37b8082e00becbe9
+generated: "2024-12-20T16:52:40.180416+01:00"
