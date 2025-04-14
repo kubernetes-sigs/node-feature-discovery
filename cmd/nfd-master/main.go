@@ -73,6 +73,8 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
+		case "enable-spiffe":
+			args.Overrides.EnableSpiffe = overrides.EnableSpiffe
 		}
 	})
 
@@ -140,6 +142,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.Var(overrides.ResyncPeriod, "resync-period", "Specify the NFD API controller resync period.")
 	overrides.NfdApiParallelism = flagset.Int("nfd-api-parallelism", 10, "Defines the maximum number of goroutines responsible of updating nodes. "+
 		"Can be used for the throttling mechanism.")
+	overrides.EnableSpiffe = flagset.Bool("enable-spiffe", false,
+		"Enables the Spiffe signature verification of created CRDs. This is still an EXPERIMENTAL feature.")
 
 	return args, overrides
 }
