@@ -189,6 +189,10 @@ mdlint:
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
 
+helm-push:
+	helm package deployment/helm/node-feature-discovery --version $(HELM_CHART_VERSION) --app-version $(HELM_CHART_VERSION)
+	helm push node-feature-discovery-$(HELM_CHART_VERSION).tgz oci://${HELM_REGISTRY}
+
 test:
 	$(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
 	cd api/nfd && $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./...
