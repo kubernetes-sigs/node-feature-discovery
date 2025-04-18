@@ -28,6 +28,7 @@ master:
     # extraLabelNs: ["added.ns.io","added.kubernets.io"]
     # denyLabelNs: ["denied.ns.io","denied.kubernetes.io"]
     # enableTaints: false
+    # informerPageSize: 200
     # labelWhiteList: "foo"
     # resyncPeriod: "2h"
     # restrictions:
