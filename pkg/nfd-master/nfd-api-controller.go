@@ -52,7 +52,6 @@ type nfdController struct {
 }
 
 type nfdApiControllerOptions struct {
-	DisableNodeFeature           bool
 	DisableNodeFeatureGroup      bool
 	ResyncPeriod                 time.Duration
 	K8sClient                    k8sclient.Interface
@@ -92,72 +91,64 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.ResyncPeriod)
 
 	// Add informer for NodeFeature objects
-	if !nfdApiControllerOptions.DisableNodeFeature {
-		tweakListOpts := func(opts *metav1.ListOptions) {
-			// Tweak list opts on initial sync to avoid timeouts on the apiserver.
-			// NodeFeature objects are huge and the Kubernetes apiserver
-			// (v1.30) experiences http handler timeouts when the resource
-			// version is set to some non-empty value (TODO: find out why).
-			if opts.ResourceVersion == "0" {
-				opts.ResourceVersion = ""
-			}
+	tweakListOpts := func(opts *metav1.ListOptions) {
+		// Tweak list opts on initial sync to avoid timeouts on the apiserver.
+		// NodeFeature objects are huge and the Kubernetes apiserver
+		// (v1.30) experiences http handler timeouts when the resource
+		// version is set to some non-empty value (TODO: find out why).
+		if opts.ResourceVersion == "0" {
+			opts.ResourceVersion = ""
 		}
-		featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
-		if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				nfr := obj.(*nfdv1alpha1.NodeFeature)
-				klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
-				if c.isNamespaceSelected(nfr.Namespace) {
-					c.updateOneNode("NodeFeature", nfr)
-				} else {
-					klog.V(2).InfoS("NodeFeature namespace is not selected, skipping", "nodefeature", klog.KObj(nfr))
-				}
-				if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-					c.updateAllNodeFeatureGroups()
-				}
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				nfr := newObj.(*nfdv1alpha1.NodeFeature)
-				klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
-				c.updateOneNode("NodeFeature", nfr)
-				if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-					c.updateAllNodeFeatureGroups()
-				}
-			},
-			DeleteFunc: func(obj interface{}) {
-				nfr := obj.(*nfdv1alpha1.NodeFeature)
-				klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
-				c.updateOneNode("NodeFeature", nfr)
-				if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-					c.updateAllNodeFeatureGroups()
-				}
-			},
-		}); err != nil {
-			return nil, err
-		}
-		c.featureLister = featureInformer.Lister()
 	}
+	featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
+	if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			nfr := obj.(*nfdv1alpha1.NodeFeature)
+			klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
+			if c.isNamespaceSelected(nfr.Namespace) {
+				c.updateOneNode("NodeFeature", nfr)
+			} else {
+				klog.V(2).InfoS("NodeFeature namespace is not selected, skipping", "nodefeature", klog.KObj(nfr))
+			}
+			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+				c.updateAllNodeFeatureGroups()
+			}
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			nfr := newObj.(*nfdv1alpha1.NodeFeature)
+			klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
+			c.updateOneNode("NodeFeature", nfr)
+			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+				c.updateAllNodeFeatureGroups()
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			nfr := obj.(*nfdv1alpha1.NodeFeature)
+			klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
+			c.updateOneNode("NodeFeature", nfr)
+			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
+				c.updateAllNodeFeatureGroups()
+			}
+		},
+	}); err != nil {
+		return nil, err
+	}
+	c.featureLister = featureInformer.Lister()
 
 	// Add informer for NodeFeatureRule objects
 	nodeFeatureRuleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
 	if _, err := nodeFeatureRuleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			klog.V(2).InfoS("NodeFeatureRule added", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
-			if !nfdApiControllerOptions.DisableNodeFeature {
-				c.updateAllNodes()
-			}
+			c.updateAllNodes()
 		},
 		UpdateFunc: func(oldObject, newObject interface{}) {
 			klog.V(2).InfoS("NodeFeatureRule updated", "nodefeaturerule", klog.KObj(newObject.(metav1.Object)))
-			if !nfdApiControllerOptions.DisableNodeFeature {
-				c.updateAllNodes()
-			}
+			c.updateAllNodes()
 		},
 		DeleteFunc: func(object interface{}) {
 			klog.V(2).InfoS("NodeFeatureRule deleted", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
-			if !nfdApiControllerOptions.DisableNodeFeature {
-				c.updateAllNodes()
-			}
+			c.updateAllNodes()
 		},
 	}); err != nil {
 		return nil, err
