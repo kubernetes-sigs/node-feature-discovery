@@ -161,6 +161,9 @@ type nfdMaster struct {
 	updaterPool    *updaterPool
 	deniedNs
 	config *NFDConfig
+
+	// isLeader indicates if this instance is the leader, changing dynamically
+	isLeader bool
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
@@ -344,10 +347,11 @@ func (m *nfdMaster) Run() error {
 	// Run updater that handles events from the nfd CRD API.
 	if m.nfdController != nil {
 		if m.args.EnableLeaderElection {
-			go m.nfdAPIUpdateHandlerWithLeaderElection()
+			go m.startLeaderElectionHandler()
 		} else {
-			go m.nfdAPIUpdateHandler()
+			m.isLeader = true
 		}
+		go m.nfdAPIUpdateHandler()
 	}
 
 	// Start gRPC server for liveness probe (at this point we're "live")
@@ -506,6 +510,12 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 		case nodeFeatureGroupName := <-m.nfdController.updateNodeFeatureGroupChan:
 			nodeFeatureGroup[nodeFeatureGroupName] = struct{}{}
 		case <-rateLimit:
+			// If we're not the leader, don't do anything, sleep a bit longer
+			if !m.isLeader {
+				rateLimit = time.After(5 * time.Second)
+				break
+			}
+
 			// NodeFeature
 			errUpdateAll := false
 			if updateAll {
@@ -1522,7 +1532,7 @@ func (m *nfdMaster) startNfdApiController() error {
 	return nil
 }
 
-func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
+func (m *nfdMaster) startLeaderElectionHandler() {
 	ctx := context.Background()
 	lock := &resourcelock.LeaseLock{
 		LeaseMeta: metav1.ObjectMeta{
@@ -1543,11 +1553,15 @@ func (m *nfdMaster) nfdAPIUpdateHandlerWithLeaderElection() {
 		RenewDeadline: m.config.LeaderElection.RenewDeadline.Duration,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(_ context.Context) {
-				m.nfdAPIUpdateHandler()
+				m.isLeader = true
 			},
 			OnStoppedLeading: func() {
 				// We lost the lock.
 				klog.InfoS("leaderelection lock was lost")
+				// We stop (i.e. exit), makes sure that in-flight
+				// requests/re-tries will be stopped TODO: more graceful
+				// handling that does not exit the pod (set m.isLeader to false
+				// and flush updater queue and flush updater queues...)
 				m.Stop()
 			},
 		},
