@@ -55,7 +55,7 @@ scss: |
 # Release is the full released version number. Used to make external links to
 # point to the correct blobs in the Github repo. This is also the version shown
 # in the sidebar (top left corner of the page)
-release: v0.16.7
+release: v0.16.8
 
 # Container image which to point to in the documentation
-container_image: registry.k8s.io/nfd/node-feature-discovery:v0.16.7
+container_image: registry.k8s.io/nfd/node-feature-discovery:v0.16.8
