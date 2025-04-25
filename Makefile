@@ -31,6 +31,8 @@ JEKYLL_OPTS := -d '$(SITE_DESTDIR)' $(if $(SITE_BASEURL),-b '$(SITE_BASEURL)',)
 
 VERSION := $(shell git describe --tags --dirty --always --match "v*")
 
+CHART_VERSION ?= $(shell echo $(VERSION) | cut -c2-)
+
 IMAGE_REGISTRY ?= registry.k8s.io/nfd
 IMAGE_TAG_NAME ?= $(VERSION)
 IMAGE_EXTRA_TAG_NAMES ?=
@@ -188,6 +190,10 @@ mdlint:
 
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
+
+helm-push:
+	helm package deployment/helm/node-feature-discovery --version $(CHART_VERSION) --app-version $(IMAGE_TAG_NAME)
+	helm push node-feature-discovery-$(CHART_VERSION).tgz oci://${IMAGE_REGISTRY}/charts
 
 test:
 	$(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
