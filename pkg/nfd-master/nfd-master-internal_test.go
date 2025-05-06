@@ -134,6 +134,33 @@ func newFakeMaster(opts ...NfdMasterOption) *nfdMaster {
 	return m.(*nfdMaster)
 }
 
+func newFakeMasterWithFeatureGate(opts ...NfdMasterOption) *nfdMaster {
+	nfdCli := fakenfdclient.NewSimpleClientset()
+	defaultOpts := []NfdMasterOption{
+		withNodeName(testNodeName),
+		withConfig(&NFDConfig{Restrictions: Restrictions{AllowOverwrite: true}}),
+		WithKubernetesClient(fakeclient.NewSimpleClientset()),
+		withNFDClient(nfdCli),
+	}
+	m, err := NewNfdMaster(append(defaultOpts, opts...)...)
+	if err != nil {
+		panic(err)
+	}
+	// Add FeatureGates
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+		panic(err)
+	}
+	if err := features.NFDMutableFeatureGate.Set("DisableAutoPrefix=true"); err != nil {
+		panic(err)
+	}
+	// Enable DisableAutoPrefix feature gate
+	if !features.NFDFeatureGate.Enabled(features.DisableAutoPrefix) {
+		err = errors.New("DisableAutoPrefix feature gate is not enabled")
+		panic(err)
+	}
+	return m.(*nfdMaster)
+}
+
 func TestUpdateNodeObject(t *testing.T) {
 	Convey("When I update the node using fake client", t, func() {
 		featureLabels := map[string]string{
@@ -430,6 +457,28 @@ func TestFilterLabels(t *testing.T) {
 					So(labelValue, ShouldEqual, tc.expectedValue)
 				})
 			}
+		})
+	}
+	// Create a new fake master with the feature gate enabled
+	fakeMaster = newFakeMasterWithFeatureGate()
+	tcs = []TC{
+		{
+			description:   "Unprefixed should be allowed",
+			labelName:     "test-label",
+			labelValue:    "test-value",
+			expectedValue: "test-value",
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.description, func(t *testing.T) {
+			labelValue, err := fakeMaster.filterFeatureLabel(tc.labelName, tc.labelValue, &tc.features)
+
+			Convey("Label should not be filtered out", t, func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Label value should be correct", t, func() {
+				So(labelValue, ShouldEqual, tc.expectedValue)
+			})
 		})
 	}
 }
