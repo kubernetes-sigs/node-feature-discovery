@@ -122,8 +122,9 @@ func (s *systemSource) Discover() error {
 	libcAttrs, err := getLibcAttributes()
 	if err != nil {
 		klog.ErrorS(err, "failed to detect libc version")
+	} else {
+		s.features.Attributes[LibcFeature] = nfdv1alpha1.NewAttributeFeatures(libcAttrs)
 	}
-	s.features.Attributes[LibcFeature] = nfdv1alpha1.NewAttributeFeatures(libcAttrs)
 
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
 
