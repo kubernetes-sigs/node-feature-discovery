@@ -30,6 +30,7 @@ import (
 
 	"maps"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/context"
@@ -121,6 +122,8 @@ type nfdWorker struct {
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
 	stop                chan struct{} // channel for signaling stop
+	fsEvent             chan fsnotify.Event
+	fsWatcher           *fsnotify.Watcher
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
@@ -304,6 +307,29 @@ func (w *nfdWorker) Run() error {
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
 
+	featureFilesDir := "/etc/kubernetes/node-feature-discovery/features.d/"
+
+	info, err := os.Stat(featureFilesDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if info != nil && info.IsDir() {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			return err
+		}
+		defer watcher.Close()
+
+		err = watcher.Add(featureFilesDir)
+		if err != nil {
+			return fmt.Errorf("unable to access %v: %w", featureFilesDir, err)
+		}
+		w.fsWatcher = watcher
+	}
+
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
@@ -341,6 +367,13 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 
+		case event := <-w.fsWatcher.Events:
+			if event.Op&fsnotify.Create == fsnotify.Create || event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename || event.Op&fsnotify.Chmod == fsnotify.Chmod {
+				err = w.runFeatureDiscovery()
+				if err != nil {
+					return err
+				}
+			}
 		case <-w.stop:
 			klog.InfoS("shutting down nfd-worker")
 			return nil
