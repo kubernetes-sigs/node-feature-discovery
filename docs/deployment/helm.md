@@ -266,6 +266,7 @@ API's you need to install the prometheus operator in your cluster.
 | `worker.readinessProbe.timeoutSeconds`      | integer | 1 (by Kubernetes)       | Specifies the number of seconds after which the probe times out.                                                                                                                                             |
 | `worker.readinessProbe.successThreshold`    | integer | 1 (by Kubernetes)       | Specifies the number of consecutive successes of readiness probes before considering the pod as ready.                                                                                                       |
 | `worker.dnsPolicy`                          | array   | ClusterFirstWithHostNet | NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy)                                                                                        |
+| `worker.updateStrategy`                     | dict    | {}                      | Daemonset [updateStrategy](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/#performing-a-rolling-update)                                                                                    |
 
 ### Topology updater parameters
 
