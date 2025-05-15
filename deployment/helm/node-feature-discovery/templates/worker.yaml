@@ -13,13 +13,10 @@ metadata:
   {{- end }}
 spec:
   revisionHistoryLimit: {{ .Values.worker.revisionHistoryLimit }}
+  {{- with .Values.worker.updateStrategy }}
   updateStrategy:
-    type: {{ ((.Values.worker).updateStrategy).type | default "RollingUpdate" }}
-    {{- if or (not ((.Values.worker).updateStrategy).type) (eq .Values.worker.updateStrategy.type "RollingUpdate") }}
-    rollingUpdate:
-      maxSurge: {{ (((.Values.worker).updateStrategy).rollingUpdate).maxSurge | default 1 }}
-      maxUnavailable: {{ (((.Values.worker).updateStrategy).rollingUpdate).maxUnavailable | default 1 }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end}}
   selector:
     matchLabels:
       {{- include "node-feature-discovery.selectorLabels" . | nindent 6 }}
