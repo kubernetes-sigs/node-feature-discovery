@@ -469,6 +469,12 @@ worker:
 
   priorityClassName: ""
 
+  updateStrategy: {}
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxSurge: 0
+    #   maxUnavailable: "10%"
+
 topologyUpdater:
   config: ### <NFD-TOPOLOGY-UPDATER-CONF-START-DO-NOT-REMOVE>
     ## key = node name, value = list of resources to be excluded.
