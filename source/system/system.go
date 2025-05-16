@@ -44,6 +44,7 @@ const (
 	OsReleaseFeature = "osrelease"
 	NameFeature      = "name"
 	DmiIdFeature     = "dmiid"
+	LibcFeature      = "libc"
 )
 
 // systemSource implements the FeatureSource and LabelSource interfaces.
@@ -116,6 +117,13 @@ func (s *systemSource) Discover() error {
 
 	if len(dmiAttrs) > 0 {
 		s.features.Attributes[DmiIdFeature] = nfdv1alpha1.NewAttributeFeatures(dmiAttrs)
+	}
+
+	libcAttrs, err := getLibcAttributes()
+	if err != nil {
+		klog.ErrorS(err, "failed to detect libc version")
+	} else {
+		s.features.Attributes[LibcFeature] = nfdv1alpha1.NewAttributeFeatures(libcAttrs)
 	}
 
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
