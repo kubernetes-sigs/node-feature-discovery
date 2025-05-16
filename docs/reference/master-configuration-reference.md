@@ -180,6 +180,21 @@ Example:
 nfdApiParallelism: 1
 ```
 
+## informerPageSize
+
+The `informerPageSize` option is used to control pagination
+during informer cache sync on nfd-master startup.
+This is useful to control load on api-server/etcd as listing
+NodeFeature objects can be expensive, especially in large clusters.
+
+Default: 200
+
+Example:
+
+```yaml
+informerPageSize: 50
+```
+
 ## klog
 
 The following options specify the logger configuration. Most of which can be

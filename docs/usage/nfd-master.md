@@ -84,3 +84,11 @@ If you have RBAC authorization enabled (as is the default e.g. with clusters
 initialized with kubeadm) you need to configure the appropriate ClusterRoles,
 ClusterRoleBindings and a ServiceAccount for NFD to create node
 labels. The provided template will configure these for you.
+
+## Informer List Pagination
+
+When NFD Master starts up it starts an informer on the nodefeatures resources.
+These resources can be large and in a large cluster this initial list call
+to sync the informer cache can be expensive and heavy on api-server/etcd.
+You can use the `informer-list-size` argument to NFD master to
+control pagination size to help control the load during NFD-Master restart.

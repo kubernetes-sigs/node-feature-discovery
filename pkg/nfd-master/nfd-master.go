@@ -91,6 +91,7 @@ type NFDConfig struct {
 	NfdApiParallelism int
 	Klog              klogutils.KlogConfigOpts
 	Restrictions      Restrictions
+	InformerPageSize  int64
 }
 
 // LeaderElectionConfig contains the configuration for leader election
@@ -109,6 +110,7 @@ type ConfigOverrideArgs struct {
 	NoPublish         *bool
 	ResyncPeriod      *utils.DurationVal
 	NfdApiParallelism *int
+	InformerPageSize  *int64
 }
 
 // Args holds command line arguments
@@ -121,6 +123,7 @@ type Args struct {
 	Prune                bool
 	Options              string
 	EnableLeaderElection bool
+	MetricsPort          int
 
 	Overrides ConfigOverrideArgs
 }
@@ -243,6 +246,7 @@ func newDefaultConfig() *NFDConfig {
 		NfdApiParallelism: 10,
 		EnableTaints:      false,
 		ResyncPeriod:      utils.DurationVal{Duration: time.Duration(1) * time.Hour},
+		InformerPageSize:  200,
 		LeaderElection: LeaderElectionConfig{
 			LeaseDuration: utils.DurationVal{Duration: time.Duration(15) * time.Second},
 			RetryPeriod:   utils.DurationVal{Duration: time.Duration(2) * time.Second},
@@ -1187,6 +1191,9 @@ func (m *nfdMaster) configure(filepath string, overrides string) error {
 	if m.args.Overrides.NfdApiParallelism != nil {
 		c.NfdApiParallelism = *m.args.Overrides.NfdApiParallelism
 	}
+	if m.args.Overrides.InformerPageSize != nil {
+		c.InformerPageSize = *m.args.Overrides.InformerPageSize
+	}
 
 	if c.NfdApiParallelism <= 0 {
 		return fmt.Errorf("the maximum number of concurrent labelers should be a non-zero positive number")
@@ -1293,6 +1300,7 @@ func (m *nfdMaster) startNfdApiController() error {
 		K8sClient:                    m.k8sClient,
 		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
 		DisableNodeFeatureGroup:      !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureGroupAPI),
+		ListSize:                     m.config.InformerPageSize,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)
