@@ -14,7 +14,7 @@ You can reach us via the following channels:
 
 - [#node-feature-discovery](https://kubernetes.slack.com/messages/node-feature-discovery)
   channel in [Kubernetes Slack](https://slack.k8s.io/)
-- [SIG-Node](https://groups.google.com/g/kubernetes-sig-node) mailing list
+- [SIG-Node](https://groups.google.com/a/kubernetes.io/g/sig-node) mailing list
 - File an
   [issue](https://github.com/kubernetes-sigs/node-feature-discovery/issues/new)
   in this repository
