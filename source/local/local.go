@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"github.com/fsnotify/fsnotify"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -65,10 +66,11 @@ var (
 	featureFilesDir = "/etc/kubernetes/node-feature-discovery/features.d/"
 )
 
-// localSource implements the FeatureSource and LabelSource interfaces.
+// localSource implements the FeatureSource, LabelSource, EventSource interfaces.
 type localSource struct {
-	features *nfdv1alpha1.Features
-	config   *Config
+	features  *nfdv1alpha1.Features
+	config    *Config
+	fsWatcher *fsnotify.Watcher
 }
 
 type Config struct {
@@ -87,6 +89,7 @@ var (
 	_   source.FeatureSource      = &src
 	_   source.LabelSource        = &src
 	_   source.ConfigurableSource = &src
+	_   source.EventSource        = &src
 )
 
 // Name method of the LabelSource interface
@@ -316,6 +319,49 @@ func getFileContent(fileName string) ([][]byte, error) {
 	}
 
 	return lines, nil
+}
+
+func (s *localSource) runNotifier(ch chan string) {
+	for {
+		select {
+		case event := <-s.fsWatcher.Events:
+			opAny := fsnotify.Create | fsnotify.Write | fsnotify.Remove | fsnotify.Rename | fsnotify.Chmod
+			if event.Op&opAny != 0 {
+				klog.V(2).InfoS("fsnotify event", "eventName", event.Name, "eventOp", event.Op)
+				ch <- s.Name()
+			}
+		case err := <-s.fsWatcher.Errors:
+			klog.ErrorS(err, "failed to to watch features.d changes")
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
+// SetNotifyChannel method of the EventSource Interface
+func (s *localSource) SetNotifyChannel(ch chan string) error {
+	info, err := os.Stat(featureFilesDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if info != nil && info.IsDir() {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			return err
+		}
+
+		err = watcher.Add(featureFilesDir)
+		if err != nil {
+			return fmt.Errorf("unable to access %v: %w", featureFilesDir, err)
+		}
+		s.fsWatcher = watcher
+	}
+
+	go s.runNotifier(ch)
+
+	return nil
 }
 
 func init() {
