@@ -30,6 +30,7 @@ import (
 
 	"maps"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/context"
@@ -55,7 +56,7 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/custom"
 	_ "sigs.k8s.io/node-feature-discovery/source/fake"
 	_ "sigs.k8s.io/node-feature-discovery/source/kernel"
-	_ "sigs.k8s.io/node-feature-discovery/source/local"
+	"sigs.k8s.io/node-feature-discovery/source/local"
 	_ "sigs.k8s.io/node-feature-discovery/source/memory"
 	_ "sigs.k8s.io/node-feature-discovery/source/network"
 	_ "sigs.k8s.io/node-feature-discovery/source/pci"
@@ -121,6 +122,7 @@ type nfdWorker struct {
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
 	stop                chan struct{} // channel for signaling stop
+	fsWatcher           *fsnotify.Watcher
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
@@ -304,6 +306,13 @@ func (w *nfdWorker) Run() error {
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
 
+	if s := source.GetFeatureSource("local"); s != nil {
+		w.fsWatcher = local.FSWatcher
+		if w.fsWatcher != nil {
+			defer w.fsWatcher.Close()
+		}
+	}
+
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
@@ -341,6 +350,16 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 
+		case event := <-w.fsWatcher.Events:
+			if event.Op&fsnotify.Create == fsnotify.Create || event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename || event.Op&fsnotify.Chmod == fsnotify.Chmod {
+				err = w.runFeatureDiscovery()
+				if err != nil {
+					return err
+				}
+			}
+		case err := <-w.fsWatcher.Errors:
+			klog.ErrorS(err, "failed to to watch features.d changes")
+			return err
 		case <-w.stop:
 			klog.InfoS("shutting down nfd-worker")
 			return nil
