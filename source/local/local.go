@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"github.com/fsnotify/fsnotify"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -63,6 +64,7 @@ const MaxFeatureFileSize = 65536
 // Config
 var (
 	featureFilesDir = "/etc/kubernetes/node-feature-discovery/features.d/"
+	FSWatcher       *fsnotify.Watcher
 )
 
 // localSource implements the FeatureSource and LabelSource interfaces.
@@ -125,6 +127,13 @@ func (s *localSource) GetLabels() (source.FeatureLabels, error) {
 // Discover method of the FeatureSource interface
 func (s *localSource) Discover() error {
 	s.features = nfdv1alpha1.NewFeatures()
+
+	if FSWatcher == nil {
+		err := watch(s)
+		if err != nil {
+			klog.ErrorS(err, "failed to watch features.d directory")
+		}
+	}
 
 	featuresFromFiles, labelsFromFiles, err := getFeaturesFromFiles()
 	if err != nil {
@@ -316,6 +325,30 @@ func getFileContent(fileName string) ([][]byte, error) {
 	}
 
 	return lines, nil
+}
+
+func watch(s *localSource) error {
+	info, err := os.Stat(featureFilesDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if info != nil && info.IsDir() {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			return err
+		}
+
+		err = watcher.Add(featureFilesDir)
+		if err != nil {
+			return fmt.Errorf("unable to access %v: %w", featureFilesDir, err)
+		}
+		FSWatcher = watcher
+	}
+
+	return nil
 }
 
 func init() {
