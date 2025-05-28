@@ -1,4 +1,7 @@
 # Netlify settings
 [build]
-    command = "cd docs/ && source /opt/buildhome/.rvm/scripts/rvm && rvm install ruby-3.1.6 && bundle plugin install bundler-override && bundle install && jekyll build"
+    command = "cd docs/ && source /opt/buildhome/.rvm/scripts/rvm && rvm install ruby-3.3.8 && bundle plugin install bundler-override && bundle install && jekyll build"
     publish = "docs/_site/"
+
+[build.environment]
+    PAGES_DISABLE_NETWORK = "1"
