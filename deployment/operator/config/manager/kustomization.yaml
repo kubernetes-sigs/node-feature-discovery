@@ -12,5 +12,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: gcr.io/k8s-staging-nfd/node-feature-discovery-operator
-  newTag: master
+  newName: registry.k8s.io/nfd/node-feature-discovery-operator
+  newTag: 0.4.2
