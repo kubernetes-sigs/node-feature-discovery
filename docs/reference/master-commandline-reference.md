@@ -47,20 +47,17 @@ The `-prune` flag is a sub-command like option for cleaning up the cluster. It
 causes nfd-master to remove all NFD related labels, annotations and extended
 resources from all Node objects of the cluster and exit.
 
-### -metrics
+### -port
 
-**DEPRECATED**: Will be removed in NFD v0.17 and replaced by `-port`.
+The `-port` flag specifies the port on which metrics and healthz endpoints are
+served on.
 
-The `-metrics` flag specifies the port on which to expose
-[Prometheus](https://prometheus.io/) metrics. Setting this to 0 disables the
-metrics server on nfd-master.
-
-Default: 8081
+Default: 8080
 
 Example:
 
 ```bash
-nfd-master -metrics=12345
+nfd-master -port=12345
 ```
 
 ### -instance
