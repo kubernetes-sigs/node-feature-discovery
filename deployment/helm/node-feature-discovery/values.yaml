@@ -572,7 +572,7 @@ gc:
       cpu: 10m
       memory: 128Mi
 
-  metricsPort: 8081
+  port: 8080
 
   nodeSelector: {}
   tolerations: []
