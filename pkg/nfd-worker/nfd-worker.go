@@ -81,6 +81,7 @@ type coreConfig struct {
 	LabelWhiteList utils.RegexpVal
 	NoPublish      bool
 	NoOwnerRefs    bool
+	OwnerRefPod    bool
 	FeatureSources []string
 	Sources        *[]string
 	LabelSources   []string
@@ -101,6 +102,7 @@ type Args struct {
 	Options     string
 	Port        int
 	NoOwnerRefs bool
+	OwnerRefPod bool
 
 	Overrides ConfigOverrideArgs
 }
@@ -109,6 +111,7 @@ type Args struct {
 type ConfigOverrideArgs struct {
 	NoPublish      *bool
 	NoOwnerRefs    *bool
+	OwnerRefPod    *bool
 	FeatureSources *utils.StringSliceVal
 	LabelSources   *utils.StringSliceVal
 }
@@ -253,33 +256,53 @@ func (w *nfdWorker) setOwnerReference() error {
 	ownerReference := []metav1.OwnerReference{}
 
 	if !w.config.Core.NoOwnerRefs {
-		// Get pod owner reference
-		podName := os.Getenv("POD_NAME")
-		// Add pod owner reference if it exists
-		if podName != "" {
-			if selfPod, err := w.k8sClient.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
-				klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
-				return err
-			} else {
-				for _, owner := range selfPod.OwnerReferences {
-					owner.BlockOwnerDeletion = ptr.To(false)
-					ownerReference = append(ownerReference, owner)
+		if w.config.Core.OwnerRefPod {
+			// Get pod owner reference
+			podName := os.Getenv("POD_NAME")
+			// Add pod owner reference if it exists
+			if podName != "" {
+				if selfPod, err := w.k8sClient.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
+					klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
+					return err
+				} else {
+					for _, owner := range selfPod.OwnerReferences {
+						owner.BlockOwnerDeletion = ptr.To(false)
+						ownerReference = append(ownerReference, owner)
+					}
 				}
-			}
 
-			podUID := os.Getenv("POD_UID")
-			if podUID != "" {
-				ownerReference = append(ownerReference, metav1.OwnerReference{
-					APIVersion: "v1",
-					Kind:       "Pod",
-					Name:       podName,
-					UID:        types.UID(podUID),
-				})
+				podUID := os.Getenv("POD_UID")
+				if podUID != "" {
+					ownerReference = append(ownerReference, metav1.OwnerReference{
+						APIVersion: "v1",
+						Kind:       "Pod",
+						Name:       podName,
+						UID:        types.UID(podUID),
+					})
+				} else {
+					klog.InfoS("Cannot append POD ownerReference to NodeFeature, POD_UID not specified")
+				}
 			} else {
-				klog.InfoS("Cannot append POD ownerReference to NodeFeature, POD_UID not specified")
+				klog.InfoS("Cannot set NodeFeature owner references, POD_NAME not specified")
 			}
 		} else {
-			klog.InfoS("Cannot set NodeFeature owner references, POD_NAME not specified")
+			// Get node owner reference
+			nodeName := os.Getenv("NODE_NAME")
+			if nodeName != "" {
+				if selfNode, err := w.k8sClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{}); err != nil {
+					klog.ErrorS(err, "failed to get self node, cannot inherit ownerReference for NodeFeature")
+					return err
+				} else {
+					ownerReference = append(ownerReference, metav1.OwnerReference{
+						APIVersion: "v1",
+						Kind:       "Node",
+						Name:       nodeName,
+						UID:        selfNode.UID,
+					})
+				}
+			} else {
+				klog.InfoS("Cannot set NodeFeature owner reference to Node, NODE_NAME not specified")
+			}
 		}
 	}
 
@@ -504,6 +527,9 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	}
 	if w.args.Overrides.NoOwnerRefs != nil {
 		c.Core.NoOwnerRefs = *w.args.Overrides.NoOwnerRefs
+	}
+	if w.args.Overrides.OwnerRefPod != nil {
+		c.Core.OwnerRefPod = *w.args.Overrides.OwnerRefPod
 	}
 	if w.args.Overrides.FeatureSources != nil {
 		c.Core.FeatureSources = *w.args.Overrides.FeatureSources
