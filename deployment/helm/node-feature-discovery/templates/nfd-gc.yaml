@@ -70,8 +70,8 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
         ports:
-          - name: metrics
-            containerPort: {{ .Values.gc.metricsPort | default "8081"}}
+          - name: http
+            containerPort: {{ .Values.gc.port | default "8080"}}
 
     {{- with .Values.gc.nodeSelector }}
       nodeSelector:
