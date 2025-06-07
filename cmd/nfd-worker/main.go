@@ -73,13 +73,30 @@ func main() {
 }
 
 func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
-	args, overrides := initFlags(flags)
+
+	// We allow exportFlag to be a boolean or string, and need to check it here
+	var exportFlag boolOrStringValue
+	args, overrides := initFlags(flags, &exportFlag)
 
 	_ = flags.Parse(osArgs)
 	if len(flags.Args()) > 0 {
 		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
+	}
+
+	// Was export set?
+	if exportFlag.IsSet {
+
+		// Case 1: Only -export is defined, print labels to screen
+		if exportFlag.Value == "true" {
+			args.Export = true
+
+		} else {
+			// Case 2: a specific filename is provided to export to
+			args.Export = true
+			args.ExportPath = exportFlag.Value
+		}
 	}
 
 	// Handle overrides
@@ -99,7 +116,7 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 	return args
 }
 
-func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs) {
+func initFlags(flagset *flag.FlagSet, exportFlag *boolOrStringValue) (*worker.Args, *worker.ConfigOverrideArgs) {
 	args := &worker.Args{}
 
 	flagset.StringVar(&args.ConfigFile, "config", "/etc/kubernetes/node-feature-discovery/nfd-worker.conf",
@@ -113,6 +130,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
+	flagset.Var(exportFlag, "export", "Export features from a static, non-Kubernetes node. Can be boolean (-export) or path (-export=<path>).")
 
 	args.Klog = klogutils.InitKlogFlags(flagset)
 

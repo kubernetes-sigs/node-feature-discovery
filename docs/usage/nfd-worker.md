@@ -23,7 +23,7 @@ config option.
 
 NFD-Worker supports configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`,
-but, this can be changed by specifying the`-config` command line flag.
+but, this can be changed by specifying the `-config` command line flag.
 Configuration file is re-read whenever it is modified which makes run-time
 re-configuration of nfd-worker straightforward.
 
@@ -63,3 +63,22 @@ file must be used, i.e. JSON (or YAML). For example:
 
 Configuration options specified from the command line will override those read
 from the config file.
+
+## Worker export
+
+The nfd worker supports an export mode, where metadata labels can be derived without requiring a Kubernetes context.
+This addresses use cases such as high performance computing (HPC) and other environments with compute nodes
+that warrant assessment, but may not have Kubernetes running, or may not be able to or want to run a central
+daemon service for data. To use export, you can simply add the `--export` flag to the worker start command:
+
+```bash
+nfd-worker --export
+```
+
+By default, the labels will be printed to the screen. If you want to export to a file path:
+
+```bash
+nfd-worker --export=labels.json
+```
+
+
