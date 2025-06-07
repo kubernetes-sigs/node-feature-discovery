@@ -102,7 +102,10 @@ type Args struct {
 	Port        int
 	NoOwnerRefs bool
 
-	Overrides ConfigOverrideArgs
+	// Options for export
+	Export     bool
+	ExportPath string
+	Overrides  ConfigOverrideArgs
 }
 
 // ConfigOverrideArgs are args that override config file options
@@ -178,7 +181,8 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 	}
 
 	// k8sClient might've been set via opts by tests
-	if nfd.k8sClient == nil {
+	// Export mode does not assume in Kubernetes environment
+	if nfd.k8sClient == nil && !nfd.args.Export {
 		kubeconfig, err := utils.GetKubeconfig(nfd.args.Kubeconfig)
 		if err != nil {
 			return nfd, err
@@ -221,6 +225,7 @@ func (i *infiniteTicker) Reset(d time.Duration) {
 }
 
 // Run feature discovery.
+// singleExport will derive labels and save or print
 func (w *nfdWorker) runFeatureDiscovery() error {
 	discoveryStart := time.Now()
 	for _, s := range w.featureSources {
@@ -239,6 +244,29 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	}
 	// Get the set of feature labels.
 	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+
+	// Show exported labels and exit
+	if w.args.Export {
+		exportedLabels, err := json.MarshalIndent(labels, "", "    ")
+		if err != nil {
+			return err
+		}
+		// No export path provided
+		if w.args.ExportPath == "" {
+			fmt.Println(string(exportedLabels))
+		} else {
+
+			// Export labels to provided filename
+			fd, err := os.Create(w.args.ExportPath)
+			if err != nil {
+				return err
+			}
+			defer fd.Close()
+			_, err = fmt.Fprint(fd, string(exportedLabels))
+			return err
+		}
+		return err
+	}
 
 	// Update the node with the feature labels.
 	if !w.config.Core.NoPublish {
@@ -303,6 +331,11 @@ func (w *nfdWorker) Run() error {
 	labelTrigger := infiniteTicker{Ticker: time.NewTicker(1)}
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
+
+	// If we are exporting and don't assume Kubernetes, don't set up prometheus, etc.
+	if w.args.Export {
+		return w.runFeatureDiscovery()
+	}
 
 	httpMux := http.NewServeMux()
 

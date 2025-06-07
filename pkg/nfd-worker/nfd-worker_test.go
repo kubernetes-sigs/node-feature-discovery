@@ -17,7 +17,9 @@ limitations under the License.
 package nfdworker_test
 
 import (
+	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -130,6 +132,81 @@ func TestRun(t *testing.T) {
 					},
 				}
 				So(nf, ShouldResemble, nfExpected)
+			})
+		})
+	})
+}
+
+func TestExport(t *testing.T) {
+	nfdCli := fakenfdclient.NewSimpleClientset()
+	initializeFeatureGates()
+	Convey("When running nfd-worker", t, func() {
+		Convey("When requesting export to terminal", func() {
+			args := &worker.Args{
+				Export: true,
+				Overrides: worker.ConfigOverrideArgs{
+					FeatureSources: &utils.StringSliceVal{"fake"},
+					LabelSources:   &utils.StringSliceVal{"fake"},
+				},
+			}
+			w, _ := worker.NewNfdWorker(
+				worker.WithArgs(args),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()),
+				worker.WithNFDClient(nfdCli),
+			)
+			err := w.Run()
+			Convey("No error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestExportToFile(t *testing.T) {
+	nfdCli := fakenfdclient.NewSimpleClientset()
+	initializeFeatureGates()
+	tempDir := t.TempDir()
+	exportFilePath := filepath.Join(tempDir, "labels.json")
+	Convey("When running nfd-worker", t, func() {
+		Convey("When requesting export to terminal", func() {
+			args := &worker.Args{
+				Export:     true,
+				ExportPath: exportFilePath,
+				Overrides: worker.ConfigOverrideArgs{
+					FeatureSources: &utils.StringSliceVal{"fake"},
+					LabelSources:   &utils.StringSliceVal{"fake"},
+				},
+			}
+			w, _ := worker.NewNfdWorker(
+				worker.WithArgs(args),
+				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()),
+				worker.WithNFDClient(nfdCli),
+			)
+			err := w.Run()
+			Convey("No error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("The output file should be created with labels", func() {
+
+				_, err := os.Stat(exportFilePath)
+				So(os.IsNotExist(err), ShouldBeFalse)
+
+				rawLabels, err := os.ReadFile(exportFilePath)
+				So(err, ShouldBeNil)
+				So(len(rawLabels), ShouldBeGreaterThan, 0)
+
+				// Unmarshal the JSON into labels
+				var labels worker.Labels
+				err = json.Unmarshal(rawLabels, &labels)
+				Convey("The output should unmarshal to valid JSON", func() {
+					So(err, ShouldBeNil)
+				})
+				Convey("The Labels should not be empty", func() {
+					So(labels, ShouldNotBeNil)
+					So(len(labels), ShouldBeGreaterThan, 0)
+					So(labels, ShouldContainKey, "feature.node.kubernetes.io/fake-fakefeature1")
+				})
 			})
 		})
 	})
