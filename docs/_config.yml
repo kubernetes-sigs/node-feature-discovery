@@ -26,7 +26,7 @@ markdown: kramdown
 kramdown:
   toc_levels: 1..3
 
-theme: jekyll-rtd-theme
+theme: just-the-docs
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
@@ -59,3 +59,17 @@ release: master
 
 # Container image which to point to in the documentation
 container_image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+
+nav:
+  - title: Home
+    url: /
+  - title: Guides
+    url: /guides/
+  - title: Foo
+    nav:
+      - title: v1.0
+        url: https://yourdomain.com/docs/v1.0
+      - title: v1.1
+        url: https://yourdomain.com/docs/v1.1
+      - title: Latest
+        url: https://yourdomain.com/docs/latest

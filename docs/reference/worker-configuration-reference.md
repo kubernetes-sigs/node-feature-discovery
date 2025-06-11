@@ -1,7 +1,8 @@
 ---
 title: "Worker config reference"
+parent: "Reference"
 layout: default
-sort: 4
+nav_order: 4
 ---
 
 # Configuration file reference of nfd-worker

@@ -1,7 +1,8 @@
 ---
 title: "Contributing"
 layout: default
-sort: 6
+nav_order: 6
+has_children: true
 ---
 
 # Contributing

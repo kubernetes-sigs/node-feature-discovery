@@ -1,7 +1,8 @@
 ---
 title: "Helm"
+parent: "Deployment"
 layout: default
-sort: 3
+nav_order: 3
 ---
 
 # Deployment with Helm
