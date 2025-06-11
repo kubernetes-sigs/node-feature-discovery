@@ -1,7 +1,8 @@
 ---
 title: "Versions"
+parent: "Reference"
 layout: default
-sort: 10
+nav_order: 10
 ---
 
 # Versions and deprecation

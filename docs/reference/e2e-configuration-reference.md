@@ -1,7 +1,8 @@
 ---
 title: "E2E-test config reference"
+parent: "Reference"
 layout: default
-sort: 5
+nav_order: 5
 published: false
 ---
 

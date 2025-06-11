@@ -1,7 +1,8 @@
 ---
 title: "CRDs"
+parent: "Usage"
 layout: default
-sort: 7
+nav_order: 7
 ---
 
 # Custom Resources

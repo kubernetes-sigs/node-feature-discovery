@@ -1,0 +1,39 @@
+{% if site.display_version_list %}
+  <style>
+  .version-menu {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.875rem;
+  }
+  </style>
+
+  <div class="version-menu">
+    <label for="versions">Version:</label>
+      <select id="versions" onchange="location = this.value;">
+      {% if jekyll.environment == "development" %}
+        <option value="{{ site.baseurl }}/">{{ site.version }}</option>
+      {% else %}
+          {% comment %}
+          Drop the last component from site.baseurl which is supposed to
+          be pointing to a subdirectory of the true site baseurl.
+          {% endcomment %}
+          {% assign spliturl = site.baseurl | split: "/" %}
+          {% assign last = spliturl.size | minus: 1 %}
+          {% assign baseurl = spliturl | slice: 0, last | join: "/" %}
+
+          <script src="{{ baseurl }}/versions.js"></script>
+          <script>
+              var select = document.getElementById('versions');
+              var items = getVersionListItems();
+              for (var i=0; i < items.length; i++) {
+                var opt = document.createElement('option');
+                opt.appendChild(document.createTextNode(items[i].name));
+                opt.value = items[i].url;
+                select.appendChild(opt);
+              }
+          </script>
+      {% endif %}
+      </select>
+  </div>
+{% endif %}

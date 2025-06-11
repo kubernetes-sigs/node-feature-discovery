@@ -1,7 +1,8 @@
 ---
 title: "NFD Operator"
+parent: "Deployment"
 layout: default
-sort: 4
+nav_order: 4
 ---
 
 # Deployment with NFD Operator

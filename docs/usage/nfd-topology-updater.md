@@ -1,7 +1,8 @@
 ---
 title: "NFD-Topology-Updater"
+parent: "Usage"
 layout: default
-sort: 5
+nav_order: 5
 ---
 
 # NFD-Topology-Updater

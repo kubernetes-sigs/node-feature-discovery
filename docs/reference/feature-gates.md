@@ -1,7 +1,8 @@
 ---
 title: "Feature Gates"
+parent: "Reference"
 layout: default
-sort: 11
+nav_order: 11
 ---
 
 # Feature Gates

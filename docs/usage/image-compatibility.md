@@ -1,7 +1,8 @@
 ---
 title: "Image Compatibility Artifact"
+parent: "Usage"
 layout: default
-sort: 11
+nav_order: 11
 ---
 
 # Image Compatibility Artifact

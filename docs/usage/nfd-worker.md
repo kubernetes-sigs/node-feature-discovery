@@ -1,7 +1,8 @@
 ---
 title: "NFD-Worker"
+parent: "Usage"
 layout: default
-sort: 4
+nav_order: 4
 ---
 
 # NFD-Worker

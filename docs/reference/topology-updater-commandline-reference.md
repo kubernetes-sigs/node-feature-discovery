@@ -1,7 +1,8 @@
 ---
 title: "Topology Updater Cmdline Reference"
+parent: "Reference"
 layout: default
-sort: 5
+nav_order: 5
 ---
 
 # NFD-Topology-Updater Commandline Flags

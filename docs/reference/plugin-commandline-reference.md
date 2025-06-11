@@ -1,7 +1,8 @@
 ---
 title: "Kubectl plugin cmdline reference"
+parent: "Reference"
 layout: default
-sort: 8
+nav_order: 8
 ---
 
 # Commandline flags of kubectl-nfd (plugin)

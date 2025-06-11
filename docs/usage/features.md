@@ -1,7 +1,8 @@
 ---
 title: "Feature labels"
+parent: "Usage"
 layout: default
-sort: 1
+nav_order: 1
 ---
 
 # Feature labels

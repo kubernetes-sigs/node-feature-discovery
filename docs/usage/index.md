@@ -1,7 +1,8 @@
 ---
 title: "Usage"
 layout: default
-sort: 3
+nav_order: 3
+has_children: true
 ---
 
 # Usage

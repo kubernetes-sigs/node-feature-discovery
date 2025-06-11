@@ -1,7 +1,8 @@
 ---
 title: "Deployment"
 layout: default
-sort: 2
+has_children: true
+nav_order: 2
 ---
 
 # Deployment

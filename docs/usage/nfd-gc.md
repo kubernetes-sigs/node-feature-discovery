@@ -1,7 +1,8 @@
 ---
 title: "NFD-Garbage-Collector"
+parent: "Usage"
 layout: default
-sort: 6
+nav_order: 6
 ---
 
 # NFD-GC

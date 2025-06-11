@@ -1,7 +1,8 @@
 ---
 title: "Kustomize"
+parent: "Deployment"
 layout: default
-sort: 2
+nav_order: 2
 ---
 
 # Deployment with Kustomize

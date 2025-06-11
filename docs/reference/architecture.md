@@ -1,7 +1,8 @@
 ---
 title: "Architecture"
+parent: "Reference"
 layout: default
-sort: 6
+nav_order: 6
 published: false
 ---
 

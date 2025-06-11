@@ -1,7 +1,8 @@
 ---
 title: "Using node labels"
+parent: "Usage"
 layout: default
-sort: 2
+nav_order: 2
 ---
 
 # Using node labels
