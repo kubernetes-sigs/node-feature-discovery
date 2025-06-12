@@ -1,7 +1,8 @@
 ---
 title: "Metrics"
+parent: "Deployment"
 layout: default
-sort: 6
+nav_order: 6
 ---
 
 # Metrics

@@ -1,7 +1,8 @@
 ---
 title: "Image variants"
+parent: "Deployment"
 layout: default
-sort: 1
+nav_order: 1
 ---
 
 # Image variants

@@ -1,7 +1,8 @@
 ---
 title: "Kubectl plugin"
+parent: "Usage"
 layout: default
-sort: 10
+nav_order: 10
 ---
 
 # Kubectl plugin

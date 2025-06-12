@@ -1,7 +1,8 @@
 ---
 title: "Node Feature client cmdline reference"
+parent: "Reference"
 layout: default
-sort: 9
+nav_order: 9
 ---
 
 # Commandline flags of nfd client

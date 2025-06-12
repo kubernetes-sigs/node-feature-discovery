@@ -1,7 +1,8 @@
 ---
 title: "Master config reference"
+parent: "Reference"
 layout: default
-sort: 3
+nav_order: 3
 ---
 
 # Configuration file reference of nfd-master
