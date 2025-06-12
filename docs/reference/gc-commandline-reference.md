@@ -42,3 +42,15 @@ Example:
 ```bash
 nfd-gc -gc-interval=1h
 ```
+
+### -port
+
+The `-port` flag specifies the port on which metrics are served on.
+
+Default: 8080
+
+Example:
+
+```bash
+nfd-gc -port=12345
+```

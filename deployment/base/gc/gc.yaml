@@ -29,5 +29,5 @@ spec:
           command:
             - "nfd-gc"
           ports:
-            - name: metrics
-              containerPort: 8081
+            - name: http
+              containerPort: 8080
