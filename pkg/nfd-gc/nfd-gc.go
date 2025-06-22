@@ -36,6 +36,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
+
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
@@ -49,9 +52,10 @@ var (
 
 // Args are the command line arguments
 type Args struct {
-	GCPeriod   time.Duration
-	Kubeconfig string
-	Port       int
+	GCPeriod        time.Duration
+	Kubeconfig      string
+	Port            int
+	GrpcHealthPort  int
 }
 
 type NfdGarbageCollector interface {
@@ -60,10 +64,11 @@ type NfdGarbageCollector interface {
 }
 
 type nfdGarbageCollector struct {
-	args     *Args
-	stopChan chan struct{}
-	client   metadataclient.Interface
-	factory  metadatainformer.SharedInformerFactory
+	args         *Args
+	stopChan     chan struct{}
+	client       metadataclient.Interface
+	factory      metadatainformer.SharedInformerFactory
+	healthServer *grpc.Server
 }
 
 func New(args *Args) (NfdGarbageCollector, error) {
@@ -80,6 +85,29 @@ func New(args *Args) (NfdGarbageCollector, error) {
 		client:   cli,
 		factory:  metadatainformer.NewSharedInformerFactory(cli, 0),
 	}, nil
+}
+
+func (w *nfdGarbageCollector) startGrpcHealthServer(errChan chan<- error) error {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", w.args.GrpcHealthPort))
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	s := grpc.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	klog.InfoS("gRPC health server serving", "port", w.args.GrpcHealthPort)
+
+	go func() {
+		defer func() {
+			lis.Close()
+		}()
+		if err := s.Serve(lis); err != nil {
+			errChan <- fmt.Errorf("gRPC health server exited with an error: %w", err)
+		}
+		klog.InfoS("gRPC health server stopped")
+	}()
+	w.healthServer = s
+	return nil
 }
 
 func (n *nfdGarbageCollector) deleteNodeFeature(namespace, name string) {
@@ -206,12 +234,27 @@ func (n *nfdGarbageCollector) periodicGC(gcPeriod time.Duration) {
 
 	gcTrigger := time.NewTicker(gcPeriod)
 	defer gcTrigger.Stop()
+	
+	grpcErr := make(chan error, 1)
+
+	// Start gRPC server for liveness probe (at this point we're "live")
+	if w.args.GrpcHealthPort != 0 {
+		if err := w.startGrpcHealthServer(grpcErr); err != nil {
+			return fmt.Errorf("failed to start gRPC health server: %w", err)
+		}
+	}
+
 	for {
 		select {
+		case err := <-grpcErr:
+			return fmt.Errorf("error in serving gRPC: %w", err)
 		case <-gcTrigger.C:
 			n.garbageCollect()
 		case <-n.stopChan:
 			klog.InfoS("shutting down periodic Garbage Collector")
+			if w.healthServer != nil {
+				w.healthServer.GracefulStop()
+			}
 			return
 		}
 	}

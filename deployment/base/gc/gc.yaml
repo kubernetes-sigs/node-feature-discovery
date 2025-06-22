@@ -19,6 +19,17 @@ spec:
         - name: nfd-gc
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           imagePullPolicy: Always
+          livenessProbe:
+            grpc:
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            grpc:
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 10
           resources:
             limits:
               cpu: 20m

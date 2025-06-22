@@ -30,7 +30,8 @@ import (
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName = "nfd-gc"
+	ProgramName    = "nfd-gc"
+	GrpcHealthPort = 8082
 )
 
 func main() {
@@ -51,6 +52,7 @@ func main() {
 	}
 
 	// Get new garbage collector instance
+	args.GrpcHealthPort = GrpcHealthPort
 	gc, err := nfdgarbagecollector.New(args)
 	if err != nil {
 		klog.ErrorS(err, "failed to initialize nfd garbage collector instance")
