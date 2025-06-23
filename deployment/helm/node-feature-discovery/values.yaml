@@ -572,7 +572,7 @@ gc:
     # timeoutSeconds: 1
   readinessProbe:
     initialDelaySeconds: 5
-    failureThreshold: 10
+    # failureThreshold: 3
     # periodSeconds: 10
     # timeoutSeconds: 1
     # successThreshold: 1
