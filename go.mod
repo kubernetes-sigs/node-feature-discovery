@@ -188,7 +188,6 @@ require (
 // The k8s "sub-"packages do not have 'semver' compatible versions. Thus, we
 // need to override with commits (corresponding their kubernetes-* tags)
 replace (
-	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	k8s.io/api => k8s.io/api v0.33.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.33.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.33.1
