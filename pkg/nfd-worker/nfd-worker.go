@@ -537,7 +537,7 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 	// Get labels from all enabled label sources
 	klog.InfoS("starting feature discovery...")
 	for _, source := range sources {
-		labelsFromSource, err := getFeatureLabels(source, labelWhiteList)
+		labelsFromSource, err := GetFeatureLabels(source, labelWhiteList)
 		if err != nil {
 			klog.ErrorS(err, "discovery failed", "source", source.Name())
 			continue
@@ -555,7 +555,7 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func getFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
+func GetFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
 	labels = Labels{}
 	features, err := source.GetLabels()
 	if err != nil {
