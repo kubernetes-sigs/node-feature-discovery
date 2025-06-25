@@ -31,3 +31,12 @@ kubectl -n node-feature-discovery wait job.batch/nfd-master --for=condition=comp
 
 > **NOTE:** You must run prune before removing the RBAC rules (serviceaccount,
 > clusterrole and clusterrolebinding).
+
+## Removing stale NodeFeature objects
+
+In case NFD-Worker is configured to set the owner reference to Node or Pod,
+manually delete stale NodeFeature objects.
+
+```bash
+kubectl delete -n node-feature-discovery NodeFeature $(kubectl get -o json -n node-feature-discovery NodeFeature | jq ".items[].metadata.name")
+```
