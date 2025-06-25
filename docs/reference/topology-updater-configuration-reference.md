@@ -1,7 +1,8 @@
 ---
 title: "Topology-Updater config reference"
+parent: "Reference"
 layout: default
-sort: 6
+nav_order: 6
 ---
 
 # Configuration file reference of nfd-topology-updater
