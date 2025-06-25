@@ -82,6 +82,10 @@ func New(args *Args) (NfdGarbageCollector, error) {
 	}, nil
 }
 
+func (n *nfdGarbageCollector) Healthz(writer http.ResponseWriter, _ *http.Request) {
+	writer.WriteHeader(http.StatusOK)
+}
+
 func (n *nfdGarbageCollector) deleteNodeFeature(namespace, name string) {
 	kind := "NodeFeature"
 	if err := n.client.Resource(gvrNF).Namespace(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
@@ -252,7 +256,8 @@ func (n *nfdGarbageCollector) Run() error {
 	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
 	registerVersion(version.Get())
 
-	// TODO: health probe endpoint could be added here
+	// Register health endpoint (at this point we're "ready and live")
+	httpMux.HandleFunc("/healthz", n.Healthz)
 
 	// Start HTTP server
 	httpServer := http.Server{Addr: fmt.Sprintf(":%d", n.args.Port), Handler: httpMux}

@@ -565,6 +565,18 @@ gc:
 
   podSecurityContext: {}
 
+  livenessProbe:
+    initialDelaySeconds: 10
+    # failureThreshold: 3
+    # periodSeconds: 10
+    # timeoutSeconds: 1
+  readinessProbe:
+    initialDelaySeconds: 5
+    # failureThreshold: 3
+    # periodSeconds: 10
+    # timeoutSeconds: 1
+    # successThreshold: 1
+
   resources:
     limits:
       memory: 1Gi
