@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
-	github.com/Masterminds/semver/v3 v3.3.1
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
