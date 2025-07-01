@@ -1,7 +1,8 @@
 ---
 title: "Examples and demos"
+parent: "Usage"
 layout: default
-sort: 9
+nav_order: 9
 ---
 
 # Examples and demos

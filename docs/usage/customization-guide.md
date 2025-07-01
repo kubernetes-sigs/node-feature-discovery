@@ -1,7 +1,8 @@
 ---
 title: "Customization guide"
+parent: "Usage"
 layout: default
-sort: 8
+nav_order: 8
 ---
 
 # Customization guide

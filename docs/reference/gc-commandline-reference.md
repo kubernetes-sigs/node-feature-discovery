@@ -1,7 +1,8 @@
 ---
 title: "Garbage Collector Cmdline Reference"
+parent: "Reference"
 layout: default
-sort: 7
+nav_order: 7
 ---
 
 # NFD-GC Commandline Flags

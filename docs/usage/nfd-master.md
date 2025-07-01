@@ -1,7 +1,8 @@
 ---
 title: "NFD-Master"
+parent: "Usage"
 layout: default
-sort: 3
+nav_order: 3
 ---
 
 # NFD-Master
