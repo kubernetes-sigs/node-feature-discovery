@@ -106,6 +106,8 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
+	flagset.StringVar(&args.KubeletConfigPath, "kubelet-config-path", "/var/lib/kubelet/config.yaml",
+		"Path to the kubelet configuration file")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Do not publish feature labels")
 	flagset.IntVar(&args.Port, "port", 8080,
