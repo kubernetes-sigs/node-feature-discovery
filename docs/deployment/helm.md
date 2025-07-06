@@ -170,6 +170,12 @@ Metrics are configured to be exposed using prometheus operator API's by
 default. If you want to expose metrics using the prometheus operator
 API's you need to install the prometheus operator in your cluster.
 
+### Global parameters
+
+| Name                                        | Type    | Default                          | Description                                                                                                                |
+|---------------------------------------------|---------|----------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `global.imagePullSecrets`                   | array   | []                               | In case global `imagePullSecrets` are used, their values will be appended, when local `.Values.imagePullSecrets` are not specified. Local values take precedence over global values. |
+
 ### Master pod parameters
 
 | Name                                        | Type    | Default                          | Description                                                                                                                |

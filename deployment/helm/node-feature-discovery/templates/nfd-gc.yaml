@@ -33,10 +33,7 @@ spec:
     {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
     {{- end }}
-    {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+      imagePullSecrets: {{ include "node-feature-discovery.imagePullSecrets" . }}
       securityContext:
         {{- toYaml .Values.gc.podSecurityContext | nindent 8 }}
       hostNetwork: {{ .Values.gc.hostNetwork }}
