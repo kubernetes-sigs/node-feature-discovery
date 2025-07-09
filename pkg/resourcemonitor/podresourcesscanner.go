@@ -19,7 +19,6 @@ package resourcemonitor
 import (
 	"context"
 	"fmt"
-	"k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +26,7 @@ import (
 	client "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
+	"k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	"github.com/k8stopologyawareschedwg/podfingerprint"
@@ -60,17 +60,17 @@ func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.
 // In Scan(), if watchable is false, this pods scan will skip
 // so we can return directly if pod's namespace is not watchable
 func (resMon *PodResourcesScanner) isWatchable(podResource *podresourcesapi.PodResources) (bool, bool, error) {
-	if resMon.namespace != "*" && resMon.namespace != podResource.Namespace {
+	if resMon.namespace != "*" && resMon.namespace != podResource.GetNamespace() {
 		return false, false, nil
 	}
 
-	pod, err := resMon.k8sClient.CoreV1().Pods(podResource.Namespace).Get(context.TODO(), podResource.Name, metav1.GetOptions{})
+	pod, err := resMon.k8sClient.CoreV1().Pods(podResource.GetNamespace()).Get(context.TODO(), podResource.Name, metav1.GetOptions{})
 	if err != nil {
 		return false, false, err
 	}
 
-	podHasExclusiveCPUs := checkPodExclusiveCPUs(pod)
 	isPodGuaranteed := qos.GetPodQOS(pod) == corev1.PodQOSGuaranteed
+	podHasExclusiveCPUs := isPodGuaranteed && checkPodExclusiveCPUs(pod)
 
 	return isPodGuaranteed || hasDevice(podResource), podHasExclusiveCPUs, nil
 }
@@ -158,7 +158,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 			cpuIDs := container.GetCpuIds()
 			if len(cpuIDs) > 0 && isExclusiveCPUs {
 				var resCPUs []string
-				for _, cpuID := range container.GetCpuIds() {
+				for _, cpuID := range cpuIDs {
 					resCPUs = append(resCPUs, strconv.FormatInt(cpuID, 10))
 				}
 				contRes.Resources = []ResourceInfo{
