@@ -488,7 +488,7 @@ topologyUpdater:
 ### <NFD-TOPOLOGY-UPDATER-CONF-END-DO-NOT-REMOVE>
 
   enable: false
-  createCRDs: false
+  createCRDs: true
   extraArgs: []
   extraEnvs: []
   hostNetwork: false
