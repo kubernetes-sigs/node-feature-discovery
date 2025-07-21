@@ -22,4 +22,12 @@ rules:
   - pods
   verbs:
   - get
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets/finalizers
+  verbs:
+  - get
+  - update
+  - delete
 {{- end }}
