@@ -334,6 +334,12 @@ func TestNodeValidator(t *testing.T) {
 										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
 									},
 								},
+								{
+									Feature: "fake.instance",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+									},
+								},
 							},
 						},
 					},
@@ -366,6 +372,13 @@ func TestNodeValidator(t *testing.T) {
 						},
 						{
 							MatchedExpressions: []MatchedExpression{
+								{
+									Feature:     "fake.instance",
+									Name:        "name",
+									Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+									MatcherType: MatchExpressionType,
+									IsMatch:     true,
+								},
 								{
 									Feature:     "fake.instance",
 									Name:        "name",
