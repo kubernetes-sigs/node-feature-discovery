@@ -133,7 +133,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 
 	maps.Copy(labels, r.Labels)
 	maps.Copy(vars, r.Vars)
-	matchStatus.IsMatch = true
+	matchStatus.IsMatch = isMatch
 
 	ret := RuleOutput{
 		Labels:            labels,
@@ -204,7 +204,7 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, 
 	}
 
 	maps.Copy(vars, r.Vars)
-	matchStatus.IsMatch = true
+	matchStatus.IsMatch = isMatch
 
 	ret := GroupRuleOutput{
 		Vars:        vars,
