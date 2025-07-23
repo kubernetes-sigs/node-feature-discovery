@@ -1,4 +1,8 @@
 # -*- mode: Python -*-
+# Anonymous, ephemeral image registry.
+default_registry('ttl.sh')
+# Allow Tilt to use the local Docker daemon
+allow_k8s_contexts('kubernetes-admin@kubernetes')
 
 BASE_IMAGE_MINIMAL="gcr.io/distroless/base"
 BASE_IMAGE_FULL="debian:bullseye-slim"
@@ -12,7 +16,6 @@ IMAGE_NAME = os.getenv('IMAGE_NAME', "node-feature-discovery")
 # registry.k8s.io/nfd/node-feature-discovery:master
 IMAGE = "/".join([IMAGE_REGISTRY, IMAGE_NAME])
 TAGGED_IMAGE = ":".join([IMAGE, IMAGE_TAG_NAME])
-allow_k8s_contexts('kubernetes-admin@kubernetes')
 
 # Builds container image
 def build_image():
