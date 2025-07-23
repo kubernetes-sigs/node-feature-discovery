@@ -45,10 +45,8 @@ When enabled nfd-master does not automatically add the default
 extended resources. Automatic prefixing is the default behavior in NFD v0.16
 and earlier.
 
-Note that enabling the feature gate effectively causes unprefixed names to be
-filtered out as NFD does not allow unprefixed names of labels, annotations or
-extended resources. For example, with the `DisableAutoPrefix` feature gate set
-to `false`, a NodeFeatureRule with
+For example, with the `DisableAutoPrefix` feature gate set to `false`, a
+NodeFeatureRule with
 
 ```yaml
   labels:
