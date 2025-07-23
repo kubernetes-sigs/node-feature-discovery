@@ -21,6 +21,7 @@ JEKYLL_ENV ?= development
 SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" \
 	$(shell [ -t 0 ] && echo '-t') \
 	-e JEKYLL_ENV=$(JEKYLL_ENV) \
+	-e JEKYLL_GITHUB_TOKEN="$$JEKYLL_GITHUB_TOKEN" \
 	$(shell [ "$(JEKYLL_ENV)" = "development" ] && echo '-e PAGES_DISABLE_NETWORK=1') \
 	--volume="$$PWD/docs:/work" \
 	--volume="$$PWD/docs/vendor/bundle:/usr/local/bundle" \
