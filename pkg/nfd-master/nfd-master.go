@@ -809,7 +809,9 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	// Validate
 	err := validate.ExtendedResource(name, filteredValue)
 	if err != nil {
-		return "", err
+		if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) || err != validate.ErrUnprefixedKeysNotAllowed {
+			return "", err
+		}
 	}
 
 	return filteredValue, nil

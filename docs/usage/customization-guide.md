@@ -724,10 +724,10 @@ Resources names:
   generally be used
 - the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
   (like `sub.ns.feature.node.kubernetes.io`)
-- unprefixed names (like `my-er`) site.version }} unprefixed names will be
-  automatically prefixed with `feature.node.kubernetes.io/` but this will
-  change in a future version (see the
-  [DisableAutoPrefix](../reference/feature-gates.md#disableautoprefix) feature gate).
+- if an unprefixed name (e.g., `my-er`) is used, NFD {{ site.version }}
+  will automatically prefix it with `feature.node.kubernetes.io/` unless the
+  `DisableAutoPrefix` feature gate is set to true, in which case no prefixing
+  occurs.
 
 > **NOTE:** `.extendedResources` is not supported by the
 > [custom feature source](#custom-feature-source) -- it can only be used in
