@@ -10,12 +10,16 @@ on:
 concurrency:
   group: gh-pages
 
+permissions:
+  contents: read
+
 jobs:
   update-docs:
     name: Update gh-pages documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-
     - name: Install dependencies
       run: |
         sudo apt-get install -y jq curl
