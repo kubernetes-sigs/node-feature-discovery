@@ -1,7 +1,8 @@
 ---
 title: "Uninstallation"
+parent: "Deployment"
 layout: default
-sort: 5
+nav_order: 5
 ---
 
 # Uninstallation

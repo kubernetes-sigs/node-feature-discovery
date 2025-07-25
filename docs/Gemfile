@@ -1,10 +1,6 @@
 source "https://rubygems.org"
 
-# Use override plugin to drop incorrect dependency of jekyll-rtd-them on github-pages (~> 209)
-# The original dep would allow github-pages v209.x but not v210 or later.
-plugin 'bundler-override'
-require File.join(Bundler::Plugin.index.load_paths("bundler-override")[0], "bundler-override") rescue nil
-override 'jekyll-rtd-theme', :drop => "github-pages"
+ruby "~> 3.3"
 
 # Hello! This is where you manage which Jekyll version is used to run.
 # When you want to use a different version, change it below, save the
@@ -37,4 +33,4 @@ gem "wdm", "~> 0.1.1", :install_if => Gem.win_platform?
 
 gem "webrick", "~> 1.8"
 
-gem 'jekyll-rtd-theme', '~> 2.0', '>= 2.0.10'
+gem "just-the-docs"
