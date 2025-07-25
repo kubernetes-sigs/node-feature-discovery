@@ -31,6 +31,7 @@ import (
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/kubeconf"
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
@@ -54,12 +55,24 @@ type memorySource struct {
 	features *nfdv1alpha1.Features
 }
 
+// KubeletConfigPath holds the path to the kubelet configuration file.
+type KubeletConfigPath struct {
+	ConfigFilePath string
+}
+
 // Singleton source instance
 var (
-	src memorySource
-	_   source.FeatureSource = &src
-	_   source.LabelSource   = &src
+	src                 memorySource
+	_                   source.FeatureSource = &src
+	_                   source.LabelSource   = &src
+	defaultSwapBehavior                      = "NoSwap"
 )
+
+var kubelet = KubeletConfigPath{}
+
+func SetKubeletConfigPath(path string) {
+	kubelet.ConfigFilePath = path
+}
 
 // Name returns an identifier string for this feature source.
 func (s *memorySource) Name() string { return Name }
@@ -80,6 +93,7 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 	// Swap
 	if isSwap, ok := features.Attributes[SwapFeature].Elements["enabled"]; ok && isSwap == "true" {
 		labels["swap"] = true
+		labels["swap.behavior"] = features.Attributes[SwapFeature].Elements["behavior"]
 	}
 
 	// NVDIMM
@@ -107,11 +121,19 @@ func (s *memorySource) Discover() error {
 		s.features.Attributes[NumaFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: numa}
 	}
 
-	// Detect Swap
+	// Detect Swap and Swap Behavior
 	if swap, err := detectSwap(); err != nil {
 		klog.ErrorS(err, "failed to detect Swap nodes")
 	} else {
 		s.features.Attributes[SwapFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: swap}
+		swapBehavior, err := detectSwapBehavior(kubelet.ConfigFilePath)
+		if err != nil {
+			klog.V(3).ErrorS(err, "failed to detect swap behavior; kubelet swapBehavior configuration may be missing or misconfigured")
+		} else if swapBehavior == "" {
+			swap["behavior"] = defaultSwapBehavior
+		} else {
+			swap["behavior"] = swapBehavior
+		}
 	}
 
 	// Detect NVDIMM
@@ -153,6 +175,16 @@ func detectSwap() (map[string]string, error) {
 	return map[string]string{
 		"enabled": strconv.FormatBool(lines > 1),
 	}, nil
+}
+
+// detectSwapBehavior detects the swap behavior as configured in the kubelet.
+func detectSwapBehavior(configFilePath string) (string, error) {
+	kubeletConfig, err := kubeconf.ReadKubeletConfig(configFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read kubelet configuration file %q: %w", configFilePath, err)
+	}
+
+	return kubeletConfig.MemorySwap.SwapBehavior, nil
 }
 
 // detectNuma detects NUMA node information
