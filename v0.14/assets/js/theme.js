@@ -1,5 +1,8 @@
+/* global $, DOMPurify, ui */
+
 function search(data) {
   let text = new URL(location.href).searchParams.get("q");
+  // eslint-disable-next-line no-unused-vars
   let lang = new URL(location.href).searchParams.get("lang") || ui.lang;
 
   $("input[name='q']").val(text);
@@ -20,7 +23,8 @@ function search(data) {
       .slice(min, max)
       .replace(regexp, (match) => `<span class="bg-yellow">${match}</span>`);
   }
-  for (page of data) {
+
+  for (const page of data) {
     let [title, content] = [null, null];
     try {
       if (page.title) {
@@ -37,7 +41,8 @@ function search(data) {
     }
     try {
       if (page.content) {
-        page.content = $("<div/>").html(page.content).text();
+        const _sanitizeContent = DOMPurify.sanitize(page.content);
+        page.content = $("<div/>").html(_sanitizeContent).text();
         content = page.content.match(regexp);
       }
     } catch (e) {
@@ -63,17 +68,18 @@ function search(data) {
           `<p class="text-gray">${prefix}${slice(
             page.content,
             min,
-            max
-          )}${suffix}</p>`
+            max,
+          )}${suffix}</p>`,
         );
       }
       results.push(`<li class="border-top py-4">${result.join("")}</li>`);
     }
   }
   if (results.length > 0 && text.length > 0) {
-    $(".search-results .content").html(results.join(""));
+    const _sanitizeResults = DOMPurify.sanitize(results.join(""));
+    $(".search-results .content").html(_sanitizeResults);
     $(".search-results .summary").html(
-      ui.i18n.search_results_found.replace("#", results.length)
+      ui.i18n.search_results_found.replace("#", results.length),
     );
   } else {
     $(".search-results .content").empty();
@@ -128,7 +134,7 @@ function toc() {
           } else {
             stack.splice(
               0,
-              Math.min(temp - tagLevel, Math.max(stack.length - 1, 0))
+              Math.min(temp - tagLevel, Math.max(stack.length - 1, 0)),
             );
           }
           temp = tagLevel;
@@ -166,7 +172,7 @@ function restore() {
       $(".sidebar").scrollTop(scroll);
     }
   }
-  $(".sidebar").scroll(function () {
+  $(".sidebar").on("scroll", function () {
     set("scroll", this.scrollTop);
     set("scrollTime", Date.now());
     set("scrollHost", location.host);
@@ -174,7 +180,8 @@ function restore() {
 }
 
 function highlight() {
-  let text = new URL(location.href).searchParams.get("highlight");
+  const _sanitizeUrl = DOMPurify.sanitize(location.href);
+  let text = new URL(_sanitizeUrl).searchParams.get("highlight");
 
   if (text) {
     $(".markdown-body")
@@ -199,8 +206,8 @@ function highlight() {
   }
 }
 
-$(window).bind("hashchange", () =>
-  initialize(location.hash || location.pathname)
+$(window).on("hashchange", () =>
+  initialize(location.hash || location.pathname),
 );
 
 $(document).on("scroll", function () {
@@ -233,10 +240,10 @@ $(document).on("scroll", function () {
   }
 });
 
-$("#toggle").click(function () {
+$("#toggle").on("click", function () {
   $(".sidebar-wrap,.content-wrap,.addons-wrap").toggleClass("shift");
 });
-$(".status").click(function () {
+$(".status").on("click", function () {
   $(".addons").toggleClass("d-none");
 });
 
@@ -285,3 +292,64 @@ if ("serviceWorker" in navigator) {
 } else {
   debug("Service Worker not supported!");
 }
+
+$(function () {
+  /**
+   * Add target="'_blank" to all external links
+   */
+  $("a[href^='http']").each(function () {
+    /* console.debug("link", this.href); */
+    let rel = $(this).attr("rel");
+    rel =
+      "noopener noreferrer" +
+      (rel && !rel.match("noopener noreferrer") ? " " + rel : "");
+    /* console.debug("rel", rel); */
+    $(this).attr({ target: "_blank", rel: rel });
+  });
+
+  /**
+   * For single README.md in docs/
+   *
+   * Test by boolean
+   * const _sidebar = $("div.sidebar > div.toctree > ul").children().length > 0 || false
+   * console.debug("Sidebar", _sidebar)
+   * if (_sidebar) return
+   */
+
+  const _sidebar = $("div.sidebar > div.toctree > ul").children().length || 0;
+  console.debug("_sidebar", _sidebar);
+  if (_sidebar) return;
+
+  $(".markdown-body h2, .markdown-body h3").each(function (index) {
+    let level_ = (parseInt(this.nodeName.slice(-1)) - 1).toString();
+    const _sanitizeText = DOMPurify.sanitize($(this).text());
+    $(".toctree ul").append(
+      `<li class='toc level-${level_} tag-${this.nodeName.toLowerCase()}' data-sort='${(
+        index + 1
+      ).toString()}' data-level='${level_}'><a class='d-flex flex-items-baseline' href='#${$(
+        this,
+      )
+        .text()
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^\w-]+/g, "")}'>${_sanitizeText}</a></li>`,
+    );
+    $(this).attr(
+      "id",
+      $(this)
+        .text()
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^\w-]+/g, ""),
+    );
+    $(".toctree ul li:first-child a").parent().addClass("current");
+  });
+
+  $("toctree ul li").on("click", "a", function (event) {
+    var position = $($(this).attr("href")).offset().top - 190;
+    $("html, body").animate({ scrollTop: position }, 400);
+    $("toctree ul li a").parent().removeClass("current");
+    $(this).parent().addClass("current");
+    event.preventDefault();
+  });
+});
