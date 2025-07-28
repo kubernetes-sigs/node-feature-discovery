@@ -1,0 +1,22 @@
+{%- comment %} canonical link {% endcomment -%}
+{%- if prev -%}
+    <link rel="prev" href="{{ prev.url | absolute_url }}">
+{%- endif -%}
+
+{%- if next -%}
+    <link rel="next" href="{{ next.url | absolute_url }}">
+{%- endif -%}
+
+<link rel="canonical" href="{{ schema_surl }}">
+
+{%- comment %} favicon icon {% endcomment -%}
+<link rel="icon" type="image/x-icon" href="{{ '/assets/images/nfd/favicon.ico' | relative_url }}">
+{%- comment %} alternate {% endcomment -%}
+<link rel="icon" type="image/svg+xml" href="{{ '/assets/images/nfd/favicon.svg' | relative_url }}">
+<link rel="icon" type="image/png" href="{{ 'assets/images/nfd/favicon-96x96.png' | relative_url }}" sizes="96x96">
+
+{%- comment %} apple-touch-icon {% endcomment -%}
+<link rel="apple-touch-icon" href="{{ 'assets/images/nfd/apple-touch-icon.png' | relative_url }}">
+
+{%- comment %} web manifest {% endcomment -%}
+<link rel="manifest" href="{{ 'assets/images/nfd/site.webmanifest' | relative_url }}">
