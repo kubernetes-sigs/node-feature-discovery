@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kubernetes-sigs.github.com/node-feature-discovery/master/sitemap.xml
+Sitemap: https://kubernetes-sigs.github.io/node-feature-discovery/master/sitemap.xml
