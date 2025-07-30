@@ -9,6 +9,7 @@ on:
 
 concurrency:
   group: gh-pages
+  cancel-in-progress: false
 
 permissions:
   contents: read
