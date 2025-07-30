@@ -5,3 +5,9 @@
 
 [build.environment]
     PAGES_DISABLE_NETWORK = "1"
+
+[[redirects]]
+    from = "/"
+    to = "https://release-0-17--kubernetes-sigs-nfd.netlify.app"
+    status = 301
+    force = true
