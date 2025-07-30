@@ -29,7 +29,7 @@ Please do not remove items from the checklist
 - [ ] An OWNER runs
      `git tag -s -m "NFD release $VERSION" $VERSION`
 - [ ] An OWNER runs
-     `git tag -s -m "NFD API release $VERSION" api/nfd/$VERSION`     
+     `git tag -s -m "NFD API release $VERSION" api/nfd/$VERSION`
 - [ ] An OWNER pushes the tag with
       `git push $VERSION api/nfd/$VERSION`
   - Triggers prow to build and publish a staging container image
@@ -43,9 +43,10 @@ Please do not remove items from the checklist
 - [ ] Add a link to the tagged release in this issue.
 - [ ] Send an announcement email to `dev@kubernetes.io` with the subject `[ANNOUNCE] node-feature-discovery $VERSION is released`
   - [ ] Add a link to the release announcement in this issue
-- [ ] Update README in master branch
-  - [ ] Update references e.g. by running `hack/prepare-release.sh $VERSION` but **only** committing README.md, and,
-        submit a PR
+- [ ] Update README and netlify.toml in master branch
+  - [ ] Submit a PR
+    - Update references e.g. by running `hack/prepare-release.sh $VERSION` but **only** committing README.md
+    - Update the `[[redirects]]` in `netlify.toml` to point to the new release branch
   - [ ] Wait for the PR to be merged
 - [ ] Create an unannotated *devel* tag in the master branch, on the first commit that gets merged after the release branch has been created (presumably the README update commit above), and, push the tag:
       `DEVEL=v0.$(($MAJ+1)).0-devel; git tag $DEVEL master && git push $DEVEL`
