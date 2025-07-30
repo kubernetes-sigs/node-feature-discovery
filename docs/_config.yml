@@ -17,7 +17,7 @@ title: Node Feature Discovery
 description: >- # this means to ignore newlines until "baseurl:"
   Documentation of Node Feature Discovery - a Kubernetes add-on for discovering
   and advertising hardware features and system configuration in the cluster.
-url: "https://kubernetes-sigs.github.com" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://kubernetes-sigs.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
 repository: kubernetes-sigs/node-feature-discovery
 
