@@ -1,5 +1,6 @@
 function getVersionListItems() {
   return [
+    { name: 'charts', url: '/node-feature-discovery/charts' },
     { name: 'master', url: '/node-feature-discovery/master' },
     { name: 'stable', url: '/node-feature-discovery/stable' },
     { name: 'v0.10', url: '/node-feature-discovery/v0.10' },
