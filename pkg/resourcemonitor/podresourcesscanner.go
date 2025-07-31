@@ -134,7 +134,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 		if err != nil {
 			klog.ErrorS(err, "failed to calculate fingerprint")
 		} else {
-			klog.InfoS("podFingerprint calculated", "status", status.Repr())
+			klog.V(1).InfoS("podFingerprint calculated", "status", status.Repr())
 
 			retVal.Attributes = append(retVal.Attributes, v1alpha2.AttributeInfo{
 				Name:  podfingerprint.Attribute,
@@ -145,7 +145,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 	var podResData []PodResources
 
 	for _, podResource := range respPodResources {
-		klog.InfoS("scanning pod", "podName", podResource.GetName())
+		klog.V(1).InfoS("scanning pod", "podName", podResource.GetName())
 		hasDevice := hasDevice(podResource)
 		isWatchable, isIntegralGuaranteed, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
 		if err != nil {
@@ -228,7 +228,7 @@ func hasDevice(podResource *podresourcesapi.PodResources) bool {
 			return true
 		}
 	}
-	klog.InfoS("pod doesn't have devices", "podName", podResource.GetName())
+	klog.V(1).InfoS("pod doesn't have devices", "podName", podResource.GetName())
 	return false
 }
 
