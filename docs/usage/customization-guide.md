@@ -605,10 +605,10 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
   generally be used
 - the only exception is `feature.node.kubernetes.io/` and its sub-namespaces
   (like `sub.ns.feature.node.kubernetes.io`)
-- unprefixed names (like `my-annotation`) should not be used. In NFD {{
-  site.version }} unprefixed names will be automatically prefixed with
-  `feature.node.kubernetes.io/` but this will change in a future version (see the
-  [DisableAutoPrefix](../reference/feature-gates.md#disableautoprefix) feature gate).
+- if an unprefixed name (e.g., `my-annotation`) is used, NFD {{ site.version }}
+  will automatically prefix it with `feature.node.kubernetes.io/` unless the
+  `DisableAutoPrefix` feature gate is set to true, in which case no prefixing
+  occurs.
 
 > **NOTE:** The `annotations` field has will only advertise features via node
 > annotations the features won't be advertised as node labels unless they are
