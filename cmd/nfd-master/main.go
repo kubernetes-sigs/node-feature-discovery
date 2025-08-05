@@ -65,6 +65,10 @@ func main() {
 			args.Overrides.DenyLabelNs = overrides.DenyLabelNs
 		case "label-whitelist":
 			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
+		case "feature-allowlist":
+			args.Overrides.FeatureAllowList = overrides.FeatureAllowList
+		case "feature-denylist":
+			args.Overrides.FeatureDenyList = overrides.FeatureDenyList
 		case "enable-taints":
 			args.Overrides.EnableTaints = overrides.EnableTaints
 		case "no-publish":
@@ -121,16 +125,22 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	args.Klog = klogutils.InitKlogFlags(flagset)
 
 	overrides := &master.ConfigOverrideArgs{
-		LabelWhiteList: &utils.RegexpVal{},
-		DenyLabelNs:    &utils.StringSetVal{},
-		ExtraLabelNs:   &utils.StringSetVal{},
-		ResyncPeriod:   &utils.DurationVal{Duration: time.Duration(1) * time.Hour},
+		LabelWhiteList:  &utils.RegexpVal{},
+		FeatureAlowList: &utils.RegexpVal{},
+		FeatureDenyList: &utils.RegexpVal{},
+		DenyLabelNs:     &utils.StringSetVal{},
+		ExtraLabelNs:    &utils.StringSetVal{},
+		ResyncPeriod:    &utils.DurationVal{Duration: time.Duration(1) * time.Hour},
 	}
 	flagset.Var(overrides.ExtraLabelNs, "extra-label-ns",
 		"Comma separated list of allowed extra label namespaces")
 	flagset.Var(overrides.LabelWhiteList, "label-whitelist",
 		"Regular expression to filter label names to publish to the Kubernetes API server. "+
 			"NB: the label namespace is omitted i.e. the filter is only applied to the name part after '/'.")
+	flagset.Var(overrides.FeatureAllowList, "feature-allowlist",
+		"Regular expression to filter feature names to publish to the Kubernetes API server")
+	flagset.Var(overrides.FeatureDenyList, "feature-denylist",
+		"Regular expression to filter out feature names")
 	overrides.EnableTaints = flagset.Bool("enable-taints", false,
 		"Enable node tainting feature")
 	overrides.NoPublish = flagset.Bool("no-publish", false,
