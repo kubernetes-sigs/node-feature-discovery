@@ -22,11 +22,11 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	client "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
+	"k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	"github.com/k8stopologyawareschedwg/podfingerprint"
@@ -57,58 +57,49 @@ func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.
 }
 
 // isWatchable tells if the the given namespace should be watched.
-func (resMon *PodResourcesScanner) isWatchable(podNamespace string, podName string, hasDevice bool) (bool, bool, error) {
-	pod, err := resMon.k8sClient.CoreV1().Pods(podNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
+// In Scan(), if watchable is false, this pods scan will skip
+// so we can return directly if pod's namespace is not watchable
+func (resMon *PodResourcesScanner) isWatchable(podResource *podresourcesapi.PodResources) (bool, bool, error) {
+	if resMon.namespace != "*" && resMon.namespace != podResource.GetNamespace() {
+		return false, false, nil
+	}
+
+	pod, err := resMon.k8sClient.CoreV1().Pods(podResource.GetNamespace()).Get(context.TODO(), podResource.Name, metav1.GetOptions{})
 	if err != nil {
 		return false, false, err
 	}
 
-	isIntegralGuaranteed := hasExclusiveCPUs(pod)
+	isPodGuaranteed := qos.GetPodQOS(pod) == corev1.PodQOSGuaranteed
+	podHasExclusiveCPUs := isPodGuaranteed && checkPodExclusiveCPUs(pod)
 
-	if resMon.namespace == "*" && (isIntegralGuaranteed || hasDevice) {
-		return true, isIntegralGuaranteed, nil
-	}
-	// TODO:  add an explicit check for guaranteed pods and pods with devices
-	return resMon.namespace == podNamespace && (isIntegralGuaranteed || hasDevice), isIntegralGuaranteed, nil
+	return isPodGuaranteed || hasDevice(podResource), podHasExclusiveCPUs, nil
 }
 
-// hasExclusiveCPUs returns true if a guaranteed pod is allocated exclusive CPUs else returns false.
+// checkPodExclusiveCPUs returns true if a guaranteed pod is allocated exclusive CPUs else returns false.
 // In isWatchable() function we check for the pod QoS and proceed if it is guaranteed (i.e. request == limit)
 // and hence we only check for request in the function below.
-func hasExclusiveCPUs(pod *corev1.Pod) bool {
-	var totalCPU int64
-	var cpuQuantity resource.Quantity
+func checkPodExclusiveCPUs(pod *corev1.Pod) bool {
 	for _, container := range pod.Spec.InitContainers {
-
-		var ok bool
-		if cpuQuantity, ok = container.Resources.Requests[corev1.ResourceCPU]; !ok {
-			continue
-		}
-		totalCPU += cpuQuantity.Value()
-		isInitContainerGuaranteed := hasIntegralCPUs(pod, &container)
-		if !isInitContainerGuaranteed {
-			return false
+		if hasIntegralCPUs(&container) {
+			return true
 		}
 	}
 	for _, container := range pod.Spec.Containers {
-		var ok bool
-		if cpuQuantity, ok = container.Resources.Requests[corev1.ResourceCPU]; !ok {
-			continue
-		}
-		totalCPU += cpuQuantity.Value()
-		isAppContainerGuaranteed := hasIntegralCPUs(pod, &container)
-		if !isAppContainerGuaranteed {
-			return false
+		if hasIntegralCPUs(&container) {
+			return true
 		}
 	}
 
-	//No CPUs requested in all the containers in the pod
-	return totalCPU != 0
+	//No integralCPUs requested in all the containers of the pod
+	return false
 }
 
 // hasIntegralCPUs returns true if a container in pod is requesting integral CPUs else returns false
-func hasIntegralCPUs(pod *corev1.Pod, container *corev1.Container) bool {
-	cpuQuantity := container.Resources.Requests[corev1.ResourceCPU]
+func hasIntegralCPUs(container *corev1.Container) bool {
+	cpuQuantity, ok := container.Resources.Requests[corev1.ResourceCPU]
+	if !ok {
+		return false
+	}
 	return cpuQuantity.Value()*1000 == cpuQuantity.MilliValue()
 }
 
@@ -146,8 +137,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 
 	for _, podResource := range respPodResources {
 		klog.V(1).InfoS("scanning pod", "podName", podResource.GetName())
-		hasDevice := hasDevice(podResource)
-		isWatchable, isIntegralGuaranteed, err := resMon.isWatchable(podResource.GetNamespace(), podResource.GetName(), hasDevice)
+		isWatchable, isExclusiveCPUs, err := resMon.isWatchable(podResource)
 		if err != nil {
 			return ScanResponse{}, fmt.Errorf("checking if pod in a namespace is watchable, namespace:%v, pod name %v: %w", podResource.GetNamespace(), podResource.GetName(), err)
 		}
@@ -165,19 +155,17 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 				Name: container.Name,
 			}
 
-			if isIntegralGuaranteed {
-				cpuIDs := container.GetCpuIds()
-				if len(cpuIDs) > 0 {
-					var resCPUs []string
-					for _, cpuID := range container.GetCpuIds() {
-						resCPUs = append(resCPUs, strconv.FormatInt(cpuID, 10))
-					}
-					contRes.Resources = []ResourceInfo{
-						{
-							Name: corev1.ResourceCPU,
-							Data: resCPUs,
-						},
-					}
+			cpuIDs := container.GetCpuIds()
+			if len(cpuIDs) > 0 && isExclusiveCPUs {
+				var resCPUs []string
+				for _, cpuID := range cpuIDs {
+					resCPUs = append(resCPUs, strconv.FormatInt(cpuID, 10))
+				}
+				contRes.Resources = []ResourceInfo{
+					{
+						Name: corev1.ResourceCPU,
+						Data: resCPUs,
+					},
 				}
 			}
 
