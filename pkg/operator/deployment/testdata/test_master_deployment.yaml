@@ -70,11 +70,16 @@ spec:
               - ALL
             readOnlyRootFilesystem: true
           livenessProbe:
-            grpc:
-              port: 8082
+            httpGet:
+              path: /healthz
+              port: http
             initialDelaySeconds: 10
           readinessProbe:
-            grpc:
-              port: 8082
+            httpGet:
+              path: /healthz
+              port: http
             failureThreshold: 10
             initialDelaySeconds: 5
+          ports:
+          - containerPort: 8080
+            name: http

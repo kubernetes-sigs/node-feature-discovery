@@ -41,3 +41,17 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 10
+            initialDelaySeconds: 5
+          ports:
+          - containerPort: 8080
+            name: http
