@@ -121,6 +121,7 @@ type nfdWorker struct {
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
 	stop                chan struct{} // channel for signaling stop
+	sourceEvent         chan struct{} // channel for events from soures
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
@@ -304,6 +305,12 @@ func (w *nfdWorker) Run() error {
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
 
+	w.sourceEvent = make(chan struct{})
+	eventSources := source.GetAllEventSources()
+	for _, s := range eventSources {
+		s.SetChannel(w.sourceEvent)
+	}
+
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
@@ -336,6 +343,12 @@ func (w *nfdWorker) Run() error {
 	for {
 		select {
 		case <-labelTrigger.C:
+			err = w.runFeatureDiscovery()
+			if err != nil {
+				return err
+			}
+
+		case <-w.sourceEvent:
 			err = w.runFeatureDiscovery()
 			if err != nil {
 				return err
