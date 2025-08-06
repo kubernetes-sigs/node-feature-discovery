@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -89,6 +90,7 @@ func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeature
 						SecurityContext: getMasterSecurityContext(),
 						LivenessProbe:   getLivenessProbe(),
 						ReadinessProbe:  getReadinessProbe(),
+						Ports:           getPorts(),
 					},
 				},
 			},
@@ -123,6 +125,9 @@ func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDisc
 						},
 						Env:             getEnvs(),
 						SecurityContext: getGCSecurityContext(),
+						LivenessProbe:   getLivenessProbe(),
+						ReadinessProbe:  getReadinessProbe(),
+						Ports:           getPorts(),
 					},
 				},
 			},
@@ -279,8 +284,12 @@ func getLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		InitialDelaySeconds: 10,
 		ProbeHandler: corev1.ProbeHandler{
-			GRPC: &corev1.GRPCAction{
-				Port: 8082,
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/healthz",
+				Port: intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "http",
+				},
 			},
 		},
 	}
@@ -291,9 +300,22 @@ func getReadinessProbe() *corev1.Probe {
 		InitialDelaySeconds: 5,
 		FailureThreshold:    10,
 		ProbeHandler: corev1.ProbeHandler{
-			GRPC: &corev1.GRPCAction{
-				Port: 8082,
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/healthz",
+				Port: intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "http",
+				},
 			},
+		},
+	}
+}
+
+func getPorts() []corev1.ContainerPort {
+	return []corev1.ContainerPort{
+		{
+			ContainerPort: 8080,
+			Name:          "http",
 		},
 	}
 }
