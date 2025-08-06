@@ -61,6 +61,9 @@ func GuaranteedSleeper(opts ...func(pod *corev1.Pod)) *corev1.Pod {
 				},
 			},
 		},
+		Status: corev1.PodStatus{
+			QOSClass: corev1.PodQOSGuaranteed,
+		},
 	}
 	for _, o := range opts {
 		o(p)
