@@ -57,6 +57,7 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/kernel"
 	_ "sigs.k8s.io/node-feature-discovery/source/local"
 	_ "sigs.k8s.io/node-feature-discovery/source/memory"
+	memory "sigs.k8s.io/node-feature-discovery/source/memory"
 	_ "sigs.k8s.io/node-feature-discovery/source/network"
 	_ "sigs.k8s.io/node-feature-discovery/source/pci"
 	_ "sigs.k8s.io/node-feature-discovery/source/storage"
@@ -74,6 +75,14 @@ type NfdWorker interface {
 type NFDConfig struct {
 	Core    coreConfig
 	Sources sourcesConfig
+}
+
+func configureKubeletConfigPath(kubeletConfigPath string) error {
+	if kubeletConfigPath == "" {
+		return fmt.Errorf("kubelet config path is empty, using default: '/var/lib/kubelet/config.yaml'")
+	}
+	memory.SetKubeletConfigPath(kubeletConfigPath)
+	return nil
 }
 
 type coreConfig struct {
@@ -94,13 +103,14 @@ type Labels map[string]string
 
 // Args are the command line arguments of NfdWorker.
 type Args struct {
-	ConfigFile  string
-	Klog        map[string]*utils.KlogFlagVal
-	Kubeconfig  string
-	Oneshot     bool
-	Options     string
-	Port        int
-	NoOwnerRefs bool
+	ConfigFile        string
+	Klog              map[string]*utils.KlogFlagVal
+	Kubeconfig        string
+	Oneshot           bool
+	Options           string
+	Port              int
+	NoOwnerRefs       bool
+	KubeletConfigPath string
 
 	Overrides ConfigOverrideArgs
 }
@@ -311,6 +321,10 @@ func (w *nfdWorker) Run() error {
 	promRegistry.MustRegister(buildInfo, featureDiscoveryDuration)
 	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
 	registerVersion(version.Get())
+
+	if err := configureKubeletConfigPath(w.args.KubeletConfigPath); err != nil {
+		klog.ErrorS(err, "failed to configure kubelet config path")
+	}
 
 	err = w.runFeatureDiscovery()
 	if err != nil {

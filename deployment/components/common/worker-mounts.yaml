@@ -22,6 +22,9 @@
   - name: features-d
     hostPath:
       path: "/etc/kubernetes/node-feature-discovery/features.d/"
+  - name: kubelet-dir
+    hostPath:
+      path: "/var/lib/kubelet/config.yaml"
   - name: nfd-worker-conf
     configMap:
       name: nfd-worker-conf
@@ -49,6 +52,9 @@
     readOnly: true
   - name: features-d
     mountPath: "/etc/kubernetes/node-feature-discovery/features.d/"
+    readOnly: true
+  - name: kubelet-dir
+    mountPath: "/var/lib/kubelet/config.yaml"
     readOnly: true
   - name: nfd-worker-conf
     mountPath: "/etc/kubernetes/node-feature-discovery"
