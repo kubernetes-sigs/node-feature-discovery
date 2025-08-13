@@ -23,7 +23,7 @@ jobs:
         version: 3.12.3
 
     - name: Check out repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
