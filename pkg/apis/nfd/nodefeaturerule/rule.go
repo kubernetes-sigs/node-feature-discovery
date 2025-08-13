@@ -69,9 +69,10 @@ type RuleOutput struct {
 // Execute the rule against a set of input features.
 func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool) (RuleOutput, error) {
 	var (
-		matchStatus MatchStatus
-		isMatch     bool
-		err         error
+		matchStatus    MatchStatus
+		isMatchAny     bool
+		isMatchFeature bool
+		err            error
 	)
 	labels := make(map[string]string)
 	vars := make(map[string]string)
@@ -87,7 +88,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 			if matched, featureStatus, err = evaluateMatchAnyElem(&matcher, features, failFast); err != nil {
 				return RuleOutput{}, err
 			} else if matched {
-				isMatch = true
+				isMatchAny = true
 				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(featureStatus.MatchedFeatures))
 
 				if r.LabelsTemplate == "" && r.VarsTemplate == "" && failFast {
@@ -108,16 +109,16 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 			matchStatus.MatchAny = append(matchStatus.MatchAny, featureStatus)
 		}
 
-		if !isMatch && failFast {
+		if !isMatchAny && failFast {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{MatchStatus: &matchStatus}, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
-		if isMatch, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
+		if isMatchFeature, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
 			return RuleOutput{}, err
-		} else if !isMatch {
+		} else if !isMatchFeature {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return RuleOutput{MatchStatus: &matchStatus}, nil
 		} else {
@@ -133,7 +134,7 @@ func Execute(r *nfdv1alpha1.Rule, features *nfdv1alpha1.Features, failFast bool)
 
 	maps.Copy(labels, r.Labels)
 	maps.Copy(vars, r.Vars)
-	matchStatus.IsMatch = isMatch
+	matchStatus.IsMatch = (len(r.MatchAny) == 0 || isMatchAny) && (len(r.MatchFeatures) == 0 || isMatchFeature)
 
 	ret := RuleOutput{
 		Labels:            labels,
@@ -157,8 +158,9 @@ type GroupRuleOutput struct {
 // rule matches.
 func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, failFast bool) (GroupRuleOutput, error) {
 	var (
-		matchStatus MatchStatus
-		isMatch     bool
+		matchStatus    MatchStatus
+		isMatchAny     bool
+		isMatchFeature bool
 	)
 	vars := make(map[string]string)
 
@@ -170,7 +172,7 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, 
 			if err != nil {
 				return GroupRuleOutput{}, err
 			} else if matched {
-				isMatch = true
+				isMatchAny = true
 				klog.V(4).InfoS("matchAny matched", "ruleName", r.Name, "matchedFeatures", utils.DelayedDumper(featureStatus.MatchedFeatures))
 
 				if r.VarsTemplate == "" && failFast {
@@ -185,16 +187,16 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, 
 			}
 			matchStatus.MatchAny = append(matchStatus.MatchAny, featureStatus)
 		}
-		if !isMatch && failFast {
+		if !isMatchAny && failFast {
 			return GroupRuleOutput{MatchStatus: &matchStatus}, nil
 		}
 	}
 
 	if len(r.MatchFeatures) > 0 {
 		var err error
-		if isMatch, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
+		if isMatchFeature, matchStatus.MatchFeatureStatus, err = evaluateFeatureMatcher(&r.MatchFeatures, features, failFast); err != nil {
 			return GroupRuleOutput{}, err
-		} else if !isMatch {
+		} else if !isMatchFeature {
 			klog.V(2).InfoS("rule did not match", "ruleName", r.Name)
 			return GroupRuleOutput{MatchStatus: &matchStatus}, nil
 		}
@@ -204,7 +206,7 @@ func ExecuteGroupRule(r *nfdv1alpha1.GroupRule, features *nfdv1alpha1.Features, 
 	}
 
 	maps.Copy(vars, r.Vars)
-	matchStatus.IsMatch = isMatch
+	matchStatus.IsMatch = (len(r.MatchAny) == 0 || isMatchAny) && (len(r.MatchFeatures) == 0 || isMatchFeature)
 
 	ret := GroupRuleOutput{
 		Vars:        vars,
