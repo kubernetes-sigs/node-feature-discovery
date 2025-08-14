@@ -311,7 +311,7 @@ func TestNodeValidator(t *testing.T) {
 			assertOutput(ctx, spec, expectedOutput)
 		})
 
-		Convey("That contains matchAny and matchFeatures in one spec", func() {
+		Convey("That contains matchAny and matchFeatures in one spec and results in match", func() {
 			spec := buildDefaultSpec([]v1alpha1.GroupRule{
 				{
 					Name: "fake_6",
@@ -394,6 +394,246 @@ func TestNodeValidator(t *testing.T) {
 							Feature:     "fake.attribute",
 							Name:        "attr_1",
 							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+					},
+				},
+			})
+
+			assertOutput(ctx, spec, expectedOutput)
+		})
+
+		Convey("That contains matchAny and matchFeatures in one spec and results in mismatch", func() {
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
+				{
+					Name: "fake_7",
+					MatchAny: []v1alpha1.MatchAnyElem{
+						{
+							MatchFeatures: v1alpha1.FeatureMatcher{
+								{
+									Feature: "fake.instance",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
+									},
+								},
+							},
+						},
+						{
+							MatchFeatures: v1alpha1.FeatureMatcher{
+								{
+									Feature: "fake.instance",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
+									},
+								},
+								{
+									Feature: "fake.instance",
+									MatchExpressions: &v1alpha1.MatchExpressionSet{
+										"id": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"unknown"}},
+									},
+								},
+							},
+						},
+					},
+					MatchFeatures: v1alpha1.FeatureMatcher{
+						{
+							Feature: "fake.attribute",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"attr_1": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							},
+						},
+					},
+				},
+			})
+
+			expectedOutput := buildDefaultExpectedOutput([]ProcessedRuleStatus{
+				{
+					Name:    "fake_7",
+					IsMatch: false,
+					MatchedAny: []MatchAnyElem{
+						{
+							MatchedExpressions: []MatchedExpression{
+								{
+									Feature:     "fake.instance",
+									Name:        "name",
+									Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
+									MatcherType: MatchExpressionType,
+									IsMatch:     false,
+								},
+							},
+						},
+						{
+							MatchedExpressions: []MatchedExpression{
+								{
+									Feature:     "fake.instance",
+									Name:        "id",
+									Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"unknown"}},
+									MatcherType: MatchExpressionType,
+									IsMatch:     false,
+								},
+								{
+									Feature:     "fake.instance",
+									Name:        "name",
+									Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_unknown"}},
+									MatcherType: MatchExpressionType,
+									IsMatch:     false,
+								},
+							},
+						},
+					},
+					MatchedExpressions: []MatchedExpression{
+						{
+							Feature:     "fake.attribute",
+							Name:        "attr_1",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+					},
+				},
+			})
+
+			assertOutput(ctx, spec, expectedOutput)
+		})
+
+		Convey("That contains flags, attrs and instances which results in mismatch", func() {
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
+				{
+					Name: "fake_8",
+					MatchFeatures: v1alpha1.FeatureMatcher{
+						{
+							Feature: "fake.flag",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"flag_unknown": &v1alpha1.MatchExpression{Op: v1alpha1.MatchExists},
+							},
+						},
+						{
+							Feature: "fake.attribute",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"attr_1": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							},
+						},
+						{
+							Feature: "fake.instance",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"name":   &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+								"attr_1": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							},
+						},
+						{
+							Feature: "fake.instance",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"name":   &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_2"}},
+								"attr_1": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"false"}},
+							},
+						},
+					},
+				},
+			})
+
+			expectedOutput := buildDefaultExpectedOutput([]ProcessedRuleStatus{
+				{
+					Name:    "fake_8",
+					IsMatch: false,
+					MatchedExpressions: []MatchedExpression{
+						{
+							Feature:     "fake.attribute",
+							Name:        "attr_1",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+						{
+							Feature:     "fake.flag",
+							Name:        "flag_unknown",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchExists},
+							MatcherType: MatchExpressionType,
+							IsMatch:     false,
+						},
+						{
+							Feature:     "fake.instance",
+							Name:        "attr_1",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"false"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     false,
+						},
+						{
+							Feature:     "fake.instance",
+							Name:        "attr_1",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+						{
+							Feature:     "fake.instance",
+							Name:        "name",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+						{
+							Feature:     "fake.instance",
+							Name:        "name",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_2"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+					},
+				},
+			})
+
+			assertOutput(ctx, spec, expectedOutput)
+		})
+
+		Convey("That contains flags, attrs and instances which results in match", func() {
+			spec := buildDefaultSpec([]v1alpha1.GroupRule{
+				{
+					Name: "fake_9",
+					MatchFeatures: v1alpha1.FeatureMatcher{
+						{
+							Feature:   "fake.flag",
+							MatchName: &v1alpha1.MatchExpression{Op: v1alpha1.MatchInRegexp, Value: v1alpha1.MatchValue{"^flag"}},
+						},
+						{
+							Feature: "fake.attribute",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"attr_1": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							},
+						},
+						{
+							Feature: "fake.instance",
+							MatchExpressions: &v1alpha1.MatchExpressionSet{
+								"name": &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
+							},
+						},
+					},
+				},
+			})
+
+			expectedOutput := buildDefaultExpectedOutput([]ProcessedRuleStatus{
+				{
+					Name:    "fake_9",
+					IsMatch: true,
+					MatchedExpressions: []MatchedExpression{
+						{
+							Feature:     "fake.attribute",
+							Name:        "attr_1",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"true"}},
+							MatcherType: MatchExpressionType,
+							IsMatch:     true,
+						},
+						{
+							Feature:     "fake.flag",
+							Name:        "",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchInRegexp, Value: v1alpha1.MatchValue{"^flag"}},
+							MatcherType: MatchNameType,
+							IsMatch:     true,
+						},
+						{
+							Feature:     "fake.instance",
+							Name:        "name",
+							Expression:  &v1alpha1.MatchExpression{Op: v1alpha1.MatchIn, Value: v1alpha1.MatchValue{"instance_1"}},
 							MatcherType: MatchExpressionType,
 							IsMatch:     true,
 						},
