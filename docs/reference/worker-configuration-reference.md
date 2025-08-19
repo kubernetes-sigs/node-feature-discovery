@@ -167,6 +167,24 @@ core:
   noOwnerRefs: true
 ```
 
+### core.ownerRefPod
+
+Setting `core.ownerRefPod` to `true` sets the owner reference
+of the NodeFeature object to Pod for nfd-worker.
+
+> **NOTE:** Overridden by the
+> [`-owner-ref-pod`](worker-commandline-reference.md#-owner-ref-pod)
+> command line flag (if specified).
+
+Default: `false`
+
+Example:
+
+```yaml
+core:
+  ownerRefPod: true
+```
+
 ### core.klog
 
 The following options specify the logger configuration.
