@@ -35,14 +35,14 @@ func readKconfigGzip(filename string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer f.Close() // nolint: errcheck
 
 	// Uncompress data
 	r, err := gzip.NewReader(f)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
+	defer r.Close() // nolint: errcheck
 
 	return io.ReadAll(r)
 }
@@ -83,7 +83,7 @@ func parseKconfig(configPath string) (realKconfig, legacyKconfig map[string]stri
 
 	for _, path := range append([]string{configPath}, searchPaths...) {
 		if len(path) > 0 {
-			if ".gz" == filepath.Ext(path) {
+			if filepath.Ext(path) == ".gz" {
 				if raw, err = readKconfigGzip(path); err == nil {
 					break
 				}

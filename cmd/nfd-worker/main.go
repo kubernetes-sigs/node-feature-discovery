@@ -77,7 +77,7 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 
 	_ = flags.Parse(osArgs)
 	if len(flags.Args()) > 0 {
-		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
+		_, _ = fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
 	}

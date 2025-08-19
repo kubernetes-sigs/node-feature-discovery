@@ -200,7 +200,7 @@ func (w *nfdTopologyUpdater) Run() error {
 		klog.InfoS("http server starting", "port", httpServer.Addr)
 		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
 	}()
-	defer httpServer.Close()
+	defer httpServer.Close() // nolint: errcheck
 
 	for {
 		select {

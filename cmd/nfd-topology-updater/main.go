@@ -70,7 +70,7 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) (*topology.Args, *resource
 
 	_ = flags.Parse(osArgs)
 	if len(flags.Args()) > 0 {
-		fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
+		_, _ = fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
 	}
@@ -83,7 +83,7 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) (*topology.Args, *resource
 	if len(resourcemonitorArgs.KubeletConfigURI) == 0 {
 		nodeAddress := os.Getenv("NODE_ADDRESS")
 		if len(nodeAddress) == 0 {
-			fmt.Fprintf(flags.Output(), "unable to determine the default kubelet config endpoint 'https://${NODE_ADDRESS}:%d/configz' due to empty NODE_ADDRESS environment, "+
+			_, _ = fmt.Fprintf(flags.Output(), "unable to determine the default kubelet config endpoint 'https://${NODE_ADDRESS}:%d/configz' due to empty NODE_ADDRESS environment, "+
 				"please either define the NODE_ADDRESS environment variable or specify endpoint with the -kubelet-config-uri flag\n", kubeletSecurePort)
 			os.Exit(1)
 		}

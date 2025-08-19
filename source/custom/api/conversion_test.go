@@ -21,7 +21,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
@@ -178,7 +177,7 @@ func TestRuleConversion(t *testing.T) {
 					nfdv1alpha1.FeatureMatcherTerm{
 						Feature:          "fake.attribute",
 						MatchExpressions: nil,
-						MatchName:        &v1alpha1.MatchExpression{Op: v1alpha1.MatchInRegexp, Value: v1alpha1.MatchValue{"^elem-"}},
+						MatchName:        &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchInRegexp, Value: nfdv1alpha1.MatchValue{"^elem-"}},
 					},
 				},
 			},

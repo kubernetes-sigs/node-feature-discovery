@@ -158,7 +158,7 @@ func getCgroupMiscCapacity(resource string) int64 {
 		miscCgroups := hostpath.SysfsDir.Path(miscCgroupsPath)
 		f, err := os.Open(miscCgroups)
 		if err == nil {
-			defer f.Close()
+			defer f.Close() // nolint: errcheck
 
 			return retrieveCgroupMiscCapacityValue(f, resource)
 		}

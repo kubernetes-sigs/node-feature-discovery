@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 
@@ -36,8 +36,8 @@ type k8sLabels map[string]string
 type k8sAnnotations map[string]string
 
 // eventuallyNonControlPlaneNodes is a helper for asserting node properties
-func eventuallyNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) AsyncAssertion {
-	return Eventually(func(g Gomega, ctx context.Context) ([]corev1.Node, error) {
+func eventuallyNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) gomega.AsyncAssertion {
+	return gomega.Eventually(func(g gomega.Gomega, ctx context.Context) ([]corev1.Node, error) {
 		return getNonControlPlaneNodes(ctx, cli)
 	}).WithPolling(1 * time.Second).WithTimeout(10 * time.Second).WithContext(ctx)
 }

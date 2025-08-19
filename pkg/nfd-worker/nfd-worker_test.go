@@ -27,7 +27,6 @@ import (
 	"k8s.io/klog/v2"
 
 	fakenfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
-	"sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
@@ -46,8 +45,8 @@ func TestRun(t *testing.T) {
 	initializeFeatureGates()
 	Convey("When running nfd-worker", t, func() {
 		Convey("When publishing features from fake source", func() {
-			os.Setenv("NODE_NAME", "fake-node")
-			os.Setenv("KUBERNETES_NAMESPACE", "fake-ns")
+			_ = os.Setenv("NODE_NAME", "fake-node")
+			_ = os.Setenv("KUBERNETES_NAMESPACE", "fake-ns")
 			args := &worker.Args{
 				Oneshot: true,
 				Overrides: worker.ConfigOverrideArgs{
@@ -86,16 +85,16 @@ func TestRun(t *testing.T) {
 							"feature.node.kubernetes.io/fake-fakefeature2": "true",
 							"feature.node.kubernetes.io/fake-fakefeature3": "true",
 						},
-						Features: v1alpha1.Features{
-							Flags: map[string]v1alpha1.FlagFeatureSet{
+						Features: nfdv1alpha1.Features{
+							Flags: map[string]nfdv1alpha1.FlagFeatureSet{
 								"fake.flag": {
-									Elements: map[string]v1alpha1.Nil{
+									Elements: map[string]nfdv1alpha1.Nil{
 										"flag_1": {},
 										"flag_2": {},
 										"flag_3": {}},
 								},
 							},
-							Attributes: map[string]v1alpha1.AttributeFeatureSet{
+							Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
 								"fake.attribute": {
 									Elements: map[string]string{
 										"attr_1": "true",
@@ -104,9 +103,9 @@ func TestRun(t *testing.T) {
 									},
 								},
 							},
-							Instances: map[string]v1alpha1.InstanceFeatureSet{
+							Instances: map[string]nfdv1alpha1.InstanceFeatureSet{
 								"fake.instance": {
-									Elements: []v1alpha1.InstanceFeature{
+									Elements: []nfdv1alpha1.InstanceFeature{
 										{Attributes: map[string]string{
 											"name":   "instance_1",
 											"attr_1": "true",

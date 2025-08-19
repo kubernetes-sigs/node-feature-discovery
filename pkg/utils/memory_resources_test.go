@@ -70,7 +70,11 @@ func TestGetMemoryResourceCounters(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(rootDir) // clean up
+	defer func() {
+		if err := os.RemoveAll(rootDir); err != nil {
+			t.Logf("failed to remove temporary directory %q: %v", rootDir, err)
+		}
+	}()
 
 	sysBusNodeBasepath = rootDir
 

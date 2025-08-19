@@ -175,9 +175,10 @@ func (f *featureGate) SetFromMap(m map[string]bool) error {
 		}
 		enabled[k] = v
 
-		if featureSpec.PreRelease == Deprecated {
+		switch featureSpec.PreRelease {
+		case Deprecated:
 			klog.InfoS("Setting deprecated feature gate. It will be removed in a future release.", "featureGateName", k, "featureGateValue", v)
-		} else if featureSpec.PreRelease == GA {
+		case GA:
 			klog.InfoS("Setting GA feature gate. It will be removed in a future release.", "featureGateName", k, "featureGateValue", v)
 		}
 	}
