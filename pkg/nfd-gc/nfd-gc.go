@@ -131,7 +131,7 @@ func (n *nfdGarbageCollector) deleteNodeHandler(object interface{}) {
 		klog.InfoS("cannot convert object to metav1.ObjectMeta", "object", object)
 		return
 	}
-	nodeName := meta.ObjectMeta.GetName()
+	nodeName := meta.GetName()
 
 	n.deleteNRT(nodeName)
 
@@ -177,10 +177,10 @@ func (n *nfdGarbageCollector) garbageCollect() {
 				handler(item)
 			}
 
-			if rsp.ListMeta.Continue == "" {
+			if rsp.Continue == "" {
 				break
 			}
-			opts.Continue = rsp.ListMeta.Continue
+			opts.Continue = rsp.Continue
 		}
 	}
 
@@ -269,7 +269,7 @@ func (n *nfdGarbageCollector) Run() error {
 			klog.InfoS("HTTP server stopped")
 		}
 	}()
-	defer httpServer.Close()
+	defer httpServer.Close() // nolint:errcheck
 
 	if err := n.startNodeInformer(); err != nil {
 		return err

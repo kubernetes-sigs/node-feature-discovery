@@ -216,7 +216,7 @@ func (i *infiniteTicker) Reset(d time.Duration) {
 	default:
 		// If the sleep interval is not a positive number the ticker will act
 		// as if it was set to an infinite duration by not ticking.
-		i.Ticker.Stop()
+		i.Stop()
 	}
 }
 
@@ -331,7 +331,7 @@ func (w *nfdWorker) Run() error {
 		klog.InfoS("http server starting", "port", httpServer.Addr)
 		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
 	}()
-	defer httpServer.Close()
+	defer httpServer.Close() // nolint: errcheck
 
 	for {
 		select {
@@ -356,7 +356,7 @@ func (w *nfdWorker) Stop() {
 func (c *coreConfig) sanitize() {
 	if c.SleepInterval.Duration > 0 && c.SleepInterval.Duration < time.Second {
 		klog.InfoS("too short sleep interval specified, forcing to 1s",
-			"sleepInterval", c.SleepInterval.Duration.String())
+			"sleepInterval", c.SleepInterval.String())
 		c.SleepInterval = utils.DurationVal{Duration: time.Second}
 	}
 }

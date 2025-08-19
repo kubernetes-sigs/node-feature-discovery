@@ -452,7 +452,7 @@ func MatchGetInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha
 func MatchMulti(m *nfdv1alpha1.MatchExpressionSet, keys map[string]nfdv1alpha1.Nil, values map[string]string, instances []nfdv1alpha1.InstanceFeature, failFast bool) (bool, []MatchedElement, *nfdv1alpha1.MatchExpressionSet, error) {
 	matchedElems := []MatchedElement{}
 	matchedExpressions := nfdv1alpha1.MatchExpressionSet{}
-	isMatch := false
+	isMatch := false // nolint: staticcheck
 
 	// Keys and values are handled as a union, it is enough to find a match in
 	// either of them
