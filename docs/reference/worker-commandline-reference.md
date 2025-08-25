@@ -84,6 +84,24 @@ Example:
 nfd-worker -kubeconfig ${HOME}/.kube/config
 ```
 
+### -kubelet-config-path
+
+The `-kubeconfig-path` flag specifies the absolute path to the kubelet configuration
+file on the node. This configuration is primarily used by NFD to determine the
+swap behavior set on the node. Kubernetes currently supports two types of swap
+behavior `NoSwap` and `LimitedSwap`. It is important to note that even if swap is
+enabled at the system level, a setting of `NoSwap` in the kubelet configuration
+means that Kubernetes workloads will not be permitted to use swap space—although
+non-Kubernetes processes on the node may still do so.
+
+Default: `/var/lib/kubelet/config.yaml`
+
+Example:
+
+```bash
+nfd-worker -kubeconfig-path /var/lib/kubelet/config.yaml
+```
+
 ### -feature-sources
 
 The `-feature-sources` flag specifies a comma-separated list of enabled feature
