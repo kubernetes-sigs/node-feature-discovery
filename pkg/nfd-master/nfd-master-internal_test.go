@@ -386,6 +386,7 @@ func TestFilterLabels(t *testing.T) {
 		expectErr            bool
 		expectedValue        string
 		expectedExtResources ExtendedResources
+		expectedAnnotations  map[string]string
 	}
 
 	tcs := []TC{
@@ -463,17 +464,29 @@ func TestFilterLabels(t *testing.T) {
 
 	tcs = []TC{
 		{
-			description:          "Unprefixed extended resources should not be allowed",
+			description:          "Unprefixed extended resources & annotations should not be allowed",
 			expectedExtResources: ExtendedResources{},
+			expectedAnnotations:  map[string]string{},
 		},
 	}
 
 	extendedResources := ExtendedResources{"micromicrowaves": "10", "tooster": "5"}
+	prefixlessAnnotation := map[string]string{"test-annotation": "bar"}
+
 	for _, tc := range tcs {
 		t.Run(tc.description, func(t *testing.T) {
 			outExtendedResources := fakeMaster.filterExtendedResources(&tc.features, extendedResources)
-			Convey("Unprefixed extended resources should npotbe allowed", t, func() {
+			Convey("Unprefixed extended resources should not be allowed", t, func() {
 				So(outExtendedResources, ShouldEqual, tc.expectedExtResources)
+			})
+		})
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.description, func(t *testing.T) {
+			filteredAnnotations := fakeMaster.filterFeatureAnnotations(prefixlessAnnotation)
+			Convey("Unprefixed annotation should not be allowed", t, func() {
+				So(filteredAnnotations, ShouldEqual, tc.expectedAnnotations)
 			})
 		})
 	}
@@ -482,21 +495,32 @@ func TestFilterLabels(t *testing.T) {
 	fakeMaster = newFakeMasterWithFeatureGate()
 	tcs = []TC{
 		{
-			description:   "Unprefixed should be allowed",
+			description:   "Unprefixed label & annotation should be allowed",
 			labelName:     "test-label",
 			labelValue:    "test-value",
 			expectedValue: "test-value",
+			expectedAnnotations: map[string]string{
+				"test-annotation": "bar",
+			},
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.description, func(t *testing.T) {
+			testPrefixlessAnnotation := map[string]string{
+				"test-annotation": "bar",
+			}
+
 			labelValue, err := fakeMaster.filterFeatureLabel(tc.labelName, tc.labelValue, &tc.features)
+			filteredAnnotations := fakeMaster.filterFeatureAnnotations(testPrefixlessAnnotation)
 
 			Convey("Label should not be filtered out", t, func() {
 				So(err, ShouldBeNil)
 			})
 			Convey("Label value should be correct", t, func() {
 				So(labelValue, ShouldEqual, tc.expectedValue)
+			})
+			Convey("Unprefixed annotation should be allowed", t, func() {
+				So(filteredAnnotations, ShouldEqual, tc.expectedAnnotations)
 			})
 		})
 	}
