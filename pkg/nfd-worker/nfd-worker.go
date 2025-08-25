@@ -121,6 +121,7 @@ type nfdWorker struct {
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
 	stop                chan struct{} // channel for signaling stop
+	sourceEvent         chan string   // channel for events from soures
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
@@ -248,6 +249,36 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	return nil
 }
 
+// Run feature discovery.
+func (w *nfdWorker) runFeatureDiscoveryBySourceName(source string) error {
+	discoveryStart := time.Now()
+	for _, s := range w.featureSources {
+		if s.Name() == source {
+			currentSourceStart := time.Now()
+			if err := s.Discover(); err != nil {
+				klog.ErrorS(err, "feature discovery failed", "source", s.Name())
+			}
+			klog.V(3).InfoS("feature discovery completed", "featureSource", s.Name(), "duration", time.Since(currentSourceStart))
+		}
+	}
+
+	discoveryDuration := time.Since(discoveryStart)
+	klog.V(2).InfoS("feature discovery of all sources completed", "duration", discoveryDuration)
+	featureDiscoveryDuration.WithLabelValues(utils.NodeName()).Observe(discoveryDuration.Seconds())
+	if w.config.Core.SleepInterval.Duration > 0 && discoveryDuration > w.config.Core.SleepInterval.Duration/2 {
+		klog.InfoS("feature discovery sources took over half of sleep interval ", "duration", discoveryDuration, "sleepInterval", w.config.Core.SleepInterval.Duration)
+	}
+	// Get the set of feature labels.
+	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+
+	// Update the node with the feature labels.
+	if !w.config.Core.NoPublish {
+		return w.advertiseFeatures(labels)
+	}
+
+	return nil
+}
+
 // Set owner ref
 func (w *nfdWorker) setOwnerReference() error {
 	ownerReference := []metav1.OwnerReference{}
@@ -304,6 +335,12 @@ func (w *nfdWorker) Run() error {
 	labelTrigger.Reset(w.config.Core.SleepInterval.Duration)
 	defer labelTrigger.Stop()
 
+	w.sourceEvent = make(chan string)
+	eventSources := source.GetAllEventSources()
+	for _, s := range eventSources {
+		s.SetNotifyChannel(w.sourceEvent)
+	}
+
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
@@ -337,6 +374,12 @@ func (w *nfdWorker) Run() error {
 		select {
 		case <-labelTrigger.C:
 			err = w.runFeatureDiscovery()
+			if err != nil {
+				return err
+			}
+
+		case sourceName := <-w.sourceEvent:
+			err = w.runFeatureDiscoveryBySourceName(sourceName)
 			if err != nil {
 				return err
 			}
