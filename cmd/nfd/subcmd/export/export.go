@@ -1,5 +1,5 @@
 /*
-Copyright 2024 The Kubernetes Authors.
+Copyright 2025 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,33 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package subcmd
+package export
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"sigs.k8s.io/node-feature-discovery/cmd/nfd/subcmd/compat"
-	"sigs.k8s.io/node-feature-discovery/cmd/nfd/subcmd/export"
 )
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
-	Use:   "nfd",
-	Short: "Node Feature Discovery client",
+var ExportCmd = &cobra.Command{
+	Use:   "export",
+	Short: "Export commands",
 }
 
-func init() {
-	RootCmd.AddCommand(compat.CompatCmd)
-	RootCmd.AddCommand(export.ExportCmd)
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+	if err := ExportCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

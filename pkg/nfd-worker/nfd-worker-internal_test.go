@@ -54,7 +54,7 @@ func TestGetLabelsWithMockSources(t *testing.T) {
 			mockLabelSource.On("Name").Return(fakeLabelSourceName)
 			mockLabelSource.On("GetLabels").Return(fakeFeatures, nil)
 
-			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
+			returnedLabels, err := GetFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
 			Convey("Proper label is returned", func() {
 				So(returnedLabels, ShouldResemble, fakeFeatureLabels)
 			})
@@ -67,7 +67,7 @@ func TestGetLabelsWithMockSources(t *testing.T) {
 			expectedError := errors.New("fake error")
 			mockLabelSource.On("GetLabels").Return(nil, expectedError)
 
-			returnedLabels, err := getFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
+			returnedLabels, err := GetFeatureLabels(fakeLabelSource, labelWhiteList.Regexp)
 			Convey("No label is returned", func() {
 				So(returnedLabels, ShouldBeNil)
 			})
