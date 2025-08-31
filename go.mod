@@ -10,7 +10,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/jaypipes/ghw v0.17.0
+	github.com/jaypipes/ghw v0.19.0
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
 	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
@@ -51,7 +51,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
-	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -94,7 +93,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.24.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jaypipes/pcidb v1.0.1 // indirect
+	github.com/jaypipes/pcidb v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
@@ -104,7 +103,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
@@ -131,6 +129,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.21 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.21 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.21 // indirect
@@ -167,7 +166,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	howett.net/plist v1.0.0 // indirect
+	howett.net/plist v1.0.2-0.20250314012144-ee69052608d9 // indirect
 	k8s.io/apiserver v0.33.4 // indirect
 	k8s.io/cloud-provider v0.33.4 // indirect
 	k8s.io/code-generator v0.33.4 // indirect
