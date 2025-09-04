@@ -975,6 +975,7 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 			l := ruleOut.Labels
 			e := ruleOut.ExtendedResources
 			a := ruleOut.Annotations
+
 			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 				l = addNsToMapKeys(ruleOut.Labels, nfdv1alpha1.FeatureLabelNs)
 				e = addNsToMapKeys(ruleOut.ExtendedResources, nfdv1alpha1.ExtendedResourceNs)
@@ -1360,8 +1361,10 @@ func (m *nfdMaster) filterFeatureAnnotations(annotations map[string]string) map[
 		// Check annotation namespace, filter out if ns is not whitelisted
 		err := validate.Annotation(annotation, value)
 		if err != nil {
-			klog.ErrorS(err, "ignoring annotation", "annotationKey", annotation, "annotationValue", value)
-			continue
+			if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) || err != validate.ErrUnprefixedKeysNotAllowed {
+				klog.ErrorS(err, "ignoring annotation", "annotationKey", annotation, "annotationValue", value)
+				continue
+			}
 		}
 
 		outAnnotations[annotation] = value
