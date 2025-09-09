@@ -1,8 +1,6 @@
 module sigs.k8s.io/node-feature-discovery
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
