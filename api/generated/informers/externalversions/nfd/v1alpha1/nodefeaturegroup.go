@@ -62,13 +62,25 @@ func NewFilteredNodeFeatureGroupInformer(client versioned.Interface, namespace s
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NfdV1alpha1().NodeFeatureGroups(namespace).List(context.TODO(), options)
+				return client.NfdV1alpha1().NodeFeatureGroups(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NfdV1alpha1().NodeFeatureGroups(namespace).Watch(context.TODO(), options)
+				return client.NfdV1alpha1().NodeFeatureGroups(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.NfdV1alpha1().NodeFeatureGroups(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.NfdV1alpha1().NodeFeatureGroups(namespace).Watch(ctx, options)
 			},
 		},
 		&apinfdv1alpha1.NodeFeatureGroup{},
