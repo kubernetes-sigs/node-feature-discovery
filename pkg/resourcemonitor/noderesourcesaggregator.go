@@ -304,7 +304,7 @@ func makeNodeAllocatable(devices []*podresourcesapi.ContainerDevices, memoryBloc
 
 			// I do not like the idea to cast from uint64 to int64, but until the memory size does not go over
 			// 8589934592Gi, it should be ok
-			perNUMAAllocatable[nodeID][memoryType] += int64(block.GetSize_())
+			perNUMAAllocatable[nodeID][memoryType] += int64(block.GetSize())
 		}
 	}
 

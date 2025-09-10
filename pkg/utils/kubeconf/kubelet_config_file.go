@@ -17,6 +17,7 @@ limitations under the License.
 package kubeconf
 
 import (
+	"context"
 	"fmt"
 
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
@@ -36,7 +37,7 @@ func GetKubeletConfigFromLocalFile(kubeletConfigPath string) (*kubeletconfigv1be
 		return nil, fmt.Errorf(errFmt, kubeletConfigPath, err)
 	}
 
-	kc, err := loader.Load()
+	kc, err := loader.Load(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf(errFmt, kubeletConfigPath, err)
 	}
