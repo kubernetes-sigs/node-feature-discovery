@@ -151,20 +151,8 @@ templates:
 	@rm nfd-worker.conf.tmp
 	@rm nfd-topology-updater.conf.tmp
 
-.generator.image.stamp: Dockerfile_generator
-	$(IMAGE_BUILD_CMD) \
-	    --build-arg BUILDER_IMAGE=$(BUILDER_IMAGE) \
-	    -t nfd-generator \
-	    -f Dockerfile_generator .
-
-generate: .generator.image.stamp
-	$(CONTAINER_RUN_CMD) --rm \
-	    -v "`pwd`:/go/node-feature-discovery" \
-	    -v "`go env GOCACHE`:/.cache" \
-	    -v "`go env GOMODCACHE`:/go/pkg/mod" \
-	    --user=`id -u`:`id -g`\
-	    nfd-generator \
-	    ./hack/update_codegen.sh
+generate:
+	hack/update_codegen.sh
 
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')
