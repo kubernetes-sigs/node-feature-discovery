@@ -16,7 +16,7 @@ limitations under the License.
 
 package compat
 
-//go:generate mockery --name=ArtifactClient --inpackage
+//go:generate go tool mockery --name=ArtifactClient --inpackage
 
 import (
 	"context"

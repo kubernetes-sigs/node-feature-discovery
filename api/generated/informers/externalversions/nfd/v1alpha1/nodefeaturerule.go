@@ -61,13 +61,25 @@ func NewFilteredNodeFeatureRuleInformer(client versioned.Interface, resyncPeriod
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NfdV1alpha1().NodeFeatureRules().List(context.TODO(), options)
+				return client.NfdV1alpha1().NodeFeatureRules().List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NfdV1alpha1().NodeFeatureRules().Watch(context.TODO(), options)
+				return client.NfdV1alpha1().NodeFeatureRules().Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.NfdV1alpha1().NodeFeatureRules().List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.NfdV1alpha1().NodeFeatureRules().Watch(ctx, options)
 			},
 		},
 		&apinfdv1alpha1.NodeFeatureRule{},
