@@ -15,12 +15,11 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     go mod download
 
 # Do actual build
-COPY . /go/node-feature-discovery
-
 ARG VERSION
 ARG HOSTMOUNT_PREFIX
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=src=.,target=. \
     make install VERSION=$VERSION HOSTMOUNT_PREFIX=$HOSTMOUNT_PREFIX
 
 # Create full variant of the production image
@@ -32,7 +31,7 @@ USER 65534:65534
 # Use more verbose logging of gRPC
 ENV GRPC_GO_LOG_SEVERITY_LEVEL="INFO"
 
-COPY --from=builder /go/node-feature-discovery/deployment/components/worker-config/nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
+COPY deployment/components/worker-config/nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
 COPY --from=builder /go/bin/* /usr/bin/
 
 # Create minimal variant of the production image
@@ -44,5 +43,5 @@ USER 65534:65534
 # Use more verbose logging of gRPC
 ENV GRPC_GO_LOG_SEVERITY_LEVEL="INFO"
 
-COPY --from=builder /go/node-feature-discovery/deployment/components/worker-config/nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
+COPY deployment/components/worker-config/nfd-worker.conf.example /etc/kubernetes/node-feature-discovery/nfd-worker.conf
 COPY --from=builder /go/bin/* /usr/bin/
