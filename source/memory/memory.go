@@ -56,10 +56,16 @@ type memorySource struct {
 
 // Singleton source instance
 var (
-	src memorySource
-	_   source.FeatureSource = &src
-	_   source.LabelSource   = &src
+	src                 memorySource
+	_                   source.FeatureSource = &src
+	_                   source.LabelSource   = &src
+	defaultSwapBehavior                      = "NoSwap"
+	swapBehavior        string
 )
+
+func SetSwapMode(behavior string) {
+	swapBehavior = behavior
+}
 
 // Name returns an identifier string for this feature source.
 func (s *memorySource) Name() string { return Name }
@@ -80,6 +86,7 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 	// Swap
 	if isSwap, ok := features.Attributes[SwapFeature].Elements["enabled"]; ok && isSwap == "true" {
 		labels["swap"] = true
+		labels["swap.behavior"] = features.Attributes[SwapFeature].Elements["behavior"]
 	}
 
 	// NVDIMM
@@ -106,12 +113,16 @@ func (s *memorySource) Discover() error {
 	} else {
 		s.features.Attributes[NumaFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: numa}
 	}
-
-	// Detect Swap
+	// Detect Swap and Swap Behavior
 	if swap, err := detectSwap(); err != nil {
 		klog.ErrorS(err, "failed to detect Swap nodes")
 	} else {
 		s.features.Attributes[SwapFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: swap}
+		if swapBehavior == "" {
+			swap["behavior"] = defaultSwapBehavior
+		} else {
+			swap["behavior"] = swapBehavior
+		}
 	}
 
 	// Detect NVDIMM

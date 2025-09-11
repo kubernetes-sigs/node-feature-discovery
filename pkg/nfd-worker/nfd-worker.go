@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -38,8 +39,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/utils/ptr"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/kubeconf"
 	"sigs.k8s.io/yaml"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -57,6 +60,7 @@ import (
 	_ "sigs.k8s.io/node-feature-discovery/source/kernel"
 	_ "sigs.k8s.io/node-feature-discovery/source/local"
 	_ "sigs.k8s.io/node-feature-discovery/source/memory"
+	memory "sigs.k8s.io/node-feature-discovery/source/memory"
 	_ "sigs.k8s.io/node-feature-discovery/source/network"
 	_ "sigs.k8s.io/node-feature-discovery/source/pci"
 	_ "sigs.k8s.io/node-feature-discovery/source/storage"
@@ -94,13 +98,16 @@ type Labels map[string]string
 
 // Args are the command line arguments of NfdWorker.
 type Args struct {
-	ConfigFile  string
-	Klog        map[string]*utils.KlogFlagVal
-	Kubeconfig  string
-	Oneshot     bool
-	Options     string
-	Port        int
-	NoOwnerRefs bool
+	ConfigFile        string
+	Klog              map[string]*utils.KlogFlagVal
+	Kubeconfig        string
+	Oneshot           bool
+	Options           string
+	Port              int
+	NoOwnerRefs       bool
+	KubeletConfigPath string
+	KubeletConfigURI  string
+	APIAuthTokenFile  string
 
 	Overrides ConfigOverrideArgs
 }
@@ -124,6 +131,7 @@ type nfdWorker struct {
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
+	kubeletConfigFunc   func() (*kubeletconfigv1beta1.KubeletConfiguration, error)
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -169,12 +177,25 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 		stop:                make(chan struct{}),
 	}
 
+	if nfd.args.ConfigFile != "" {
+		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
+	}
+
 	for _, o := range opts {
 		o.apply(nfd)
 	}
 
-	if nfd.args.ConfigFile != "" {
-		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
+	kubeletConfigFunc, err := getKubeletConfigFunc(nfd.args.KubeletConfigURI, nfd.args.APIAuthTokenFile)
+	if err != nil {
+		return nil, err
+	}
+
+	nfd = &nfdWorker{
+		kubeletConfigFunc: kubeletConfigFunc,
+	}
+
+	for _, o := range opts {
+		o.apply(nfd)
 	}
 
 	// k8sClient might've been set via opts by tests
@@ -239,6 +260,8 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	}
 	// Get the set of feature labels.
 	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+	// Append a label with app=nfd
+	labels["app"] = "nfd"
 
 	// Update the node with the feature labels.
 	if !w.config.Core.NoPublish {
@@ -255,9 +278,10 @@ func (w *nfdWorker) setOwnerReference() error {
 	if !w.config.Core.NoOwnerRefs {
 		// Get pod owner reference
 		podName := os.Getenv("POD_NAME")
+		podNamespace := os.Getenv("POD_NAMESPACE")
 		// Add pod owner reference if it exists
 		if podName != "" {
-			if selfPod, err := w.k8sClient.CoreV1().Pods(w.kubernetesNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
+			if selfPod, err := w.k8sClient.CoreV1().Pods(podNamespace).Get(context.TODO(), podName, metav1.GetOptions{}); err != nil {
 				klog.ErrorS(err, "failed to get self pod, cannot inherit ownerReference for NodeFeature")
 				return err
 			} else {
@@ -311,6 +335,12 @@ func (w *nfdWorker) Run() error {
 	promRegistry.MustRegister(buildInfo, featureDiscoveryDuration)
 	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
 	registerVersion(version.Get())
+
+	klConfig, err := w.kubeletConfigFunc()
+	if err != nil {
+		return err
+	}
+	memory.SetSwapMode(klConfig.MemorySwap.SwapBehavior)
 
 	err = w.runFeatureDiscovery()
 	if err != nil {
@@ -624,7 +654,7 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		return err
 	}
 	nodename := utils.NodeName()
-	namespace := m.kubernetesNamespace
+	namespace := os.Getenv("POD_NAMESPACE")
 
 	features := source.GetAllFeatures()
 
@@ -719,4 +749,39 @@ func (c *sourcesConfig) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+func getKubeletConfigFunc(uri, apiAuthTokenFile string) (func() (*kubeletconfigv1beta1.KubeletConfiguration, error), error) {
+	u, err := url.ParseRequestURI(uri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse -kubelet-config-uri: %w", err)
+	}
+
+	// init kubelet API client
+	var klConfig *kubeletconfigv1beta1.KubeletConfiguration
+	switch u.Scheme {
+	case "file":
+		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+			klConfig, err = kubeconf.GetKubeletConfigFromLocalFile(u.Path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read kubelet config: %w", err)
+			}
+			return klConfig, err
+		}, nil
+	case "https":
+		restConfig, err := kubeconf.InsecureConfig(u.String(), apiAuthTokenFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
+		}
+
+		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+			klConfig, err = kubeconf.GetKubeletConfiguration(restConfig)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get kubelet config from configz endpoint: %w", err)
+			}
+			return klConfig, nil
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unsupported URI scheme: %v", u.Scheme)
 }
