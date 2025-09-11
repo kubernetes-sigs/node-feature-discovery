@@ -179,14 +179,14 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 			}
 
 			for _, block := range container.GetMemory() {
-				if block.GetSize_() == 0 {
+				if block.GetSize() == 0 {
 					continue
 				}
 
 				topology := getNumaNodeIds(block.GetTopology())
 				contRes.Resources = append(contRes.Resources, ResourceInfo{
 					Name:        corev1.ResourceName(block.MemoryType),
-					Data:        []string{fmt.Sprintf("%d", block.GetSize_())},
+					Data:        []string{fmt.Sprintf("%d", block.GetSize())},
 					NumaNodeIds: topology,
 				})
 			}

@@ -112,7 +112,7 @@ func TestPodScanner(t *testing.T) {
 								Memory: []*v1.ContainerMemory{
 									{
 										MemoryType: "hugepages-2Mi",
-										Size_:      512,
+										Size:       512,
 										Topology: &v1.TopologyInfo{
 											Nodes: []*v1.NUMANode{
 												{ID: 1},
@@ -121,7 +121,7 @@ func TestPodScanner(t *testing.T) {
 									},
 									{
 										MemoryType: "memory",
-										Size_:      512,
+										Size:       512,
 										Topology: &v1.TopologyInfo{
 											Nodes: []*v1.NUMANode{
 												{ID: 0},

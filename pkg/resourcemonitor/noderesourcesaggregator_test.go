@@ -135,7 +135,7 @@ func TestResourcesAggregator(t *testing.T) {
 			Memory: []*v1.ContainerMemory{
 				{
 					MemoryType: "memory",
-					Size_:      1024,
+					Size:       1024,
 					Topology: &v1.TopologyInfo{
 						Nodes: []*v1.NUMANode{
 							{
@@ -146,7 +146,7 @@ func TestResourcesAggregator(t *testing.T) {
 				},
 				{
 					MemoryType: "memory",
-					Size_:      1024,
+					Size:       1024,
 					Topology: &v1.TopologyInfo{
 						Nodes: []*v1.NUMANode{
 							{
@@ -157,7 +157,7 @@ func TestResourcesAggregator(t *testing.T) {
 				},
 				{
 					MemoryType: "hugepages-2Mi",
-					Size_:      1024,
+					Size:       1024,
 					Topology: &v1.TopologyInfo{
 						Nodes: []*v1.NUMANode{
 							{
@@ -332,7 +332,7 @@ func TestResourcesAggregator(t *testing.T) {
 			Memory: []*v1.ContainerMemory{
 				{
 					MemoryType: "memory",
-					Size_:      1024,
+					Size:       1024,
 					Topology: &v1.TopologyInfo{
 						Nodes: []*v1.NUMANode{
 							{
@@ -343,7 +343,7 @@ func TestResourcesAggregator(t *testing.T) {
 				},
 				{
 					MemoryType: "memory",
-					Size_:      1024,
+					Size:       1024,
 					Topology: &v1.TopologyInfo{
 						Nodes: []*v1.NUMANode{
 							{
@@ -354,7 +354,7 @@ func TestResourcesAggregator(t *testing.T) {
 				},
 				{
 					MemoryType: "hugepages-2Mi",
-					Size_:      1024,
+					Size:       1024,
 					Topology: &v1.TopologyInfo{
 						Nodes: []*v1.NUMANode{
 							{
