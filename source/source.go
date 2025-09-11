@@ -77,6 +77,14 @@ type SupplementalSource interface {
 	DisableByDefault() bool
 }
 
+// EventSource is an interface for a source that can send events
+type EventSource interface {
+	Source
+
+	// SetNotifyChannel sets the channel
+	SetNotifyChannel(chan string) error
+}
+
 // FeatureLabelValue represents the value of one feature label
 type FeatureLabelValue interface{}
 
@@ -149,6 +157,17 @@ func GetAllConfigurableSources() map[string]ConfigurableSource {
 	all := make(map[string]ConfigurableSource)
 	for k, v := range sources {
 		if s, ok := v.(ConfigurableSource); ok {
+			all[k] = s
+		}
+	}
+	return all
+}
+
+// GetAllEventSources returns all registered event sources
+func GetAllEventSources() map[string]EventSource {
+	all := make(map[string]EventSource)
+	for k, v := range sources {
+		if s, ok := v.(EventSource); ok {
 			all[k] = s
 		}
 	}
