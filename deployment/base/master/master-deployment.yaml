@@ -19,7 +19,7 @@ spec:
       tolerations: []
       containers:
         - name: nfd-master
-          image: registry.k8s.io/nfd/node-feature-discovery:v0.16.8
+          image: registry.k8s.io/nfd/node-feature-discovery:v0.16.9
           imagePullPolicy: IfNotPresent
           resources:
             limits:
