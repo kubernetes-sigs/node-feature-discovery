@@ -131,7 +131,9 @@ if [ -z "$no_patching" ]; then
 
     # Patch Helm chart
     echo "Patching Helm chart"
-    sed -e s"/appVersion:.*/appVersion: $release/" -i deployment/helm/node-feature-discovery/Chart.yaml
+    sed -e s"/appVersion:.*/appVersion: $release/" \
+        -e s"!icon:.*!icon: https://kubernetes-sigs.github.io/node-feature-discovery/$docs_version/assets/images/nfd/favicon.svg!" \
+        -i deployment/helm/node-feature-discovery/Chart.yaml
     sed -e s"/pullPolicy:.*/pullPolicy: IfNotPresent/" \
         -e s"!gcr.io/k8s-staging-nfd/node-feature-discovery!registry.k8s.io/nfd/node-feature-discovery!" \
         -i deployment/helm/node-feature-discovery/values.yaml
