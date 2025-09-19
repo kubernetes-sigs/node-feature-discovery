@@ -443,7 +443,7 @@ func (w *nfdWorker) getGrpcClient() (pb.LabelerClient, error) {
 	// Dial and create a client
 	dialCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	dialOpts := []grpc.DialOption{grpc.WithBlock()}
+	dialOpts := []grpc.DialOption{grpc.WithBlock()} //nolint:staticcheck // WithBlock is deprecated
 	if w.args.CaFile != "" || w.args.CertFile != "" || w.args.KeyFile != "" {
 		// Load client cert for client authentication
 		cert, err := tls.LoadX509KeyPair(w.args.CertFile, w.args.KeyFile)
@@ -471,7 +471,7 @@ func (w *nfdWorker) getGrpcClient() (pb.LabelerClient, error) {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	klog.InfoS("connecting to nfd-master", "address", w.args.Server)
-	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...)
+	conn, err := grpc.DialContext(dialCtx, w.args.Server, dialOpts...) //nolint:staticcheck // DialContext is deprecated
 	if err != nil {
 		return nil, err
 	}
