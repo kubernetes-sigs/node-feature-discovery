@@ -33,8 +33,9 @@ Print version and exit.
 
 ### -list-size
 
-The pagination size to use when calling api-server to list nodefeatures. 
-Pagination is useful for controlling the load on api-server/etcd as the nodefeature resources can be large.
+The pagination size to use when calling api-server to list nodefeatures.
+Pagination is useful for controlling the load on api-server/etcd as the
+nodefeature resources can be large.
 A value of 0 will disable pagination.
 
 Default: 200

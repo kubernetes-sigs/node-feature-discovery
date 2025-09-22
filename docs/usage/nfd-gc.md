@@ -30,7 +30,8 @@ for altering the nfd-gc configuration.
 
 ## List Pagination & Scalability
 
-When NFD GC runs up it lists nodefeatures from api-server.
-These resources can be large and in a large cluster this initial list call to sync the informer cache can be
-expensive and heavy on api-server/etcd. You can use the `list-size` argument to control pagination size
+When NFD GC starts up it lists nodefeatures from api-server.
+These resources can be large and in a large cluster this initial list call to
+sync the informer cache can be expensive and heavy on api-server/etcd.
+You can use the `list-size` argument to control pagination size
 to help control the load from this list.
