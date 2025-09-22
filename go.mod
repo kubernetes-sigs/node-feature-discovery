@@ -11,7 +11,7 @@ require (
 	github.com/jaypipes/ghw v0.19.1
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2
-	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
+	github.com/k8stopologyawareschedwg/podfingerprint v0.2.3
 	github.com/klauspost/cpuid/v2 v2.3.0
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
