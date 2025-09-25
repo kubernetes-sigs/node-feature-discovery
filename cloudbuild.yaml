@@ -5,7 +5,6 @@ steps:
     env:
     - IMAGE_REGISTRY=gcr.io/$PROJECT_ID
     - _GIT_TAG=$_GIT_TAG
-    - IMAGE_EXTRA_TAG_NAMES=$_PULL_BASE_REF
     - HOME=/root
 substitutions:
   _GIT_TAG: '0.0.0'
