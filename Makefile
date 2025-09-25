@@ -184,6 +184,12 @@ helm-lint:
 helm-push:
 	helm package deployment/helm/node-feature-discovery --version $(CHART_VERSION) --app-version $(IMAGE_TAG_NAME)
 	helm push node-feature-discovery-$(CHART_VERSION).tgz oci://${IMAGE_REGISTRY}/charts
+	# Push artifacthub.io metadata
+	# Ref: https://artifacthub.io/docs/topics/repositories/helm-charts/#oci-support
+	oras push \
+	    ${IMAGE_REGISTRY}/charts/node-feature-discovery:artifacthub.io \
+	    --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+	    artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
 
 test:
 	$(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
