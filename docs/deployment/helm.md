@@ -29,14 +29,40 @@ Node Feature Discovery provides a Helm chart to manage its deployment.
 
 ## Deployment
 
+### OCI Helm repository
+
+The NFD project provides Helm charts in an OCI compliant repository. Install
+NFD with the default configuration
+
+```bash
+helm install nfd --namespace node-feature-discovery --create-namespace {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }}
+```
+
+See the [configuration](#configuration) section below for instructions how to
+alter the deployment parameters.
+
+### Legacy Helm repository
+
+For the time being, the NFD project still provides Helm charts in a legacy
+(HTTP) Helm repository, too.
+
+> **NOTE:** This repository will be deprecated in the future. It is recommended
+> for users to switch to use the OCI Helm repository.
+
+#### Stable version
+
 To install the latest stable version:
 
 ```bash
-export NFD_NS=node-feature-discovery
 helm repo add nfd https://kubernetes-sigs.github.io/node-feature-discovery/charts
 helm repo update
-helm install nfd/node-feature-discovery --namespace $NFD_NS --create-namespace --generate-name
+helm install nfd nfd/node-feature-discovery --namespace node-feature-discovery --create-namespace
 ```
+
+See the [configuration](#configuration) section below for instructions how to
+alter the deployment parameters.
+
+### Latest development version
 
 To install the latest development version you need to clone the NFD Git
 repository and install from there.
@@ -44,27 +70,21 @@ repository and install from there.
 ```bash
 git clone https://github.com/kubernetes-sigs/node-feature-discovery/
 cd node-feature-discovery/deployment/helm
-export NFD_NS=node-feature-discovery
-helm install node-feature-discovery ./node-feature-discovery/ --namespace $NFD_NS --create-namespace
+helm install nfd ./node-feature-discovery/ --namespace node-feature-discovery --create-namespace
 ```
-
-See the [configuration](#configuration) section below for instructions how to
-alter the deployment parameters.
 
 ## Configuration
 
 You can override values from `values.yaml` and provide a file with custom values:
 
 ```bash
-export NFD_NS=node-feature-discovery
-helm install nfd/node-feature-discovery -f <path/to/custom/values.yaml> --namespace $NFD_NS --create-namespace
+helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }}
 ```
 
 To specify each parameter separately you can provide them to helm install command:
 
 ```bash
-export NFD_NS=node-feature-discovery
-helm install nfd/node-feature-discovery --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace $NFD_NS --create-namespace
+helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }}
 ```
 
 ## Upgrading the chart
@@ -83,16 +103,15 @@ Helm deployment of NFD was introduced in v0.8.0.
 
 ```bash
 export NFD_NS=node-feature-discovery
+export HELM_INSTALL_NAME=nfd
 # Uninstall the old NFD deployment
-helm uninstall node-feature-discovery --namespace $NFD_NS
-# Update Helm repository
-helm repo update
+helm uninstall $HELM_INSTALL_NAME --namespace $NFD_NS
 # Install the new NFD deployment
-helm upgrade --install node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=false
+helm install $HELM_INSTALL_NAME {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --namespace $NFD_NS --set master.enable=false
 # Wait for NFD Worker to be ready
 kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
 # Enable the NFD Master
-helm upgrade --install node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=true
+helm upgrade $HELM_INSTALL_NAME {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --namespace $NFD_NS --set master.enable=true
 ```
 
 ### From v0.12 - v0.13
@@ -102,16 +121,15 @@ The API was not enabled by default.
 
 ```bash
 export NFD_NS=node-feature-discovery
-# Update Helm repository
-helm repo update
+export HELM_INSTALL_NAME=nfd
 # Install and upgrade CRD's
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/deployment/base/nfd-crds/nfd-api-crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/deployment/base/nfd-crds/nfd-api-crds.yaml
 # Install the new NFD deployment
-helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=false
+helm upgrade $HELM_INSTALL_NAME {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --namespace $NFD_NS --set master.enable=false
 # Wait for NFD Worker to be ready
 kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
 # Enable the NFD Master
-helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS --set master.enable=true
+helm upgrade $HELM_INSTALL_NAME {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --namespace $NFD_NS --set master.enable=true
 ```
 
 ### From v0.14+
@@ -121,12 +139,11 @@ and the CRD `NodeFeature` is enabled by default.
 
 ```bash
 export NFD_NS=node-feature-discovery
-# Update Helm repository
-helm repo update
+export HELM_INSTALL_NAME=nfd
 # Install and upgrade CRD's
 kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/deployment/base/nfd-crds/nfd-api-crds.yaml
 # Install the new NFD deployment
-helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_NS
+helm upgrade $HELM_INSTALL_NAME {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --namespace $NFD_NS
 ```
 
 ## Uninstalling the chart
@@ -134,8 +151,7 @@ helm upgrade node-feature-discovery nfd/node-feature-discovery --namespace $NFD_
 To uninstall the `node-feature-discovery` deployment:
 
 ```bash
-export NFD_NS=node-feature-discovery
-helm uninstall node-feature-discovery --namespace $NFD_NS
+helm uninstall nfd --namespace node-feature-discovery
 ```
 
 The command removes all the Kubernetes components associated with the chart and
