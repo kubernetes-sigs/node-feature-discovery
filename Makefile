@@ -34,6 +34,7 @@ JEKYLL_OPTS := -d '$(SITE_DESTDIR)' $(if $(SITE_BASEURL),-b '$(SITE_BASEURL)',)
 VERSION := $(shell git describe --tags --dirty --always --match "v*")
 
 CHART_VERSION ?= $(shell echo $(VERSION) | cut -c2-)
+CHART_EXTRA_VERSIONS ?=
 
 IMAGE_REGISTRY ?= registry.k8s.io/nfd
 IMAGE_TAG_NAME ?= $(VERSION)
@@ -182,8 +183,10 @@ helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
 
 helm-push:
-	helm package deployment/helm/node-feature-discovery --version $(CHART_VERSION) --app-version $(IMAGE_TAG_NAME)
-	helm push node-feature-discovery-$(CHART_VERSION).tgz oci://${IMAGE_REGISTRY}/charts
+	for v in $(CHART_VERSION) $(CHART_EXTRA_VERSIONS); do \
+	    helm package deployment/helm/node-feature-discovery --version $$v --app-version $(IMAGE_TAG_NAME); \
+	    helm push node-feature-discovery-$$v.tgz oci://${IMAGE_REGISTRY}/charts; \
+	done
 	# Push artifacthub.io metadata
 	# Ref: https://artifacthub.io/docs/topics/repositories/helm-charts/#oci-support
 	oras push \
