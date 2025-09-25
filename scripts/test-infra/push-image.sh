@@ -16,6 +16,6 @@ gcloud auth configure-docker
 IMAGE_ALL_PLATFORMS=linux/amd64,linux/arm64 make push-all $MAKE_VARS
 
 go install helm.sh/helm/v3/cmd/helm@v3.17.3
-go install oras.land/oras/cmd/oras@v1.3.0
+go install oras.land/oras/cmd/oras@v1.2.3
 
 make helm-push $VERSION_OVERRIDE $MAKE_VARS
