@@ -4,7 +4,7 @@
 # ('vYYYYMMDD-') from _GIT_TAG in order to get a reproducible version and
 # container image tag
 if [ -z "$_GIT_TAG" ]; then
-    MAKE_VARS="IMAGE_EXTRA_TAG_NAMES=${_PULL_BASE_REF}"
+    MAKE_VARS="IMAGE_EXTRA_TAG_NAMES=${_PULL_BASE_REF} CHART_EXTRA_VERSIONS=0.0.0-${_PULL_BASE_REF}"
 else
     MAKE_VARS="VERSION=${_GIT_TAG:10}"
 fi
