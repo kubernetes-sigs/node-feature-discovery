@@ -57,5 +57,7 @@ scss: |
 # in the sidebar (top left corner of the page)
 release: master
 
-# Container image which to point to in the documentation
+# Container image and OCI Helm repo which to point to in the documentation
 container_image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+helm_oci_repo: oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery
+helm_chart_version: 0.0.0-master

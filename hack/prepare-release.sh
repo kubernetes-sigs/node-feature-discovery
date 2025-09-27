@@ -113,7 +113,9 @@ if [ -z "$no_patching" ]; then
     echo Patching docs/_config.yml
     sed -e s"/release:.*/release: $release/"  \
         -e s"/version:.*/version: $docs_version/" \
+        -e s"/helm_chart_version:.*/helm_chart_version: $semver/" \
         -e s"!container_image:.*!container_image: registry.k8s.io/nfd/node-feature-discovery:$release!" \
+        -e s"!helm_oci_repo:.*!helm_oci_repo: oci://registry.k8s.io/nfd/charts/node-feature-discovery!" \
         -i docs/_config.yml
 
     # Patch README
