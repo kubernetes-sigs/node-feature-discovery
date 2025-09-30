@@ -63,3 +63,23 @@ The `--registry-password-stdin` flag enables reading of registry password from s
 #### --registry-token-stdin
 
 The `--registry-token-stdin` flag enables reading of registry token from stdin.
+
+## export
+
+Export node features to stdout or a file.
+
+### features
+
+Export features of the system in JSON format to stdout or a file.
+
+#### --path
+
+The `--path` flag specifies a file to write the output to.
+
+### labels
+
+Export feature labels of the system in JSON format to stdout or a file.
+
+#### --path
+
+The `--path` flag specifies a file to write the output to.
