@@ -27,8 +27,8 @@ spec:
                       - nfd-worker
       containers:
         - name: nfd-worker
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-          imagePullPolicy: Always
+          image: registry.k8s.io/nfd/node-feature-discovery:v0.18.0
+          imagePullPolicy: IfNotPresent
           command:
             - "nfd-worker"
           args:
