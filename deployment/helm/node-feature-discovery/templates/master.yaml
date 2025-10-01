@@ -125,9 +125,6 @@ spec:
             {{- if .Values.master.enableTaints }}
             - "-enable-taints"
             {{- end }}
-            {{- if .Values.master.featureRulesController | kindIs "invalid" | not }}
-            - "-featurerules-controller={{ .Values.master.featureRulesController }}"
-            {{- end }}
             {{- if .Values.master.resyncPeriod }}
             - "-resync-period={{ .Values.master.resyncPeriod }}"
             {{- end }}
