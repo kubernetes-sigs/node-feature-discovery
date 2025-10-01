@@ -75,7 +75,6 @@ master:
   denyLabelNs: []
   extraLabelNs: []
   enableTaints: false
-  featureRulesController: null
   nfdApiParallelism: null
   deploymentAnnotations: {}
   replicaCount: 1
