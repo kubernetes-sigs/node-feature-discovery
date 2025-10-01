@@ -105,7 +105,7 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
         {{- with .Values.master.extraEnvs }}
-          {{- toYaml . | nindent 8 }}
+          {{- toYaml . | nindent 10 }}
         {{- end}}
           command:
             - "nfd-master"
