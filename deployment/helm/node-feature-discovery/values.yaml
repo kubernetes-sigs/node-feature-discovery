@@ -71,7 +71,6 @@ master:
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   port: 8080
   instance:
-  featureApi:
   resyncPeriod:
   denyLabelNs: []
   extraLabelNs: []
