@@ -1,7 +1,7 @@
 image:
-  repository: gcr.io/k8s-staging-nfd/node-feature-discovery
+  repository: registry.k8s.io/nfd/node-feature-discovery
   # This should be set to 'IfNotPresent' for released version
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # tag, if defined will use the given image tag, else Chart.AppVersion will be used
   # tag
 imagePullSecrets: []

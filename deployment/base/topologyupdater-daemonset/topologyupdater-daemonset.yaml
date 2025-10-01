@@ -17,8 +17,8 @@ spec:
       serviceAccount: nfd-topology-updater
       containers:
         - name: nfd-topology-updater
-          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
-          imagePullPolicy: Always
+          image: registry.k8s.io/nfd/node-feature-discovery:v0.18.0
+          imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:
               path: /healthz
