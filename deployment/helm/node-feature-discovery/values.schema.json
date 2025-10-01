@@ -1,0 +1,696 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "featureGates": {
+            "description": "[Feature gates](../reference/feature-gates.md) to enable/disable specific features.",
+            "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z]$": {
+                    "type": "string"
+                }
+            }
+        },
+        "fullnameOverride": {
+            "description": "Override a default fully qualified app name",
+            "type": "string"
+        },
+        "gc": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "[Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-gc pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
+                    "type": "object"
+                },
+                "annotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "deploymentAnnotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc  Deployment.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "dnsPolicy": {
+                    "description": "NFD gc pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).",
+                    "type": "string"
+                },
+                "enable": {
+                    "description": "Specifies whether nfd-gc should be deployed.",
+                    "type": "boolean"
+                },
+                "extraArgs": {
+                    "description": "Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
+                    "type": "array"
+                },
+                "extraEnvs": {
+                    "description": "Additional environment variables to set in the nfd-gc container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env",
+                    "type": "array"
+                },
+                "hostNetwork": {
+                    "description": "Run the container in the host's network namespace.",
+                    "type": "boolean"
+                },
+                "interval": {
+                    "description": "Time between periodic garbage collector runs.",
+                    "type": "string"
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-gc pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector",
+                    "type": "object"
+                },
+                "podDisruptionBudget": {
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.policy.v1.PodDisruptionBudgetSpec",
+                    "type": "object",
+                    "properties": {
+                        "enable": {
+                            "description": "Configure PodDisruptionBudget for the nfd-master Deployment.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "podSecurityContext": {
+                    "description": "[Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-gc pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
+                    "type": "object"
+                },
+                "port": {
+                    "description": "Port on which to serve http for metrics and healthz endpoints.",
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "rbac": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "description": "Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-gc.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "The number of desired replicas for the nfd-gc Deployment.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+                    "type": "object"
+                },
+                "revisionHistoryLimit": {
+                    "description": "Specifies the number of old history for the Deployment to retain to allow rollback.",
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account.",
+                            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                            "type": "object"
+                        },
+                        "create": {
+                            "description": "Specifies whether a service account should be created.",
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "description": "Name of the service account to use. If not set and create is true, a name is generated using the fullname template.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "tolerations": {
+                    "description": "[Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-gc pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations",
+                    "type": "array"
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "pullPolicy": {
+                    "description": "Image pull policy",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
+                "repository": {
+                    "description": "NFD image repository",
+                    "type": "string"
+                },
+                "tag": {
+                    "description": "NFD image tag. If not specified Chart.AppVersion will be used.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "description": "Image pull secrets. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod).",
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets",
+            "type": "array"
+        },
+        "master": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "[Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-master pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
+                    "type": "object"
+                },
+                "annotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "config": {
+                    "description": "NFD master [configuration](../reference/master-configuration-reference).",
+                    "type": "null"
+                },
+                "denyLabelNs": {
+                    "description": "Label namespaces to deny. Labels with these prefixes will not be published to the nodes.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "deploymentAnnotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master Deployment.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "dnsPolicy": {
+                    "description": "NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
+                    "type": "string"
+                },
+                "enable": {
+                    "description": "Specifies whether nfd-master should be deployed",
+                    "type": "boolean"
+                },
+                "enableTaints": {
+                    "description": "Enable node tainting.",
+                    "type": "boolean"
+                },
+                "extraArgs": {
+                    "description": "Additional [command line arguments](../reference/master-commandline-reference.md) to pass to nfd-master.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
+                    "type": "array"
+                },
+                "extraEnvs": {
+                    "description": "Additional environment variables to set in the nfd-master container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env",
+                    "type": "array"
+                },
+                "extraLabelNs": {
+                    "description": "Additional label namespaces to publish. Labels with these prefixes are allowed even if otherwise denied by `master.denyLabelNs`.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hostNetwork": {
+                    "description": "Run the container in the host's network namespace.",
+                    "type": "boolean"
+                },
+                "instance": {
+                    "description": "Instance name. Used to separate annotation namespaces for multiple parallel deployments.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "nfdApiParallelism": {
+                    "description": "The maximum number of concurrent node updates.",
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "nodeSelector": {
+                    "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-master pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector",
+                    "type": "object"
+                },
+                "podDisruptionBudget": {
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.policy.v1.PodDisruptionBudgetSpec",
+                    "type": "object",
+                    "properties": {
+                        "enable": {
+                            "description": "Configure PodDisruptionBudget for the nfd-master Deployment.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "podSecurityContext": {
+                    "description": "[Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-master pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
+                    "type": "object"
+                },
+                "port": {
+                    "description": "Port on which to serve http for metrics and healthz endpoints.",
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "rbac": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "description": "Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Number of the desired replicas for the nfd-master Deployment.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+                    "type": "object"
+                },
+                "resyncPeriod": {
+                    "description": "NFD API controller resync period. Time duration string (e.g. \"5m\", \"1h\", \"2h45m\").",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "revisionHistoryLimit": {
+                    "description": "Specifies the number of old ReplicaSets for the Deployment to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit)",
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "securityContext": {
+                    "description": "[SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-master container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext",
+                    "type": "object"
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account",
+                            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                            "type": "object"
+                        },
+                        "create": {
+                            "description": "Specifies whether a service account should be created.",
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "startupProbe": {
+                    "description": "Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "tolerations": {
+                    "description": "[Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-master pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "description": "Override the name of the chart",
+            "type": "string"
+        },
+        "namespaceOverride": {
+            "description": "Override the namespace to install the chart into. By default, the namespace is determined by Helm.",
+            "type": "string"
+        },
+        "postDeleteCleanup": {
+            "description": "Enable/disable the Helm post-delete hook.",
+            "type": "boolean"
+        },
+        "priorityClassName": {
+            "description": "The name of the PriorityClass to be used for the NFD pods.",
+            "type": "string"
+        },
+        "prometheus": {
+            "type": "object",
+            "properties": {
+                "enable": {
+                    "description": "Create PodMonitor object for enabling metrics collection by Prometheus Operator.",
+                    "type": "boolean"
+                },
+                "labels": {
+                    "description": "Labels to add to the PodMonitor object.",
+                    "type": "object"
+                },
+                "scrapeInterval": {
+                    "description": "Interval at which metrics are scraped.",
+                    "type": "string"
+                }
+            }
+        },
+        "topologyUpdater": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "[Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-topology-updater pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
+                    "type": "object"
+                },
+                "annotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-topology-updater pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "config": {
+                    "description": "Configuration for the topology updater. See the [configuration reference](../reference/topology-updater-configuration-reference.md) for details.",
+                    "type": "null"
+                },
+                "createCRDs": {
+                    "description": "Create CustomResourceDefinitions for the TopologyUpdater.",
+                    "type": "boolean"
+                },
+                "daemonsetAnnotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-topology-updater DaemonSet.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "dnsPolicy": {
+                    "description": "NFD topology updater pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).",
+                    "type": "string"
+                },
+                "enable": {
+                    "description": "Specifies whether nfd-topology-updater should be deployed.",
+                    "type": "boolean"
+                },
+                "extraArgs": {
+                    "description": "Additional [command line arguments](../reference/topology-updater-commandline-reference.md) to pass to nfd-topology-updater.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
+                    "type": "array"
+                },
+                "extraEnvs": {
+                    "description": "Additional environment variables to set in the nfd-topology-updater container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env",
+                    "type": "array"
+                },
+                "hostNetwork": {
+                    "description": "Run the container in the host's network namespace.",
+                    "type": "boolean"
+                },
+                "kubeletConfigPath": {
+                    "description": "Host path for the kubelet config file.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "kubeletPodResourcesSockPath": {
+                    "description": "Host path for the kubelet socket for podresources endpoint.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "kubeletStateDir": {
+                    "description": "The kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.",
+                    "type": "string"
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-topology-updater pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector",
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "[Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-topology-updater pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
+                    "type": "object"
+                },
+                "podSetFingerprint": {
+                    "description": "Enables compute and report of pod fingerprint in NRT objects.",
+                    "type": "boolean"
+                },
+                "port": {
+                    "description": "Port on which to serve http for metrics and healthz endpoints.",
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "rbac": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "description": "Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-topology-updater.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "resources": {
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+                    "type": "object"
+                },
+                "revisionHistoryLimit": {
+                    "description": "Specifies the number of old history for the DaemonSet to retain to allow rollback.",
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "securityContext": {
+                    "description": "[SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-topology-updater container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext",
+                    "type": "object"
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account.",
+                            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                            "type": "object"
+                        },
+                        "create": {
+                            "description": "Specifies whether a service account should be created.",
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "description": "Name or the service account to use. If not set and create is true, a name is generated using the fullname template.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "tolerations": {
+                    "description": "[Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-topology-updater pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations",
+                    "type": "array"
+                },
+                "updateInterval": {
+                    "description": "Time to sleep between CR updates. Non-positive value implies no CR update.",
+                    "type": "string"
+                },
+                "watchNamespace": {
+                    "description": "Namespace to watch pods, `*` for all namespaces.",
+                    "type": "string"
+                }
+            }
+        },
+        "worker": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "[Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-worker pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
+                    "type": "object"
+                },
+                "annotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "config": {
+                    "description": "NFD worker [configuration](../reference/worker-configuration-reference).",
+                    "type": "null"
+                },
+                "daemonsetAnnotations": {
+                    "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker DaemonSet.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                    "type": "object"
+                },
+                "dnsPolicy": {
+                    "description": "NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).",
+                    "type": "string"
+                },
+                "enable": {
+                    "description": "Specifies whether nfd-worker should be deployed",
+                    "type": "boolean"
+                },
+                "extraArgs": {
+                    "description": "Additional [command line arguments](../reference/worker-commandline-reference.md) to pass to nfd-worker.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
+                    "type": "array"
+                },
+                "extraEnvs": {
+                    "description": "Additional environment variables to set in the nfd-worker container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env",
+                    "type": "array"
+                },
+                "hostNetwork": {
+                    "description": "Run the container in the host's network namespace.",
+                    "type": "boolean"
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "mountUsrSrc": {
+                    "description": "Mount host path /user/src inside the container. Does not work on systems without /usr/src AND a read-only /usr.",
+                    "type": "boolean"
+                },
+                "nodeSelector": {
+                    "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-worker pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector",
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "[Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-worker pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
+                    "type": "object"
+                },
+                "port": {
+                    "description": "Port on which to serve http for metrics and healthz endpoints.",
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "priorityClassName": {
+                    "description": "The name of the PriorityClass to be used for the nfd-worker pods.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "rbac": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "description": "Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-worker.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
+                    "type": "object"
+                },
+                "resources": {
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+                    "type": "object"
+                },
+                "revisionHistoryLimit": {
+                    "description": "Specifies the number of old history for the DaemonSet to retain to allow rollback.",
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "securityContext": {
+                    "description": "[SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-worker container.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext",
+                    "type": "object"
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account",
+                            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations",
+                            "type": "object"
+                        },
+                        "create": {
+                            "description": "Specifies whether a service account should be created.",
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "description": "Name of the service account to use. If not set and create is true, a name is generated using the fullname template",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "tolerations": {
+                    "description": "[Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-worker pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations",
+                    "type": "array"
+                },
+                "updateStrategy": {
+                    "description": "Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.apps.v1.DaemonSetUpdateStrategy",
+                    "type": "object"
+                }
+            }
+        }
+    }
+}
