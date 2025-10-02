@@ -8,6 +8,6 @@
 
 [[redirects]]
     from = "https://nfd.sigs.k8s.io/*"
-    to = "https://release-0-17--kubernetes-sigs-nfd.netlify.app/:splat"
+    to = "https://release-0-18--kubernetes-sigs-nfd.netlify.app/:splat"
     status = 301
     force = true
