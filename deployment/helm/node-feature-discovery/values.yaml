@@ -19,7 +19,7 @@ fullnameOverride: ""
 namespaceOverride: ""
 
 # @schema patternProperties: {"^[a-zA-Z]$": {type: string}}
-# -- [Feature gates](../reference/feature-gates.md) to enable/disable specific features.
+# -- [Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features.
 # @section -- General
 featureGates: {}
 
@@ -29,11 +29,13 @@ priorityClassName: ""
 # -- Enable/disable the Helm post-delete hook.
 postDeleteCleanup: true
 
+#
+# NFD-Master configuration
 master:
   # -- Specifies whether nfd-master should be deployed
   enable: true
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](../reference/master-commandline-reference.md) to pass to nfd-master.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-commandline-reference) to pass to nfd-master.
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
   # -- Additional environment variables to set in the nfd-master container.
@@ -43,7 +45,7 @@ master:
   # @enum: [Default, ClusterFirst, ClusterFirstWithHostNet, None]
   # -- NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
   dnsPolicy: ClusterFirstWithHostNet
-  # -- NFD master [configuration](../reference/master-configuration-reference).
+  # -- NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference).
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
     # extraLabelNs: ["added.ns.io","added.kubernets.io"]
@@ -202,59 +204,60 @@ master:
               - key: "node-role.kubernetes.io/control-plane"
                 operator: In
                 values: [""]
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
   # -- Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes).
   startupProbe:
-    # The number of seconds after the container has started before probe is initiated.
-    #initialDelaySeconds: 0
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # @schema hidden
-    # The number of consecutive failures for the probe before considering the pod as not ready.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
+    initialDelaySeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of consecutive failures for the probe before considering the pod as not ready.
     failureThreshold: 30
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
-  livenessProbe: {}
-    # The number of seconds after the container has started before probe is initiated.
-    #initialDelaySeconds: 0
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # The number of consecutive failures for the probe before considering the pod as not ready.
-    #failureThreshold: 3
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
+  livenessProbe:
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
+    initialDelaySeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   readinessProbe:
-    # The number of seconds after the container has started before probe is initiated.
-    #initialDelaySeconds: 0
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # @schema hidden
-    # The number of consecutive failures for the probe before considering the pod as not ready.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
+    initialDelaySeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    successThreshold:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of consecutive failures for the probe before considering the pod as not ready.
     failureThreshold: 10
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
 
+#
+# NFD-Worker configuration
+#
 worker:
   # -- Specifies whether nfd-worker should be deployed
   enable: true
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](../reference/worker-commandline-reference.md) to pass to nfd-worker.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-commandline-reference) to pass to nfd-worker.
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
   # -- Additional environment variables to set in the nfd-worker container.
@@ -264,7 +267,7 @@ worker:
   # @enum: [Default, ClusterFirst, ClusterFirstWithHostNet, None]
   # -- NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).
   dnsPolicy: ClusterFirstWithHostNet
-  # -- NFD worker [configuration](../reference/worker-configuration-reference).
+  # -- NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference).
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:
@@ -529,39 +532,39 @@ worker:
     readOnlyRootFilesystem: true
     # @schema hidden
     runAsNonRoot: true
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
+
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   livenessProbe:
-    # @schema hidden
-    # The number of seconds after the container has started before probe is initiated.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
     initialDelaySeconds: 10
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # The number of consecutive failures for the probe before considering the pod as not ready.
-    #failureThreshold: 3
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   readinessProbe:
-    # @schema hidden
-    # The number of seconds after the container has started before probe is initiated.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
     initialDelaySeconds: 5
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # @schema hidden
-    # The number of consecutive failures for the probe before considering the pod as not ready.
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    successThreshold:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of consecutive failures for the probe before considering the pod as not ready.
     failureThreshold: 10
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
+
   serviceAccount:
     # -- Specifies whether a service account should be created.
     create: true
@@ -612,8 +615,11 @@ worker:
   # -- Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)
   updateStrategy: {}
 
+#
+# NFD-Topology-Updater configuration
+#
 topologyUpdater:
-  # -- Configuration for the topology updater. See the [configuration reference](../reference/topology-updater-configuration-reference.md) for details.
+  # -- Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details.
   config: ### <NFD-TOPOLOGY-UPDATER-CONF-START-DO-NOT-REMOVE>
     ## key = node name, value = list of resources to be excluded.
     ## use * to exclude from all nodes.
@@ -629,7 +635,7 @@ topologyUpdater:
   # -- Create CustomResourceDefinitions for the TopologyUpdater.
   createCRDs: false
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](../reference/topology-updater-commandline-reference.md) to pass to nfd-topology-updater.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater.
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
   # -- Additional environment variables to set in the nfd-topology-updater container.
@@ -686,39 +692,37 @@ topologyUpdater:
     # @schema hidden
     runAsUser: 0
 
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   livenessProbe:
-    # @schema hidden
-    # The number of seconds after the container has started before probe is initiated.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
     initialDelaySeconds: 10
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # The number of consecutive failures for the probe before considering the pod as not ready.
-    #failureThreshold: 3
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   readinessProbe:
-    # @schema hidden
-    # The number of seconds after the container has started before probe is initiated.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
     initialDelaySeconds: 5
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # @schema hidden
-    # The number of consecutive failures for the probe before considering the pod as not ready.
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    successThreshold:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of consecutive failures for the probe before considering the pod as not ready.
     failureThreshold: 10
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
 
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
   resources:
@@ -749,11 +753,14 @@ topologyUpdater:
   # -- Enables compute and report of pod fingerprint in NRT objects.
   podSetFingerprint: true
 
+#
+# NFD-GC configuration
+#
 gc:
   # -- Specifies whether nfd-gc should be deployed.
   enable: true
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/gc-commandline-reference) to pass to nfd-gc.
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
   # -- Additional environment variables to set in the nfd-gc container.
@@ -783,39 +790,38 @@ gc:
   # -- [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-gc pods.
   podSecurityContext: {}
 
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   livenessProbe:
-    # @schema hidden
-    # The number of seconds after the container has started before probe is initiated.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
     initialDelaySeconds: 10
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # The number of consecutive failures for the probe before considering the pod as not ready.
-    #failureThreshold: 3
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   readinessProbe:
-    # @schema hidden
-    # The number of seconds after the container has started before probe is initiated.
+    # @schema type: [integer, null]
+    # -- The number of seconds after the container has started before probe is initiated.
     initialDelaySeconds: 5
-    # The number of seconds after which the probe times out.
-    #timeoutSeconds: 1
-    # How often (in seconds) to perform the probe.
-    #periodSeconds: 10
-    # Minimum consecutive successes for the probe before considering the pod as ready.
-    #successThreshold: 1
-    # The number of consecutive failures for the probe before considering the pod as not ready.
-    #failureThreshold: 3
-    # Number of seconds given to the pod to terminate gracefully upon probe failure.
-    #terminationGracePeriodSeconds:
-  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of seconds after which the probe times out.
+    timeoutSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- How often (in seconds) to perform the probe.
+    periodSeconds:
+    # @schema type: [integer, null]; minimum: 1
+    # -- Minimum consecutive successes for the probe before considering the pod as ready.
+    successThreshold:
+    # @schema type: [integer, null]; minimum: 1
+    # -- The number of consecutive failures for the probe before considering the pod as not ready.
+    failureThreshold:
+
   resources:
     # @schema hidden
     # -- Resource [limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the nfd-gc container.
@@ -858,6 +864,9 @@ gc:
   # -- Specifies the number of old history for the Deployment to retain to allow rollback.
   revisionHistoryLimit:
 
+#
+# Prometheus configuration
+#
 prometheus:
   # -- Create PodMonitor object for enabling metrics collection by Prometheus Operator.
   enable: false

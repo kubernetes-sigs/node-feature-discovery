@@ -3,7 +3,7 @@
     "type": "object",
     "properties": {
         "featureGates": {
-            "description": "[Feature gates](../reference/feature-gates.md) to enable/disable specific features.",
+            "description": "[Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features.",
             "type": "object",
             "patternProperties": {
                 "^[a-zA-Z]$": {
@@ -42,7 +42,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](../reference/gc-commandline-reference.md) to pass to nfd-gc.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/gc-commandline-reference) to pass to nfd-gc.",
                     "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -61,8 +61,40 @@
                 },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "nodeSelector": {
                     "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-gc pods.",
@@ -101,15 +133,54 @@
                 },
                 "readinessProbe": {
                     "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "The number of consecutive failures for the probe before considering the pod as not ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "successThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "replicaCount": {
                     "description": "The number of desired replicas for the nfd-gc Deployment.",
                     "type": "integer"
                 },
                 "resources": {
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
                     "type": "object"
                 },
                 "revisionHistoryLimit": {
@@ -191,7 +262,7 @@
                     "type": "object"
                 },
                 "config": {
-                    "description": "NFD master [configuration](../reference/master-configuration-reference).",
+                    "description": "NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference).",
                     "type": "null"
                 },
                 "denyLabelNs": {
@@ -219,7 +290,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](../reference/master-commandline-reference.md) to pass to nfd-master.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-commandline-reference) to pass to nfd-master.",
                     "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -248,8 +319,40 @@
                 },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "nfdApiParallelism": {
                     "description": "The maximum number of concurrent node updates.",
@@ -297,8 +400,48 @@
                 },
                 "readinessProbe": {
                     "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "The number of consecutive failures for the probe before considering the pod as not ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "successThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "replicaCount": {
                     "description": "Number of the desired replicas for the nfd-master Deployment.",
@@ -350,8 +493,40 @@
                 },
                 "startupProbe": {
                     "description": "Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "The number of consecutive failures for the probe before considering the pod as not ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "tolerations": {
                     "description": "[Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-master pods.",
@@ -410,7 +585,7 @@
                     "type": "object"
                 },
                 "config": {
-                    "description": "Configuration for the topology updater. See the [configuration reference](../reference/topology-updater-configuration-reference.md) for details.",
+                    "description": "Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details.",
                     "type": "null"
                 },
                 "createCRDs": {
@@ -431,7 +606,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](../reference/topology-updater-commandline-reference.md) to pass to nfd-topology-updater.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater.",
                     "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -464,8 +639,40 @@
                 },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "nodeSelector": {
                     "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-topology-updater pods.",
@@ -498,8 +705,48 @@
                 },
                 "readinessProbe": {
                     "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "The number of consecutive failures for the probe before considering the pod as not ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "successThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "resources": {
                     "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
@@ -567,7 +814,7 @@
                     "type": "object"
                 },
                 "config": {
-                    "description": "NFD worker [configuration](../reference/worker-configuration-reference).",
+                    "description": "NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference).",
                     "type": "null"
                 },
                 "daemonsetAnnotations": {
@@ -584,7 +831,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](../reference/worker-commandline-reference.md) to pass to nfd-worker.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-commandline-reference) to pass to nfd-worker.",
                     "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -599,8 +846,40 @@
                 },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "mountUsrSrc": {
                     "description": "Mount host path /user/src inside the container. Does not work on systems without /usr/src AND a read-only /usr.",
@@ -640,8 +919,48 @@
                 },
                 "readinessProbe": {
                     "description": "Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).",
-                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.Probe",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "failureThreshold": {
+                            "description": "The number of consecutive failures for the probe before considering the pod as not ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "initialDelaySeconds": {
+                            "description": "The number of seconds after the container has started before probe is initiated.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "periodSeconds": {
+                            "description": "How often (in seconds) to perform the probe.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "successThreshold": {
+                            "description": "Minimum consecutive successes for the probe before considering the pod as ready.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        },
+                        "timeoutSeconds": {
+                            "description": "The number of seconds after which the probe times out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    }
                 },
                 "resources": {
                     "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
