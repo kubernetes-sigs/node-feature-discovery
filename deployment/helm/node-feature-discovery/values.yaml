@@ -71,12 +71,10 @@ master:
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
   port: 8080
   instance:
-  featureApi:
   resyncPeriod:
   denyLabelNs: []
   extraLabelNs: []
   enableTaints: false
-  featureRulesController: null
   nfdApiParallelism: null
   deploymentAnnotations: {}
   replicaCount: 1
@@ -595,7 +593,7 @@ gc:
   podDisruptionBudget:
     enable: false
     minAvailable: 1
-    unhealthyPodEvictionPolicy: Always
+    unhealthyPodEvictionPolicy: AlwaysAllow
 
   # specify how many old ReplicaSets for the Deployment to retain.
   revisionHistoryLimit:

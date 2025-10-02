@@ -12,6 +12,6 @@ spec:
     matchLabels:
       {{- include "node-feature-discovery.selectorLabels" . | nindent 6 }}
       role: gc
-{{- toYaml (omit .Values.gc.podDisruptionBudget "enable") | indent 2 }}
+{{- toYaml (omit .Values.gc.podDisruptionBudget "enable") | nindent 2 }}
 {{- end }}
 {{- end }}
