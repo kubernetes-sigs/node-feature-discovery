@@ -19,28 +19,35 @@ Continue to:
 
 ## Quick-start -- the short-short version
 
-```bash
-$ kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
-  namespace/node-feature-discovery created
-  serviceaccount/nfd-master created
-  clusterrole.rbac.authorization.k8s.io/nfd-master created
-  clusterrolebinding.rbac.authorization.k8s.io/nfd-master created
-  configmap/nfd-worker-conf created
-  deployment.apps/nfd-master created
-  daemonset.apps/nfd-worker created
+### Helm
 
+```bash
+helm install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }}
+```
+
+### Kustomize
+
+Alternatively, you can deploy using kubectl and kustomize:
+
+```bash
+kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+```
+
+### Verify the deployment
+
+```bash
 $ kubectl -n node-feature-discovery get all
   NAME                              READY   STATUS    RESTARTS   AGE
-  pod/nfd-master-555458dbbc-sxg6w   1/1     Running   0          56s
-  pod/nfd-worker-mjg9f              1/1     Running   0          17s
+  pod/nfd-gc-565fc85d9b-94jpj       1/1     Running   0          18s
+  pod/nfd-master-6796d89d7b-qccrq   1/1     Running   0          18s
+  pod/nfd-worker-nwdp6              1/1     Running   0          18s
 ...
 
-$ kubectl get nodes -o json | jq '.items[].metadata.labels'
+$ kubectl get no -o json | jq ".items[].metadata.labels"
   {
     "kubernetes.io/arch": "amd64",
     "kubernetes.io/os": "linux",
     "feature.node.kubernetes.io/cpu-cpuid.ADX": "true",
     "feature.node.kubernetes.io/cpu-cpuid.AESNI": "true",
 ...
-
 ```
