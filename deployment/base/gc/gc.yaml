@@ -17,8 +17,8 @@ spec:
       serviceAccount: nfd-gc
       containers:
         - name: nfd-gc
-          image: registry.k8s.io/nfd/node-feature-discovery:v0.18.0
-          imagePullPolicy: IfNotPresent
+          image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+          imagePullPolicy: Always
           livenessProbe:
             httpGet:
               path: /healthz

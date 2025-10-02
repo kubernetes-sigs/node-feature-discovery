@@ -41,7 +41,7 @@ remote_theme: jv-conseil/jekyll-theme-read-the-docs@ce7ed5ad2184b36244a50adbeea2
 #   - vendor/ruby/
 
 # Document versioning
-version: v0.18
+version: master
 display_version_list: true
 
 # Customize page width (make it wider) for large screens
@@ -55,9 +55,9 @@ scss: |
 # Release is the full released version number. Used to make external links to
 # point to the correct blobs in the Github repo. This is also the version shown
 # in the sidebar (top left corner of the page)
-release: v0.18.0
+release: master
 
 # Container image and OCI Helm repo which to point to in the documentation
-container_image: registry.k8s.io/nfd/node-feature-discovery:v0.18.0
-helm_oci_repo: oci://registry.k8s.io/nfd/charts/node-feature-discovery
-helm_chart_version: 0.18.0
+container_image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
+helm_oci_repo: oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery
+helm_chart_version: 0.0.0-master
