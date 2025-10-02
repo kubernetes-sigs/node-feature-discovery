@@ -593,7 +593,7 @@ gc:
   podDisruptionBudget:
     enable: false
     minAvailable: 1
-    unhealthyPodEvictionPolicy: Always
+    unhealthyPodEvictionPolicy: AlwaysAllow
 
   # specify how many old ReplicaSets for the Deployment to retain.
   revisionHistoryLimit:
