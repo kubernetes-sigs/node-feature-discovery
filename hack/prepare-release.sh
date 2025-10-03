@@ -145,6 +145,7 @@ if [ -z "$no_patching" ]; then
     sed -e s"!.*metadata\.oci_repo.*!{{- define \"metadata.oci_repo\" -}}oci://registry.k8s.io/nfd/charts/node-feature-discovery!" \
         -e s"/.*metadata\.oci_tag.*/{{- define \"metadata.oci_tag\" -}}$semver/" \
         -e s"/.*metadata\.docs_version.*/{{- define \"metadata.docs_version\" -}}$docs_version/" \
+        -e s"/.*metadata\.nfd_release.*/{{- define \"metadata.nfd_release\" -}}$release/" \
         -i deployment/helm/node-feature-discovery/_metadata.gotmpl
     make helm-docs
 

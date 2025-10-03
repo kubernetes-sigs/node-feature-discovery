@@ -6,15 +6,4 @@
 {{ template "chart.sourcesSection" . }}
 {{ template "chart.requirementsSection" . }}
 
-## Installing the chart
-
-```bash
-helm install nfd --namespace node-feature-discovery --create-namespace {{ template "metadata.oci_repo" . }} --version {{ template "metadata.oci_tag" . }}
-```
-
-See
-[NFD documentation](https://kubernetes-sigs.github.io/node-feature-discovery/{{ template "metadata.docs_version" . }}/deployment/helm.html)
-for more detailed deployment instructions.
-
-{{ template "chart.valuesSection" . }}
-{{ template "helm-docs.versionFooter" . }}
+{{ template "common" . }}

@@ -187,10 +187,14 @@ helm-schema:
 
 .PHONY: helm-docs
 helm-docs:
+	cd deployment/helm/node-feature-discovery/ && \
 	go tool helm-docs \
-	    -c deployment/helm/ \
-	    -t README.md.gotmpl -t _metadata.gotmpl \
-	    --sort-values-order file
+	    -t README.md.gotmpl -t _metadata.gotmpl -t _templates.gotmpl \
+	    --sort-values-order file && \
+	go tool helm-docs \
+	    -t ../../../docs/deployment/helm.md.gotmpl -t _metadata-site.gotmpl -t _templates.gotmpl \
+	    --sort-values-order file \
+	    -o ../../../docs/deployment/helm.md
 
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/

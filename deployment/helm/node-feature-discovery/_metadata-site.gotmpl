@@ -1,0 +1,15 @@
+{{- define "metadata.oci_repo" -}}
+{{ "{{ site.helm_oci_repo }}" }}
+{{- end -}}
+
+{{- define "metadata.oci_tag" -}}
+{{ "{{ site.helm_chart_version }}" }}
+{{- end -}}
+
+{{- define "metadata.docs_version" -}}
+{{ "{{ site.version }}" }}
+{{- end -}}
+
+{{- define "metadata.nfd_release" -}}
+{{ "{{ site.release }}" }}
+{{- end -}}
