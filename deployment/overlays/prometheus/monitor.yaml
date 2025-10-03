@@ -10,7 +10,7 @@ spec:
     - honorLabels: true
       interval: 10s
       path: /metrics
-      port: metrics
+      port: http
       scheme: http
   namespaceSelector:
     matchNames:
