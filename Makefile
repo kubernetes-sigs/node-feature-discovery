@@ -179,6 +179,16 @@ mdlint:
 	ruby:slim \
 	/workdir/scripts/test-infra/mdlint.sh
 
+.PHONY: helm-schema
+helm-schema:
+	@if ! helm schema -h >/dev/null 2>&1; then \
+	    echo "ERROR: helm schema command not found! Please install the plugin with:"; \
+	    echo "       helm plugin install https://github.com/losisin/helm-values-schema-json.git"; \
+	    exit 1; \
+	fi
+	cd deployment/helm/node-feature-discovery/ && \
+	helm schema
+
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
 
