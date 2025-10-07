@@ -61,6 +61,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -70,6 +71,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -92,7 +94,13 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
+	github.com/knadh/koanf/maps v0.1.2 // indirect
+	github.com/knadh/koanf/providers/file v1.2.0 // indirect
+	github.com/knadh/koanf/providers/posflag v1.0.1 // indirect
+	github.com/knadh/koanf/providers/structs v1.0.0 // indirect
+	github.com/knadh/koanf/v2 v2.2.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/losisin/helm-values-schema-json/v2 v2.3.0 // indirect
 	github.com/magiconair/properties v1.8.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -230,6 +238,7 @@ replace (
 )
 
 tool (
+	github.com/losisin/helm-values-schema-json/v2
 	github.com/norwoodj/helm-docs/cmd/helm-docs
 	github.com/vektra/mockery/v2
 	k8s.io/code-generator
