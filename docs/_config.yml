@@ -55,9 +55,9 @@ scss: |
 # Release is the full released version number. Used to make external links to
 # point to the correct blobs in the Github repo. This is also the version shown
 # in the sidebar (top left corner of the page)
-release: v0.18.0
+release: v0.18.1
 
 # Container image and OCI Helm repo which to point to in the documentation
-container_image: registry.k8s.io/nfd/node-feature-discovery:v0.18.0
+container_image: registry.k8s.io/nfd/node-feature-discovery:v0.18.1
 helm_oci_repo: oci://registry.k8s.io/nfd/charts/node-feature-discovery
-helm_chart_version: 0.18.0
+helm_chart_version: 0.18.1
