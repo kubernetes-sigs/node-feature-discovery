@@ -10,8 +10,18 @@ Minimal steps to deploy latest released version of NFD in your cluster.
 
 ## Installation
 
-Deploy with kustomize -- creates a new namespace, service and required RBAC
-rules and deploys nfd-master and nfd-worker daemons.
+NFD installation consists of CRDs, RBAC rules, Deployments of the nfd-master
+and nfd-gc daemons and DaemonSet of the nfd-worker daemon.
+
+### Helm
+
+```bash
+helm install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }}
+```
+
+### Kustomize
+
+Alternatively, NFD can be deploy with kubectl/kustomize.
 
 ```bash
 kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
@@ -19,15 +29,16 @@ kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/depl
 
 ## Verify
 
-Wait until NFD master and NFD worker are running.
+Wait until NFD pods are running.
 
 ```bash
 $ kubectl -n node-feature-discovery get ds,deploy
-NAME                         DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
-daemonset.apps/nfd-worker    2         2         2       2            2           <none>          10s
+NAME                                               DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+daemonset.apps/nfd-node-feature-discovery-worker   2         2         2       2            2           <none>          20s
 
-NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/nfd-master   1/1     1            1           17s
+NAME                                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nfd-node-feature-discovery-gc       1/1     1            1           20s
+deployment.apps/nfd-node-feature-discovery-master   1/1     1            1           20s
 
 ```
 
@@ -78,8 +89,16 @@ feature-dependent-pod   1/1     Running   0          23s   10.36.0.4   node-2   
 
 ### Deploy nfd-topology-updater
 
-To deploy nfd-topology-updater use the `topologyupdater` kustomize
-overlay.
+#### Deploy nfd-topology-updater with Helm
+
+```bash
+helm upgrade --install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --set topologyUpdater.enable=true
+```
+
+#### Deploy nfd-topology-updater with Kustomize
+
+There's a separate overlay that deploys nfd-topology-updater in addition to the
+default NFD components.
 
 ```bash
 kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/topologyupdater?ref={{ site.release }}"
@@ -91,9 +110,9 @@ Wait until nfd-topology-updater is running.
 
 ```bash
 $ kubectl -n node-feature-discovery get ds
-NAME                                  DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
-daemonset.apps/nfd-topology-updater   2         2         2       2            2           <none>          5s
-
+NAME                                                         DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+daemonset.apps/nfd-node-feature-discovery-topology-updater   2         2         2       2            2           <none>          20s
+...
 ```
 
 Check that the NodeResourceTopology objects are created
