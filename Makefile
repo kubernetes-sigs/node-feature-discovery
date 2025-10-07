@@ -182,13 +182,8 @@ mdlint:
 
 .PHONY: helm-schema
 helm-schema:
-	@if ! helm schema -h >/dev/null 2>&1; then \
-	    echo "ERROR: helm schema command not found! Please install the plugin with:"; \
-	    echo "       helm plugin install https://github.com/losisin/helm-values-schema-json.git"; \
-	    exit 1; \
-	fi
 	cd deployment/helm/node-feature-discovery/ && \
-	helm schema
+	go tool helm-values-schema-json
 
 .PHONY: helm-docs
 helm-docs:

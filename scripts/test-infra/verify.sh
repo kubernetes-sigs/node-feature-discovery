@@ -71,7 +71,6 @@ done
 
 # Check that the Helm validation schema is in sync
 echo "Verifying Helm values schema"
-helm plugin install --version 2.3.0 https://github.com/losisin/helm-values-schema-json.git
 make helm-schema
 if ! git diff --quiet; then
     echo "Helm validation schema is not in sync. Run 'make helm-schema' to update"
