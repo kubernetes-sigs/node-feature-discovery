@@ -180,6 +180,9 @@ mdlint:
 	ruby:slim \
 	/workdir/scripts/test-infra/mdlint.sh
 
+.PHONY: helm-generate
+helm-generate: helm-lint helm-docs helm-schema
+
 .PHONY: helm-schema
 helm-schema:
 	cd deployment/helm/node-feature-discovery/ && \
