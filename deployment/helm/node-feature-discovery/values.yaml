@@ -39,6 +39,15 @@ priorityClassName: ""
 postDeleteCleanup: true
 
 #
+# Global configuration for NFD used as a sub-chart
+#
+global:
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets
+  # -- If `imagePullSecrets` is specified, it takes precedence over `global.imagePullSecrets`. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod).
+  # @section -- Global
+  imagePullSecrets: []
+
+#
 # NFD-Master configuration
 #
 master:

@@ -218,6 +218,16 @@
                 }
             }
         },
+        "global": {
+            "type": "object",
+            "properties": {
+                "imagePullSecrets": {
+                    "description": "If `imagePullSecrets` is specified, it takes precedence over `global.imagePullSecrets`. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod).",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets",
+                    "type": "array"
+                }
+            }
+        },
         "image": {
             "type": "object",
             "properties": {
