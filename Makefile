@@ -17,6 +17,7 @@ BASE_IMAGE_MINIMAL ?= scratch
 # same site url than the "host" it binds to. Thus, all the links will be
 # broken if we'd bind to 0.0.0.0
 RUBY_IMAGE_VERSION := 3.3
+TOOOLCHAIN_MODE ?= $(shell $(GO_CMD) env GOVERSION)+auto
 JEKYLL_ENV ?= development
 SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" \
 	$(shell [ -t 0 ] && echo '-t') \
@@ -211,9 +212,10 @@ helm-push:
 	    --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
 	    artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
 
+# TODO: Remove TOOOLCHAIN_MODE variable when fixed in upstream Go toolchain. Ref: https://github.com/golang/go/issues/75031
 test:
-	$(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
-	cd api/nfd && $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./...
+	GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
+	cd api/nfd && GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./...
 
 e2e-test:
 	@if [ -z ${KUBECONFIG} ]; then echo "[ERR] KUBECONFIG missing, must be defined"; exit 1; fi
