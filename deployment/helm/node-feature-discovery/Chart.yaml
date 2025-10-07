@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: v0.18.0
+appVersion: v0.18.1
 icon: https://kubernetes-sigs.github.io/node-feature-discovery/v0.18/assets/images/nfd/favicon.svg
 description: |
   Detects hardware features available on each node in a Kubernetes cluster, and advertises
