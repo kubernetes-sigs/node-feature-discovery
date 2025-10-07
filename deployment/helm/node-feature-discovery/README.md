@@ -39,6 +39,12 @@ for more detailed deployment instructions.
 | priorityClassName | string | `""` | The name of the PriorityClass to be used for the NFD pods. |
 | postDeleteCleanup | bool | `true` | Enable/disable the Helm post-delete hook. |
 
+### Global
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| global.imagePullSecrets | list | `[]` | If `imagePullSecrets` is specified, it takes precedence over `global.imagePullSecrets`. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod). |
+
 ### NFD-Master
 
 | Key | Type | Default | Description |
