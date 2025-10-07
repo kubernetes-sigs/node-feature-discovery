@@ -17,8 +17,8 @@ curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring 
 curl -Os https://uploader.codecov.io/latest/linux/codecov
 chmod +x codecov
 
-# TODO: re-enable logcheck when https://github.com/kubernetes-sigs/logtools/pull/31 is merged
-#go install sigs.k8s.io/logtools/logcheck@v0.8.1
+# TODO: update logcheck version when there is a new release (newer than v0.9.0)
+go install sigs.k8s.io/logtools/logcheck@v0.9.1-0.20251007102500-d35c84c015fe
 
 # Run verify steps
 echo "Checking gofmt"
@@ -30,9 +30,8 @@ make ci-lint
 echo "Running Helm lint"
 make helm-lint
 
-# TODO: re-enable logcheck when https://github.com/kubernetes-sigs/logtools/pull/31 is merged
-#echo "Running logcheck"
-#logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./pkg/...  ./source/...
+echo "Running logcheck"
+logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./pkg/...  ./source/...
 
 echo "Running unit tests"
 make test
