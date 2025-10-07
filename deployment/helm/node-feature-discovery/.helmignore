@@ -21,3 +21,6 @@
 .idea/
 *.tmproj
 .vscode/
+# Sources for autogeneration
+README.md.gotmpl
+_metadata.gotmpl

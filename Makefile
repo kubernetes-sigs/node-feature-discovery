@@ -189,6 +189,13 @@ helm-schema:
 	cd deployment/helm/node-feature-discovery/ && \
 	helm schema
 
+.PHONY: helm-docs
+helm-docs:
+	go tool helm-docs \
+	    -c deployment/helm/ \
+	    -t README.md.gotmpl -t _metadata.gotmpl \
+	    --sort-values-order file
+
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
 
