@@ -72,7 +72,7 @@ done
 echo "Verifying Helm values schema"
 make helm-schema
 if ! git diff --quiet; then
-    echo "Helm validation schema is not in sync. Run 'make helm-schema' to update"
+    echo "Helm validation schema is not in sync. Run 'make helm-generate' to update"
     exit 1
 fi
 
@@ -80,6 +80,6 @@ fi
 echo "Verifying Helm README"
 make helm-docs
 if ! git diff --quiet; then
-    echo "Helm README is not in sync. Run 'make helm-docs' to update"
+    echo "Helm README is not in sync. Run 'make helm-generate' to update"
     exit 1
 fi
