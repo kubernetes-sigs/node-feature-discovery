@@ -24,3 +24,5 @@
 # Sources for autogeneration
 README.md.gotmpl
 _metadata.gotmpl
+_metadata-site.gotmpl
+_templates.gotmpl
