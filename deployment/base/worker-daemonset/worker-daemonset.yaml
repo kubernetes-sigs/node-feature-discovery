@@ -19,6 +19,11 @@ spec:
         - name: nfd-worker
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
           imagePullPolicy: Always
+          env:
+          - name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
           livenessProbe:
             httpGet:
               path: /healthz
