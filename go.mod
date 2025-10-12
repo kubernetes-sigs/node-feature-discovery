@@ -23,7 +23,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
 	golang.org/x/net v0.46.0
-	golang.org/x/time v0.13.0
+	golang.org/x/time v0.14.0
 	google.golang.org/grpc v1.75.1
 	k8s.io/api v0.34.1
 	k8s.io/apiextensions-apiserver v0.34.1
