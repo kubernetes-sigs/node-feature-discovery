@@ -69,6 +69,7 @@ master:
   # -- NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
   # @section -- NFD-Master
   dnsPolicy: ClusterFirstWithHostNet
+  # @schema type: [object, null]
   # -- NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference).
   # @section -- NFD-Master
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
@@ -341,6 +342,7 @@ worker:
   # -- NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).
   # @section -- NFD-Worker
   dnsPolicy: ClusterFirstWithHostNet
+  # @schema type: [object, null]
   # -- NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference).
   # @section -- NFD-Worker
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
@@ -725,6 +727,7 @@ worker:
 # NFD-Topology-Updater configuration
 #
 topologyUpdater:
+  # @schema type: [object, null]
   # -- Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details.
   # @section -- NFD-Topology-Updater
   config: ### <NFD-TOPOLOGY-UPDATER-CONF-START-DO-NOT-REMOVE>

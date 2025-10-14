@@ -273,7 +273,10 @@
                 },
                 "config": {
                     "description": "NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference).",
-                    "type": "null"
+                    "type": [
+                        "object",
+                        "null"
+                    ]
                 },
                 "denyLabelNs": {
                     "description": "Label namespaces to deny. Labels with these prefixes will not be published to the nodes.",
@@ -596,7 +599,10 @@
                 },
                 "config": {
                     "description": "Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details.",
-                    "type": "null"
+                    "type": [
+                        "object",
+                        "null"
+                    ]
                 },
                 "createCRDs": {
                     "description": "Create CustomResourceDefinitions for the TopologyUpdater.",
@@ -825,7 +831,10 @@
                 },
                 "config": {
                     "description": "NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference).",
-                    "type": "null"
+                    "type": [
+                        "object",
+                        "null"
+                    ]
                 },
                 "daemonsetAnnotations": {
                     "description": "[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker DaemonSet.",
