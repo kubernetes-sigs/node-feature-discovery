@@ -19,6 +19,7 @@ package kubeconf
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	kubeletconfigscheme "k8s.io/kubernetes/pkg/kubelet/apis/config/scheme"
@@ -54,4 +55,39 @@ func GetKubeletConfigFromLocalFile(kubeletConfigPath string) (*kubeletconfigv1be
 	}
 
 	return kubeletConfig, nil
+}
+
+func GetKubeletConfigFunc(uri, apiAuthTokenFile string) (func() (*kubeletconfigv1beta1.KubeletConfiguration, error), error) {
+	u, err := url.ParseRequestURI(uri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse -kubelet-config-uri: %w", err)
+	}
+
+	// init kubelet API client
+	var klConfig *kubeletconfigv1beta1.KubeletConfiguration
+	switch u.Scheme {
+	case "file":
+		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+			klConfig, err = GetKubeletConfigFromLocalFile(u.Path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read kubelet config: %w", err)
+			}
+			return klConfig, err
+		}, nil
+	case "https":
+		restConfig, err := InsecureConfig(u.String(), apiAuthTokenFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
+		}
+
+		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+			klConfig, err = GetKubeletConfiguration(restConfig)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get kubelet config from configz endpoint: %w", err)
+			}
+			return klConfig, nil
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unsupported URI scheme: %v", u.Scheme)
 }
