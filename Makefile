@@ -8,7 +8,7 @@ IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
-BUILDER_IMAGE ?= golang:1.25.1-trixie
+BUILDER_IMAGE ?= golang:1.25.3-trixie
 BASE_IMAGE_FULL ?= debian:bookworm-slim
 BASE_IMAGE_MINIMAL ?= scratch
 
