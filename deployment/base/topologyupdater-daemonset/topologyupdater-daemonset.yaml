@@ -17,7 +17,7 @@ spec:
       serviceAccount: nfd-topology-updater
       containers:
         - name: nfd-topology-updater
-          image: registry.k8s.io/nfd/node-feature-discovery:v0.18.1
+          image: registry.k8s.io/nfd/node-feature-discovery:v0.18.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:
