@@ -120,7 +120,8 @@ type nfdWorker struct {
 	kubernetesNamespace string
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
-	stop                chan struct{} // channel for signaling stop
+	stop                chan struct{}              // channel for signaling stop
+	sourceEvent         chan *source.FeatureSource // channel for events from sources
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
@@ -220,6 +221,19 @@ func (i *infiniteTicker) Reset(d time.Duration) {
 	}
 }
 
+// Publish labels.
+func (w *nfdWorker) publishNodeFeatureObject() error {
+	// Get the set of feature labels.
+	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+
+	// Update the node with the feature labels.
+	if !w.config.Core.NoPublish {
+		return w.advertiseFeatures(labels)
+	}
+
+	return nil
+}
+
 // Run feature discovery.
 func (w *nfdWorker) runFeatureDiscovery() error {
 	discoveryStart := time.Now()
@@ -237,12 +251,9 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	if w.config.Core.SleepInterval.Duration > 0 && discoveryDuration > w.config.Core.SleepInterval.Duration/2 {
 		klog.InfoS("feature discovery sources took over half of sleep interval ", "duration", discoveryDuration, "sleepInterval", w.config.Core.SleepInterval.Duration)
 	}
-	// Get the set of feature labels.
-	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
 
-	// Update the node with the feature labels.
-	if !w.config.Core.NoPublish {
-		return w.advertiseFeatures(labels)
+	if err := w.publishNodeFeatureObject(); err != nil {
+		return err
 	}
 
 	return nil
@@ -293,8 +304,11 @@ func (w *nfdWorker) setOwnerReference() error {
 func (w *nfdWorker) Run() error {
 	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Read configuration file
-	err := w.configure(w.configFilePath, w.args.Options)
+	err := w.configure(ctx, w.configFilePath, w.args.Options)
 	if err != nil {
 		return err
 	}
@@ -338,6 +352,15 @@ func (w *nfdWorker) Run() error {
 		case <-labelTrigger.C:
 			err = w.runFeatureDiscovery()
 			if err != nil {
+				return err
+			}
+
+		case s := <-w.sourceEvent:
+			if err := (*s).Discover(); err != nil {
+				klog.ErrorS(err, "feature discovery failed", "source", (*s).Name())
+				break
+			}
+			if err = w.publishNodeFeatureObject(); err != nil {
 				return err
 			}
 
@@ -461,7 +484,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 }
 
 // Parse configuration options
-func (w *nfdWorker) configure(filepath string, overrides string) error {
+func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides string) error {
 	// Create a new default config
 	c := newDefaultConfig()
 	confSources := source.GetAllConfigurableSources()
@@ -523,6 +546,14 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 	// (Re-)configure sources
 	for _, s := range confSources {
 		s.SetConfig(c.Sources[s.Name()])
+	}
+
+	w.sourceEvent = make(chan *source.FeatureSource)
+	eventSources := source.GetAllEventSources()
+	for _, s := range eventSources {
+		if err := s.SetNotifyChannel(ctx, w.sourceEvent); err != nil {
+			klog.ErrorS(err, "failed to set notify channel for event source", "source", s.Name())
+		}
 	}
 
 	klog.InfoS("configuration successfully updated", "configuration", w.config)
