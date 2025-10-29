@@ -25,10 +25,20 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+var (
+	exportFeaturesExample = `
+# Export node features to stdout (prints to terminal)
+nfd export features
+
+# Export node features to a file instead
+nfd export features --path /tmp/features.json`
+)
+
 func NewExportCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "features",
-		Short: "Export features for given node",
+		Use:     "features",
+		Short:   "Export features for given node",
+		Example: exportFeaturesExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sources := map[string]source.FeatureSource{}
 			for k, v := range source.GetAllFeatureSources() {
@@ -59,7 +69,7 @@ func NewExportCmd() *cobra.Command {
 			return err
 		},
 	}
-	cmd.Flags().StringVar(&outputPath, "path", "", "export to this JSON path")
+	cmd.Flags().StringVarP(&outputPath, "path", "p", "", "export to this JSON path")
 	return cmd
 }
 
