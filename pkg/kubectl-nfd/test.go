@@ -17,15 +17,16 @@ limitations under the License.
 package kubectlnfd
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"time"
+	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/clientcmd"
 
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
-	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 
 	"sigs.k8s.io/yaml"
@@ -46,14 +47,13 @@ func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
-	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, 1*time.Second)
-	featureLister := informerFactory.Nfd().V1alpha1().NodeFeatures().Lister()
 
 	sel := k8sLabels.SelectorFromSet(k8sLabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
-	objs, err := featureLister.List(sel)
+	list, err := nfdClient.NfdV1alpha1().NodeFeatures(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{LabelSelector: sel.String()})
 	if err != nil {
 		return []error{fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)}
 	}
+	objs := list.Items
 	features := nfdv1alpha1.NewNodeFeatureSpec()
 	if len(objs) > 0 {
 		features = objs[0].Spec.DeepCopy()
