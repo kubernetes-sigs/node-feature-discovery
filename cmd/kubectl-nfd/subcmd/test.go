@@ -49,8 +49,10 @@ func init() {
 	testCmd.Flags().StringVarP(&nodefeaturerule, "nodefeaturerule-file", "f", "", "Path to the NodeFeatureRule file to validate")
 	testCmd.Flags().StringVarP(&node, "nodename", "n", "", "Node to validate against")
 	testCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "kubeconfig file to use")
-	err := testCmd.MarkFlagRequired("nodefeaturerule-file")
-	if err != nil {
+	if err := testCmd.MarkFlagRequired("nodefeaturerule-file"); err != nil {
+		panic(err)
+	}
+	if err := testCmd.MarkFlagRequired("nodename"); err != nil {
 		panic(err)
 	}
 }
