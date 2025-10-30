@@ -54,6 +54,12 @@ func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
 		return []error{fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)}
 	}
 	objs := list.Items
+	names := make([]string, len(objs))
+	for i, o := range objs {
+		names[i] = o.Namespace + "/" + o.Name
+	}
+	fmt.Printf("Found %d NodeFeature objects for node %q: %s\n", len(objs), nodeName, strings.Join(names, ", "))
+
 	features := nfdv1alpha1.NewNodeFeatureSpec()
 	if len(objs) > 0 {
 		features = objs[0].Spec.DeepCopy()
