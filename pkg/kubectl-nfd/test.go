@@ -36,12 +36,11 @@ func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
 	var errs []error
 	var err error
 
-	nfr := nfdv1alpha1.NodeFeatureRule{}
-
-	if kubeconfig == "" {
-		kubeconfig = os.Getenv("KUBECONFIG")
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if kubeconfig != "" {
+		loadingRules.ExplicitPath = kubeconfig
 	}
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{}).ClientConfig()
 	if err != nil {
 		return []error{fmt.Errorf("error building kubeconfig: %w", err)}
 	}
@@ -74,6 +73,7 @@ func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
 		return []error{fmt.Errorf("error reading NodeFeatureRule file: %w", err)}
 	}
 
+	nfr := nfdv1alpha1.NodeFeatureRule{}
 	err = yaml.Unmarshal(nfrFile, &nfr)
 	if err != nil {
 		return []error{fmt.Errorf("error parsing NodeFeatureRule: %w", err)}
