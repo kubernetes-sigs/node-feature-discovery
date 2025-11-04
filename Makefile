@@ -68,7 +68,7 @@ BUILD_FLAGS = -tags osusergo,netgo \
               -ldflags "-s -w -extldflags=-static -X sigs.k8s.io/node-feature-discovery/pkg/version.version=$(VERSION) -X sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath.pathPrefix=$(HOSTMOUNT_PREFIX)"
 
 # multi-arch build with buildx
-IMAGE_ALL_PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v7
+IMAGE_ALL_PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le
 
 # enable buildx
 ensure-buildx:
