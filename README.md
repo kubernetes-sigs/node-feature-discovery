@@ -14,7 +14,7 @@ features and system configuration!
 #### Helm
 
 ```bash
-helm install -n node-feature-discovery --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.18.2
+helm install -n node-feature-discovery --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.18.3
 ```
 
 #### Kustomize
@@ -22,7 +22,7 @@ helm install -n node-feature-discovery --create-namespace nfd oci://registry.k8s
 Alternatively, you can deploy using kubectl and kustomize:
 
 ```bash
-kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.18.2"
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.18.3"
 ```
 
 #### Verify the deployment
