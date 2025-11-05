@@ -1,4 +1,4 @@
-timeout: 3000s
+timeout: 5000s
 steps:
   - name: gcr.io/k8s-staging-test-infra/gcb-docker-gcloud:v20250513-9264efb079
     entrypoint: scripts/test-infra/push-image.sh
