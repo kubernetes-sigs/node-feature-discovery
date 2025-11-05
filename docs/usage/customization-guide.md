@@ -962,6 +962,8 @@ The following features are available for matching:
 |                  |              | **`mod-name`** |      | Kernel module `<mod-name>` is loaded |
 | **`kernel.selinux`** | attribute |         |            | Kernel SELinux related features |
 |                  |              | **`enabled`** | bool  | `true` if SELinux has been enabled and is in enforcing mode, otherwise `false` |
+| **`kernel.kvm`** | attribute |         |            | Kernel KVM related features |
+|                  |              | **`enabled`** | bool  | `true` if KVM has been enabled, otherwise `false` |
 | **`kernel.version`** | attribute |          |           | Kernel version information |
 |                  |              | **`full`** | string   | Full kernel version (e.g. ‘4.5.6-7-g123abcde') |
 |                  |              | **`major`** | int     | First component of the kernel version (e.g. ‘4') |
