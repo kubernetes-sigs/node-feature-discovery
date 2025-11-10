@@ -31,10 +31,20 @@ import (
 	"sigs.k8s.io/node-feature-discovery/source"
 )
 
+var (
+	exportLabelsExample = `
+# Export node labels to stdout (prints to terminal)
+nfd export features
+
+# Export node labels to a file instead
+nfd export features --path /tmp/labels.json`
+)
+
 func NewLabelsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "labels",
-		Short: "Export feature labels for given node",
+		Use:     "labels",
+		Short:   "Export feature labels for given node",
+		Example: exportLabelsExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// Determine enabled feature sources
@@ -93,7 +103,7 @@ func NewLabelsCmd() *cobra.Command {
 			return err
 		},
 	}
-	cmd.Flags().StringVar(&outputPath, "path", "", "export to this JSON path")
+	cmd.Flags().StringVarP(&outputPath, "path", "p", "", "export to this JSON path")
 	return cmd
 }
 

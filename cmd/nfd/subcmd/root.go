@@ -35,6 +35,7 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(compat.CompatCmd)
 	RootCmd.AddCommand(export.ExportCmd)
+	RootCmd.SilenceUsage = true
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -49,11 +49,16 @@ var (
 	username        string
 	password        string
 	accessToken     string
+
+	validateExample = `
+# Validate image compatibility
+nfd compat validate-node --image <image-url>`
 )
 
 var validateNodeCmd = &cobra.Command{
-	Use:   "validate-node",
-	Short: "Perform node validation based on its associated image compatibility artifact",
+	Use:     "validate-node",
+	Short:   "Perform node validation based on its associated image compatibility artifact",
+	Example: validateExample,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 
