@@ -71,12 +71,14 @@ func parseKconfig(configPath string) (realKconfig, legacyKconfig map[string]stri
 		searchPaths = []string{
 			"/proc/config.gz",
 			hostpath.UsrDir.Path("src/linux-" + kVer + "/.config"),
+			hostpath.UsrDir.Path("src/linux-rt-" + kVer + "/.config"),
 			hostpath.UsrDir.Path("src/linux/.config"),
 			hostpath.UsrDir.Path("lib/modules/" + kVer + "/config"),
 			hostpath.UsrDir.Path("lib/ostree-boot/config-" + kVer),
 			hostpath.UsrDir.Path("lib/kernel/config-" + kVer),
 			hostpath.UsrDir.Path("src/linux-headers-" + kVer + "/.config"),
 			"/lib/modules/" + kVer + "/build/.config",
+			hostpath.UsrDir.Path("src/linux-rt-headers-" + kVer + "/.config"),
 			hostpath.BootDir.Path("config-" + kVer),
 		}
 	}
