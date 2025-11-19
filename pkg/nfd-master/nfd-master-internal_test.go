@@ -17,6 +17,7 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"maps"
@@ -27,7 +28,6 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

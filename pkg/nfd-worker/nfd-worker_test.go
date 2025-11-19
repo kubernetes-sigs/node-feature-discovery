@@ -17,11 +17,11 @@ limitations under the License.
 package nfdworker_test
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"

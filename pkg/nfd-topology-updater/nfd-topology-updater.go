@@ -17,13 +17,12 @@ limitations under the License.
 package nfdtopologyupdater
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-
-	"golang.org/x/net/context"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
