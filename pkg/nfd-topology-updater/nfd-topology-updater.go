@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -41,6 +42,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/kubeconf"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
@@ -311,6 +313,32 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 	return nil
 }
 
+// Discover E/P cores
+func discoverCpuCores() v1alpha2.AttributeList {
+	attrList := v1alpha2.AttributeList{}
+
+	cpusPathGlob := hostpath.SysfsDir.Path("sys/devices/cpu_*/cpus")
+	cpuPaths, err := filepath.Glob(cpusPathGlob)
+	if err != nil {
+		klog.ErrorS(err, "error reading cpu entries", "cpusPathGlob", cpusPathGlob)
+		return attrList
+	}
+
+	for _, entry := range cpuPaths {
+		cpus, err := os.ReadFile(entry)
+		if err != nil {
+			klog.ErrorS(err, "error reading cpu entry file", "entry", entry)
+		} else {
+			attrList = append(attrList, v1alpha2.AttributeInfo{
+				Name:  filepath.Base(filepath.Dir(entry)),
+				Value: strings.TrimSpace(string(cpus)),
+			})
+		}
+	}
+
+	return attrList
+}
+
 func (w *nfdTopologyUpdater) updateNRTTopologyManagerInfo(nrt *v1alpha2.NodeResourceTopology) error {
 	policy, scope, err := w.detectTopologyPolicyAndScope()
 	if err != nil {
@@ -322,6 +350,9 @@ func (w *nfdTopologyUpdater) updateNRTTopologyManagerInfo(nrt *v1alpha2.NodeReso
 
 	updateAttributes(&nrt.Attributes, tmAttributes)
 	nrt.TopologyPolicies = deprecatedTopologyPolicies
+
+	attrList := discoverCpuCores()
+	updateAttributes(&nrt.Attributes, attrList)
 
 	return nil
 }
