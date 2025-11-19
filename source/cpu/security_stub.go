@@ -1,5 +1,4 @@
 //go:build !(amd64 || s390x)
-// +build !amd64,!s390x
 
 /*
 Copyright 2021 The Kubernetes Authors.

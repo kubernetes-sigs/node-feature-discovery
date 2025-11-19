@@ -1,5 +1,4 @@
 //go:build !linux && !amd64
-// +build !linux,!amd64
 
 /*
 Copyright 2022 The Kubernetes Authors.

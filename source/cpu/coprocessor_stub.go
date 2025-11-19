@@ -1,5 +1,4 @@
 //go:build !ppc64le
-// +build !ppc64le
 
 /*
 Copyright 2023 The Kubernetes Authors.
