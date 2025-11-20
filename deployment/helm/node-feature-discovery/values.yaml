@@ -242,6 +242,10 @@ master:
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master pods.
   # @section -- NFD-Master
   annotations: {}
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels
+  # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-master pods.
+  # @section -- NFD-Master
+  labels: {} 
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity
   # -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-master pods.
   # @section -- NFD-Master
@@ -710,6 +714,10 @@ worker:
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker pods.
   # @section -- NFD-Worker
   annotations: {}
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels
+  # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods.
+  # @section -- NFD-Worker
+  labels: {}
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity
   # -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-worker pods.
   # @section -- NFD-Worker
@@ -891,6 +899,10 @@ topologyUpdater:
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-topology-updater pods.
   # @section -- NFD-Topology-Updater
   annotations: {}
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels
+  # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-topology-updater pods.
+  # @section -- NFD-Topology-Updater
+  labels: {}
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-topology-updater DaemonSet.
   # @section -- NFD-Topology-Updater
@@ -1025,6 +1037,10 @@ gc:
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc pods.
   # @section -- NFD-GC
   annotations: {}
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels
+  # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-gc pods.
+  # @section -- NFD-GC
+  labels: {}
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc  Deployment.
   # @section -- NFD-GC
