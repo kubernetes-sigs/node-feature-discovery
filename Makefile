@@ -16,7 +16,7 @@ BASE_IMAGE_MINIMAL ?= scratch
 # Use host networking because 'jekyll serve' is stupid enough to use the
 # same site url than the "host" it binds to. Thus, all the links will be
 # broken if we'd bind to 0.0.0.0
-RUBY_IMAGE_VERSION := 3.3
+RUBY_IMAGE_VERSION := 3.4
 TOOOLCHAIN_MODE ?= $(shell $(GO_CMD) env GOVERSION)+auto
 JEKYLL_ENV ?= development
 SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" \
