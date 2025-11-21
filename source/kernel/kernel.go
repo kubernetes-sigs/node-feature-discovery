@@ -36,6 +36,7 @@ const (
 	SelinuxFeature       = "selinux"
 	VersionFeature       = "version"
 	EnabledModuleFeature = "enabledmodule"
+	KvmFeature           = "kvm"
 )
 
 // Configuration file options
@@ -114,6 +115,10 @@ func (s *kernelSource) GetLabels() (source.FeatureLabels, error) {
 		labels["selinux.enabled"] = "true"
 	}
 
+	if enabled, ok := features.Attributes[KvmFeature].Elements["enabled"]; ok && enabled == "true" {
+		labels["kvm.enabled"] = "true"
+	}
+
 	return labels, nil
 }
 
@@ -157,6 +162,13 @@ func (s *kernelSource) Discover() error {
 	} else {
 		s.features.Attributes[SelinuxFeature] = nfdv1alpha1.NewAttributeFeatures(nil)
 		s.features.Attributes[SelinuxFeature].Elements["enabled"] = strconv.FormatBool(selinux)
+	}
+
+	if kvm, err := KvmEnabled(); err != nil {
+		klog.ErrorS(err, "failed to detect kvm status")
+	} else {
+		s.features.Attributes[KvmFeature] = nfdv1alpha1.NewAttributeFeatures(nil)
+		s.features.Attributes[KvmFeature].Elements["enabled"] = strconv.FormatBool(kvm)
 	}
 
 	klog.V(3).InfoS("discovered features", "featureSource", s.Name(), "features", utils.DelayedDumper(s.features))
