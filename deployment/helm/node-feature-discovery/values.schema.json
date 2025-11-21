@@ -59,6 +59,11 @@
                     "description": "Time between periodic garbage collector runs.",
                     "type": "string"
                 },
+                "labels": {
+                    "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-gc pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels",
+                    "type": "object"
+                },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
                     "type": "object",
@@ -329,6 +334,11 @@
                         "string",
                         "null"
                     ]
+                },
+                "labels": {
+                    "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-master pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels",
+                    "type": "object"
                 },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
@@ -653,6 +663,11 @@
                     "description": "The kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking.",
                     "type": "string"
                 },
+                "labels": {
+                    "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-topology-updater pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels",
+                    "type": "object"
+                },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
                     "type": "object",
@@ -862,6 +877,11 @@
                 "hostNetwork": {
                     "description": "Run the container in the host's network namespace.",
                     "type": "boolean"
+                },
+                "labels": {
+                    "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods.",
+                    "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.1/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels",
+                    "type": "object"
                 },
                 "livenessProbe": {
                     "description": "Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).",
