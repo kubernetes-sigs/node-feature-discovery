@@ -1,6 +1,6 @@
 # Netlify settings
 [build]
-    command = "cd docs/ && source /opt/buildhome/.rvm/scripts/rvm && rvm install ruby-3.3.9 && bundle install && jekyll build"
+    command = "cd docs/ && bundle install && jekyll build"
     publish = "docs/_site/"
 
 [build.environment]
