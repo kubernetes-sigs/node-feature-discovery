@@ -21,6 +21,9 @@ spec:
     metadata:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
+        {{- with .Values.topologyUpdater.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         role: topology-updater
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/nfd-topologyupdater-conf.yaml") . | sha256sum }}

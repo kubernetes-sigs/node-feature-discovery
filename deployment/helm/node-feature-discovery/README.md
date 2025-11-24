@@ -201,6 +201,7 @@ NFD.
 | master.podDisruptionBudget.minAvailable | int | `1` | Minimum number (or percentage) of pods that must be available after the eviction. |
 | master.podDisruptionBudget.unhealthyPodEvictionPolicy | string | `"AlwaysAllow"` | Policy to evict unhealthy pods when a PodDisruptionBudget is defined. |
 | master.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master pods. |
+| master.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-master pods. |
 | master.affinity | object | `{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"preference":{"matchExpressions":[{"key":"node-role.kubernetes.io/control-plane","operator":"In","values":[""]}]},"weight":1}]}}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-master pods. |
 | master.startupProbe | object |   | Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes). |
 | master.startupProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
@@ -255,6 +256,7 @@ NFD.
 | worker.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-worker pods. |
 | worker.tolerations | list | `[]` | [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-worker pods. |
 | worker.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker pods. |
+| worker.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods. |
 | worker.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-worker pods. |
 | worker.priorityClassName | string | `nil` | The name of the PriorityClass to be used for the nfd-worker pods. |
 | worker.updateStrategy | object | `{}` | Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set) |
@@ -299,6 +301,7 @@ NFD.
 | topologyUpdater.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-topology-updater pods. |
 | topologyUpdater.tolerations | list | `[]` | [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-topology-updater pods. |
 | topologyUpdater.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-topology-updater pods. |
+| topologyUpdater.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-topology-updater pods. |
 | topologyUpdater.daemonsetAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-topology-updater DaemonSet. |
 | topologyUpdater.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-topology-updater pods. |
 | topologyUpdater.podSetFingerprint | bool | `true` | Enables compute and report of pod fingerprint in NRT objects. |
@@ -336,6 +339,7 @@ NFD.
 | gc.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-gc pods. |
 | gc.tolerations | list | `[]` | [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for the nfd-gc pods. |
 | gc.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc pods. |
+| gc.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-gc pods. |
 | gc.deploymentAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc  Deployment. |
 | gc.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-gc pods. |
 | gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-master Deployment. |

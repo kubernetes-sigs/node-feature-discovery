@@ -25,6 +25,9 @@ spec:
     metadata:
       labels:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
+        {{- with .Values.worker.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         role: worker
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/nfd-worker-conf.yaml") . | sha256sum }}
