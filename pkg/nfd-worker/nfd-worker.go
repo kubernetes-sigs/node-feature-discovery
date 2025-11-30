@@ -77,14 +77,16 @@ type NFDConfig struct {
 }
 
 type coreConfig struct {
-	Klog           klogutils.KlogConfigOpts
-	LabelWhiteList utils.RegexpVal
-	NoPublish      bool
-	NoOwnerRefs    bool
-	FeatureSources []string
-	Sources        *[]string
-	LabelSources   []string
-	SleepInterval  utils.DurationVal
+	Klog             klogutils.KlogConfigOpts
+	LabelWhiteList   utils.RegexpVal
+	FeatureAllowList utils.RegexpVal
+	FeatureDenyList  utils.RegexpVal
+	NoPublish        bool
+	NoOwnerRefs      bool
+	FeatureSources   []string
+	Sources          *[]string
+	LabelSources     []string
+	SleepInterval    utils.DurationVal
 }
 
 type sourcesConfig map[string]source.Config
@@ -196,11 +198,13 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 func newDefaultConfig() *NFDConfig {
 	return &NFDConfig{
 		Core: coreConfig{
-			LabelWhiteList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
-			SleepInterval:  utils.DurationVal{Duration: 60 * time.Second},
-			FeatureSources: []string{"all"},
-			LabelSources:   []string{"all"},
-			Klog:           make(map[string]string),
+			LabelWhiteList:   utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+			FeatureAllowList: utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+			FeatureDenyList:  utils.RegexpVal{Regexp: *regexp.MustCompile("")},
+			SleepInterval:    utils.DurationVal{Duration: 60 * time.Second},
+			FeatureSources:   []string{"all"},
+			LabelSources:     []string{"all"},
+			Klog:             make(map[string]string),
 		},
 	}
 }
@@ -238,7 +242,7 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 		klog.InfoS("feature discovery sources took over half of sleep interval ", "duration", discoveryDuration, "sleepInterval", w.config.Core.SleepInterval.Duration)
 	}
 	// Get the set of feature labels.
-	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp, w.config.Core.FeatureAllowList.Regexp, w.config.Core.FeatureDenyList.Regexp)
 
 	// Update the node with the feature labels.
 	if !w.config.Core.NoPublish {
@@ -531,13 +535,13 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 // createFeatureLabels returns the set of feature labels from the enabled
 // sources and the whitelist argument.
-func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels) {
+func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Regexp, featureAllowList regexp.Regexp, featureDenyList regexp.Regexp) (labels Labels) {
 	labels = Labels{}
 
 	// Get labels from all enabled label sources
 	klog.InfoS("starting feature discovery...")
 	for _, source := range sources {
-		labelsFromSource, err := GetFeatureLabels(source, labelWhiteList)
+		labelsFromSource, err := GetFeatureLabels(source, labelWhiteList, featureAllowList, featureDenyList)
 		if err != nil {
 			klog.ErrorS(err, "discovery failed", "source", source.Name())
 			continue
@@ -555,7 +559,7 @@ func createFeatureLabels(sources []source.LabelSource, labelWhiteList regexp.Reg
 
 // getFeatureLabels returns node labels for features discovered by the
 // supplied source.
-func GetFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (labels Labels, err error) {
+func GetFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp, featureAllowList regexp.Regexp, featureDenyList regexp.Regexp) (labels Labels, err error) {
 	labels = Labels{}
 	features, err := source.GetLabels()
 	if err != nil {
@@ -564,6 +568,21 @@ func GetFeatureLabels(source source.LabelSource, labelWhiteList regexp.Regexp) (
 
 	for k, v := range features {
 		name := k
+
+		allowed := featureAllowList.MatchString(name)
+		if !allowed {
+			klog.InfoS("feature does not match the allowlist", "feature", name, "regexp", featureAllowList.String())
+		}
+
+		denied := featureDenyList.MatchString(name)
+		if denied {
+			klog.InfoS("feature matches the denylist", "feature", name, "regexp", featureDenyList.String())
+		}
+
+		if !(!denied && allowed) {
+			continue
+		}
+
 		switch sourceName := source.Name(); sourceName {
 		case "local", "custom":
 			// No mangling of labels from the custom rules or feature files
