@@ -172,6 +172,7 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | ----------------------------| ------ | --------------------------------------------------------- |
 | **`kernel-config.<option>`** | true   | Kernel config option is enabled (set 'y' or 'm'). Default options are `NO_HZ`, `NO_HZ_IDLE`, `NO_HZ_FULL` and `PREEMPT` |
 | **`kernel-selinux.enabled`** | true   | Selinux is enabled on the node                            |
+| **`kernel-kvm.enabled`**     | true   | Kvm is enabled on the node                                |
 | **`kernel-version.full`**    | string | Full kernel version as reported by `/proc/sys/kernel/osrelease` (e.g. '4.5.6-7-g123abcde') |
 | **`kernel-version.major`**   | string | First component of the kernel version (e.g. '4')          |
 | **`kernel-version.minor`**   | string | Second component of the kernel version (e.g. '5')         |

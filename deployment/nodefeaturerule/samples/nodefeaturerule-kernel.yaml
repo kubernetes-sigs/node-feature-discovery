@@ -36,3 +36,11 @@ spec:
           matchExpressions:
             "enabled":
               op: IsTrue
+    - name: "nfd built-in kernel-kvm labels"
+      labels:
+        "kernel-kvm.enabled": "true"
+      matchFeatures:
+        - feature: kernel.kvm
+          matchExpressions:
+            "enabled":
+              op: IsTrue
