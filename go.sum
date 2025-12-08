@@ -157,8 +157,8 @@ github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSAS
 github.com/iancoleman/strcase v0.3.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/jaypipes/ghw v0.20.0 h1:8efvHHtyrj0P4qVZ9KE43iW9tMThKoh6dEOo38f3a4w=
-github.com/jaypipes/ghw v0.20.0/go.mod h1:GPrvwbtPoxYUenr74+nAnWbardIZq600vJDD5HnPsPE=
+github.com/jaypipes/ghw v0.21.0 h1:ClG2xWtYY0c1ud9jZYwVGdSgfCI7AbmZmZyw3S5HHz8=
+github.com/jaypipes/ghw v0.21.0/go.mod h1:GPrvwbtPoxYUenr74+nAnWbardIZq600vJDD5HnPsPE=
 github.com/jaypipes/pcidb v1.1.1 h1:QmPhpsbmmnCwZmHeYAATxEaoRuiMAJusKYkUncMC0ro=
 github.com/jaypipes/pcidb v1.1.1/go.mod h1:x27LT2krrUgjf875KxQXKB0Ha/YXLdZRVmw6hH0G7g8=
 github.com/jedib0t/go-pretty/v6 v6.7.5 h1:9dJSWTJnsXJVVAbvxIFxeHf/JxoJd7GUl5o3UzhtuiM=
