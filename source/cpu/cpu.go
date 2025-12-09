@@ -276,76 +276,63 @@ func getCPUModel() map[string]string {
 
 // getHypervisor detects the hypervisor on s390x by reading /proc/sysinfo
 // and on x86_64/arm64 using the cpuid library.
-// Returns normalized hypervisor string or "none" for bare metal.
-// Returns "", nil only when hypervisor information is unavailable on s390x
+// Returns normalized hypervisor string, "unknown" for unknown vendor, or "none" for bare metal.
 func getHypervisor() (string, error) {
-	// use /proc/sysinfo for s390x
+	// try using /proc/sysinfo for s390x
 	if _, err := os.Stat("/proc/sysinfo"); err == nil {
-		data, err := os.ReadFile("/proc/sysinfo")
-		if err != nil {
-			return "", err
+		hv, discovered := getHypervisorFromProcSysinfo()
+		if discovered {
+			return hv, nil
 		}
-
-		hypervisor := ""
-		for _, line := range strings.Split(string(data), "\n") {
-			if strings.Contains(line, "Control Program:") {
-				parts := strings.SplitN(line, ":", 2)
-				if len(parts) == 2 {
-					hypervisor = strings.TrimSpace(parts[1])
-				}
-				break
-			}
-		}
-		if hypervisor == "" {
-			return "", nil
-		}
-
-		// Replace forbidden symbols
-		fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]+")
-		hypervisor = fullRegex.ReplaceAllString(hypervisor, "_")
-		return hypervisor, nil
-	} else if !os.IsNotExist(err) {
-		return "", err
+	} else {
+		klog.Error(err, "failed to stat /proc/sysinfo")
 	}
 
-	// use cpuid lib for x86/arm
+	// fallback to cpuid
 	if cpuid.CPU.VM() {
-		hv := strings.ToLower(cpuid.CPU.HypervisorVendorID.String())
-	
-		switch hv {
-		case "msvm":
-			return "hyperv", nil
-		case "kvm":
-			return "kvm", nil
-		case "vmware":
-			return "vmware", nil
-		case "xenhvm":
-			return "xen", nil
-		case "bhyve":
-			return "bhyve", nil
-		case "qemu":
-			return "qemu", nil
-		case "apple":
-			return "apple", nil
-		case "qnx":
-			return "qnx", nil
-		case "acrn":
-			return "acrn", nil
-		case "sre":
-			return "sre", nil
-		case "vendorunknown":
-			raw := cpuid.CPU.HypervisorVendorString
-			clean := regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(raw, "_")
-			if clean == "" {
-				return "unknown", nil
+		return getHypervisorFromCPUID()
+	}
+
+	// no hv discovered
+	return "none", nil
+}
+
+func getHypervisorFromProcSysinfo() (string, bool) {
+	data, err := os.ReadFile("/proc/sysinfo")
+	if err != nil {
+		klog.Error(err, "failed to read /proc/sysinfo")
+		return "", false
+	}
+
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.Contains(line, "Control Program:") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				hypervisor := strings.TrimSpace(parts[1])
+				if hypervisor != "" {
+					hypervisor = regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(hypervisor, "_")
+					return hypervisor, true
+				}
 			}
-			return clean, nil
-		default:
+			break
+		}
+	}
+
+	return "", false
+}
+
+func getHypervisorFromCPUID() (string, error) {
+	switch hv := cpuid.CPU.HypervisorVendorID; hv {
+	case cpuid.VendorUnknown:
+		raw := cpuid.CPU.HypervisorVendorString
+		clean := regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(raw, "_")
+		if clean == "" {
 			return "unknown", nil
 		}
+		return clean, nil
+	default:
+		return strings.ToLower(cpuid.CPU.HypervisorVendorID.String()), nil
 	}
-
-	return "none", nil
 }
 
 func discoverTopology() map[string]string {
