@@ -285,7 +285,7 @@ func getHypervisor() (string, error) {
 			return hv, nil
 		}
 	} else {
-		klog.Error(err, "failed to stat /proc/sysinfo")
+		klog.ErrorS(err, "failed to stat /proc/sysinfo")
 	}
 
 	// fallback to cpuid
@@ -300,7 +300,7 @@ func getHypervisor() (string, error) {
 func getHypervisorFromProcSysinfo() (string, bool) {
 	data, err := os.ReadFile("/proc/sysinfo")
 	if err != nil {
-		klog.Error(err, "failed to read /proc/sysinfo")
+		klog.ErrorS(err, "failed to read /proc/sysinfo")
 		return "", false
 	}
 
