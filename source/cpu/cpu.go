@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -278,17 +279,12 @@ func getCPUModel() map[string]string {
 // and on x86_64/arm64 using the cpuid library.
 // Returns normalized hypervisor string, "unknown" for unknown vendor, or "none" for bare metal.
 func getHypervisor() (string, error) {
-	// try using /proc/sysinfo for s390x
-	if _, err := os.Stat("/proc/sysinfo"); err == nil {
-		hv, discovered := getHypervisorFromProcSysinfo()
-		if discovered {
-			return hv, nil
-		}
-	} else {
-		klog.ErrorS(err, "failed to stat /proc/sysinfo")
+	// use /proc/sysinfo for s390x
+	if runtime.GOARCH == "s390x" {
+		return getHypervisorFromProcSysinfo()
 	}
 
-	// fallback to cpuid
+	// use cpuid lib for x86/arm
 	if cpuid.CPU.VM() {
 		return getHypervisorFromCPUID()
 	}
@@ -297,42 +293,41 @@ func getHypervisor() (string, error) {
 	return "none", nil
 }
 
-func getHypervisorFromProcSysinfo() (string, bool) {
+func getHypervisorFromProcSysinfo() (string, error) {
 	data, err := os.ReadFile("/proc/sysinfo")
 	if err != nil {
 		klog.ErrorS(err, "failed to read /proc/sysinfo")
-		return "", false
+		return "", err
 	}
 
+	hypervisor := "PR/SM"
 	for _, line := range strings.Split(string(data), "\n") {
 		if strings.Contains(line, "Control Program:") {
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) == 2 {
-				hypervisor := strings.TrimSpace(parts[1])
-				if hypervisor != "" {
-					hypervisor = regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(hypervisor, "_")
-					return hypervisor, true
-				}
+				hypervisor = strings.TrimSpace(parts[1])
 			}
 			break
 		}
 	}
+	// Replace forbidden symbols
+	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]+")
+	hypervisor = fullRegex.ReplaceAllString(hypervisor, "_")
 
-	return "", false
+	return hypervisor, nil
 }
 
 func getHypervisorFromCPUID() (string, error) {
-	switch hv := cpuid.CPU.HypervisorVendorID; hv {
-	case cpuid.VendorUnknown:
+	hv := cpuid.CPU.HypervisorVendorID
+	if hv == cpuid.VendorUnknown {
 		raw := cpuid.CPU.HypervisorVendorString
 		clean := regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(raw, "_")
 		if clean == "" {
 			return "unknown", nil
 		}
 		return clean, nil
-	default:
-		return strings.ToLower(cpuid.CPU.HypervisorVendorID.String()), nil
 	}
+	return strings.ToLower(hv.String()), nil
 }
 
 func discoverTopology() map[string]string {
