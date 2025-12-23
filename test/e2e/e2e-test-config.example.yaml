@@ -52,6 +52,7 @@ defaultFeatures:
     - "feature.node.kubernetes.io/kernel-config.NO_HZ_IDLE"
     - "feature.node.kubernetes.io/kernel-config.PREEMPT"
     - "feature.node.kubernetes.io/kernel-selinux.enabled"
+    - "feature.node.kubernetes.io/kernel-kvm.enabled"
     - "feature.node.kubernetes.io/kernel-version.full"
     - "feature.node.kubernetes.io/kernel-version.major"
     - "feature.node.kubernetes.io/kernel-version.minor"
