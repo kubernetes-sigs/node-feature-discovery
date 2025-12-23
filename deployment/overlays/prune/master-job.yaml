@@ -6,6 +6,7 @@ metadata:
     app: nfd
 spec:
   completions: 1
+  ttlSecondsAfterFinished: 3600
   template:
     metadata:
       labels:
