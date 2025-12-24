@@ -120,7 +120,8 @@ type nfdWorker struct {
 	kubernetesNamespace string
 	k8sClient           k8sclient.Interface
 	nfdClient           nfdclient.Interface
-	stop                chan struct{} // channel for signaling stop
+	stop                chan struct{}              // channel for signaling stop
+	sourceEvent         chan *source.FeatureSource // channel for events from sources
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
@@ -167,6 +168,7 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 		config:              &NFDConfig{},
 		kubernetesNamespace: utils.GetKubernetesNamespace(),
 		stop:                make(chan struct{}),
+		sourceEvent:         make(chan *source.FeatureSource),
 	}
 
 	for _, o := range opts {
@@ -220,6 +222,19 @@ func (i *infiniteTicker) Reset(d time.Duration) {
 	}
 }
 
+// Publish labels.
+func (w *nfdWorker) publishNodeFeatureObject() error {
+	// Get the set of feature labels.
+	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
+
+	// Update the node with the feature labels.
+	if !w.config.Core.NoPublish {
+		return w.advertiseFeatures(labels)
+	}
+
+	return nil
+}
+
 // Run feature discovery.
 func (w *nfdWorker) runFeatureDiscovery() error {
 	discoveryStart := time.Now()
@@ -237,15 +252,8 @@ func (w *nfdWorker) runFeatureDiscovery() error {
 	if w.config.Core.SleepInterval.Duration > 0 && discoveryDuration > w.config.Core.SleepInterval.Duration/2 {
 		klog.InfoS("feature discovery sources took over half of sleep interval ", "duration", discoveryDuration, "sleepInterval", w.config.Core.SleepInterval.Duration)
 	}
-	// Get the set of feature labels.
-	labels := createFeatureLabels(w.labelSources, w.config.Core.LabelWhiteList.Regexp)
 
-	// Update the node with the feature labels.
-	if !w.config.Core.NoPublish {
-		return w.advertiseFeatures(labels)
-	}
-
-	return nil
+	return w.publishNodeFeatureObject()
 }
 
 // Set owner ref
@@ -293,8 +301,11 @@ func (w *nfdWorker) setOwnerReference() error {
 func (w *nfdWorker) Run() error {
 	klog.InfoS("Node Feature Discovery Worker", "version", version.Get(), "nodeName", utils.NodeName(), "namespace", w.kubernetesNamespace)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Read configuration file
-	err := w.configure(w.configFilePath, w.args.Options)
+	err := w.configure(ctx, w.configFilePath, w.args.Options)
 	if err != nil {
 		return err
 	}
@@ -341,6 +352,15 @@ func (w *nfdWorker) Run() error {
 				return err
 			}
 
+		case s := <-w.sourceEvent:
+			if err := (*s).Discover(); err != nil {
+				klog.ErrorS(err, "feature discovery failed", "source", (*s).Name())
+				break
+			}
+			if err = w.publishNodeFeatureObject(); err != nil {
+				return err
+			}
+
 		case <-w.stop:
 			klog.InfoS("shutting down nfd-worker")
 			return nil
@@ -361,7 +381,7 @@ func (c *coreConfig) sanitize() {
 	}
 }
 
-func (w *nfdWorker) configureCore(c coreConfig) error {
+func (w *nfdWorker) configureCore(ctx context.Context, c coreConfig) error {
 	// Handle klog
 	err := klogutils.MergeKlogConfiguration(w.args.Klog, c.Klog)
 	if err != nil {
@@ -438,6 +458,15 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 		return w.labelSources[i].Name() < w.labelSources[j].Name()
 	})
 
+	eventSources := source.GetAllEventSources()
+	for _, s := range eventSources {
+		if ok := featureSources[s.Name()]; ok != nil {
+			if err := s.SetNotifyChannel(ctx, w.sourceEvent); err != nil {
+				klog.ErrorS(err, "failed to set notify channel for event source", "source", s.Name())
+			}
+		}
+	}
+
 	if klogV := klog.V(1); klogV.Enabled() {
 		n := make([]string, len(w.featureSources))
 		for i, s := range w.featureSources {
@@ -461,7 +490,7 @@ func (w *nfdWorker) configureCore(c coreConfig) error {
 }
 
 // Parse configuration options
-func (w *nfdWorker) configure(filepath string, overrides string) error {
+func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides string) error {
 	// Create a new default config
 	c := newDefaultConfig()
 	confSources := source.GetAllConfigurableSources()
@@ -516,7 +545,7 @@ func (w *nfdWorker) configure(filepath string, overrides string) error {
 
 	w.config = c
 
-	if err := w.configureCore(c.Core); err != nil {
+	if err := w.configureCore(ctx, c.Core); err != nil {
 		return err
 	}
 
