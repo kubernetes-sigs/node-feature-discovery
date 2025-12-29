@@ -101,6 +101,31 @@
                         }
                     }
                 },
+                "networkPolicy": {
+                    "type": "object",
+                    "properties": {
+                        "egress": {
+                            "description": "[Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-gc pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule",
+                                "type": "object"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Should a networkPolicy be deployed for the nfd-gc pods",
+                            "type": "boolean"
+                        },
+                        "ingress": {
+                            "description": "[Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-gc pods.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule",
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "nodeSelector": {
                     "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-gc pods.",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector",
@@ -374,6 +399,31 @@
                                 "null"
                             ],
                             "minimum": 1
+                        }
+                    }
+                },
+                "networkPolicy": {
+                    "type": "object",
+                    "properties": {
+                        "egress": {
+                            "description": "[Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-master pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule",
+                                "type": "object"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Should a networkPolicy be deployed for the nfd-master pods",
+                            "type": "boolean"
+                        },
+                        "ingress": {
+                            "description": "[Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-master pods.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule",
+                                "type": "object"
+                            }
                         }
                     }
                 },
@@ -705,6 +755,31 @@
                         }
                     }
                 },
+                "networkPolicy": {
+                    "type": "object",
+                    "properties": {
+                        "egress": {
+                            "description": "[Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-topology pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule",
+                                "type": "object"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Should a networkPolicy be deployed for the nfd-topology pods",
+                            "type": "boolean"
+                        },
+                        "ingress": {
+                            "description": "[Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-topology pods.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule",
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "nodeSelector": {
                     "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-topology-updater pods.",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector",
@@ -923,6 +998,31 @@
                 "mountUsrSrc": {
                     "description": "Mount host path /user/src inside the container. Does not work on systems without /usr/src AND a read-only /usr.",
                     "type": "boolean"
+                },
+                "networkPolicy": {
+                    "type": "object",
+                    "properties": {
+                        "egress": {
+                            "description": "[Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule",
+                                "type": "object"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Should a networkPolicy be deployed for the nfd-worker pods",
+                            "type": "boolean"
+                        },
+                        "ingress": {
+                            "description": "[Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule",
+                                "type": "object"
+                            }
+                        }
+                    }
                 },
                 "nodeSelector": {
                     "description": "[Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-worker pods.",
@@ -4088,6 +4188,103 @@
                         },
                         "runAsUserName": {
                             "description": "The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "io.k8s.api.networking.v1.IPBlock": {
+                    "description": "IPBlock describes a particular CIDR (Ex. \"192.168.1.0/24\",\"2001:db8::/64\") that is allowed to the pods matched by a NetworkPolicySpec's podSelector. The except entry describes CIDRs that should not be included within this rule.",
+                    "type": "object",
+                    "required": [
+                        "cidr"
+                    ],
+                    "properties": {
+                        "cidr": {
+                            "description": "cidr is a string representing the IPBlock Valid examples are \"192.168.1.0/24\" or \"2001:db8::/64\"",
+                            "type": "string"
+                        },
+                        "except": {
+                            "description": "except is a slice of CIDRs that should not be included within an IPBlock Valid examples are \"192.168.1.0/24\" or \"2001:db8::/64\" Except values will be rejected if they are outside the cidr range",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "io.k8s.api.networking.v1.NetworkPolicyEgressRule": {
+                    "description": "NetworkPolicyEgressRule describes a particular set of traffic that is allowed out of pods matched by a NetworkPolicySpec's podSelector. The traffic must match both ports and to. This type is beta-level in 1.8",
+                    "type": "object",
+                    "properties": {
+                        "ports": {
+                            "description": "ports is a list of destination ports for outgoing traffic. Each item in this list is combined using a logical OR. If this field is empty or missing, this rule matches all ports (traffic not restricted by port). If this field is present and contains at least one item, then this rule allows traffic only if the traffic matches at least one port in the list.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyPort"
+                            }
+                        },
+                        "to": {
+                            "description": "to is a list of destinations for outgoing traffic of pods selected for this rule. Items in this list are combined using a logical OR operation. If this field is empty or missing, this rule matches all destinations (traffic not restricted by destination). If this field is present and contains at least one item, this rule allows traffic only if the traffic matches at least one item in the to list.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyPeer"
+                            }
+                        }
+                    }
+                },
+                "io.k8s.api.networking.v1.NetworkPolicyIngressRule": {
+                    "description": "NetworkPolicyIngressRule describes a particular set of traffic that is allowed to the pods matched by a NetworkPolicySpec's podSelector. The traffic must match both ports and from.",
+                    "type": "object",
+                    "properties": {
+                        "from": {
+                            "description": "from is a list of sources which should be able to access the pods selected for this rule. Items in this list are combined using a logical OR operation. If this field is empty or missing, this rule matches all sources (traffic not restricted by source). If this field is present and contains at least one item, this rule allows traffic only if the traffic matches at least one item in the from list.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyPeer"
+                            }
+                        },
+                        "ports": {
+                            "description": "ports is a list of ports which should be made accessible on the pods selected for this rule. Each item in this list is combined using a logical OR. If this field is empty or missing, this rule matches all ports (traffic not restricted by port). If this field is present and contains at least one item, then this rule allows traffic only if the traffic matches at least one port in the list.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.NetworkPolicyPort"
+                            }
+                        }
+                    }
+                },
+                "io.k8s.api.networking.v1.NetworkPolicyPeer": {
+                    "description": "NetworkPolicyPeer describes a peer to allow traffic to/from. Only certain combinations of fields are allowed",
+                    "type": "object",
+                    "properties": {
+                        "ipBlock": {
+                            "description": "ipBlock defines policy on a particular IPBlock. If this field is set then neither of the other fields can be.",
+                            "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.networking.v1.IPBlock"
+                        },
+                        "namespaceSelector": {
+                            "description": "namespaceSelector selects namespaces using cluster-scoped labels. This field follows standard label selector semantics; if present but empty, it selects all namespaces.\n\nIf podSelector is also set, then the NetworkPolicyPeer as a whole selects the pods matching podSelector in the namespaces selected by namespaceSelector. Otherwise it selects all pods in the namespaces selected by namespaceSelector.",
+                            "$ref": "#/$defs/_definitions.json/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+                        },
+                        "podSelector": {
+                            "description": "podSelector is a label selector which selects pods. This field follows standard label selector semantics; if present but empty, it selects all pods.\n\nIf namespaceSelector is also set, then the NetworkPolicyPeer as a whole selects the pods matching podSelector in the Namespaces selected by NamespaceSelector. Otherwise it selects the pods matching podSelector in the policy's own namespace.",
+                            "$ref": "#/$defs/_definitions.json/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+                        }
+                    }
+                },
+                "io.k8s.api.networking.v1.NetworkPolicyPort": {
+                    "description": "NetworkPolicyPort describes a port to allow traffic on",
+                    "type": "object",
+                    "properties": {
+                        "endPort": {
+                            "description": "endPort indicates that the range of ports from port to endPort if set, inclusive, should be allowed by the policy. This field cannot be defined if the port field is not defined or if the port field is defined as a named (string) port. The endPort must be equal or greater than port.",
+                            "type": "integer",
+                            "format": "int32"
+                        },
+                        "port": {
+                            "description": "port represents the port on the given protocol. This can either be a numerical or named port on a pod. If this field is not provided, this matches all port names and numbers. If present, only traffic on the specified protocol AND port will be matched.",
+                            "$ref": "#/$defs/_definitions.json/definitions/io.k8s.apimachinery.pkg.util.intstr.IntOrString"
+                        },
+                        "protocol": {
+                            "description": "protocol represents the protocol (TCP, UDP, or SCTP) which traffic must match. If not specified, this field defaults to TCP.",
                             "type": "string"
                         }
                     }
