@@ -59,6 +59,7 @@ func newTestNamespace(name string) *corev1.Namespace {
 }
 
 func TestIsNamespaceSelected(t *testing.T) {
+	//nolint:staticcheck // See issue #2400 for migration to NewClientset
 	fakeCli := fakeclient.NewSimpleClientset(newTestNamespace("fake"))
 	fakeCli.PrependWatchReactor("*", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
 		gvr := action.GetResource()

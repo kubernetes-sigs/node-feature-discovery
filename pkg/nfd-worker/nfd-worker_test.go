@@ -54,9 +54,11 @@ func TestRun(t *testing.T) {
 					LabelSources:   &utils.StringSliceVal{"fake"},
 				},
 			}
+			//nolint:staticcheck // See issue #2400 for migration to NewClientset
+			k8sCli := fakeclient.NewSimpleClientset()
 			w, _ := worker.NewNfdWorker(
 				worker.WithArgs(args),
-				worker.WithKubernetesClient(fakeclient.NewSimpleClientset()),
+				worker.WithKubernetesClient(k8sCli),
 				worker.WithNFDClient(nfdCli),
 			)
 			err := w.Run()
