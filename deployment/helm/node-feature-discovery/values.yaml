@@ -289,7 +289,7 @@ master:
                 values: [""]
   # -- Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes).
   # @section -- NFD-Master
-  # @default --
+  # @default -- -
   startupProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -309,7 +309,7 @@ master:
     failureThreshold: 30
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-Master
-  # @default --
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -329,7 +329,7 @@ master:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-Master
-  # @default --
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -648,7 +648,7 @@ worker:
 
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-Worker
-  # @default --
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -668,7 +668,7 @@ worker:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-Worker
-  # @default --
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -887,7 +887,7 @@ topologyUpdater:
 
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-Topology-Updater
-  # @default --
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -907,7 +907,7 @@ topologyUpdater:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-Topology-Updater
-  # @default --
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -1050,7 +1050,7 @@ gc:
 
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-GC
-  # @default --
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -1070,7 +1070,7 @@ gc:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-GC
-  # @default --
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.

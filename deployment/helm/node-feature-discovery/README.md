@@ -206,17 +206,17 @@ NFD.
 | master.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master pods. |
 | master.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-master pods. |
 | master.affinity | object | `{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"preference":{"matchExpressions":[{"key":"node-role.kubernetes.io/control-plane","operator":"In","values":[""]}]},"weight":1}]}}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-master pods. |
-| master.startupProbe | object | `{"failureThreshold":30,"initialDelaySeconds":null,"periodSeconds":null,"timeoutSeconds":null}` | Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes). @default -- |
+| master.startupProbe | object | - | Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes). |
 | master.startupProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
 | master.startupProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | master.startupProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
 | master.startupProbe.failureThreshold | int | `30` | The number of consecutive failures for the probe before considering the pod as not ready. |
-| master.livenessProbe | object | `{"failureThreshold":null,"initialDelaySeconds":null,"periodSeconds":null,"timeoutSeconds":null}` | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). @default -- |
+| master.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
 | master.livenessProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
 | master.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | master.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
 | master.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| master.readinessProbe | object | `{"failureThreshold":10,"initialDelaySeconds":null,"periodSeconds":null,"successThreshold":null,"timeoutSeconds":null}` | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). @default -- |
+| master.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
 | master.readinessProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
 | master.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | master.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -237,12 +237,12 @@ NFD.
 | worker.daemonsetAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker DaemonSet. |
 | worker.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-worker pods. |
 | worker.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true}` | [SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-worker container. |
-| worker.livenessProbe | object | `{"failureThreshold":null,"initialDelaySeconds":10,"periodSeconds":null,"timeoutSeconds":null}` | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). @default -- |
+| worker.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
 | worker.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | worker.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | worker.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
 | worker.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| worker.readinessProbe | object | `{"failureThreshold":10,"initialDelaySeconds":5,"periodSeconds":null,"successThreshold":null,"timeoutSeconds":null}` | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). @default -- |
+| worker.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
 | worker.readinessProbe.initialDelaySeconds | int | `5` | The number of seconds after the container has started before probe is initiated. |
 | worker.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | worker.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -291,12 +291,12 @@ NFD.
 | topologyUpdater.kubeletStateDir | string | `"/var/lib/kubelet"` | The kubelet state directory path for watching state and checkpoint files. Empty value disables kubelet state tracking. |
 | topologyUpdater.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-topology-updater pods. |
 | topologyUpdater.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsUser":0}` | [SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-topology-updater container. |
-| topologyUpdater.livenessProbe | object | `{"failureThreshold":null,"initialDelaySeconds":10,"periodSeconds":null,"timeoutSeconds":null}` | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). @default -- |
+| topologyUpdater.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
 | topologyUpdater.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | topologyUpdater.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | topologyUpdater.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
 | topologyUpdater.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| topologyUpdater.readinessProbe | object | `{"failureThreshold":10,"initialDelaySeconds":5,"periodSeconds":null,"successThreshold":null,"timeoutSeconds":null}` | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). @default -- |
+| topologyUpdater.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
 | topologyUpdater.readinessProbe.initialDelaySeconds | int | `5` | The number of seconds after the container has started before probe is initiated. |
 | topologyUpdater.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | topologyUpdater.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -331,12 +331,12 @@ NFD.
 | gc.rbac.create | bool | `true` | Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-gc. |
 | gc.interval | string | `"1h"` | Time between periodic garbage collector runs. |
 | gc.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-gc pods. |
-| gc.livenessProbe | object | `{"failureThreshold":null,"initialDelaySeconds":10,"periodSeconds":null,"timeoutSeconds":null}` | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). @default -- |
+| gc.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
 | gc.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | gc.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | gc.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
 | gc.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| gc.readinessProbe | object | `{"failureThreshold":null,"initialDelaySeconds":5,"periodSeconds":null,"successThreshold":null,"timeoutSeconds":null}` | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). @default -- |
+| gc.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
 | gc.readinessProbe.initialDelaySeconds | int | `5` | The number of seconds after the container has started before probe is initiated. |
 | gc.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | gc.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
