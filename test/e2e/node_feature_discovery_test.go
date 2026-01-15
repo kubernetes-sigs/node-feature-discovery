@@ -620,6 +620,37 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 				expectedLabels[targetNodeName] = k8sLabels{}
 				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
 			})
+
+			It("labels should be properly removed when NodeFeature is deleted (pending delete tracking)", func(ctx context.Context) {
+				nodes, err := getNonControlPlaneNodes(ctx, f.ClientSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				targetNodeName := nodes[0].Name
+				Expect(targetNodeName).ToNot(BeEmpty(), "No suitable worker node found")
+
+				By("Creating NodeFeature object with labels")
+				nodeFeatures, err := testutils.CreateOrUpdateNodeFeaturesFromFile(ctx, nfdClient, "nodefeature-1.yaml", f.Namespace.Name, targetNodeName)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying node labels from NodeFeature object are created")
+				expectedLabels := map[string]k8sLabels{
+					targetNodeName: {
+						nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-1": "obj-1",
+						nfdv1alpha1.FeatureLabelNs + "/e2e-nodefeature-test-2": "obj-1",
+						nfdv1alpha1.FeatureLabelNs + "/fake-fakefeature3":      "overridden",
+					},
+					"*": {},
+				}
+				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
+
+				By("Deleting NodeFeature object (tests pending delete tracking mechanism)")
+				err = nfdClient.NfdV1alpha1().NodeFeatures(f.Namespace.Name).Delete(ctx, nodeFeatures[0], metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying node labels are removed via pending delete mechanism")
+				expectedLabels[targetNodeName] = k8sLabels{}
+				eventuallyNonControlPlaneNodes(ctx, f.ClientSet).Should(MatchLabels(expectedLabels, nodes))
+			})
 		})
 
 		// Test NodeFeatureRule
