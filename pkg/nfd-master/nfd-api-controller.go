@@ -49,6 +49,11 @@ type nfdController struct {
 	updateNodeFeatureGroupChan     chan string
 
 	namespaceLister *NamespaceLister
+
+	// onDelete is called when a NodeFeature is deleted. This allows the
+	// nfdMaster to track pending deletes and distinguish between "NodeFeature
+	// was deleted" vs "NodeFeature is missing from incomplete cache".
+	onDelete func(nodeName string)
 }
 
 type nfdApiControllerOptions struct {
@@ -57,6 +62,9 @@ type nfdApiControllerOptions struct {
 	K8sClient                    k8sclient.Interface
 	NodeFeatureNamespaceSelector *metav1.LabelSelector
 	ListSize                     int64
+	// OnNodeFeatureDelete is called when a NodeFeature is deleted, before
+	// queuing the node for update. This allows tracking pending deletes.
+	OnNodeFeatureDelete func(nodeName string)
 }
 
 func init() {
@@ -70,6 +78,7 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		updateOneNodeChan:              make(chan string),
 		updateAllNodeFeatureGroupsChan: make(chan struct{}, 1),
 		updateNodeFeatureGroupChan:     make(chan string),
+		onDelete:                       nfdApiControllerOptions.OnNodeFeatureDelete,
 	}
 
 	if nfdApiControllerOptions.NodeFeatureNamespaceSelector != nil {
@@ -134,6 +143,19 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		DeleteFunc: func(obj interface{}) {
 			nfr := obj.(*nfdv1alpha1.NodeFeature)
 			klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
+			// Mark the node as having a pending delete before queuing update.
+			// This allows nfdAPIUpdateOneNode to distinguish between
+			// "NodeFeature was deleted" vs "cache is incomplete".
+			if c.onDelete != nil {
+				nodeName, err := getNodeNameForObj(nfr)
+				if err != nil {
+					klog.ErrorS(err, "failed to get node name for deleted NodeFeature; "+
+						"pending delete will not be marked, labels may not be removed",
+						"nodefeature", klog.KObj(nfr))
+				} else {
+					c.onDelete(nodeName)
+				}
+			}
 			c.updateOneNode("NodeFeature", nfr)
 			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
 				c.updateAllNodeFeatureGroups()
