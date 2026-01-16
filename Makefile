@@ -156,6 +156,22 @@ templates:
 generate:
 	hack/update_codegen.sh
 
+# Tool versions for API docs generation
+CRD_REF_DOCS_VERSION ?= v0.2.0
+
+.PHONY: generate-api-docs
+generate-api-docs: generate-api-docs-nfd
+
+.PHONY: generate-api-docs-nfd
+generate-api-docs-nfd:
+	$(GO_CMD) run github.com/elastic/crd-ref-docs@$(CRD_REF_DOCS_VERSION) \
+		--source-path=./api/nfd/v1alpha1 \
+		--config=./hack/crd-ref-docs/config.yaml \
+		--renderer=markdown \
+		--output-path=./docs/reference/nfd-api-reference.md
+	@# Add Jekyll front matter for site integration
+	@sed -i.bak '1s/^/---\ntitle: "NFD API Reference"\nlayout: default\nsort: 8\n---\n\n/' ./docs/reference/nfd-api-reference.md && rm -f ./docs/reference/nfd-api-reference.md.bak
+
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')
 

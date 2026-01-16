@@ -1,0 +1,12 @@
+processor:
+  # Do not include unexported fields in documentation
+  ignoreUnexportedFields: true
+  # Do not include fields inherited from these types
+  ignoreFields:
+    - "TypeMeta"
+    - "ObjectMeta"
+    - "ListMeta"
+
+render:
+  # Kubernetes version for linking to upstream types
+  kubernetesVersion: "1.31"
