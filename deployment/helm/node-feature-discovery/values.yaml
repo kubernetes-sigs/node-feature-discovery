@@ -237,6 +237,34 @@ master:
     # -- Policy to evict unhealthy pods when a PodDisruptionBudget is defined.
     # @section -- NFD-Master
     unhealthyPodEvictionPolicy: AlwaysAllow
+  # @section -- NFD-Master
+  networkPolicy:
+    # -- Should a networkPolicy be deployed for the nfd-master pods
+    # @section -- NFD-Master
+    enabled: false
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule
+    # -- [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-master pods.
+    # The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp
+    # @section -- NFD-Master
+    egress:
+    - ports: # @schema hidden
+      - port: 80
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+      - port: 53
+        protocol: TCP
+      - port: 53
+        protocol: UDP
+      - port: 6443
+        protocol: TCP
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule
+    # -- [Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-master pods.
+    # @section -- NFD-Master
+    ingress:
+    - ports: # @schema hidden
+      - protocol: TCP
+        port: http
 
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations
   # -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master pods.
@@ -245,7 +273,7 @@ master:
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels
   # -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-master pods.
   # @section -- NFD-Master
-  labels: {} 
+  labels: {}
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity
   # -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-master pods.
   # @section -- NFD-Master
@@ -261,7 +289,7 @@ master:
                 values: [""]
   # -- Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes).
   # @section -- NFD-Master
-  # @default --  
+  # @default -- -
   startupProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -281,7 +309,7 @@ master:
     failureThreshold: 30
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-Master
-  # @default --  
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -301,7 +329,7 @@ master:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-Master
-  # @default --  
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -623,7 +651,7 @@ worker:
 
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-Worker
-  # @default --  
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -643,7 +671,7 @@ worker:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-Worker
-  # @default --  
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -733,6 +761,34 @@ worker:
   # -- Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)
   # @section -- NFD-Worker
   updateStrategy: {}
+  # @section -- NFD-Worker
+  networkPolicy:
+    # -- Should a networkPolicy be deployed for the nfd-worker pods
+    # @section -- NFD-Worker
+    enabled: false
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule
+    # -- [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods.
+    # The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp
+    # @section -- NFD-Worker
+    egress:
+    - ports: # @schema hidden
+      - port: 80
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+      - port: 53
+        protocol: TCP
+      - port: 53
+        protocol: UDP
+      - port: 6443
+        protocol: TCP
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule
+    # -- [Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods.
+    # @section -- NFD-Worker
+    ingress:
+    - ports: # @schema hidden
+      - protocol: TCP
+        port: http
 
 #
 # NFD-Topology-Updater configuration
@@ -834,7 +890,7 @@ topologyUpdater:
 
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-Topology-Updater
-  # @default --  
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -854,7 +910,7 @@ topologyUpdater:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-Topology-Updater
-  # @default --  
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -917,6 +973,34 @@ topologyUpdater:
   # -- Enables compute and report of pod fingerprint in NRT objects.
   # @section -- NFD-Topology-Updater
   podSetFingerprint: true
+  # @section -- NFD-Topology-Updater
+  networkPolicy:
+    # -- Should a networkPolicy be deployed for the nfd-topology pods
+    # @section -- NFD-Topology-Updater
+    enabled: false
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule
+    # -- [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-topology pods.
+    # The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp
+    # @section -- NFD-Topology-Updater
+    egress:
+    - ports: # @schema hidden
+      - port: 80
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+      - port: 53
+        protocol: TCP
+      - port: 53
+        protocol: UDP
+      - port: 6443
+        protocol: TCP
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule
+    # -- [Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-topology pods.
+    # @section -- NFD-Topology-Updater
+    ingress:
+    - ports: # @schema hidden
+      - protocol: TCP
+        port: http
 
 #
 # NFD-GC configuration
@@ -969,7 +1053,7 @@ gc:
 
   # -- Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes).
   # @section -- NFD-GC
-  # @default --  
+  # @default -- -
   livenessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -989,7 +1073,7 @@ gc:
     failureThreshold:
   # -- Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes).
   # @section -- NFD-GC
-  # @default --  
+  # @default -- -
   readinessProbe:
     # @schema type: [integer, null]
     # -- (int) The number of seconds after the container has started before probe is initiated.
@@ -1069,6 +1153,34 @@ gc:
   # -- (int) Specifies the number of old history for the Deployment to retain to allow rollback.
   # @section -- NFD-GC
   revisionHistoryLimit:
+  # @section -- NFD-GC
+  networkPolicy:
+    # -- Should a networkPolicy be deployed for the nfd-gc pods
+    # @section -- NFD-GC
+    enabled: false
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyEgressRule
+    # -- [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-gc pods.
+    # The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp
+    # @section -- NFD-GC
+    egress:
+    - ports: # @schema hidden
+      - port: 80
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+      - port: 53
+        protocol: TCP
+      - port: 53
+        protocol: UDP
+      - port: 6443
+        protocol: TCP
+    # @schema itemRef: $k8s/_definitions.json#/definitions/io.k8s.api.networking.v1.NetworkPolicyIngressRule
+    # -- [Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-gc pods.
+    # @section -- NFD-GC
+    ingress:
+    - ports: # @schema hidden
+      - protocol: TCP
+        port: http
 
 #
 # Prometheus configuration
