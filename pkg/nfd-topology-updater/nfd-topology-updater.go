@@ -24,11 +24,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	k8sclient "k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
@@ -48,10 +51,14 @@ import (
 )
 
 const (
-	// TopologyManagerPolicyAttributeName represents an attribute which defines Topology Manager Policy
+	// TopologyManagerPolicyAttributeName represents an attribute which defines
+	// Topology Manager Policy
 	TopologyManagerPolicyAttributeName = "topologyManagerPolicy"
-	// TopologyManagerScopeAttributeName represents an attribute which defines Topology Manager Policy Scope
+	// TopologyManagerScopeAttributeName represents an attribute which defines
+	// Topology Manager Policy Scope
 	TopologyManagerScopeAttributeName = "topologyManagerScope"
+	// NodeResourceTopologyCRDName is the name of the NodeResourceTopology CRD
+	NodeResourceTopologyCRDName = "noderesourcetopologies.topology.node.k8s.io"
 )
 
 // Args are the command line arguments
@@ -141,6 +148,26 @@ func (w *nfdTopologyUpdater) Healthz(writer http.ResponseWriter, _ *http.Request
 func (w *nfdTopologyUpdater) Run() error {
 	klog.InfoS("Node Feature Discovery Topology Updater", "version", version.Get(), "nodeName", w.nodeName)
 
+	// Start HTTP server early so health probes work during initialization.
+	// This is important because we may wait for the CRD to be available.
+	httpMux := http.NewServeMux()
+	httpMux.HandleFunc("/healthz", w.Healthz)
+
+	// Register to metrics server
+	promRegistry := prometheus.NewRegistry()
+	promRegistry.MustRegister(
+		buildInfo,
+		scanErrors)
+	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
+	registerVersion(version.Get())
+
+	httpServer := http.Server{Addr: fmt.Sprintf(":%d", w.args.Port), Handler: httpMux}
+	go func() {
+		klog.InfoS("http server starting", "port", httpServer.Addr)
+		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
+	}()
+	defer httpServer.Close() // nolint: errcheck
+
 	podResClient, err := podres.GetPodResClient(w.resourcemonitorArgs.PodResourceSocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to get PodResource Client: %w", err)
@@ -152,7 +179,7 @@ func (w *nfdTopologyUpdater) Run() error {
 	}
 	topoClient, err := topologyclientset.NewForConfig(kubeconfig)
 	if err != nil {
-		return nil
+		return fmt.Errorf("failed to create topology client: %w", err)
 	}
 	w.topoClient = topoClient
 
@@ -162,19 +189,16 @@ func (w *nfdTopologyUpdater) Run() error {
 	}
 	w.k8sClient = k8sClient
 
+	// Wait for the NodeResourceTopology CRD to be available before proceeding.
+	// This handles race conditions during deployment and scenarios where the
+	// CRD is installed after the topology-updater.
+	if err := waitForNodeResourceTopologyCRD(kubeconfig, w.stop); err != nil {
+		return err
+	}
+
 	if err := w.configure(); err != nil {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
 	}
-
-	httpMux := http.NewServeMux()
-
-	// Register to metrics server
-	promRegistry := prometheus.NewRegistry()
-	promRegistry.MustRegister(
-		buildInfo,
-		scanErrors)
-	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
-	registerVersion(version.Get())
 
 	var resScan resourcemonitor.ResourcesScanner
 
@@ -193,17 +217,6 @@ func (w *nfdTopologyUpdater) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to obtain node resource information: %w", err)
 	}
-
-	// Register health probe (at this point we're "ready and live")
-	httpMux.HandleFunc("/healthz", w.Healthz)
-
-	// Start HTTP server
-	httpServer := http.Server{Addr: fmt.Sprintf(":%d", w.args.Port), Handler: httpMux}
-	go func() {
-		klog.InfoS("http server starting", "port", httpServer.Addr)
-		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
-	}()
-	defer httpServer.Close() // nolint: errcheck
 
 	for {
 		select {
@@ -282,6 +295,12 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 		updateAttributes(&nrtNew.Attributes, scanResponse.Attributes)
 
 		if _, err := w.topoClient.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{}); err != nil {
+			if errors.IsNotFound(err) {
+				return fmt.Errorf("failed to create NodeResourceTopology: %w. "+
+					"The NodeResourceTopology CRD may not be installed. "+
+					"If using Helm, ensure 'topologyUpdater.createCRDs=true' is set",
+					err)
+			}
 			return fmt.Errorf("failed to create NodeResourceTopology: %w", err)
 		}
 		return nil
@@ -378,6 +397,66 @@ func (w *nfdTopologyUpdater) configure() error {
 	}
 	klog.InfoS("configuration file parsed", "path", w.configFilePath, "config", w.config)
 	return nil
+}
+
+// waitForNodeResourceTopologyCRD waits for the NodeResourceTopology CRD to be
+// available in the cluster. This handles race conditions during deployment and
+// scenarios where the CRD is installed after the topology-updater pods start.
+// The function will retry indefinitely until the CRD is found or the stop
+// channel is closed.
+func waitForNodeResourceTopologyCRD(config *restclient.Config, stop <-chan struct{}) error {
+	const (
+		initialBackoff = 5 * time.Second
+		maxBackoff     = 60 * time.Second
+	)
+
+	apiextClient, err := apiextensionsclient.NewForConfig(config)
+	if err != nil {
+		klog.V(2).InfoS("unable to create apiextensions client for CRD check, skipping wait",
+			"error", err)
+		// Don't block startup, the error will be caught later when creating NRT
+		return nil
+	}
+
+	backoff := initialBackoff
+	for {
+		_, err = apiextClient.ApiextensionsV1().CustomResourceDefinitions().Get(
+			context.TODO(), NodeResourceTopologyCRDName, metav1.GetOptions{})
+		if err == nil {
+			klog.InfoS("NodeResourceTopology CRD is available",
+				"crd", NodeResourceTopologyCRDName)
+			return nil
+		}
+
+		// If we don't have permission to check CRDs, skip waiting and let the
+		// actual NRT creation fail with a more descriptive error
+		if errors.IsForbidden(err) {
+			klog.V(2).InfoS("no permission to check CRD existence, skipping wait",
+				"crd", NodeResourceTopologyCRDName, "error", err)
+			return nil
+		}
+
+		if errors.IsNotFound(err) {
+			klog.InfoS("waiting for NodeResourceTopology CRD to be created. "+
+				"If using Helm, ensure 'topologyUpdater.createCRDs=true' is set",
+				"crd", NodeResourceTopologyCRDName, "retryIn", backoff)
+		} else {
+			klog.V(2).InfoS("error checking for CRD, will retry",
+				"crd", NodeResourceTopologyCRDName, "error", err, "retryIn", backoff)
+		}
+
+		select {
+		case <-stop:
+			return fmt.Errorf("stopped while waiting for CRD %q",
+				NodeResourceTopologyCRDName)
+		case <-time.After(backoff):
+			// Exponential backoff with max cap
+			backoff *= 2
+			if backoff > maxBackoff {
+				backoff = maxBackoff
+			}
+		}
+	}
 }
 
 func createTopologyAttributes(policy string, scope string) v1alpha2.AttributeList {

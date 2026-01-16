@@ -754,7 +754,10 @@ topologyUpdater:
   # -- Specifies whether nfd-topology-updater should be deployed.
   # @section -- NFD-Topology-Updater
   enable: false
-  # -- Create CustomResourceDefinitions for the TopologyUpdater.
+  # -- Create the NodeResourceTopology CRD. This MUST be set to true when
+  # 'enable' is true, unless the CRD is installed separately (e.g., by another
+  # Helm release or external tool). If the CRD is missing, the topology-updater
+  # pods will fail with "NodeResourceTopology CRD is not installed" error.
   # @section -- NFD-Topology-Updater
   createCRDs: false
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
