@@ -44,6 +44,9 @@ spec:
       securityContext:
         {{- toYaml .Values.worker.podSecurityContext | nindent 8 }}
       hostNetwork: {{ .Values.worker.hostNetwork }}
+      {{- if kindIs "bool" .Values.worker.hostUsers }}
+      hostUsers: {{ .Values.worker.hostUsers }}
+      {{- end }}
       containers:
       - name: worker
         securityContext:

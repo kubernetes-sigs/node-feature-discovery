@@ -40,6 +40,9 @@ spec:
       securityContext:
         {{- toYaml .Values.topologyUpdater.podSecurityContext | nindent 8 }}
       hostNetwork: {{ .Values.topologyUpdater.hostNetwork }}
+      {{- if kindIs "bool" .Values.topologyUpdater.hostUsers }}
+      hostUsers: {{ .Values.topologyUpdater.hostUsers }}
+      {{- end }}
       containers:
       - name: topology-updater
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
