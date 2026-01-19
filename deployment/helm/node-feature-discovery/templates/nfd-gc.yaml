@@ -40,6 +40,9 @@ spec:
       securityContext:
         {{- toYaml .Values.gc.podSecurityContext | nindent 8 }}
       hostNetwork: {{ .Values.gc.hostNetwork }}
+      {{- if kindIs "bool" .Values.gc.hostUsers }}
+      hostUsers: {{ .Values.gc.hostUsers }}
+      {{- end }}
       containers:
       - name: gc
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

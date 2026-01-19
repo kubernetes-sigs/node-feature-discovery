@@ -65,6 +65,10 @@ master:
   # -- Run the container in the host's network namespace.
   # @section -- NFD-Master
   hostNetwork: false
+  # @schema type: [boolean, null]
+  # -- (bool) Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.
+  # @section -- NFD-Master
+  hostUsers: ~  # @schema type: [boolean, null]
   # @enum: [Default, ClusterFirst, ClusterFirstWithHostNet, None]
   # -- NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
   # @section -- NFD-Master
@@ -370,6 +374,10 @@ worker:
   # -- Run the container in the host's network namespace.
   # @section -- NFD-Worker
   hostNetwork: false
+  # @schema type: [boolean, null]
+  # -- (bool) Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.
+  # @section -- NFD-Worker
+  hostUsers: ~  # @schema type: [boolean, null]
   # @enum: [Default, ClusterFirst, ClusterFirstWithHostNet, None]
   # -- NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).
   # @section -- NFD-Worker
@@ -824,6 +832,10 @@ topologyUpdater:
   # -- Run the container in the host's network namespace.
   # @section -- NFD-Topology-Updater
   hostNetwork: false
+  # @schema type: [boolean, null]
+  # -- (bool) Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.
+  # @section -- NFD-Topology-Updater
+  hostUsers: ~  # @schema type: [boolean, null]
   # @enum: [Default, ClusterFirst, ClusterFirstWithHostNet, None]
   # -- NFD topology updater pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy).
   # @section -- NFD-Topology-Updater
@@ -1020,6 +1032,10 @@ gc:
   # -- Run the container in the host's network namespace.
   # @section -- NFD-GC
   hostNetwork: false
+  # @schema type: [boolean, null]
+  # -- (bool) Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.
+  # @section -- NFD-GC
+  hostUsers: ~  # @schema type: [boolean, null]
   # -- The number of desired replicas for the nfd-gc Deployment.
   # @section -- NFD-GC
   replicaCount: 1

@@ -55,6 +55,13 @@
                     "description": "Run the container in the host's network namespace.",
                     "type": "boolean"
                 },
+                "hostUsers": {
+                    "description": "Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.",
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
                 "interval": {
                     "description": "Time between periodic garbage collector runs.",
                     "type": "string"
@@ -352,6 +359,13 @@
                 "hostNetwork": {
                     "description": "Run the container in the host's network namespace.",
                     "type": "boolean"
+                },
+                "hostUsers": {
+                    "description": "Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.",
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
                 },
                 "instance": {
                     "description": "Instance name. Used to separate annotation namespaces for multiple parallel deployments.",
@@ -695,6 +709,13 @@
                     "description": "Run the container in the host's network namespace.",
                     "type": "boolean"
                 },
+                "hostUsers": {
+                    "description": "Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.",
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
                 "kubeletConfigPath": {
                     "description": "Host path for the kubelet config file.",
                     "type": [
@@ -952,6 +973,13 @@
                 "hostNetwork": {
                     "description": "Run the container in the host's network namespace.",
                     "type": "boolean"
+                },
+                "hostUsers": {
+                    "description": "Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true.",
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
                 },
                 "labels": {
                     "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods.",

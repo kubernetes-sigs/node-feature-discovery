@@ -193,6 +193,7 @@ NFD.
 | master.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-commandline-reference) to pass to nfd-master. |
 | master.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-master container. |
 | master.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
+| master.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | master.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy). |
 | master.config | string | `nil` | NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference). |
 | master.port | int | `8080` | Port on which to serve http for metrics and healthz endpoints. |
@@ -249,6 +250,7 @@ NFD.
 | worker.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-commandline-reference) to pass to nfd-worker. |
 | worker.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-worker container. |
 | worker.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
+| worker.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | worker.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
 | worker.config | string | `nil` | NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference). |
 | worker.port | int | `8080` | Port on which to serve http for metrics and healthz endpoints. |
@@ -295,6 +297,7 @@ NFD.
 | topologyUpdater.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater. |
 | topologyUpdater.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-topology-updater container. |
 | topologyUpdater.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
+| topologyUpdater.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | topologyUpdater.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD topology updater pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
 | topologyUpdater.serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
 | topologyUpdater.serviceAccount.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account. |
@@ -341,6 +344,7 @@ NFD.
 | gc.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/gc-commandline-reference) to pass to nfd-gc. |
 | gc.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-gc container. |
 | gc.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
+| gc.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | gc.replicaCount | int | `1` | The number of desired replicas for the nfd-gc Deployment. |
 | gc.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD gc pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
 | gc.serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
