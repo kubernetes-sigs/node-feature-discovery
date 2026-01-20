@@ -18,6 +18,7 @@ package kernel
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 
 	"k8s.io/klog/v2"
@@ -41,14 +42,16 @@ const (
 
 // Configuration file options
 type Config struct {
-	KconfigFile string
-	ConfigOpts  []string `json:"configOpts,omitempty"`
+	KconfigFile     string
+	ConfigOpts      []string `json:"configOpts,omitempty"`
+	ModuleWhiteList string
 }
 
 // newDefaultConfig returns a new config with pre-populated defaults
 func newDefaultConfig() *Config {
 	return &Config{
-		KconfigFile: "",
+		KconfigFile:     "",
+		ModuleWhiteList: ".*",
 		ConfigOpts: []string{
 			"NO_HZ",
 			"NO_HZ_IDLE",
@@ -64,7 +67,8 @@ type kernelSource struct {
 	features *nfdv1alpha1.Features
 	// legacyKconfig contains mangled kconfig values used for
 	// kernel.config-<flag> labels and legacy kConfig custom rules.
-	legacyKconfig map[string]string
+	legacyKconfig   map[string]string
+	moduleWhiteList *regexp.Regexp
 }
 
 // Singleton source instance
@@ -90,6 +94,11 @@ func (s *kernelSource) SetConfig(conf source.Config) {
 		s.config = v
 	default:
 		panic(fmt.Sprintf("invalid config type: %T", conf))
+	}
+
+	r, err := regexp.Compile(s.config.ModuleWhiteList)
+	if err == nil {
+		s.moduleWhiteList = r
 	}
 }
 
@@ -139,14 +148,14 @@ func (s *kernelSource) Discover() error {
 	}
 
 	var enabledModules []string
-	if kmods, err := getLoadedModules(); err != nil {
+	if kmods, err := getLoadedModules(s); err != nil {
 		klog.ErrorS(err, "failed to get loaded kernel modules")
 	} else {
 		enabledModules = append(enabledModules, kmods...)
 		s.features.Flags[LoadedModuleFeature] = nfdv1alpha1.NewFlagFeatures(kmods...)
 	}
 
-	if builtinMods, err := getBuiltinModules(); err != nil {
+	if builtinMods, err := getBuiltinModules(s); err != nil {
 		klog.ErrorS(err, "failed to get builtin kernel modules")
 	} else {
 		enabledModules = append(enabledModules, builtinMods...)
