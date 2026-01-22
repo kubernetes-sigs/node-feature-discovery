@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,7 +100,7 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (Nf
 	}
 	go ntf.Run()
 
-	kubeletConfigFunc, err := getKubeletConfigFunc(resourcemonitorArgs.KubeletConfigURI, resourcemonitorArgs.APIAuthTokenFile)
+	kubeletConfigFunc, err := kubeconf.GetKubeletConfigFunc(resourcemonitorArgs.KubeletConfigURI, resourcemonitorArgs.APIAuthTokenFile)
 	if err != nil {
 		return nil, err
 	}
@@ -410,39 +409,4 @@ func updateAttributes(lhs *v1alpha2.AttributeList, rhs v1alpha2.AttributeList) {
 	for _, attr := range rhs {
 		updateAttribute(lhs, attr)
 	}
-}
-
-func getKubeletConfigFunc(uri, apiAuthTokenFile string) (func() (*kubeletconfigv1beta1.KubeletConfiguration, error), error) {
-	u, err := url.ParseRequestURI(uri)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse -kubelet-config-uri: %w", err)
-	}
-
-	// init kubelet API client
-	var klConfig *kubeletconfigv1beta1.KubeletConfiguration
-	switch u.Scheme {
-	case "file":
-		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
-			klConfig, err = kubeconf.GetKubeletConfigFromLocalFile(u.Path)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read kubelet config: %w", err)
-			}
-			return klConfig, err
-		}, nil
-	case "https":
-		restConfig, err := kubeconf.InsecureConfig(u.String(), apiAuthTokenFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
-		}
-
-		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
-			klConfig, err = kubeconf.GetKubeletConfiguration(restConfig)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get kubelet config from configz endpoint: %w", err)
-			}
-			return klConfig, nil
-		}, nil
-	}
-
-	return nil, fmt.Errorf("unsupported URI scheme: %v", u.Scheme)
 }
