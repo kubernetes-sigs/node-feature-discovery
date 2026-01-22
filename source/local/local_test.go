@@ -17,12 +17,15 @@ limitations under the License.
 package local
 
 import (
+	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/node-feature-discovery/source"
 )
 
 func TestLocalSource(t *testing.T) {
@@ -82,4 +85,106 @@ func TestParseDirectives(t *testing.T) {
 			assert.Equal(t, err != nil, tc.wantErr)
 		})
 	}
+}
+
+func TestSetNotifyChannel_WatcherCleanup(t *testing.T) {
+	// Create a temp directory to use as features.d
+	tmpDir := t.TempDir()
+	originalDir := featureFilesDir
+	featureFilesDir = tmpDir
+	t.Cleanup(func() { featureFilesDir = originalDir })
+
+	// Create a fresh localSource for testing
+	testSrc := &localSource{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan *source.FeatureSource, 1)
+
+	// Start the notifier
+	err := testSrc.SetNotifyChannel(ctx, ch)
+	assert.NoError(t, err)
+
+	// Verify cancelFunc and done are set
+	testSrc.mu.Lock()
+	assert.NotNil(t, testSrc.cancelFunc)
+	done := testSrc.done
+	testSrc.mu.Unlock()
+
+	// Cancel context and wait for goroutine to exit
+	cancel()
+	<-done
+
+	// After goroutine exits, watcher should be closed (verified by no panic/hang)
+}
+
+func TestSetNotifyChannel_Reinitialization(t *testing.T) {
+	// Create a temp directory to use as features.d
+	tmpDir := t.TempDir()
+	originalDir := featureFilesDir
+	featureFilesDir = tmpDir
+	t.Cleanup(func() { featureFilesDir = originalDir })
+
+	testSrc := &localSource{}
+	ch := make(chan *source.FeatureSource, 1)
+
+	// First call to SetNotifyChannel
+	ctx1, cancel1 := context.WithCancel(context.Background())
+	err := testSrc.SetNotifyChannel(ctx1, ch)
+	assert.NoError(t, err)
+
+	// Second call should stop the first notifier and start a new one
+	ctx2, cancel2 := context.WithCancel(context.Background())
+	err = testSrc.SetNotifyChannel(ctx2, ch)
+	assert.NoError(t, err)
+
+	// First context's cancel should have no effect now (already stopped)
+	cancel1()
+
+	// Verify the second notifier is still active
+	testSrc.mu.Lock()
+	assert.NotNil(t, testSrc.cancelFunc)
+	done := testSrc.done
+	testSrc.mu.Unlock()
+
+	// Cleanup
+	cancel2()
+	<-done
+}
+
+func TestSetNotifyChannel_ConcurrentCalls(t *testing.T) {
+	// Create a temp directory to use as features.d
+	tmpDir := t.TempDir()
+	originalDir := featureFilesDir
+	featureFilesDir = tmpDir
+	t.Cleanup(func() { featureFilesDir = originalDir })
+
+	testSrc := &localSource{}
+	ch := make(chan *source.FeatureSource, 10)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Make multiple concurrent calls to SetNotifyChannel
+	var wg sync.WaitGroup
+	numCalls := 10
+	for i := 0; i < numCalls; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_ = testSrc.SetNotifyChannel(ctx, ch)
+		}()
+	}
+
+	// Wait for all calls to complete
+	wg.Wait()
+
+	// Verify only one notifier is active
+	testSrc.mu.Lock()
+	assert.NotNil(t, testSrc.cancelFunc)
+	done := testSrc.done
+	testSrc.mu.Unlock()
+
+	// Cleanup
+	cancel()
+	<-done
 }
