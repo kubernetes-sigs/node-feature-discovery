@@ -37,7 +37,6 @@ spec:
           args: []
           resources:
             limits:
-              cpu: 100m
               memory: 60Mi
             requests:
               cpu: 50m
