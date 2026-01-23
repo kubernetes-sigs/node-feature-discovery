@@ -28,7 +28,6 @@ spec:
                 resource: limits.memory
           resources:
             limits:
-              cpu: 300m
               memory: 4Gi
             requests:
               cpu: 100m
