@@ -82,7 +82,7 @@ rules:
 - apiGroups:
     - ""
   resources:
-    - nodes/proxy
+    - nodes/configz
   verbs:
     - get
 - apiGroups:
@@ -120,7 +120,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - nodes/proxy
+  - nodes/configz
   verbs:
   - get
 - apiGroups:
