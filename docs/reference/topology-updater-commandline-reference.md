@@ -134,7 +134,9 @@ The `-api-auth-token-file` specifies the path to the api auth token file
 which is used to retrieve Kubelet's configuration from Kubelet secure port,
 only taking effect when `-kubelet-config-uri` is https.
 Note that this token file must bind to a role that has the `get` capability to
-`nodes/proxy` resources.
+`nodes/configz` resources (on 1.33+ nodes), or `get` `nodes/proxy` resources
+(prior to 1.33). See [warnings](https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/#get-nodes-proxy-warning)
+about granting `nodes/proxy` permissions.
 
 Default:  `/var/run/secrets/kubernetes.io/serviceaccount/token`
 

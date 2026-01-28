@@ -19,7 +19,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - nodes/proxy
+  - nodes/configz
   verbs:
   - get
 - apiGroups:
