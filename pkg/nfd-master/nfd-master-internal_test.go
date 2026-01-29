@@ -210,7 +210,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
 
 		Convey("When I successfully update the node with feature labels", func() {
-			err := fakeMaster.updateNodeObject(fakeCli, testNode, featureLabels, featureAnnotations, featureExtResources, nil)
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, featureLabels, featureAnnotations, featureExtResources, nil, false)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -242,7 +242,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 				return true, &corev1.Node{}, errors.New("Fake error when patching node")
 			})
-			err := fakeMaster.updateNodeObject(fakeCli, testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil, false)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldBeError)
@@ -868,4 +868,119 @@ func TestGetDynamicValue(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPendingDeleteTracking(t *testing.T) {
+	Convey("When tracking pending deletes", t, func() {
+		fakeMaster := newFakeMaster()
+
+		Convey("markPendingDelete should add node to pending set", func() {
+			fakeMaster.markPendingDelete("test-node-1")
+
+			So(fakeMaster.pendingDeletes.Has("test-node-1"), ShouldBeTrue)
+		})
+
+		Convey("consumePendingDelete should return true and remove node if marked", func() {
+			fakeMaster.markPendingDelete("test-node-2")
+
+			result := fakeMaster.consumePendingDelete("test-node-2")
+
+			So(result, ShouldBeTrue)
+			So(fakeMaster.pendingDeletes.Has("test-node-2"), ShouldBeFalse)
+		})
+
+		Convey("consumePendingDelete should return false if node not marked", func() {
+			result := fakeMaster.consumePendingDelete("unmarked-node")
+
+			So(result, ShouldBeFalse)
+		})
+
+		Convey("consumePendingDelete should be idempotent", func() {
+			fakeMaster.markPendingDelete("test-node-3")
+
+			first := fakeMaster.consumePendingDelete("test-node-3")
+			second := fakeMaster.consumePendingDelete("test-node-3")
+
+			So(first, ShouldBeTrue)
+			So(second, ShouldBeFalse)
+		})
+
+		Convey("multiple nodes can be tracked independently", func() {
+			fakeMaster.markPendingDelete("node-a")
+			fakeMaster.markPendingDelete("node-b")
+
+			So(fakeMaster.pendingDeletes.Has("node-a"), ShouldBeTrue)
+			So(fakeMaster.pendingDeletes.Has("node-b"), ShouldBeTrue)
+
+			fakeMaster.consumePendingDelete("node-a")
+
+			So(fakeMaster.pendingDeletes.Has("node-a"), ShouldBeFalse)
+			So(fakeMaster.pendingDeletes.Has("node-b"), ShouldBeTrue)
+		})
+	})
+}
+
+func TestUpdateNodeObjectSkipLabelRemoval(t *testing.T) {
+	Convey("When updating node with skipLabelRemoval=true", t, func() {
+		testNode := newTestNode()
+		// Set up node with existing NFD labels
+		testNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"] = "existing-value"
+		testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "existing-label"
+
+		//nolint:staticcheck // See issue #2400 for migration to NewClientset
+		fakeCli := fakeclient.NewSimpleClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+
+		Convey("existing labels should NOT be removed when skipLabelRemoval=true", func() {
+			// Update with empty labels but skip removal
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, ExtendedResources{}, nil, true)
+			So(err, ShouldBeNil)
+
+			// Get the updated node
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// Existing label should still be present
+			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"], ShouldEqual, "existing-value")
+		})
+
+		Convey("new labels should still be added when skipLabelRemoval=true", func() {
+			newLabels := Labels{nfdv1alpha1.FeatureLabelNs + "/new-label": "new-value"}
+
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, newLabels, Annotations{}, ExtendedResources{}, nil, true)
+			So(err, ShouldBeNil)
+
+			// Get the updated node
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// New label should be added
+			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/new-label"], ShouldEqual, "new-value")
+			// Existing label should still be present
+			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"], ShouldEqual, "existing-value")
+		})
+
+		Convey("existing labels should be removed when skipLabelRemoval=false", func() {
+			// Reset the test node
+			testNode2 := newTestNode()
+			testNode2.Labels[nfdv1alpha1.FeatureLabelNs+"/old-label"] = "old-value"
+			testNode2.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "old-label"
+
+			//nolint:staticcheck // See issue #2400 for migration to NewClientset
+			fakeCli2 := fakeclient.NewSimpleClientset(testNode2)
+			fakeMaster2 := newFakeMaster(WithKubernetesClient(fakeCli2))
+
+			// Update with empty labels and don't skip removal
+			err := fakeMaster2.updateNodeObject(fakeCli2, testNode2, Labels{}, Annotations{}, ExtendedResources{}, nil, false)
+			So(err, ShouldBeNil)
+
+			// Get the updated node
+			updatedNode, err := fakeCli2.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// Old label should be removed
+			_, exists := updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/old-label"]
+			So(exists, ShouldBeFalse)
+		})
+	})
 }
