@@ -41,7 +41,6 @@ spec:
             - "nfd-worker"
           resources:
             limits:
-              cpu: 200m
               memory: 512Mi
             requests:
               cpu: 5m
