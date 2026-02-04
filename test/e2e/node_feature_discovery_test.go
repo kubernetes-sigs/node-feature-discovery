@@ -1284,39 +1284,3 @@ restrictions:
 		})
 	})
 })
-
-// getNonControlPlaneNodes gets the nodes that are not tainted for exclusive control-plane usage
-func getNonControlPlaneNodes(ctx context.Context, cli clientset.Interface) ([]corev1.Node, error) {
-	nodeList, err := cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	if len(nodeList.Items) == 0 {
-		return nil, fmt.Errorf("no nodes found in the cluster")
-	}
-
-	controlPlaneTaint := corev1.Taint{
-		Effect: corev1.TaintEffectNoSchedule,
-		Key:    "node-role.kubernetes.io/control-plane",
-	}
-	out := []corev1.Node{}
-	for _, node := range nodeList.Items {
-		if !taintutils.TaintExists(node.Spec.Taints, &controlPlaneTaint) {
-			out = append(out, node)
-		}
-	}
-
-	if len(out) == 0 {
-		return nil, fmt.Errorf("no non-control-plane nodes found in the cluster")
-	}
-	return out, nil
-}
-
-func getNode(nodes []corev1.Node, nodeName string) corev1.Node {
-	for _, node := range nodes {
-		if node.Name == nodeName {
-			return node
-		}
-	}
-	return corev1.Node{}
-}
