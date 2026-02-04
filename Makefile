@@ -1,4 +1,4 @@
-.PHONY: all test templates yamls build build-%
+.PHONY: all test templates yamls build build-% install-crds
 .FORCE:
 
 GO_CMD ?= go
@@ -219,8 +219,12 @@ test:
 	GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
 	cd api/nfd && GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./...
 
+install-crds:
+	@if [ ! -f "${KUBECONFIG}" ]; then echo "[ERR] KUBECONFIG file not found: ${KUBECONFIG}"; exit 1; fi
+	kubectl apply -f deployment/base/nfd-crds/nfd-api-crds.yaml
+
 e2e-test:
-	@if [ -z ${KUBECONFIG} ]; then echo "[ERR] KUBECONFIG missing, must be defined"; exit 1; fi
+	@if [ ! -f "${KUBECONFIG}" ]; then echo "[ERR] KUBECONFIG file not found: ${KUBECONFIG}"; exit 1; fi
 	$(GO_CMD) test -timeout=1h -v ./test/e2e/ -args \
 	    -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) \
 	    -kubeconfig=$(KUBECONFIG) \

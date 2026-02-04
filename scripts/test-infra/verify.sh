@@ -2,15 +2,20 @@
 
 this_dir=`dirname $0`
 
+# Tool versions
+GOLANGCI_LINT_VERSION="v2.4.0"
+HELM_VERSION="v3.17.3"
+KUBECTL_VERSION="v1.22.1"
+
 # Install deps
 gobinpath="$(go env GOPATH)/bin"
-curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" v2.4.0
+curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" $GOLANGCI_LINT_VERSION
 export PATH=$PATH:$(go env GOPATH)/bin
 
-curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -s -- --version v3.15.3
+curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -s -- --version $HELM_VERSION
 
 kubectl="$gobinpath/kubectl"
-curl -L https://dl.k8s.io/release/v1.22.1/bin/linux/amd64/kubectl -o "$kubectl"
+curl -L https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl -o "$kubectl"
 chmod 755 "$kubectl"
 
 curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
