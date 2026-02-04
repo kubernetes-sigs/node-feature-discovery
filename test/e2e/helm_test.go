@@ -49,29 +49,6 @@ const (
 	helmInstallTimeout = "5m"
 )
 
-// configTestCase defines a test case for Helm configuration overrides
-type configTestCase struct {
-	name           string
-	helmArgs       []string
-	mustExist      []string // Resource suffixes that must exist
-	mustNotExist   []string // Resource suffixes that must NOT exist
-	mustExistCM    []string // ConfigMap suffixes that must exist
-	mustNotExistCM []string // ConfigMap suffixes that must NOT exist
-}
-
-// rbacTestCase defines a test case for RBAC resource verification
-type rbacTestCase struct {
-	name                   string
-	helmArgs               []string
-	serviceAccounts        []string // ServiceAccount suffixes that must exist
-	missingServiceAccounts []string // ServiceAccount suffixes that must NOT exist
-	configMaps             []string // ConfigMap suffixes that must exist
-	missingConfigMaps      []string // ConfigMap suffixes that must NOT exist
-	roles                  []string // Role suffixes (namespaced)
-	clusterRoles           []string // ClusterRole suffixes
-	missingClusterRoles    []string // ClusterRole suffixes that must NOT exist
-}
-
 // Helper functions for helm tests
 
 // getChartPath returns the absolute path to the local helm chart.
@@ -271,59 +248,13 @@ var _ = NFDDescribe(Label("helm"), func() {
 	//
 	// Test configuration overrides with table-driven tests
 	//
-	configTestCases := []configTestCase{
-		{
-			name:     "topology-updater disabled",
-			helmArgs: []string{"--set", "topologyUpdater.enable=false"},
-			mustExist: []string{
-				"-master",
-				"-worker",
-				"-gc",
-			},
-			mustNotExist: []string{
-				"-topology-updater",
-			},
-			mustExistCM: []string{
-				"-master-conf",
-				"-worker-conf",
-			},
-			mustNotExistCM: []string{
-				"-topology-updater-conf",
-			},
-		},
-		{
-			name:     "topology-updater enabled",
-			helmArgs: []string{"--set", "topologyUpdater.enable=true"},
-			mustExist: []string{
-				"-master",
-				"-worker",
-				"-gc",
-				"-topology-updater",
-			},
-			mustNotExist: []string{},
-			mustExistCM: []string{
-				"-master-conf",
-				"-worker-conf",
-				"-topology-updater-conf",
-			},
-			mustNotExistCM: []string{},
-		},
-		{
-			name:     "gc disabled",
-			helmArgs: []string{"--set", "gc.enable=false"},
-			mustExist: []string{
-				"-master",
-				"-worker",
-			},
-			mustNotExist: []string{
-				"-gc",
-			},
-			mustExistCM: []string{
-				"-master-conf",
-				"-worker-conf",
-			},
-			mustNotExistCM: []string{},
-		},
+	type configTestCase struct {
+		name           string
+		helmArgs       []string
+		mustExist      []string // Resource suffixes that must exist
+		mustNotExist   []string // Resource suffixes that must NOT exist
+		mustExistCM    []string // ConfigMap suffixes that must exist
+		mustNotExistCM []string // ConfigMap suffixes that must NOT exist
 	}
 
 	DescribeTable("configuration overrides",
@@ -405,82 +336,73 @@ var _ = NFDDescribe(Label("helm"), func() {
 				Expect(ds.Spec.Selector.MatchLabels["app.kubernetes.io/name"]).To(Equal("node-feature-discovery"))
 			}
 		},
-		Entry("topology-updater disabled", configTestCases[0]),
-		Entry("topology-updater enabled", configTestCases[1]),
-		Entry("gc disabled", configTestCases[2]),
+		Entry("topology-updater disabled", configTestCase{
+			name:     "topology-updater disabled",
+			helmArgs: []string{"--set", "topologyUpdater.enable=false"},
+			mustExist: []string{
+				"-master",
+				"-worker",
+				"-gc",
+			},
+			mustNotExist: []string{
+				"-topology-updater",
+			},
+			mustExistCM: []string{
+				"-master-conf",
+				"-worker-conf",
+			},
+			mustNotExistCM: []string{
+				"-topology-updater-conf",
+			},
+		}),
+		Entry("topology-updater enabled", configTestCase{
+			name:     "topology-updater enabled",
+			helmArgs: []string{"--set", "topologyUpdater.enable=true"},
+			mustExist: []string{
+				"-master",
+				"-worker",
+				"-gc",
+				"-topology-updater",
+			},
+			mustNotExist: []string{},
+			mustExistCM: []string{
+				"-master-conf",
+				"-worker-conf",
+				"-topology-updater-conf",
+			},
+			mustNotExistCM: []string{},
+		}),
+		Entry("gc disabled", configTestCase{
+			name:     "gc disabled",
+			helmArgs: []string{"--set", "gc.enable=false"},
+			mustExist: []string{
+				"-master",
+				"-worker",
+			},
+			mustNotExist: []string{
+				"-gc",
+			},
+			mustExistCM: []string{
+				"-master-conf",
+				"-worker-conf",
+			},
+			mustNotExistCM: []string{},
+		}),
 	)
 
 	//
 	// Test RBAC and configuration resources with table-driven tests
 	//
-	rbacTestCases := []rbacTestCase{
-		{
-			name:     "default RBAC resources",
-			helmArgs: []string{},
-			serviceAccounts: []string{
-				"",
-				"-gc",
-				"-worker",
-			},
-			configMaps: []string{
-				"-master-conf",
-				"-worker-conf",
-			},
-			roles: []string{
-				"-worker",
-			},
-			clusterRoles: []string{
-				"",
-				"-gc",
-			},
-		},
-		{
-			name:     "topology-updater RBAC when enabled",
-			helmArgs: []string{"--set", "topologyUpdater.enable=true"},
-			serviceAccounts: []string{
-				"",
-				"-gc",
-				"-worker",
-				"-topology-updater",
-			},
-			configMaps: []string{
-				"-master-conf",
-				"-worker-conf",
-				"-topology-updater-conf",
-			},
-			roles: []string{
-				"-worker",
-			},
-			clusterRoles: []string{
-				"",
-				"-gc",
-				"-topology-updater",
-			},
-		},
-		{
-			name:     "gc disabled removes gc RBAC",
-			helmArgs: []string{"--set", "gc.enable=false"},
-			serviceAccounts: []string{
-				"",
-				"-worker",
-			},
-			missingServiceAccounts: []string{
-				"-gc",
-			},
-			configMaps: []string{
-				"-master-conf",
-				"-worker-conf",
-			},
-			roles: []string{
-				"-worker",
-			},
-			clusterRoles: []string{
-				"",
-			},
-			missingClusterRoles: []string{
-				"-gc",
-			},
-		},
+	type rbacTestCase struct {
+		name                   string
+		helmArgs               []string
+		serviceAccounts        []string // ServiceAccount suffixes that must exist
+		missingServiceAccounts []string // ServiceAccount suffixes that must NOT exist
+		configMaps             []string // ConfigMap suffixes that must exist
+		missingConfigMaps      []string // ConfigMap suffixes that must NOT exist
+		roles                  []string // Role suffixes (namespaced)
+		clusterRoles           []string // ClusterRole suffixes
+		missingClusterRoles    []string // ClusterRole suffixes that must NOT exist
 	}
 
 	DescribeTable("RBAC and configuration resources",
@@ -579,9 +501,73 @@ var _ = NFDDescribe(Label("helm"), func() {
 				Expect(apierrors.IsNotFound(err)).To(BeTrue(), "ClusterRoleBinding %q should not exist", crName)
 			}
 		},
-		Entry("default RBAC resources", rbacTestCases[0]),
-		Entry("topology-updater RBAC when enabled", rbacTestCases[1]),
-		Entry("gc disabled removes gc RBAC", rbacTestCases[2]),
+		Entry("default RBAC resources", rbacTestCase{
+			name:     "default RBAC resources",
+			helmArgs: []string{},
+			serviceAccounts: []string{
+				"",
+				"-gc",
+				"-worker",
+			},
+			configMaps: []string{
+				"-master-conf",
+				"-worker-conf",
+			},
+			roles: []string{
+				"-worker",
+			},
+			clusterRoles: []string{
+				"",
+				"-gc",
+			},
+		}),
+		Entry("topology-updater RBAC when enabled", rbacTestCase{
+			name:     "topology-updater RBAC when enabled",
+			helmArgs: []string{"--set", "topologyUpdater.enable=true"},
+			serviceAccounts: []string{
+				"",
+				"-gc",
+				"-worker",
+				"-topology-updater",
+			},
+			configMaps: []string{
+				"-master-conf",
+				"-worker-conf",
+				"-topology-updater-conf",
+			},
+			roles: []string{
+				"-worker",
+			},
+			clusterRoles: []string{
+				"",
+				"-gc",
+				"-topology-updater",
+			},
+		}),
+		Entry("gc disabled removes gc RBAC", rbacTestCase{
+			name:     "gc disabled removes gc RBAC",
+			helmArgs: []string{"--set", "gc.enable=false"},
+			serviceAccounts: []string{
+				"",
+				"-worker",
+			},
+			missingServiceAccounts: []string{
+				"-gc",
+			},
+			configMaps: []string{
+				"-master-conf",
+				"-worker-conf",
+			},
+			roles: []string{
+				"-worker",
+			},
+			clusterRoles: []string{
+				"",
+			},
+			missingClusterRoles: []string{
+				"-gc",
+			},
+		}),
 	)
 
 	//
