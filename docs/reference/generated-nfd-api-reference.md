@@ -4,18 +4,7 @@ layout: default
 sort: 8
 ---
 
-# NFD API Reference
-{: .no_toc}
-
-## Table of Contents
-{: .no_toc .text-delta}
-
-1. TOC
-{:toc}
-
----
-
-This document provides the API reference for Node Feature Discovery Custom Resources.
+# API Reference
 
 ## Packages
 - [nfd.k8s-sigs.io/v1alpha1](#nfdk8s-sigsiov1alpha1)
