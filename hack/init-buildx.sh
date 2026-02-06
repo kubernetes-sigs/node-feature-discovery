@@ -36,7 +36,9 @@ if [ "$(uname)" == 'Linux' ]; then
 fi
 
 # Ensure we use a builder that can leverage it (the default on linux will not)
-docker buildx rm nfd-builder || true
+if docker buildx inspect nfd-builder >/dev/null 2>&1; then
+  docker buildx rm -f nfd-builder || true
+fi
 docker buildx create --use --name=nfd-builder                 \
   ${http_proxy:+--driver-opt env.http_proxy="$http_proxy"}    \
   ${HTTP_PROXY:+--driver-opt env.HTTP_PROXY="$HTTP_PROXY"}    \
