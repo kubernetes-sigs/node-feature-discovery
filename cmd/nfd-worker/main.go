@@ -19,7 +19,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
+	"strings"
 
 	"k8s.io/klog/v2"
 
@@ -32,7 +34,8 @@ import (
 
 const (
 	// ProgramName is the canonical name of this program
-	ProgramName = "nfd-worker"
+	ProgramName       = "nfd-worker"
+	kubeletSecurePort = 10250
 )
 
 func main() {
@@ -82,6 +85,20 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 		os.Exit(2)
 	}
 
+	if len(args.KubeletConfigURI) == 0 {
+		nodeAddress := os.Getenv("NODE_ADDRESS")
+		if len(nodeAddress) == 0 {
+			_, _ = fmt.Fprintf(flags.Output(), "unable to determine the default kubelet config endpoint 'https://${NODE_ADDRESS}:%d/configz' due to empty NODE_ADDRESS environment, "+
+				"please either define the NODE_ADDRESS environment variable or specify endpoint with the -kubelet-config-uri flag\n", kubeletSecurePort)
+			os.Exit(1)
+		}
+		if isIPv6(nodeAddress) {
+			// With IPv6 we need to wrap the IP address in brackets as we append :port below
+			nodeAddress = "[" + nodeAddress + "]"
+		}
+		args.KubeletConfigURI = fmt.Sprintf("https://%s:%d/configz", nodeAddress, kubeletSecurePort)
+	}
+
 	// Handle overrides
 	flags.Visit(func(f *flag.Flag) {
 		switch f.Name {
@@ -106,6 +123,10 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Config file to use.")
 	flagset.StringVar(&args.Kubeconfig, "kubeconfig", "",
 		"Kubeconfig to use")
+	flagset.StringVar(&args.KubeletConfigURI, "kubelet-config-uri", "",
+		"Kubelet config URI path. Default to kubelet configz endpoint.")
+	flagset.StringVar(&args.APIAuthTokenFile, "api-auth-token-file", "/var/run/secrets/kubernetes.io/serviceaccount/token",
+		"API auth token file path. It is used to request kubelet configz endpoint, only takes effect when kubelet-config-uri is https. Default to /var/run/secrets/kubernetes.io/serviceaccount/token.")
 	flagset.BoolVar(&args.Oneshot, "oneshot", false,
 		"Do not publish feature labels")
 	flagset.IntVar(&args.Port, "port", 8080,
@@ -133,4 +154,9 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 			"Prefix the source name with '-' to disable it.")
 
 	return args, overrides
+}
+
+func isIPv6(addr string) bool {
+	ip := net.ParseIP(addr)
+	return ip != nil && strings.Count(ip.String(), ":") >= 2
 }
