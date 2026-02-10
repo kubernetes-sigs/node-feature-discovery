@@ -36,7 +36,7 @@ require (
 	k8s.io/pod-security-admission v0.35.0
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	oras.land/oras-go/v2 v2.6.0
-	sigs.k8s.io/e2e-framework v0.4.0
+	sigs.k8s.io/e2e-framework v0.6.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -144,7 +144,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/vektra/mockery/v2 v2.52.2 // indirect
-	github.com/vladimirvivien/gexe v0.2.0 // indirect
+	github.com/vladimirvivien/gexe v0.4.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.5 // indirect
