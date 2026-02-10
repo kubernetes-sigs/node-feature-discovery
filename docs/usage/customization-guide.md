@@ -30,6 +30,9 @@ labeling:
 - [`custom`](#custom-feature-source) feature source of nfd-worker creates
   labels based on user-specified rules.
 
+For complete API type definitions, see the
+[NFD API Reference](../reference/generated-nfd-api-reference.md).
+
 ## NodeFeature custom resource
 
 NodeFeature objects provide a way for 3rd party extensions to advertise custom
