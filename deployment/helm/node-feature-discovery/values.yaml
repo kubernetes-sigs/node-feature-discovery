@@ -120,6 +120,7 @@ master:
     #   renewDeadline: 10s
     #   # this value has to be greater than 0
     #   retryPeriod: 2s
+    # enableLeaderElection: false
     # nfdApiParallelism: 10
   ### <NFD-MASTER-CONF-END-DO-NOT-REMOVE>
 
