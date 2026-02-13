@@ -293,7 +293,7 @@ NFD.
 |-----|------|---------|-------------|
 | topologyUpdater.config | string | `nil` | Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details. |
 | topologyUpdater.enable | bool | `false` | Specifies whether nfd-topology-updater should be deployed. |
-| topologyUpdater.createCRDs | bool | `false` | Create CustomResourceDefinitions for the TopologyUpdater. |
+| topologyUpdater.createCRDs | bool | `false` | Create the NodeResourceTopology CRD. This MUST be set to true when 'enable' is true, unless the CRD is installed separately (e.g., by another Helm release or external tool). If the CRD is missing, the topology-updater pods will fail with "NodeResourceTopology CRD is not installed" error. |
 | topologyUpdater.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater. |
 | topologyUpdater.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-topology-updater container. |
 | topologyUpdater.hostNetwork | bool | `false` | Run the container in the host's network namespace. |

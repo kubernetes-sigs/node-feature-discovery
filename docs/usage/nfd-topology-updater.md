@@ -56,6 +56,29 @@ Preceding Kubernetes v1.23, the `kubelet` must be started with
 Starting from Kubernetes v1.23, the `KubeletPodResourcesGetAllocatable`
 [feature gate][feature-gate].  is enabled by default
 
+### NodeResourceTopology CRD
+
+The NFD-Topology-Updater requires the `NodeResourceTopology` Custom Resource
+Definition (CRD) to be installed in the cluster. Without this CRD, the
+topology-updater pods will fail with an error:
+
+```plaintext
+NodeResourceTopology CRD "noderesourcetopologies.topology.node.k8s.io" is not installed
+```
+
+When deploying with Helm, you **must** set `topologyUpdater.createCRDs=true`
+along with `topologyUpdater.enable=true`:
+
+```bash
+helm install nfd node-feature-discovery \
+  --set topologyUpdater.enable=true \
+  --set topologyUpdater.createCRDs=true
+```
+
+If you manage CRDs separately (e.g., through a dedicated CRD management tool or
+another Helm release), ensure the `NodeResourceTopology` CRD is installed before
+deploying the topology-updater
+
 ## Topology-Updater Configuration
 
 NFD-Topology-Updater supports configuration through a configuration file. The
