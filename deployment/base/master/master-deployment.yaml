@@ -14,7 +14,7 @@ spec:
       labels:
         app: nfd-master
     spec:
-      serviceAccount: nfd-master
+      serviceAccountName: nfd-master
       enableServiceLinks: false
       tolerations: []
       containers:

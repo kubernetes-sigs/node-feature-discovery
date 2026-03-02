@@ -13,7 +13,7 @@ spec:
       labels:
         app: nfd-worker
     spec:
-      serviceAccount: nfd-worker
+      serviceAccountName: nfd-worker
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Never
       affinity:
