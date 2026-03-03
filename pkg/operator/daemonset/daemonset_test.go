@@ -94,7 +94,8 @@ var _ = Describe("SetWorkerDaemonsetAsDesired", func() {
 		nfdCR := nfdv1.NodeFeatureDiscovery{
 			Spec: nfdv1.NodeFeatureDiscoverySpec{
 				Operand: nfdv1.OperandSpec{
-					Image: "test-image",
+					Image:                   "test-image",
+					WorkerPriorityClassName: "check-priority-class",
 				},
 			},
 		}
