@@ -99,6 +99,7 @@ spec:
       tolerations:
       - effect: NoSchedule
         operator: Exists
+      priorityClassName: check-priority-class
       volumes:
       - hostPath:
           path: /boot
