@@ -87,6 +87,7 @@ type NFDConfig struct {
 	EnableTaints      bool
 	ResyncPeriod      utils.DurationVal
 	LeaderElection    LeaderElectionConfig
+	ReplicaCount      int
 	NfdApiParallelism int
 	Klog              klogutils.KlogConfigOpts
 	Restrictions      Restrictions
@@ -310,10 +311,10 @@ func (m *nfdMaster) Run() error {
 	registerVersion(version.Get())
 
 	// Run updater that handles events from the nfd CRD API.
-	if m.args.EnableLeaderElection {
-		go m.startLeaderElectionHandler()
-	} else {
+	if m.config.ReplicaCount == 1 {
 		m.isLeader = true
+	} else if m.args.EnableLeaderElection {
+		go m.startLeaderElectionHandler()
 	}
 	go m.nfdAPIUpdateHandler()
 
