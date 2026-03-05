@@ -12,7 +12,7 @@ spec:
       labels:
         app: nfd-prune
     spec:
-      serviceAccount: nfd-master
+      serviceAccountName: nfd-master
       tolerations: []
       containers:
         - name: nfd-master
