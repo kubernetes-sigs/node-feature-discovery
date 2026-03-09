@@ -24,16 +24,16 @@ require (
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
 	golang.org/x/time v0.14.0
 	google.golang.org/grpc v1.79.1
-	k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver v0.35.0
-	k8s.io/apimachinery v0.35.0
-	k8s.io/client-go v0.35.0
-	k8s.io/component-base v0.35.0
-	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.35.0
-	k8s.io/kubelet v0.35.0
-	k8s.io/kubernetes v1.35.0
-	k8s.io/pod-security-admission v0.35.0
+	k8s.io/api v0.35.2
+	k8s.io/apiextensions-apiserver v0.35.2
+	k8s.io/apimachinery v0.35.2
+	k8s.io/client-go v0.35.2
+	k8s.io/component-base v0.35.2
+	k8s.io/klog/v2 v2.140.0
+	k8s.io/kubectl v0.35.2
+	k8s.io/kubelet v0.35.2
+	k8s.io/kubernetes v1.35.2
+	k8s.io/pod-security-admission v0.35.2
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	oras.land/oras-go/v2 v2.6.0
 	sigs.k8s.io/e2e-framework v0.6.0
@@ -186,20 +186,20 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.19.0 // indirect
 	howett.net/plist v1.0.2-0.20250314012144-ee69052608d9 // indirect
-	k8s.io/apiserver v0.35.0 // indirect
-	k8s.io/cloud-provider v0.35.0 // indirect
-	k8s.io/code-generator v0.35.0 // indirect
-	k8s.io/component-helpers v0.35.0 // indirect
-	k8s.io/controller-manager v0.35.0 // indirect
-	k8s.io/cri-api v0.35.0 // indirect
-	k8s.io/cri-client v0.35.0 // indirect
-	k8s.io/csi-translation-lib v0.35.0 // indirect
-	k8s.io/dynamic-resource-allocation v0.35.0 // indirect
+	k8s.io/apiserver v0.35.2 // indirect
+	k8s.io/cloud-provider v0.35.2 // indirect
+	k8s.io/code-generator v0.35.2 // indirect
+	k8s.io/component-helpers v0.35.2 // indirect
+	k8s.io/controller-manager v0.35.2 // indirect
+	k8s.io/cri-api v0.35.2 // indirect
+	k8s.io/cri-client v0.35.2 // indirect
+	k8s.io/csi-translation-lib v0.35.2 // indirect
+	k8s.io/dynamic-resource-allocation v0.35.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
-	k8s.io/kms v0.35.0 // indirect
+	k8s.io/kms v0.35.2 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
-	k8s.io/kube-scheduler v0.35.0 // indirect
-	k8s.io/mount-utils v0.35.0 // indirect
+	k8s.io/kube-scheduler v0.35.2 // indirect
+	k8s.io/mount-utils v0.35.2 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect
 	sigs.k8s.io/controller-tools v0.16.3 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
@@ -209,32 +209,32 @@ require (
 // The k8s "sub-"packages do not have 'semver' compatible versions. Thus, we
 // need to override with commits (corresponding their kubernetes-* tags)
 replace (
-	k8s.io/api => k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.35.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.35.0
-	k8s.io/apiserver => k8s.io/apiserver v0.35.0
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.35.0
-	k8s.io/client-go => k8s.io/client-go v0.35.0
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.0
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.35.0
-	k8s.io/code-generator => k8s.io/code-generator v0.35.0
-	k8s.io/component-base => k8s.io/component-base v0.35.0
-	k8s.io/component-helpers => k8s.io/component-helpers v0.35.0
-	k8s.io/controller-manager => k8s.io/controller-manager v0.35.0
-	k8s.io/cri-api => k8s.io/cri-api v0.35.0
-	k8s.io/cri-client => k8s.io/cri-client v0.35.0
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.35.0
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.35.0
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.35.0
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.35.0
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.35.0
-	k8s.io/kubectl => k8s.io/kubectl v0.35.0
-	k8s.io/kubelet => k8s.io/kubelet v0.35.0
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.35.0
-	k8s.io/metrics => k8s.io/metrics v0.35.0
-	k8s.io/mount-utils => k8s.io/mount-utils v0.35.0
-	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.35.0
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.35.0
+	k8s.io/api => k8s.io/api v0.35.2
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.35.2
+	k8s.io/apimachinery => k8s.io/apimachinery v0.35.2
+	k8s.io/apiserver => k8s.io/apiserver v0.35.2
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.35.2
+	k8s.io/client-go => k8s.io/client-go v0.35.2
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.2
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.35.2
+	k8s.io/code-generator => k8s.io/code-generator v0.35.2
+	k8s.io/component-base => k8s.io/component-base v0.35.2
+	k8s.io/component-helpers => k8s.io/component-helpers v0.35.2
+	k8s.io/controller-manager => k8s.io/controller-manager v0.35.2
+	k8s.io/cri-api => k8s.io/cri-api v0.35.2
+	k8s.io/cri-client => k8s.io/cri-client v0.35.2
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.35.2
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.35.2
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.35.2
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.35.2
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.35.2
+	k8s.io/kubectl => k8s.io/kubectl v0.35.2
+	k8s.io/kubelet => k8s.io/kubelet v0.35.2
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.35.2
+	k8s.io/metrics => k8s.io/metrics v0.35.2
+	k8s.io/mount-utils => k8s.io/mount-utils v0.35.2
+	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.35.2
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.35.2
 	sigs.k8s.io/node-feature-discovery/api/nfd => ./api/nfd
 )
 
