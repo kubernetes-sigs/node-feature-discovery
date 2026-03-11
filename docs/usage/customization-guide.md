@@ -996,8 +996,22 @@ The following features are available for matching:
 | **`system.osrelease`** | attribute |       |            | System identification data from `/etc/os-release` |
 |                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release` |
 | **`system.dmiid`** | attribute |       |            | DMI identification data from `/sys/devices/virtual/dmi/id/` |
-|                  |              | **`sys_vendor`** | string | Vendor name from `/sys/devices/virtual/dmi/id/sys_vendor` |
-|                  |              | **`product_name`** | string | Product name from `/sys/devices/virtual/dmi/id/product_name` |
+|                  |              | **`bios_date`** | string | BIOS release date |
+|                  |              | **`bios_vendor`** | string | BIOS vendor name |
+|                  |              | **`bios_version`** | string | BIOS version |
+|                  |              | **`board_asset_tag`** | string | Baseboard asset tag |
+|                  |              | **`board_name`** | string | Baseboard name |
+|                  |              | **`board_vendor`** | string | Baseboard vendor name |
+|                  |              | **`board_version`** | string | Baseboard version |
+|                  |              | **`chassis_asset_tag`** | string | Chassis asset tag |
+|                  |              | **`chassis_type`** | string | Chassis type (numeric, e.g. 1=Other, 17=Laptop) |
+|                  |              | **`chassis_vendor`** | string | Chassis vendor name |
+|                  |              | **`chassis_version`** | string | Chassis version |
+|                  |              | **`product_family`** | string | Product family |
+|                  |              | **`product_name`** | string | Product name |
+|                  |              | **`product_sku`** | string | Product SKU |
+|                  |              | **`product_version`** | string | Product version |
+|                  |              | **`sys_vendor`** | string | System vendor name |
 | **`system.name`** | attribute   |          |            | System name information |
 |                  |              | **`nodename`** | string | Name of the kubernetes node object |
 | **`usb.device`** | instance     |          |            | USB devices present in the system |

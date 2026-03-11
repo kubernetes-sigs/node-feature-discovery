@@ -67,6 +67,21 @@ spec:
           VERSION_ID.minor: "04"
       system.dmiid:
         elements:
+          bios_date: "01/01/2024"
+          bios_vendor: BIOSVendor
+          bios_version: "1.0.0"
+          board_asset_tag: ""
+          board_name: BaseBoard
+          board_vendor: BoardVendor
+          board_version: "1.0"
+          chassis_asset_tag: ""
+          chassis_type: "17"
+          chassis_vendor: ChassisVendor
+          chassis_version: N/A
+          product_family: ProductFamily
+          product_name: ProductName
+          product_sku: SKU-001
+          product_version: N/A
           sys_vendor: VendorUnknown
     flags:
       cpu.cpuid:
