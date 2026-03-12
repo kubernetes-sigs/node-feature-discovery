@@ -340,6 +340,10 @@ spec:
                       - name
                       type: object
                     type: array
+                  workerPriorityClassName:
+                    description: WorkerPriorityClassName allows setting a specific
+                      priority class for the worker pods
+                    type: string
                   workerTolerations:
                     description: WorkerTolerations defines tolerations to be applied
                       to the worker Daemonset

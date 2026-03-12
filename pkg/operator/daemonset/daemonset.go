@@ -262,7 +262,8 @@ func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance
 						SecurityContext: getWorkerSecurityContext(),
 					},
 				},
-				Volumes: getWorkerVolumes(),
+				Volumes:           getWorkerVolumes(),
+				PriorityClassName: nfdInstance.Spec.Operand.WorkerPriorityClassName,
 			},
 		},
 	}
