@@ -43,6 +43,10 @@ spec:
       {{- if kindIs "bool" .Values.topologyUpdater.hostUsers }}
       hostUsers: {{ .Values.topologyUpdater.hostUsers }}
       {{- end }}
+      {{- with .Values.topologyUpdater.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: topology-updater
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

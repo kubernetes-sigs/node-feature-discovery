@@ -62,6 +62,11 @@
                         "null"
                     ]
                 },
+                "initContainers": {
+                    "description": "[Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-gc pods.",
+                    "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers",
+                    "type": "array"
+                },
                 "interval": {
                     "description": "Time between periodic garbage collector runs.",
                     "type": "string"
@@ -366,6 +371,11 @@
                         "boolean",
                         "null"
                     ]
+                },
+                "initContainers": {
+                    "description": "[Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-master pods.",
+                    "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers",
+                    "type": "array"
                 },
                 "instance": {
                     "description": "Instance name. Used to separate annotation namespaces for multiple parallel deployments.",
@@ -716,6 +726,11 @@
                         "null"
                     ]
                 },
+                "initContainers": {
+                    "description": "[Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-topology-updater pods.",
+                    "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers",
+                    "type": "array"
+                },
                 "kubeletConfigPath": {
                     "description": "Host path for the kubelet config file.",
                     "type": [
@@ -980,6 +995,11 @@
                         "boolean",
                         "null"
                     ]
+                },
+                "initContainers": {
+                    "description": "[Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-worker pods.",
+                    "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers",
+                    "type": "array"
                 },
                 "labels": {
                     "description": "[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods.",

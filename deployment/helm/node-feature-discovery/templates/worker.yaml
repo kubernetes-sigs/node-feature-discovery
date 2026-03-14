@@ -47,6 +47,10 @@ spec:
       {{- if kindIs "bool" .Values.worker.hostUsers }}
       hostUsers: {{ .Values.worker.hostUsers }}
       {{- end }}
+      {{- with .Values.worker.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: worker
         securityContext:

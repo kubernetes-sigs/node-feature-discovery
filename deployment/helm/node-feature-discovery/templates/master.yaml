@@ -45,6 +45,10 @@ spec:
       {{- if kindIs "bool" .Values.master.hostUsers }}
       hostUsers: {{ .Values.master.hostUsers }}
       {{- end }}
+      {{- with .Values.master.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: master
           securityContext:
