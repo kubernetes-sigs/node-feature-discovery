@@ -722,14 +722,14 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 	//
 	// After initial processing, subsequent updates proceed normally to allow
 	// label cleanup when NodeFeatureRules are deleted.
-	skipNodeFeatureLabelRemoval := false
+	skipRemoval := false
 	if !hasFeatures {
 		hasPendingDelete := m.consumePendingDelete(node.Name)
 		alreadyProcessed := m.wasNodeProcessedOnce(node.Name)
 		if !hasPendingDelete && !foundInCache && !alreadyProcessed {
 			// First time processing this node with no NodeFeature and no pending delete.
 			// Could be cache miss during startup, skip label removal this time only.
-			skipNodeFeatureLabelRemoval = true
+			skipRemoval = true
 			klog.V(2).InfoS("first processing of node with no NodeFeature in cache, "+
 				"skipping label removal (possible startup cache miss)",
 				"nodeName", node.Name)
@@ -749,7 +749,7 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 	// Update node labels et al. This may also mean removing all NFD-owned
 	// labels (et al.), for example in the case no NodeFeature objects are
 	// present and we have a confirmed delete event.
-	if err := m.refreshNodeFeatures(cli, node, nodeFeatures.Spec.Labels, &nodeFeatures.Spec.Features, skipNodeFeatureLabelRemoval); err != nil {
+	if err := m.refreshNodeFeatures(cli, node, nodeFeatures.Spec.Labels, &nodeFeatures.Spec.Features, skipRemoval); err != nil {
 		return err
 	}
 
@@ -925,7 +925,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	return filteredValue, nil
 }
 
-func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features, skipNodeFeatureLabelRemoval bool) error {
+func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features, skipRemoval bool) error {
 	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 	} else if labels == nil {
@@ -960,7 +960,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 		return nil
 	}
 
-	err := m.updateNodeObject(cli, node, labels, annotations, extendedResources, taints, skipNodeFeatureLabelRemoval)
+	err := m.updateNodeObject(cli, node, labels, annotations, extendedResources, taints, skipRemoval)
 	if err != nil {
 		klog.ErrorS(err, "failed to update node", "nodeName", node.Name)
 		return err
@@ -1109,10 +1109,10 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 // updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-// If skipLabelRemoval is true, existing labels will not be removed (but new
-// labels will still be added). This is used when the informer cache may be
-// incomplete to avoid removing labels that should still exist.
-func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint, skipLabelRemoval bool) error {
+// If skipRemoval is true, existing labels, annotations, extended resources,
+// and taints will not be removed (but new ones will still be added).
+// This is used when the informer cache may be incomplete.
+func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint, skipRemoval bool) error {
 	annotations := make(Annotations)
 
 	// Store names of labels in an annotation
@@ -1154,16 +1154,16 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
 	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
 
-	// When skipLabelRemoval is true, we don't want to remove any existing labels
+	// When skipRemoval is true, we don't want to remove any existing labels
 	// or annotations. This is used when the informer cache may be incomplete
 	// (e.g., during startup or watch reconnection) to avoid removing labels that
 	// should still exist. We still add new labels from NodeFeatureRules.
 	var labelsToRemove sets.Set[string]
 	var annotationsToRemove sets.Set[string]
-	if skipLabelRemoval {
+	if skipRemoval {
 		labelsToRemove = sets.New[string]()
 		annotationsToRemove = sets.New[string]()
-		klog.V(2).InfoS("skipping label/annotation removal due to potential cache miss",
+		klog.V(2).InfoS("skipping removal due to potential cache miss",
 			"nodeName", node.Name)
 	} else {
 		labelsToRemove = sets.New(oldLabels...)
