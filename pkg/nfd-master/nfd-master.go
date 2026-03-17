@@ -361,6 +361,18 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 	nodeFeatureGroup := make(map[string]struct{})
 	updateAllNodeFeatureGroups := false
 	rateLimit := time.After(time.Second)
+
+	// Periodic reconciliation: re-process all nodes at the resync interval
+	// to catch nodes whose NodeFeatures were genuinely absent (not cache misses).
+	// A nil channel blocks forever in select, effectively disabling the case
+	// when ResyncPeriod is zero (which would panic in time.NewTicker).
+	var resyncTickerC <-chan time.Time
+	if m.config.ResyncPeriod.Duration > 0 {
+		resyncTicker := time.NewTicker(m.config.ResyncPeriod.Duration)
+		defer resyncTicker.Stop()
+		resyncTickerC = resyncTicker.C
+	}
+
 	for {
 		select {
 		case <-m.updateAllNodesChan:
@@ -371,6 +383,9 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 			updateAllNodeFeatureGroups = true
 		case nodeFeatureGroupName := <-m.updateNodeFeatureGroupChan:
 			nodeFeatureGroup[nodeFeatureGroupName] = struct{}{}
+		case <-resyncTickerC:
+			klog.V(1).InfoS("periodic reconciliation triggered")
+			updateAll = true
 		case <-rateLimit:
 			// If we're not the leader, don't do anything, sleep a bit longer
 			if !m.isLeader {
