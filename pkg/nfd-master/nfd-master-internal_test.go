@@ -1134,3 +1134,35 @@ func TestSetTaintsSkipRemoval(t *testing.T) {
 		})
 	})
 }
+
+func TestProcessedOnceNodeGetsLabelsRemovedOnReprocess(t *testing.T) {
+	Convey("When reprocessing a node that was previously processed", t, func() {
+		testNode := newTestNode()
+		// Node has existing NFD labels from a previous run
+		testNode.Labels[nfdv1alpha1.FeatureLabelNs+"/stale-label"] = "stale-value"
+		testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "stale-label"
+
+		//nolint:staticcheck
+		fakeCli := fakeclient.NewSimpleClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+
+		Convey("labels should be removed on second processing with no NodeFeature", func() {
+			// Simulate: node was already processed once during startup
+			// resolveNodeState marks the node as processed (inserts into processedOnce)
+			fakeMaster.resolveNodeState(testNodeName)
+
+			// Process with empty labels and skipRemoval=false.
+			// This is the path taken by periodic reconciliation for a node
+			// whose NodeFeature was genuinely deleted before startup.
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, ExtendedResources{}, nil, false)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// Stale label should be removed
+			_, exists := updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/stale-label"]
+			So(exists, ShouldBeFalse)
+		})
+	})
+}
