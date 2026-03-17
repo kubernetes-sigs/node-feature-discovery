@@ -308,7 +308,7 @@ func TestAddingExtResources(t *testing.T) {
 		Convey("When there are no matching labels", func() {
 			testNode := newTestNode()
 			extendedResources := ExtendedResources{}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldEqual, 0)
 		})
 
@@ -319,7 +319,7 @@ func TestAddingExtResources(t *testing.T) {
 				utils.NewJsonPatch("add", "/status/capacity", "feature-1", "1"),
 				utils.NewJsonPatch("add", "/status/capacity", "feature-2", "2"),
 			}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 
@@ -327,7 +327,7 @@ func TestAddingExtResources(t *testing.T) {
 			testNode := newTestNode()
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1"}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldEqual, 0)
 		})
 
@@ -339,7 +339,7 @@ func TestAddingExtResources(t *testing.T) {
 				utils.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
 				utils.NewJsonPatch("replace", "/status/allocatable", "feature-1", "1"),
 			}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 	})
@@ -354,7 +354,7 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldEqual, 0)
 		})
 		Convey("When the related label is gone", func() {
@@ -363,7 +363,7 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-4,feature-2"
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
@@ -372,7 +372,7 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 	})
@@ -1027,6 +1027,51 @@ func TestUpdateNodeObjectSkipRemoval(t *testing.T) {
 			// Old label should be removed
 			_, exists := updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/old-label"]
 			So(exists, ShouldBeFalse)
+		})
+	})
+}
+
+func TestCreateExtendedResourcePatchesSkipRemoval(t *testing.T) {
+	Convey("When creating extended resource patches with skipRemoval", t, func() {
+		fakeMaster := newFakeMaster()
+
+		testNode := newTestNode()
+		// Simulate existing extended resource on node
+		testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/gpu")] = resource.MustParse("1")
+		testNode.Annotations[nfdv1alpha1.ExtendedResourceAnnotation] = "gpu"
+
+		Convey("existing resources should NOT be removed when skipRemoval=true", func() {
+			patches := fakeMaster.createExtendedResourcePatches(testNode, ExtendedResources{}, true)
+
+			for _, p := range patches {
+				So(p.Op, ShouldNotEqual, "remove")
+			}
+		})
+
+		Convey("new resources should still be added when skipRemoval=true", func() {
+			newResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/fpga": "2"}
+			patches := fakeMaster.createExtendedResourcePatches(testNode, newResources, true)
+
+			hasAdd := false
+			for _, p := range patches {
+				if p.Op == "add" {
+					hasAdd = true
+				}
+				So(p.Op, ShouldNotEqual, "remove")
+			}
+			So(hasAdd, ShouldBeTrue)
+		})
+
+		Convey("existing resources should be removed when skipRemoval=false", func() {
+			patches := fakeMaster.createExtendedResourcePatches(testNode, ExtendedResources{}, false)
+
+			hasRemove := false
+			for _, p := range patches {
+				if p.Op == "remove" {
+					hasRemove = true
+				}
+			}
+			So(hasRemove, ShouldBeTrue)
 		})
 	})
 }
