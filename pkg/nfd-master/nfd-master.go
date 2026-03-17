@@ -1179,7 +1179,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	patches = append(patches, createPatches(annotationsToRemove, node.Annotations, annotations, "/metadata/annotations", m.config.Restrictions.AllowOverwrite)...)
 
 	// patch node status with extended resource changes
-	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
+	statusPatches := m.createExtendedResourcePatches(node, extendedResources, skipRemoval)
 	err := patchNodeStatus(cli, node.Name, statusPatches)
 	if err != nil {
 		return fmt.Errorf("error while patching extended resources: %w", err)
@@ -1236,19 +1236,21 @@ func createPatches(removeKeys sets.Set[string], oldItems map[string]string, newI
 
 // createExtendedResourcePatches returns a slice of operations to perform on
 // the node status
-func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources) []utils.JsonPatch {
+func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources, skipRemoval bool) []utils.JsonPatch {
 	patches := []utils.JsonPatch{}
 
 	// Form a list of namespaced resource names managed by us
 	oldResources := stringToNsNames(n.Annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)], nfdv1alpha1.FeatureLabelNs)
 
 	// figure out which resources to remove
-	for _, resource := range oldResources {
-		if _, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
-			// check if the ext resource is still needed
-			if _, extResNeeded := extendedResources[resource]; !extResNeeded {
-				patches = append(patches, utils.NewJsonPatch("remove", "/status/capacity", resource, ""))
-				patches = append(patches, utils.NewJsonPatch("remove", "/status/allocatable", resource, ""))
+	if !skipRemoval {
+		for _, resource := range oldResources {
+			if _, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
+				// check if the ext resource is still needed
+				if _, extResNeeded := extendedResources[resource]; !extResNeeded {
+					patches = append(patches, utils.NewJsonPatch("remove", "/status/capacity", resource, ""))
+					patches = append(patches, utils.NewJsonPatch("remove", "/status/allocatable", resource, ""))
+				}
 			}
 		}
 	}
