@@ -725,18 +725,19 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 		len(nodeFeatures.Spec.Features.Flags) > 0 ||
 		len(nodeFeatures.Spec.Features.Instances) > 0
 
-	// Determine if we should skip removing NodeFeature-sourced labels.
-	// This is needed to handle cache-miss scenarios during startup where
-	// pagination failures (410 Expired errors) can cause NodeFeatures to be
-	// missing from the informer cache.
+	// Determine if we should skip removing NFD-managed node properties
+	// (labels, annotations, extended resources, taints). This is needed to
+	// handle cache-miss scenarios during startup where pagination failures
+	// (410 Expired errors) can cause NodeFeatures to be missing from the
+	// informer cache.
 	//
-	// We skip label removal only when ALL of these are true:
+	// We skip removal only when ALL of these are true:
 	// - No NodeFeature found in cache (!foundInCache)
 	// - No pending delete marker (not an explicit deletion)
 	// - This node hasn't been processed before (first time during startup)
 	//
 	// After initial processing, subsequent updates proceed normally to allow
-	// label cleanup when NodeFeatureRules are deleted.
+	// cleanup when NodeFeatures are deleted or NodeFeatureRules change.
 	// Atomically resolve pending-delete and processed-once state.
 	// This consumes any pending delete marker and marks the node as processed.
 	hasPendingDelete, alreadyProcessed := m.resolveNodeState(node.Name)
@@ -775,6 +776,8 @@ func (m *nfdMaster) markPendingDelete(nodeName string) {
 
 // consumePendingDelete checks if a node has a pending delete and removes it
 // from the set. Returns true if the node was in the pending deletes set.
+// Retained for use in updater-pool.go cleanup path; the normal processing
+// path uses resolveNodeState instead for atomic state resolution.
 func (m *nfdMaster) consumePendingDelete(nodeName string) bool {
 	m.pendingDeletesMu.Lock()
 	defer m.pendingDeletesMu.Unlock()
@@ -1039,6 +1042,7 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 		allTaintStrs := []string{}
 		if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok && val != "" {
 			for _, s := range strings.Split(val, ",") {
+				s = strings.TrimSpace(s)
 				if _, exists := taintSet[s]; !exists {
 					taintSet[s] = struct{}{}
 					allTaintStrs = append(allTaintStrs, s)
@@ -1167,7 +1171,10 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 	}
 
-	// Store names of extended resources in an annotation
+	// Store names of extended resources in an annotation.
+	// Note: when skipRemoval=true, this only tracks the current set of new
+	// resource keys (not merged with old). This is acceptable because the next
+	// normal pass (after processedOnce=true) will rebuild the annotation fully.
 	if len(extendedResources) > 0 {
 		extendedResourceKeys := make([]string, 0, len(extendedResources))
 		for key := range extendedResources {
