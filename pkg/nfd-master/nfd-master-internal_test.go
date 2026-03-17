@@ -1075,3 +1075,62 @@ func TestCreateExtendedResourcePatchesSkipRemoval(t *testing.T) {
 		})
 	})
 }
+
+func TestSetTaintsSkipRemoval(t *testing.T) {
+	Convey("When setting taints with skipRemoval", t, func() {
+		testNode := newTestNode()
+
+		// Set up existing taint on node
+		existingTaint := corev1.Taint{Key: "nfd.node.kubernetes.io/old-taint", Value: "true", Effect: corev1.TaintEffectNoSchedule}
+		testNode.Spec.Taints = []corev1.Taint{existingTaint}
+		testNode.Annotations[nfdv1alpha1.NodeTaintsAnnotation] = existingTaint.ToString()
+
+		//nolint:staticcheck
+		fakeCli := fakeclient.NewSimpleClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+
+		Convey("existing taints should NOT be removed when skipRemoval=true", func() {
+			err := fakeMaster.setTaints(fakeCli, []corev1.Taint{}, testNode, true)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			found := false
+			for _, t := range updatedNode.Spec.Taints {
+				if t.Key == existingTaint.Key {
+					found = true
+				}
+			}
+			So(found, ShouldBeTrue)
+		})
+
+		Convey("new taints should be added when skipRemoval=true", func() {
+			newTaint := corev1.Taint{Key: "nfd.node.kubernetes.io/new-taint", Value: "v", Effect: corev1.TaintEffectNoSchedule}
+			err := fakeMaster.setTaints(fakeCli, []corev1.Taint{newTaint}, testNode, true)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			keys := map[string]bool{}
+			for _, t := range updatedNode.Spec.Taints {
+				keys[t.Key] = true
+			}
+			So(keys[existingTaint.Key], ShouldBeTrue)
+			So(keys[newTaint.Key], ShouldBeTrue)
+		})
+
+		Convey("existing taints should be removed when skipRemoval=false", func() {
+			err := fakeMaster.setTaints(fakeCli, []corev1.Taint{}, testNode, false)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			for _, t := range updatedNode.Spec.Taints {
+				So(t.Key, ShouldNotEqual, existingTaint.Key)
+			}
+		})
+	})
+}

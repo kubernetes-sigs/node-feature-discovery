@@ -969,7 +969,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 // setTaints sets node taints and annotations based on the taints passed via
 // nodeFeatureRule custom resorce. If empty list of taints is passed, currently
 // NFD owned taints and annotations are removed from the node.
-func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node) error {
+func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node, skipRemoval bool) error {
 	// De-serialize the taints annotation into corev1.Taint type for comparision below.
 	var err error
 	oldTaints := []corev1.Taint{}
@@ -984,17 +984,19 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 	// Delete old nfd-managed taints that are not found in the set of new taints.
 	taintsUpdated := false
 	newNode := node.DeepCopy()
-	for _, taintToRemove := range oldTaints {
-		if taintutils.TaintExists(taints, &taintToRemove) {
-			continue
-		}
+	if !skipRemoval {
+		for _, taintToRemove := range oldTaints {
+			if taintutils.TaintExists(taints, &taintToRemove) {
+				continue
+			}
 
-		newTaints, removed := taintutils.DeleteTaint(newNode.Spec.Taints, &taintToRemove)
-		if !removed {
-			klog.V(1).InfoS("taint already deleted from node", "taint", taintToRemove)
+			newTaints, removed := taintutils.DeleteTaint(newNode.Spec.Taints, &taintToRemove)
+			if !removed {
+				klog.V(1).InfoS("taint already deleted from node", "taint", taintToRemove)
+			}
+			taintsUpdated = taintsUpdated || removed
+			newNode.Spec.Taints = newTaints
 		}
-		taintsUpdated = taintsUpdated || removed
-		newNode.Spec.Taints = newTaints
 	}
 
 	// Add new taints found in the set of new taints.
@@ -1016,17 +1018,44 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 
 	// Update node annotation that holds the taints managed by us
 	newAnnotations := map[string]string{}
-	if len(taints) > 0 {
-		// Serialize the new taints into string and update the annotation
-		// with that string.
-		taintStrs := make([]string, 0, len(taints))
-		for _, taint := range taints {
-			taintStrs = append(taintStrs, taint.ToString())
+	if skipRemoval {
+		// Merge: keep existing taints in annotation, add new ones (deduplicated)
+		taintSet := make(map[string]struct{})
+		allTaintStrs := []string{}
+		if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok && val != "" {
+			for _, s := range strings.Split(val, ",") {
+				if _, exists := taintSet[s]; !exists {
+					taintSet[s] = struct{}{}
+					allTaintStrs = append(allTaintStrs, s)
+				}
+			}
 		}
-		newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
+		for _, taint := range taints {
+			s := taint.ToString()
+			if _, exists := taintSet[s]; !exists {
+				taintSet[s] = struct{}{}
+				allTaintStrs = append(allTaintStrs, s)
+			}
+		}
+		if len(allTaintStrs) > 0 {
+			newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(allTaintStrs, ",")
+		}
+	} else {
+		if len(taints) > 0 {
+			taintStrs := make([]string, 0, len(taints))
+			for _, taint := range taints {
+				taintStrs = append(taintStrs, taint.ToString())
+			}
+			newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
+		}
 	}
 
-	patches := createPatches(sets.New([]string{nfdv1alpha1.NodeTaintsAnnotation}...),
+	// When skipRemoval=true, don't remove the taint annotation
+	removeSet := sets.New([]string{nfdv1alpha1.NodeTaintsAnnotation}...)
+	if skipRemoval {
+		removeSet = sets.New[string]()
+	}
+	patches := createPatches(removeSet,
 		node.Annotations, newAnnotations,
 		"/metadata/annotations",
 		m.config.Restrictions.AllowOverwrite,
@@ -1199,7 +1228,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	}
 
 	// Set taints
-	err = m.setTaints(cli, taints, node)
+	err = m.setTaints(cli, taints, node, skipRemoval)
 	if err != nil {
 		return err
 	}
