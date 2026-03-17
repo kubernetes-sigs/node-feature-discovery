@@ -40,6 +40,7 @@ const Name = "cpu"
 
 const (
 	CpuidFeature       = "cpuid"
+	Cpucores           = "cpu_cores"
 	Cpumodel           = "model"
 	CstateFeature      = "cstate"
 	PstateFeature      = "pstate"
@@ -161,6 +162,11 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["model."+k] = v
 	}
 
+	// CPU cores
+	for k, v := range features.Attributes[Cpucores].Elements {
+		labels["cores."+k] = v
+	}
+
 	// Cstate
 	for k, v := range features.Attributes[CstateFeature].Elements {
 		labels["cstate."+k] = v
@@ -225,6 +231,9 @@ func (s *cpuSource) Discover() error {
 
 	// Detect CPU model
 	s.features.Attributes[Cpumodel] = nfdv1alpha1.NewAttributeFeatures(getCPUModel())
+
+	// Detect CPU cores
+	s.features.Attributes[Cpucores] = nfdv1alpha1.NewAttributeFeatures(getCPUCores())
 
 	// Detect cstate configuration
 	cstate, err := detectCstate()
@@ -297,6 +306,15 @@ func getCPUModel() map[string]string {
 	}
 
 	return cpuModelInfo
+}
+
+func getCPUCores() map[string]string {
+	cpuCoresInfo := make(map[string]string)
+	cpuCoresInfo["physical"] = strconv.Itoa(cpuid.CPU.PhysicalCores)
+	cpuCoresInfo["threads_per_core"] = strconv.Itoa(cpuid.CPU.ThreadsPerCore)
+	cpuCoresInfo["logical"] = strconv.Itoa(cpuid.CPU.LogicalCores)
+
+	return cpuCoresInfo
 }
 
 // getHypervisor detects the hypervisor on s390x by reading /proc/sysinfo
