@@ -722,29 +722,22 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 	//
 	// After initial processing, subsequent updates proceed normally to allow
 	// label cleanup when NodeFeatureRules are deleted.
+	// Atomically resolve pending-delete and processed-once state.
+	// This consumes any pending delete marker and marks the node as processed.
+	hasPendingDelete, alreadyProcessed := m.resolveNodeState(node.Name)
+
 	skipRemoval := false
 	if !hasFeatures {
-		hasPendingDelete := m.consumePendingDelete(node.Name)
-		alreadyProcessed := m.wasNodeProcessedOnce(node.Name)
 		if !hasPendingDelete && !foundInCache && !alreadyProcessed {
-			// First time processing this node with no NodeFeature and no pending delete.
-			// Could be cache miss during startup, skip label removal this time only.
 			skipRemoval = true
 			klog.V(2).InfoS("first processing of node with no NodeFeature in cache, "+
-				"skipping label removal (possible startup cache miss)",
+				"skipping removal (possible startup cache miss)",
 				"nodeName", node.Name)
 		} else if hasPendingDelete {
-			klog.V(2).InfoS("NodeFeature deleted, proceeding with label removal",
+			klog.V(2).InfoS("NodeFeature deleted, proceeding with removal",
 				"nodeName", node.Name)
 		}
-	} else {
-		// Features exist, so we'll update normally. Clean up any stale pending
-		// delete marker that might exist (e.g., if a NodeFeature was deleted
-		// but a new one was created before we processed the update).
-		m.consumePendingDelete(node.Name)
 	}
-	// Mark node as processed for subsequent updates
-	m.markNodeProcessedOnce(node.Name)
 
 	// Update node labels et al. This may also mean removing all NFD-owned
 	// labels (et al.), for example in the case no NodeFeature objects are
@@ -777,18 +770,22 @@ func (m *nfdMaster) consumePendingDelete(nodeName string) bool {
 	return false
 }
 
-// wasNodeProcessedOnce returns true if the node has been processed at least once.
-func (m *nfdMaster) wasNodeProcessedOnce(nodeName string) bool {
+// resolveNodeState atomically checks and updates the pending-delete and
+// processed-once state for a node. This combines what would otherwise be
+// three separate lock/unlock cycles into one atomic operation.
+// Both pendingDeletes and processedOnce are protected by pendingDeletesMu.
+func (m *nfdMaster) resolveNodeState(nodeName string) (hasPendingDelete, alreadyProcessed bool) {
 	m.pendingDeletesMu.Lock()
 	defer m.pendingDeletesMu.Unlock()
-	return m.processedOnce.Has(nodeName)
-}
 
-// markNodeProcessedOnce marks a node as having been processed at least once.
-func (m *nfdMaster) markNodeProcessedOnce(nodeName string) {
-	m.pendingDeletesMu.Lock()
-	defer m.pendingDeletesMu.Unlock()
+	hasPendingDelete = m.pendingDeletes.Has(nodeName)
+	if hasPendingDelete {
+		m.pendingDeletes.Delete(nodeName)
+	}
+	alreadyProcessed = m.processedOnce.Has(nodeName)
 	m.processedOnce.Insert(nodeName)
+
+	return
 }
 
 // clearNodeProcessedOnce removes a node from the processedOnce set.

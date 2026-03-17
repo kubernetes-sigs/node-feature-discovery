@@ -920,6 +920,52 @@ func TestPendingDeleteTracking(t *testing.T) {
 	})
 }
 
+func TestResolveNodeState(t *testing.T) {
+	Convey("When resolving node state atomically", t, func() {
+		fakeMaster := newFakeMaster()
+
+		Convey("returns false/false for unknown node and marks it processed", func() {
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("new-node")
+
+			So(hasPending, ShouldBeFalse)
+			So(alreadyProcessed, ShouldBeFalse)
+			_, alreadyProcessed2 := fakeMaster.resolveNodeState("new-node")
+			So(alreadyProcessed2, ShouldBeTrue)
+		})
+
+		Convey("consumes pending delete and returns true/false on first call", func() {
+			fakeMaster.markPendingDelete("pending-node")
+
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("pending-node")
+
+			So(hasPending, ShouldBeTrue)
+			So(alreadyProcessed, ShouldBeFalse)
+			hasPending2, alreadyProcessed2 := fakeMaster.resolveNodeState("pending-node")
+			So(hasPending2, ShouldBeFalse)
+			So(alreadyProcessed2, ShouldBeTrue)
+		})
+
+		Convey("returns false/true for already-processed node with no pending delete", func() {
+			fakeMaster.resolveNodeState("processed-node")
+
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("processed-node")
+
+			So(hasPending, ShouldBeFalse)
+			So(alreadyProcessed, ShouldBeTrue)
+		})
+
+		Convey("handles pending delete on already-processed node", func() {
+			fakeMaster.resolveNodeState("reprocess-node")
+			fakeMaster.markPendingDelete("reprocess-node")
+
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("reprocess-node")
+
+			So(hasPending, ShouldBeTrue)
+			So(alreadyProcessed, ShouldBeTrue)
+		})
+	})
+}
+
 func TestUpdateNodeObjectSkipRemoval(t *testing.T) {
 	Convey("When updating node with skipRemoval=true", t, func() {
 		testNode := newTestNode()
