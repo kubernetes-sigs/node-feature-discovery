@@ -920,8 +920,8 @@ func TestPendingDeleteTracking(t *testing.T) {
 	})
 }
 
-func TestUpdateNodeObjectSkipLabelRemoval(t *testing.T) {
-	Convey("When updating node with skipLabelRemoval=true", t, func() {
+func TestUpdateNodeObjectSkipRemoval(t *testing.T) {
+	Convey("When updating node with skipRemoval=true", t, func() {
 		testNode := newTestNode()
 		// Set up node with existing NFD labels
 		testNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"] = "existing-value"
@@ -931,7 +931,7 @@ func TestUpdateNodeObjectSkipLabelRemoval(t *testing.T) {
 		fakeCli := fakeclient.NewSimpleClientset(testNode)
 		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
 
-		Convey("existing labels should NOT be removed when skipLabelRemoval=true", func() {
+		Convey("existing labels should NOT be removed when skipRemoval=true", func() {
 			// Update with empty labels but skip removal
 			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, ExtendedResources{}, nil, true)
 			So(err, ShouldBeNil)
@@ -944,7 +944,7 @@ func TestUpdateNodeObjectSkipLabelRemoval(t *testing.T) {
 			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"], ShouldEqual, "existing-value")
 		})
 
-		Convey("new labels should still be added when skipLabelRemoval=true", func() {
+		Convey("new labels should still be added when skipRemoval=true", func() {
 			newLabels := Labels{nfdv1alpha1.FeatureLabelNs + "/new-label": "new-value"}
 
 			err := fakeMaster.updateNodeObject(fakeCli, testNode, newLabels, Annotations{}, ExtendedResources{}, nil, true)
@@ -960,7 +960,7 @@ func TestUpdateNodeObjectSkipLabelRemoval(t *testing.T) {
 			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"], ShouldEqual, "existing-value")
 		})
 
-		Convey("existing labels should be removed when skipLabelRemoval=false", func() {
+		Convey("existing labels should be removed when skipRemoval=false", func() {
 			// Reset the test node
 			testNode2 := newTestNode()
 			testNode2.Labels[nfdv1alpha1.FeatureLabelNs+"/old-label"] = "old-value"
