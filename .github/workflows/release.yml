@@ -18,7 +18,7 @@ jobs:
       contents: write
     steps:
     - name: Install Helm
-      uses: azure/setup-helm@v4
+      uses: azure/setup-helm@v5
       with:
         version: 3.12.3
 
