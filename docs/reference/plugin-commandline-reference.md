@@ -25,9 +25,9 @@ Print usage and exit.
 
 Validate a NodeFeatureRule file.
 
-### -f / --nodefeature-file
+### -f / --nodefeaturerule-file
 
-The `--nodefeature-file` flag specifies the path to the NodeFeatureRule file
+The `--nodefeaturerule-file` flag specifies the path to the NodeFeatureRule file
 to validate.
 
 ## Test
