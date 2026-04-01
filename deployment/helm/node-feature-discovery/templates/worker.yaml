@@ -30,7 +30,11 @@ spec:
         {{- end }}
         role: worker
       annotations:
+        {{- if .Values.checksumValuesOnly }}
+        checksum/config: {{ .Values.worker.config | toYaml | sha256sum }}
+        {{- else }}
         checksum/config: {{ include (print $.Template.BasePath "/nfd-worker-conf.yaml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.worker.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

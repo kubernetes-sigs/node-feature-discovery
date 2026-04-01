@@ -30,6 +30,11 @@ namespaceOverride: ""
 # @section -- General
 featureGates: {}
 
+# -- Only checksum config values (not the full rendered ConfigMap template) for the rollout annotation.
+# When enabled, pods will only restart when config values actually change, not on unrelated template changes.
+# @section -- General
+checksumValuesOnly: false
+
 # -- The name of the PriorityClass to be used for the NFD pods.
 # @section -- General
 priorityClassName: ""

@@ -26,7 +26,11 @@ spec:
         {{- end }}
         role: topology-updater
       annotations:
+        {{- if .Values.checksumValuesOnly }}
+        checksum/config: {{ .Values.topologyUpdater.config | toYaml | sha256sum }}
+        {{- else }}
         checksum/config: {{ include (print $.Template.BasePath "/nfd-topologyupdater-conf.yaml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.topologyUpdater.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
