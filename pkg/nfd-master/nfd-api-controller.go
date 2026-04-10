@@ -132,7 +132,18 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			nfr := obj.(*nfdv1alpha1.NodeFeature)
+			// obj may be a DeletedFinalStateUnknown if the watch was missed
+			if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+				klog.V(2).InfoS("found stale NodeFeature object", "object", obj)
+				obj = deletedFinalStateUnknown.Obj
+			}
+
+			nfr, ok := obj.(*nfdv1alpha1.NodeFeature)
+			if !ok {
+				klog.ErrorS(fmt.Errorf("unexpected object type %T", obj), "cannot convert object to NodeFeature")
+				return
+			}
+
 			klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
 			c.updateOneNode("NodeFeature", nfr)
 			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
@@ -179,7 +190,18 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				c.updateNodeFeatureGroup(nfg.Name)
 			},
 			DeleteFunc: func(obj interface{}) {
-				nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
+				// obj may be a DeletedFinalStateUnknown if the watch was missed
+				if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+					klog.V(2).InfoS("found stale NodeFeatureGroup object", "object", obj)
+					obj = deletedFinalStateUnknown.Obj
+				}
+
+				nfg, ok := obj.(*nfdv1alpha1.NodeFeatureGroup)
+				if !ok {
+					klog.ErrorS(fmt.Errorf("unexpected object type %T", obj), "cannot convert object to NodeFeatureGroup")
+					return
+				}
+
 				klog.V(2).InfoS("NodeFeatureGroup deleted", "nodeFeatureGroup", klog.KObj(nfg))
 				c.updateNodeFeatureGroup(nfg.Name)
 			},
