@@ -2,6 +2,10 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "properties": {
+        "checksumValuesOnly": {
+            "description": "Only checksum config values (not the full rendered ConfigMap template) for the rollout annotation. When enabled, pods will only restart when config values actually change, not on unrelated template changes.",
+            "type": "boolean"
+        },
         "featureGates": {
             "description": "[Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features.",
             "type": "object",

@@ -176,6 +176,7 @@ NFD.
 | fullnameOverride | string | `""` | Override a default fully qualified app name |
 | namespaceOverride | string | `""` | Override the namespace to install the chart into. By default, the namespace is determined by Helm. |
 | featureGates | object | `{}` | [Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features. |
+| checksumValuesOnly | bool | `false` | Only checksum config values (not the full rendered ConfigMap template) for the rollout annotation. When enabled, pods will only restart when config values actually change, not on unrelated template changes. |
 | priorityClassName | string | `""` | The name of the PriorityClass to be used for the NFD pods. |
 | postDeleteCleanup | bool | `true` | Enable/disable the Helm post-delete hook. |
 

@@ -27,7 +27,11 @@ spec:
         {{- end }}
         role: master
       annotations:
+        {{- if .Values.checksumValuesOnly }}
+        checksum/config: {{ .Values.master.config | toYaml | sha256sum }}
+        {{- else }}
         checksum/config: {{ include (print $.Template.BasePath "/nfd-master-conf.yaml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.master.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
