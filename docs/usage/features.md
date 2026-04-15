@@ -119,6 +119,7 @@ configuration options for details.
 | VAES               | AVX-512 vector AES instructions |
 | VPCLMULQDQ         | Carry-less multiplication quadword |
 | WRMSRNS            | Non-Serializing Write to Model Specific Register |
+| X86_64_V1, X86_64_V2, X86_64_V3, X86_64_V4 | x86-64 microarchitecture level (v1-v4) per the x86-64 psABI spec (cumulative; a v4 CPU gets all four flags) |
 
 By default, the following CPUID flags have been blacklisted: AVX10 (use
 AVX10_VERSION instead), BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT,
