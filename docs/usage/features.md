@@ -197,6 +197,8 @@ configuration options for details.
 | ------------------------------| ----- | --------------------------------------------------------------- |
 | **`network-sriov.capable`**   | true  | [Single Root Input/Output Virtualization][sriov] (SR-IOV) enabled Network Interface Card(s) present |
 | **`network-sriov.configured`**| true  | SR-IOV virtual functions have been configured                   |
+| **`network-sriov.total_vfs`** | 254   | Total SR-IOV VF capacity aggregated across all physical NICs    |
+| **`network-sriov.num_vfs`**   | 128   | Number of configured SR-IOV VFs aggregated across all physical NICs |
 
 ### PCI
 
