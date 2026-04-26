@@ -90,5 +90,13 @@ func initFlags(flagset *flag.FlagSet) *nfdgarbagecollector.Args {
 
 	klog.InitFlags(flagset)
 
+	// Opt into the new klog behavior so that -stderrthreshold is honored even
+	// when -logtostderr=true (the default).
+	// Ref: kubernetes/klog#212, kubernetes/klog#432
+	if err := flagset.Set("legacy_stderr_threshold_behavior", "false"); err != nil {
+		klog.ErrorS(err, "Failed to set legacy_stderr_threshold_behavior flag")
+		os.Exit(1)
+	}
+
 	return args
 }
