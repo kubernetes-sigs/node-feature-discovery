@@ -41,7 +41,6 @@ func main() {
 
 	printVersion := flags.Bool("version", false, "Print version and exit.")
 
-	args, overrides := initFlags(flags)
 	// Add FeatureGates flag
 	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
 		klog.ErrorS(err, "failed to add default feature gates")
@@ -49,34 +48,7 @@ func main() {
 	}
 	features.NFDMutableFeatureGate.AddFlag(flags)
 
-	_ = flags.Parse(os.Args[1:])
-	if len(flags.Args()) > 0 {
-		_, _ = fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
-		flags.Usage()
-		os.Exit(2)
-	}
-
-	// Check deprecated flags
-	flags.Visit(func(f *flag.Flag) {
-		switch f.Name {
-		case "extra-label-ns":
-			args.Overrides.ExtraLabelNs = overrides.ExtraLabelNs
-		case "deny-label-ns":
-			args.Overrides.DenyLabelNs = overrides.DenyLabelNs
-		case "label-whitelist":
-			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
-		case "enable-taints":
-			args.Overrides.EnableTaints = overrides.EnableTaints
-		case "no-publish":
-			args.Overrides.NoPublish = overrides.NoPublish
-		case "resync-period":
-			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
-		case "nfd-api-parallelism":
-			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
-		case "informer-page-size":
-			args.Overrides.InformerPageSize = overrides.InformerPageSize
-		}
-	})
+	args := parseArgs(flags, os.Args[1:]...)
 
 	if *printVersion {
 		fmt.Println(ProgramName, version.Get())
@@ -99,6 +71,52 @@ func main() {
 		klog.ErrorS(err, "error while running")
 		os.Exit(1)
 	}
+}
+
+func parseArgs(flags *flag.FlagSet, osArgs ...string) *master.Args {
+	args, overrides := initFlags(flags)
+
+	filtered := osArgs[:0]
+	for _, a := range osArgs {
+		if len(a) > 0 {
+			filtered = append(filtered, a)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return args
+	}
+
+	_ = flags.Parse(filtered)
+	if len(flags.Args()) > 0 {
+		_, _ = fmt.Fprintf(flags.Output(), "unknown command line argument: %s\n", flags.Args()[0])
+		flags.Usage()
+		os.Exit(2)
+	}
+
+	// Handle overrides
+	flags.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "extra-label-ns":
+			args.Overrides.ExtraLabelNs = overrides.ExtraLabelNs
+		case "deny-label-ns":
+			args.Overrides.DenyLabelNs = overrides.DenyLabelNs
+		case "label-whitelist":
+			args.Overrides.LabelWhiteList = overrides.LabelWhiteList
+		case "enable-taints":
+			args.Overrides.EnableTaints = overrides.EnableTaints
+		case "no-publish":
+			args.Overrides.NoPublish = overrides.NoPublish
+		case "resync-period":
+			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
+		case "nfd-api-parallelism":
+			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
+		case "informer-page-size":
+			args.Overrides.InformerPageSize = overrides.InformerPageSize
+		}
+	})
+
+	return args
 }
 
 func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs) {
