@@ -179,6 +179,17 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
 	}
 
+	if err := nfd.readConfig(nfd.configFilePath, nfd.config); err != nil {
+		return nil, err
+	}
+
+	if (nfd.args.Overrides.NoPublish != nil && *nfd.args.Overrides.NoPublish) || nfd.config.Core.NoPublish {
+		// Don't connect to apiserver in case --no-publish is used.
+		// This is useful together with Oneshot option for quick
+		// out of cluster tests.
+		return nfd, nil
+	}
+
 	// k8sClient might've been set via opts by tests
 	if nfd.k8sClient == nil {
 		kubeconfig, err := utils.GetKubeconfig(nfd.args.Kubeconfig)
@@ -489,16 +500,7 @@ func (w *nfdWorker) configureCore(ctx context.Context, c coreConfig) error {
 	return nil
 }
 
-// Parse configuration options
-func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides string) error {
-	// Create a new default config
-	c := newDefaultConfig()
-	confSources := source.GetAllConfigurableSources()
-	c.Sources = make(map[string]source.Config, len(confSources))
-	for _, s := range confSources {
-		c.Sources[s.Name()] = s.NewConfig()
-	}
-
+func (w *nfdWorker) readConfig(filepath string, c *NFDConfig) error {
 	// Try to read and parse config file
 	if filepath != "" {
 		data, err := os.ReadFile(filepath)
@@ -521,6 +523,23 @@ func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides st
 
 			klog.InfoS("configuration file parsed", "path", filepath)
 		}
+	}
+
+	return nil
+}
+
+// Parse configuration options
+func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides string) error {
+	// Create a new default config
+	c := newDefaultConfig()
+	confSources := source.GetAllConfigurableSources()
+	c.Sources = make(map[string]source.Config, len(confSources))
+	for _, s := range confSources {
+		c.Sources[s.Name()] = s.NewConfig()
+	}
+
+	if err := w.readConfig(filepath, c); err != nil {
+		return err
 	}
 
 	// Parse config overrides
