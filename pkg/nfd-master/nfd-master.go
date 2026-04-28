@@ -29,6 +29,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -154,14 +155,29 @@ type nfdMaster struct {
 
 	// isLeader indicates if this instance is the leader, changing dynamically
 	isLeader bool
+
+	// pendingDeletesMu protects pendingDeletes and processedOnce
+	pendingDeletesMu sync.Mutex
+	// pendingDeletes tracks nodes that have pending NodeFeature delete events.
+	// This is used to distinguish between "NodeFeature was deleted" vs
+	// "NodeFeature is missing from cache due to incomplete sync".
+	// Only nodes in this set should have their labels removed when no
+	// NodeFeature is found.
+	pendingDeletes sets.Set[string]
+	// processedOnce tracks nodes that have been processed at least once.
+	// This is used to allow label removal on subsequent processing even if
+	// no NodeFeature exists (e.g., when NodeFeatureRules are deleted).
+	processedOnce sets.Set[string]
 }
 
 // NewNfdMaster creates a new NfdMaster server instance.
 func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 	nfd := &nfdMaster{
-		nodeName:  utils.NodeName(),
-		namespace: utils.GetKubernetesNamespace(),
-		stop:      make(chan struct{}),
+		nodeName:       utils.NodeName(),
+		namespace:      utils.GetKubernetesNamespace(),
+		stop:           make(chan struct{}),
+		pendingDeletes: sets.New[string](),
+		processedOnce:  sets.New[string](),
 	}
 
 	for _, o := range opts {
@@ -345,6 +361,18 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 	nodeFeatureGroup := make(map[string]struct{})
 	updateAllNodeFeatureGroups := false
 	rateLimit := time.After(time.Second)
+
+	// Periodic reconciliation: re-process all nodes at the resync interval
+	// to catch nodes whose NodeFeatures were genuinely absent (not cache misses).
+	// A nil channel blocks forever in select, effectively disabling the case
+	// when ResyncPeriod is zero (which would panic in time.NewTicker).
+	var resyncTickerC <-chan time.Time
+	if m.config.ResyncPeriod.Duration > 0 {
+		resyncTicker := time.NewTicker(m.config.ResyncPeriod.Duration)
+		defer resyncTicker.Stop()
+		resyncTickerC = resyncTicker.C
+	}
+
 	for {
 		select {
 		case <-m.updateAllNodesChan:
@@ -355,6 +383,9 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 			updateAllNodeFeatureGroups = true
 		case nodeFeatureGroupName := <-m.updateNodeFeatureGroupChan:
 			nodeFeatureGroup[nodeFeatureGroupName] = struct{}{}
+		case <-resyncTickerC:
+			klog.V(1).InfoS("periodic reconciliation triggered")
+			updateAll = true
 		case <-rateLimit:
 			// If we're not the leader, don't do anything, sleep a bit longer
 			if !m.isLeader {
@@ -421,7 +452,7 @@ func (m *nfdMaster) prune() error {
 		klog.InfoS("pruning node...", "nodeName", node.Name)
 
 		// Prune labels and extended resources
-		err := m.updateNodeObject(m.k8sClient, &node, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{})
+		err := m.updateNodeObject(m.k8sClient, &node, Labels{}, Annotations{}, ExtendedResources{}, []corev1.Taint{}, false)
 		if err != nil {
 			nodeUpdateFailures.Inc()
 			return fmt.Errorf("failed to prune node %q: %v", node.Name, err)
@@ -587,7 +618,10 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 
 // getAndMergeNodeFeatures merges the NodeFeature objects of the given node into a single NodeFeatureSpec.
 // The Name field of the returned NodeFeatureSpec contains the node name.
-func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeFeature, error) {
+// The second return value indicates whether any NodeFeature objects were found in the cache
+// (before namespace filtering). This helps distinguish between "no NodeFeature exists" and
+// "NodeFeature exists but is filtered out by namespace selector".
+func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeFeature, bool, error) {
 	nodeFeatures := &nfdv1alpha1.NodeFeature{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nodeName,
@@ -597,8 +631,11 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 	sel := k8slabels.SelectorFromSet(k8slabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
 	objs, err := m.featureLister.List(sel)
 	if err != nil {
-		return &nfdv1alpha1.NodeFeature{}, fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
+		return &nfdv1alpha1.NodeFeature{}, false, fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
 	}
+
+	// Track whether we found any objects in the cache (before namespace filtering)
+	foundInCache := len(objs) > 0
 
 	filteredObjs := []*nfdv1alpha1.NodeFeature{}
 	for _, obj := range objs {
@@ -607,9 +644,9 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 		}
 	}
 
-	// Node without a running NFD-Worker
+	// Node without a running NFD-Worker or all NodeFeatures filtered by namespace
 	if len(filteredObjs) == 0 {
-		return &nfdv1alpha1.NodeFeature{}, nil
+		return &nfdv1alpha1.NodeFeature{}, foundInCache, nil
 	}
 
 	// Sort our objects
@@ -665,7 +702,7 @@ func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeF
 		klog.V(4).InfoS("merged nodeFeatureSpecs", "newNodeFeatureSpec", utils.DelayedDumper(features))
 	}
 
-	return nodeFeatures, nil
+	return nodeFeatures, foundInCache, nil
 }
 
 // isThirdPartyNodeFeature determines whether a node feature is a third party one or created by nfd-worker
@@ -674,20 +711,107 @@ func (m *nfdMaster) isThirdPartyNodeFeature(nodeFeature nfdv1alpha1.NodeFeature,
 }
 
 func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.Node) error {
-	// Merge all NodeFeature objects into a single NodeFeatureSpec
-	nodeFeatures, err := m.getAndMergeNodeFeatures(node.Name)
+	// Merge all NodeFeature objects into a single NodeFeatureSpec.
+	// foundInCache indicates whether any NodeFeature objects were found in the
+	// informer cache (before namespace filtering).
+	nodeFeatures, foundInCache, err := m.getAndMergeNodeFeatures(node.Name)
 	if err != nil {
 		return fmt.Errorf("failed to merge NodeFeature objects for node %q: %w", node.Name, err)
 	}
 
+	// Check if we have any features for this node
+	hasFeatures := len(nodeFeatures.Spec.Labels) > 0 ||
+		len(nodeFeatures.Spec.Features.Attributes) > 0 ||
+		len(nodeFeatures.Spec.Features.Flags) > 0 ||
+		len(nodeFeatures.Spec.Features.Instances) > 0
+
+	// Determine if we should skip removing NFD-managed node properties
+	// (labels, annotations, extended resources, taints). This is needed to
+	// handle cache-miss scenarios during startup where pagination failures
+	// (410 Expired errors) can cause NodeFeatures to be missing from the
+	// informer cache.
+	//
+	// We skip removal only when ALL of these are true:
+	// - No NodeFeature found in cache (!foundInCache)
+	// - No pending delete marker (not an explicit deletion)
+	// - This node hasn't been processed before (first time during startup)
+	//
+	// After initial processing, subsequent updates proceed normally to allow
+	// cleanup when NodeFeatures are deleted or NodeFeatureRules change.
+	// Atomically resolve pending-delete and processed-once state.
+	// This consumes any pending delete marker and marks the node as processed.
+	hasPendingDelete, alreadyProcessed := m.resolveNodeState(node.Name)
+
+	skipRemoval := false
+	if !hasFeatures {
+		if !hasPendingDelete && !foundInCache && !alreadyProcessed {
+			skipRemoval = true
+			klog.V(2).InfoS("first processing of node with no NodeFeature in cache, "+
+				"skipping removal (possible startup cache miss)",
+				"nodeName", node.Name)
+		} else if hasPendingDelete {
+			klog.V(2).InfoS("NodeFeature deleted, proceeding with removal",
+				"nodeName", node.Name)
+		}
+	}
+
 	// Update node labels et al. This may also mean removing all NFD-owned
-	// labels (et al.), for example  in the case no NodeFeature objects are
-	// present.
-	if err := m.refreshNodeFeatures(cli, node, nodeFeatures.Spec.Labels, &nodeFeatures.Spec.Features); err != nil {
+	// labels (et al.), for example in the case no NodeFeature objects are
+	// present and we have a confirmed delete event.
+	if err := m.refreshNodeFeatures(cli, node, nodeFeatures.Spec.Labels, &nodeFeatures.Spec.Features, skipRemoval); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// markPendingDelete marks a node as having a pending NodeFeature delete event.
+// This should be called from the DeleteFunc handler in the informer.
+func (m *nfdMaster) markPendingDelete(nodeName string) {
+	m.pendingDeletesMu.Lock()
+	defer m.pendingDeletesMu.Unlock()
+	m.pendingDeletes.Insert(nodeName)
+	klog.V(3).InfoS("marked node for pending delete", "nodeName", nodeName)
+}
+
+// consumePendingDelete checks if a node has a pending delete and removes it
+// from the set. Returns true if the node was in the pending deletes set.
+// Retained for use in updater-pool.go cleanup path; the normal processing
+// path uses resolveNodeState instead for atomic state resolution.
+func (m *nfdMaster) consumePendingDelete(nodeName string) bool {
+	m.pendingDeletesMu.Lock()
+	defer m.pendingDeletesMu.Unlock()
+	if m.pendingDeletes.Has(nodeName) {
+		m.pendingDeletes.Delete(nodeName)
+		return true
+	}
+	return false
+}
+
+// resolveNodeState atomically checks and updates the pending-delete and
+// processed-once state for a node. This combines what would otherwise be
+// three separate lock/unlock cycles into one atomic operation.
+// Both pendingDeletes and processedOnce are protected by pendingDeletesMu.
+func (m *nfdMaster) resolveNodeState(nodeName string) (hasPendingDelete, alreadyProcessed bool) {
+	m.pendingDeletesMu.Lock()
+	defer m.pendingDeletesMu.Unlock()
+
+	hasPendingDelete = m.pendingDeletes.Has(nodeName)
+	if hasPendingDelete {
+		m.pendingDeletes.Delete(nodeName)
+	}
+	alreadyProcessed = m.processedOnce.Has(nodeName)
+	m.processedOnce.Insert(nodeName)
+
+	return
+}
+
+// clearNodeProcessedOnce removes a node from the processedOnce set.
+// This is called when a node no longer exists to prevent memory leaks.
+func (m *nfdMaster) clearNodeProcessedOnce(nodeName string) {
+	m.pendingDeletesMu.Lock()
+	defer m.pendingDeletesMu.Unlock()
+	m.processedOnce.Delete(nodeName)
 }
 
 func (m *nfdMaster) nfdAPIUpdateAllNodeFeatureGroups() error {
@@ -720,7 +844,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 	nodeFeaturesList := make([]*nfdv1alpha1.Features, 0)
 	for _, node := range nodes.Items {
 		// Merge all NodeFeature objects into a single NodeFeatureSpec
-		nodeFeatures, err := m.getAndMergeNodeFeatures(node.Name)
+		nodeFeatures, _, err := m.getAndMergeNodeFeatures(node.Name)
 		if err != nil {
 			return fmt.Errorf("failed to merge NodeFeature objects for node %q: %w", node.Name, err)
 		}
@@ -816,7 +940,7 @@ func filterExtendedResource(name, value string, features *nfdv1alpha1.Features) 
 	return filteredValue, nil
 }
 
-func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features) error {
+func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.Node, labels map[string]string, features *nfdv1alpha1.Features, skipRemoval bool) error {
 	if !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
 		labels = addNsToMapKeys(labels, nfdv1alpha1.FeatureLabelNs)
 	} else if labels == nil {
@@ -851,7 +975,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 		return nil
 	}
 
-	err := m.updateNodeObject(cli, node, labels, annotations, extendedResources, taints)
+	err := m.updateNodeObject(cli, node, labels, annotations, extendedResources, taints, skipRemoval)
 	if err != nil {
 		klog.ErrorS(err, "failed to update node", "nodeName", node.Name)
 		return err
@@ -863,7 +987,7 @@ func (m *nfdMaster) refreshNodeFeatures(cli k8sclient.Interface, node *corev1.No
 // setTaints sets node taints and annotations based on the taints passed via
 // nodeFeatureRule custom resorce. If empty list of taints is passed, currently
 // NFD owned taints and annotations are removed from the node.
-func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node) error {
+func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, node *corev1.Node, skipRemoval bool) error {
 	// De-serialize the taints annotation into corev1.Taint type for comparision below.
 	var err error
 	oldTaints := []corev1.Taint{}
@@ -878,17 +1002,19 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 	// Delete old nfd-managed taints that are not found in the set of new taints.
 	taintsUpdated := false
 	newNode := node.DeepCopy()
-	for _, taintToRemove := range oldTaints {
-		if taintutils.TaintExists(taints, &taintToRemove) {
-			continue
-		}
+	if !skipRemoval {
+		for _, taintToRemove := range oldTaints {
+			if taintutils.TaintExists(taints, &taintToRemove) {
+				continue
+			}
 
-		newTaints, removed := taintutils.DeleteTaint(newNode.Spec.Taints, &taintToRemove)
-		if !removed {
-			klog.V(1).InfoS("taint already deleted from node", "taint", taintToRemove)
+			newTaints, removed := taintutils.DeleteTaint(newNode.Spec.Taints, &taintToRemove)
+			if !removed {
+				klog.V(1).InfoS("taint already deleted from node", "taint", taintToRemove)
+			}
+			taintsUpdated = taintsUpdated || removed
+			newNode.Spec.Taints = newTaints
 		}
-		taintsUpdated = taintsUpdated || removed
-		newNode.Spec.Taints = newTaints
 	}
 
 	// Add new taints found in the set of new taints.
@@ -910,17 +1036,45 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 
 	// Update node annotation that holds the taints managed by us
 	newAnnotations := map[string]string{}
-	if len(taints) > 0 {
-		// Serialize the new taints into string and update the annotation
-		// with that string.
-		taintStrs := make([]string, 0, len(taints))
-		for _, taint := range taints {
-			taintStrs = append(taintStrs, taint.ToString())
+	if skipRemoval {
+		// Merge: keep existing taints in annotation, add new ones (deduplicated)
+		taintSet := make(map[string]struct{})
+		allTaintStrs := []string{}
+		if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok && val != "" {
+			for _, s := range strings.Split(val, ",") {
+				s = strings.TrimSpace(s)
+				if _, exists := taintSet[s]; !exists {
+					taintSet[s] = struct{}{}
+					allTaintStrs = append(allTaintStrs, s)
+				}
+			}
 		}
-		newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
+		for _, taint := range taints {
+			s := taint.ToString()
+			if _, exists := taintSet[s]; !exists {
+				taintSet[s] = struct{}{}
+				allTaintStrs = append(allTaintStrs, s)
+			}
+		}
+		if len(allTaintStrs) > 0 {
+			newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(allTaintStrs, ",")
+		}
+	} else {
+		if len(taints) > 0 {
+			taintStrs := make([]string, 0, len(taints))
+			for _, taint := range taints {
+				taintStrs = append(taintStrs, taint.ToString())
+			}
+			newAnnotations[nfdv1alpha1.NodeTaintsAnnotation] = strings.Join(taintStrs, ",")
+		}
 	}
 
-	patches := createPatches(sets.New([]string{nfdv1alpha1.NodeTaintsAnnotation}...),
+	// When skipRemoval=true, don't remove the taint annotation
+	removeSet := sets.New([]string{nfdv1alpha1.NodeTaintsAnnotation}...)
+	if skipRemoval {
+		removeSet = sets.New[string]()
+	}
+	patches := createPatches(removeSet,
 		node.Annotations, newAnnotations,
 		"/metadata/annotations",
 		m.config.Restrictions.AllowOverwrite,
@@ -1000,7 +1154,10 @@ func (m *nfdMaster) processNodeFeatureRule(nodeName string, features *nfdv1alpha
 // updateNodeObject ensures the Kubernetes node object is up to date,
 // creating new labels and extended resources where necessary and removing
 // outdated ones. Also updates the corresponding annotations.
-func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint) error {
+// If skipRemoval is true, existing labels, annotations, extended resources,
+// and taints will not be removed (but new ones will still be added).
+// This is used when the informer cache may be incomplete.
+func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node, labels Labels, featureAnnotations Annotations, extendedResources ExtendedResources, taints []corev1.Taint, skipRemoval bool) error {
 	annotations := make(Annotations)
 
 	// Store names of labels in an annotation
@@ -1014,7 +1171,10 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
 	}
 
-	// Store names of extended resources in an annotation
+	// Store names of extended resources in an annotation.
+	// Note: when skipRemoval=true, this only tracks the current set of new
+	// resource keys (not merged with old). This is acceptable because the next
+	// normal pass (after processedOnce=true) will rebuild the annotation fully.
 	if len(extendedResources) > 0 {
 		extendedResourceKeys := make([]string, 0, len(extendedResources))
 		for key := range extendedResources {
@@ -1041,18 +1201,36 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	// Create JSON patches for changes in labels and annotations
 	oldLabels := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)], nfdv1alpha1.FeatureLabelNs)
 	oldAnnotations := stringToNsNames(node.Annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)], nfdv1alpha1.FeatureAnnotationNs)
-	patches := createPatches(sets.New(oldLabels...), node.Labels, labels, "/metadata/labels", m.config.Restrictions.AllowOverwrite)
-	oldAnnotations = append(oldAnnotations, []string{
-		m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
-		m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
-		m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation),
-		// Clean up deprecated/stale nfd version annotations
-		m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
-		m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation)}...)
-	patches = append(patches, createPatches(sets.New(oldAnnotations...), node.Annotations, annotations, "/metadata/annotations", m.config.Restrictions.AllowOverwrite)...)
+
+	// When skipRemoval is true, we don't want to remove any existing labels
+	// or annotations. This is used when the informer cache may be incomplete
+	// (e.g., during startup or watch reconnection) to avoid removing labels that
+	// should still exist. We still add new labels from NodeFeatureRules.
+	var labelsToRemove sets.Set[string]
+	var annotationsToRemove sets.Set[string]
+	if skipRemoval {
+		labelsToRemove = sets.New[string]()
+		annotationsToRemove = sets.New[string]()
+		klog.V(2).InfoS("skipping removal due to potential cache miss",
+			"nodeName", node.Name)
+	} else {
+		labelsToRemove = sets.New(oldLabels...)
+		annotationsToRemove = sets.New(oldAnnotations...)
+		annotationsToRemove.Insert(
+			m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
+			m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
+			m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation),
+			// Clean up deprecated/stale nfd version annotations
+			m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
+			m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation),
+		)
+	}
+
+	patches := createPatches(labelsToRemove, node.Labels, labels, "/metadata/labels", m.config.Restrictions.AllowOverwrite)
+	patches = append(patches, createPatches(annotationsToRemove, node.Annotations, annotations, "/metadata/annotations", m.config.Restrictions.AllowOverwrite)...)
 
 	// patch node status with extended resource changes
-	statusPatches := m.createExtendedResourcePatches(node, extendedResources)
+	statusPatches := m.createExtendedResourcePatches(node, extendedResources, skipRemoval)
 	err := patchNodeStatus(cli, node.Name, statusPatches)
 	if err != nil {
 		return fmt.Errorf("error while patching extended resources: %w", err)
@@ -1072,7 +1250,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	}
 
 	// Set taints
-	err = m.setTaints(cli, taints, node)
+	err = m.setTaints(cli, taints, node, skipRemoval)
 	if err != nil {
 		return err
 	}
@@ -1109,19 +1287,21 @@ func createPatches(removeKeys sets.Set[string], oldItems map[string]string, newI
 
 // createExtendedResourcePatches returns a slice of operations to perform on
 // the node status
-func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources) []utils.JsonPatch {
+func (m *nfdMaster) createExtendedResourcePatches(n *corev1.Node, extendedResources ExtendedResources, skipRemoval bool) []utils.JsonPatch {
 	patches := []utils.JsonPatch{}
 
 	// Form a list of namespaced resource names managed by us
 	oldResources := stringToNsNames(n.Annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)], nfdv1alpha1.FeatureLabelNs)
 
 	// figure out which resources to remove
-	for _, resource := range oldResources {
-		if _, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
-			// check if the ext resource is still needed
-			if _, extResNeeded := extendedResources[resource]; !extResNeeded {
-				patches = append(patches, utils.NewJsonPatch("remove", "/status/capacity", resource, ""))
-				patches = append(patches, utils.NewJsonPatch("remove", "/status/allocatable", resource, ""))
+	if !skipRemoval {
+		for _, resource := range oldResources {
+			if _, ok := n.Status.Capacity[corev1.ResourceName(resource)]; ok {
+				// check if the ext resource is still needed
+				if _, extResNeeded := extendedResources[resource]; !extResNeeded {
+					patches = append(patches, utils.NewJsonPatch("remove", "/status/capacity", resource, ""))
+					patches = append(patches, utils.NewJsonPatch("remove", "/status/allocatable", resource, ""))
+				}
 			}
 		}
 	}
@@ -1303,6 +1483,7 @@ func (m *nfdMaster) startNfdApiController() error {
 		NodeFeatureNamespaceSelector: m.config.Restrictions.NodeFeatureNamespaceSelector,
 		DisableNodeFeatureGroup:      !nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.NodeFeatureGroupAPI),
 		ListSize:                     m.config.InformerPageSize,
+		OnNodeFeatureDelete:          m.markPendingDelete,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize CRD controller: %w", err)

@@ -60,6 +60,10 @@ func (u *updaterPool) processNodeUpdateRequest(cli k8sclient.Interface) bool {
 	// Check if node exists
 	if node, err := getNode(cli, nodeName); apierrors.IsNotFound(err) {
 		klog.InfoS("node not found, skip update", "nodeName", nodeName)
+		// Clean up any stale tracking data for this non-existent node.
+		// This prevents memory leaks when nodes are deleted from the cluster.
+		u.nfdMaster.consumePendingDelete(nodeName)
+		u.nfdMaster.clearNodeProcessedOnce(nodeName)
 	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(cli, node); err != nil {
 		if n := u.queue.NumRequeues(nodeName); n < 15 {
 			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err, "numRetries", n)

@@ -209,7 +209,7 @@ func TestUpdateNodeObject(t *testing.T) {
 		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
 
 		Convey("When I successfully update the node with feature labels", func() {
-			err := fakeMaster.updateNodeObject(fakeCli, testNode, featureLabels, featureAnnotations, featureExtResources, nil)
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, featureLabels, featureAnnotations, featureExtResources, nil, false)
 			Convey("Error is nil", func() {
 				So(err, ShouldBeNil)
 			})
@@ -241,7 +241,7 @@ func TestUpdateNodeObject(t *testing.T) {
 			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 				return true, &corev1.Node{}, errors.New("Fake error when patching node")
 			})
-			err := fakeMaster.updateNodeObject(fakeCli, testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil)
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, nil, featureAnnotations, ExtendedResources{"": ""}, nil, false)
 
 			Convey("Error is produced", func() {
 				So(err, ShouldBeError)
@@ -304,7 +304,7 @@ func TestAddingExtResources(t *testing.T) {
 		Convey("When there are no matching labels", func() {
 			testNode := newTestNode()
 			extendedResources := ExtendedResources{}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldEqual, 0)
 		})
 
@@ -315,7 +315,7 @@ func TestAddingExtResources(t *testing.T) {
 				utils.NewJsonPatch("add", "/status/capacity", "feature-1", "1"),
 				utils.NewJsonPatch("add", "/status/capacity", "feature-2", "2"),
 			}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 
@@ -323,7 +323,7 @@ func TestAddingExtResources(t *testing.T) {
 			testNode := newTestNode()
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-1": "1"}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldEqual, 0)
 		})
 
@@ -335,7 +335,7 @@ func TestAddingExtResources(t *testing.T) {
 				utils.NewJsonPatch("replace", "/status/capacity", "feature-1", "1"),
 				utils.NewJsonPatch("replace", "/status/allocatable", "feature-1", "1"),
 			}
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(sortJsonPatches(patches), ShouldResemble, sortJsonPatches(expectedPatches))
 		})
 	})
@@ -350,7 +350,7 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-1")] = *resource.NewQuantity(1, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldEqual, 0)
 		})
 		Convey("When the related label is gone", func() {
@@ -359,7 +359,7 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-4,feature-2"
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-4")] = *resource.NewQuantity(4, resource.BinarySI)
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 		Convey("When the extended resource is no longer wanted", func() {
@@ -368,7 +368,7 @@ func TestRemovingExtResources(t *testing.T) {
 			testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/feature-2")] = *resource.NewQuantity(2, resource.BinarySI)
 			extendedResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/feature-2": "2"}
 			testNode.Annotations[nfdv1alpha1.AnnotationNs+"/extended-resources"] = "feature-1,feature-2"
-			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources)
+			patches := fakeMaster.createExtendedResourcePatches(testNode, extendedResources, false)
 			So(len(patches), ShouldBeGreaterThan, 0)
 		})
 	})
@@ -864,4 +864,301 @@ func TestGetDynamicValue(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPendingDeleteTracking(t *testing.T) {
+	Convey("When tracking pending deletes", t, func() {
+		fakeMaster := newFakeMaster()
+
+		Convey("markPendingDelete should add node to pending set", func() {
+			fakeMaster.markPendingDelete("test-node-1")
+
+			So(fakeMaster.pendingDeletes.Has("test-node-1"), ShouldBeTrue)
+		})
+
+		Convey("consumePendingDelete should return true and remove node if marked", func() {
+			fakeMaster.markPendingDelete("test-node-2")
+
+			result := fakeMaster.consumePendingDelete("test-node-2")
+
+			So(result, ShouldBeTrue)
+			So(fakeMaster.pendingDeletes.Has("test-node-2"), ShouldBeFalse)
+		})
+
+		Convey("consumePendingDelete should return false if node not marked", func() {
+			result := fakeMaster.consumePendingDelete("unmarked-node")
+
+			So(result, ShouldBeFalse)
+		})
+
+		Convey("consumePendingDelete should be idempotent", func() {
+			fakeMaster.markPendingDelete("test-node-3")
+
+			first := fakeMaster.consumePendingDelete("test-node-3")
+			second := fakeMaster.consumePendingDelete("test-node-3")
+
+			So(first, ShouldBeTrue)
+			So(second, ShouldBeFalse)
+		})
+
+		Convey("multiple nodes can be tracked independently", func() {
+			fakeMaster.markPendingDelete("node-a")
+			fakeMaster.markPendingDelete("node-b")
+
+			So(fakeMaster.pendingDeletes.Has("node-a"), ShouldBeTrue)
+			So(fakeMaster.pendingDeletes.Has("node-b"), ShouldBeTrue)
+
+			fakeMaster.consumePendingDelete("node-a")
+
+			So(fakeMaster.pendingDeletes.Has("node-a"), ShouldBeFalse)
+			So(fakeMaster.pendingDeletes.Has("node-b"), ShouldBeTrue)
+		})
+	})
+}
+
+func TestResolveNodeState(t *testing.T) {
+	Convey("When resolving node state atomically", t, func() {
+		fakeMaster := newFakeMaster()
+
+		Convey("returns false/false for unknown node and marks it processed", func() {
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("new-node")
+
+			So(hasPending, ShouldBeFalse)
+			So(alreadyProcessed, ShouldBeFalse)
+			_, alreadyProcessed2 := fakeMaster.resolveNodeState("new-node")
+			So(alreadyProcessed2, ShouldBeTrue)
+		})
+
+		Convey("consumes pending delete and returns true/false on first call", func() {
+			fakeMaster.markPendingDelete("pending-node")
+
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("pending-node")
+
+			So(hasPending, ShouldBeTrue)
+			So(alreadyProcessed, ShouldBeFalse)
+			hasPending2, alreadyProcessed2 := fakeMaster.resolveNodeState("pending-node")
+			So(hasPending2, ShouldBeFalse)
+			So(alreadyProcessed2, ShouldBeTrue)
+		})
+
+		Convey("returns false/true for already-processed node with no pending delete", func() {
+			fakeMaster.resolveNodeState("processed-node")
+
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("processed-node")
+
+			So(hasPending, ShouldBeFalse)
+			So(alreadyProcessed, ShouldBeTrue)
+		})
+
+		Convey("handles pending delete on already-processed node", func() {
+			fakeMaster.resolveNodeState("reprocess-node")
+			fakeMaster.markPendingDelete("reprocess-node")
+
+			hasPending, alreadyProcessed := fakeMaster.resolveNodeState("reprocess-node")
+
+			So(hasPending, ShouldBeTrue)
+			So(alreadyProcessed, ShouldBeTrue)
+		})
+	})
+}
+
+func TestUpdateNodeObjectSkipRemoval(t *testing.T) {
+	Convey("When updating node with skipRemoval=true", t, func() {
+		testNode := newTestNode()
+		// Set up node with existing NFD labels
+		testNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"] = "existing-value"
+		testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "existing-label"
+
+		//nolint:staticcheck // See issue #2400 for migration to NewClientset
+		fakeCli := fakeclient.NewSimpleClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+
+		Convey("existing labels should NOT be removed when skipRemoval=true", func() {
+			// Update with empty labels but skip removal
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, ExtendedResources{}, nil, true)
+			So(err, ShouldBeNil)
+
+			// Get the updated node
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// Existing label should still be present
+			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"], ShouldEqual, "existing-value")
+		})
+
+		Convey("new labels should still be added when skipRemoval=true", func() {
+			newLabels := Labels{nfdv1alpha1.FeatureLabelNs + "/new-label": "new-value"}
+
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, newLabels, Annotations{}, ExtendedResources{}, nil, true)
+			So(err, ShouldBeNil)
+
+			// Get the updated node
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// New label should be added
+			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/new-label"], ShouldEqual, "new-value")
+			// Existing label should still be present
+			So(updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/existing-label"], ShouldEqual, "existing-value")
+		})
+
+		Convey("existing labels should be removed when skipRemoval=false", func() {
+			// Reset the test node
+			testNode2 := newTestNode()
+			testNode2.Labels[nfdv1alpha1.FeatureLabelNs+"/old-label"] = "old-value"
+			testNode2.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "old-label"
+
+			//nolint:staticcheck // See issue #2400 for migration to NewClientset
+			fakeCli2 := fakeclient.NewSimpleClientset(testNode2)
+			fakeMaster2 := newFakeMaster(WithKubernetesClient(fakeCli2))
+
+			// Update with empty labels and don't skip removal
+			err := fakeMaster2.updateNodeObject(fakeCli2, testNode2, Labels{}, Annotations{}, ExtendedResources{}, nil, false)
+			So(err, ShouldBeNil)
+
+			// Get the updated node
+			updatedNode, err := fakeCli2.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// Old label should be removed
+			_, exists := updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/old-label"]
+			So(exists, ShouldBeFalse)
+		})
+	})
+}
+
+func TestCreateExtendedResourcePatchesSkipRemoval(t *testing.T) {
+	Convey("When creating extended resource patches with skipRemoval", t, func() {
+		fakeMaster := newFakeMaster()
+
+		testNode := newTestNode()
+		// Simulate existing extended resource on node
+		testNode.Status.Capacity[corev1.ResourceName(nfdv1alpha1.FeatureLabelNs+"/gpu")] = resource.MustParse("1")
+		testNode.Annotations[nfdv1alpha1.ExtendedResourceAnnotation] = "gpu"
+
+		Convey("existing resources should NOT be removed when skipRemoval=true", func() {
+			patches := fakeMaster.createExtendedResourcePatches(testNode, ExtendedResources{}, true)
+
+			for _, p := range patches {
+				So(p.Op, ShouldNotEqual, "remove")
+			}
+		})
+
+		Convey("new resources should still be added when skipRemoval=true", func() {
+			newResources := ExtendedResources{nfdv1alpha1.FeatureLabelNs + "/fpga": "2"}
+			patches := fakeMaster.createExtendedResourcePatches(testNode, newResources, true)
+
+			hasAdd := false
+			for _, p := range patches {
+				if p.Op == "add" {
+					hasAdd = true
+				}
+				So(p.Op, ShouldNotEqual, "remove")
+			}
+			So(hasAdd, ShouldBeTrue)
+		})
+
+		Convey("existing resources should be removed when skipRemoval=false", func() {
+			patches := fakeMaster.createExtendedResourcePatches(testNode, ExtendedResources{}, false)
+
+			hasRemove := false
+			for _, p := range patches {
+				if p.Op == "remove" {
+					hasRemove = true
+				}
+			}
+			So(hasRemove, ShouldBeTrue)
+		})
+	})
+}
+
+func TestSetTaintsSkipRemoval(t *testing.T) {
+	Convey("When setting taints with skipRemoval", t, func() {
+		testNode := newTestNode()
+
+		// Set up existing taint on node
+		existingTaint := corev1.Taint{Key: "nfd.node.kubernetes.io/old-taint", Value: "true", Effect: corev1.TaintEffectNoSchedule}
+		testNode.Spec.Taints = []corev1.Taint{existingTaint}
+		testNode.Annotations[nfdv1alpha1.NodeTaintsAnnotation] = existingTaint.ToString()
+
+		//nolint:staticcheck
+		fakeCli := fakeclient.NewSimpleClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+
+		Convey("existing taints should NOT be removed when skipRemoval=true", func() {
+			err := fakeMaster.setTaints(fakeCli, []corev1.Taint{}, testNode, true)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			found := false
+			for _, t := range updatedNode.Spec.Taints {
+				if t.Key == existingTaint.Key {
+					found = true
+				}
+			}
+			So(found, ShouldBeTrue)
+		})
+
+		Convey("new taints should be added when skipRemoval=true", func() {
+			newTaint := corev1.Taint{Key: "nfd.node.kubernetes.io/new-taint", Value: "v", Effect: corev1.TaintEffectNoSchedule}
+			err := fakeMaster.setTaints(fakeCli, []corev1.Taint{newTaint}, testNode, true)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			keys := map[string]bool{}
+			for _, t := range updatedNode.Spec.Taints {
+				keys[t.Key] = true
+			}
+			So(keys[existingTaint.Key], ShouldBeTrue)
+			So(keys[newTaint.Key], ShouldBeTrue)
+		})
+
+		Convey("existing taints should be removed when skipRemoval=false", func() {
+			err := fakeMaster.setTaints(fakeCli, []corev1.Taint{}, testNode, false)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			for _, t := range updatedNode.Spec.Taints {
+				So(t.Key, ShouldNotEqual, existingTaint.Key)
+			}
+		})
+	})
+}
+
+func TestProcessedOnceNodeGetsLabelsRemovedOnReprocess(t *testing.T) {
+	Convey("When reprocessing a node that was previously processed", t, func() {
+		testNode := newTestNode()
+		// Node has existing NFD labels from a previous run
+		testNode.Labels[nfdv1alpha1.FeatureLabelNs+"/stale-label"] = "stale-value"
+		testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "stale-label"
+
+		//nolint:staticcheck
+		fakeCli := fakeclient.NewSimpleClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+
+		Convey("labels should be removed on second processing with no NodeFeature", func() {
+			// Simulate: node was already processed once during startup
+			// resolveNodeState marks the node as processed (inserts into processedOnce)
+			fakeMaster.resolveNodeState(testNodeName)
+
+			// Process with empty labels and skipRemoval=false.
+			// This is the path taken by periodic reconciliation for a node
+			// whose NodeFeature was genuinely deleted before startup.
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, ExtendedResources{}, nil, false)
+			So(err, ShouldBeNil)
+
+			updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+
+			// Stale label should be removed
+			_, exists := updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/stale-label"]
+			So(exists, ShouldBeFalse)
+		})
+	})
 }
