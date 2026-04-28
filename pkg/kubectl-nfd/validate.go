@@ -18,31 +18,53 @@ package kubectlnfd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/yaml"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
 )
 
-// Given a file path, read the file and check if is a valid NodeFeatureRule file
-func ValidateNFR(filepath string) []error {
-	var err error
+// Validate reads a file and checks if it is a valid NodeFeatureRule or NodeFeatureGroup file.
+// The kind is detected automatically from the file content.
+func Validate(filepath string) []error {
+	t := parseRuleFile(filepath)
+	switch o := t.(type) {
+	case *nfdv1alpha1.NodeFeatureRule:
+		return validateNFR(*o)
+	case *nfdv1alpha1.NodeFeatureGroup:
+		return validateNFG(*o)
+	default:
+		return []error{fmt.Errorf("unsupported resource %v: must be NodeFeatureRule or NodeFeatureGroup", t)}
+	}
+}
+
+func validateNFG(nfg nfdv1alpha1.NodeFeatureGroup) []error {
 	var validationErr []error
 
-	file, err := os.ReadFile(filepath)
-	if err != nil {
-		return []error{fmt.Errorf("error reading NodeFeatureRule file: %w", err)}
+	for _, rule := range nfg.Spec.Rules {
+		fmt.Println("Validating rule: ", rule.Name)
+		// Validate Rule Name
+		if rule.Name == "" {
+			validationErr = append(validationErr, fmt.Errorf("rule name cannot be empty"))
+		}
+
+		// Validate VarsTemplate
+		validationErr = append(validationErr, validate.Template(rule.VarsTemplate)...)
+
+		// Validate matchFeatures
+		validationErr = append(validationErr, validate.MatchFeatures(rule.MatchFeatures)...)
+
+		// Validate matchAny
+		validationErr = append(validationErr, validate.MatchAny(rule.MatchAny)...)
 	}
 
-	nfr := nfdv1alpha1.NodeFeatureRule{}
-	err = yaml.Unmarshal(file, &nfr)
-	if err != nil {
-		return []error{fmt.Errorf("error reading NodeFeatureRule file: %w", err)}
-	}
+	return validationErr
+}
+
+func validateNFR(nfr nfdv1alpha1.NodeFeatureRule) []error {
+	var validationErr []error
 
 	for _, rule := range nfr.Spec.Rules {
 		fmt.Println("Validating rule: ", rule.Name)

@@ -26,32 +26,34 @@ import (
 
 var testCmd = &cobra.Command{
 	Use:   "test",
-	Short: "Test a NodeFeatureRule file against a Node",
-	Long:  `Test a NodeFeatureRule file against a Node to ensure it is valid before applying it to a cluster`,
+	Short: "Test a NodeFeatureRule or NodeFeatureGroup file against a Node",
+	Long:  `Test a NodeFeatureRule or NodeFeatureGroup file against a Node to ensure it is valid before applying it to a cluster`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if rule == "" {
+			return fmt.Errorf("--rule-file must be specified")
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Evaluating NodeFeatureRule against Node %s\n", node)
-		err := kubectlnfd.Test(nodefeaturerule, node, kubeconfig)
-		if len(err) > 0 {
-			fmt.Printf("NodeFeatureRule is not valid for Node %s\n", node)
-			for _, e := range err {
+		fmt.Printf("Evaluating %s against Node %s\n", rule, node)
+		errs := kubectlnfd.Test(rule, node, kubeconfig)
+		if len(errs) > 0 {
+			fmt.Printf("%s is not valid for Node %s\n", rule, node)
+			for _, e := range errs {
 				cmd.PrintErrln(e)
 			}
-			// Return non-zero exit code to indicate failure
 			os.Exit(1)
 		}
-		fmt.Printf("NodeFeatureRule is valid for Node %s\n", node)
+		fmt.Printf("%s is valid for Node %s\n", rule, node)
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(testCmd)
 
-	testCmd.Flags().StringVarP(&nodefeaturerule, "nodefeaturerule-file", "f", "", "Path to the NodeFeatureRule file to validate")
-	testCmd.Flags().StringVarP(&node, "nodename", "n", "", "Node to validate against")
+	testCmd.Flags().StringVarP(&rule, "rule-file", "f", "", "Path to the NodeFeatureRule or NodeFeatureGroup file to test")
+	testCmd.Flags().StringVarP(&node, "nodename", "n", "", "Node to test against")
 	testCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "kubeconfig file to use")
-	if err := testCmd.MarkFlagRequired("nodefeaturerule-file"); err != nil {
-		panic(err)
-	}
 	if err := testCmd.MarkFlagRequired("nodename"); err != nil {
 		panic(err)
 	}
