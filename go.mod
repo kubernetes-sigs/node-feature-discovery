@@ -3,7 +3,7 @@ module sigs.k8s.io/node-feature-discovery
 go 1.26
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-cmp v0.7.0
