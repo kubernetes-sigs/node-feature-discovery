@@ -186,6 +186,7 @@ configuration options for details.
 
 | Feature              | Value | Description                                               |
 | --------------------| ----- | --------------------------------------------------------- |
+| **`memory-memory.total`**    | int  | Amount of RAM memory in a system in kilobytes, kB (decimal) |
 | **`memory-numa`**    | true  | Multiple memory nodes i.e. NUMA architecture detected     |
 | **`memory-nv.present`** | true | NVDIMM device(s) are present                              |
 | **`memory-nv.dax`** | true  | NVDIMM region(s) configured in DAX mode are present        |
