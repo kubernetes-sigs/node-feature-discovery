@@ -19,6 +19,7 @@ package klog
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"k8s.io/klog/v2"
@@ -34,11 +35,22 @@ func InitKlogFlags(flagset *flag.FlagSet) map[string]*utils.KlogFlagVal {
 
 	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
 	klog.InitFlags(flags)
+
 	flags.VisitAll(func(f *flag.Flag) {
 		name := klogConfigOptName(f.Name)
 		klogFlags[name] = utils.NewKlogFlagVal(f)
 		flagset.Var(klogFlags[name], f.Name, f.Usage)
 	})
+
+	// Opt into the new klog behavior so that -stderrthreshold is honored even
+	// when -logtostderr=true (the default).  Set on the outer flagset so that
+	// KlogFlagVal.isSetFromCmdLine is true and MergeKlogConfiguration will not
+	// revert the value.
+	// Ref: kubernetes/klog#212, kubernetes/klog#432
+	if err := flagset.Set("legacy_stderr_threshold_behavior", "false"); err != nil {
+		klog.ErrorS(err, "Failed to set legacy_stderr_threshold_behavior flag")
+		os.Exit(1)
+	}
 
 	return klogFlags
 }
