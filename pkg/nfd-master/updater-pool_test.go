@@ -83,7 +83,8 @@ func TestNodeUpdaterStop(t *testing.T) {
 }
 
 func TestRunNodeUpdater(t *testing.T) {
-	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewSimpleClientset()))
+	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewClientset()))
+	//nolint:staticcheck
 	fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
 	updaterPool := newFakeupdaterPool(fakeMaster)
 
@@ -99,7 +100,8 @@ func TestRunNodeUpdater(t *testing.T) {
 }
 
 func TestRunNodeFeatureGroupUpdater(t *testing.T) {
-	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewSimpleClientset()))
+	fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewClientset()))
+	//nolint:staticcheck
 	fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
 	updaterPool := newFakeupdaterPool(fakeMaster)
 

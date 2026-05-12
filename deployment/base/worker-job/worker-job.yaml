@@ -5,6 +5,7 @@ metadata:
     app: nfd
   name: nfd-worker
 spec:
+  ttlSecondsAfterFinished: 3600
   completions: NUM_NODES
   parallelism: NUM_NODES
   template:
@@ -12,7 +13,7 @@ spec:
       labels:
         app: nfd-worker
     spec:
-      serviceAccount: nfd-worker
+      serviceAccountName: nfd-worker
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Never
       affinity:

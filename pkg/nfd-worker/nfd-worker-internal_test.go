@@ -17,6 +17,7 @@ limitations under the License.
 package nfdworker
 
 import (
+	"context"
 	"os"
 	"regexp"
 	"strings"
@@ -95,14 +96,15 @@ func makeFakeFeatures(names []string) (source.FeatureLabels, Labels) {
 
 func TestConfigParse(t *testing.T) {
 	Convey("When parsing configuration", t, func() {
+		k8sCli := fakeclient.NewClientset()
 		w, err := NewNfdWorker(WithArgs(&Args{}),
-			WithKubernetesClient(fakeclient.NewSimpleClientset()))
+			WithKubernetesClient(k8sCli))
 		So(err, ShouldBeNil)
 		worker := w.(*nfdWorker)
 		overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"cpu": {"cpuid": {"attributeBlacklist": ["foo","bar"]}}}}`
 
 		Convey("and no core cmdline flags have been specified", func() {
-			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
+			So(worker.configure(context.Background(), "non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core overrides should be in effect", func() {
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"fake"})
@@ -114,7 +116,7 @@ func TestConfigParse(t *testing.T) {
 			worker.args = Args{Overrides: ConfigOverrideArgs{
 				LabelSources:   &utils.StringSliceVal{"cpu", "kernel", "pci"},
 				FeatureSources: &utils.StringSliceVal{"cpu"}}}
-			So(worker.configure("non-existing-file", overrides), ShouldBeNil)
+			So(worker.configure(context.Background(), "non-existing-file", overrides), ShouldBeNil)
 
 			Convey("core cmdline flags should be in effect instead overrides", func() {
 				So(worker.config.Core.LabelSources, ShouldResemble, []string{"cpu", "kernel", "pci"})
@@ -155,7 +157,7 @@ sources:
 
 		Convey("and a proper config file is specified", func() {
 			worker.args = Args{Overrides: ConfigOverrideArgs{LabelSources: &utils.StringSliceVal{"cpu", "kernel", "pci"}}}
-			So(worker.configure(f.Name(), ""), ShouldBeNil)
+			So(worker.configure(context.Background(), f.Name(), ""), ShouldBeNil)
 
 			Convey("specified configuration should take effect", func() {
 				// Verify core config
@@ -177,7 +179,7 @@ sources:
 		Convey("and a proper config file and overrides are given", func() {
 			worker.args = Args{Overrides: ConfigOverrideArgs{FeatureSources: &utils.StringSliceVal{"cpu"}}}
 			overrides := `{"core": {"labelSources": ["fake"],"noPublish": true},"sources": {"pci": {"deviceClassWhitelist": ["03"]}}}`
-			So(worker.configure(f.Name(), overrides), ShouldBeNil)
+			So(worker.configure(context.Background(), f.Name(), overrides), ShouldBeNil)
 
 			Convey("overrides should take precedence over the config file", func() {
 				// Verify core config
@@ -204,13 +206,14 @@ func TestNewNfdWorker(t *testing.T) {
 
 		Convey("without any args specified", func() {
 			args := &Args{}
+			k8sCli := fakeclient.NewClientset()
 			w, err := NewNfdWorker(WithArgs(args),
-				WithKubernetesClient(fakeclient.NewSimpleClientset()))
+				WithKubernetesClient(k8sCli))
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
-			So(worker.configure("", ""), ShouldBeNil)
+			So(worker.configure(context.Background(), "", ""), ShouldBeNil)
 			Convey("all sources should be enabled and the whitelist regexp should be empty", func() {
 				So(len(worker.featureSources), ShouldEqual, len(source.GetAllFeatureSources())-1)
 				So(len(worker.labelSources), ShouldEqual, len(source.GetAllLabelSources())-1)
@@ -222,13 +225,14 @@ func TestNewNfdWorker(t *testing.T) {
 			args := &Args{Overrides: ConfigOverrideArgs{
 				LabelSources:   &utils.StringSliceVal{"fake"},
 				FeatureSources: &utils.StringSliceVal{"cpu"}}}
+			k8sCli := fakeclient.NewClientset()
 			w, err := NewNfdWorker(WithArgs(args),
-				WithKubernetesClient(fakeclient.NewSimpleClientset()))
+				WithKubernetesClient(k8sCli))
 			Convey("no error should be returned", func() {
 				So(err, ShouldBeNil)
 			})
 			worker := w.(*nfdWorker)
-			So(worker.configure("", ""), ShouldBeNil)
+			So(worker.configure(context.Background(), "", ""), ShouldBeNil)
 			Convey("proper sources should be enabled", func() {
 				So(len(worker.featureSources), ShouldEqual, 1)
 				So(worker.featureSources[0].Name(), ShouldEqual, "cpu")

@@ -198,6 +198,20 @@ Example:
 nfd-master -config=/opt/nfd/master.conf
 ```
 
+### -kubeconfig
+
+The `-kubeconfig` flag specifies the path to a kubeconfig file to use for
+connecting to the Kubernetes API server. If not specified, the in-cluster
+configuration is used.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-master -kubeconfig=${HOME}/.kube/config
+```
+
 ### -options
 
 The `-options` flag may be used to specify and override configuration file

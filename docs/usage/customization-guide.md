@@ -30,6 +30,9 @@ labeling:
 - [`custom`](#custom-feature-source) feature source of nfd-worker creates
   labels based on user-specified rules.
 
+For complete API type definitions, see the
+[NFD API Reference](../reference/generated-nfd-api-reference.md).
+
 ## NodeFeature custom resource
 
 NodeFeature objects provide a way for 3rd party extensions to advertise custom
@@ -928,7 +931,7 @@ The following features are available for matching:
 |                  |              | **`family`** | int    | CPU family |
 |                  |              | **`vendor_id`** | string | CPU vendor ID |
 |                  |              | **`id`** | int        | CPU model ID |
-|                  |              | **`hypervisor`** | string | Hypervisor type information from `/proc/sysinfo` (s390x-only feature) |
+|                  |              | **`hypervisor`** | string | Hypervisor type information. On s390x read from `/proc/sysinfo`. On x86_64/arm64 detected via CPUID. Value 'none' on physical hardware. |
 | **`cpu.pstate`** | attribute    |          |            | State of the Intel pstate driver. Does not exist if the driver is not enabled. |
 |                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive' |
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false' |
@@ -962,6 +965,8 @@ The following features are available for matching:
 |                  |              | **`mod-name`** |      | Kernel module `<mod-name>` is loaded |
 | **`kernel.selinux`** | attribute |         |            | Kernel SELinux related features |
 |                  |              | **`enabled`** | bool  | `true` if SELinux has been enabled and is in enforcing mode, otherwise `false` |
+| **`kernel.kvm`** | attribute |         |            | Kernel KVM related features |
+|                  |              | **`enabled`** | bool  | `true` if KVM has been enabled, otherwise `false` |
 | **`kernel.version`** | attribute |          |           | Kernel version information |
 |                  |              | **`full`** | string   | Full kernel version (e.g. ‘4.5.6-7-g123abcde') |
 |                  |              | **`major`** | int     | First component of the kernel version (e.g. ‘4') |
@@ -994,8 +999,22 @@ The following features are available for matching:
 | **`system.osrelease`** | attribute |       |            | System identification data from `/etc/os-release` |
 |                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release` |
 | **`system.dmiid`** | attribute |       |            | DMI identification data from `/sys/devices/virtual/dmi/id/` |
-|                  |              | **`sys_vendor`** | string | Vendor name from `/sys/devices/virtual/dmi/id/sys_vendor` |
-|                  |              | **`product_name`** | string | Product name from `/sys/devices/virtual/dmi/id/product_name` |
+|                  |              | **`bios_date`** | string | BIOS release date |
+|                  |              | **`bios_vendor`** | string | BIOS vendor name |
+|                  |              | **`bios_version`** | string | BIOS version |
+|                  |              | **`board_asset_tag`** | string | Baseboard asset tag |
+|                  |              | **`board_name`** | string | Baseboard name |
+|                  |              | **`board_vendor`** | string | Baseboard vendor name |
+|                  |              | **`board_version`** | string | Baseboard version |
+|                  |              | **`chassis_asset_tag`** | string | Chassis asset tag |
+|                  |              | **`chassis_type`** | string | Chassis type (numeric, e.g. 1=Other, 17=Laptop) |
+|                  |              | **`chassis_vendor`** | string | Chassis vendor name |
+|                  |              | **`chassis_version`** | string | Chassis version |
+|                  |              | **`product_family`** | string | Product family |
+|                  |              | **`product_name`** | string | Product name |
+|                  |              | **`product_sku`** | string | Product SKU |
+|                  |              | **`product_version`** | string | Product version |
+|                  |              | **`sys_vendor`** | string | System vendor name |
 | **`system.name`** | attribute   |          |            | System name information |
 |                  |              | **`nodename`** | string | Name of the kubernetes node object |
 | **`usb.device`** | instance     |          |            | USB devices present in the system |

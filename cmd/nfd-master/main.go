@@ -73,6 +73,8 @@ func main() {
 			args.Overrides.ResyncPeriod = overrides.ResyncPeriod
 		case "nfd-api-parallelism":
 			args.Overrides.NfdApiParallelism = overrides.NfdApiParallelism
+		case "informer-page-size":
+			args.Overrides.InformerPageSize = overrides.InformerPageSize
 		}
 	})
 

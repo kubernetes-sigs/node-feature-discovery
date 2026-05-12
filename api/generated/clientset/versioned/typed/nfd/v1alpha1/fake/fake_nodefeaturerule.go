@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,19 +20,20 @@ package fake
 
 import (
 	gentype "k8s.io/client-go/gentype"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/typed/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/applyconfiguration/nfd/v1alpha1"
+	typednfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/typed/nfd/v1alpha1"
 	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // fakeNodeFeatureRules implements NodeFeatureRuleInterface
 type fakeNodeFeatureRules struct {
-	*gentype.FakeClientWithList[*v1alpha1.NodeFeatureRule, *v1alpha1.NodeFeatureRuleList]
+	*gentype.FakeClientWithListAndApply[*v1alpha1.NodeFeatureRule, *v1alpha1.NodeFeatureRuleList, *nfdv1alpha1.NodeFeatureRuleApplyConfiguration]
 	Fake *FakeNfdV1alpha1
 }
 
-func newFakeNodeFeatureRules(fake *FakeNfdV1alpha1) nfdv1alpha1.NodeFeatureRuleInterface {
+func newFakeNodeFeatureRules(fake *FakeNfdV1alpha1) typednfdv1alpha1.NodeFeatureRuleInterface {
 	return &fakeNodeFeatureRules{
-		gentype.NewFakeClientWithList[*v1alpha1.NodeFeatureRule, *v1alpha1.NodeFeatureRuleList](
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.NodeFeatureRule, *v1alpha1.NodeFeatureRuleList, *nfdv1alpha1.NodeFeatureRuleApplyConfiguration](
 			fake.Fake,
 			"",
 			v1alpha1.SchemeGroupVersion.WithResource("nodefeaturerules"),

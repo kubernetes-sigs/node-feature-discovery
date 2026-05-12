@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes Authors.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,19 +20,20 @@ package fake
 
 import (
 	gentype "k8s.io/client-go/gentype"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/typed/nfd/v1alpha1"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/applyconfiguration/nfd/v1alpha1"
+	typednfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/typed/nfd/v1alpha1"
 	v1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 // fakeNodeFeatureGroups implements NodeFeatureGroupInterface
 type fakeNodeFeatureGroups struct {
-	*gentype.FakeClientWithList[*v1alpha1.NodeFeatureGroup, *v1alpha1.NodeFeatureGroupList]
+	*gentype.FakeClientWithListAndApply[*v1alpha1.NodeFeatureGroup, *v1alpha1.NodeFeatureGroupList, *nfdv1alpha1.NodeFeatureGroupApplyConfiguration]
 	Fake *FakeNfdV1alpha1
 }
 
-func newFakeNodeFeatureGroups(fake *FakeNfdV1alpha1, namespace string) nfdv1alpha1.NodeFeatureGroupInterface {
+func newFakeNodeFeatureGroups(fake *FakeNfdV1alpha1, namespace string) typednfdv1alpha1.NodeFeatureGroupInterface {
 	return &fakeNodeFeatureGroups{
-		gentype.NewFakeClientWithList[*v1alpha1.NodeFeatureGroup, *v1alpha1.NodeFeatureGroupList](
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.NodeFeatureGroup, *v1alpha1.NodeFeatureGroupList, *nfdv1alpha1.NodeFeatureGroupApplyConfiguration](
 			fake.Fake,
 			namespace,
 			v1alpha1.SchemeGroupVersion.WithResource("nodefeaturegroups"),

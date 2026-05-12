@@ -59,7 +59,7 @@ func newTestNamespace(name string) *corev1.Namespace {
 }
 
 func TestIsNamespaceSelected(t *testing.T) {
-	fakeCli := fakeclient.NewSimpleClientset(newTestNamespace("fake"))
+	fakeCli := fakeclient.NewClientset(newTestNamespace("fake"))
 	fakeCli.PrependWatchReactor("*", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
 		gvr := action.GetResource()
 		ns := action.GetNamespace()

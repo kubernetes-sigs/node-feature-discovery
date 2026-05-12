@@ -102,8 +102,26 @@ func (s *systemSource) Discover() error {
 		}
 	}
 
-	// Get DMI ID attributes
-	dmiIDAttributeNames := []string{"sys_vendor", "product_name"}
+	// Get DMI ID attributes (publicly readable files under /sys/devices/virtual/dmi/id/).
+	// Serial numbers and product_uuid are excluded as they require root access.
+	dmiIDAttributeNames := []string{
+		"bios_date",
+		"bios_vendor",
+		"bios_version",
+		"board_asset_tag",
+		"board_name",
+		"board_vendor",
+		"board_version",
+		"chassis_asset_tag",
+		"chassis_type",
+		"chassis_vendor",
+		"chassis_version",
+		"product_family",
+		"product_name",
+		"product_sku",
+		"product_version",
+		"sys_vendor",
+	}
 	dmiAttrs := make(map[string]string)
 	for _, name := range dmiIDAttributeNames {
 		val, err := getDmiIDAttribute(name)

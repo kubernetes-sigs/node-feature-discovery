@@ -50,7 +50,7 @@ func TestPodScanner(t *testing.T) {
 	Convey("When I scan for pod resources using fake client and no namespace", t, func() {
 		mockPodResClient := new(mockpodres.PodResourcesListerClient)
 
-		fakeCli := fakeclient.NewSimpleClientset()
+		fakeCli := fakeclient.NewClientset()
 		computePodFingerprint := true
 		resScan, err := NewPodResourcesScanner("*", mockPodResClient, fakeCli, computePodFingerprint)
 
@@ -170,7 +170,7 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 
-			fakeCli := fakeclient.NewSimpleClientset(pod)
+			fakeCli := fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -288,7 +288,7 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -378,7 +378,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -471,7 +471,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -549,7 +549,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -644,7 +644,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -688,7 +688,7 @@ func TestPodScanner(t *testing.T) {
 
 	Convey("When I scan for pod resources using fake client and given namespace", t, func() {
 		mockPodResClient := new(mockpodres.PodResourcesListerClient)
-		fakeCli := fakeclient.NewSimpleClientset()
+		fakeCli := fakeclient.NewClientset()
 		computePodFingerprint := false
 		resScan, err := NewPodResourcesScanner("pod-res-test", mockPodResClient, fakeCli, computePodFingerprint)
 
@@ -776,7 +776,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -844,7 +844,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -924,7 +924,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -990,7 +990,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -1051,7 +1051,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -1138,7 +1138,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 
@@ -1249,7 +1249,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewSimpleClientset(pod)
+			fakeCli = fakeclient.NewClientset(pod)
 			resScan.(*PodResourcesScanner).k8sClient = fakeCli
 			res, err := resScan.Scan()
 

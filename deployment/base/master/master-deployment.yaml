@@ -14,7 +14,7 @@ spec:
       labels:
         app: nfd-master
     spec:
-      serviceAccount: nfd-master
+      serviceAccountName: nfd-master
       enableServiceLinks: false
       tolerations: []
       containers:
@@ -28,7 +28,6 @@ spec:
                 resource: limits.memory
           resources:
             limits:
-              cpu: 300m
               memory: 4Gi
             requests:
               cpu: 100m

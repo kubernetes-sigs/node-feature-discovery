@@ -46,6 +46,7 @@ pushd "${NFD_ROOT}/api/nfd" > /dev/null
 
 kube::codegen::gen_client \
     --with-watch \
+    --with-applyconfig \
     --output-dir "${NFD_ROOT}/api/generated" \
     --output-pkg "sigs.k8s.io/node-feature-discovery/api/generated" \
     --boilerplate "${NFD_ROOT}/hack/boilerplate.go.txt" \

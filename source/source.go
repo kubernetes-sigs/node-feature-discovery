@@ -19,6 +19,7 @@ package source
 //go:generate go tool mockery --name=LabelSource --inpackage
 
 import (
+	"context"
 	"fmt"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
@@ -75,6 +76,16 @@ type SupplementalSource interface {
 	// DisableByDefault returns true if the source should be disabled by
 	// default in production.
 	DisableByDefault() bool
+}
+
+// EventSource is an interface for a source that can send events
+type EventSource interface {
+	FeatureSource
+
+	// SetNotifyChannel sets the notification channel used to send updates about feature changes.
+	// The provided channel will receive a notification (a pointer to the FeatureSource) whenever
+	// the source detects new or updated features, typically after a successful Discover operation.
+	SetNotifyChannel(ctx context.Context, ch chan *FeatureSource) error
 }
 
 // FeatureLabelValue represents the value of one feature label
@@ -149,6 +160,17 @@ func GetAllConfigurableSources() map[string]ConfigurableSource {
 	all := make(map[string]ConfigurableSource)
 	for k, v := range sources {
 		if s, ok := v.(ConfigurableSource); ok {
+			all[k] = s
+		}
+	}
+	return all
+}
+
+// GetAllEventSources returns all registered event sources
+func GetAllEventSources() map[string]EventSource {
+	all := make(map[string]EventSource)
+	for k, v := range sources {
+		if s, ok := v.(EventSource); ok {
 			all[k] = s
 		}
 	}

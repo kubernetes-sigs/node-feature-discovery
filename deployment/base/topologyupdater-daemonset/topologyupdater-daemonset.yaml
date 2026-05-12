@@ -14,7 +14,7 @@ spec:
         app: nfd-topology-updater
     spec:
       dnsPolicy: ClusterFirstWithHostNet
-      serviceAccount: nfd-topology-updater
+      serviceAccountName: nfd-topology-updater
       containers:
         - name: nfd-topology-updater
           image: gcr.io/k8s-staging-nfd/node-feature-discovery:master
@@ -37,7 +37,6 @@ spec:
           args: []
           resources:
             limits:
-              cpu: 100m
               memory: 60Mi
             requests:
               cpu: 50m
