@@ -24,14 +24,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/informers"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
@@ -49,6 +53,11 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
 )
+
+// nodeScopedPodInformerResync is zero because topology scans read pods
+// from the cached lister only. This value only makes sense when event
+// handlers are registered to the informer.
+const nodeScopedPodInformerResync = 0
 
 const (
 	// TopologyManagerPolicyAttributeName represents an attribute which defines
@@ -200,9 +209,49 @@ func (w *nfdTopologyUpdater) Run() error {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
 	}
 
+	syncCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	// Build a node-scoped Pod informer so per-pod lookups in
+	// PodResourcesScanner.isWatchable() are served from a local cache
+	// avoiding cluster-wide pod traffic.
+	podInformerFactory := informers.NewSharedInformerFactoryWithOptions(
+		k8sClient,
+		nodeScopedPodInformerResync,
+		informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
+			opts.FieldSelector = fields.OneTermEqualSelector("spec.nodeName", w.nodeName).String()
+		}),
+	)
+	podInformer := podInformerFactory.Core().V1().Pods()
+	podLister := podInformer.Lister()
+
+	podInformerStop := make(chan struct{})
+	var stopPodInformerOnce sync.Once
+	stopPodInformer := func() {
+		stopPodInformerOnce.Do(func() {
+			close(podInformerStop)
+		})
+	}
+	defer stopPodInformer()
+
+	go func() {
+		select {
+		case <-w.stop:
+			stopPodInformer()
+		case <-podInformerStop:
+		}
+	}()
+
+	podInformerFactory.Start(podInformerStop)
+	klog.InfoS("waiting for node-scoped Pod informer cache sync", "nodeName", w.nodeName)
+	if !cache.WaitForCacheSync(syncCtx.Done(), podInformer.Informer().HasSynced) {
+		return fmt.Errorf("timed out waiting for node-scoped Pod informer cache sync for node %q", w.nodeName)
+	}
+	klog.InfoS("node-scoped Pod informer cache synced", "nodeName", w.nodeName)
+
 	var resScan resourcemonitor.ResourcesScanner
 
-	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, k8sClient, w.resourcemonitorArgs.PodSetFingerprint)
+	resScan, err = resourcemonitor.NewPodResourcesScanner(w.resourcemonitorArgs.Namespace, podResClient, podLister, k8sClient, w.resourcemonitorArgs.PodSetFingerprint)
 	if err != nil {
 		return fmt.Errorf("failed to initialize ResourceMonitor instance: %w", err)
 	}

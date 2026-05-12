@@ -17,6 +17,8 @@ limitations under the License.
 package resourcemonitor
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -26,13 +28,150 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
+	corev1listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 	v1 "k8s.io/kubelet/pkg/apis/podresources/v1"
 
 	mockpodres "sigs.k8s.io/node-feature-discovery/pkg/podres/mocks"
 )
+
+// newFakePodLister returns a PodLister backed by an in-memory indexer
+// pre-populated with the given pods. It avoids spinning up a fake
+// clientset / informer / sync loop in unit tests; PodLister only needs
+// an Indexer, and tests for PodResourcesScanner exercise lookups not
+// reflector behavior.
+func newFakePodLister(pods ...*corev1.Pod) corev1listers.PodLister {
+	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	for _, pod := range pods {
+		_ = indexer.Add(pod)
+	}
+	return corev1listers.NewPodLister(indexer)
+}
+
+type errorPodLister struct {
+	err error
+}
+
+func (l errorPodLister) List(selector labels.Selector) ([]*corev1.Pod, error) {
+	return nil, l.err
+}
+
+func (l errorPodLister) Pods(namespace string) corev1listers.PodNamespaceLister {
+	return errorPodNamespaceLister(l)
+}
+
+type errorPodNamespaceLister struct {
+	err error
+}
+
+func (l errorPodNamespaceLister) List(selector labels.Selector) ([]*corev1.Pod, error) {
+	return nil, l.err
+}
+
+func (l errorPodNamespaceLister) Get(name string) (*corev1.Pod, error) {
+	return nil, l.err
+}
+
+func TestNewPodResourcesScannerRequiresKubernetesClient(t *testing.T) {
+	Convey("When I create a pod resources scanner without a Kubernetes client", t, func() {
+		resScan, err := NewPodResourcesScanner("*", nil, newFakePodLister(), nil, false)
+
+		Convey("Error is present", func() {
+			So(err, ShouldNotBeNil)
+		})
+		Convey("Return ResourcesScanner should be nil", func() {
+			So(resScan, ShouldBeNil)
+		})
+	})
+}
+
+func TestIsWatchable(t *testing.T) {
+	Convey("When pod is missing from the lister and live GET succeeds", t, func() {
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-pod",
+				Namespace: "default",
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: "test-container",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    *resource.NewQuantity(1, resource.DecimalSI),
+								corev1.ResourceMemory: *resource.NewQuantity(100, resource.DecimalSI),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    *resource.NewQuantity(1, resource.DecimalSI),
+								corev1.ResourceMemory: *resource.NewQuantity(100, resource.DecimalSI),
+							},
+						},
+					},
+				},
+			},
+		}
+		resScan := &PodResourcesScanner{
+			namespace: "*",
+			podLister: newFakePodLister(),
+			k8sClient: fakeclient.NewClientset(pod),
+		}
+
+		isWatchable, isExclusiveCPUs, err := resScan.isWatchable(context.Background(), &v1.PodResources{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+		})
+
+		Convey("Error is nil", func() {
+			So(err, ShouldBeNil)
+		})
+		Convey("Pod is watchable", func() {
+			So(isWatchable, ShouldBeTrue)
+		})
+		Convey("Pod has exclusive CPUs", func() {
+			So(isExclusiveCPUs, ShouldBeTrue)
+		})
+	})
+
+	Convey("When pod is missing from the lister and live GET fails", t, func() {
+		resScan := &PodResourcesScanner{
+			namespace: "*",
+			podLister: newFakePodLister(),
+			k8sClient: fakeclient.NewClientset(),
+		}
+
+		_, _, err := resScan.isWatchable(context.Background(), &v1.PodResources{
+			Name:      "missing-pod",
+			Namespace: "default",
+		})
+
+		Convey("NotFound error is returned", func() {
+			So(apierrors.IsNotFound(err), ShouldBeTrue)
+		})
+	})
+
+	Convey("When pod lister returns a non-NotFound error", t, func() {
+		listerErr := errors.New("lister failure")
+		resScan := &PodResourcesScanner{
+			namespace: "*",
+			podLister: errorPodLister{err: listerErr},
+			k8sClient: fakeclient.NewClientset(),
+		}
+
+		_, _, err := resScan.isWatchable(context.Background(), &v1.PodResources{
+			Name:      "test-pod",
+			Namespace: "default",
+		})
+
+		Convey("Lister error is returned", func() {
+			So(errors.Is(err, listerErr), ShouldBeTrue)
+		})
+	})
+}
 
 func TestPodScanner(t *testing.T) {
 	// PodFingerprint only depends on Name/Namespace of the pods running on a Node
@@ -50,9 +189,8 @@ func TestPodScanner(t *testing.T) {
 	Convey("When I scan for pod resources using fake client and no namespace", t, func() {
 		mockPodResClient := new(mockpodres.PodResourcesListerClient)
 
-		fakeCli := fakeclient.NewClientset()
 		computePodFingerprint := true
-		resScan, err := NewPodResourcesScanner("*", mockPodResClient, fakeCli, computePodFingerprint)
+		resScan, err := NewPodResourcesScanner("*", mockPodResClient, newFakePodLister(), fakeclient.NewClientset(), computePodFingerprint)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)
@@ -170,8 +308,7 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 
-			fakeCli := fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -288,8 +425,7 @@ func TestPodScanner(t *testing.T) {
 				},
 			}
 
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -378,8 +514,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -471,8 +606,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -549,8 +683,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -644,8 +777,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -688,9 +820,8 @@ func TestPodScanner(t *testing.T) {
 
 	Convey("When I scan for pod resources using fake client and given namespace", t, func() {
 		mockPodResClient := new(mockpodres.PodResourcesListerClient)
-		fakeCli := fakeclient.NewClientset()
 		computePodFingerprint := false
-		resScan, err := NewPodResourcesScanner("pod-res-test", mockPodResClient, fakeCli, computePodFingerprint)
+		resScan, err := NewPodResourcesScanner("pod-res-test", mockPodResClient, newFakePodLister(), fakeclient.NewClientset(), computePodFingerprint)
 
 		Convey("Creating a Resources Scanner using a mock client", func() {
 			So(err, ShouldBeNil)
@@ -776,8 +907,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -844,8 +974,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -924,8 +1053,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -990,8 +1118,7 @@ func TestPodScanner(t *testing.T) {
 					},
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -1051,8 +1178,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -1138,8 +1264,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
@@ -1249,8 +1374,7 @@ func TestPodScanner(t *testing.T) {
 					QOSClass: corev1.PodQOSGuaranteed,
 				},
 			}
-			fakeCli = fakeclient.NewClientset(pod)
-			resScan.(*PodResourcesScanner).k8sClient = fakeCli
+			resScan.(*PodResourcesScanner).podLister = newFakePodLister(pod)
 			res, err := resScan.Scan()
 
 			Convey("Error is nil", func() {
