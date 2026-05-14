@@ -17,12 +17,60 @@ limitations under the License.
 package api
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+// MaxJSONDepth bounds JSON nesting depth in MatchExpression(.Set) decoding.
+// Go's encoding/json already imposes its own (~10k) cap; this tighter
+// application-layer limit rejects pathological inputs earlier with a
+// clearer error and stays effective on toolchains that lack the
+// internal cap.
+const MaxJSONDepth = 100
+
+// ErrJSONTooDeep is returned when a MatchExpression(.Set) input exceeds
+// MaxJSONDepth.
+var ErrJSONTooDeep = errors.New("JSON nesting exceeds maximum depth")
+
+// boundedJSONDepth scans data with json.Decoder.Token and returns an
+// error if nesting exceeds maxDepth. Token consumes ~constant memory
+// per level, so this is safe to call before json.Unmarshal.
+//
+// Any tokenizer error (io.EOF or malformed JSON) returns nil — the
+// caller's subsequent json.Unmarshal surfaces the canonical parse
+// error. boundedJSONDepth only enforces the depth invariant.
+//
+// Only MatchExpression and MatchExpressionSet need this pre-check.
+// MatchOp and MatchValue UnmarshalJSON receive scalar / flat-array
+// input and do not recurse into nested containers.
+func boundedJSONDepth(data []byte, maxDepth int) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	depth := 0
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil
+		}
+		delim, ok := tok.(json.Delim)
+		if !ok {
+			continue
+		}
+		switch delim {
+		case '{', '[':
+			depth++
+			if depth > maxDepth {
+				return fmt.Errorf("%w: %d > %d", ErrJSONTooDeep, depth, maxDepth)
+			}
+		case '}', ']':
+			depth--
+		}
+	}
+}
 
 var matchOps = map[MatchOp]struct{}{
 	MatchAny:          {},
@@ -100,6 +148,10 @@ type matchExpression MatchExpression
 
 // UnmarshalJSON implements the Unmarshaler interface of "encoding/json"
 func (m *MatchExpression) UnmarshalJSON(data []byte) error {
+	if err := boundedJSONDepth(data, MaxJSONDepth); err != nil {
+		return err
+	}
+
 	raw := new(interface{})
 
 	err := json.Unmarshal(data, raw)
@@ -139,6 +191,10 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 
 // UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
 func (m *MatchExpressionSet) UnmarshalJSON(data []byte) error {
+	if err := boundedJSONDepth(data, MaxJSONDepth); err != nil {
+		return err
+	}
+
 	*m = MatchExpressionSet{}
 
 	names := make([]string, 0)
