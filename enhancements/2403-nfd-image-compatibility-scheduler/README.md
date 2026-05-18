@@ -25,7 +25,7 @@
 
 ## Summary
 
-Cloud-native technologies are being adopted by high-demand industries where container compatibility is critical for service performance and cluster preparation.
+Cloud-native technologies are being adopted by high-demand industries where container compatibility is critical for service performance and cluster preparation. The integration of workloads requiring specific resource adaptations (acceleration, specific networking behavior, ..) can quickly become complex and often involves multiple back-and-forths between the infrastructure teams and workload vendors. A convergence is usually necessary to align application needs with available resources. Experience shows that this is a significant cause of deployment delays.
 Building upon the first phase of [KEP-1845 Proposal](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/enhancements/1845-nfd-image-compatibility/README.md), which completed node compatibility validation, this proposal introduces a compatibility scheduling plugin. This plugin utilizes `NodeFeatureGroup` to filter nodes that meet compatibility requirements. It effectively schedules pods to compatible nodes, enabling automated and intelligent compatibility scheduling decisions to meet the application's need for a specific, compatible environment.
 
 ## Motivation
@@ -37,10 +37,6 @@ The first phase of [KEP-1845 Proposal](https://github.com/kubernetes-sigs/node-f
 ### User Stories
 
 When deploying applications that require specific hardware or software features (e.g., AVX2 support, specific kernel versions, or GPU availability), users want to ensure that their pods are scheduled only on nodes that meet these compatibility requirements. This is particularly important for workloads in high-performance computing, machine learning, and other specialized domains where compatibility directly impacts performance and functionality.
-
-The core of this proposal is to implement an `ImageCompatibilityPlugin` within the Kubernetes scheduler framework. During the **Prefilter phase** of the scheduling cycle, this plugin dynamically creates a `NodeFeatureGroup` Custom Resource based on the image compatibility metadata obtained from the OCI Artifact to describe node requirements. It then uses the list of matching nodes in the resource's `status` field to filter compatible candidate nodes during the **Filter phase** of the scheduling cycle.
-
-To achieve high-performance scheduling from basic validation to large scale cluster scenarios, we have designed three solutions based on the above foundational architecture. The proposal C is our preferred solution. Node pre-grouping can significantly reduce the number of compatibility checks required during scheduling. 
 
 ### Risks and Mitigations
 #### Group Homogeneity Enforcement
@@ -58,9 +54,12 @@ It can be divided into two scenarios:
 If `NodeFeatureGroup` status updates are delayed, it can lead to stale information being used during the scheduling process. This latency can impact the accuracy of compatibility checks and potentially result in suboptimal scheduling decisions. However, since the pre-grouping can reduce the latency of NFG updates, the impact of this latency is limited. Still, adding a last-second validation of node features before the final binding step could be considered to further mitigate this risk.
 
 ## Design Details
+The core of this proposal is to implement an `ImageCompatibilityPlugin` within the Kubernetes scheduler framework. During the **Prefilter phase** of the scheduling cycle, this plugin dynamically creates a `NodeFeatureGroup` Custom Resource based on the image compatibility metadata obtained from the OCI Artifact to describe node requirements. It then uses the list of matching nodes in the resource's `status` field to filter compatible candidate nodes during the **Filter phase** of the scheduling cycle.
+
+To achieve high-performance scheduling from basic validation to large scale cluster scenarios, we have designed three solutions based on the above foundational architecture. The proposal C is our preferred solution (see below for the pros/cons of the different scenario in [alternative-design-proposals](#alternative-design-proposals)). Node pre-grouping can significantly reduce the number of compatibility checks required during scheduling. 
 ### Proposal C: Node Pre-grouping
 
-![compatibility_scheduler-](./proposal-C.png)
+![compatibility_scheduler-proposal-C](./proposal-C.png)
 
 For large scale clusters, node pre-grouping is a method to significantly reduce computational overhead. The core idea is to pre-organize all nodes into several groups based on specific, static rules (e.g., `cpu.model`, `kernel.version`). This optimization changes the scheduling complexity from checking **N (number of nodes)** down to just **G** groups (**G<<N**) in the critical path.
 
