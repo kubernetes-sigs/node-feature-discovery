@@ -117,6 +117,28 @@ image-all: ensure-buildx yamls
 	$(IMAGE_BUILDX_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)
 	$(IMAGE_BUILDX_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_MINIMAL)
 
+# Local cross-build smoke test for the full release matrix. Does NOT push;
+# does NOT --load. Exits non-zero on the first platform that fails to build.
+# Use to reproduce CI cross-build issues locally; leaves images named
+# nfd-cross-test:<plat> in the local cache for inspection (run
+# `docker image prune` or `docker rmi nfd-cross-test:*` to clean up).
+#
+# This recipe re-spells the docker buildx flags from IMAGE_BUILDX_CMD
+# rather than reusing the variable because IMAGE_BUILDX_CMD bakes in
+# --platform=$(IMAGE_ALL_PLATFORMS) (multi-arch in one invocation), and
+# we need a per-platform single-arch loop here. Keep the flags in sync
+# with IMAGE_BUILDX_CMD (line 78) if either changes. --pull is preserved
+# to match CI behaviour (fresh base images per smoke run).
+image-cross-test: ensure-buildx yamls
+	@for plat in $$(echo $(IMAGE_ALL_PLATFORMS) | tr , ' '); do \
+	  echo "===> $$plat"; \
+	  DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build \
+	    --builder=nfd-builder --platform=$$plat --progress=auto --pull \
+	    $(IMAGE_BUILD_ARGS) --target minimal \
+	    -t nfd-cross-test:$$(echo $$plat | tr / -) . \
+	    || { echo "FAIL $$plat"; exit 1; }; \
+	done
+
 # clean NFD labels on all nodes
 # devel only
 deploy-prune:
