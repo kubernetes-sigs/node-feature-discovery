@@ -27,11 +27,12 @@ import (
 func TestNewNfdMaster(t *testing.T) {
 	Convey("When initializing new NfdMaster instance", t, func() {
 		Convey("When -config is supplied", func() {
+			k8sCli := fakeclient.NewClientset()
 			_, err := m.NewNfdMaster(
 				m.WithArgs(&m.Args{
 					ConfigFile: "master-config.yaml",
 				}),
-				m.WithKubernetesClient(fakeclient.NewSimpleClientset()))
+				m.WithKubernetesClient(k8sCli))
 			Convey("An error should not be returned", func() {
 				So(err, ShouldBeNil)
 			})

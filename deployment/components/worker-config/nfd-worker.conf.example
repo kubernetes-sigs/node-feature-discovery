@@ -116,6 +116,9 @@
 #        - feature: kernel.selinux
 #          matchExpressions:
 #            enabled: {op: IsFalse}
+#        - feature: kernel.kvm
+#          matchExpressions:
+#            enabled: {op: IsFalse}
 #        - feature: kernel.version
 #          matchExpressions:
 #            major: {op: In, value: ["5"]}

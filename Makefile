@@ -1,4 +1,4 @@
-.PHONY: all test templates yamls build build-%
+.PHONY: all test templates yamls build build-% install-crds
 .FORCE:
 
 GO_CMD ?= go
@@ -8,7 +8,7 @@ IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
 IMAGE_PUSH_CMD ?= docker push
 CONTAINER_RUN_CMD ?= docker run
-BUILDER_IMAGE ?= golang:1.25-trixie
+BUILDER_IMAGE ?= golang:1.26-trixie
 BASE_IMAGE_FULL ?= debian:bookworm-slim
 BASE_IMAGE_MINIMAL ?= scratch
 
@@ -99,7 +99,7 @@ all: image
 BUILD_BINARIES := nfd-master nfd-worker nfd-topology-updater nfd-gc kubectl-nfd nfd
 
 build-%:
-	$(GO_CMD) build -v -o bin/ $(BUILD_FLAGS) ./cmd/$*
+	CGO_ENABLED=0 $(GO_CMD) build -v -o bin/ $(BUILD_FLAGS) ./cmd/$*
 
 build:	$(foreach bin, $(BUILD_BINARIES), build-$(bin))
 
@@ -155,6 +155,19 @@ templates:
 
 generate:
 	hack/update_codegen.sh
+
+.PHONY: generate-api-docs
+generate-api-docs: generate-api-docs-nfd
+
+.PHONY: generate-api-docs-nfd
+generate-api-docs-nfd:
+	$(GO_CMD) tool crd-ref-docs \
+		--source-path=./api/nfd/v1alpha1 \
+		--config=./hack/crd-ref-docs/config.yaml \
+		--renderer=markdown \
+		--output-path=./docs/reference/generated-nfd-api-reference.md
+	@# Add Jekyll front matter for site integration
+	@sed -i.bak '1s/^/---\ntitle: "NFD API Reference"\nlayout: default\nsort: 8\n---\n\n/' ./docs/reference/generated-nfd-api-reference.md && rm -f ./docs/reference/generated-nfd-api-reference.md.bak
 
 gofmt:
 	@$(GO_FMT) -w -l $$(find . -name '*.go')
@@ -219,8 +232,12 @@ test:
 	GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./pkg/... ./source/...
 	cd api/nfd && GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./...
 
+install-crds:
+	@if [ ! -f "${KUBECONFIG}" ]; then echo "[ERR] KUBECONFIG file not found: ${KUBECONFIG}"; exit 1; fi
+	kubectl apply -f deployment/base/nfd-crds/nfd-api-crds.yaml
+
 e2e-test:
-	@if [ -z ${KUBECONFIG} ]; then echo "[ERR] KUBECONFIG missing, must be defined"; exit 1; fi
+	@if [ ! -f "${KUBECONFIG}" ]; then echo "[ERR] KUBECONFIG file not found: ${KUBECONFIG}"; exit 1; fi
 	$(GO_CMD) test -timeout=1h -v ./test/e2e/ -args \
 	    -nfd.repo=$(IMAGE_REPO) -nfd.tag=$(IMAGE_TAG_NAME) \
 	    -kubeconfig=$(KUBECONFIG) \

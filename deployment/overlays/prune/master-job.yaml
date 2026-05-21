@@ -6,12 +6,13 @@ metadata:
     app: nfd
 spec:
   completions: 1
+  ttlSecondsAfterFinished: 3600
   template:
     metadata:
       labels:
         app: nfd-prune
     spec:
-      serviceAccount: nfd-master
+      serviceAccountName: nfd-master
       tolerations: []
       containers:
         - name: nfd-master

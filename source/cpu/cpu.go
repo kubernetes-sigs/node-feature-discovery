@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -199,6 +200,16 @@ func (s *cpuSource) GetLabels() (source.FeatureLabels, error) {
 		labels["coprocessor.nx_gzip"] = v
 	}
 
+	_, err := os.ReadFile(hostpath.SysfsDir.Path("sys/devices/cpu_atom/cpus"))
+	if err == nil {
+		labels["cpu_atom"] = true
+	}
+
+	_, err = os.ReadFile(hostpath.SysfsDir.Path("sys/devices/cpu_core/cpus"))
+	if err == nil {
+		labels["cpu_core"] = true
+	}
+
 	return labels, nil
 }
 
@@ -271,22 +282,49 @@ func getCPUModel() map[string]string {
 		cpuModelInfo["hypervisor"] = hypervisor
 	}
 
+	if runtime.GOARCH == "s390x" {
+		s390xAttrs := getS390xAttributes()
+		if v := s390xAttrs["vendor_id"]; v != "" {
+			cpuModelInfo["vendor_id"] = v
+		}
+		if f := s390xAttrs["family"]; f != "" && f != "0" {
+			cpuModelInfo["family"] = f
+		}
+		if id := s390xAttrs["id"]; id != "" && id != "0" {
+			cpuModelInfo["id"] = id
+		}
+
+	}
+
 	return cpuModelInfo
 }
 
-// getHypervisor detects the hypervisor on s390x by reading /proc/sysinfo.
-// If the file does not exist, it returns an empty string with no error.
+// getHypervisor detects the hypervisor on s390x by reading /proc/sysinfo
+// and on x86_64/arm64 using the cpuid library.
+// Returns normalized hypervisor string, "unknown" for unknown vendor, or "none" for bare metal.
 func getHypervisor() (string, error) {
-	if _, err := os.Stat("/proc/sysinfo"); os.IsNotExist(err) {
-		return "", nil
+	// use /proc/sysinfo for s390x
+	if runtime.GOARCH == "s390x" {
+		return getHypervisorFromProcSysinfo()
 	}
 
+	// use cpuid lib for x86/arm
+	if cpuid.CPU.VM() {
+		return getHypervisorFromCPUID()
+	}
+
+	// no hv discovered
+	return "none", nil
+}
+
+func getHypervisorFromProcSysinfo() (string, error) {
 	data, err := os.ReadFile("/proc/sysinfo")
 	if err != nil {
+		klog.ErrorS(err, "failed to read /proc/sysinfo")
 		return "", err
 	}
 
-	hypervisor := "PR/SM"
+	hypervisor := ""
 	for _, line := range strings.Split(string(data), "\n") {
 		if strings.Contains(line, "Control Program:") {
 			parts := strings.SplitN(line, ":", 2)
@@ -296,11 +334,59 @@ func getHypervisor() (string, error) {
 			break
 		}
 	}
+	if hypervisor == "" {
+		return "none", nil
+	}
 	// Replace forbidden symbols
 	fullRegex := regexp.MustCompile("[^-A-Za-z0-9_.]+")
 	hypervisor = fullRegex.ReplaceAllString(hypervisor, "_")
 
 	return hypervisor, nil
+}
+
+func getS390xAttributes() map[string]string {
+	attrs := make(map[string]string)
+	attrs["vendor_id"] = ""
+	attrs["family"] = "0"
+	attrs["id"] = "0"
+
+	if data, err := os.ReadFile("/proc/cpuinfo"); err == nil {
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) < 2 {
+				continue
+			}
+			key := strings.TrimSpace(parts[0])
+			val := strings.TrimSpace(parts[1])
+
+			switch key {
+			case "vendor_id":
+				// Sanitize IBM/S390 -> IBM_S390
+				attrs["vendor_id"] = regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(val, "_")
+			case "machine":
+				attrs["id"] = val
+			case "identification":
+				if attrs["family"] == "0" { // Only set once for the first processor found
+					attrs["family"] = val
+				}
+			}
+		}
+	}
+	return attrs
+}
+
+func getHypervisorFromCPUID() (string, error) {
+	hv := cpuid.CPU.HypervisorVendorID
+	if hv == cpuid.VendorUnknown {
+		raw := cpuid.CPU.HypervisorVendorString
+		clean := regexp.MustCompile("[^-A-Za-z0-9_.]+").ReplaceAllString(raw, "_")
+		if clean == "" {
+			return "unknown", nil
+		}
+		return clean, nil
+	}
+	return strings.ToLower(hv.String()), nil
 }
 
 func discoverTopology() map[string]string {

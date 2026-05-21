@@ -33,7 +33,7 @@ rules:
 - apiGroups:
   - nfd.k8s-sigs.io
   resources:
-  - nodefeaturegroup/status
+  - nodefeaturegroups/status
   verbs:
   - patch
   - update

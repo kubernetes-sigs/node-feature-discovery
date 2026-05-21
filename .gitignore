@@ -4,3 +4,4 @@ demo/helper-scripts/*.log
 /kustomization.yaml
 coverage.out
 .idea/
+.worktrees/
