@@ -2,6 +2,8 @@
 <!-- toc -->
 - [Summary](#summary)
 - [Motivation](#motivation)
+  - [Goals](#goals)
+  - [Non-Goals](#non-goals)
 - [Proposal](#proposal)
   - [User Stories](#user-stories)
   - [Risks and Mitigations](#risks-and-mitigations)
@@ -32,6 +34,16 @@ Building upon the first phase of [KEP-1845 Proposal](https://github.com/kubernet
 
 The first phase of [KEP-1845 Proposal](https://github.com/kubernetes-sigs/node-feature-discovery/blob/master/enhancements/1845-nfd-image-compatibility/README.md) introduced compatibility metadata to help container image authors describe compatibility requirements in a standardized way. This metadata is uploaded to the image registry alongside the image. Based on this container compatibility metadata, the compatibility scheduler plugin automatically analyzes the compatibility requirements of container images, filters suitable nodes for scheduling, and ensures that containers run on compatible nodes.
 
+### Goals
+
+- Implement an image compatibility scheduling plugin based on NFD to schedule Pods to compatible nodes, providing a production-ready scheduling extension for tracking image compatibility requirements.
+- Enhance NFD to implement an NFG update API targeted at specific nodes (node-granular updates) rather than triggering a full node scan.
+
+### Non-Goals
+
+- Making image compatibility scheduling plugin a hard requirement for the NFD usage.
+- Cover applications ABI compatibility.
+
 ## Proposal
 
 ### User Stories
@@ -48,7 +60,7 @@ Cluster administrators are responsible for ensuring homogeneity when they define
 When node features drift over time (e.g., due to software updates or hardware changes), it can lead to mismatches between the pre-group definitions and the actual node capabilities. This drift can compromise the effectiveness of the pre-grouping strategy.
 It can be divided into two scenarios:
 1. **Drift Before Scheduling:** If a node drifts before the scheduling process, the pre-groups will be updated accordingly during the next `NodeFeatureGroup` update (trigger immediately). Thus, the scheduling process will always work with the most current node features.
-2. **Drift After Scheduling:** When drift happens after the scheduling process, the scheduled pods will not effect until next schedule time. --We'll need to add a monitoring mechanism to watch for drifted nodes, alert, and have administrators trigger rescheduling.
+2. **Drift After Scheduling:** When drift happens after the scheduling process, the scheduled pods will not be affected until next schedule time. --We'll need to add a monitoring mechanism to watch for drifted nodes, alert, and have administrators trigger rescheduling.
 
 #### NFG Status Update Latency
 If `NodeFeatureGroup` status updates are delayed, it can lead to stale information being used during the scheduling process. This latency can impact the accuracy of compatibility checks and potentially result in suboptimal scheduling decisions. However, since the pre-grouping can reduce the latency of NFG updates, the impact of this latency is limited. Still, adding a last-second validation of node features before the final binding step could be considered to further mitigate this risk.
@@ -76,7 +88,7 @@ The process involves these main phases:
 3. **Scheduling Filter Phase:** The scheduler filters candidate nodes by checking their presence in the status of the relevant ephemeral `NodeFeatureGroup` CR, ensuring they meet the computed compatibility requirements.
 4. **Scheduling PreBind Phase (Optional):** An optional final validation step can be added to re-verify node compatibility before binding, ensuring that any update latency is accounted for.
 
-**Example Flow:** Assume 10000 nodes are pre-grouped into 10 groups (`Group-1` to `Group-10`). For a pod with a new compatibility demand, the scheduler creates `NodeFeatureGroup-Compat-X`. It sequentially evaluates the pre-groups. If `Group-1`'s representative node can match compatibility demand, all nodes from `Group-1` are immediately added to `NodeFeatureGroup-Compat-X`. If it doesn't match, the entire `Group-1` is skipped. The process repeats with `Group-2`, and continues sequentially until a matching group is found. This approach reduces the number of compatibility evaluations in the critical path from **10,000 individual node checks** to **at most 10 representative node checks**. If no group's representative node satisfies the demand, the system correctly concludes that no compatible nodes exist in the cluster, as the pre-grouping is designed to ensure feature homogeneity within each group.
+**Example Flow:** Assume 10000 nodes are pre-grouped into 10 groups (`Group-1` to `Group-10`). For a pod with a new compatibility demand, the scheduler creates `NodeFeatureGroup-Compat-X`. It sequentially evaluates the pre-groups. If `Group-1`'s representative node can match compatibility demand, all nodes from `Group-1` are immediately added to `NodeFeatureGroup-Compat-X`. If it doesn't match, the entire `Group-1` is skipped. The process repeats with `Group-2`, and continues sequentially until a matching group is found. This approach reduces the number of compatibility evaluations in the critical path from **10,000 individual node checks** to **at most 10 representative node checks**. If no group's representative node satisfies the demand, the system correctly concludes that no compatible nodes exist in the cluster only under verified homogeneity. If a group's homogeneity is unverified or drifted, then will instead trigger a per-node fallback check to eliminate potential false negatives.
 
 **Key Characteristics:**
 
@@ -105,24 +117,37 @@ The process involves these main phases:
 
 To ensure the proper functioning of the compatibility scheduler plugin, the following test plan should be executed:
 
-- **Unit Tests:** Write unit tests for the plugin.
-- **Manual e2e Tests:** Deploy a sample pod with compatibility artifact. Test the `NodeFeatureGroup` updates correctly and the pod is scheduled to compatibility node successfully.
-- **Performance Tests:** Measure the latency of scheduling decisions and `NodeFeatureGroup` status updates.
+- **Unit Tests:** Write unit tests covering core logic for the plugin.
+- **Manual e2e Tests:** Validate core end-to-end functionality by deploying a sample pod with compatibility artifacts. Including:
+    - The NodeFeatureGroup updates correctly and the pod is successfully routed to a compatible node.
+    - Spec-Hash deduplication, reference counting and TTL lazy delection apply correctly.
+    - The system smoothly triggers homogeneity verification based on its configurations, and safely downgrades to the pre-bind fallback mechanism when homogeneity fails.
+    - The default compatibility failure policy triggers.
+- **Fault-Injection Tests:** Explicitly validate system resilience and fallback safety under the following failure modes:
+    - **Registry Service Outage / Downtime:** Verify that when metadata becomes unreachable, setting failurePolicy: Fail correctly suspends/rejects the Pod, while setting failurePolicy: Ignore smoothly downgrades the safety policy without stalling the scheduling queue.
+    - **NFD-Master Restart / Crash:** Verify that while the Master is offline, the scheduler can continuously make safe decisions using cached NodeFeatureGroup (NFG) states, and validate that state synchronization latency remains minimal once the Master recovers.
+    - **Stale NFG Status:** Artificially inject an NFD-Master update delay to verify that the scheduling plugin's Watch + Requeue mechanism.
+    - **Massive Homogeneity Disruption:** Randomly modify feature labels on 10% of the nodes within an enforced group to verify that the NFG automatically flips its status to Homogeneous=False and seamlessly triggers the scheduler's fallback to full per-node scans.
+- **Performance Tests:** Measure scheduling latency and NFG update overhead under simulated heavy loads using Kwok (at 1k, 5k, and 10k nodes).
+    - **Performance Targets:**
 
-To ensure the performance in a large scale cluster, we may need to simulate dev environment which contains at least 1000 nodes. We can spin up a k8s in k8s cluster, where pods act as nodes for the nested cluster. The kubemark is also useful.
+| Cluster Size (Nodes) | P99 Prefilter Latency | P99 Scheduling Latency | Latency	Success Rate at 50 Pods/s Arrival Rate |
+| :--- | :--- | :--- | :--- | 
+| **1k** | < 50ms | < 100ms | 100% |
+| **5k** | < 100ms | < 200ms | 99.9% | 
+| **10k** | < 250ms | < 500ms | 99% | 
 
 ### Graduation Criteria
 
 #### Alpha
-- Implement the basic compatibility scheduler plugin (Proposal A).
-- Initial e2e tests completed and enabled.
+- Core Functionality Implementation: Complete the core development of the image compatibility scheduling plugin and NFG features.
+- Basic Verification: Complete full E2E testing in a 100-node cluster to ensure all features are fully operational.
 #### Beta
-- Implement performance optimizations (Proposal C).
-- Performance tests completed in large scale cluster simulation.
-- Gather feedback from developers and users.
+- Scalability Simulation: Complete simulation verification on a 5,000-node cluster, ensuring P99 Prefilter Latency < 100ms.
+- Fault Tolerance: Validate system recovery capabilities under abnormal scenarios (e.g., Registry latency/downtime, NFD-Master restarts), achieving a success rate greater than 99.9%.
 #### GA
-- Feedback is collected on usability of the field.
-- Example of real-world usage.
+- Extreme Performance & Production Verification: Complete long-term stability testing at a scale of 10,000 nodes.
+- Production Adoption: Gather deployment cases and performance feedback reports under real-world workloads from at least 2 independent production environments.
 
 ## Implementation History
 - 2025-12-27: KEP proposal submission
@@ -205,7 +230,7 @@ To achieve this, we’ll need an additional controller that watches nodes, colle
 **Advantages**
 
 - **High Performance with Fast Queries:** By leveraging an indexed SQLite database with an EAV schema, node feature queries are executed with high efficiency. 
-- **Non-blocking Scheduler Filter Phase:**  All node evaluation and `NodeFeatureGroup` status calculations are completed asynchronously.
+- **Non-blocking Scheduler Filter Phase:** All node evaluation and `NodeFeatureGroup` status calculations are completed asynchronously.
 
 **Limitations**
 
