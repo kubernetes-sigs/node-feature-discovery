@@ -214,6 +214,7 @@ NFD.
 | master.serviceAccount.name | string | `nil` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
 | master.revisionHistoryLimit | int | `nil` | Specifies the number of old ReplicaSets for the Deployment to retain. [revisionHistoryLimit](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#revision-history-limit) |
 | master.rbac.create | bool | `true` | Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master. |
+| master.rbac.createAggregateRoles | bool | `false` | Create aggregate roles that grant view and edit access to NFD CRD resources. |
 | master.resources.limits | object | `{"memory":"4Gi"}` | Resource [limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the nfd-master container. |
 | master.resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Resource [requests](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the nfd-master container. |
 | master.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-master pods. |
