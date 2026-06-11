@@ -1196,9 +1196,22 @@
                     "type": "array"
                 },
                 "updateStrategy": {
-                    "description": "Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)",
+                    "description": "Update strategy for the nfd-worker DaemonSet. Defaults to a rolling update with `maxUnavailable: \"10%\"` so upgrades complete in a bounded number of waves on clusters of any size (the Kubernetes default of `maxUnavailable: 1` rolls one node at a time and makes Helm wait and Flux HelmRelease timeouts likely on large clusters). nfd-worker is stateless and node labels persist while a worker pod restarts, so a faster roll is safe. Set `maxUnavailable: 1` to restore the Kubernetes default. To use `type: OnDelete`, also set `rollingUpdate: null` (Helm deep-merges maps). [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.apps.v1.DaemonSetUpdateStrategy",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "rollingUpdate": {
+                            "type": "object",
+                            "properties": {
+                                "maxUnavailable": {
+                                    "type": [
+                                        "string",
+                                        "integer"
+                                    ]
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
