@@ -70,6 +70,22 @@ helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namesp
 
 To upgrade the `node-feature-discovery` deployment to {{ template "metadata.nfd_release" . }} via Helm.
 
+### Rolling-update pace on large clusters
+
+The nfd-worker DaemonSet rolls out updates with `maxUnavailable: "10%"` by
+default, so an upgrade completes in roughly ten waves regardless of cluster
+size. nfd-worker is stateless and node labels persist while a worker pod
+restarts, so tuning the pace only affects how quickly feature updates resume
+on each node. Adjust it via `worker.updateStrategy.rollingUpdate.maxUnavailable`
+(e.g. `1` restores the Kubernetes default of one node at a time; to use
+`type: OnDelete`, also set `rollingUpdate: null` as Helm deep-merges maps).
+
+When driving upgrades through `helm upgrade --wait` or GitOps health checks
+(Flux `HelmRelease`, Argo CD), size the timeout to cover the full rollout:
+roughly `ceil(1 / maxUnavailable) × per-wave pod-ready time`. With the serial
+Kubernetes default the rollout time grows linearly with node count and easily
+exceeds a 5-minute timeout on large clusters.
+
 ### From v0.7 and older
 
 Please see
