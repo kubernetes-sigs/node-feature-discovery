@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/klauspost/cpuid/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,18 +47,32 @@ func TestGetCpuidFlags_X86_64Levels(t *testing.T) {
 		flagSet[f] = true
 	}
 
-	// Every x86-64 CPU is at least level 1
-	assert.True(t, flagSet["X86_64_V1"], "expected X86_64_V1 flag on amd64")
+	// V(i) must be present iff i <= the detected level. Asserting equality against
+	// X64Level pins both presence and absence; a cumulative-only check would hold by
+	// construction and miss an over-claimed level above what X64Level reports.
+	level := cpuid.CPU.X64Level()
+	for i := 1; i <= 4; i++ {
+		flag := fmt.Sprintf("X86_64_V%d", i)
+		assert.Equal(t, i <= level, flagSet[flag], "flag %s vs detected level %d", flag, level)
+	}
+}
 
-	// Levels must be cumulative: if V(n) is present, all V(1)..V(n-1) must be too
-	for level := 4; level >= 2; level-- {
-		flag := fmt.Sprintf("X86_64_V%d", level)
-		if !flagSet[flag] {
-			continue
-		}
-		for i := 1; i < level; i++ {
-			lower := fmt.Sprintf("X86_64_V%d", i)
-			assert.True(t, flagSet[lower], "X86_64_V%d present but %s missing", level, lower)
-		}
+func TestX86_64LevelFlags(t *testing.T) {
+	// Deterministic, host-independent check of the level-to-flags mapping. Unlike
+	// the test above, this catches an over-claimed level (e.g. a hardcoded 1..4
+	// loop) on any machine, since the expected flags don't depend on the host CPU.
+	cases := []struct {
+		level int
+		want  []string
+	}{
+		{level: -1, want: nil},
+		{level: 0, want: nil},
+		{level: 1, want: []string{"X86_64_V1"}},
+		{level: 2, want: []string{"X86_64_V1", "X86_64_V2"}},
+		{level: 3, want: []string{"X86_64_V1", "X86_64_V2", "X86_64_V3"}},
+		{level: 4, want: []string{"X86_64_V1", "X86_64_V2", "X86_64_V3", "X86_64_V4"}},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.want, microarchLevelFlags(tc.level), "level %d", tc.level)
 	}
 }

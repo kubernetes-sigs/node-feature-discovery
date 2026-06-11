@@ -17,7 +17,6 @@ limitations under the License.
 package cpu
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/klauspost/cpuid/v2"
@@ -26,12 +25,7 @@ import (
 // getCpuidFlags returns feature names for all the supported CPU features.
 func getCpuidFlags() []string {
 	flags := cpuid.CPU.FeatureSet()
-
-	if level := cpuid.CPU.X64Level(); level > 0 {
-		for i := 1; i <= level; i++ {
-			flags = append(flags, fmt.Sprintf("X86_64_V%d", i))
-		}
-	}
+	flags = append(flags, microarchLevelFlags(cpuid.CPU.X64Level())...)
 
 	return flags
 }
