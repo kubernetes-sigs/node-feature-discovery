@@ -110,7 +110,8 @@ master:
     #    logBacktraceAt:
     #    logtostderr: true
     #    skipHeaders: false
-    #    stderrthreshold: 2
+    #    stderrthreshold: 0
+    #    legacyStderrThresholdBehavior: false
     #    v: 0
     #    vmodule:
     ##   NOTE: the following options are not dynamically run-time configurable
@@ -412,7 +413,8 @@ worker:
     #    logBacktraceAt:
     #    logtostderr: true
     #    skipHeaders: false
-    #    stderrthreshold: 2
+    #    stderrthreshold: 0
+    #    legacyStderrThresholdBehavior: false
     #    v: 0
     #    vmodule:
     ##   NOTE: the following options are not dynamically run-time configurable

@@ -25,6 +25,7 @@ import (
 	"k8s.io/klog/v2"
 
 	nfdgarbagecollector "sigs.k8s.io/node-feature-discovery/pkg/nfd-gc"
+	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -88,7 +89,7 @@ func initFlags(flagset *flag.FlagSet) *nfdgarbagecollector.Args {
 	flagset.Int64Var(&args.ListSize, "list-size", 200,
 		"the pagination size used when listing node features")
 
-	klog.InitFlags(flagset)
+	klogutils.InitKlogFlags(flagset)
 
 	return args
 }
