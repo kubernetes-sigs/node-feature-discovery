@@ -461,6 +461,18 @@ func (f keyFilter) unmask(k string) bool {
 	return false
 }
 
+// microarchLevelFlags maps an x86-64 psABI microarchitecture level to its
+// cumulative feature names (X86_64_V1..X86_64_V<level>); a level <= 0 yields
+// none. It is kept in this arch-neutral file, rather than cpuid_amd64.go, so
+// the mapping can be unit tested on any GOARCH.
+func microarchLevelFlags(level int) []string {
+	var flags []string
+	for i := 1; i <= level; i++ {
+		flags = append(flags, fmt.Sprintf("X86_64_V%d", i))
+	}
+	return flags
+}
+
 func init() {
 	source.Register(&src)
 }

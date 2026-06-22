@@ -24,7 +24,10 @@ import (
 
 // getCpuidFlags returns feature names for all the supported CPU features.
 func getCpuidFlags() []string {
-	return cpuid.CPU.FeatureSet()
+	flags := cpuid.CPU.FeatureSet()
+	flags = append(flags, microarchLevelFlags(cpuid.CPU.X64Level())...)
+
+	return flags
 }
 
 func getCpuidAttributes() map[string]string {
