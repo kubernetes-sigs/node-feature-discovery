@@ -94,6 +94,22 @@ helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namesp
 
 To upgrade the `node-feature-discovery` deployment to {{ site.release }} via Helm.
 
+### Rolling-update pace on large clusters
+
+The nfd-worker DaemonSet rolls out updates with `maxUnavailable: "10%"` by
+default, so an upgrade completes in roughly ten waves regardless of cluster
+size. nfd-worker is stateless and node labels persist while a worker pod
+restarts, so tuning the pace only affects how quickly feature updates resume
+on each node. Adjust it via `worker.updateStrategy.rollingUpdate.maxUnavailable`
+(e.g. `1` restores the Kubernetes default of one node at a time; to use
+`type: OnDelete`, also set `rollingUpdate: null` as Helm deep-merges maps).
+
+When driving upgrades through `helm upgrade --wait` or GitOps health checks
+(Flux `HelmRelease`, Argo CD), size the timeout to cover the full rollout:
+roughly `ceil(1 / maxUnavailable) × per-wave pod-ready time`. With the serial
+Kubernetes default the rollout time grows linearly with node count and easily
+exceeds a 5-minute timeout on large clusters.
+
 ### From v0.7 and older
 
 Please see
@@ -285,7 +301,7 @@ NFD.
 | worker.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods. |
 | worker.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-worker pods. |
 | worker.priorityClassName | string | `nil` | The name of the PriorityClass to be used for the nfd-worker pods. |
-| worker.updateStrategy | object | `{}` | Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set) |
+| worker.updateStrategy | object | `{"rollingUpdate":{"maxUnavailable":"10%"}}` | Update strategy for the nfd-worker DaemonSet. Defaults to a rolling update with `maxUnavailable: "10%"` so upgrades complete in a bounded number of waves on clusters of any size (the Kubernetes default of `maxUnavailable: 1` rolls one node at a time and makes Helm wait and Flux HelmRelease timeouts likely on large clusters). nfd-worker is stateless and node labels persist while a worker pod restarts, so a faster roll is safe. Set `maxUnavailable: 1` to restore the Kubernetes default. To use `type: OnDelete`, also set `rollingUpdate: null` (Helm deep-merges maps). [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set) |
 | worker.networkPolicy.enabled | bool | `false` | Should a networkPolicy be deployed for the nfd-worker pods |
 | worker.networkPolicy.egress | list | `[{"ports":[{"port":80,"protocol":"TCP"},{"port":443,"protocol":"TCP"},{"port":53,"protocol":"TCP"},{"port":53,"protocol":"UDP"},{"port":6443,"protocol":"TCP"}]}]` | [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp |
 | worker.networkPolicy.ingress | list | `[{"ports":[{"port":"http","protocol":"TCP"}]}]` | [Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods. |

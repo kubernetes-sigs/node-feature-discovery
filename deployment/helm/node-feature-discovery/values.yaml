@@ -779,9 +779,21 @@ worker:
   # @section -- NFD-Worker
   priorityClassName:
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.apps.v1.DaemonSetUpdateStrategy
-  # -- Update strategy for the nfd-worker DaemonSet. [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)
+  # -- Update strategy for the nfd-worker DaemonSet. Defaults to a rolling
+  # update with `maxUnavailable: "10%"` so upgrades complete in a bounded
+  # number of waves on clusters of any size (the Kubernetes default of
+  # `maxUnavailable: 1` rolls one node at a time and makes Helm wait and
+  # Flux HelmRelease timeouts likely on large clusters). nfd-worker is
+  # stateless and node labels persist while a worker pod restarts, so a
+  # faster roll is safe. Set `maxUnavailable: 1` to restore the Kubernetes
+  # default. To use `type: OnDelete`, also set `rollingUpdate: null`
+  # (Helm deep-merges maps).
+  # [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)
   # @section -- NFD-Worker
-  updateStrategy: {}
+  updateStrategy:
+    rollingUpdate:
+      # @schema type: [string, integer]
+      maxUnavailable: "10%"
   # @section -- NFD-Worker
   networkPolicy:
     # -- Should a networkPolicy be deployed for the nfd-worker pods
