@@ -18,10 +18,6 @@ kubectl="$gobinpath/kubectl"
 curl -L https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl -o "$kubectl"
 chmod 755 "$kubectl"
 
-curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
-curl -Os https://uploader.codecov.io/latest/linux/codecov
-chmod +x codecov
-
 # TODO: update logcheck version when there is a new release (newer than v0.9.0)
 go install sigs.k8s.io/logtools/logcheck@v0.9.1-0.20251007102500-d35c84c015fe
 
@@ -41,14 +37,27 @@ logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./pkg/...  ./source/...
 echo "Running unit tests"
 make test
 
-# Upload coverage report
-./codecov -t "${CODECOV_TOKEN}" \
-          -C "${PULL_PULL_SHA}" \
-          -r "${REPO_OWNER}/${REPO_NAME}" \
-          -P "${PULL_NUMBER}" \
-          -b "${BUILD_ID}" \
-          -B "${PULL_BASE_REF}" \
-          -N "${PULL_BASE_SHA}"
+# Upload coverage report (best-effort; coverage reporting must never gate CI).
+# The legacy Codecov uploader is deprecated and its download/key endpoints have
+# proven unreliable (e.g. the Keybase PGP key URL now returns a stub), so any
+# failure here is logged and treated as non-fatal. Migrating to the supported
+# Codecov CLI is tracked separately.
+upload_coverage() {
+    curl -Os https://uploader.codecov.io/latest/linux/codecov
+    chmod +x codecov
+    ./codecov -t "${CODECOV_TOKEN}" \
+              -C "${PULL_PULL_SHA}" \
+              -r "${REPO_OWNER}/${REPO_NAME}" \
+              -P "${PULL_NUMBER}" \
+              -b "${BUILD_ID}" \
+              -B "${PULL_BASE_REF}" \
+              -N "${PULL_BASE_SHA}"
+}
+
+echo "Uploading coverage report (best-effort, non-gating)"
+if ! upload_coverage; then
+    echo "WARNING: Codecov coverage upload failed; continuing because coverage reporting does not gate CI."
+fi
 
 # Check that repo is clean
 if ! git diff --quiet; then
