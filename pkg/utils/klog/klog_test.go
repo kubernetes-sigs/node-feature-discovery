@@ -21,7 +21,30 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	klogv2 "k8s.io/klog/v2"
 )
+
+// klogSnapshot captures the current klog global flag values and returns a
+// cleanup function that restores them. Call it at the start of any test that
+// mutates klog global state via KlogFlagVal.SetFromConfig.
+func klogSnapshot(t *testing.T) {
+	t.Helper()
+	snap := flag.NewFlagSet("klog-snapshot", flag.ContinueOnError)
+	klogv2.InitFlags(snap)
+
+	saved := map[string]string{}
+	snap.VisitAll(func(f *flag.Flag) {
+		saved[f.Name] = f.Value.String()
+	})
+
+	t.Cleanup(func() {
+		restore := flag.NewFlagSet("klog-restore", flag.ContinueOnError)
+		klogv2.InitFlags(restore)
+		for name, val := range saved {
+			_ = restore.Set(name, val)
+		}
+	})
+}
 
 func TestKlogConfigOptName(t *testing.T) {
 	Convey("When converting names of klog command line flags", t, func() {
@@ -80,6 +103,9 @@ func TestApplyStderrThresholdDefaults(t *testing.T) {
 
 func TestInitKlogFlags_MergePreservesDefaults(t *testing.T) {
 	Convey("When InitKlogFlags is called and MergeKlogConfiguration runs with empty config", t, func() {
+		// Snapshot klog global state; restored after each sub-test via t.Cleanup.
+		klogSnapshot(t)
+
 		flagset := flag.NewFlagSet("test-merge", flag.ContinueOnError)
 		klogFlags := InitKlogFlags(flagset)
 
