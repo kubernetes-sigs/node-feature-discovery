@@ -231,7 +231,17 @@ Default: `false`
 
 #### core.klog.stderrthreshold
 
-Logs at or above this threshold go to stderr (default 2)
+Logs at or above this threshold go to stderr. Severity levels:
+0=INFO, 1=WARNING, 2=ERROR, 3=FATAL.
+
+Default: `0`
+
+#### core.klog.legacyStderrThresholdBehavior
+
+If true, stderrthreshold is ignored when logtostderr=true (legacy klog
+behavior). NFD sets this to false so that stderrthreshold is always honored.
+
+Default: `false`
 
 #### core.klog.v
 

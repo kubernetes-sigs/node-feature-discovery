@@ -302,9 +302,18 @@ Default: false
 
 #### -stderrthreshold
 
-Logs at or above this threshold go to stderr.
+Logs at or above this threshold go to stderr when
+`-legacy_stderr_threshold_behavior=false` (the default in NFD). Severity levels:
+0=INFO, 1=WARNING, 2=ERROR, 3=FATAL.
 
-Default: 2
+Default: 0
+
+#### -legacy_stderr_threshold_behavior
+
+If true, -stderrthreshold is ignored when -logtostderr=true (legacy klog
+behavior). NFD sets this to false so that -stderrthreshold is always honored.
+
+Default: false
 
 #### -v
 
