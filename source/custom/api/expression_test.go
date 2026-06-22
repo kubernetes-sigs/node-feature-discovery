@@ -17,10 +17,43 @@ limitations under the License.
 package api
 
 import (
+	"encoding/json"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMatchExpression_RejectsDeepNesting(t *testing.T) {
+	deep := strings.Repeat("[", MaxJSONDepth+1) + strings.Repeat("]", MaxJSONDepth+1)
+	var m MatchExpression
+	err := json.Unmarshal([]byte(deep), &m)
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, ErrJSONTooDeep),
+		"expected ErrJSONTooDeep, got %v", err)
+}
+
+func TestMatchExpressionSet_RejectsDeepNesting(t *testing.T) {
+	deep := strings.Repeat("[", MaxJSONDepth+1) + strings.Repeat("]", MaxJSONDepth+1)
+	var s MatchExpressionSet
+	err := json.Unmarshal([]byte(deep), &s)
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, ErrJSONTooDeep),
+		"expected ErrJSONTooDeep, got %v", err)
+}
+
+func TestMatchExpression_AcceptsDepthAtCap(t *testing.T) {
+	// Boundary check: exactly MaxJSONDepth levels must NOT trigger
+	// ErrJSONTooDeep. The content is otherwise invalid for a
+	// MatchExpression, so json.Unmarshal will fail with a different
+	// (downstream) error — we only assert the depth check did not fire.
+	atCap := strings.Repeat("[", MaxJSONDepth) + strings.Repeat("]", MaxJSONDepth)
+	var m MatchExpression
+	err := json.Unmarshal([]byte(atCap), &m)
+	assert.False(t, errors.Is(err, ErrJSONTooDeep),
+		"depth at cap should not trigger ErrJSONTooDeep; got %v", err)
+}
 
 type BoolAssertionFunc func(assert.TestingT, bool, ...interface{}) bool
 
