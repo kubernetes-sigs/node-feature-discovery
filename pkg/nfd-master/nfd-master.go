@@ -719,12 +719,6 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 		return fmt.Errorf("failed to merge NodeFeature objects for node %q: %w", node.Name, err)
 	}
 
-	// Check if we have any features for this node
-	hasFeatures := len(nodeFeatures.Spec.Labels) > 0 ||
-		len(nodeFeatures.Spec.Features.Attributes) > 0 ||
-		len(nodeFeatures.Spec.Features.Flags) > 0 ||
-		len(nodeFeatures.Spec.Features.Instances) > 0
-
 	// Determine if we should skip removing NFD-managed node properties
 	// (labels, annotations, extended resources, taints). This is needed to
 	// handle cache-miss scenarios during startup where pagination failures
@@ -743,15 +737,17 @@ func (m *nfdMaster) nfdAPIUpdateOneNode(cli k8sclient.Interface, node *corev1.No
 	hasPendingDelete, alreadyProcessed := m.resolveNodeState(node.Name)
 
 	skipRemoval := false
-	if !hasFeatures {
-		if !hasPendingDelete && !foundInCache && !alreadyProcessed {
-			skipRemoval = true
-			klog.V(2).InfoS("first processing of node with no NodeFeature in cache, "+
-				"skipping removal (possible startup cache miss)",
-				"nodeName", node.Name)
-		} else if hasPendingDelete {
+	if !nodeFeatures.HasFeatures() {
+		if hasPendingDelete {
 			klog.V(2).InfoS("NodeFeature deleted, proceeding with removal",
 				"nodeName", node.Name)
+		} else {
+			if !foundInCache && !alreadyProcessed {
+				skipRemoval = true
+				klog.V(2).InfoS("first processing of node with no NodeFeature in cache, "+
+					"skipping removal (possible startup cache miss)",
+					"nodeName", node.Name)
+			}
 		}
 	}
 
