@@ -10,3 +10,5 @@ resources:
 - worker-serviceaccount.yaml
 - worker-role.yaml
 - worker-rolebinding.yaml
+- worker-clusterrole.yaml
+- worker-clusterrolebinding.yaml
