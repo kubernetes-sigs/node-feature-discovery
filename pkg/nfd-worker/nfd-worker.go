@@ -35,6 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
@@ -84,7 +85,13 @@ type coreConfig struct {
 	FeatureSources []string
 	Sources        *[]string
 	LabelSources   []string
-	SleepInterval  utils.DurationVal
+	// NoPublishFeatures lists feature keys that are discovered (so they remain
+	// available to label sources and inline custom rules) but are omitted from
+	// the published NodeFeature object to reduce its size. Each entry is matched
+	// against the "<source>.<feature>" key, exactly or, when it ends with "*",
+	// as a prefix (e.g. "pci.device" or "pci.*").
+	NoPublishFeatures []string
+	SleepInterval     utils.DurationVal
 }
 
 type sourcesConfig map[string]source.Config
@@ -107,10 +114,11 @@ type Args struct {
 
 // ConfigOverrideArgs are args that override config file options
 type ConfigOverrideArgs struct {
-	NoPublish      *bool
-	NoOwnerRefs    *bool
-	FeatureSources *utils.StringSliceVal
-	LabelSources   *utils.StringSliceVal
+	NoPublish         *bool
+	NoOwnerRefs       *bool
+	FeatureSources    *utils.StringSliceVal
+	LabelSources      *utils.StringSliceVal
+	NoPublishFeatures *utils.StringSliceVal
 }
 
 type nfdWorker struct {
@@ -125,6 +133,11 @@ type nfdWorker struct {
 	featureSources      []source.FeatureSource
 	labelSources        []source.LabelSource
 	ownerReference      []metav1.OwnerReference
+
+	// noPublishNoMatchWarned records core.noPublishFeatures patterns already
+	// warned about for matching no feature, so a persistent no-match (typically
+	// a typo) is logged once rather than on every discovery cycle.
+	noPublishNoMatchWarned sets.Set[string]
 }
 
 // This ticker can represent infinite and normal intervals.
@@ -165,10 +178,11 @@ func (f *nfdWorkerOpt) apply(n *nfdWorker) {
 // NewNfdWorker creates new NfdWorker instance.
 func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 	nfd := &nfdWorker{
-		config:              &NFDConfig{},
-		kubernetesNamespace: utils.GetKubernetesNamespace(),
-		stop:                make(chan struct{}),
-		sourceEvent:         make(chan *source.FeatureSource),
+		config:                 &NFDConfig{},
+		kubernetesNamespace:    utils.GetKubernetesNamespace(),
+		stop:                   make(chan struct{}),
+		sourceEvent:            make(chan *source.FeatureSource),
+		noPublishNoMatchWarned: sets.New[string](),
 	}
 
 	for _, o := range opts {
@@ -540,6 +554,9 @@ func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides st
 	if w.args.Overrides.LabelSources != nil {
 		c.Core.LabelSources = *w.args.Overrides.LabelSources
 	}
+	if w.args.Overrides.NoPublishFeatures != nil {
+		c.Core.NoPublishFeatures = *w.args.Overrides.NoPublishFeatures
+	}
 
 	c.Core.sanitize()
 
@@ -646,6 +663,61 @@ func (w *nfdWorker) advertiseFeatures(labels Labels) error {
 	return nil
 }
 
+// removeNoPublishFeatures deletes the feature keys matched by patterns from the
+// Features that will be published in the NodeFeature object. Discovery is not
+// affected, so the features remain available to label sources and inline custom
+// rules; they are only omitted from the published object. Each pattern matches
+// the "<source>.<feature>" key exactly, or as a prefix when it ends with "*"
+// (e.g. "pci.device" or "pci.*").
+//
+// It returns the patterns that matched no feature key. That usually means a
+// typo, but it can be legitimate on a heterogeneous cluster where the same
+// config reaches nodes lacking the targeted hardware, so the caller logs it
+// informationally rather than treating it as an error.
+func removeNoPublishFeatures(features *nfdv1alpha1.Features, patterns []string) []string {
+	if features == nil || len(patterns) == 0 {
+		return nil
+	}
+	matched := make([]bool, len(patterns))
+	matches := func(key string) bool {
+		hit := false
+		for i, p := range patterns {
+			if prefix, ok := strings.CutSuffix(p, "*"); ok {
+				if strings.HasPrefix(key, prefix) {
+					matched[i] = true
+					hit = true
+				}
+			} else if key == p {
+				matched[i] = true
+				hit = true
+			}
+		}
+		return hit
+	}
+	for k := range features.Flags {
+		if matches(k) {
+			delete(features.Flags, k)
+		}
+	}
+	for k := range features.Attributes {
+		if matches(k) {
+			delete(features.Attributes, k)
+		}
+	}
+	for k := range features.Instances {
+		if matches(k) {
+			delete(features.Instances, k)
+		}
+	}
+	var unmatched []string
+	for i, p := range patterns {
+		if !matched[i] {
+			unmatched = append(unmatched, p)
+		}
+	}
+	return unmatched
+}
+
 // updateNodeFeatureObject creates/updates the node-specific NodeFeature custom resource.
 func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 	cli, err := m.getNfdClient()
@@ -656,6 +728,17 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 	namespace := m.kubernetesNamespace
 
 	features := source.GetAllFeatures()
+
+	// Strip features that are configured not to be published. Discovery has
+	// already run (and feature labels have already been computed from the full
+	// set), so this only shrinks the published object, reducing load on the
+	// apiserver, etcd and nfd-master's informer cache.
+	for _, p := range removeNoPublishFeatures(features, m.config.Core.NoPublishFeatures) {
+		if !m.noPublishNoMatchWarned.Has(p) {
+			m.noPublishNoMatchWarned.Insert(p)
+			klog.InfoS("core.noPublishFeatures pattern matched no feature; possible typo, or the targeted hardware is absent on this node", "pattern", p)
+		}
+	}
 
 	// TODO: we could implement some simple caching of the object, only get it
 	// every 10 minutes or so because nobody else should really be modifying it

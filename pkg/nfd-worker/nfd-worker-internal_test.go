@@ -273,3 +273,67 @@ func TestCreateFeatureLabels(t *testing.T) {
 		})
 	})
 }
+
+func TestRemoveNoPublishFeatures(t *testing.T) {
+	Convey("When stripping features that should not be published", t, func() {
+		newFeatures := func() *nfdv1alpha1.Features {
+			f := nfdv1alpha1.NewFeatures()
+			f.Flags["cpu.cpuid"] = nfdv1alpha1.NewFlagFeatures("AVX", "SSE")
+			f.Attributes["cpu.model"] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"family": "23"})
+			f.Attributes["system.osrelease"] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"ID": "rocky"})
+			f.Instances["pci.device"] = nfdv1alpha1.NewInstanceFeatures(
+				nfdv1alpha1.InstanceFeature{Attributes: map[string]string{"vendor": "10de"}})
+			return f
+		}
+
+		Convey("a nil/empty pattern list leaves the features untouched", func() {
+			f := newFeatures()
+			So(removeNoPublishFeatures(f, nil), ShouldBeEmpty)
+			So(len(f.Flags), ShouldEqual, 1)
+			So(len(f.Attributes), ShouldEqual, 2)
+			So(len(f.Instances), ShouldEqual, 1)
+		})
+
+		Convey("an exact key match removes only that feature", func() {
+			f := newFeatures()
+			So(removeNoPublishFeatures(f, []string{"pci.device"}), ShouldBeEmpty)
+			So(f.Instances, ShouldNotContainKey, "pci.device")
+			So(len(f.Flags), ShouldEqual, 1)
+			So(len(f.Attributes), ShouldEqual, 2)
+		})
+
+		Convey("a '*' suffix removes all features of a source by prefix", func() {
+			f := newFeatures()
+			So(removeNoPublishFeatures(f, []string{"cpu.*"}), ShouldBeEmpty)
+			So(len(f.Flags), ShouldEqual, 0)
+			So(f.Attributes, ShouldNotContainKey, "cpu.model")
+			So(f.Attributes, ShouldContainKey, "system.osrelease")
+			So(len(f.Instances), ShouldEqual, 1)
+		})
+
+		Convey("multiple patterns are all applied", func() {
+			f := newFeatures()
+			So(removeNoPublishFeatures(f, []string{"pci.device", "cpu.cpuid"}), ShouldBeEmpty)
+			So(len(f.Flags), ShouldEqual, 0)
+			So(len(f.Instances), ShouldEqual, 0)
+			So(len(f.Attributes), ShouldEqual, 2)
+		})
+
+		Convey("a non-matching pattern removes nothing and is reported", func() {
+			f := newFeatures()
+			unmatched := removeNoPublishFeatures(f, []string{"usb.device", "memory.*"})
+			So(unmatched, ShouldResemble, []string{"usb.device", "memory.*"})
+			So(len(f.Flags), ShouldEqual, 1)
+			So(len(f.Attributes), ShouldEqual, 2)
+			So(len(f.Instances), ShouldEqual, 1)
+		})
+
+		Convey("only the non-matching patterns are reported, in config order", func() {
+			f := newFeatures()
+			unmatched := removeNoPublishFeatures(f, []string{"pci.device", "usb.*", "cpu.cpuid"})
+			So(unmatched, ShouldResemble, []string{"usb.*"})
+			So(f.Instances, ShouldNotContainKey, "pci.device")
+			So(f.Flags, ShouldNotContainKey, "cpu.cpuid")
+		})
+	})
+}
