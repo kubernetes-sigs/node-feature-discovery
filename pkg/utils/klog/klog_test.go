@@ -107,7 +107,8 @@ func TestInitKlogFlags_MergePreservesDefaults(t *testing.T) {
 		klogSnapshot(t)
 
 		flagset := flag.NewFlagSet("test-merge", flag.ContinueOnError)
-		klogFlags := InitKlogFlags(flagset)
+		klogFlags, err := InitKlogFlags(flagset)
+		So(err, ShouldBeNil)
 
 		Convey("legacy_stderr_threshold_behavior should be disabled", func() {
 			f := flagset.Lookup("legacy_stderr_threshold_behavior")

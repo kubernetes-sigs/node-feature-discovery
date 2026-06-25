@@ -125,7 +125,9 @@ func initFlags(flagset *flag.FlagSet) (*topology.Args, *resourcemonitor.Args) {
 	flagset.BoolVar(&resourcemonitorArgs.PodSetFingerprint, "pods-fingerprint", true, "Compute and report the pod set fingerprint")
 	flagset.StringVar(&args.KubeletStateDir, "kubelet-state-dir", DefaultKubeletStateDir, "Kubelet state directory path for watching state and checkpoint files")
 
-	args.Klog = klogutils.InitKlogFlags(flagset)
+	if _, err := klogutils.InitKlogFlags(flagset); err != nil {
+		klog.Fatalf("Failed to initialize klog flags: %v", err)
+	}
 
 	return args, resourcemonitorArgs
 }

@@ -29,7 +29,10 @@ import (
 type KlogConfigOpts map[string]string
 
 // InitKlogFlags function is responsible for initializing klog flags.
-func InitKlogFlags(flagset *flag.FlagSet) map[string]*utils.KlogFlagVal {
+// It returns an error if the NFD-level klog defaults cannot be applied
+// (e.g., a future klog version renames the flags); callers should treat
+// this as fatal to avoid silently reverting to broken behavior.
+func InitKlogFlags(flagset *flag.FlagSet) (map[string]*utils.KlogFlagVal, error) {
 	klogFlags := make(map[string]*utils.KlogFlagVal)
 
 	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
@@ -42,7 +45,7 @@ func InitKlogFlags(flagset *flag.FlagSet) map[string]*utils.KlogFlagVal {
 	// while still allowing config-file and CLI overrides to win.
 	// Ref: kubernetes/klog#212, kubernetes/klog#432
 	if err := applyStderrThresholdDefaults(flags); err != nil {
-		klog.ErrorS(err, "Failed to apply stderrthreshold defaults")
+		return nil, fmt.Errorf("applying stderrthreshold defaults: %w", err)
 	}
 
 	flags.VisitAll(func(f *flag.Flag) {
@@ -51,7 +54,7 @@ func InitKlogFlags(flagset *flag.FlagSet) map[string]*utils.KlogFlagVal {
 		flagset.Var(klogFlags[name], f.Name, f.Usage)
 	})
 
-	return klogFlags
+	return klogFlags, nil
 }
 
 // applyStderrThresholdDefaults sets the NFD-level defaults on the inner klog
