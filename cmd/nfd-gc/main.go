@@ -89,7 +89,9 @@ func initFlags(flagset *flag.FlagSet) *nfdgarbagecollector.Args {
 	flagset.Int64Var(&args.ListSize, "list-size", 200,
 		"the pagination size used when listing node features")
 
-	klogutils.InitKlogFlags(flagset)
+	if _, err := klogutils.InitKlogFlags(flagset); err != nil {
+		klog.Fatalf("Failed to initialize klog flags: %v", err)
+	}
 
 	return args
 }

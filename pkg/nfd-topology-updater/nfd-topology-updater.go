@@ -78,8 +78,6 @@ type Args struct {
 	KubeConfigFile  string
 	ConfigFile      string
 	KubeletStateDir string
-
-	Klog map[string]*utils.KlogFlagVal
 }
 
 // NFDConfig contains the configuration settings of NFDTopologyUpdater.

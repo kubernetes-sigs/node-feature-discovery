@@ -116,7 +116,11 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
 
-	args.Klog = klogutils.InitKlogFlags(flagset)
+	var err error
+	args.Klog, err = klogutils.InitKlogFlags(flagset)
+	if err != nil {
+		klog.Fatalf("Failed to initialize klog flags: %v", err)
+	}
 
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
