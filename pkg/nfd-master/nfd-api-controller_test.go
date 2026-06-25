@@ -111,3 +111,82 @@ func TestIsNamespaceSelected(t *testing.T) {
 		assert.Equal(t, res, tc.expectedResult)
 	}
 }
+
+func TestSpecChanged(t *testing.T) {
+	nfSpec := func(o *nfdv1alpha1.NodeFeature) any { return o.Spec }
+	nfrSpec := func(o *nfdv1alpha1.NodeFeatureRule) any { return o.Spec }
+	nfgSpec := func(o *nfdv1alpha1.NodeFeatureGroup) any { return o.Spec }
+
+	// NodeFeature: Spec{Features, Labels}, no status subresource.
+	nf := &nfdv1alpha1.NodeFeature{
+		ObjectMeta: metav1.ObjectMeta{Name: "n", ResourceVersion: "1"},
+		Spec: nfdv1alpha1.NodeFeatureSpec{
+			Features: nfdv1alpha1.Features{
+				Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
+					"cpu.model": {Elements: map[string]string{"family": "6"}},
+				},
+			},
+			Labels: map[string]string{"feature.node.kubernetes.io/foo": "bar"},
+		},
+	}
+	nfMetaOnly := nf.DeepCopy()
+	nfMetaOnly.ResourceVersion = "2"
+	nfMetaOnly.Annotations = map[string]string{"nfd.node.kubernetes.io/worker.version": "v0.18"}
+	nfMetaOnly.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node-1"}
+
+	nfFeatureChanged := nf.DeepCopy()
+	nfFeatureChanged.Spec.Features.Attributes["cpu.model"] = nfdv1alpha1.AttributeFeatureSet{Elements: map[string]string{"family": "7"}}
+
+	nfLabelsChanged := nf.DeepCopy()
+	nfLabelsChanged.Spec.Labels["feature.node.kubernetes.io/foo"] = "baz"
+
+	// NodeFeatureRule: Spec{Rules}, no status. UpdateFunc triggers a full reconcile.
+	nfr := &nfdv1alpha1.NodeFeatureRule{
+		ObjectMeta: metav1.ObjectMeta{Name: "r", ResourceVersion: "1"},
+		Spec:       nfdv1alpha1.NodeFeatureRuleSpec{Rules: []nfdv1alpha1.Rule{{Name: "rule-1"}}},
+	}
+	nfrMetaOnly := nfr.DeepCopy()
+	nfrMetaOnly.ResourceVersion = "2"
+	nfrMetaOnly.Annotations = map[string]string{"x": "y"}
+
+	nfrSpecChanged := nfr.DeepCopy()
+	nfrSpecChanged.Spec.Rules[0].Name = "rule-2"
+
+	// NodeFeatureGroup: Spec{Rules} AND Status; master writes its status, so a
+	// status-only update must NOT reconcile (else it feeds back on itself).
+	nfg := &nfdv1alpha1.NodeFeatureGroup{
+		ObjectMeta: metav1.ObjectMeta{Name: "g", ResourceVersion: "1"},
+		Spec:       nfdv1alpha1.NodeFeatureGroupSpec{Rules: []nfdv1alpha1.GroupRule{{Name: "grule-1"}}},
+	}
+	nfgStatusOnly := nfg.DeepCopy()
+	nfgStatusOnly.ResourceVersion = "2"
+	nfgStatusOnly.Status = nfdv1alpha1.NodeFeatureGroupStatus{Nodes: []nfdv1alpha1.FeatureGroupNode{{Name: "node-1"}}}
+
+	nfgSpecChanged := nfg.DeepCopy()
+	nfgSpecChanged.Spec.Rules[0].Name = "grule-2"
+
+	testcases := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"NodeFeature resync no-op", specChanged(nf, nf.DeepCopy(), nfSpec), false},
+		{"NodeFeature metadata-only change", specChanged(nf, nfMetaOnly, nfSpec), false},
+		{"NodeFeature feature change", specChanged(nf, nfFeatureChanged, nfSpec), true},
+		{"NodeFeature spec.Labels change", specChanged(nf, nfLabelsChanged, nfSpec), true},
+
+		{"NodeFeatureRule metadata-only change", specChanged(nfr, nfrMetaOnly, nfrSpec), false},
+		{"NodeFeatureRule spec change", specChanged(nfr, nfrSpecChanged, nfrSpec), true},
+
+		{"NodeFeatureGroup status-only change", specChanged(nfg, nfgStatusOnly, nfgSpec), false},
+		{"NodeFeatureGroup spec change", specChanged(nfg, nfgSpecChanged, nfgSpec), true},
+
+		// Fail open: never skip a reconcile when the objects can't be compared.
+		{"nil old object", specChanged(nil, nf, nfSpec), true},
+		{"mismatched types", specChanged(&nfdv1alpha1.NodeFeatureRule{}, nf, nfSpec), true},
+	}
+
+	for _, tc := range testcases {
+		assert.Equalf(t, tc.want, tc.got, tc.name)
+	}
+}
