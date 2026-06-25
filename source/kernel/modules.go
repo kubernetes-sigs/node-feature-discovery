@@ -27,7 +27,7 @@ import (
 
 const kmodProcfsPath = "/proc/modules"
 
-func getLoadedModules() ([]string, error) {
+func getLoadedModules(s *kernelSource) ([]string, error) {
 	out, err := os.ReadFile(kmodProcfsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %s", kmodProcfsPath, err.Error())
@@ -40,13 +40,20 @@ func getLoadedModules() ([]string, error) {
 		if len(line) == 0 {
 			continue
 		}
+
+		mod := strings.Fields(line)[0]
+		// Skip if module doesn't match ModuleWhiteList
+		if !s.moduleWhiteList.MatchString(mod) {
+			continue
+		}
+
 		// append loaded module
-		loadedMods = append(loadedMods, strings.Fields(line)[0])
+		loadedMods = append(loadedMods, mod)
 	}
 	return loadedMods, nil
 }
 
-func getBuiltinModules() ([]string, error) {
+func getBuiltinModules(s *kernelSource) ([]string, error) {
 	kVersion, err := getVersion()
 	if err != nil {
 		return []string{}, err
@@ -67,8 +74,14 @@ func getBuiltinModules() ([]string, error) {
 			continue
 		}
 
+		mod := strings.TrimSuffix(path.Base(line), ".ko")
+		// Skip if module doesn't match ModuleWhiteList
+		if !s.moduleWhiteList.MatchString(mod) {
+			continue
+		}
+
 		// append loaded module
-		builtinMods = append(builtinMods, strings.TrimSuffix(path.Base(line), ".ko"))
+		builtinMods = append(builtinMods, mod)
 	}
 	return builtinMods, nil
 }
