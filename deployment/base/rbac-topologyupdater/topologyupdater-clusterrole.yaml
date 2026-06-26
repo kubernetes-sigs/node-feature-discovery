@@ -36,8 +36,7 @@ rules:
   - noderesourcetopologies
   verbs:
   - create
-  - get
-  - update
+  - patch
 - apiGroups:
   - apiextensions.k8s.io
   resources:
