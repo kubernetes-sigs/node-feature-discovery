@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	strings "strings"
+	"sync"
 
 	"maps"
 
@@ -54,6 +55,43 @@ var matchOps = map[nfdv1alpha1.MatchOp]struct{}{
 	nfdv1alpha1.MatchGeLe:         {},
 	nfdv1alpha1.MatchIsTrue:       {},
 	nfdv1alpha1.MatchIsFalse:      {},
+}
+
+// compiledRegexps memoizes compiled regular expressions by their pattern string.
+// evaluateMatchExpression runs for every feature element of every rule on every
+// node on every reconcile, so compiling MatchInRegexp patterns from scratch each
+// time was a dominant source of nfd-master allocation churn.
+//
+// The cache key is the pattern string, which comes from NodeFeatureRule /
+// NodeFeatureGroup specs (MatchExpression.Value) -- never from NodeFeature
+// objects or the feature values being matched. So the high-cardinality, churning
+// data never enters the cache; only the small, slowly-changing set of
+// operator-authored patterns does. A plain unbounded sync.Map therefore stays
+// bounded in practice (a handful of KB), and sync.Map is safe for the concurrent
+// node updater pool.
+//
+// Entries are never evicted -- including when a rule is modified or deleted, so a
+// retired pattern lingers until the process restarts. This is intentional: tying
+// eviction to rule lifecycle would need reference counting (a pattern may be
+// shared across rules) for negligible benefit. The only way this grows unbounded
+// is a workload that produces many *unique* patterns over time (e.g. rules with
+// node names or UUIDs baked into the regex). If that ever becomes a concern,
+// replace the sync.Map with a size-capped LRU (e.g. hashicorp/golang-lru) behind
+// the same compileRegexp signature.
+var compiledRegexps sync.Map // map[string]*regexp.Regexp
+
+// compileRegexp returns a compiled regexp for pattern, reusing a previously
+// compiled instance when one exists.
+func compileRegexp(pattern string) (*regexp.Regexp, error) {
+	if re, ok := compiledRegexps.Load(pattern); ok {
+		return re.(*regexp.Regexp), nil
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	actual, _ := compiledRegexps.LoadOrStore(pattern, re)
+	return actual.(*regexp.Regexp), nil
 }
 
 // evaluateMatchExpression evaluates the MatchExpression against a single input value.
@@ -108,7 +146,7 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 			}
 			valueRe := make([]*regexp.Regexp, len(m.Value))
 			for i, v := range m.Value {
-				re, err := regexp.Compile(v)
+				re, err := compileRegexp(v)
 				if err != nil {
 					return false, fmt.Errorf("invalid expressiom, 'value' field must only contain valid regexps for Op %q (have %v)", m.Op, m.Value)
 				}

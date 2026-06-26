@@ -28,6 +28,28 @@ type BoolAssertionFunc func(assert.TestingT, bool, ...interface{}) bool
 
 type ValueAssertionFunc func(assert.TestingT, interface{}, ...interface{}) bool
 
+func TestCompileRegexp(t *testing.T) {
+	// The same pattern must return the same cached instance (no recompile).
+	re1, err := compileRegexp("^foo-[0-9]+$")
+	assert.NoError(t, err)
+	re2, err := compileRegexp("^foo-[0-9]+$")
+	assert.NoError(t, err)
+	assert.Same(t, re1, re2, "expected the same cached *regexp.Regexp instance for an identical pattern")
+
+	// The cached regexp must still match correctly.
+	assert.True(t, re1.MatchString("foo-42"))
+	assert.False(t, re1.MatchString("bar"))
+
+	// A different pattern yields a different instance.
+	re3, err := compileRegexp("^bar$")
+	assert.NoError(t, err)
+	assert.NotSame(t, re1, re3)
+
+	// Invalid patterns return an error.
+	_, err = compileRegexp("[invalid(")
+	assert.Error(t, err)
+}
+
 func TestEvaluateMatchExpression(t *testing.T) {
 	type V = nfdv1alpha1.MatchValue
 	type TC struct {
