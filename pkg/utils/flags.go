@@ -81,9 +81,16 @@ func (a *StringSetVal) UnmarshalJSON(data []byte) error {
 // StringSliceVal is a Value encapsulating a slice of comma-separated strings
 type StringSliceVal []string
 
-// Set implements the regexp.Value interface
+// Set implements the regexp.Value interface. Surrounding whitespace is trimmed
+// from each comma-separated entry and blank entries are dropped, so a value like
+// "cpu, pci" parses to ["cpu", "pci"] and "" parses to an empty slice.
 func (a *StringSliceVal) Set(val string) error {
-	*a = strings.Split(val, ",")
+	*a = nil
+	for s := range strings.SplitSeq(val, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			*a = append(*a, s)
+		}
+	}
 	return nil
 }
 
