@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -69,6 +70,22 @@ type nfdApiControllerOptions struct {
 
 func init() {
 	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
+}
+
+// specChanged reports whether the reconcile-relevant part of an object — its
+// .Spec — differs between the old and new versions delivered to an informer
+// UpdateFunc. Metadata-only updates (annotations, labels, ownerReferences,
+// resourceVersion), status-only updates, and resync no-ops (oldObj == newObj)
+// therefore return false, letting the handler skip an unnecessary reconcile.
+// It fails open (returns true) when the objects cannot be type-asserted, so a
+// needed reconcile is never wrongly skipped.
+func specChanged[T any](oldObj, newObj interface{}, specOf func(*T) any) bool {
+	oldT, ok1 := oldObj.(*T)
+	newT, ok2 := newObj.(*T)
+	if !ok1 || !ok2 {
+		return true
+	}
+	return !apiequality.Semantic.DeepEqual(specOf(oldT), specOf(newT))
 }
 
 func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiControllerOptions) (*nfdController, error) {
@@ -133,6 +150,9 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
+			if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeature) any { return o.Spec }) {
+				return
+			}
 			nfr := newObj.(*nfdv1alpha1.NodeFeature)
 			klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
 			c.updateOneNode("NodeFeature", nfr)
@@ -188,6 +208,9 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 			c.updateAllNodes()
 		},
 		UpdateFunc: func(oldObject, newObject interface{}) {
+			if !specChanged(oldObject, newObject, func(o *nfdv1alpha1.NodeFeatureRule) any { return o.Spec }) {
+				return
+			}
 			klog.V(2).InfoS("NodeFeatureRule updated", "nodefeaturerule", klog.KObj(newObject.(metav1.Object)))
 			c.updateAllNodes()
 		},
@@ -210,6 +233,9 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 				c.updateNodeFeatureGroup(nfg.Name)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
+				if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeatureGroup) any { return o.Spec }) {
+					return
+				}
 				nfg := newObj.(*nfdv1alpha1.NodeFeatureGroup)
 				klog.V(2).InfoS("NodeFeatureGroup updated", "nodeFeatureGroup", klog.KObj(nfg))
 				c.updateNodeFeatureGroup(nfg.Name)
