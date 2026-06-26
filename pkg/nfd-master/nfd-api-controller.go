@@ -55,6 +55,8 @@ type nfdController struct {
 	// nfdMaster to track pending deletes and distinguish between "NodeFeature
 	// was deleted" vs "NodeFeature is missing from incomplete cache".
 	onDelete func(nodeName string)
+
+	disableNodeFeatureGroup bool
 }
 
 type nfdApiControllerOptions struct {
@@ -96,20 +98,11 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 		updateAllNodeFeatureGroupsChan: make(chan struct{}, 1),
 		updateNodeFeatureGroupChan:     make(chan string),
 		onDelete:                       nfdApiControllerOptions.OnNodeFeatureDelete,
+		disableNodeFeatureGroup:        nfdApiControllerOptions.DisableNodeFeatureGroup,
 	}
 
-	if nfdApiControllerOptions.NodeFeatureNamespaceSelector != nil {
-		labelMap, err := metav1.LabelSelectorAsSelector(nfdApiControllerOptions.NodeFeatureNamespaceSelector)
-		if err != nil {
-			klog.ErrorS(err, "failed to convert label selector to map", "selector", nfdApiControllerOptions.NodeFeatureNamespaceSelector)
-			return nil, err
-		}
-		c.namespaceLister, err = newNamespaceLister(nfdApiControllerOptions.K8sClient, labelMap)
-		if err != nil {
-			klog.ErrorS(err, "coudn't create namespace lister")
-			return nil, err
-		}
-
+	if err := c.configureNamespaceLister(nfdApiControllerOptions); err != nil {
+		return nil, err
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
@@ -117,149 +110,16 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 
 	informerFactory := nfdinformers.NewSharedInformerFactory(nfdClient, nfdApiControllerOptions.ResyncPeriod)
 
-	// Add informer for NodeFeature objects
-	tweakListOpts := func(opts *metav1.ListOptions) {
-		// Tweak list opts on initial sync to avoid timeouts on the apiserver.
-		// NodeFeature objects are huge and the Kubernetes apiserver
-		// (v1.30) experiences http handler timeouts when the resource
-		// version is set to some non-empty value
-		// https://github.com/kubernetes/kubernetes/blob/ace55542575fb098b3e413692bbe2bc20d2348ba/staging/src/k8s.io/apiserver/pkg/storage/cacher/cacher.go#L600-L616 if you set resource version to 0
-		// it serves the request from apiservers cache and doesn't use pagination otherwise pagination will default to 500
-		// so that's why this is required on large clusters
-		// So by setting this we're making it go to ETCD instead of from api-server cache, there's some WIP in k/k
-		// that seems to imply they're working on improving this behavior where you'll be able to paginate from apiserver cache
-		// it's not supported yet (2/2025), would be good to track this though kubernetes/kubernetes#108003
-		if opts.ResourceVersion == "0" {
-			opts.ResourceVersion = ""
-		}
-		opts.Limit = nfdApiControllerOptions.ListSize // value of 0 disables pagination
-	}
-
-	featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
-	if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			nfr := obj.(*nfdv1alpha1.NodeFeature)
-			klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
-			if c.isNamespaceSelected(nfr.Namespace) {
-				c.updateOneNode("NodeFeature", nfr)
-			} else {
-				klog.V(2).InfoS("NodeFeature namespace is not selected, skipping", "nodefeature", klog.KObj(nfr))
-			}
-			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-				c.updateAllNodeFeatureGroups()
-			}
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeature) any { return o.Spec }) {
-				return
-			}
-			nfr := newObj.(*nfdv1alpha1.NodeFeature)
-			klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
-			c.updateOneNode("NodeFeature", nfr)
-			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-				c.updateAllNodeFeatureGroups()
-			}
-		},
-		DeleteFunc: func(obj interface{}) {
-			// obj may be a DeletedFinalStateUnknown if the watch was missed
-			if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
-				klog.V(2).InfoS("found stale NodeFeature object", "object", obj)
-				obj = deletedFinalStateUnknown.Obj
-			}
-
-			nfr, ok := obj.(*nfdv1alpha1.NodeFeature)
-			if !ok {
-				klog.ErrorS(fmt.Errorf("unexpected object type %T", obj), "cannot convert object to NodeFeature")
-				return
-			}
-
-			klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
-			// Mark the node as having a pending delete before queuing update.
-			// This allows nfdAPIUpdateOneNode to distinguish between
-			// "NodeFeature was deleted" vs "cache is incomplete".
-			if c.onDelete != nil {
-				nodeName, err := getNodeNameForObj(nfr)
-				if err != nil {
-					// Fallback: use the NodeFeature's name as the node name.
-					// By convention, nfd-worker creates NodeFeatures with name == nodeName.
-					// This may mark a wrong node for pending delete (for third-party
-					// NodeFeatures), but that's harmless—it just gets consumed without effect.
-					klog.V(2).InfoS("failed to get node name from label, falling back to object name",
-						"nodefeature", klog.KObj(nfr), "error", err)
-					nodeName = nfr.Name
-				}
-				c.onDelete(nodeName)
-			}
-			c.updateOneNode("NodeFeature", nfr)
-			if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-				c.updateAllNodeFeatureGroups()
-			}
-		},
-	}); err != nil {
+	if err := c.addNodeFeatureInformer(informerFactory, nfdApiControllerOptions.ListSize); err != nil {
 		return nil, err
 	}
-	c.featureLister = featureInformer.Lister()
-
-	// Add informer for NodeFeatureRule objects
-	nodeFeatureRuleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
-	if _, err := nodeFeatureRuleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(object interface{}) {
-			klog.V(2).InfoS("NodeFeatureRule added", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
-			c.updateAllNodes()
-		},
-		UpdateFunc: func(oldObject, newObject interface{}) {
-			if !specChanged(oldObject, newObject, func(o *nfdv1alpha1.NodeFeatureRule) any { return o.Spec }) {
-				return
-			}
-			klog.V(2).InfoS("NodeFeatureRule updated", "nodefeaturerule", klog.KObj(newObject.(metav1.Object)))
-			c.updateAllNodes()
-		},
-		DeleteFunc: func(object interface{}) {
-			klog.V(2).InfoS("NodeFeatureRule deleted", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
-			c.updateAllNodes()
-		},
-	}); err != nil {
+	if err := c.addNodeFeatureRuleInformer(informerFactory); err != nil {
 		return nil, err
 	}
-	c.ruleLister = nodeFeatureRuleInformer.Lister()
-
-	// Add informer for NodeFeatureGroup objects
 	if !nfdApiControllerOptions.DisableNodeFeatureGroup {
-		nodeFeatureGroupInformer := informerFactory.Nfd().V1alpha1().NodeFeatureGroups()
-		if _, err := nodeFeatureGroupInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
-				klog.V(2).InfoS("NodeFeatureGroup added", "nodeFeatureGroup", klog.KObj(nfg))
-				c.updateNodeFeatureGroup(nfg.Name)
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeatureGroup) any { return o.Spec }) {
-					return
-				}
-				nfg := newObj.(*nfdv1alpha1.NodeFeatureGroup)
-				klog.V(2).InfoS("NodeFeatureGroup updated", "nodeFeatureGroup", klog.KObj(nfg))
-				c.updateNodeFeatureGroup(nfg.Name)
-			},
-			DeleteFunc: func(obj interface{}) {
-				// obj may be a DeletedFinalStateUnknown if the watch was missed
-				if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
-					klog.V(2).InfoS("found stale NodeFeatureGroup object", "object", obj)
-					obj = deletedFinalStateUnknown.Obj
-				}
-
-				nfg, ok := obj.(*nfdv1alpha1.NodeFeatureGroup)
-				if !ok {
-					klog.ErrorS(fmt.Errorf("unexpected object type %T", obj), "cannot convert object to NodeFeatureGroup")
-					return
-				}
-
-				klog.V(2).InfoS("NodeFeatureGroup deleted", "nodeFeatureGroup", klog.KObj(nfg))
-				c.updateNodeFeatureGroup(nfg.Name)
-			},
-		}); err != nil {
+		if err := c.addNodeFeatureGroupInformer(informerFactory); err != nil {
 			return nil, err
 		}
-		c.featureGroupLister = nodeFeatureGroupInformer.Lister()
 	}
 
 	// Start informers
@@ -278,6 +138,193 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	klog.InfoS("informer caches synced", "duration", time.Since(now))
 
 	return c, nil
+}
+
+// configureNamespaceLister sets up the namespace lister used to filter
+// NodeFeature objects by namespace. It is a no-op when no namespace selector
+// was configured, in which case all namespaces are allowed.
+func (c *nfdController) configureNamespaceLister(opts nfdApiControllerOptions) error {
+	if opts.NodeFeatureNamespaceSelector == nil {
+		return nil
+	}
+	labelMap, err := metav1.LabelSelectorAsSelector(opts.NodeFeatureNamespaceSelector)
+	if err != nil {
+		klog.ErrorS(err, "failed to convert label selector to map", "selector", opts.NodeFeatureNamespaceSelector)
+		return err
+	}
+	c.namespaceLister, err = newNamespaceLister(opts.K8sClient, labelMap)
+	if err != nil {
+		klog.ErrorS(err, "coudn't create namespace lister")
+		return err
+	}
+	return nil
+}
+
+// addNodeFeatureInformer registers the informer and event handlers for
+// NodeFeature objects.
+func (c *nfdController) addNodeFeatureInformer(informerFactory nfdinformers.SharedInformerFactory, listSize int64) error {
+	tweakListOpts := func(opts *metav1.ListOptions) {
+		// Tweak list opts on initial sync to avoid timeouts on the apiserver.
+		// NodeFeature objects are huge and the Kubernetes apiserver
+		// (v1.30) experiences http handler timeouts when the resource
+		// version is set to some non-empty value
+		// https://github.com/kubernetes/kubernetes/blob/ace55542575fb098b3e413692bbe2bc20d2348ba/staging/src/k8s.io/apiserver/pkg/storage/cacher/cacher.go#L600-L616 if you set resource version to 0
+		// it serves the request from apiservers cache and doesn't use pagination otherwise pagination will default to 500
+		// so that's why this is required on large clusters
+		// So by setting this we're making it go to ETCD instead of from api-server cache, there's some WIP in k/k
+		// that seems to imply they're working on improving this behavior where you'll be able to paginate from apiserver cache
+		// it's not supported yet (2/2025), would be good to track this though kubernetes/kubernetes#108003
+		if opts.ResourceVersion == "0" {
+			opts.ResourceVersion = ""
+		}
+		opts.Limit = listSize // value of 0 disables pagination
+	}
+
+	featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
+	if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    c.onNodeFeatureAdd,
+		UpdateFunc: c.onNodeFeatureUpdate,
+		DeleteFunc: c.onNodeFeatureDelete,
+	}); err != nil {
+		return err
+	}
+	c.featureLister = featureInformer.Lister()
+	return nil
+}
+
+func (c *nfdController) onNodeFeatureAdd(obj interface{}) {
+	nfr := obj.(*nfdv1alpha1.NodeFeature)
+	klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
+	if c.isNamespaceSelected(nfr.Namespace) {
+		c.updateOneNode("NodeFeature", nfr)
+	} else {
+		klog.V(2).InfoS("NodeFeature namespace is not selected, skipping", "nodefeature", klog.KObj(nfr))
+	}
+	if !c.disableNodeFeatureGroup {
+		c.updateAllNodeFeatureGroups()
+	}
+}
+
+func (c *nfdController) onNodeFeatureUpdate(oldObj, newObj interface{}) {
+	if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeature) any { return o.Spec }) {
+		return
+	}
+	nfr := newObj.(*nfdv1alpha1.NodeFeature)
+	klog.V(2).InfoS("NodeFeature updated", "nodefeature", klog.KObj(nfr))
+	c.updateOneNode("NodeFeature", nfr)
+	if !c.disableNodeFeatureGroup {
+		c.updateAllNodeFeatureGroups()
+	}
+}
+
+func (c *nfdController) onNodeFeatureDelete(obj interface{}) {
+	// obj may be a DeletedFinalStateUnknown if the watch was missed
+	if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+		klog.V(2).InfoS("found stale NodeFeature object", "object", obj)
+		obj = deletedFinalStateUnknown.Obj
+	}
+
+	nfr, ok := obj.(*nfdv1alpha1.NodeFeature)
+	if !ok {
+		klog.ErrorS(fmt.Errorf("unexpected object type %T", obj), "cannot convert object to NodeFeature")
+		return
+	}
+
+	klog.V(2).InfoS("NodeFeature deleted", "nodefeature", klog.KObj(nfr))
+	// Mark the node as having a pending delete before queuing update.
+	// This allows nfdAPIUpdateOneNode to distinguish between
+	// "NodeFeature was deleted" vs "cache is incomplete".
+	if c.onDelete != nil {
+		nodeName, err := getNodeNameForObj(nfr)
+		if err != nil {
+			// Fallback: use the NodeFeature's name as the node name.
+			// By convention, nfd-worker creates NodeFeatures with name == nodeName.
+			// This may mark a wrong node for pending delete (for third-party
+			// NodeFeatures), but that's harmless—it just gets consumed without effect.
+			klog.V(2).InfoS("failed to get node name from label, falling back to object name",
+				"nodefeature", klog.KObj(nfr), "error", err)
+			nodeName = nfr.Name
+		}
+		c.onDelete(nodeName)
+	}
+	c.updateOneNode("NodeFeature", nfr)
+	if !c.disableNodeFeatureGroup {
+		c.updateAllNodeFeatureGroups()
+	}
+}
+
+// addNodeFeatureRuleInformer registers the informer and event handlers for
+// NodeFeatureRule objects.
+func (c *nfdController) addNodeFeatureRuleInformer(informerFactory nfdinformers.SharedInformerFactory) error {
+	nodeFeatureRuleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
+	if _, err := nodeFeatureRuleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(object interface{}) {
+			klog.V(2).InfoS("NodeFeatureRule added", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
+			c.updateAllNodes()
+		},
+		UpdateFunc: func(oldObject, newObject interface{}) {
+			if !specChanged(oldObject, newObject, func(o *nfdv1alpha1.NodeFeatureRule) any { return o.Spec }) {
+				return
+			}
+			klog.V(2).InfoS("NodeFeatureRule updated", "nodefeaturerule", klog.KObj(newObject.(metav1.Object)))
+			c.updateAllNodes()
+		},
+		DeleteFunc: func(object interface{}) {
+			klog.V(2).InfoS("NodeFeatureRule deleted", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
+			c.updateAllNodes()
+		},
+	}); err != nil {
+		return err
+	}
+	c.ruleLister = nodeFeatureRuleInformer.Lister()
+	return nil
+}
+
+// addNodeFeatureGroupInformer registers the informer and event handlers for
+// NodeFeatureGroup objects.
+func (c *nfdController) addNodeFeatureGroupInformer(informerFactory nfdinformers.SharedInformerFactory) error {
+	nodeFeatureGroupInformer := informerFactory.Nfd().V1alpha1().NodeFeatureGroups()
+	if _, err := nodeFeatureGroupInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    c.onNodeFeatureGroupAdd,
+		UpdateFunc: c.onNodeFeatureGroupUpdate,
+		DeleteFunc: c.onNodeFeatureGroupDelete,
+	}); err != nil {
+		return err
+	}
+	c.featureGroupLister = nodeFeatureGroupInformer.Lister()
+	return nil
+}
+
+func (c *nfdController) onNodeFeatureGroupAdd(obj interface{}) {
+	nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
+	klog.V(2).InfoS("NodeFeatureGroup added", "nodeFeatureGroup", klog.KObj(nfg))
+	c.updateNodeFeatureGroup(nfg.Name)
+}
+
+func (c *nfdController) onNodeFeatureGroupUpdate(oldObj, newObj interface{}) {
+	if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeatureGroup) any { return o.Spec }) {
+		return
+	}
+	nfg := newObj.(*nfdv1alpha1.NodeFeatureGroup)
+	klog.V(2).InfoS("NodeFeatureGroup updated", "nodeFeatureGroup", klog.KObj(nfg))
+	c.updateNodeFeatureGroup(nfg.Name)
+}
+
+func (c *nfdController) onNodeFeatureGroupDelete(obj interface{}) {
+	// obj may be a DeletedFinalStateUnknown if the watch was missed
+	if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+		klog.V(2).InfoS("found stale NodeFeatureGroup object", "object", obj)
+		obj = deletedFinalStateUnknown.Obj
+	}
+
+	nfg, ok := obj.(*nfdv1alpha1.NodeFeatureGroup)
+	if !ok {
+		klog.ErrorS(fmt.Errorf("unexpected object type %T", obj), "cannot convert object to NodeFeatureGroup")
+		return
+	}
+
+	klog.V(2).InfoS("NodeFeatureGroup deleted", "nodeFeatureGroup", klog.KObj(nfg))
+	c.updateNodeFeatureGroup(nfg.Name)
 }
 
 func (c *nfdController) stop() {
