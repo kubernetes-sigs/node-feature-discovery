@@ -110,6 +110,37 @@ core:
 > **NOTE:** `core.sources` takes precedence over the `core.labelSources`
 > configuration file option.
 
+### core.noPublishFeatures
+
+`core.noPublishFeatures` specifies a list of feature keys that are discovered but
+omitted from the published `NodeFeature` object. Discovery itself is not
+affected, so the features remain available locally for label sources and inline
+custom/`NodeFeatureRule` rules in `sources.custom`; they are only stripped from
+the published object to reduce its size (and thus the load on the Kubernetes API
+server, etcd and the nfd-master informer cache).
+
+Each entry is matched against the `<source>.<feature>` key either exactly, or as
+a prefix when it ends with `*`.
+
+> **NOTE:** Overridden by the `-no-publish-features` command line flag (if
+> specified). Only use this for features that no cluster-side `NodeFeatureRule`
+> or `NodeFeatureGroup` consumes - those are evaluated by nfd-master against the
+> published `Spec.Features`, so removing a feature they rely on changes the
+> resulting labels, taints and extended resources.
+
+Default: `empty`
+
+Example:
+
+```yaml
+core:
+  # Discover PCI and USB devices (so local rules can still use them) but do not
+  # publish the potentially large per-device lists in the NodeFeature object.
+  noPublishFeatures:
+    - "pci.device"
+    - "usb.*"
+```
+
 ### core.labelWhiteList
 
 `core.labelWhiteList` specifies a regular expression for filtering feature

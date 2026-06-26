@@ -5,6 +5,10 @@
 #  sleepInterval: 60s
 #  featureSources: [all]
 #  labelSources: [all]
+#  # Discover these features but omit them from the published NodeFeature object
+#  # to reduce its size. Exact key or '*' prefix (e.g. pci.device, pci.*).
+#  # Only for features no NodeFeatureRule/NodeFeatureGroup consumes.
+#  noPublishFeatures: []
 #  klog:
 #    addDirHeader: false
 #    alsologtostderr: false

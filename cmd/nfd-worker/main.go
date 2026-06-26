@@ -91,6 +91,8 @@ func parseArgs(flags *flag.FlagSet, osArgs ...string) *worker.Args {
 			args.Overrides.FeatureSources = overrides.FeatureSources
 		case "label-sources":
 			args.Overrides.LabelSources = overrides.LabelSources
+		case "no-publish-features":
+			args.Overrides.NoPublishFeatures = overrides.NoPublishFeatures
 		case "no-owner-refs":
 			args.Overrides.NoOwnerRefs = overrides.NoOwnerRefs
 		}
@@ -118,8 +120,9 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 
 	// Flags overlapping with config file options
 	overrides := &worker.ConfigOverrideArgs{
-		FeatureSources: &utils.StringSliceVal{},
-		LabelSources:   &utils.StringSliceVal{},
+		FeatureSources:    &utils.StringSliceVal{},
+		LabelSources:      &utils.StringSliceVal{},
+		NoPublishFeatures: &utils.StringSliceVal{},
 	}
 	overrides.NoPublish = flagset.Bool("no-publish", false,
 		"Do not publish discovered features, disable connection to nfd-master and don't create NodeFeature object.")
@@ -131,6 +134,11 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 	flagset.Var(overrides.LabelSources, "label-sources",
 		"Comma separated list of label sources. Special value 'all' enables all sources. "+
 			"Prefix the source name with '-' to disable it.")
+	flagset.Var(overrides.NoPublishFeatures, "no-publish-features",
+		"Comma separated list of feature keys to discover but omit from the published "+
+			"NodeFeature object (e.g. 'pci.device'). Suffix a key with '*' for a prefix "+
+			"match (e.g. 'pci.*'). Reduces object size; only use for features that no "+
+			"NodeFeatureRule or NodeFeatureGroup consumes.")
 
 	return args, overrides
 }

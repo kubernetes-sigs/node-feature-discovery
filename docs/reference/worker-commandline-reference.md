@@ -126,6 +126,28 @@ Example:
 nfd-worker -label-sources=kernel,system,local
 ```
 
+### -no-publish-features
+
+The `-no-publish-features` flag specifies a comma-separated list of feature keys
+that are discovered but omitted from the published `NodeFeature` object, to
+reduce its size. Each entry matches the `<source>.<feature>` key exactly, or as
+a prefix when it ends with `*`. Discovery is not affected, so the features stay
+available to label sources and inline custom rules. Consider using the
+`core.noPublishFeatures` config file option, instead, allowing dynamic
+configurability.
+
+> **NOTE:** This flag takes precedence over the `core.noPublishFeatures`
+> configuration file option. Only use it for features that no cluster-side
+> `NodeFeatureRule` or `NodeFeatureGroup` consumes.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-worker -no-publish-features=pci.device,usb.*
+```
+
 ### -port
 
 The `-port` flag specifies the port on which metrics and healthz endpoints are
