@@ -52,6 +52,7 @@ import (
 
 	// Register all source packages
 	_ "sigs.k8s.io/node-feature-discovery/source/cpu"
+	_ "sigs.k8s.io/node-feature-discovery/source/crypto"
 	_ "sigs.k8s.io/node-feature-discovery/source/custom"
 	_ "sigs.k8s.io/node-feature-discovery/source/fake"
 	_ "sigs.k8s.io/node-feature-discovery/source/kernel"
