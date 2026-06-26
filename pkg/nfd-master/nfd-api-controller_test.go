@@ -47,6 +47,13 @@ func TestGetNodeNameForObj(t *testing.T) {
 	assert.Equal(t, n, "node-1")
 }
 
+func TestControllerStop(t *testing.T) {
+	// stop() must not panic when no NodeFeature namespace selector was
+	// configured and namespaceLister is therefore nil (the default).
+	c := &nfdController{stopChan: make(chan struct{})}
+	assert.NotPanics(t, c.stop)
+}
+
 func newTestNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
