@@ -268,6 +268,9 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 	ret := informerFactory.WaitForCacheSync(c.stopChan)
 	for res, ok := range ret {
 		if !ok {
+			// Stop the informers started above so their goroutines
+			// don't leak when construction fails.
+			c.stop()
 			return nil, fmt.Errorf("informer cache failed to sync resource %s", res)
 		}
 	}
@@ -279,7 +282,11 @@ func newNfdController(config *restclient.Config, nfdApiControllerOptions nfdApiC
 
 func (c *nfdController) stop() {
 	close(c.stopChan)
-	c.namespaceLister.stop()
+	// namespaceLister is only created when a NodeFeature namespace selector is
+	// configured, so it may be nil (the default).
+	if c.namespaceLister != nil {
+		c.namespaceLister.stop()
+	}
 }
 
 func getNodeNameForObj(obj metav1.Object) (string, error) {
