@@ -35,7 +35,7 @@ require (
 	k8s.io/kubernetes v1.35.3
 	k8s.io/pod-security-admission v0.35.3
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-	oras.land/oras-go/v2 v2.6.0
+	oras.land/oras-go/v2 v2.6.1
 	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.0
