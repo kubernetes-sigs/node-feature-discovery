@@ -514,27 +514,8 @@ func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides st
 	}
 
 	// Try to read and parse config file
-	if filepath != "" {
-		data, err := os.ReadFile(filepath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				klog.InfoS("config file not found, using defaults", "path", filepath)
-			} else {
-				return fmt.Errorf("error reading config file: %s", err)
-			}
-		} else {
-			err = yaml.Unmarshal(data, c)
-			if err != nil {
-				return fmt.Errorf("failed to parse config file: %s", err)
-			}
-
-			if c.Core.Sources != nil {
-				klog.InfoS("usage of deprecated 'core.sources' config file option, please use 'core.labelSources' instead")
-				c.Core.LabelSources = *c.Core.Sources
-			}
-
-			klog.InfoS("configuration file parsed", "path", filepath)
-		}
+	if err := loadConfigFile(c, filepath); err != nil {
+		return err
 	}
 
 	// Parse config overrides
@@ -542,21 +523,7 @@ func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides st
 		return fmt.Errorf("failed to parse -options: %s", err)
 	}
 
-	if w.args.Overrides.NoPublish != nil {
-		c.Core.NoPublish = *w.args.Overrides.NoPublish
-	}
-	if w.args.Overrides.NoOwnerRefs != nil {
-		c.Core.NoOwnerRefs = *w.args.Overrides.NoOwnerRefs
-	}
-	if w.args.Overrides.FeatureSources != nil {
-		c.Core.FeatureSources = *w.args.Overrides.FeatureSources
-	}
-	if w.args.Overrides.LabelSources != nil {
-		c.Core.LabelSources = *w.args.Overrides.LabelSources
-	}
-	if w.args.Overrides.NoPublishFeatures != nil {
-		c.Core.NoPublishFeatures = *w.args.Overrides.NoPublishFeatures
-	}
+	w.applyConfigOverrides(c)
 
 	c.Core.sanitize()
 
@@ -573,6 +540,55 @@ func (w *nfdWorker) configure(ctx context.Context, filepath string, overrides st
 
 	klog.InfoS("configuration successfully updated", "configuration", w.config)
 	return nil
+}
+
+// loadConfigFile reads the config file at filepath and unmarshals it into c. A
+// missing file is not an error: the defaults already in c are kept. An empty
+// filepath is a no-op.
+func loadConfigFile(c *NFDConfig, filepath string) error {
+	if filepath == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			klog.InfoS("config file not found, using defaults", "path", filepath)
+			return nil
+		}
+		return fmt.Errorf("error reading config file: %s", err)
+	}
+
+	if err := yaml.Unmarshal(data, c); err != nil {
+		return fmt.Errorf("failed to parse config file: %s", err)
+	}
+
+	if c.Core.Sources != nil {
+		klog.InfoS("usage of deprecated 'core.sources' config file option, please use 'core.labelSources' instead")
+		c.Core.LabelSources = *c.Core.Sources
+	}
+
+	klog.InfoS("configuration file parsed", "path", filepath)
+	return nil
+}
+
+// applyConfigOverrides applies the command-line overrides onto the core config.
+func (w *nfdWorker) applyConfigOverrides(c *NFDConfig) {
+	if w.args.Overrides.NoPublish != nil {
+		c.Core.NoPublish = *w.args.Overrides.NoPublish
+	}
+	if w.args.Overrides.NoOwnerRefs != nil {
+		c.Core.NoOwnerRefs = *w.args.Overrides.NoOwnerRefs
+	}
+	if w.args.Overrides.FeatureSources != nil {
+		c.Core.FeatureSources = *w.args.Overrides.FeatureSources
+	}
+	if w.args.Overrides.LabelSources != nil {
+		c.Core.LabelSources = *w.args.Overrides.LabelSources
+	}
+	if w.args.Overrides.NoPublishFeatures != nil {
+		c.Core.NoPublishFeatures = *w.args.Overrides.NoPublishFeatures
+	}
 }
 
 // createFeatureLabels returns the set of feature labels from the enabled
@@ -682,33 +698,18 @@ func removeNoPublishFeatures(features *nfdv1alpha1.Features, patterns []string) 
 	matches := func(key string) bool {
 		hit := false
 		for i, p := range patterns {
-			if prefix, ok := strings.CutSuffix(p, "*"); ok {
-				if strings.HasPrefix(key, prefix) {
-					matched[i] = true
-					hit = true
-				}
-			} else if key == p {
+			if patternMatches(key, p) {
 				matched[i] = true
 				hit = true
 			}
 		}
 		return hit
 	}
-	for k := range features.Flags {
-		if matches(k) {
-			delete(features.Flags, k)
-		}
-	}
-	for k := range features.Attributes {
-		if matches(k) {
-			delete(features.Attributes, k)
-		}
-	}
-	for k := range features.Instances {
-		if matches(k) {
-			delete(features.Instances, k)
-		}
-	}
+
+	deleteMatchingKeys(features.Flags, matches)
+	deleteMatchingKeys(features.Attributes, matches)
+	deleteMatchingKeys(features.Instances, matches)
+
 	var unmatched []string
 	for i, p := range patterns {
 		if !matched[i] {
@@ -716,6 +717,25 @@ func removeNoPublishFeatures(features *nfdv1alpha1.Features, patterns []string) 
 		}
 	}
 	return unmatched
+}
+
+// patternMatches reports whether a feature key matches a single no-publish
+// pattern. A pattern ending in "*" matches by prefix; otherwise it must equal
+// the key exactly.
+func patternMatches(key, pattern string) bool {
+	if prefix, ok := strings.CutSuffix(pattern, "*"); ok {
+		return strings.HasPrefix(key, prefix)
+	}
+	return key == pattern
+}
+
+// deleteMatchingKeys removes every entry of m whose key satisfies matches.
+func deleteMatchingKeys[V any](m map[string]V, matches func(string) bool) {
+	for k := range m {
+		if matches(k) {
+			delete(m, k)
+		}
+	}
 }
 
 // updateNodeFeatureObject creates/updates the node-specific NodeFeature custom resource.
