@@ -22,8 +22,10 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	client "k8s.io/client-go/kubernetes"
+	corev1listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/klog/v2"
 	podresourcesapi "k8s.io/kubelet/pkg/apis/podresources/v1"
 	"k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
@@ -35,15 +37,21 @@ import (
 type PodResourcesScanner struct {
 	namespace         string
 	podResourceClient podresourcesapi.PodResourcesListerClient
+	podLister         corev1listers.PodLister
 	k8sClient         client.Interface
 	podFingerprint    bool
 }
 
 // NewPodResourcesScanner creates a new ResourcesScanner instance
-func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, k8sClient client.Interface, podFingerprint bool) (ResourcesScanner, error) {
+func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.PodResourcesListerClient, podLister corev1listers.PodLister, k8sClient client.Interface, podFingerprint bool) (ResourcesScanner, error) {
+	if k8sClient == nil {
+		return nil, fmt.Errorf("kubernetes client is required")
+	}
+
 	resourcemonitorInstance := &PodResourcesScanner{
 		namespace:         namespace,
 		podResourceClient: podResourceClient,
+		podLister:         podLister,
 		k8sClient:         k8sClient,
 		podFingerprint:    podFingerprint,
 	}
@@ -59,14 +67,26 @@ func NewPodResourcesScanner(namespace string, podResourceClient podresourcesapi.
 // isWatchable tells if the the given namespace should be watched.
 // In Scan(), if watchable is false, this pods scan will skip
 // so we can return directly if pod's namespace is not watchable
-func (resMon *PodResourcesScanner) isWatchable(podResource *podresourcesapi.PodResources) (bool, bool, error) {
+func (resMon *PodResourcesScanner) isWatchable(ctx context.Context, podResource *podresourcesapi.PodResources) (bool, bool, error) {
 	if resMon.namespace != "*" && resMon.namespace != podResource.GetNamespace() {
 		return false, false, nil
 	}
 
-	pod, err := resMon.k8sClient.CoreV1().Pods(podResource.GetNamespace()).Get(context.TODO(), podResource.Name, metav1.GetOptions{})
+	ns := podResource.GetNamespace()
+	name := podResource.GetName()
+
+	pod, err := resMon.podLister.Pods(ns).Get(name)
 	if err != nil {
-		return false, false, err
+		if !apierrors.IsNotFound(err) {
+			return false, false, err
+		}
+		// The informer cache can lag behind the kubelet PodResources API. Use a
+		// live GET to preserve topology correctness.
+		klog.InfoS("pod not in informer cache, falling back to GET", "namespace", ns, "podName", name)
+		pod, err = resMon.k8sClient.CoreV1().Pods(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return false, false, err
+		}
 	}
 
 	isPodGuaranteed := qos.GetPodQOS(pod) == corev1.PodQOSGuaranteed
@@ -137,7 +157,7 @@ func (resMon *PodResourcesScanner) Scan() (ScanResponse, error) {
 
 	for _, podResource := range respPodResources {
 		klog.V(1).InfoS("scanning pod", "podName", podResource.GetName())
-		isWatchable, isExclusiveCPUs, err := resMon.isWatchable(podResource)
+		isWatchable, isExclusiveCPUs, err := resMon.isWatchable(ctx, podResource)
 		if err != nil {
 			return ScanResponse{}, fmt.Errorf("checking if pod in a namespace is watchable, namespace:%v, pod name %v: %w", podResource.GetNamespace(), podResource.GetName(), err)
 		}
