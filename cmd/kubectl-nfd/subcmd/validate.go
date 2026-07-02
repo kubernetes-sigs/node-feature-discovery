@@ -26,29 +26,30 @@ import (
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
-	Short: "Validate a NodeFeatureRule file",
-	Long:  `Validate a NodeFeatureRule file to ensure it is valid before applying it to a cluster`,
+	Short: "Validate a NodeFeatureRule or NodeFeatureGroup file",
+	Long:  `Validate a NodeFeatureRule or NodeFeatureGroup file to ensure it is valid before applying it to a cluster`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if rule == "" {
+			return fmt.Errorf("--rule-file must be specified")
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Validating NodeFeatureRule %s\n", nodefeaturerule)
-		err := kubectlnfd.ValidateNFR(nodefeaturerule)
-		if len(err) > 0 {
-			fmt.Printf("NodeFeatureRule %s is not valid\n", nodefeaturerule)
-			for _, e := range err {
+		fmt.Printf("Validating %s\n", rule)
+		errs := kubectlnfd.Validate(rule)
+		if len(errs) > 0 {
+			fmt.Printf("%s is not valid\n", rule)
+			for _, e := range errs {
 				cmd.PrintErrln(e)
 			}
-			// Return non-zero exit code to indicate failure
 			os.Exit(1)
 		}
-		fmt.Printf("NodeFeatureRule %s is valid\n", nodefeaturerule)
+		fmt.Printf("%s is valid\n", rule)
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(validateCmd)
 
-	validateCmd.Flags().StringVarP(&nodefeaturerule, "nodefeaturerule-file", "f", "", "Path to the NodeFeatureRule file to validate")
-	err := validateCmd.MarkFlagRequired("nodefeaturerule-file")
-	if err != nil {
-		panic(err)
-	}
+	validateCmd.Flags().StringVarP(&rule, "rule-file", "f", "", "Path to the NodeFeatureRule or NodeFeatureGroup file to validate")
 }

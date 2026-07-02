@@ -31,34 +31,51 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
 )
 
-func DryRun(nodefeaturerulepath, nodefeaturepath string) []error {
+func processNodeFeatureGroup(nodeFeatureGroup nfdv1alpha1.NodeFeatureGroup, nodeFeature nfdv1alpha1.NodeFeatureSpec) []error {
 	var errs []error
-	nfr := nfdv1alpha1.NodeFeatureRule{}
-	nf := nfdv1alpha1.NodeFeature{}
 
-	nfrFile, err := os.ReadFile(nodefeaturerulepath)
-	if err != nil {
-		return []error{fmt.Errorf("error reading NodeFeatureRule file: %w", err)}
+	for _, rule := range nodeFeatureGroup.Spec.Rules {
+		fmt.Println("Processing rule: ", rule.Name)
+		ruleOut, err := nodefeaturerule.ExecuteGroupRule(&rule, &nodeFeature.Features, true)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to process rule %q: %w", rule.Name, err))
+			continue
+		}
+		if ruleOut.MatchStatus == nil || !ruleOut.MatchStatus.IsMatch {
+			fmt.Printf("Rule %q did not match\n", rule.Name)
+			continue
+		}
+		fmt.Printf("Rule %q matched\n", rule.Name)
+		if len(ruleOut.Vars) > 0 {
+			fmt.Println("***\tVars\t***")
+			for k, v := range ruleOut.Vars {
+				fmt.Printf("%s=%s\n", k, v)
+			}
+		}
 	}
-
-	err = yaml.Unmarshal(nfrFile, &nfr)
-	if err != nil {
-		return []error{fmt.Errorf("error parsing NodeFeatureRule: %w", err)}
-	}
-
-	nfFile, err := os.ReadFile(nodefeaturepath)
-	if err != nil {
-		return []error{fmt.Errorf("error reading NodeFeatureRule file: %w", err)}
-	}
-
-	err = yaml.Unmarshal(nfFile, &nf)
-	if err != nil {
-		return []error{fmt.Errorf("error parsing NodeFeatureRule: %w", err)}
-	}
-
-	errs = append(errs, processNodeFeatureRule(nfr, nf.Spec)...)
 
 	return errs
+}
+
+func DryRun(resourcepath, nodefeaturepath string) []error {
+	nfFile, err := os.ReadFile(nodefeaturepath)
+	if err != nil {
+		return []error{fmt.Errorf("error reading NodeFeature file: %w", err)}
+	}
+	nf := nfdv1alpha1.NodeFeature{}
+	if err = yaml.Unmarshal(nfFile, &nf); err != nil {
+		return []error{fmt.Errorf("error parsing NodeFeature: %w", err)}
+	}
+
+	t := parseRuleFile(resourcepath)
+	switch o := t.(type) {
+	case *nfdv1alpha1.NodeFeatureRule:
+		return processNodeFeatureRule(*o, nf.Spec)
+	case *nfdv1alpha1.NodeFeatureGroup:
+		return processNodeFeatureGroup(*o, nf.Spec)
+	default:
+		return []error{fmt.Errorf("unsupported resource %v: must be NodeFeatureRule or NodeFeatureGroup", t)}
+	}
 }
 
 func processNodeFeatureRule(nodeFeatureRule nfdv1alpha1.NodeFeatureRule, nodeFeature nfdv1alpha1.NodeFeatureSpec) []error {

@@ -19,7 +19,6 @@ package kubectlnfd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,21 +27,16 @@ import (
 
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
-
-	"sigs.k8s.io/yaml"
 )
 
-func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
-	var errs []error
-	var err error
-
+func getNodeFeatures(nodeName, kubeconfig string) (*nfdv1alpha1.NodeFeatureSpec, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if kubeconfig != "" {
 		loadingRules.ExplicitPath = kubeconfig
 	}
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{}).ClientConfig()
 	if err != nil {
-		return []error{fmt.Errorf("error building kubeconfig: %w", err)}
+		return nil, fmt.Errorf("error building kubeconfig: %w", err)
 	}
 
 	nfdClient := nfdclientset.NewForConfigOrDie(config)
@@ -50,7 +44,7 @@ func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
 	sel := k8sLabels.SelectorFromSet(k8sLabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
 	list, err := nfdClient.NfdV1alpha1().NodeFeatures(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{LabelSelector: sel.String()})
 	if err != nil {
-		return []error{fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)}
+		return nil, fmt.Errorf("failed to get NodeFeature resources for node %q: %w", nodeName, err)
 	}
 	objs := list.Items
 	names := make([]string, len(objs))
@@ -67,19 +61,24 @@ func Test(nodefeaturerulepath, nodeName, kubeconfig string) []error {
 			s.MergeInto(features)
 		}
 	}
+	return features, nil
+}
 
-	nfrFile, err := os.ReadFile(nodefeaturerulepath)
+// Test reads a NodeFeatureRule or NodeFeatureGroup file and evaluates it against
+// the NodeFeature objects of the given node. The kind is detected automatically.
+func Test(resourcepath, nodeName, kubeconfig string) []error {
+	features, err := getNodeFeatures(nodeName, kubeconfig)
 	if err != nil {
-		return []error{fmt.Errorf("error reading NodeFeatureRule file: %w", err)}
+		return []error{err}
 	}
 
-	nfr := nfdv1alpha1.NodeFeatureRule{}
-	err = yaml.Unmarshal(nfrFile, &nfr)
-	if err != nil {
-		return []error{fmt.Errorf("error parsing NodeFeatureRule: %w", err)}
+	t := parseRuleFile(resourcepath)
+	switch o := t.(type) {
+	case *nfdv1alpha1.NodeFeatureRule:
+		return processNodeFeatureRule(*o, *features)
+	case *nfdv1alpha1.NodeFeatureGroup:
+		return processNodeFeatureGroup(*o, *features)
+	default:
+		return []error{fmt.Errorf("unsupported resource %v: must be NodeFeatureRule or NodeFeatureGroup", t)}
 	}
-
-	errs = append(errs, processNodeFeatureRule(nfr, *features)...)
-
-	return errs
 }

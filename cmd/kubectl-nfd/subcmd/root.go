@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	// Path to the NodeFeatureRule file to validate
-	nodefeaturerule string
+	// Path to the NodeFeatureRule or NodeFeatureGroup file
+	rule string
 	// Path to the NodeFeature file to run against the NodeFeatureRule
 	nodefeature string
 	// Node to validate against
