@@ -1,11 +1,11 @@
 image:
   # -- NFD image repository
   # @section -- General
-  repository: gcr.io/k8s-staging-nfd/node-feature-discovery
+  repository: registry.k8s.io/nfd/node-feature-discovery
   # @schema enum: [Always, IfNotPresent, Never]
   # -- Image pull policy
   # @section -- General
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # @schema type: [string, null]
   # -- NFD image tag. If not specified Chart.AppVersion will be used.
   # @section -- General
@@ -26,7 +26,7 @@ fullnameOverride: ""
 namespaceOverride: ""
 
 # @schema patternProperties: {"^[a-zA-Z]$": {type: string}}
-# -- [Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features.
+# -- [Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/feature-gates) to enable/disable specific features.
 # @section -- General
 featureGates: {}
 
@@ -60,7 +60,7 @@ master:
   # @section -- NFD-Master
   enable: true
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-commandline-reference) to pass to nfd-master.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/master-commandline-reference) to pass to nfd-master.
   # @section -- NFD-Master
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
@@ -79,7 +79,7 @@ master:
   # @section -- NFD-Master
   dnsPolicy: ClusterFirstWithHostNet
   # @schema type: [object, null]
-  # -- NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference).
+  # -- NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/master-configuration-reference).
   # @section -- NFD-Master
   config: ### <NFD-MASTER-CONF-START-DO-NOT-REMOVE>
     # noPublish: false
@@ -379,7 +379,7 @@ worker:
     - pod
     - ds
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-commandline-reference) to pass to nfd-worker.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/worker-commandline-reference) to pass to nfd-worker.
   # @section -- NFD-Worker
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
@@ -398,7 +398,7 @@ worker:
   # @section -- NFD-Worker
   dnsPolicy: ClusterFirstWithHostNet
   # @schema type: [object, null]
-  # -- NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference).
+  # -- NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/worker-configuration-reference).
   # @section -- NFD-Worker
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
@@ -840,7 +840,7 @@ worker:
 #
 topologyUpdater:
   # @schema type: [object, null]
-  # -- Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details.
+  # -- Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/topology-updater-configuration-reference) for details.
   # @section -- NFD-Topology-Updater
   config: ### <NFD-TOPOLOGY-UPDATER-CONF-START-DO-NOT-REMOVE>
     ## key = node name, value = list of resources to be excluded.
@@ -862,7 +862,7 @@ topologyUpdater:
   # @section -- NFD-Topology-Updater
   createCRDs: false
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater.
   # @section -- NFD-Topology-Updater
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env
@@ -1066,7 +1066,7 @@ gc:
   # @section -- NFD-GC
   enable: true
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/args
-  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/gc-commandline-reference) to pass to nfd-gc.
+  # -- Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/gc-commandline-reference) to pass to nfd-gc.
   # @section -- NFD-GC
   extraArgs: []
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/env

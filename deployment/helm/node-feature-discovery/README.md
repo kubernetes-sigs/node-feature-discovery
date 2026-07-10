@@ -1,6 +1,6 @@
 # node-feature-discovery
 
-![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: master](https://img.shields.io/badge/AppVersion-master-informational?style=flat-square)
+![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.19.0](https://img.shields.io/badge/AppVersion-v0.19.0-informational?style=flat-square)
 Node Feature Discovery (NFD) is a Kubernetes add-on for detecting hardware
 features and system configuration. Detected features are advertised as node
 labels. NFD provides flexible configuration and extension points for a wide
@@ -20,7 +20,7 @@ The NFD project provides Helm charts in an OCI compliant repository. Install
 NFD with the default configuration
 
 ```bash
-helm install nfd --namespace node-feature-discovery --create-namespace oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master
+helm install nfd --namespace node-feature-discovery --create-namespace oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0
 ```
 
 See the [configuration](#configuration) section below for instructions how to
@@ -63,18 +63,18 @@ helm install nfd ./node-feature-discovery/ --namespace node-feature-discovery --
 You can override values from `values.yaml` and provide a file with custom values:
 
 ```bash
-helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace nfd oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master
+helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0
 ```
 
 To specify each parameter separately you can provide them to helm install command:
 
 ```bash
-helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master
+helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0
 ```
 
 ## Upgrading the chart
 
-To upgrade the `node-feature-discovery` deployment to master via Helm.
+To upgrade the `node-feature-discovery` deployment to v0.19.0 via Helm.
 
 ### Rolling-update pace on large clusters
 
@@ -108,11 +108,11 @@ export HELM_INSTALL_NAME=nfd
 # Uninstall the old NFD deployment
 helm uninstall $HELM_INSTALL_NAME --namespace $NFD_NS
 # Install the new NFD deployment
-helm install $HELM_INSTALL_NAME oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master --namespace $NFD_NS --set master.enable=false
+helm install $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0 --namespace $NFD_NS --set master.enable=false
 # Wait for NFD Worker to be ready
 kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
 # Enable the NFD Master
-helm upgrade $HELM_INSTALL_NAME oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master --namespace $NFD_NS --set master.enable=true
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0 --namespace $NFD_NS --set master.enable=true
 ```
 
 ### From v0.12 - v0.13
@@ -124,13 +124,13 @@ The API was not enabled by default.
 export NFD_NS=node-feature-discovery
 export HELM_INSTALL_NAME=nfd
 # Install and upgrade CRD's
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/deployment/base/nfd-crds/nfd-api-crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.19.0/deployment/base/nfd-crds/nfd-api-crds.yaml
 # Install the new NFD deployment
-helm upgrade $HELM_INSTALL_NAME oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master --namespace $NFD_NS --set master.enable=false
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0 --namespace $NFD_NS --set master.enable=false
 # Wait for NFD Worker to be ready
 kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
 # Enable the NFD Master
-helm upgrade $HELM_INSTALL_NAME oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master --namespace $NFD_NS --set master.enable=true
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0 --namespace $NFD_NS --set master.enable=true
 ```
 
 ### From v0.14+
@@ -142,9 +142,9 @@ and the CRD `NodeFeature` is enabled by default.
 export NFD_NS=node-feature-discovery
 export HELM_INSTALL_NAME=nfd
 # Install and upgrade CRD's
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/deployment/base/nfd-crds/nfd-api-crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.19.0/deployment/base/nfd-crds/nfd-api-crds.yaml
 # Install the new NFD deployment
-helm upgrade $HELM_INSTALL_NAME oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master --namespace $NFD_NS
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0 --namespace $NFD_NS
 ```
 
 ## Uninstalling the chart
@@ -166,14 +166,14 @@ NFD.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| image.repository | string | `"gcr.io/k8s-staging-nfd/node-feature-discovery"` | NFD image repository |
-| image.pullPolicy | string | `"Always"` | Image pull policy |
+| image.repository | string | `"registry.k8s.io/nfd/node-feature-discovery"` | NFD image repository |
+| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.tag | string | `nil` | NFD image tag. If not specified Chart.AppVersion will be used. |
 | imagePullSecrets | list | `[]` | Image pull secrets. [More info](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod). |
 | nameOverride | string | `""` | Override the name of the chart |
 | fullnameOverride | string | `""` | Override a default fully qualified app name |
 | namespaceOverride | string | `""` | Override the namespace to install the chart into. By default, the namespace is determined by Helm. |
-| featureGates | object | `{}` | [Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features. |
+| featureGates | object | `{}` | [Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/feature-gates) to enable/disable specific features. |
 | checksumValuesOnly | bool | `false` | Only checksum config values (not the full rendered ConfigMap template) for the rollout annotation. When enabled, pods will only restart when config values actually change, not on unrelated template changes. |
 | priorityClassName | string | `""` | The name of the PriorityClass to be used for the NFD pods. |
 | postDeleteCleanup | bool | `true` | Enable/disable the Helm post-delete hook. |
@@ -189,12 +189,12 @@ NFD.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | master.enable | bool | `true` | Specifies whether nfd-master should be deployed |
-| master.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-commandline-reference) to pass to nfd-master. |
+| master.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/master-commandline-reference) to pass to nfd-master. |
 | master.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-master container. |
 | master.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | master.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | master.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy). |
-| master.config | string | `nil` | NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference). |
+| master.config | string | `nil` | NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/master-configuration-reference). |
 | master.port | int | `8080` | Port on which to serve http for metrics and healthz endpoints. |
 | master.instance | string | `nil` | Instance name. Used to separate annotation namespaces for multiple parallel deployments. |
 | master.resyncPeriod | int | `nil` | NFD API controller resync period. Time duration string (e.g. "5m", "1h", "2h45m"). |
@@ -248,12 +248,12 @@ NFD.
 |-----|------|---------|-------------|
 | worker.enable | bool | `true` | Specifies whether nfd-worker should be deployed |
 | worker.ownerRefs | list | `["pod","ds"]` | Objects used as owner references for NodeFeature objects. Valid values are `node`, `pod`, and `ds`. This value is passed through `-owner-refs` and takes precedence over `worker.config.core.ownerRefs`. |
-| worker.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-commandline-reference) to pass to nfd-worker. |
+| worker.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/worker-commandline-reference) to pass to nfd-worker. |
 | worker.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-worker container. |
 | worker.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | worker.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | worker.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
-| worker.config | string | `nil` | NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference). |
+| worker.config | string | `nil` | NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/worker-configuration-reference). |
 | worker.port | int | `8080` | Port on which to serve http for metrics and healthz endpoints. |
 | worker.daemonsetAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker DaemonSet. |
 | worker.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-worker pods. |
@@ -293,10 +293,10 @@ NFD.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| topologyUpdater.config | string | `nil` | Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details. |
+| topologyUpdater.config | string | `nil` | Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/topology-updater-configuration-reference) for details. |
 | topologyUpdater.enable | bool | `false` | Specifies whether nfd-topology-updater should be deployed. |
 | topologyUpdater.createCRDs | bool | `false` | Create the NodeResourceTopology CRD. This MUST be set to true when 'enable' is true, unless the CRD is installed separately (e.g., by another Helm release or external tool). If the CRD is missing, the topology-updater pods will fail with "NodeResourceTopology CRD is not installed" error. |
-| topologyUpdater.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater. |
+| topologyUpdater.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater. |
 | topologyUpdater.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-topology-updater container. |
 | topologyUpdater.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | topologyUpdater.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
@@ -344,7 +344,7 @@ NFD.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | gc.enable | bool | `true` | Specifies whether nfd-gc should be deployed. |
-| gc.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/gc-commandline-reference) to pass to nfd-gc. |
+| gc.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/gc-commandline-reference) to pass to nfd-gc. |
 | gc.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-gc container. |
 | gc.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | gc.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
