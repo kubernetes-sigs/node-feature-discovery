@@ -320,7 +320,7 @@ func (c *nfdController) addNodeFeatureGroupInformer(informerFactory nfdinformers
 func (c *nfdController) onNodeFeatureGroupAdd(obj interface{}) {
 	nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
 	klog.V(2).InfoS("NodeFeatureGroup added", "nodeFeatureGroup", klog.KObj(nfg))
-	c.updateNodeFeatureGroup(nfg.Name)
+	c.enqueueNodeFeatureGroup(nfg)
 }
 
 func (c *nfdController) onNodeFeatureGroupUpdate(oldObj, newObj interface{}) {
@@ -329,7 +329,7 @@ func (c *nfdController) onNodeFeatureGroupUpdate(oldObj, newObj interface{}) {
 	}
 	nfg := newObj.(*nfdv1alpha1.NodeFeatureGroup)
 	klog.V(2).InfoS("NodeFeatureGroup updated", "nodeFeatureGroup", klog.KObj(nfg))
-	c.updateNodeFeatureGroup(nfg.Name)
+	c.enqueueNodeFeatureGroup(nfg)
 }
 
 func (c *nfdController) onNodeFeatureGroupDelete(obj interface{}) {
@@ -346,7 +346,19 @@ func (c *nfdController) onNodeFeatureGroupDelete(obj interface{}) {
 	}
 
 	klog.V(2).InfoS("NodeFeatureGroup deleted", "nodeFeatureGroup", klog.KObj(nfg))
-	c.updateNodeFeatureGroup(nfg.Name)
+	c.enqueueNodeFeatureGroup(nfg)
+}
+
+// enqueueNodeFeatureGroup enqueues a NodeFeatureGroup by its namespace/name
+// key so that same-name objects in different namespaces do not collide and the
+// consumer can resolve the object in its own namespace.
+func (c *nfdController) enqueueNodeFeatureGroup(nfg *nfdv1alpha1.NodeFeatureGroup) {
+	key, err := cache.MetaNamespaceKeyFunc(nfg)
+	if err != nil {
+		klog.ErrorS(err, "failed to create key for NodeFeatureGroup", "nodeFeatureGroup", klog.KObj(nfg))
+		return
+	}
+	c.updateNodeFeatureGroup(key)
 }
 
 func (c *nfdController) stop() {
@@ -410,9 +422,9 @@ func (c *nfdController) updateAllNodes() {
 	}
 }
 
-func (c *nfdController) updateNodeFeatureGroup(nodeFeatureGroup string) {
+func (c *nfdController) updateNodeFeatureGroup(key string) {
 	select {
-	case c.updateNodeFeatureGroupChan <- nodeFeatureGroup:
+	case c.updateNodeFeatureGroupChan <- key:
 	case <-c.stopChan:
 	}
 }
