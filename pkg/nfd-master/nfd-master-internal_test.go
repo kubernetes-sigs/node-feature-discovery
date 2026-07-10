@@ -93,8 +93,25 @@ func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	}
 	c.ruleLister = ruleInformer.Lister()
 
-	// Start informers
+	// Add informer for NodeFeatureGroup objects
+	nodeFeatureGroupInformer := informerFactory.Nfd().V1alpha1().NodeFeatureGroups()
+	if _, err := nodeFeatureGroupInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(object interface{}) {},
+		UpdateFunc: func(oldObject, newObject interface{}) {},
+		DeleteFunc: func(object interface{}) {},
+	}); err != nil {
+		return nil
+	}
+	c.featureGroupLister = nodeFeatureGroupInformer.Lister()
+
+	// Start informers and wait for their caches to fill, so that listers are
+	// usable immediately when the helper returns.
 	informerFactory.Start(c.stopChan)
+	cache.WaitForCacheSync(c.stopChan,
+		featureInformer.Informer().HasSynced,
+		ruleInformer.Informer().HasSynced,
+		nodeFeatureGroupInformer.Informer().HasSynced,
+	)
 
 	utilruntime.Must(nfdv1alpha1.AddToScheme(nfdscheme.Scheme))
 
