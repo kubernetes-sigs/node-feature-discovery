@@ -7,7 +7,7 @@
             "type": "boolean"
         },
         "featureGates": {
-            "description": "[Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/feature-gates) to enable/disable specific features.",
+            "description": "[Feature gates](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/feature-gates) to enable/disable specific features.",
             "type": "object",
             "patternProperties": {
                 "^[a-zA-Z]$": {
@@ -46,7 +46,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/gc-commandline-reference) to pass to nfd-gc.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/gc-commandline-reference) to pass to nfd-gc.",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -318,7 +318,7 @@
                     "type": "object"
                 },
                 "config": {
-                    "description": "NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference).",
+                    "description": "NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/master-configuration-reference).",
                     "type": [
                         "object",
                         "null"
@@ -349,7 +349,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-commandline-reference) to pass to nfd-master.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/master-commandline-reference) to pass to nfd-master.",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -686,7 +686,7 @@
                     "type": "object"
                 },
                 "config": {
-                    "description": "Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details.",
+                    "description": "Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/topology-updater-configuration-reference) for details.",
                     "type": [
                         "object",
                         "null"
@@ -710,7 +710,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater.",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
@@ -960,7 +960,7 @@
                     "type": "object"
                 },
                 "config": {
-                    "description": "NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference).",
+                    "description": "NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/worker-configuration-reference).",
                     "type": [
                         "object",
                         "null"
@@ -980,7 +980,7 @@
                     "type": "boolean"
                 },
                 "extraArgs": {
-                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-commandline-reference) to pass to nfd-worker.",
+                    "description": "Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/worker-commandline-reference) to pass to nfd-worker.",
                     "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.Container/properties/args",
                     "type": "array"
                 },
