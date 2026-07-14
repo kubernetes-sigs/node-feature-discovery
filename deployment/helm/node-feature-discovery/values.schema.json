@@ -496,6 +496,10 @@
                         "create": {
                             "description": "Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master.",
                             "type": "boolean"
+                        },
+                        "createAggregateRoles": {
+                            "description": "Create aggregate roles that grant view and edit access to NFD CRD resources.",
+                            "type": "boolean"
                         }
                     }
                 },
