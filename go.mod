@@ -16,7 +16,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/opencontainers/runc v1.5.0
+	github.com/opencontainers/runc v1.5.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.10.2
