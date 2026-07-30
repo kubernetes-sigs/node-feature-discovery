@@ -323,8 +323,7 @@ func createClusterRoleTopologyUpdater(ctx context.Context, cs clientset.Interfac
 				Resources: []string{"noderesourcetopologies"},
 				Verbs: []string{
 					"create",
-					"get",
-					"update",
+					"patch",
 				},
 			},
 		},

@@ -452,7 +452,7 @@ excludeList:
 				if err != nil {
 					if apierrors.IsNotFound(err) {
 						framework.Logf("missing node topology resource for %q", topologyUpdaterNode.Name)
-						return true // intentionally retry
+						return false
 					}
 					framework.Logf("failed to get the node topology resource: %v", err)
 					return false

@@ -28,14 +28,22 @@ import (
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 )
 
+const kubeletConfigurationTimeout = 2 * time.Minute
+
 // GetKubeletConfiguration returns the kubelet configuration.
 func GetKubeletConfiguration(restConfig *rest.Config) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), kubeletConfigurationTimeout)
+	defer cancel()
+	return GetKubeletConfigurationWithContext(ctx, restConfig)
+}
+
+// GetKubeletConfigurationWithContext returns the kubelet configuration using the supplied context.
+func GetKubeletConfigurationWithContext(ctx context.Context, restConfig *rest.Config) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	var timeout time.Duration
 	// This hack because /configz reports the following structure:
 	// {"kubeletconfig": {the JSON representation of kubeletconfigv1beta1.KubeletConfiguration}}
 	type configzWrapper struct {
@@ -43,8 +51,7 @@ func GetKubeletConfiguration(restConfig *rest.Config) (*kubeletconfigv1beta1.Kub
 	}
 	bytes, err := discoveryClient.RESTClient().
 		Get().
-		Timeout(timeout).
-		Do(context.TODO()).
+		Do(ctx).
 		Raw()
 	if err != nil {
 		return nil, err

@@ -182,8 +182,8 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
-github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2 h1:uAwqOtyrFYggq3pVf3hs1XKkBxrQ8dkgjWz3LCLJsiY=
-github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.2/go.mod h1:LBzS4n6GX1C69tzSd5EibZ9cGOXFuHP7GxEMDYVe1sM=
+github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.3 h1:aXkBkkcxBYmr9anRPeaz68tvP2bX2HutrGgqr4hoXE4=
+github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.3/go.mod h1:lWV0gAcHlmZjmGDhVSkoyTcRlwNAZnTQ3LK32R9/EKA=
 github.com/k8stopologyawareschedwg/podfingerprint v0.3.0 h1:xJmXm8vi3qBpMTucRhrF3aEGnp8f5bJrrcsXfzVr7ow=
 github.com/k8stopologyawareschedwg/podfingerprint v0.3.0/go.mod h1:GtO0jO6n3W7A8LEKGDEm9a63IA3ZOJx22RGFV547wE4=
 github.com/karrick/godirwalk v1.17.0 h1:b4kY7nqDdioR/6qnbHQyDvmA17u5G1cZ6J+CZXwSWoI=

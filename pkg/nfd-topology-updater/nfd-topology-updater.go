@@ -18,6 +18,7 @@ package nfdtopologyupdater
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -28,10 +29,11 @@ import (
 	"time"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
+	metav1apply "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/client-go/informers"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -40,6 +42,7 @@ import (
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
+	applyconfigurationtopologyv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/applyconfiguration/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -60,6 +63,8 @@ import (
 const nodeScopedPodInformerResync = 0
 
 const (
+	topologyManagerInfoRefreshTimeout = 2 * time.Minute
+
 	// TopologyManagerPolicyAttributeName represents an attribute which defines
 	// Topology Manager Policy
 	TopologyManagerPolicyAttributeName = "topologyManagerPolicy"
@@ -68,7 +73,12 @@ const (
 	TopologyManagerScopeAttributeName = "topologyManagerScope"
 	// NodeResourceTopologyCRDName is the name of the NodeResourceTopology CRD
 	NodeResourceTopologyCRDName = "noderesourcetopologies.topology.node.k8s.io"
+	// nodeResourceTopologyFieldManager is used for server-side apply updates to
+	// NodeResourceTopology objects.
+	nodeResourceTopologyFieldManager = "node-feature-discovery-topology-updater"
 )
+
+var errTopologyManagerInfoUnavailable = errors.New("topology-manager information unavailable")
 
 // Args are the command line arguments
 type Args struct {
@@ -93,18 +103,22 @@ type NfdTopologyUpdater interface {
 }
 
 type nfdTopologyUpdater struct {
-	nodeName            string
-	args                Args
-	topoClient          topologyclientset.Interface
-	resourcemonitorArgs resourcemonitor.Args
-	stop                chan struct{} // channel for signaling stop
-	eventSource         <-chan kubeletnotifier.Info
-	configFilePath      string
-	config              *NFDConfig
-	kubernetesNamespace string
-	ownerRefs           []metav1.OwnerReference
-	k8sClient           k8sclient.Interface
-	kubeletConfigFunc   func() (*kubeletconfigv1beta1.KubeletConfiguration, error)
+	nodeName             string
+	args                 Args
+	topoClient           topologyclientset.Interface
+	resourcemonitorArgs  resourcemonitor.Args
+	stop                 chan struct{} // channel for signaling stop
+	eventSource          <-chan kubeletnotifier.Info
+	configFilePath       string
+	config               *NFDConfig
+	kubernetesNamespace  string
+	ownerRefs            []metav1.OwnerReference
+	k8sClient            k8sclient.Interface
+	kubeletConfigFunc    func(context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error)
+	discoverCpuCoresFunc func() v1alpha2.AttributeList
+	kubeletConfigMu      sync.RWMutex
+	kubeletConfig        *kubeletconfigv1beta1.KubeletConfiguration
+	cpuCoreAttributes    v1alpha2.AttributeList
 }
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
@@ -123,15 +137,16 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (Nf
 	}
 
 	nfd := &nfdTopologyUpdater{
-		args:                args,
-		resourcemonitorArgs: resourcemonitorArgs,
-		stop:                make(chan struct{}),
-		nodeName:            utils.NodeName(),
-		eventSource:         eventSource,
-		config:              &NFDConfig{},
-		kubernetesNamespace: utils.GetKubernetesNamespace(),
-		ownerRefs:           []metav1.OwnerReference{},
-		kubeletConfigFunc:   kubeletConfigFunc,
+		args:                 args,
+		resourcemonitorArgs:  resourcemonitorArgs,
+		stop:                 make(chan struct{}),
+		nodeName:             utils.NodeName(),
+		eventSource:          eventSource,
+		config:               &NFDConfig{},
+		kubernetesNamespace:  utils.GetKubernetesNamespace(),
+		ownerRefs:            []metav1.OwnerReference{},
+		kubeletConfigFunc:    kubeletConfigFunc,
+		discoverCpuCoresFunc: discoverCpuCores,
 	}
 	if args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(args.ConfigFile)
@@ -139,10 +154,52 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (Nf
 	return nfd, nil
 }
 
-func (w *nfdTopologyUpdater) detectTopologyPolicyAndScope() (string, string, error) {
-	klConfig, err := w.kubeletConfigFunc()
+// refreshTopologyManagerInfo fetches and caches the inputs used to publish
+// topology-manager information.
+func (w *nfdTopologyUpdater) refreshTopologyManagerInfo(ctx context.Context) error {
+	klConfig, err := w.kubeletConfigFunc(ctx)
 	if err != nil {
-		return "", "", err
+		return err
+	}
+	cpuCoreAttributes := w.discoverCpuCoresFunc()
+
+	w.kubeletConfigMu.Lock()
+	w.kubeletConfig = klConfig
+	w.cpuCoreAttributes = cpuCoreAttributes
+	w.kubeletConfigMu.Unlock()
+	return nil
+}
+
+// getKubeletConfig returns the cached kubelet configuration, or nil if it has
+// not been fetched yet.
+func (w *nfdTopologyUpdater) getKubeletConfig() *kubeletconfigv1beta1.KubeletConfiguration {
+	w.kubeletConfigMu.RLock()
+	defer w.kubeletConfigMu.RUnlock()
+	return w.kubeletConfig
+}
+
+func (w *nfdTopologyUpdater) getCpuCoreAttributes() v1alpha2.AttributeList {
+	w.kubeletConfigMu.RLock()
+	defer w.kubeletConfigMu.RUnlock()
+	return append(v1alpha2.AttributeList(nil), w.cpuCoreAttributes...)
+}
+
+func (w *nfdTopologyUpdater) newTopologyManagerRefreshContext() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), topologyManagerInfoRefreshTimeout)
+	go func() {
+		select {
+		case <-w.stop:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
+}
+
+func (w *nfdTopologyUpdater) detectTopologyPolicyAndScope() (string, string, error) {
+	klConfig := w.getKubeletConfig()
+	if klConfig == nil {
+		return "", "", fmt.Errorf("kubelet configuration is not cached")
 	}
 
 	return klConfig.TopologyManagerPolicy, klConfig.TopologyManagerScope, nil
@@ -207,6 +264,15 @@ func (w *nfdTopologyUpdater) Run() error {
 
 	if err := w.configure(); err != nil {
 		return fmt.Errorf("faild to configure Node Feature Discovery Topology Updater: %w", err)
+	}
+
+	// Cache topology-manager information once on startup. It is subsequently
+	// refreshed on interval-based events (see the event loop below).
+	refreshCtx, cancelRefresh := w.newTopologyManagerRefreshContext()
+	err = w.refreshTopologyManagerInfo(refreshCtx)
+	cancelRefresh()
+	if err != nil {
+		klog.ErrorS(err, "failed to cache topology-manager information on startup, will retry on next scan")
 	}
 
 	syncCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -281,13 +347,25 @@ func (w *nfdTopologyUpdater) Run() error {
 			}
 			zones = resAggr.Aggregate(scanResponse.PodResources)
 			klog.V(1).InfoS("aggregated resources identified", "resourceZones", utils.DelayedDumper(zones))
-			readKubeletConfig := false
 			if info.Event == kubeletnotifier.IntervalBased {
-				readKubeletConfig = true
+				refreshCtx, cancel := w.newTopologyManagerRefreshContext()
+				err := w.refreshTopologyManagerInfo(refreshCtx)
+				cancel()
+				if err != nil {
+					klog.ErrorS(err, "failed to refresh topology-manager information, keeping cached information")
+				}
 			}
 
 			if !w.args.NoPublish {
-				if err = w.updateNodeResourceTopology(zones, scanResponse, readKubeletConfig); err != nil {
+				if err = w.updateNodeResourceTopology(zones, scanResponse); err != nil {
+					if errors.Is(err, errTopologyManagerInfoUnavailable) {
+						scanErrors.Inc()
+						klog.ErrorS(err, "skipping NodeResourceTopology publish")
+						if w.args.Oneshot {
+							return err
+						}
+						continue
+					}
 					return err
 				}
 			}
@@ -309,7 +387,7 @@ func (w *nfdTopologyUpdater) Stop() {
 	close(w.stop)
 }
 
-func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList, scanResponse resourcemonitor.ScanResponse, readKubeletConfig bool) error {
+func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneList, scanResponse resourcemonitor.ScanResponse) error {
 
 	if len(w.ownerRefs) == 0 {
 		ns, err := w.k8sClient.CoreV1().Namespaces().Get(context.TODO(), w.kubernetesNamespace, metav1.GetOptions{})
@@ -327,58 +405,65 @@ func (w *nfdTopologyUpdater) updateNodeResourceTopology(zoneInfo v1alpha2.ZoneLi
 		}
 	}
 
-	nrt, err := w.topoClient.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), w.nodeName, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		nrtNew := v1alpha2.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            w.nodeName,
-				OwnerReferences: w.ownerRefs,
-			},
-			Zones:      zoneInfo,
-			Attributes: v1alpha2.AttributeList{},
-		}
-
-		if err := w.updateNRTTopologyManagerInfo(&nrtNew); err != nil {
-			return err
-		}
-
-		updateAttributes(&nrtNew.Attributes, scanResponse.Attributes)
-
-		if _, err := w.topoClient.TopologyV1alpha2().NodeResourceTopologies().Create(context.TODO(), &nrtNew, metav1.CreateOptions{}); err != nil {
-			if errors.IsNotFound(err) {
-				return fmt.Errorf("failed to create NodeResourceTopology: %w. "+
-					"The NodeResourceTopology CRD may not be installed. "+
-					"If using Helm, ensure 'topologyUpdater.createCRDs=true' is set",
-					err)
-			}
-			return fmt.Errorf("failed to create NodeResourceTopology: %w", err)
-		}
-		return nil
-	} else if err != nil {
-		return err
+	nrt := &v1alpha2.NodeResourceTopology{
+		Attributes: v1alpha2.AttributeList{},
 	}
 
-	nrtMutated := nrt.DeepCopy()
-	nrtMutated.Zones = zoneInfo
-	nrtMutated.OwnerReferences = w.ownerRefs
-
-	attributes := scanResponse.Attributes
-
-	if readKubeletConfig {
-		if err := w.updateNRTTopologyManagerInfo(nrtMutated); err != nil {
-			return err
-		}
+	if err := w.applyNRTTopologyManagerInfo(nrt); err != nil {
+		return fmt.Errorf("%w: %w", errTopologyManagerInfoUnavailable, err)
 	}
 
-	updateAttributes(&nrtMutated.Attributes, attributes)
+	updateAttributes(&nrt.Attributes, scanResponse.Attributes)
 
-	nrtUpdated, err := w.topoClient.TopologyV1alpha2().NodeResourceTopologies().Update(context.TODO(), nrtMutated, metav1.UpdateOptions{})
+	nrtApply := applyconfigurationtopologyv1alpha2.NodeResourceTopology(w.nodeName)
+	if len(w.ownerRefs) > 0 {
+		ownerRefApplies := make([]*metav1apply.OwnerReferenceApplyConfiguration, len(w.ownerRefs))
+		for i, ref := range w.ownerRefs {
+			ownerRefApplies[i] = metav1apply.OwnerReference().
+				WithAPIVersion(ref.APIVersion).
+				WithKind(ref.Kind).
+				WithName(ref.Name).
+				WithUID(ref.UID)
+		}
+		nrtApply.WithOwnerReferences(ownerRefApplies...)
+	}
+	nrtApply.WithZones(zoneInfo).
+		WithAttributes(nrt.Attributes).
+		WithTopologyPolicies(nrt.TopologyPolicies...)
+
+	nrtUpdated, err := w.topoClient.TopologyV1alpha2().NodeResourceTopologies().Apply(
+		context.TODO(),
+		nrtApply,
+		metav1.ApplyOptions{
+			FieldManager: nodeResourceTopologyFieldManager,
+			Force:        true,
+		},
+	)
 	if err != nil {
-		return fmt.Errorf("failed to update NodeResourceTopology: %w", err)
+		if apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to apply NodeResourceTopology: %w. "+
+				"The NodeResourceTopology CRD may not be installed. "+
+				"If using Helm, ensure 'topologyUpdater.createCRDs=true' is set",
+				err)
+		}
+		return fmt.Errorf("failed to apply NodeResourceTopology: %w", err)
 	}
 
-	klog.V(4).InfoS("NodeResourceTopology object updated", "nodeResourceTopology", utils.DelayedDumper(nrtUpdated))
+	klog.V(4).InfoS("NodeResourceTopology object applied", "nodeResourceTopology", utils.DelayedDumper(nrtUpdated))
 	return nil
+}
+
+func (w *nfdTopologyUpdater) applyNRTTopologyManagerInfo(nrt *v1alpha2.NodeResourceTopology) error {
+	if w.getKubeletConfig() == nil {
+		refreshCtx, cancel := w.newTopologyManagerRefreshContext()
+		err := w.refreshTopologyManagerInfo(refreshCtx)
+		cancel()
+		if err != nil {
+			return err
+		}
+	}
+
+	return w.updateNRTTopologyManagerInfo(nrt)
 }
 
 // Discover E/P cores
@@ -419,7 +504,7 @@ func (w *nfdTopologyUpdater) updateNRTTopologyManagerInfo(nrt *v1alpha2.NodeReso
 	updateAttributes(&nrt.Attributes, tmAttributes)
 	nrt.TopologyPolicies = deprecatedTopologyPolicies
 
-	attrList := discoverCpuCores()
+	attrList := w.getCpuCoreAttributes()
 	updateAttributes(&nrt.Attributes, attrList)
 
 	return nil
@@ -480,13 +565,13 @@ func waitForNodeResourceTopologyCRD(config *restclient.Config, stop <-chan struc
 
 		// If we don't have permission to check CRDs, skip waiting and let the
 		// actual NRT creation fail with a more descriptive error
-		if errors.IsForbidden(err) {
+		if apierrors.IsForbidden(err) {
 			klog.V(2).InfoS("no permission to check CRD existence, skipping wait",
 				"crd", NodeResourceTopologyCRDName, "error", err)
 			return nil
 		}
 
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			klog.InfoS("waiting for NodeResourceTopology CRD to be created. "+
 				"If using Helm, ensure 'topologyUpdater.createCRDs=true' is set",
 				"crd", NodeResourceTopologyCRDName, "retryIn", backoff)
@@ -541,7 +626,7 @@ func updateAttributes(lhs *v1alpha2.AttributeList, rhs v1alpha2.AttributeList) {
 	}
 }
 
-func getKubeletConfigFunc(uri, apiAuthTokenFile string) (func() (*kubeletconfigv1beta1.KubeletConfiguration, error), error) {
+func getKubeletConfigFunc(uri, apiAuthTokenFile string) (func(context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error), error) {
 	u, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse -kubelet-config-uri: %w", err)
@@ -551,7 +636,7 @@ func getKubeletConfigFunc(uri, apiAuthTokenFile string) (func() (*kubeletconfigv
 	var klConfig *kubeletconfigv1beta1.KubeletConfiguration
 	switch u.Scheme {
 	case "file":
-		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+		return func(context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
 			klConfig, err = kubeconf.GetKubeletConfigFromLocalFile(u.Path)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read kubelet config: %w", err)
@@ -564,8 +649,8 @@ func getKubeletConfigFunc(uri, apiAuthTokenFile string) (func() (*kubeletconfigv
 			return nil, fmt.Errorf("failed to initialize rest config for kubelet config uri: %w", err)
 		}
 
-		return func() (*kubeletconfigv1beta1.KubeletConfiguration, error) {
-			klConfig, err = kubeconf.GetKubeletConfiguration(restConfig)
+		return func(ctx context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error) {
+			klConfig, err = kubeconf.GetKubeletConfigurationWithContext(ctx, restConfig)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get kubelet config from configz endpoint: %w", err)
 			}
