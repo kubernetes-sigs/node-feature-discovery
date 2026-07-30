@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
@@ -381,8 +382,8 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 			updateNodes[nodeName] = struct{}{}
 		case <-m.updateAllNodeFeatureGroupsChan:
 			updateAllNodeFeatureGroups = true
-		case nodeFeatureGroupName := <-m.updateNodeFeatureGroupChan:
-			nodeFeatureGroup[nodeFeatureGroupName] = struct{}{}
+		case nfgKey := <-m.updateNodeFeatureGroupChan:
+			nodeFeatureGroup[nfgKey] = struct{}{}
 		case <-resyncTickerC:
 			klog.V(1).InfoS("periodic reconciliation triggered")
 			updateAll = true
@@ -413,8 +414,8 @@ func (m *nfdMaster) nfdAPIUpdateHandler() {
 					errUpdateAllNFG = true
 				}
 			} else {
-				for nodeFeatureGroupName := range nodeFeatureGroup {
-					m.updaterPool.addNodeFeatureGroup(nodeFeatureGroupName)
+				for nfgKey := range nodeFeatureGroup {
+					m.updaterPool.addNodeFeatureGroup(nfgKey)
 				}
 			}
 
@@ -820,7 +821,12 @@ func (m *nfdMaster) nfdAPIUpdateAllNodeFeatureGroups() error {
 
 	if len(nodeFeatureGroupsList) > 0 {
 		for _, nodeFeatureGroup := range nodeFeatureGroupsList {
-			m.updaterPool.nfgQueue.Add(nodeFeatureGroup.Name)
+			key, err := cache.MetaNamespaceKeyFunc(nodeFeatureGroup)
+			if err != nil {
+				klog.ErrorS(err, "failed to create key for NodeFeatureGroup", "nodeFeatureGroup", klog.KObj(nodeFeatureGroup))
+				continue
+			}
+			m.updaterPool.nfgQueue.Add(key)
 		}
 	} else {
 		klog.V(2).InfoS("no NodeFeatureGroup objects found")
@@ -884,7 +890,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 
 	if !apiequality.Semantic.DeepEqual(nodeFeatureGroup, nodeFeatureGroupUpdated) {
 		klog.InfoS("updating NodeFeatureGroup object", "nodeFeatureGroup", klog.KObj(nodeFeatureGroup))
-		nodeFeatureGroupUpdated, err = nfdClient.NfdV1alpha1().NodeFeatureGroups(m.namespace).UpdateStatus(context.TODO(), nodeFeatureGroupUpdated, metav1.UpdateOptions{})
+		nodeFeatureGroupUpdated, err = nfdClient.NfdV1alpha1().NodeFeatureGroups(nodeFeatureGroup.Namespace).UpdateStatus(context.TODO(), nodeFeatureGroupUpdated, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update NodeFeatureGroup object: %w", err)
 		}
