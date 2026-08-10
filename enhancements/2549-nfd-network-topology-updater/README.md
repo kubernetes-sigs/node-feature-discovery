@@ -7,16 +7,17 @@ Add a new optional NFD component named `nfd-network-topology-updater`.
 The updater discovers cluster network topology, projects it into NFD feature
 data, and maintains NFD custom resources that other components can consume. The
 initial implementation is based on the Topograph project and, in particular,
-the Topograph NFD engine design that converts a canonical topology graph into
-per-node topology attributes and `NodeFeatureGroup` objects:
-
-<https://github.com/NVIDIA/topograph/blob/ds-nfd/docs/design/nfd-engine-sdd.md>
+its implemented NFD engine, which converts the canonical `topology.Graph` into
+per-node topology attributes and `NodeFeatureGroup` objects. See the
+[Topograph NFD engine documentation](https://github.com/NVIDIA/topograph/blob/main/docs/engines/nfd.md)
+and its
+[design document](https://github.com/NVIDIA/topograph/blob/main/docs/design/nfd-engine-sdd.md).
 
 This component is separate from the existing `nfd-topology-updater`. The
 existing updater publishes `NodeResourceTopology` objects that describe
 node-local resource and NUMA topology. `nfd-network-topology-updater` publishes
-cluster network fabric topology such as accelerator domains, leaf switches,
-spine switches, and core switches.
+cluster network fabric topology as variable-depth fabric tiers and optional
+accelerator domain and sub-domain dimensions.
 
 ## Motivation
 
@@ -47,9 +48,8 @@ and topology projection model.
   deployment.
 - Base the initial topology discovery and graph projection on Topograph.
 - Publish per-node network topology attributes as `NodeFeature` objects.
-- Create one `NodeFeatureGroup` for each discovered fabric switch at supported
-  tiers such as leaf, spine, and core, and for other topology dimensions such
-  as accelerator domains.
+- Create one `NodeFeatureGroup` for each distinct value at every discovered
+  network fabric tier and for each accelerator domain or sub-domain.
 - Keep generated object names stable and Kubernetes-safe.
 - Support cleanup of stale updater-managed objects.
 - Avoid unnecessary writes when discovered topology has not changed.
@@ -80,27 +80,34 @@ At a high level, each reconciliation performs these steps:
 1. Discover or refresh a canonical cluster network topology graph.
 2. Project the graph into per-node topology values.
 3. Create or update one `NodeFeature` object per node with topology attributes.
-4. Create or update `NodeFeatureGroup` objects for discovered fabric switches
-   and other supported topology values.
+4. Create or update `NodeFeatureGroup` objects for each distinct fabric tier,
+   accelerator domain, and accelerator sub-domain value.
 5. Delete stale updater-managed `NodeFeature` and `NodeFeatureGroup` objects
    when cleanup is enabled.
 
-The Topograph design already defines the initial topology dimensions:
+Topograph providers populate an `InstanceTopology` with:
 
-- `accelerator`
-- `leaf`
-- `spine`
-- `core`
+- `FabricTiers []FabricTier` — the network switch path from the compute node
+  outward. Index 0 is the tier closest to the compute node, with indexes
+  increasing toward the fabric core.
+- `XclrDomainID string` — an optional accelerator interconnect domain.
+- `XclrSubDomainID string` — an optional accelerator sub-domain nested within
+  `XclrDomainID`.
 
-The updater should keep this model extensible so future dimensions can be added
-without redesigning the publisher.
+Topograph converts this provider output into a canonical `topology.Graph` whose
+`Tiers` field contains the switch hierarchy and whose `Domains` field contains
+accelerator or block domains. The number of fabric tiers is not fixed and can
+vary between clusters or providers. Accelerator topology currently has at most
+two dimensions: the domain and its optional sub-domain.
 
 ### Published NodeFeature Objects
 
-The updater publishes one managed `NodeFeature` object per node. The object name
-must be stable and Kubernetes-safe. For short node names the implementation may
-include the node name; for long or invalid names it should use a deterministic
-hash.
+The updater publishes one managed `NodeFeature` object per node with topology
+data. Following the current Topograph NFD engine contract, the topology feature
+set is named `topograph.network`; fabric elements are named `fabric-tier-N`, and
+the optional accelerator elements are named `xclr-domain` and
+`xclr-sub-domain`. The object name must be stable and Kubernetes-safe, combining
+a normalized node name with a deterministic short hash.
 
 Example:
 
@@ -108,38 +115,41 @@ Example:
 apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeature
 metadata:
-  name: network-topology-worker-a
+  name: network-topology-worker-a-...
   namespace: node-feature-discovery
   labels:
     app.kubernetes.io/managed-by: nfd-network-topology-updater
     nfd.node.kubernetes.io/node-name: worker-a
-  annotations:
-    network-topology.nfd.k8s-sigs.io/source: topograph
 spec:
   features:
     attributes:
-      network.topology:
+      system.name:
         elements:
-          accelerator: nvl3
-          leaf: leaf-12
-          spine: spine-2
-          core: core-1
+          nodename: worker-a
+      topograph.network:
+        elements:
+          fabric-tier-0: leaf-12
+          fabric-tier-1: spine-2
+          fabric-tier-2: core-1
+          xclr-domain: nvl3
+          xclr-sub-domain: nvl3.rack01
 ```
 
 The `nfd.node.kubernetes.io/node-name` label identifies the target Kubernetes
-node. `nfd-master` can then use these attributes as input when evaluating
+node. The `system.name.elements.nodename` attribute also lets NFD populate group
+membership when an NFD worker does not run on the node, such as for simulated
+nodes. `nfd-master` can use these attributes as input when evaluating
 `NodeFeatureRule` and `NodeFeatureGroup` objects.
 
 ### Published NodeFeatureGroup Objects
 
-For each supported topology dimension, the updater creates one
-`NodeFeatureGroup` for each distinct value seen in the graph. For network
-fabric tiers, these generated switch groups encompass the entire discovered
-network fabric: one group for each leaf switch, one group for each spine
-switch, and one group for each core switch. A leaf group contains the nodes
-attached under that leaf switch, a spine group contains the nodes reachable
-through its lower-tier leaf switches, and a top-level core switch group can
-encompass every node in the discovered cluster fabric.
+For each discovered topology dimension, the updater creates one
+`NodeFeatureGroup` per distinct value seen in the graph. Fabric tier groups
+encompass the entire discovered network fabric at that level: a `fabric-tier-0`
+group contains the nodes attached to one switch at the closest fabric level,
+a `fabric-tier-1` group contains the nodes reachable through its lower-tier
+switches, and so on up to the outermost tier. Accelerator groups use the
+`xclr-domain` and optional `xclr-sub-domain` dimensions.
 
 NFD owns `.status.nodes`; the updater owns only object metadata and `.spec`.
 
@@ -149,21 +159,21 @@ Example:
 apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeatureGroup
 metadata:
-  name: network-topology-leaf-x3f91c4a0
+  name: network-topology-fabric-tier-0-leaf-12-...
   namespace: node-feature-discovery
   labels:
     app.kubernetes.io/managed-by: nfd-network-topology-updater
-    network-topology.nfd.k8s-sigs.io/dimension: leaf
+    network-topology.nfd.k8s-sigs.io/group-type: fabric-tier-0
   annotations:
-    network-topology.nfd.k8s-sigs.io/source: topograph
-    network-topology.nfd.k8s-sigs.io/value: leaf-12
+    network-topology.nfd.k8s-sigs.io/label-key: fabric.topograph.run/tier-0
+    network-topology.nfd.k8s-sigs.io/label-value: leaf-12
 spec:
   featureGroupRules:
-    - name: leaf-12-branch
+    - name: fabric-tier-0 equals leaf-12
       matchFeatures:
-        - feature: network.topology
+        - feature: topograph.network
           matchExpressions:
-            leaf:
+            fabric-tier-0:
               op: In
               value:
                 - leaf-12
@@ -172,29 +182,32 @@ spec:
 Group names should be stable across reconciliations. The recommended format is:
 
 ```text
-network-topology-<dimension>-<hash>
+network-topology-<dimension>-<normalized-value>-<hash>
 ```
 
-The raw topology value should be stored in annotations rather than directly in
-the object name, because fabric object names may contain characters that are not
-valid in Kubernetes names or may be too long.
+As in Topograph, the hash should be computed from the unmodified topology value,
+and the normalized value should be truncated as needed to keep the complete name
+within the 63-character DNS label limit. The raw topology value should also be
+stored in an annotation because normalization and truncation are lossy.
 
 If nested `NodeFeatureGroup` support from
 [kubernetes-sigs/node-feature-discovery#2551](https://github.com/kubernetes-sigs/node-feature-discovery/pull/2551)
-is adopted, the updater can represent this hierarchy directly. Leaf switch
-groups would remain the lowest-tier groups, while spine switch groups could
-list their child leaf groups and core switch groups could list their child
-spine groups. This avoids restating all lower-tier node memberships in every
-higher-tier switch group.
+is adopted, the updater can represent this hierarchy directly. Each
+`fabric-tier-N` group would list its child `fabric-tier-(N-1)` groups rather
+than restating all
+lower-tier node memberships, and the outermost tier group could encompass
+every node in the cluster via group nesting.
 
 ### Optional Node Labels
 
-The Topograph Kubernetes engine publishes labels such as:
+The Topograph Kubernetes engine publishes labels using dynamic, level-indexed
+keys such as:
 
-- `network.topology.nvidia.com/accelerator`
-- `network.topology.nvidia.com/leaf`
-- `network.topology.nvidia.com/spine`
-- `network.topology.nvidia.com/core`
+- `fabric.topograph.run/tier-0` (switch closest to compute)
+- `fabric.topograph.run/tier-1`
+- `fabric.topograph.run/tier-2`
+- `accelerator.topograph.run/domain` (accelerator domain)
+- `accelerator.topograph.run/sub-domain` (optional nested sub-domain)
 
 Native Kubernetes scheduling can use this label shape naturally with pod
 affinity and `topologyKey`, because the scheduler compares label values on
@@ -218,11 +231,16 @@ NFD publication:
 - A projection layer converts the graph into node-to-topology values.
 - An NFD publisher reconciles `NodeFeature` and `NodeFeatureGroup` objects.
 
-The first implementation can reuse Topograph's graph model, provider model, and
-graph-to-topology projection where licensing and dependency management allow.
-If the Topograph packages cannot be imported directly, the NFD implementation
-should preserve the same conceptual contract: provider output becomes a
-canonical graph, and the NFD publisher is independent of the provider.
+Topograph's current NFD engine reuses the Kubernetes engine's graph-to-label
+projection, then translates the default label keys into `topograph.network`
+attributes: `fabric.topograph.run/tier-N` becomes `fabric-tier-N`, and the two
+accelerator keys become `xclr-domain` and `xclr-sub-domain`. The first
+implementation can reuse Topograph's graph model, provider model, and projection
+where licensing and dependency management allow. If the Topograph packages
+cannot be imported directly, the NFD implementation should preserve the same
+conceptual contract: provider output becomes a canonical graph, projection is
+shared across publication backends, and the NFD publisher is independent of the
+provider.
 
 ### Component Layout
 
@@ -255,16 +273,19 @@ publish:
   nodeFeatureGroups: true
   nodeLabels: false
   cleanup: true
-  topologyFeatureName: network.topology
+  topologyFeatureName: topograph.network
 
 provider:
-  name: topograph
+  name: infiniband-k8s
   configFile: /etc/kubernetes/node-feature-discovery/network-topology.conf
 ```
 
 `nodeSelector` limits the Kubernetes nodes for which topology is published.
-Provider-specific options should live under `provider` so the core publisher
-does not need to understand each discovery backend.
+The provider name selects a Topograph-compatible discovery backend; current
+Topograph backends include cloud API, NetQ, and InfiniBand providers rather than
+a provider literally named `topograph`. Provider-specific options should live
+under `provider` so the core publisher does not need to understand each
+discovery backend.
 
 ### Reconciliation
 
@@ -311,12 +332,12 @@ Kubernetes topology labels.
 For example, a scheduler using native pod affinity can set:
 
 ```yaml
-topologyKey: network.topology.nvidia.com/leaf
+topologyKey: fabric.topograph.run/tier-0
 ```
 
-and Kubernetes compares the leaf label value on candidate nodes. With
-`NodeFeatureGroup`, a consumer sees one group per leaf value and must choose the
-right group before it can make a placement decision.
+and Kubernetes compares the tier-0 label value on candidate nodes. With
+`NodeFeatureGroup`, a consumer sees one group per tier-0 value and must choose
+the right group before it can make a placement decision.
 
 Therefore, the MVP should be described as topology publication for NFD
 consumers. Scheduling integration can be added later through optional node
@@ -325,22 +346,24 @@ to `NodeFeatureGroup` membership.
 
 ### Scalability
 
-The updater writes one `NodeFeature` object per node and up to one
-`NodeFeatureGroup` per distinct value in each published topology dimension.
-`nfd-master` then writes matching node names into each group's status.
+The updater writes one `NodeFeature` object per node with topology data and up
+to one `NodeFeatureGroup` per distinct value in each published fabric tier,
+accelerator domain, or accelerator sub-domain. `nfd-master` then writes matching
+node names into each group's status.
 
-For `N` nodes and four dimensions, total `NodeFeatureGroup.status.nodes`
-membership is approximately `4 * N`, although membership may be concentrated in
-large groups such as a core switch containing many nodes. The implementation
-must avoid write amplification by skipping no-op updates and by not rewriting
-every object on every refresh.
+For `N` nodes, `T` fabric tiers, and `A` published accelerator dimensions, where
+`A` is 0, 1, or 2, total `NodeFeatureGroup.status.nodes` membership is
+approximately `(T + A) * N`, although membership may be concentrated in large
+groups at outer tier levels.
+The implementation must avoid write amplification by skipping no-op updates and
+by not rewriting every object on every refresh.
 
 This proposal would benefit from adoption of
 [kubernetes-sigs/node-feature-discovery#2551](https://github.com/kubernetes-sigs/node-feature-discovery/pull/2551),
 the nested `NodeFeatureGroup` KEP. Network fabric topology is naturally
-hierarchical: each non-leaf switch group contains the nodes represented by its
-lower-tier child switch groups, and the top switch group can contain every node
-in the cluster. Nested groups would let those higher-tier groups reference
+hierarchical: each outer-tier switch group contains the nodes represented by
+its lower-tier child switch groups, and the outermost tier group can contain
+every node in the cluster. Nested groups would let those higher-tier groups reference
 their child groups instead of restating every matching node in each higher-tier
 `NodeFeatureGroup.status.nodes` list.
 
@@ -369,8 +392,8 @@ kubectl -n node-feature-discovery delete nodefeatures,nodefeaturegroups \
   -l app.kubernetes.io/managed-by=nfd-network-topology-updater
 ```
 
-If the updater is downgraded to a version that does not support a newer topology
-dimension, cleanup behavior should be explicit: either leave unknown managed
+If the updater is downgraded to a version that publishes fewer tier or domain
+levels, cleanup behavior should be explicit: either leave unknown managed
 objects untouched or delete only objects marked with a compatible publisher
 version.
 
@@ -378,9 +401,13 @@ version.
 
 ### Keep Topograph External
 
-Topograph can remain a separate deployment with its own NFD engine. This keeps
-NFD smaller, but users must install and operate another controller to expose
-network topology through NFD resources.
+Topograph `main` already ships an NFD engine that creates `NodeFeature` and
+`NodeFeatureGroup` resources. It is selected with `engine.name: nfd`, supports
+the `nodeSelector` and `cleanup` parameters, and requires the deployment-scoped
+`NFD_NAMESPACE` environment variable (the Helm chart exposes this as
+`nfdNamespace`). Keeping Topograph as a separate deployment keeps NFD smaller,
+but users must install and operate another controller to expose network
+topology through NFD resources.
 
 ### Publish Only Node Labels
 
@@ -418,8 +445,8 @@ NFD APIs.
 
 ## Test Plan
 
-- Unit-test graph-to-node topology projection for accelerator, leaf, spine, and
-  core dimensions.
+- Unit-test graph-to-node topology projection for variable-depth fabric tiers
+  and optional accelerator domain and sub-domain values.
 - Unit-test stable name generation for long, invalid, and colliding topology
   values.
 - Unit-test `NodeFeature` and `NodeFeatureGroup` object generation.
