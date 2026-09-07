@@ -1,5 +1,5 @@
 # BUILDER_IMAGE MUST be Debian-family (xx-apt-get requires apt-get).
-# Project's Makefile pins it to golang:1.26-trixie (matches go.mod
+# Project's Makefile pins it to golang:1.27-trixie (matches go.mod
 # minimum Go version) which satisfies this. Override with a non-Debian
 # image only if you also swap xx-apt-get for the matching package manager.
 #
