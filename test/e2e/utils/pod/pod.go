@@ -21,13 +21,13 @@ import (
 	"flag"
 	"sync"
 	"time"
+	"uuid"
 
 	"github.com/onsi/ginkgo/v2"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubectl/pkg/util/podutils"
@@ -173,7 +173,7 @@ func NFDMaster(opts ...SpecOption) *corev1.Pod {
 func NFDWorker(opts ...SpecOption) *corev1.Pod {
 	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-worker-" + string(uuid.NewUUID()),
+			Name: "nfd-worker-" + uuid.New().String(),
 		},
 		Spec: *nfdWorkerSpec(opts...),
 	}

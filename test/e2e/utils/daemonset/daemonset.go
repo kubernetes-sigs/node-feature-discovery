@@ -17,10 +17,11 @@ limitations under the License.
 package daemonset
 
 import (
+	"uuid"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
 
 	"sigs.k8s.io/node-feature-discovery/test/e2e/utils"
 	"sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
@@ -40,7 +41,7 @@ func NFDTopologyUpdater(kc utils.KubeletConfig, opts ...pod.SpecOption) *appsv1.
 func new(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name + "-" + string(uuid.NewUUID()),
+			Name: name + "-" + uuid.New().String(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

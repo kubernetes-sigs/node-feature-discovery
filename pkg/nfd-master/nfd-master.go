@@ -31,8 +31,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	corev1 "k8s.io/api/core/v1"
@@ -1497,7 +1497,7 @@ func (m *nfdMaster) startLeaderElectionHandler() {
 		Client: m.k8sClient.CoordinationV1(),
 		LockConfig: resourcelock.ResourceLockConfig{
 			// add uuid to prevent situation where 2 nfd-master nodes run on same node
-			Identity: m.nodeName + "_" + uuid.NewString(),
+			Identity: m.nodeName + "_" + uuid.New().String(),
 		},
 	}
 	config := leaderelection.LeaderElectionConfig{
