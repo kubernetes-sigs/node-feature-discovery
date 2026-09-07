@@ -76,24 +76,54 @@ func (s *networkSource) Priority() int { return 0 }
 func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 	labels := source.FeatureLabels{}
 	features := s.GetFeatures()
+	totalVFsAll := 0
+	numVFsAll := 0
+	sriovCapable := false
 
 	for _, dev := range features.Instances[DeviceFeature].Elements {
 		attrs := dev.Attributes
-		for attr, feature := range map[string]string{
-			"sriov_totalvfs": "sriov.capable",
-			"sriov_numvfs":   "sriov.configured"} {
 
-			if v, ok := attrs[attr]; ok {
-				t, err := strconv.Atoi(v)
-				if err != nil {
-					klog.ErrorS(err, "failed to parse sriov attribute", "attributeName", attr, "deviceName", attrs["name"])
-					continue
-				}
-				if t > 0 {
-					labels[feature] = true
-				}
+		totalVFs := 0
+		numVFs := 0
+
+		// Parse total VFs
+		if v, ok := attrs["sriov_totalvfs"]; ok {
+			t, err := strconv.Atoi(v)
+			if err != nil {
+				klog.ErrorS(err, "failed to parse sriov_totalvfs", "deviceName", attrs["name"], "value", v)
+			} else {
+				totalVFs = t
 			}
 		}
+
+		// Parse configured VFs
+		if v, ok := attrs["sriov_numvfs"]; ok {
+			t, err := strconv.Atoi(v)
+			if err != nil {
+				klog.ErrorS(err, "failed to parse sriov_numvfs", "deviceName", attrs["name"], "value", v)
+			} else {
+				numVFs = t
+			}
+		}
+
+		if totalVFs > 0 {
+			sriovCapable = true
+			totalVFsAll += totalVFs
+		}
+
+		if numVFs > 0 {
+			numVFsAll += numVFs
+		}
+	}
+
+	if sriovCapable {
+		labels["sriov.capable"] = true
+		labels["sriov.total_vfs"] = totalVFsAll
+	}
+
+	if numVFsAll > 0 {
+		labels["sriov.configured"] = true
+		labels["sriov.num_vfs"] = numVFsAll
 	}
 	return labels, nil
 }
