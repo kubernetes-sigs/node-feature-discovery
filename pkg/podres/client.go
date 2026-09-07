@@ -19,6 +19,7 @@ package podres
 //go:generate go tool mockery --srcpkg=k8s.io/kubelet/pkg/apis/podresources/v1 --name PodResourcesListerClient
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -33,8 +34,8 @@ const (
 	defaultPodResourcesMaxSize = 1024 * 1024 * 16 // 16 Mb
 )
 
-func GetPodResClient(socketPath string) (podresourcesapi.PodResourcesListerClient, error) {
-	podResourceClient, _, err := podresources.GetV1Client(socketPath, defaultPodResourcesTimeout, defaultPodResourcesMaxSize)
+func GetPodResClient(ctx context.Context, socketPath string) (podresourcesapi.PodResourcesListerClient, error) {
+	podResourceClient, _, err := podresources.GetV1Client(ctx, socketPath, defaultPodResourcesTimeout, defaultPodResourcesMaxSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create podresource client: %w", err)
 	}
