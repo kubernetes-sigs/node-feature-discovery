@@ -63,6 +63,7 @@ One instance of nfd-gc is supposed to be running in the cluster.
 Feature discovery is divided into domain-specific feature sources:
 
 - CPU
+- Crypto
 - Kernel
 - Memory
 - Network
@@ -84,6 +85,7 @@ An overview of the default feature labels:
 ```json
 {
   "feature.node.kubernetes.io/cpu-<feature-name>": "true",
+  "feature.node.kubernetes.io/crypto-<feature-name>": "true",
   "feature.node.kubernetes.io/custom-<feature-name>": "true",
   "feature.node.kubernetes.io/kernel-<feature name>": "<feature value>",
   "feature.node.kubernetes.io/memory-<feature-name>": "true",

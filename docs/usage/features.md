@@ -232,6 +232,57 @@ instructions.
 | --------------------------------| ----- | ----------------------------------------------------------- |
 | **`storage-nonrotationaldisk`** | true  | Non-rotational disk, like SSD, is present in the node        |
 
+### Crypto
+
+| Feature                      | Value  | Description                                                 |
+| ---------------------------- | ------ | ----------------------------------------------------------- |
+| **`crypto-cex.present`**     | true   | IBM CEX cryptographic card(s) detected (s390x only)         |
+| **`crypto-cex.count`**       | string | Number of CEX cards present                                 |
+| **`crypto-cex.type-<TYPE>`** | true   | CEX card of specific type detected (e.g., `crypto-cex.type-CEX8C`) |
+
+The crypto source detects IBM Crypto Express (CEX) cards on s390x systems. These
+hardware security modules provide cryptographic acceleration and secure key
+management capabilities. Supported card types include CEX4, CEX5, CEX6, CEX7,
+and CEX8 in various configurations (A, C, P).
+
+**Platform Support:** s390x only
+
+**Requirements:**
+
+- s390x architecture with AP (Adjunct Processor) bus support
+- Physical hardware or VM with CEX card passthrough
+- Kernel support for AP bus (`/sys/bus/ap/devices/`)
+
+**Instance Features:**
+
+The crypto source also exposes detailed information about each detected card
+through instance features under the `crypto.cex-card` feature set:
+
+- `name`: Card device name (e.g., `card00`)
+- `type`: Card type (e.g., `CEX8C`, `CEX7P`)
+- `online`: Online status (`1` for online, `0` for offline)
+- `hwtype`: Hardware type identifier
+- `depth`: Queue depth
+- `queue_count`: Number of queues associated with the card
+- `queues`: Comma-separated list of queue identifiers
+
+**Example output:**
+
+```yaml
+crypto:
+  cex-card:
+    - name: "card00"
+      type: "CEX8C"
+      online: "1"
+      hwtype: "14"
+      depth: "8"
+      queue_count: "2"
+      queues: "00.0014,00.0015"
+```
+
+For detailed information about using the crypto source, see the
+[crypto source documentation](crypto-source.md).
+
 ### System
 
 | Feature                                 | Value  | Description                                                 |
