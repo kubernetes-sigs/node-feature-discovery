@@ -203,6 +203,9 @@ master:
     # -- Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-master.
     # @section -- NFD-Master
     create: true
+    # -- Create aggregate roles that grant view and edit access to NFD CRD resources.
+    # @section -- NFD-Master
+    createAggregateRoles: false
   # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
   resources:
     # @schema hidden
