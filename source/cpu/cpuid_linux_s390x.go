@@ -16,6 +16,12 @@ limitations under the License.
 
 package cpu
 
+import (
+	"bufio"
+	"os"
+	"strings"
+)
+
 /*
 #include <sys/auxv.h>
 
@@ -96,4 +102,56 @@ func getCpuidFlags() []string {
 	return r
 }
 
-func getCpuidAttributes() map[string]string { return nil }
+func getCpuidAttributes() map[string]string {
+	attrs := make(map[string]string)
+
+	machineType := parseMachineType()
+	if machineType != "" {
+		attrs["machine_type"] = machineType
+		if gen, ok := machineGenerations[machineType]; ok {
+			attrs["generation"] = gen
+		}
+	}
+
+	return attrs
+}
+
+// machineGenerations maps s390x machine type codes to generation names.
+// Reference: Linux kernel arch/s390/kernel/processor.c setup_elf_platform()
+// https://github.com/torvalds/linux/blob/master/arch/s390/kernel/processor.c#L262
+var machineGenerations = map[string]string{
+	"2817": "z196",
+	"2818": "z196",
+	"2827": "zEC12",
+	"2828": "zEC12",
+	"2964": "z13",
+	"2965": "z13",
+	"3906": "z14",
+	"3907": "z14",
+	"8561": "z15",
+	"8562": "z15",
+	"3931": "z16",
+	"3932": "z16",
+	"9175": "z17",
+	"9176": "z17",
+}
+
+func parseMachineType() string {
+	f, err := os.Open("/proc/cpuinfo")
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "processor") {
+			continue
+		}
+		if idx := strings.LastIndex(line, "machine = "); idx != -1 {
+			return strings.TrimSpace(line[idx+len("machine = "):])
+		}
+	}
+	return ""
+}
