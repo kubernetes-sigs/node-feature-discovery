@@ -23,6 +23,7 @@ import (
 	"golang.org/x/time/rate"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
@@ -94,30 +95,38 @@ func (u *updaterPool) runNodeUpdater() {
 }
 
 func (u *updaterPool) processNodeFeatureGroupUpdateRequest(cli nfdclientset.Interface) bool {
-	nfgName, quit := u.nfgQueue.Get()
+	key, quit := u.nfgQueue.Get()
 	if quit {
 		return false
 	}
-	defer u.nfgQueue.Done(nfgName)
+	defer u.nfgQueue.Done(key)
 
 	nodeFeatureGroupUpdateRequests.Inc()
 
+	// The queue key is a namespace/name key: resolve the NodeFeatureGroup in
+	// its own namespace, not in nfd-master's namespace.
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		klog.ErrorS(err, "failed to split NodeFeatureGroup queue key, dropping", "key", key)
+		u.nfgQueue.Forget(key)
+		return true
+	}
+
 	// Check if NodeFeatureGroup exists
 	var nfg *nfdv1alpha1.NodeFeatureGroup
-	var err error
-	if nfg, err = getNodeFeatureGroup(cli, u.nfdMaster.namespace, nfgName); apierrors.IsNotFound(err) {
-		klog.InfoS("NodeFeatureGroup not found, skip update", "NodeFeatureGroupName", nfgName)
+	if nfg, err = getNodeFeatureGroup(cli, namespace, name); apierrors.IsNotFound(err) {
+		klog.InfoS("NodeFeatureGroup not found, skip update", "nodeFeatureGroup", klog.KRef(namespace, name))
 	} else if err := u.nfdMaster.nfdAPIUpdateNodeFeatureGroup(u.nfdMaster.nfdClient, nfg); err != nil {
-		if n := u.nfgQueue.NumRequeues(nfgName); n < 15 {
+		if n := u.nfgQueue.NumRequeues(key); n < 15 {
 			klog.InfoS("retrying NodeFeatureGroup update", "nodeFeatureGroup", klog.KObj(nfg), "lastError", err)
 		} else {
 			klog.ErrorS(err, "failed to update NodeFeatureGroup, queueing for retry", "nodeFeatureGroup", klog.KObj(nfg), "lastError", err, "numRetries", n)
 		}
-		u.nfgQueue.AddRateLimited(nfgName)
+		u.nfgQueue.AddRateLimited(key)
 		return true
 	}
 
-	u.nfgQueue.Forget(nfgName)
+	u.nfgQueue.Forget(key)
 	return true
 }
 
@@ -193,8 +202,8 @@ func (u *updaterPool) addNode(nodeName string) {
 	u.queue.Add(nodeName)
 }
 
-func (u *updaterPool) addNodeFeatureGroup(nodeFeatureGroupName string) {
+func (u *updaterPool) addNodeFeatureGroup(nodeFeatureGroupKey string) {
 	u.RLock()
 	defer u.RUnlock()
-	u.nfgQueue.Add(nodeFeatureGroupName)
+	u.nfgQueue.Add(nodeFeatureGroupKey)
 }
