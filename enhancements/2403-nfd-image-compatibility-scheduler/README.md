@@ -81,8 +81,8 @@ If `NodeFeatureGroup` status updates are delayed, it can lead to stale informati
 The core of this proposal is to implement an `ImageCompatibilityPlugin` within the Kubernetes scheduler framework, working with a new `ImageCompatibilityQuery` (ICQ) CRD and existing `NodeFeatureGroup` (NFG) CRD.
 
 ### Component Responsibilities
-- **Mutating Webhook**: Parses OCI artifacts during Pod admission. Checks if an ICQ already exists (by the digest-pair name); if not, fetches the OCI artifact and creates an ICQ CR with `spec.compatibilities` only (no status computation). The ICQ CR itself serves as the persistent cache. Enforces a 5-second timeout on OCI artifact fetches. On registry failure or timeout, applies the compatibility failure policy (see Key Characteristic 3): the default `Fail` blocks pod creation, while `Ignore` admits the pod without the `icq-refs` annotation. If the fetch succeeds and the image has no compatibility metadata, the pod is admitted without creating an ICQ or adding the `icq-refs` annotation (no-op).
-- **Scheduler Plugin**: Computes and updates `status.compatibleNodesByRule` for ICQs (setting `conditions[Ready]=True` once computed), performs filtering of compatible nodes from ICQs (union within an ICQ, intersection across ICQs), scoring by weight, and PreBind validation. Increments the ICQ refcount (annotation `nfd.node.kubernetes.io/refcount`) when a Pod is successfully bound.
+- **Mutating Webhook**: Parses OCI artifacts during Pod admission. Checks if an ICQ already exists (by the digest-pair name); if not, fetches the OCI artifact and creates an ICQ CR with `spec.compatibilities` only (no status computation). The ICQ CR itself serves as the persistent cache. Enforces a 5-second timeout on OCI artifact fetches. On registry failure or timeout, applies the compatibility failure policy (see Key Characteristic 3): the default `Fail` blocks pod creation, while `Ignore` admits the pod without the `icq-refs` annotation. If the fetch succeeds and the image has no compatibility metadata, the pod is admitted without creating an ICQ or adding the `icq-refs` annotation (no-op). Increments the ICQ refcount (annotation `nfd.node.kubernetes.io/refcount`) when it adds the `icq-refs` annotation to a Pod.
+- **Scheduler Plugin**: Computes and updates `status.compatibleNodesByRule` for ICQs (setting `conditions[Ready]=True` once computed), performs filtering of compatible nodes from ICQs (union within an ICQ, intersection across ICQs), scoring by weight, and PreBind validation.
 - **nfd-master**: Updates `NodeFeatureGroup` status for admin-defined pre-groups only, computes pre-group homogeneity for each ICQ and records it in the ICQ `status.groupHomogeneity`, clears the ICQ `conditions[Ready]` when a pre-group membership changes or homogeneity is recomputed (feature drift), and detects post-scheduling drift by comparing drifted node features against ICQ compatibility rules.
 - **GC Controller**: Watches pod termination events, decrements the ICQ refcount via optimistic concurrency patch (retry on resourceVersion conflict), and deletes the ICQ when refcount reaches 0 and the TTL expires.
 
@@ -90,15 +90,15 @@ The core of this proposal is to implement an `ImageCompatibilityPlugin` within t
 
 - **Registry Credentials:** The webhook reads registry credentials from secrets synced by the administrator into the webhook's own namespace. RBAC is scoped to `get secrets` in the webhook namespace only.
 - **SSRF Prevention:** The webhook enforces a configurable registry allowlist (`--allowed-registries` flag). Image references pointing to registries outside the allowlist will not be fetched.
-- **Webhook Availability:** The `MutatingWebhookConfiguration` uses `failurePolicy: Fail` with `timeoutSeconds: 5`, and a `namespaceSelector` that exempts `kube-system` and the NFD deployment namespace. A webhook outage therefore blocks pod creation only in non-exempt namespaces and cannot prevent the webhook itself (or the control plane) from being restored.
+- **Webhook Availability:** The `MutatingWebhookConfiguration` uses `failurePolicy: Fail` with `timeoutSeconds: 10`, leaving the webhook's own 5-second OCI fetch budget room to expire and apply the compatibility failure policy before the API server abandons the call. It sets `sideEffects: NoneOnDryRun` and `admissionReviewVersions: ["v1"]`, and the handler skips ICQ creation when the request carries `dryRun`. A `namespaceSelector` exempts `kube-system` and the NFD deployment namespace, so a webhook outage blocks pod creation only in non-exempt namespaces and cannot prevent the webhook itself (or the control plane) from being restored.
 - **RBAC Surface:**
 
 | Component | RBAC Permissions |
 |-----------|-----------------|
-| Mutating Webhook | `create`, `get` on `ImageCompatibilityQuery` |
-| Scheduler Plugin | `get`, `list`, `watch` on `ImageCompatibilityQuery`; `update` on its `status` subresource; `patch` on the main object (refcount increment); `get`, `list`, `watch` on `NodeFeatureGroup` and `NodeFeature` |
-| nfd-master | `get`, `list`, `watch`, `update` on `NodeFeatureGroup`; `get`, `list`, `watch` on `ImageCompatibilityQuery`; `update` on its `status` subresource (homogeneity); `update`/`patch` on `Pods` |
-| GC Controller | `get`, `list`, `watch`, `update`, `patch`, `delete` on `ImageCompatibilityQuery`; `get`, `list`, `watch` on `Pods` |
+| Mutating Webhook | `create`, `get`, `patch` on `ImageCompatibilityQuery` (refcount increment); `get` on `Secrets` in the webhook namespace |
+| Scheduler Plugin | `get`, `list`, `watch` on `ImageCompatibilityQuery`; `update` on `imagecompatibilityqueries/status`; `get`, `list`, `watch` on `NodeFeatureGroup` and `NodeFeature` |
+| nfd-master | `get`, `list`, `watch` on `NodeFeatureGroup`; `patch`, `update` on `nodefeaturegroups/status`; `get`, `list`, `watch` on `ImageCompatibilityQuery`; `update` on `imagecompatibilityqueries/status` (homogeneity); `patch` on `Pods` (drift labels); `create` on `Events` |
+| GC Controller | `get`, `list`, `watch`, `patch`, `delete` on `ImageCompatibilityQuery`; `get`, `list`, `watch` on `Pods` |
 
 ### Proposal C: Node Pre-grouping
 
@@ -281,7 +281,7 @@ Assume a cluster with 10,000 nodes pre-grouped into 10 groups (`Group-1` to `Gro
    - ICQs are named by combination key (`icq-{image-digest-12chars}-{artifact-digest-12chars}`), enabling automatic deduplication and artifact change detection. Name length is 29 characters, well within Kubernetes limits.
    - 1000 replicas of the same image result in only 1 ICQ CR.
    - Reference counting (via annotation `nfd.node.kubernetes.io/refcount`) and TTL-based GC manage the lifecycle.
-   - The Scheduler Plugin increments the refcount when a Pod is successfully bound; the GC controller decrements it when a Pod terminates.
+   - The mutating webhook increments the refcount when it adds `icq-refs` to a Pod; the GC controller decrements it when that same Pod terminates. Both use an optimistic concurrency patch with retry on `resourceVersion` conflict, so concurrent admissions of one image do not lose increments.
    - The GC controller deletes the ICQ when the refcount reaches 0 and the TTL expires.
 
 5. **Scheduler Plugin Manages ICQ Status (Status Computation):**
