@@ -1,6 +1,6 @@
 module sigs.k8s.io/node-feature-discovery
 
-go 1.26
+go 1.26.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
-	golang.org/x/time v0.15.0
+	golang.org/x/time v0.16.0
 	google.golang.org/grpc v1.83.2
 	k8s.io/api v0.35.3
 	k8s.io/apiextensions-apiserver v0.35.3
