@@ -234,7 +234,7 @@ func (w *nfdTopologyUpdater) Run() error {
 	}()
 	defer httpServer.Close() // nolint: errcheck
 
-	podResClient, err := podres.GetPodResClient(w.resourcemonitorArgs.PodResourceSocketPath)
+	podResClient, err := podres.GetPodResClient(context.TODO(), w.resourcemonitorArgs.PodResourceSocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to get PodResource Client: %w", err)
 	}
