@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jaypipes/ghw v0.25.0
 	github.com/jedib0t/go-pretty/v6 v6.8.3
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.3
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.4
 	github.com/k8stopologyawareschedwg/podfingerprint v0.3.0
 	github.com/klauspost/cpuid/v2 v2.4.0
 	github.com/onsi/ginkgo/v2 v2.32.1
@@ -24,10 +24,10 @@ require (
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
 	golang.org/x/time v0.16.0
 	google.golang.org/grpc v1.83.2
-	k8s.io/api v0.35.3
+	k8s.io/api v0.35.7
 	k8s.io/apiextensions-apiserver v0.35.3
-	k8s.io/apimachinery v0.35.3
-	k8s.io/client-go v0.35.3
+	k8s.io/apimachinery v0.35.7
+	k8s.io/client-go v0.35.7
 	k8s.io/component-base v0.35.3
 	k8s.io/klog/v2 v2.140.0
 	k8s.io/kubectl v0.35.3
@@ -181,7 +181,7 @@ require (
 	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -192,7 +192,7 @@ require (
 	howett.net/plist v1.0.2-0.20250314012144-ee69052608d9 // indirect
 	k8s.io/apiserver v0.35.3 // indirect
 	k8s.io/cloud-provider v0.35.3 // indirect
-	k8s.io/code-generator v0.35.3 // indirect
+	k8s.io/code-generator v0.35.7 // indirect
 	k8s.io/component-helpers v0.35.3 // indirect
 	k8s.io/controller-manager v0.35.3 // indirect
 	k8s.io/cri-api v0.35.3 // indirect
