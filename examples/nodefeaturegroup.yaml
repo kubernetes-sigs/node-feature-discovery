@@ -9,3 +9,8 @@ spec:
         - feature: kernel.version
           matchExpressions:
             major: {op: In, value: ["6"]}
+    - name: "veth kernel module"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            veth: {op: Exists}
