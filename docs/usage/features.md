@@ -65,6 +65,9 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-model.vendor_id`**           | string | Comparable CPU vendor ID. |
 | **`cpu-model.family`**              | int    | CPU family. |
 | **`cpu-model.id`**                  | int    | CPU model number. |
+| **`cpu-cores.physical `**           | int    | Number of CPU physical cores. |
+| **`cpu-cores.threads_per_core`**    | int    | Number of threads per CPU core. |
+| **`cpu-cores.logical`**             | int    | Number of CPU physical cores. |
 
 The CPU label source is configurable, see
 [worker configuration](nfd-worker.md#worker-configuration) and
