@@ -138,7 +138,11 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 	flagset.BoolVar(&args.EnableLeaderElection, "enable-leader-election", false,
 		"Enables a leader election. Enable this when running more than one replica on nfd master.")
 
-	args.Klog = klogutils.InitKlogFlags(flagset)
+	var err error
+	args.Klog, err = klogutils.InitKlogFlags(flagset)
+	if err != nil {
+		klog.Fatalf("Failed to initialize klog flags: %v", err)
+	}
 
 	overrides := &master.ConfigOverrideArgs{
 		LabelWhiteList: &utils.RegexpVal{},
