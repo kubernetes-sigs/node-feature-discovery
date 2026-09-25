@@ -897,6 +897,22 @@ topologyUpdater:
   # -- (int) Specifies the number of old history for the DaemonSet to retain to allow rollback.
   # @section -- NFD-Topology-Updater
   revisionHistoryLimit:
+  # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.apps.v1.DaemonSetUpdateStrategy
+  # -- Update strategy for the nfd-topology-updater DaemonSet. Defaults to a
+  # rolling update with `maxUnavailable: "10%"` so upgrades complete in a
+  # bounded number of waves on clusters of any size (the Kubernetes default of
+  # `maxUnavailable: 1` rolls one node at a time and makes Helm wait and
+  # Flux HelmRelease timeouts likely on large clusters). The topology-updater
+  # is stateless and recomputes NodeResourceTopology objects on restart, so a
+  # faster roll is safe. Set `maxUnavailable: 1` to restore the Kubernetes
+  # default. To use `type: OnDelete`, also set `rollingUpdate: null`
+  # (Helm deep-merges maps).
+  # [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set)
+  # @section -- NFD-Topology-Updater
+  updateStrategy:
+    rollingUpdate:
+      # @schema type: [string, integer]
+      maxUnavailable: "10%"
   rbac:
     # -- Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-topology-updater.
     # @section -- NFD-Topology-Updater
