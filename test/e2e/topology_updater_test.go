@@ -71,8 +71,8 @@ var _ = NFDDescribe(Label("nfd-topology-updater"), func() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 
-		By("Creating the node resource topologies CRD")
-		Expect(testutils.CreateNodeResourceTopologies(ctx, extClient)).ToNot(BeNil())
+		By("Ensuring the node resource topologies CRD exists without stale objects")
+		Expect(testutils.EnsureNodeResourceTopologies(ctx, extClient, topologyClient)).ToNot(BeNil())
 
 		By("Configuring RBAC")
 		Expect(testutils.ConfigureRBAC(ctx, f.ClientSet, f.Namespace.Name)).NotTo(HaveOccurred())
