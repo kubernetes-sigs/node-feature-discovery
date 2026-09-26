@@ -8,6 +8,13 @@ rules:
   resources:
   - nodefeatures
   verbs:
-  - get
   - create
+  - get
   - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
