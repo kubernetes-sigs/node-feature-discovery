@@ -60,7 +60,7 @@ func NewDeploymentAPI(client client.Client, scheme *runtime.Scheme) DeploymentAP
 
 func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error {
 	standartLabels := map[string]string{"app": "nfd-master"}
-	masterDep.ObjectMeta.Labels = standartLabels
+	masterDep.Labels = standartLabels
 
 	masterDep.Spec = v1.DeploymentSpec{
 		Replicas: ptr.To[int32](1),
@@ -100,7 +100,7 @@ func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeature
 }
 
 func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, gcDep *v1.Deployment) error {
-	gcDep.ObjectMeta.Labels = map[string]string{"app": "nfd"}
+	gcDep.Labels = map[string]string{"app": "nfd"}
 	matchLabels := map[string]string{"app": "nfd-gc"}
 	gcDep.Spec = v1.DeploymentSpec{
 		Replicas: ptr.To[int32](1),
