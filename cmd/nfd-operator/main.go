@@ -30,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -104,10 +105,8 @@ func main() {
 
 	// Create a new manager to manage the operator
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: args.metricsAddr,
-		},
+		Scheme:  scheme,
+		Metrics: metricsServerOptions(args.metricsAddr),
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port: 9443,
 		}),
@@ -173,8 +172,9 @@ func initFlags(flagset *flag.FlagSet) *operatorArgs {
 	args := operatorArgs{}
 
 	// Setup CLI arguments
-	flagset.StringVar(&args.metricsAddr, "metrics-bind-address", ":8080", "The address the Prometheus "+
-		"metric endpoint binds to for scraping NFD resource usage data.")
+	flagset.StringVar(&args.metricsAddr, "metrics-bind-address", ":8443", "The address the metrics "+
+		"endpoint binds to. It is served over HTTPS and requires a bearer token that is allowed to GET "+
+		"/metrics. Use 0 to disable it.")
 	flagset.StringVar(&args.probeAddr, "health-probe-bind-address", ":8081", "The address the probe "+
 		"endpoint binds to for determining liveness, readiness, and configuration of"+
 		"operator pods.")
@@ -183,6 +183,18 @@ func initFlags(flagset *flag.FlagSet) *operatorArgs {
 			"Enabling this will ensure there is only one active controller manager.")
 
 	return &args
+}
+
+// metricsServerOptions returns the options of the manager's metrics server.
+// The endpoint is served over TLS (with a self-signed certificate unless one
+// is configured), and every request needs a bearer token that passes a
+// TokenReview and a SubjectAccessReview for GET /metrics.
+func metricsServerOptions(bindAddress string) metricsserver.Options {
+	return metricsserver.Options{
+		BindAddress:    bindAddress,
+		SecureServing:  true,
+		FilterProvider: filters.WithAuthenticationAndAuthorization,
+	}
 }
 
 // getWatchNamespace returns the Namespace the operator should be watching for changes
