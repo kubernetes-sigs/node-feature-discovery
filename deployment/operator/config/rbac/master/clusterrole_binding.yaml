@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: nfd-master
-  namespace: node-feature-discovery-operator
+  namespace: default
