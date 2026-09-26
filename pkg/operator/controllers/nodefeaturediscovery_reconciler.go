@@ -334,10 +334,7 @@ func (nfdh *nodeFeatureDiscoveryHelper) handlePrune(ctx context.Context, nfdInst
 	}
 
 	var returnErr error
-	done := false
-	if pruneJob.Status.Succeeded > 0 {
-		done = true
-	}
+	done := pruneJob.Status.Succeeded > 0
 	if pruneJob.Status.Failed > 0 {
 		returnErr = fmt.Errorf("prune job's pod has failed")
 	}

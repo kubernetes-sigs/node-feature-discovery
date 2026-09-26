@@ -184,9 +184,10 @@ func (sh *statusHelper) getDaemonSetNotAvailableConditions(ctx context.Context,
 		return getDegradedConditions(failedToGetDSReason, err.Error())
 	}
 	conditionsStatus, message := getDaemonSetConditions(ds)
-	if conditionsStatus == conditionStatusDegraded {
+	switch conditionsStatus {
+	case conditionStatusDegraded:
 		return getDegradedConditions(dsDegradedReason, message)
-	} else if conditionsStatus == conditionStatusProgressing {
+	case conditionStatusProgressing:
 		return getProgressingConditions(dsProgressingReason, message)
 	}
 	return nil
@@ -223,9 +224,10 @@ func (sh *statusHelper) getDeploymentNotAvailableConditions(ctx context.Context,
 		return getDegradedConditions(failedToGetDeploymentReason, err.Error())
 	}
 	conditionsStatus, message := getDeploymentConditions(dep)
-	if conditionsStatus == conditionStatusDegraded {
+	switch conditionsStatus {
+	case conditionStatusDegraded:
 		return getDegradedConditions(deploymentDegradedReason, message)
-	} else if conditionsStatus == conditionStatusProgressing {
+	case conditionStatusProgressing:
 		return getProgressingConditions(deploymentProgressingReason, message)
 	}
 	return nil
