@@ -59,7 +59,7 @@ spec:
           command:
             - "nfd-master"
           args:
-            - "--port=12000"
+            - "--port=8080"
           securityContext:
             runAsNonRoot: true
             seccompProfile:

@@ -75,6 +75,52 @@ var _ = Describe("SetMasterDeploymentAsDesired", func() {
 		Expect(err).To(BeNil())
 		Expect(masterDep).To(BeComparableTo(testMasterDep))
 	})
+
+	It("servicePort sets both the -port flag and the http container port", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					Image:       "test-image",
+					ServicePort: 12000,
+				},
+			},
+		}
+		masterDep := appsv1.Deployment{}
+
+		err := deploymentAPI.SetMasterDeploymentAsDesired(&nfdCR, &masterDep)
+
+		Expect(err).To(BeNil())
+		container := masterDep.Spec.Template.Spec.Containers[0]
+		Expect(container.Args).To(ContainElement("--port=12000"))
+		Expect(container.Ports).To(Equal([]corev1.ContainerPort{{Name: "http", ContainerPort: 12000}}))
+		Expect(container.LivenessProbe.HTTPGet.Port.StrVal).To(Equal("http"))
+		Expect(container.ReadinessProbe.HTTPGet.Port.StrVal).To(Equal("http"))
+	})
+
+	It("resourceLabels is not passed, nfd-master v0.17+ exits on the unknown flag", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					Image: "test-image",
+				},
+				ExtraLabelNs:   []string{"example.com"},
+				ResourceLabels: []string{"example.com/resource"},
+				LabelWhiteList: "foo",
+				EnableTaints:   true,
+			},
+		}
+		masterDep := appsv1.Deployment{}
+
+		err := deploymentAPI.SetMasterDeploymentAsDesired(&nfdCR, &masterDep)
+
+		Expect(err).To(BeNil())
+		Expect(masterDep.Spec.Template.Spec.Containers[0].Args).To(Equal([]string{
+			"--port=8080",
+			"--extra-label-ns=example.com",
+			"--label-whitelist=foo",
+			"--enable-taints",
+		}))
+	})
 })
 
 var _ = Describe("SetGCDeploymentAsDesired", func() {
@@ -116,6 +162,23 @@ var _ = Describe("SetGCDeploymentAsDesired", func() {
 		err = yaml.Unmarshal(expectedJSON, &testMasterDep)
 		Expect(err).To(BeNil())
 		Expect(masterDep).To(BeComparableTo(testMasterDep))
+	})
+
+	It("GC deployment uses the image pull policy from the NFD CR", func() {
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{
+				Operand: nfdv1.OperandSpec{
+					Image:           "test-image",
+					ImagePullPolicy: "IfNotPresent",
+				},
+			},
+		}
+		gcDep := appsv1.Deployment{}
+
+		err := deploymentAPI.SetGCDeploymentAsDesired(&nfdCR, &gcDep)
+
+		Expect(err).To(BeNil())
+		Expect(gcDep.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(Equal(corev1.PullIfNotPresent))
 	})
 })
 

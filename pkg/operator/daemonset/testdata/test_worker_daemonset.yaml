@@ -76,6 +76,7 @@ spec:
           readOnly: true
         - mountPath: /host-sys
           name: host-sys
+          readOnly: true
         - mountPath: /etc/kubernetes/node-feature-discovery
           name: nfd-worker-config
         - mountPath: /etc/kubernetes/node-feature-discovery/source.d
@@ -123,14 +124,14 @@ spec:
           name: nfd-worker
         name: nfd-worker-config
       - hostPath:
-          path: /host-usr/lib
+          path: /usr/lib
         name: host-usr-lib
       - hostPath:
-          path: /host-lib
+          path: /lib
         name: host-lib
       - hostPath:
-          path: /host-usr/src
+          path: /usr/src
         name: host-usr-src
       - hostPath:
-          path: /host-proc/swaps
+          path: /proc/swaps
         name: host-proc-swaps
