@@ -10,12 +10,9 @@ spec:
   #labelWhiteList: ""
   #extraLabelNs:
   #  - "example.com"
-  #resourceLabels:
-  #  - "example.com/resource"
   operand:
-    image: gcr.io/k8s-staging-nfd/node-feature-discovery:master-minimal
-    imagePullPolicy: Always
-    servicePort: 12000
+    image: registry.k8s.io/nfd/node-feature-discovery:v0.19.0
+    imagePullPolicy: IfNotPresent
   workerConfig:
     configData: |
       #core:
