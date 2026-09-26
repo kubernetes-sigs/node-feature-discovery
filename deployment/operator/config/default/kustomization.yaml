@@ -1,16 +1,12 @@
-images:
-- name: kube-rbac-proxy
-  newName: gcr.io/kubebuilder/kube-rbac-proxy
-  newTag: v0.8.0
-
 # Adds namespace to all resources.
 namespace: node-feature-discovery-operator
 
 # Protect the /metrics endpoint by putting it behind auth.
-# If you want your controller-manager to expose the /metrics
-# endpoint w/o any authn/z, please comment the following line.
+# The manager serves /metrics on :8443 over TLS and checks every request
+# with a TokenReview and a SubjectAccessReview; this patch sets its
+# arguments and exposes the port.
 patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
+- manager_metrics_patch.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
