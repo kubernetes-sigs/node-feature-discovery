@@ -333,15 +333,20 @@ func (nfdh *nodeFeatureDiscoveryHelper) handlePrune(ctx context.Context, nfdInst
 		return false, fmt.Errorf("failed to get nfd-prune job: %w", err)
 	}
 
-	var returnErr error
-	done := pruneJob.Status.Succeeded > 0
-	if pruneJob.Status.Failed > 0 {
-		returnErr = fmt.Errorf("prune job's pod has failed")
-	}
-
 	// no need to explicitly delete Prune job,
 	// it will be deleted by K8S scheduler once NFD CR is deleted from etcd
-	return done, returnErr
+
+	// The Job retries a failed pod up to its backoff limit, so a failed pod
+	// is not the end of pruning, and a later success finishes it.
+	if pruneJob.Status.Succeeded > 0 {
+		return true, nil
+	}
+	for _, cond := range pruneJob.Status.Conditions {
+		if cond.Type == batchv1.JobFailed && cond.Status == corev1.ConditionTrue {
+			return false, fmt.Errorf("prune job failed: %s: %s", cond.Reason, cond.Message)
+		}
+	}
+	return false, nil
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleStatus(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
