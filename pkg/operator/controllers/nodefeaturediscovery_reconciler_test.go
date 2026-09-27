@@ -759,7 +759,7 @@ var _ = Describe("handlePrune", func() {
 		Expect(done).To(BeFalse())
 	})
 
-	DescribeTable("prune job exsists flows", func(podFailed, podSucceeded bool) {
+	DescribeTable("prune job exsists flows", func(podFailed, podSucceeded, jobFailed, expectDone, expectErr bool) {
 		nfdCR.Spec.PruneOnDelete = true
 		foundJob := batchv1.Job{}
 		if podFailed {
@@ -768,26 +768,51 @@ var _ = Describe("handlePrune", func() {
 		if podSucceeded {
 			foundJob.Status.Succeeded = 1
 		}
+		if jobFailed {
+			foundJob.Status.Conditions = []batchv1.JobCondition{{
+				Type:    batchv1.JobFailed,
+				Status:  corev1.ConditionTrue,
+				Reason:  "BackoffLimitExceeded",
+				Message: "Job has reached the specified backoff limit",
+			}}
+		}
 		mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(&foundJob, nil)
 
 		done, err := nfdh.handlePrune(ctx, &nfdCR)
 
-		switch {
-		case !podFailed && !podSucceeded:
-			Expect(err).To(BeNil())
-			Expect(done).To(BeFalse())
-		case podFailed:
+		Expect(done).To(Equal(expectDone))
+		if expectErr {
 			Expect(err).To(HaveOccurred())
-			Expect(done).To(BeFalse())
-		case podSucceeded:
-			Expect(err).To(BeNil())
-			Expect(done).To(BeTrue())
+		} else {
+			Expect(err).NotTo(HaveOccurred())
 		}
 	},
-		Entry("job has not finished yet", false, false),
-		Entry("job finished, its pod successfull", false, true),
-		Entry("job finished, its pod failed", true, false),
+		Entry("job has not finished yet", false, false, false, false, false),
+		Entry("job finished, its pod successfull", false, true, false, true, false),
+		// The Job retries a failed pod (backoffLimit), so one failed pod is not
+		// the end of pruning.
+		Entry("a pod failed and the job retries it", true, false, false, false, false),
+		// Success wins: a retry that succeeded after a failed pod finishes the
+		// prune, otherwise the finalizer is never removed.
+		Entry("a pod failed, then a retry succeeded", true, true, false, true, false),
+		Entry("job failed after the backoff limit", true, false, true, false, true),
 	)
+
+	// Only a Failed condition with status True ends the Job.
+	It("a Failed condition with status False is not a failure", func() {
+		nfdCR.Spec.PruneOnDelete = true
+		foundJob := batchv1.Job{}
+		foundJob.Status.Conditions = []batchv1.JobCondition{{
+			Type:   batchv1.JobFailed,
+			Status: corev1.ConditionFalse,
+		}}
+		mockJob.EXPECT().GetJob(ctx, namespace, "nfd-prune").Return(&foundJob, nil)
+
+		done, err := nfdh.handlePrune(ctx, &nfdCR)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(done).To(BeFalse())
+	})
 })
 
 var _ = Describe("handleStatus", func() {
