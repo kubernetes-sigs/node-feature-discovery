@@ -80,18 +80,38 @@ var _ = Describe("CreatePruneJob", func() {
 
 	ctx := context.Background()
 
-	It("good flow, prune job populated with correct values", func() {
-		nfdCR := nfdv1.NodeFeatureDiscovery{
+	// createPruneJob runs CreatePruneJob for the CR and returns the Job it
+	// passed to the client.
+	createPruneJob := func(nfdCR *nfdv1.NodeFeatureDiscovery) *batchv1.Job {
+		var created *batchv1.Job
+		clnt.EXPECT().Create(ctx, gomock.AssignableToTypeOf(&batchv1.Job{})).DoAndReturn(
+			func(_ context.Context, obj ctrlclient.Object, _ ...ctrlclient.CreateOption) error {
+				created = obj.(*batchv1.Job)
+				return nil
+			},
+		)
+		Expect(jobAPI.CreatePruneJob(ctx, nfdCR)).To(Succeed())
+		Expect(created).NotTo(BeNil())
+		return created
+	}
+
+	pruneCR := func(pullPolicy string) *nfdv1.NodeFeatureDiscovery {
+		return &nfdv1.NodeFeatureDiscovery{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "test-namespace",
 				Name:      "nfd",
 			},
 			Spec: nfdv1.NodeFeatureDiscoverySpec{
 				Operand: nfdv1.OperandSpec{
-					Image: "test-image",
+					Image:           "test-image",
+					ImagePullPolicy: pullPolicy,
 				},
 			},
 		}
+	}
+
+	It("good flow, prune job populated with correct values", func() {
+		created := createPruneJob(pruneCR(""))
 
 		expectedYAMLFile, err := os.ReadFile("testdata/test_prune_job.yaml")
 		Expect(err).To(BeNil())
@@ -100,37 +120,20 @@ var _ = Describe("CreatePruneJob", func() {
 		testPruneJob := batchv1.Job{}
 		err = yaml.Unmarshal(expectedJSON, &testPruneJob)
 		Expect(err).To(BeNil())
-
-		clnt.EXPECT().Create(ctx, gomock.AssignableToTypeOf(&testPruneJob))
-
-		err = jobAPI.CreatePruneJob(ctx, &nfdCR)
-		Expect(err).To(BeNil())
+		// CreatePruneJob does not set TypeMeta; the client fills it in.
+		testPruneJob.TypeMeta = metav1.TypeMeta{}
+		Expect(*created).To(BeComparableTo(testPruneJob))
 	})
 
 	It("prune job uses the image pull policy from the NFD CR", func() {
-		nfdCR := nfdv1.NodeFeatureDiscovery{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "test-namespace",
-				Name:      "nfd",
-			},
-			Spec: nfdv1.NodeFeatureDiscoverySpec{
-				Operand: nfdv1.OperandSpec{
-					Image:           "test-image",
-					ImagePullPolicy: "IfNotPresent",
-				},
-			},
-		}
-		var created *batchv1.Job
-		clnt.EXPECT().Create(ctx, gomock.AssignableToTypeOf(&batchv1.Job{})).DoAndReturn(
-			func(_ context.Context, obj ctrlclient.Object, _ ...ctrlclient.CreateOption) error {
-				created = obj.(*batchv1.Job)
-				return nil
-			},
-		)
+		// Never is neither the operator default (Always) nor the NFD chart
+		// default (IfNotPresent), so only a policy read from the CR passes.
+		created := createPruneJob(pruneCR("Never"))
+		Expect(created.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(Equal(corev1.PullNever))
+	})
 
-		err := jobAPI.CreatePruneJob(ctx, &nfdCR)
-		Expect(err).To(BeNil())
-		Expect(created).NotTo(BeNil())
-		Expect(created.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(Equal(corev1.PullIfNotPresent))
+	It("prune job defaults the image pull policy to Always", func() {
+		created := createPruneJob(pruneCR(""))
+		Expect(created.Spec.Template.Spec.Containers[0].ImagePullPolicy).To(Equal(corev1.PullAlways))
 	})
 })
