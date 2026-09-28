@@ -46,8 +46,9 @@ type NodeFeatureDiscoverySpec struct {
 	// +kubebuilder:validation:Optional
 	ExtraLabelNs []string `json:"extraLabelNs,omitempty"`
 
-	// ResourceLabels defines the list of features
-	// to be advertised as extended resources instead of labels.
+	// ResourceLabels is ignored. nfd-master removed its -resource-labels
+	// flag in NFD v0.17.0; publish extended resources with a
+	// NodeFeatureRule (extendedResources) instead.
 	// +nullable
 	// +kubebuilder:validation:Optional
 	ResourceLabels []string `json:"resourceLabels,omitempty"`
@@ -81,7 +82,9 @@ type NodeFeatureDiscoverySpec struct {
 // OperandSpec describes configuration options for the operand
 type OperandSpec struct {
 	// Image defines the image to pull for the
-	// NFD operand
+	// NFD operand. The operator deploys NFD v0.18.0 or newer:
+	// v0.17.x rejects its nfd-master -port flag, and older
+	// releases read -port as the gRPC port.
 	// [defaults to registry.k8s.io/nfd/node-feature-discovery]
 	// +kubebuilder:validation:Pattern=[a-zA-Z0-9\-]+
 	Image string `json:"image,omitempty"`
