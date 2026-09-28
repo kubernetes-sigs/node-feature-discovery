@@ -115,11 +115,6 @@ func getWorkerVolumeMounts() *[]corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      "host-usr-src",
-			MountPath: "/host-usr/src",
-			ReadOnly:  true,
-		},
-		{
 			Name:      "host-proc-swaps",
 			MountPath: "/host-proc/swaps",
 			ReadOnly:  true,
@@ -198,14 +193,6 @@ func getWorkerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: "/lib",
-				},
-			},
-		},
-		{
-			Name: "host-usr-src",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/usr/src",
 				},
 			},
 		},
