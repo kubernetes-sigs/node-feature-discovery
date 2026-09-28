@@ -89,9 +89,6 @@ spec:
         - mountPath: /host-lib
           name: host-lib
           readOnly: true
-        - mountPath: /host-usr/src
-          name: host-usr-src
-          readOnly: true
         - mountPath: /host-proc/swaps
           name: host-proc-swaps
           readOnly: true
@@ -129,9 +126,6 @@ spec:
       - hostPath:
           path: /lib
         name: host-lib
-      - hostPath:
-          path: /usr/src
-        name: host-usr-src
       - hostPath:
           path: /proc/swaps
         name: host-proc-swaps
