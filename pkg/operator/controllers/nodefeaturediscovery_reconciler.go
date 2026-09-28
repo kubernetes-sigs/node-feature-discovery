@@ -240,6 +240,11 @@ func (nfdh *nodeFeatureDiscoveryHelper) removeFinalizer(ctx context.Context, ins
 }
 
 func (nfdh *nodeFeatureDiscoveryHelper) handleMaster(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error {
+	if len(nfdInstance.Spec.ResourceLabels) > 0 {
+		ctrl.LoggerFrom(ctx).Info("spec.resourceLabels is ignored: nfd-master removed -resource-labels in NFD v0.17.0; "+
+			"publish extended resources with a NodeFeatureRule (extendedResources) instead",
+			"namespace", nfdInstance.Namespace, "name", nfdInstance.Name, "resourceLabels", nfdInstance.Spec.ResourceLabels)
+	}
 	masterDep := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: "nfd-master", Namespace: nfdInstance.Namespace},
 	}
