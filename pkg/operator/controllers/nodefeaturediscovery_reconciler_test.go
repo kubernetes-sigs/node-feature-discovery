@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/funcr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -232,6 +234,35 @@ var _ = Describe("handleMaster", func() {
 		err := nfdh.handleMaster(ctx, &nfdCR)
 		Expect(err).To(HaveOccurred())
 	})
+
+	// nfd-master removed -resource-labels in NFD v0.17.0, so the operator no
+	// longer passes spec.resourceLabels and has to say so.
+	DescribeTable("spec.resourceLabels warning", func(resourceLabels []string, expectWarning bool) {
+		var logged []string
+		logCtx := logr.NewContext(ctx, funcr.New(func(_, args string) {
+			logged = append(logged, args)
+		}, funcr.Options{}))
+		nfdCR := nfdv1.NodeFeatureDiscovery{
+			Spec: nfdv1.NodeFeatureDiscoverySpec{ResourceLabels: resourceLabels},
+		}
+		gomock.InOrder(
+			clnt.EXPECT().Get(logCtx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, "whatever")),
+			mockDeployment.EXPECT().SetMasterDeploymentAsDesired(&nfdCR, gomock.Any()).Return(nil),
+			clnt.EXPECT().Create(logCtx, gomock.Any()).Return(nil),
+		)
+
+		Expect(nfdh.handleMaster(logCtx, &nfdCR)).To(Succeed())
+
+		warning := ContainElement(ContainSubstring(`"msg"="spec.resourceLabels is ignored`))
+		if expectWarning {
+			Expect(logged).To(warning)
+		} else {
+			Expect(logged).NotTo(warning)
+		}
+	},
+		Entry("set: warn", []string{"example.com/gpu"}, true),
+		Entry("empty: no warning", nil, false),
+	)
 })
 
 var _ = Describe("handleWorker", func() {
