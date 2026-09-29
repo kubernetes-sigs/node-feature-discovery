@@ -109,7 +109,7 @@ spec:
 ```
 
 See the
-[Customization guide](customization-guide.md#node-feature-rule-custom-resource)
+[Customization guide](customization-guide.md#nodefeaturerule-custom-resource)
 for full documentation of the NodeFeatureRule resource and its usage.
 
 The

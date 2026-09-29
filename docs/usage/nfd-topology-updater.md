@@ -29,7 +29,7 @@ and
 When run as a daemonset, nodes are re-examined for the allocated resources
 (to determine the information of the allocatable resources on a per-zone basis
 where a zone can be a NUMA node) at an interval specified using the
-[`-sleep-interval`](../reference/topology-updater-commandline-reference.html.md#-sleep-interval)
+[`-sleep-interval`](../reference/topology-updater-commandline-reference.md#-sleep-interval)
 option. The default sleep interval is set to 60s
 which is the value when no -sleep-interval is specified.
 The re-examination can be disabled by setting the sleep-interval to 0.
@@ -95,11 +95,11 @@ The provided deployment templates create an empty configmap
 and mount it inside the nfd-topology-updater containers.
 
 In Helm deployments,
-[Topology Updater parameters](../deployment/helm.md#topology-updater-parameters)
-`toplogyUpdater.config` can be used to edit the respective configuration.
+[Topology Updater parameters](../deployment/helm.md#nfd-topology-updater)
+`topologyUpdater.config` can be used to edit the respective configuration.
 
-In Kustomize deployments, modify the `nfd-worker-conf` ConfigMap with a custom
-overlay.
+In Kustomize deployments, modify the `nfd-topology-updater-conf` ConfigMap
+with a custom overlay.
 
 See
 [nfd-topology-updater configuration file reference](../reference/topology-updater-configuration-reference.md)

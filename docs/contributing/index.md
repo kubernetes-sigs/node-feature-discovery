@@ -29,4 +29,5 @@ The project was established in 2016 and was migrated to Kubernetes SIGs in 2018.
 
 ## License
 
-This is open source software released under the [Apache 2.0 License](LICENSE).
+This is open source software released under the
+[Apache 2.0 License](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/LICENSE).

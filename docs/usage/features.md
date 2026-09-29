@@ -263,13 +263,13 @@ detailed documentation.
 
 NFD is able to create extended resources, see the
 [NodeFeatureRule](custom-resources.md#nodefeaturerule) CRD and its
-[extendedResources](#customization-guide.md#extendedresources) field for more
+[extendedResources](customization-guide.md#extendedresources) field for more
 details.
 
 Note that NFD is not a replacement for the usage of device plugins.
 
 An example use-case for extended resources could be based on custom feature
-(created e.g. with [feature files](#customization-guide.md#feature-files) that
+(created e.g. with [feature files](customization-guide.md#feature-files) that
 exposes the node SGX EPC memory section size. This value will then be turned
 into an extended resource of the node, allowing PODs to request that resource
 and the Kubernetes scheduler to schedule such PODs to only those nodes which

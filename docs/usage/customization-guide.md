@@ -404,7 +404,7 @@ sources:
   custom:
     - name: "my sample rule"
       labels:
-        "feature.node.kubenernetes.io/my-sample-feature": "true"
+        "feature.node.kubernetes.io/my-sample-feature": "true"
       matchFeatures:
         - feature: kernel.loadedmodule
           matchExpressions:
@@ -415,7 +415,7 @@ sources:
 ```
 
 It specifies one rule which creates node label
-`feature.node.kubenernetes.io/my-sample-feature=true` if both of the following
+`feature.node.kubernetes.io/my-sample-feature=true` if both of the following
 conditions are true (`matchFeatures` implements a logical AND over the
 matchers):
 
@@ -443,14 +443,14 @@ following content:
 ```yaml
 - name: "my e1000 rule"
   labels:
-    "feature.node.kubenernetes.io/e1000.present": "true"
+    "feature.node.kubernetes.io/e1000.present": "true"
   matchFeatures:
     - feature: kernel.loadedmodule
       matchExpressions:
         e1000: {op: Exists}
 ```
 
-This simple rule will create `feature.node.kubenernetes.io/e1000.present=true`
+This simple rule will create `feature.node.kubernetes.io/e1000.present=true`
 label if the `e1000` kernel module has been loaded.
 
 The
@@ -674,7 +674,7 @@ usage of vars.
 #### extendedResources
 
 The `.extendedResources` field is a list of extended resources to advertise.
-See [extended resources](#extended-resources) for more details.
+See [extended resources](features.md#extended-resources) for more details.
 
 Take this rule as a referential example:
 
@@ -835,7 +835,7 @@ Valid types for specific operators are described below.
 The `.matchFeatures[].matchName` field is used to match against the
 name(s) of a feature (whereas the [`matchExpressions`](#matchexpressions) field
 matches against the value(s). The `matchName` field consists of a single
-expression which is evaulated against the name of each element of the specified
+expression which is evaluated against the name of each element of the specified
 feature.
 
 ```yaml

@@ -25,7 +25,7 @@ default garbage collector interval is set to 1h which is the value when no
 ## Configuration
 
 In Helm deployments see
-[garbage collector parameters](../deployment/helm.md#garbage-collector-parameters)
+[garbage collector parameters](../deployment/helm.md#nfd-gc)
 for altering the nfd-gc configuration.
 
 ## List Pagination & Scalability
