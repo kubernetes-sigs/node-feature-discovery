@@ -28,7 +28,7 @@ NFD-Master acts as the controller for
 It applies the rules specified in NodeFeatureRule objects on raw feature data
 and creates node labels accordingly. The feature data used as the input is
 received from nfd-worker instances through
-[NodeFeature](custom-resources.md#nodefeature-custom-resource) objects.
+[NodeFeature](custom-resources.md#nodefeature) objects.
 
 ## Master configuration
 
@@ -45,7 +45,7 @@ The provided deployment methods (Helm and Kustomize) create an empty configmap
 and mount it inside the nfd-master containers.
 
 In Helm deployments,
-[Master pod parameter](../deployment/helm.md#master-pod-parameters)
+[Master pod parameter](../deployment/helm.md#nfd-master)
 `master.config` can be used to edit the respective configuration.
 
 In Kustomize deployments, modify the `nfd-master-conf` ConfigMap with a custom

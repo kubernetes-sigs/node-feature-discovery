@@ -36,7 +36,7 @@ The provided deployment methods (Helm and Kustomize) create an empty configmap
 and mount it inside the nfd-master containers.
 
 In Helm deployments,
-[Worker pod parameter](../deployment/helm.md#worker-pod-parameters)
+[Worker pod parameter](../deployment/helm.md#nfd-worker)
 `worker.config` can be used to edit the respective configuration.
 
 In Kustomize deployments, modify the `nfd-worker-conf` ConfigMap with a custom

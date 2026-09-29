@@ -300,6 +300,6 @@ make site-build
 This will generate html documentation under `docs/_site/`.
 
 <!-- Links -->
-[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/test/e2e/e2e-test-config.exapmle.yaml
+[e2e-config-sample]: https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/test/e2e/e2e-test-config.example.yaml
 [podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
 [feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates

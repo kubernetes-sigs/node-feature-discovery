@@ -674,7 +674,7 @@ usage of vars.
 #### extendedResources
 
 The `.extendedResources` field is a list of extended resources to advertise.
-See [extended resources](#extended-resources) for more details.
+See [extended resources](features.md#extended-resources) for more details.
 
 Take this rule as a referential example:
 

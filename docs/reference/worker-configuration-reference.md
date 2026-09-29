@@ -105,7 +105,7 @@ core:
 
 ### core.sources
 
-**DEPRECATED**: use [`core.labelSources`](#core.labelSources) instead.
+**DEPRECATED**: use [`core.labelSources`](#corelabelsources) instead.
 
 > **NOTE:** `core.sources` takes precedence over the `core.labelSources`
 > configuration file option.
@@ -408,7 +408,7 @@ List of PCI [device class](https://pci-ids.ucw.cz/read/PD) IDs for which to
 publish a label. Can be specified as a main class only (e.g. `03`) or full
 class-subclass combination (e.g. `0300`) - the former implies that all
 subclasses are accepted.  The format of the labels can be further configured
-with [deviceLabelFields](#sources.pci.deviceLabelFields).
+with [deviceLabelFields](#sourcespcidevicelabelfields).
 
 Default: `["03", "0b40", "12"]`
 
@@ -445,7 +445,7 @@ With the example config above NFD would publish labels like:
 
 List of USB [device class](https://www.usb.org/defined-class-codes) IDs for
 which to publish a feature label. The format of the labels can be further
-configured with [deviceLabelFields](#sources.usb.deviceLabelFields).
+configured with [deviceLabelFields](#sourcesusbdevicelabelfields).
 
 Default: `["0e", "ef", "fe", "ff"]`
 
