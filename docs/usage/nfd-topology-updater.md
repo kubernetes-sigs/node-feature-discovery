@@ -96,10 +96,10 @@ and mount it inside the nfd-topology-updater containers.
 
 In Helm deployments,
 [Topology Updater parameters](../deployment/helm.md#nfd-topology-updater)
-`toplogyUpdater.config` can be used to edit the respective configuration.
+`topologyUpdater.config` can be used to edit the respective configuration.
 
-In Kustomize deployments, modify the `nfd-worker-conf` ConfigMap with a custom
-overlay.
+In Kustomize deployments, modify the `nfd-topology-updater-conf` ConfigMap
+with a custom overlay.
 
 See
 [nfd-topology-updater configuration file reference](../reference/topology-updater-configuration-reference.md)
