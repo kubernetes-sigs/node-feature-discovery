@@ -15,7 +15,7 @@ import (
 
 	gomock "go.uber.org/mock/gomock"
 	v1 "k8s.io/api/apps/v1"
-	v10 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	v10 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
 // MockDaemonsetAPI is a mock of DaemonsetAPI interface.

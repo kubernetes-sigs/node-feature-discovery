@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
-	v1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	v1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
 // MocknodeFeatureDiscoveryHelperAPI is a mock of nodeFeatureDiscoveryHelperAPI interface.

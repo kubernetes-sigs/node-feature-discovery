@@ -34,14 +34,14 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 
-	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/configmap"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/status"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/client"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/configmap"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/daemonset"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/deployment"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/job"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/status"
 )
 
 var _ = Describe("Reconcile", func() {
