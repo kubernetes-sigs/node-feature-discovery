@@ -30,8 +30,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/client"
+	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/client"
 	"sigs.k8s.io/yaml"
 )
 

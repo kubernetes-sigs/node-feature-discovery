@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/utils/ptr"
-	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
 func getWorkerAffinity() *corev1.Affinity {

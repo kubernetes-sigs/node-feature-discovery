@@ -19,7 +19,7 @@ package test
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	nfdv1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
+	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
 func TestScheme() (*runtime.Scheme, error) {
