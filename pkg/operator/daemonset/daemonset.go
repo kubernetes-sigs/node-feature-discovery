@@ -31,7 +31,7 @@ import (
 	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
-//go:generate mockgen -source=daemonset.go -package=daemonset -destination=mock_daemonset.go DaemonsetAPI
+//go:generate go tool mockgen -source=daemonset.go -package=daemonset -destination=mock_daemonset.go DaemonsetAPI
 
 type DaemonsetAPI interface {
 	SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, topologyDS *appsv1.DaemonSet) error
