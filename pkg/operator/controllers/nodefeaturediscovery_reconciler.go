@@ -159,7 +159,7 @@ func (r *nodeFeatureDiscoveryReconciler) Reconcile(ctx context.Context, nfdInsta
 	return res, errors.Join(errs...)
 }
 
-//go:generate mockgen -source=nodefeaturediscovery_reconciler.go -package=new_controllers -destination=mock_nodefeaturediscovery_reconciler.go nodeFeatureDiscoveryHelperAPI
+//go:generate go tool mockgen -source=nodefeaturediscovery_reconciler.go -package=new_controllers -destination=mock_nodefeaturediscovery_reconciler.go nodeFeatureDiscoveryHelperAPI
 
 type nodeFeatureDiscoveryHelperAPI interface {
 	finalizeComponents(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) error

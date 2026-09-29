@@ -39,7 +39,7 @@ const (
 	defaultPort int = 8080
 )
 
-//go:generate mockgen -source=deployment.go -package=deployment -destination=mock_deployment.go DeploymentAPI
+//go:generate go tool mockgen -source=deployment.go -package=deployment -destination=mock_deployment.go DeploymentAPI
 
 type DeploymentAPI interface {
 	SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error
