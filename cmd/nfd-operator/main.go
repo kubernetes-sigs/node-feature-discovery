@@ -34,13 +34,13 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	nfdkubernetesiov1 "sigs.k8s.io/node-feature-discovery-operator/api/v1"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/configmap"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/controllers"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/daemonset"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/deployment"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/job"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/status"
+	nfdkubernetesiov1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
+	"sigs.k8s.io/node-feature-discovery/internal/operator/configmap"
+	"sigs.k8s.io/node-feature-discovery/internal/operator/controllers"
+	"sigs.k8s.io/node-feature-discovery/internal/operator/daemonset"
+	"sigs.k8s.io/node-feature-discovery/internal/operator/deployment"
+	"sigs.k8s.io/node-feature-discovery/internal/operator/job"
+	"sigs.k8s.io/node-feature-discovery/internal/operator/status"
 	// +kubebuilder:scaffold:imports
 )
 
