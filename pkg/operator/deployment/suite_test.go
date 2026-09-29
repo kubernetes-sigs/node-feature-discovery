@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/node-feature-discovery-operator/internal/test"
+	"sigs.k8s.io/node-feature-discovery/pkg/operator/test"
 	//+kubebuilder:scaffold:imports
 )
 
