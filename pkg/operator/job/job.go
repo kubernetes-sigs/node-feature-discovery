@@ -32,7 +32,7 @@ import (
 	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
-//go:generate mockgen -source=job.go -package=job -destination=mock_job.go JobAPI
+//go:generate go tool mockgen -source=job.go -package=job -destination=mock_job.go JobAPI
 
 type JobAPI interface {
 	GetJob(ctx context.Context, namespace, name string) (*batchv1.Job, error)

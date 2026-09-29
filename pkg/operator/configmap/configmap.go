@@ -29,7 +29,7 @@ import (
 	nfdv1 "sigs.k8s.io/node-feature-discovery/api/operator/v1"
 )
 
-//go:generate mockgen -source=configmap.go -package=configmap -destination=mock_configmap.go ConfigMapAPI
+//go:generate go tool mockgen -source=configmap.go -package=configmap -destination=mock_configmap.go ConfigMapAPI
 
 type ConfigMapAPI interface {
 	SetWorkerConfigMapAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerCM *corev1.ConfigMap) error

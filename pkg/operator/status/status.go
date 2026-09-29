@@ -72,7 +72,7 @@ const (
 	conditionUpgradeable string = "Upgradeable"
 )
 
-//go:generate mockgen -source=status.go -package=status -destination=mock_status.go StatusAPI
+//go:generate go tool mockgen -source=status.go -package=status -destination=mock_status.go StatusAPI
 
 type StatusAPI interface {
 	GetConditions(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) []metav1.Condition
@@ -133,7 +133,7 @@ func (s *status) AreConditionsEqual(prevConditions, newConditions []metav1.Condi
 	return true
 }
 
-//go:generate mockgen -source=status.go -package=status -destination=mock_status.go statusHelperAPI
+//go:generate go tool mockgen -source=status.go -package=status -destination=mock_status.go statusHelperAPI
 
 type statusHelperAPI interface {
 	getWorkerNotAvailableConditions(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery) []metav1.Condition
