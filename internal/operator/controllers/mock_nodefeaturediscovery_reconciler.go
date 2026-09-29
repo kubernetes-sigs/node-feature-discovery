@@ -5,6 +5,7 @@
 //
 //	mockgen -source=nodefeaturediscovery_reconciler.go -package=new_controllers -destination=mock_nodefeaturediscovery_reconciler.go nodeFeatureDiscoveryHelperAPI
 //
+
 // Package new_controllers is a generated GoMock package.
 package new_controllers
 
@@ -20,6 +21,7 @@ import (
 type MocknodeFeatureDiscoveryHelperAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MocknodeFeatureDiscoveryHelperAPIMockRecorder
+	isgomock struct{}
 }
 
 // MocknodeFeatureDiscoveryHelperAPIMockRecorder is the mock recorder for MocknodeFeatureDiscoveryHelperAPI.

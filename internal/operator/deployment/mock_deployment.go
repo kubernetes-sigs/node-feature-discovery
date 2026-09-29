@@ -5,6 +5,7 @@
 //
 //	mockgen -source=deployment.go -package=deployment -destination=mock_deployment.go DeploymentAPI
 //
+
 // Package deployment is a generated GoMock package.
 package deployment
 
@@ -21,6 +22,7 @@ import (
 type MockDeploymentAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MockDeploymentAPIMockRecorder
+	isgomock struct{}
 }
 
 // MockDeploymentAPIMockRecorder is the mock recorder for MockDeploymentAPI.

@@ -20,26 +20,8 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
-      - args:
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
+        - --metrics-bind-address=:8443
         - --leader-elect
         command:
         - /node-feature-discovery-operator
@@ -53,7 +35,7 @@ spec:
         - name: OPERATOR_NAME
           value: node-feature-discovery-operator
         - name: NODE_FEATURE_DISCOVERY_IMAGE
-          value: "{{ .Values.nfd.image.repository }}:{{ .Values.nfd.image.tag | default "master-minimal" }}"
+          value: "{{ .Values.nfd.image.repository }}:{{ .Values.nfd.image.tag | default "v0.19.0" }}"
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
@@ -63,6 +45,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz

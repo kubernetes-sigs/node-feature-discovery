@@ -5,6 +5,7 @@
 //
 //	mockgen -source=status.go -package=status -destination=mock_status.go statusHelperAPI
 //
+
 // Package status is a generated GoMock package.
 package status
 
@@ -21,6 +22,7 @@ import (
 type MockStatusAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MockStatusAPIMockRecorder
+	isgomock struct{}
 }
 
 // MockStatusAPIMockRecorder is the mock recorder for MockStatusAPI.
@@ -72,6 +74,7 @@ func (mr *MockStatusAPIMockRecorder) GetConditions(ctx, nfdInstance any) *gomock
 type MockstatusHelperAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MockstatusHelperAPIMockRecorder
+	isgomock struct{}
 }
 
 // MockstatusHelperAPIMockRecorder is the mock recorder for MockstatusHelperAPI.

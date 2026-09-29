@@ -90,6 +90,7 @@ func getWorkerVolumeMounts() *[]corev1.VolumeMount {
 		{
 			Name:      "host-sys",
 			MountPath: "/host-sys",
+			ReadOnly:  true,
 		},
 		{
 			Name:      "nfd-worker-config",
@@ -111,11 +112,6 @@ func getWorkerVolumeMounts() *[]corev1.VolumeMount {
 		{
 			Name:      "host-lib",
 			MountPath: "/host-lib",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "host-usr-src",
-			MountPath: "/host-usr/src",
 			ReadOnly:  true,
 		},
 		{
@@ -188,7 +184,7 @@ func getWorkerVolumes() []corev1.Volume {
 			Name: "host-usr-lib",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/host-usr/lib",
+					Path: "/usr/lib",
 				},
 			},
 		},
@@ -196,15 +192,7 @@ func getWorkerVolumes() []corev1.Volume {
 			Name: "host-lib",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/host-lib",
-				},
-			},
-		},
-		{
-			Name: "host-usr-src",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/host-usr/src",
+					Path: "/lib",
 				},
 			},
 		},
@@ -212,7 +200,7 @@ func getWorkerVolumes() []corev1.Volume {
 			Name: "host-proc-swaps",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/host-proc/swaps",
+					Path: "/proc/swaps",
 				},
 			},
 		},

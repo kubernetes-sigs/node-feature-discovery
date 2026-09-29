@@ -5,6 +5,7 @@
 //
 //	mockgen -source=configmap.go -package=configmap -destination=mock_configmap.go ConfigMapAPI
 //
+
 // Package configmap is a generated GoMock package.
 package configmap
 
@@ -21,6 +22,7 @@ import (
 type MockConfigMapAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MockConfigMapAPIMockRecorder
+	isgomock struct{}
 }
 
 // MockConfigMapAPIMockRecorder is the mock recorder for MockConfigMapAPI.
