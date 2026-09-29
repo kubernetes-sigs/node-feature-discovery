@@ -72,6 +72,20 @@ Example:
 nfd-topology-updater -oneshot -no-publish
 ```
 
+### -kubeconfig
+
+The `-kubeconfig` flag specifies the path to a kubeconfig file to use for
+connecting to the Kubernetes API server. If not specified, the in-cluster
+configuration is used.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-topology-updater -kubeconfig=${HOME}/.kube/config
+```
+
 ### -port
 
 The `-port` flag specifies the port on which metrics and healthz endpoints are

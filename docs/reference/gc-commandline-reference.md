@@ -58,6 +58,20 @@ Example:
 nfd-gc -gc-interval=1h
 ```
 
+### -kubeconfig
+
+The `-kubeconfig` flag specifies the path to a kubeconfig file to use for
+connecting to the Kubernetes API server. If not specified, the in-cluster
+configuration is used.
+
+Default: *empty*
+
+Example:
+
+```bash
+nfd-gc -kubeconfig=${HOME}/.kube/config
+```
+
 ### -port
 
 The `-port` flag specifies the port on which metrics are served on.
