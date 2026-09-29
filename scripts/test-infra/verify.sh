@@ -18,8 +18,7 @@ kubectl="$gobinpath/kubectl"
 curl -L https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl -o "$kubectl"
 chmod 755 "$kubectl"
 
-# TODO: update logcheck version when there is a new release (newer than v0.9.0)
-go install sigs.k8s.io/logtools/logcheck@v0.9.1-0.20251007102500-d35c84c015fe
+go install sigs.k8s.io/logtools/logcheck@v0.10.1
 
 # Run verify steps
 echo "Checking gofmt"
