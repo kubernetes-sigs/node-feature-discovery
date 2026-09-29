@@ -53,7 +53,7 @@ func NewDaemonsetAPI(client client.Client, scheme *runtime.Scheme) DaemonsetAPI 
 }
 
 func (d *daemonset) SetTopologyDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, topologyDS *appsv1.DaemonSet) error {
-	topologyDS.ObjectMeta.Labels = map[string]string{"app": "nfd"}
+	topologyDS.Labels = map[string]string{"app": "nfd"}
 
 	podLabels := map[string]string{"app": "nfd-topology-updater"}
 	topologyDS.Spec = appsv1.DaemonSetSpec{
@@ -234,7 +234,7 @@ func getVolumes() []corev1.Volume {
 }
 
 func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error {
-	workerDS.ObjectMeta.Labels = map[string]string{"app": "nfd"}
+	workerDS.Labels = map[string]string{"app": "nfd"}
 
 	workerDS.Spec = appsv1.DaemonSetSpec{
 		Selector: &metav1.LabelSelector{

@@ -5,6 +5,7 @@
 //
 //	mockgen -source=job.go -package=job -destination=mock_job.go JobAPI
 //
+
 // Package job is a generated GoMock package.
 package job
 
@@ -21,6 +22,7 @@ import (
 type MockJobAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MockJobAPIMockRecorder
+	isgomock struct{}
 }
 
 // MockJobAPIMockRecorder is the mock recorder for MockJobAPI.

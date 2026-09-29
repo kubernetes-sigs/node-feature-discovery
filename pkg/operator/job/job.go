@@ -83,7 +83,7 @@ func (j *job) CreatePruneJob(ctx context.Context, nfdInstance *nfdv1.NodeFeature
 						{
 							Name:            "nfd-prune",
 							Image:           nfdInstance.Spec.Operand.ImagePath(),
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: getImagePullPolicy(nfdInstance),
 							Command: []string{
 								"nfd-master",
 							},
@@ -103,6 +103,13 @@ func (j *job) CreatePruneJob(ctx context.Context, nfdInstance *nfdv1.NodeFeature
 	}
 
 	return j.client.Create(ctx, &pruneJob)
+}
+
+func getImagePullPolicy(nfdInstance *nfdv1.NodeFeatureDiscovery) corev1.PullPolicy {
+	if nfdInstance.Spec.Operand.ImagePullPolicy != "" {
+		return corev1.PullPolicy(nfdInstance.Spec.Operand.ImagePullPolicy)
+	}
+	return corev1.PullAlways
 }
 
 func getPodsTolerations() []corev1.Toleration {

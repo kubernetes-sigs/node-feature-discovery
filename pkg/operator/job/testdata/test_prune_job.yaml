@@ -56,7 +56,7 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
       restartPolicy: Never
-      serviceAccount: nfd-prune
+      serviceAccountName: nfd-prune
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master

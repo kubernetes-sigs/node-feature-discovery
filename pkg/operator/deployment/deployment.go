@@ -34,7 +34,9 @@ import (
 )
 
 const (
-	defaultServicePort int = 12000
+	// defaultPort is the single HTTP port (metrics and /healthz) that every
+	// NFD component serves on since v0.18.
+	defaultPort int = 8080
 )
 
 //go:generate mockgen -source=deployment.go -package=deployment -destination=mock_deployment.go DeploymentAPI
@@ -60,7 +62,7 @@ func NewDeploymentAPI(client client.Client, scheme *runtime.Scheme) DeploymentAP
 
 func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, masterDep *v1.Deployment) error {
 	standartLabels := map[string]string{"app": "nfd-master"}
-	masterDep.ObjectMeta.Labels = standartLabels
+	masterDep.Labels = standartLabels
 
 	masterDep.Spec = v1.DeploymentSpec{
 		Replicas: ptr.To[int32](1),
@@ -90,7 +92,7 @@ func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeature
 						SecurityContext: getMasterSecurityContext(),
 						LivenessProbe:   getLivenessProbe(),
 						ReadinessProbe:  getReadinessProbe(),
-						Ports:           getPorts(),
+						Ports:           getPorts(getMasterPort(nfdInstance)),
 					},
 				},
 			},
@@ -100,7 +102,7 @@ func (d *deployment) SetMasterDeploymentAsDesired(nfdInstance *nfdv1.NodeFeature
 }
 
 func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDiscovery, gcDep *v1.Deployment) error {
-	gcDep.ObjectMeta.Labels = map[string]string{"app": "nfd"}
+	gcDep.Labels = map[string]string{"app": "nfd"}
 	matchLabels := map[string]string{"app": "nfd-gc"}
 	gcDep.Spec = v1.DeploymentSpec{
 		Replicas: ptr.To[int32](1),
@@ -119,7 +121,7 @@ func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDisc
 					{
 						Name:            "nfd-gc",
 						Image:           nfdInstance.Spec.Operand.ImagePath(),
-						ImagePullPolicy: corev1.PullAlways,
+						ImagePullPolicy: getImagePullPolicy(nfdInstance),
 						Command: []string{
 							"nfd-gc",
 						},
@@ -127,7 +129,7 @@ func (d *deployment) SetGCDeploymentAsDesired(nfdInstance *nfdv1.NodeFeatureDisc
 						SecurityContext: getGCSecurityContext(),
 						LivenessProbe:   getLivenessProbe(),
 						ReadinessProbe:  getReadinessProbe(),
-						Ports:           getPorts(),
+						Ports:           getPorts(defaultPort),
 					},
 				},
 			},
@@ -213,18 +215,23 @@ func getImagePullPolicy(nfdInstance *nfdv1.NodeFeatureDiscovery) corev1.PullPoli
 	return corev1.PullAlways
 }
 
-func getArgs(nfdInstance *nfdv1.NodeFeatureDiscovery) []string {
-	port := defaultServicePort
+// getMasterPort returns the nfd-master HTTP port: spec.operand.servicePort
+// when set, otherwise the NFD default.
+func getMasterPort(nfdInstance *nfdv1.NodeFeatureDiscovery) int {
 	if nfdInstance.Spec.Operand.ServicePort != 0 {
-		port = nfdInstance.Spec.Operand.ServicePort
+		return nfdInstance.Spec.Operand.ServicePort
 	}
+	return defaultPort
+}
+
+// getArgs does not pass spec.resourceLabels: nfd-master dropped the
+// -resource-labels flag in NFD v0.17.0 and exits on unknown flags. Extended
+// resources are managed with NodeFeatureRule objects instead.
+func getArgs(nfdInstance *nfdv1.NodeFeatureDiscovery) []string {
 	args := make([]string, 0, 4)
-	args = append(args, fmt.Sprintf("--port=%d", port))
+	args = append(args, fmt.Sprintf("--port=%d", getMasterPort(nfdInstance)))
 	if len(nfdInstance.Spec.ExtraLabelNs) != 0 {
 		args = append(args, fmt.Sprintf("--extra-label-ns=%s", strings.Join(nfdInstance.Spec.ExtraLabelNs, ",")))
-	}
-	if len(nfdInstance.Spec.ResourceLabels) != 0 {
-		args = append(args, fmt.Sprintf("--resource-labels=%s", strings.Join(nfdInstance.Spec.ResourceLabels, ",")))
 	}
 
 	if strings.TrimSpace(nfdInstance.Spec.LabelWhiteList) != "" {
@@ -311,10 +318,10 @@ func getReadinessProbe() *corev1.Probe {
 	}
 }
 
-func getPorts() []corev1.ContainerPort {
+func getPorts(port int) []corev1.ContainerPort {
 	return []corev1.ContainerPort{
 		{
-			ContainerPort: 8080,
+			ContainerPort: int32(port),
 			Name:          "http",
 		},
 	}

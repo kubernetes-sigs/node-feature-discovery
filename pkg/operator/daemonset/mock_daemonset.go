@@ -5,6 +5,7 @@
 //
 //	mockgen -source=daemonset.go -package=daemonset -destination=mock_daemonset.go DaemonsetAPI
 //
+
 // Package daemonset is a generated GoMock package.
 package daemonset
 
@@ -21,6 +22,7 @@ import (
 type MockDaemonsetAPI struct {
 	ctrl     *gomock.Controller
 	recorder *MockDaemonsetAPIMockRecorder
+	isgomock struct{}
 }
 
 // MockDaemonsetAPIMockRecorder is the mock recorder for MockDaemonsetAPI.

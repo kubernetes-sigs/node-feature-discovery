@@ -9,7 +9,7 @@ resources:
 - topologyupdater/
 - worker/
 - manager/
-# Comment the following line if you want to disable
-# the auth proxy (https://github.com/brancz/kube-rbac-proxy)
-# which protects your /metrics endpoint.
+# The manager checks /metrics requests with TokenReviews and
+# SubjectAccessReviews (the rules in auth_proxy/role.yaml), and the
+# metrics-reader ClusterRole grants GET /metrics to scrapers.
 - auth_proxy/
