@@ -1,0 +1,20 @@
+# permissions for end users to view nodefeaturediscoveries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nodefeaturediscovery-viewer-role
+rules:
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - nfd.kubernetes.io
+  resources:
+  - nodefeaturediscoveries/status
+  verbs:
+  - get
