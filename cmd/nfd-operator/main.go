@@ -87,7 +87,7 @@ func main() {
 
 	_ = flags.Parse(os.Args[1:])
 	if len(flags.Args()) > 0 {
-		setupLogger.Info("unknown command line argument", flags.Args()[0])
+		setupLogger.Info("unknown command line argument", "argument", flags.Args()[0])
 		flags.Usage()
 		os.Exit(2)
 	}
