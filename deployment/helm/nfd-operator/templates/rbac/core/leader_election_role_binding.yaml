@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "node-feature-discovery-operator.fullname" . }}-leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "node-feature-discovery-operator.fullname" . }}-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: {{ include "node-feature-discovery-operator.namespace" . }}
