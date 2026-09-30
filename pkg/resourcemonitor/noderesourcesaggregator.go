@@ -239,8 +239,30 @@ func getContainerDevicesFromAllocatableResources(availRes *podresourcesapi.Alloc
 // updateAvailable computes the actually available resources.
 // This function assumes the available resources are initialized to be equal to the allocatable.
 func (noderesourceData *nodeResources) updateAvailable(numaData map[int]map[corev1.ResourceName]*resourceData, ri ResourceInfo) {
+	resName := string(ri.Name)
+	resMap, ok := noderesourceData.resourceID2NUMAID[resName]
+	if !ok {
+		resMap = make(map[string]int)
+		for _, numaNodeID := range ri.NumaNodeIds {
+			if _, ok := numaData[numaNodeID]; !ok {
+				klog.InfoS("failed to find NUMA node ID under the node topology", "numaID", numaNodeID)
+				continue
+			}
+
+			if _, ok := numaData[numaNodeID][ri.Name]; !ok {
+				klog.InfoS("failed to find resource under the node topology", "resourceName", ri.Name)
+				continue
+			}
+
+			for _, resID := range ri.Data {
+				resMap[resID] = numaNodeID
+			}
+		}
+
+		noderesourceData.resourceID2NUMAID[resName] = resMap
+	}
+
 	for _, resID := range ri.Data {
-		resName := string(ri.Name)
 		resMap, ok := noderesourceData.resourceID2NUMAID[resName]
 		if !ok {
 			klog.InfoS("unknown resource", "resourceName", ri.Name)
