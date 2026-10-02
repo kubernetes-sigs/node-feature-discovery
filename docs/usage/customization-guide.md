@@ -184,8 +184,10 @@ to specify taints in the NodeFeatureRule object.
 
 NodeFeatureGroup API is an alpha feature and disabled by default in NFD version
 {{ site.version }}. Use the
-[NodeFeatureAPI](../reference/feature-gates.md#nodefeaturegroupapi) feature
-gate to enable it.
+[NodeFeatureGroupAPI](../reference/feature-gates.md#nodefeaturegroupapi)
+feature gate to enable it (for example
+`nfd-master -feature-gates NodeFeatureGroupAPI=true`, or
+`featureGates.NodeFeatureGroupAPI=true` in the Helm chart).
 
 `NodeFeatureGroup` objects provide a way to create node groups that share the
 same set of features. The `NodeFeatureGroup` object spec consists of a list of
@@ -219,10 +221,12 @@ status:
 The object specifies a group of nodes that share the same
 `kernel.version.major` (Linux kernel v6.x).
 
-Create a `NodeFeatureGroup` with a yaml file:
+Create a `NodeFeatureGroup` with a yaml file. nfd-master only evaluates
+NodeFeatureGroup objects in its own namespace (`node-feature-discovery` in the
+default deployments), so create it there:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/examples/nodefeaturegroup.yaml
+kubectl apply -n node-feature-discovery -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/{{ site.release }}/examples/nodefeaturegroup.yaml
 ```
 
 See [Feature rule format](#feature-rule-format) for detailed description of
@@ -293,8 +297,9 @@ Label namespace must be specified with `<namespace>/<name>[=<value>]`.
 
 Comment lines (starting with `#`) are ignored.
 
-Adding following line anywhere to feature file defines date when
-its content expires / is ignored:
+Adding the following line to a feature file sets the date after which the
+feature lines that follow it expire (are ignored); lines above the directive
+are not affected:
 
 ```plaintext
 # +expiry-time=2023-07-29T11:22:33Z
@@ -346,10 +351,12 @@ foo=baz
 Processing the above file would result in the following Features:
 
 ```yaml
-local.features:
+local.feature:
   foo: baz
+  vendor.io/foo: bar
   vendor.io/my-feature: value
-local.labels:
+local.label:
+  vendor.io/foo: bar
   vendor.io/label-only: value
   vendor.io/my-feature: value
 ```
@@ -357,6 +364,7 @@ local.labels:
 and the following labels added to the Node:
 
 ```plaintext
+vendor.io/foo=bar
 vendor.io/label-only=value
 vendor.io/my-feature=value
 ```
@@ -365,8 +373,8 @@ vendor.io/my-feature=value
 > In NFD {{ site.version }} unprefixed names will be automatically prefixed
 > with `feature.node.kubernetes.io/` but this will change in a future version
 > (see the [DisableAutoPrefix](../reference/feature-gates.md#disableautoprefix)
-> feature gate). Unprefixed names for plain Features (tagged with `#+no-label`)
-> can be used without restrictions, however.
+> feature gate). Unprefixed names for plain Features (tagged with
+> `# +no-label`) can be used without restrictions, however.
 
 ### Mounts
 
@@ -537,24 +545,26 @@ spec:
   rules:
     - name: "my dynamic label value rule"
       labels:
-        feature.node.kubernetes.io/linux-lsm-enabled: "@kernel.config.LSM"
+        feature.node.kubernetes.io/kernel-major: "@kernel.version.major"
         feature.node.kubernetes.io/custom-label: "customlabel"
 ```
 
-Label `linux-lsm-enabled` uses the `@` notation for dynamic values.
-The value of the label will be the value of the attribute `LSM`
-of the feature `kernel.config`.
+Label `kernel-major` uses the `@` notation for dynamic values.
+The value of the label will be the value of the attribute `major`
+of the feature `kernel.version`.
 
 The `@<feature-name>.<element-name>` format can be used to inject values of
 detected features to the label. See
 [available features](#available-features) for possible values to use.
+The resolved value must be a valid label value; e.g. `@kernel.config.LSM`
+usually resolves to a comma-separated list and is rejected.
 
 This will yield into the following node label:
 
 ```yaml
   labels:
     ...
-    feature.node.kubernetes.io/linux-lsm-enabled: apparmor
+    feature.node.kubernetes.io/kernel-major: "6"
     feature.node.kubernetes.io/custom-label: "customlabel"
 ```
 
@@ -616,6 +626,13 @@ NFD enforces some limitations to the namespace (or prefix)/ of the annotations:
 > **NOTE:** The `annotations` field has will only advertise features via node
 > annotations the features won't be advertised as node labels unless they are
 > specified in the `labels` field.
+>
+> **NOTE:** `.annotations` is not supported by the
+> [custom feature source](#custom-feature-source) -- it can only be used in
+> NodeFeatureRule objects. In the nfd-worker configuration file the field is
+> silently ignored, and a rule file in the
+> [additional configuration directory](#additional-configuration-directory)
+> that uses it is skipped with a `could not parse file` error.
 
 #### taints
 
@@ -649,8 +666,9 @@ spec:
 ```
 
 In this example, if the `my sample taint rule` rule is matched,
-`feature.node.kubernetes.io/pci-0300_1d0f.present=true:NoExecute`
-and `feature.node.kubernetes.io/cpu-cpuid.ADX:NoExecute` taints are set on the node.
+`feature.node.kubernetes.io/special-node=true:PreferNoSchedule`
+and `feature.node.kubernetes.io/dedicated-node:NoExecute` taints are set on the
+node.
 
 There are some limitations to the namespace part (i.e. prefix/) of the taint
 key:
