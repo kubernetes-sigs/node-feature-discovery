@@ -27,9 +27,9 @@
 
 This proposal moves the NFD Operator from
 [kubernetes-sigs/node-feature-discovery-operator](https://github.com/kubernetes-sigs/node-feature-discovery-operator)
-into this repository. The operator then ships with NFD's version, image and release notes, deploys its
-operand by rendering the NFD Helm chart instead of building the objects by hand, and is tested by NFD's
-CI on every pull request. Existing `NodeFeatureDiscovery` resources (`nfd.kubernetes.io/v1`) keep working
+into this repository. The operator then ships with NFD's version, image and release notes, deploys an
+operand of its own version by default, and is tested by NFD's CI on every pull request. As a later step,
+it renders its operand from the NFD Helm chart instead of building the objects by hand. Existing `NodeFeatureDiscovery` resources (`nfd.kubernetes.io/v1`) keep working
 without conversion.
 
 Tracking issue: [#2602](https://github.com/kubernetes-sigs/node-feature-discovery/issues/2602).
@@ -59,13 +59,17 @@ pull requests must pass a test that deploys NFD through the operator. The goals 
 ### Goals
 
 - One repository and one release line for NFD and the NFD Operator.
-- One source of operand manifests: the operator renders the NFD Helm chart
+- The operator deploys an operand of its own version by default, so upgrading the operator upgrades NFD.
+- In the end state, one source of operand manifests: the operator renders the NFD Helm chart
   (`deployment/helm/node-feature-discovery`), so every chart change also applies to operator installs.
+  This is a later step (see [Pull request roadmap](#pull-request-roadmap)); until then the operator keeps
+  its own manifests, and the operator e2e test checks them on every pull request.
 - Existing `nfd.kubernetes.io/v1` `NodeFeatureDiscovery` resources keep working after the upgrade, with no
   conversion webhook, once `spec.operand.image` is unset or points at NFD v0.18.0 or later (resources made
   from the operator v0.6.0 sample pin v0.12.1; the migration guide covers the change). No field that a
   v0.6.0 resource may carry is rejected.
-- A required presubmit that deploys NFD through the operator.
+- A required presubmit that deploys NFD through the operator and runs on every pull request, next to the
+  operand e2e tests, so an operand change that the operator does not follow fails CI.
 - Installing NFD with Helm or kustomize works exactly as before.
 
 ### Non-Goals
@@ -80,8 +84,9 @@ pull requests must pass a test that deploys NFD through the operator. The goals 
 
 The operator's code, its Helm chart and its kustomize and OLM manifests move into this repository in a
 series of pull requests (see [Pull request roadmap](#pull-request-roadmap)). The first ones bring the code
-in without shipping it; later ones add the binary to the NFD image, an operator e2e mode, the chart-driven
-rendering, the operator chart publishing and the documentation.
+in without shipping it; later ones add the binary to the NFD image with the operand image default, an
+operator e2e test that runs on every pull request, the operator chart publishing and the documentation.
+Rendering the operand from the NFD chart follows as a separate step.
 
 ### User Stories
 
@@ -111,9 +116,12 @@ rendering, the operator chart publishing and the documentation.
   Mitigation: if that happens, the operator code (`api/operator`, `pkg/operator`,
   `cmd/nfd-operator`) moves under one directory with its own `go.mod`, which takes controller-runtime out of
   the main module.
-- **Release timing.** If the chart-driven rendering or the operator chart publishing is not merged before
-  the v0.20 branch is cut, v0.20 ships only the code that is not user-visible yet, and the operator ships in
-  v0.21.
+- **The operator's own operand manifests drift from the chart until the rendering step.** Mitigation: the
+  operator e2e test runs on every pull request, next to the operand e2e tests, so an operand change that the
+  operator does not follow fails CI.
+- **Release timing.** If any of the pull requests that ship the operator (3 to 6 in the roadmap) is not
+  merged before the v0.20 branch is cut, v0.20 ships only the code that is not user-visible yet, and the
+  operator ships in v0.21. The rendering step does not gate the release.
 
 ## Design Details
 
@@ -140,6 +148,10 @@ NFD already uses) and `go.uber.org/mock` (for its existing unit tests) to the ma
 
 ### Rendering the operand from the NFD chart
 
+This is the end state, reached in a later step (7). Until then the operator keeps building the operand
+objects in Go, as it does today, and the operator e2e test on every pull request catches an operand change
+it does not follow.
+
 The operator embeds the `deployment/helm/node-feature-discovery` chart with `go:embed`. On every
 reconcile it maps the `NodeFeatureDiscovery` spec to chart values, renders the chart with Helm's template
 engine (`helm.sh/helm/v3/pkg/engine`; rendering only, no Helm releases or release storage), and applies
@@ -165,8 +177,8 @@ render, so rendering the operand chart never produces them, whatever the values.
 from the operator chart's `crds/` directory instead: `make generate` copies the same generated file there,
 the way it already copies it into the operand chart, and a CI check added with the build wiring (3) fails
 if the copies drift. The `NodeResourceTopology` CRD, which the operand chart renders from a template when
-`topologyUpdater.createCRDs` is set, also ships in the operator chart's `crds/` directory, and the operator
-always renders the operand chart with `topologyUpdater.createCRDs=false`. The operator therefore never
+`topologyUpdater.createCRDs` is set, also ships in the operator chart's `crds/` directory, and once the
+operator renders the operand chart (7) it always does so with `topologyUpdater.createCRDs=false`. The operator therefore never
 applies a CRD and never needs permission to create or change one, and every CRD has one owner.
 
 ### Versioning
@@ -189,37 +201,41 @@ are deferred until after the first release, in coordination with the downstream 
 |---|---|---|
 | 1 | This proposal | The design and the roadmap |
 | 2 | Import the operator code | History and code in the paths above; builds and tests in NFD CI; not built into the image, not published, no docs |
-| 3 | Build wiring | `nfd-operator` in the image and Makefile; code generation for the operator CRD, RBAC and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
-| 4 | Operator e2e | An operator mode for `test/e2e`: install the operator chart with the pull request's image, apply a `NodeFeatureDiscovery`, check the operand, node labels and a `NodeFeatureRule`; a presubmit job |
-| 5 | Chart-driven rendering | Render the operand from the embedded NFD chart; mapping table; golden tests; remove the hand-built objects |
-| 6 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart; the operator's default operand image |
-| 7 | Docs and ownership | Operator deployment docs, a migration guide from operator v0.6.0, `OWNERS` for the operator code |
+| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD, RBAC and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
+| 4 | Operator e2e | An operator mode for `test/e2e`: install the operator chart with the pull request's image, apply a `NodeFeatureDiscovery`, check the operand, node labels and a `NodeFeatureRule`; a required presubmit job that runs on every pull request, next to the operand e2e tests |
+| 5 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart |
+| 6 | Docs and ownership | Operator deployment docs, a migration guide from operator v0.6.0, `OWNERS` for the operator code |
+| 7 | Chart-driven rendering (later step) | Render the operand from the embedded NFD chart; mapping table; golden tests; remove the hand-built objects |
 
 Two changes outside this repository go with them: a presubmit job in kubernetes/test-infra (with 4), and a
-promoter entry in kubernetes/k8s.io for the operator chart (with 6); the operator binary needs no new
+promoter entry in kubernetes/k8s.io for the operator chart (with 5); the operator binary needs no new
 image entry because it ships in the NFD image.
 
 After the operator ships, the operator repository gets a README that points here, its open issues and pull
 requests are closed with pointers, and it is archived.
 
-The end-to-end test (4) lands before the rendering change (5), so the largest behaviour change is covered
-by a test that checks what the operator actually deploys.
+The operator ships once 1 to 6 are in. The end-to-end test (4) runs on every pull request from then on, so
+the rendering step (7), the largest behaviour change, is covered by a test that checks what the operator
+actually deploys.
 
 ### Test Plan
 
 - The operator's existing unit tests run in `make test` from the import on.
-- Golden-file tests for the chart rendering, one per sample `NodeFeatureDiscovery`.
 - An operator mode for the e2e tests that installs the operator from the pull request's image, applies a
-  `NodeFeatureDiscovery`, waits for the operand and checks node labels and a `NodeFeatureRule`.
+  `NodeFeatureDiscovery`, waits for the operand and checks node labels and a `NodeFeatureRule`. It runs as a
+  required presubmit on every pull request, next to the operand e2e tests.
+- With the rendering step (7): golden-file tests for the chart rendering, one per sample
+  `NodeFeatureDiscovery`.
 - An upgrade test from operator v0.6.0: the resource survives, the operand is reconciled and node labels
   are not removed. The v0.6.0 chart's kube-rbac-proxy image (`gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0`)
   is no longer published, so the test replaces it in the rendered manifests.
 
 ### Graduation Criteria
 
-The operator ships in the first NFD release that contains pull requests 1 to 7, with the target of
-v0.20. If the chart-driven rendering (5) or the chart publishing (6) misses the v0.20 branch cut, v0.20
-contains only the code that is not user-visible yet, and the operator ships in v0.21.
+The operator ships in the first NFD release that contains pull requests 1 to 6, with the target of
+v0.20. If any of them misses the v0.20 branch cut, v0.20 contains only the code that is not user-visible
+yet, and the operator ships in v0.21. The rendering step (7) lands in
+a later release and does not gate the operator's first release.
 
 ## Implementation History
 
@@ -227,6 +243,8 @@ contains only the code that is not user-visible yet, and the operator ships in v
   ([kubernetes-sigs/node-feature-discovery-operator#271](https://github.com/kubernetes-sigs/node-feature-discovery-operator/pull/271)).
 - 2026-09-29: tracking issue [#2602](https://github.com/kubernetes-sigs/node-feature-discovery/issues/2602)
   and this proposal.
+- 2026-10-02: after review, the operand image default and the operator e2e test come first, and rendering
+  the operand from the chart becomes a later step.
 
 ## Alternatives Considered
 
