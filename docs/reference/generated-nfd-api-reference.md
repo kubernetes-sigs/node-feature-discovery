@@ -44,7 +44,7 @@ _Appears in:_
 
 
 
-
+FeatureGroupNode is a node that matches the rules of a NodeFeatureGroup.
 
 
 
@@ -60,7 +60,7 @@ _Appears in:_
 
 _Underlying type:_ _[FeatureMatcherTerm](#featurematcherterm)_
 
-FeatureMatcher specifies a set of feature matcher terms (i.e. per-feature
+FeatureMatcher is a list (array) of FeatureMatcherTerm (i.e. per-feature
 matchers), all of which must match.
 
 
@@ -253,6 +253,7 @@ _Appears in:_
 
 NodeFeature resource holds the features discovered for one node in the
 cluster.
+NodeFeature is namespaced.
 
 
 
@@ -263,7 +264,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `nfd.k8s-sigs.io/v1alpha1` | | |
 | `kind` _string_ | `NodeFeature` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[NodeFeatureSpec](#nodefeaturespec)_ | Specification of the NodeFeature, containing features discovered for a node. |  |  |
 
 
@@ -271,7 +272,9 @@ _Appears in:_
 
 
 
-NodeFeatureGroup resource holds Node pools by featureGroup
+NodeFeatureGroup resource holds Node pools by featureGroup.
+NodeFeatureGroup is namespaced (short name `nfg`) and has a status subresource.
+Only objects in the namespace of nfd-master are processed.
 
 
 
@@ -282,7 +285,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `nfd.k8s-sigs.io/v1alpha1` | | |
 | `kind` _string_ | `NodeFeatureGroup` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[NodeFeatureGroupSpec](#nodefeaturegroupspec)_ | Spec defines the rules to be evaluated. |  |  |
 | `status` _[NodeFeatureGroupStatus](#nodefeaturegroupstatus)_ | Status of the NodeFeatureGroup after the most recent evaluation of the<br />specification. |  |  |
 
@@ -301,7 +304,7 @@ NodeFeatureGroupList contains a list of NodeFeatureGroup objects.
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `nfd.k8s-sigs.io/v1alpha1` | | |
 | `kind` _string_ | `NodeFeatureGroupList` | | |
-| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `items` _[NodeFeatureGroup](#nodefeaturegroup) array_ | List of NodeFeatureGroups. |  |  |
 
 
@@ -325,7 +328,8 @@ _Appears in:_
 
 
 
-
+NodeFeatureGroupStatus is the status of a NodeFeatureGroup, i.e. the result
+of the most recent evaluation of its rules.
 
 
 
@@ -351,7 +355,7 @@ NodeFeatureList contains a list of NodeFeature objects.
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `nfd.k8s-sigs.io/v1alpha1` | | |
 | `kind` _string_ | `NodeFeatureList` | | |
-| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `items` _[NodeFeature](#nodefeature) array_ | List of NodeFeatures. |  |  |
 
 
@@ -361,6 +365,7 @@ NodeFeatureList contains a list of NodeFeature objects.
 
 NodeFeatureRule resource specifies a configuration for feature-based
 customization of node objects, such as node labeling.
+NodeFeatureRule is cluster-scoped (short name `nfr`).
 
 
 
@@ -371,7 +376,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `nfd.k8s-sigs.io/v1alpha1` | | |
 | `kind` _string_ | `NodeFeatureRule` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[NodeFeatureRuleSpec](#nodefeaturerulespec)_ | Spec defines the rules to be evaluated. |  |  |
 
 
@@ -389,7 +394,7 @@ NodeFeatureRuleList contains a list of NodeFeatureRule objects.
 | --- | --- | --- | --- |
 | `apiVersion` _string_ | `nfd.k8s-sigs.io/v1alpha1` | | |
 | `kind` _string_ | `NodeFeatureRuleList` | | |
-| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `items` _[NodeFeatureRule](#nodefeaturerule) array_ | List of NodeFeatureRules. |  |  |
 
 
@@ -445,7 +450,7 @@ _Appears in:_
 | `annotations` _object (keys:string, values:string)_ | Annotations to create if the rule matches. |  |  |
 | `vars` _object (keys:string, values:string)_ | Vars is the variables to store if the rule matches. Variables do not<br />directly inflict any changes in the node object. However, they can be<br />referenced from other rules enabling more complex rule hierarchies,<br />without exposing intermediary output values as labels. |  |  |
 | `varsTemplate` _string_ | VarsTemplate specifies a template to expand for dynamically generating<br />multiple variables. Data (after template expansion) must be keys with an<br />optional value (<key>[=<value>]) separated by newlines. |  |  |
-| `taints` _[Taint](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#taint-v1-core) array_ | Taints to create if the rule matches. |  |  |
+| `taints` _[Taint](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#taint-v1-core) array_ | Taints to create if the rule matches. |  |  |
 | `extendedResources` _object (keys:string, values:string)_ | ExtendedResources to create if the rule matches. |  |  |
 | `matchFeatures` _[FeatureMatcher](#featurematcher)_ | MatchFeatures specifies a set of matcher terms all of which must match. |  |  |
 | `matchAny` _[MatchAnyElem](#matchanyelem) array_ | MatchAny specifies a list of matchers one of which must match. |  |  |
