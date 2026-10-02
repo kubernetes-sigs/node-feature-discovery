@@ -16,6 +16,11 @@ updates:
       k8sio:
         patterns:
         - k8s.io/*
+    ignore:
+    # controller-runtime minor releases need the matching k8s.io minor, which
+    # the replace block in go.mod pins: update them together with k8s.io.
+    - dependency-name: "sigs.k8s.io/controller-runtime"
+      update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: "github-actions"
     target-branch: master
