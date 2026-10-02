@@ -6,7 +6,9 @@ sort: 2
 
 # Quick start
 
-Minimal steps to deploy latest released version of NFD in your cluster.
+Minimal steps to deploy NFD {{ site.release }} in your cluster. On the `master`
+documentation the commands install a development build from the master branch,
+not a release.
 
 ## Installation
 
@@ -21,7 +23,7 @@ helm install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_r
 
 ### Kustomize
 
-Alternatively, NFD can be deploy with kubectl/kustomize.
+Alternatively, NFD can be deployed with kubectl/kustomize.
 
 ```bash
 kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
@@ -92,8 +94,11 @@ feature-dependent-pod   1/1     Running   0          23s   10.36.0.4   node-2   
 #### Deploy nfd-topology-updater with Helm
 
 ```bash
-helm upgrade --install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --set topologyUpdater.enable=true
+helm upgrade --install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} --set topologyUpdater.enable=true --set topologyUpdater.createCRDs=true
 ```
+
+`topologyUpdater.createCRDs=true` installs the NodeResourceTopology CRD. Omit it
+only if the CRD is already installed in the cluster.
 
 #### Deploy nfd-topology-updater with Kustomize
 
@@ -110,10 +115,12 @@ Wait until nfd-topology-updater is running.
 
 ```bash
 $ kubectl -n node-feature-discovery get ds
-NAME                                                         DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
-daemonset.apps/nfd-node-feature-discovery-topology-updater   2         2         2       2            2           <none>          20s
+NAME                                          DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+nfd-node-feature-discovery-topology-updater   2         2         2       2            2           <none>          20s
 ...
 ```
+
+(With the kustomize overlay the DaemonSet is named `nfd-topology-updater`.)
 
 Check that the NodeResourceTopology objects are created
 
