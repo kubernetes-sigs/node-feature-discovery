@@ -44,8 +44,14 @@ nfd-master -feature-gates NodeFeatureGroupAPI=true
 ### -prune
 
 The `-prune` flag is a sub-command like option for cleaning up the cluster. It
-causes nfd-master to remove all NFD related labels, annotations and extended
-resources from all Node objects of the cluster and exit.
+causes nfd-master to remove all NFD related labels, annotations, extended
+resources and taints from all Node objects of the cluster and exit. Pruning is
+skipped if `-no-publish` (or the `noPublish` configuration option) is set.
+
+> **NOTE:** Currently, if NFD taints are enabled, the first `nfd-master -prune`
+> run may exit with `failed to patch the node` and leave the NFD taints on the
+> node. Run it again. The Helm post-delete hook and the prune kustomize overlay
+> run prune as a Job, which retries automatically.
 
 ### -port
 
@@ -153,14 +159,21 @@ nfd-master -extra-label-ns=vendor-1.com,vendor-2.io
 The `-deny-label-ns` flag specifies a comma-separated list of excluded
 label namespaces. By default, nfd-master allows creating labels in all
 namespaces, excluding `kubernetes.io` namespace and its sub-namespaces
-(i.e. `*.kubernetes.io`). However, you should note that
-`kubernetes.io` and its sub-namespaces are always denied.
+(i.e. `*.kubernetes.io`). `kubernetes.io` and its sub-namespaces (except
+`feature.node.kubernetes.io`, `profile.node.kubernetes.io` and their
+sub-namespaces) stay denied whatever `-deny-label-ns` is set to. A specific
+namespace can only be allowed by listing it in `-extra-label-ns`.
 For example, `nfd-master -deny-label-ns=""` would still disallow
 `kubernetes.io` and `*.kubernetes.io`.
 This option can be used to exclude some vendors or application specific
 namespaces.
-Note that the namespaces `feature.node.kubernetes.io` and `profile.node.kubernetes.io`
-and their sub-namespaces are always allowed and cannot be denied.
+Note that the `feature.node.kubernetes.io` and `profile.node.kubernetes.io`
+namespaces and their sub-namespaces are allowed by default even though they
+are under `kubernetes.io`. They can still be denied explicitly: for example
+`-deny-label-ns=feature.node.kubernetes.io` removes all built-in feature
+labels, and `-deny-label-ns=*.kubernetes.io` removes the labels in all of these
+namespaces. A namespace listed in `-extra-label-ns` is allowed even when
+`-deny-label-ns` denies it.
 
 Default: *empty*
 
