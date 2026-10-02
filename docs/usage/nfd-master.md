@@ -90,5 +90,6 @@ labels. The provided template will configure these for you.
 When NFD Master starts up it starts an informer on the nodefeatures resources.
 These resources can be large and in a large cluster this initial list call
 to sync the informer cache can be expensive and heavy on api-server/etcd.
-You can use the `informer-list-size` argument to NFD master to
-control pagination size to help control the load during NFD-Master restart.
+You can use the `-informer-page-size` command line flag (or the
+`informerPageSize` configuration option) of nfd-master to control pagination
+size to help control the load during NFD-Master restart.

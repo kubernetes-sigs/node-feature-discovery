@@ -51,9 +51,11 @@ extraLabelNs: ["added.ns.io","added.kubernets.io"]
 ## denyLabelNs
 `denyLabelNs` specifies a list of excluded
 label namespaces. By default, nfd-master allows creating labels in all
-namespaces, excluding `kubernetes.io` namespace and its sub-namespaces
-(i.e. `*.kubernetes.io`). However, you should note that
-`kubernetes.io` and its sub-namespaces are always denied.
+namespaces, excluding `kubernetes.io` and its sub-namespaces
+(`*.kubernetes.io`), except `feature.node.kubernetes.io`,
+`profile.node.kubernetes.io` and their sub-namespaces. `denyLabelNs` cannot
+lift the `kubernetes.io` restriction; a specific namespace can be allowed with
+`extraLabelNs`.
 This option can be used to exclude some vendors or application specific
 namespaces.
 
@@ -132,7 +134,7 @@ Example:
 
 ```yaml
 leaderElection:
-  leaseDurtation: 15s
+  leaseDuration: 15s
 ```
 
 ### leaderElection.renewDeadline
@@ -197,8 +199,9 @@ informerPageSize: 50
 
 ## klog
 
-The following options specify the logger configuration. Most of which can be
-dynamically adjusted at run-time.
+The following options specify the logger configuration. Changes take effect
+when nfd-master is restarted (dynamic run-time reconfiguration was dropped in
+NFD v0.17).
 
 > **NOTE:** The logger options can also be specified via command line flags
 > which take precedence over any corresponding config file options.
@@ -209,15 +212,11 @@ If true, adds the file directory to the header of the log messages.
 
 Default: `false`
 
-Run-time configurable: yes
-
 ### klog.alsologtostderr
 
 Log to standard error as well as files.
 
 Default: `false`
-
-Run-time configurable: yes
 
 ### klog.logBacktraceAt
 
@@ -225,23 +224,17 @@ When logging hits line file:N, emit a stack trace.
 
 Default: *empty*
 
-Run-time configurable: yes
-
 ### klog.logDir
 
 If non-empty, write log files in this directory.
 
 Default: *empty*
 
-Run-time configurable: no
-
 ### klog.logFile
 
 If non-empty, use this log file.
 
 Default: *empty*
-
-Run-time configurable: no
 
 ### klog.logFileMaxSize
 
@@ -250,15 +243,11 @@ value is 0, the maximum file size is unlimited.
 
 Default: `1800`
 
-Run-time configurable: no
-
 ### klog.logtostderr
 
 Log to standard error instead of files
 
 Default: `true`
-
-Run-time configurable: yes
 
 ### klog.skipHeaders
 
@@ -266,21 +255,15 @@ If true, avoid header prefixes in the log messages.
 
 Default: `false`
 
-Run-time configurable: yes
-
 ### klog.skipLogHeaders
 
 If true, avoid headers when opening log files.
 
 Default: `false`
 
-Run-time configurable: no
-
 ### klog.stderrthreshold
 
 Logs at or above this threshold go to stderr (default 2)
-
-Run-time configurable: yes
 
 ### klog.v
 
@@ -288,15 +271,11 @@ Number for the log level verbosity.
 
 Default: `0`
 
-Run-time configurable: yes
-
 ### klog.vmodule
 
 Comma-separated list of `pattern=N` settings for file-filtered logging.
 
 Default: *empty*
-
-Run-time configurable: yes
 
 ## restrictions (EXPERIMENTAL)
 
@@ -377,6 +356,15 @@ resources that it manages with specific
 [node annotations](../get-started/introduction.md#node-annotations).
 
 Default: true
+
+> **NOTE:** Currently `allowOverwrite: false` does not work as described above.
+> Existing node labels and annotations that were not created by NFD are still
+> overwritten, while value changes to labels and annotations that NFD already
+> manages are no longer applied, and the
+> `nfd.node.kubernetes.io/feature-labels` and
+> `nfd.node.kubernetes.io/feature-annotations` tracking annotations stop being
+> updated. Extended resources ignore this option and are always overwritten.
+> Keep the default (`true`).
 
 Example:
 
