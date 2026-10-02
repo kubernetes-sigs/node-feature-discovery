@@ -848,6 +848,16 @@ Valid types for specific operators are described below.
 | --------- | ----------- | ------------------- |
 | `version` | Input is recognized as a version in the following formats (major.minor.patch) `%d.%d.%d`, `%d.%d`, `%d` (e.g., "1.2.3", "1.2", "1") |`Gt`,`Ge`,`Lt`,`Le`,`GtLt`,`GeLe` |
 
+> **NOTE:** The `Ge`, `Le` and `GeLe` operators and the `type` field are only
+> supported in NodeFeatureRule objects, not in the
+> [custom feature source](#custom-feature-source) of nfd-worker. In the
+> nfd-worker configuration file these operators, or a non-integer value for
+> `Gt`, `Lt` or `GtLt`, make nfd-worker fail to start (e.g. `invalid Op "Ge"`).
+> A rule file in the
+> [additional configuration directory](#additional-configuration-directory)
+> that uses them is skipped with a `could not parse file` error. The `type`
+> field is silently ignored, so the values are always compared as integers.
+
 ##### matchName
 
 The `.matchFeatures[].matchName` field is used to match against the
@@ -949,11 +959,11 @@ The following features are available for matching:
 |                  |              | **`family`** | int    | CPU family |
 |                  |              | **`vendor_id`** | string | CPU vendor ID |
 |                  |              | **`id`** | int        | CPU model ID |
-|                  |              | **`hypervisor`** | string | Hypervisor type information. On s390x read from `/proc/sysinfo`. On x86_64/arm64 detected via CPUID. Value 'none' on physical hardware. |
+|                  |              | **`hypervisor`** | string | Hypervisor type information. On s390x read from `/proc/sysinfo`. On x86_64 detected via the CPUID hypervisor bit; 'none' if no hypervisor is detected. On other architectures (including arm64) hypervisor detection is not supported and the value is always 'none'. |
 | **`cpu.pstate`** | attribute    |          |            | State of the Intel pstate driver. Does not exist if the driver is not enabled. |
 |                  |              | **`status`** | string | Status of the driver, possible values are 'active' and 'passive' |
 |                  |              | **`turbo`**  | bool   | 'true' if turbo frequencies are enabled, otherwise 'false' |
-|                  |              | **`scaling`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'. |
+|                  |              | **`scaling_governor`** | string | Active scaling_governor, possible values are 'powersave' or 'performance'. Only present if the driver status is 'active' and all cpufreq policies use the same governor. |
 | **`cpu.rdt`**    | attribute    |          |            | Intel RDT capabilities supported by the system |
 |                  |              | **`<rdt-flag>`** |    | RDT capability is supported, see [RDT flags](#intel-rdt-flags) for details |
 |                  |              | **`RDTL3CA_NUM_CLOSID`** | int  | The number or available CLOSID (Class of service ID) for Intel L3 Cache Allocation Technology |
@@ -994,6 +1004,7 @@ The following features are available for matching:
 | **`local.feature`** | attribute   |           |         | Features from feature files, i.e. features from the [*local* feature source](#local-feature-source) |
 |                  |              | **`<label-name>`** | string | Label `<label-name>` created by the local feature source, value equals the value of the label |
 | **`memory.nv`**  | instance     |          |            | NVDIMM devices present in the system |
+|                  |              | **`name`** | string   | Name of the NVDIMM device, i.e. its directory name under `/sys/bus/nd/devices` (e.g. `region0`, `namespace0.0`) |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `devtype`, `mode` |
 | **`memory.numa`**  | attribute  |          |            | NUMA nodes |
 |                  |              | **`is_numa`** | bool  | `true` if NUMA architecture, `false` otherwise |
@@ -1016,6 +1027,7 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned` |
 | **`system.osrelease`** | attribute |       |            | System identification data from `/etc/os-release` |
 |                  |              | **`<parameter>`** | string | One parameter from `/etc/os-release` |
+|                  |              | **`VERSION_ID.major`**, **`VERSION_ID.minor`** | string | First and second numeric components of `VERSION_ID` (derived by NFD, not read from the file; each present only if that component is numeric) |
 | **`system.dmiid`** | attribute |       |            | DMI identification data from `/sys/devices/virtual/dmi/id/` |
 |                  |              | **`bios_date`** | string | BIOS release date |
 |                  |              | **`bios_vendor`** | string | BIOS vendor name |
@@ -1025,7 +1037,7 @@ The following features are available for matching:
 |                  |              | **`board_vendor`** | string | Baseboard vendor name |
 |                  |              | **`board_version`** | string | Baseboard version |
 |                  |              | **`chassis_asset_tag`** | string | Chassis asset tag |
-|                  |              | **`chassis_type`** | string | Chassis type (numeric, e.g. 1=Other, 17=Laptop) |
+|                  |              | **`chassis_type`** | string | Chassis type (numeric SMBIOS code, e.g. 1=Other, 9=Laptop, 17=Main Server Chassis) |
 |                  |              | **`chassis_vendor`** | string | Chassis vendor name |
 |                  |              | **`chassis_version`** | string | Chassis version |
 |                  |              | **`product_family`** | string | Product family |
@@ -1048,7 +1060,7 @@ The following features are available for matching:
 | RDTCMT    | Intel Cache Monitoring (CMT)                                      |
 | RDTMBM    | Intel Memory Bandwidth Monitoring (MBM)                           |
 | RDTL3CA   | Intel L3 Cache Allocation Technology                              |
-| RDTl2CA   | Intel L2 Cache Allocation Technology                              |
+| RDTL2CA   | Intel L2 Cache Allocation Technology                              |
 | RDTMBA    | Intel Memory Bandwidth Allocation (MBA) Technology                |
 
 ### Templating
@@ -1071,7 +1083,7 @@ Consider the following example:
       - feature: pci.device
         matchExpressions:
           class: {op: InRegexp, value: ["^02"]}
-          vendor: ["0fff"]
+          vendor: {op: In, value: ["0fff"]}
 ```
 
 <!-- {% endraw %} -->
@@ -1119,7 +1131,7 @@ feature:
       {{ range .system.osrelease }}system-{{ .Name }}={{ .Value }}
       {{ end }}
     matchFeatures:
-      - feature: system.osRelease
+      - feature: system.osrelease
         matchExpressions:
           ID: {op: Exists}
           VERSION_ID.major: {op: Exists}
@@ -1259,11 +1271,11 @@ Require a certain loaded kernel module and OS version:
           e1000: {op: Exists}
       - feature: system.osrelease
         matchExpressions:
-          NAME: {op: InRegexp, values: ["^openSUSE"]}
-          VERSION_ID.major: {op: Gt, values: ["14"]}
+          NAME: {op: InRegexp, value: ["^openSUSE"]}
+          VERSION_ID.major: {op: Gt, value: ["14"]}
 ```
 
-Require a loaded  kernel module and two specific PCI devices (both of which
+Require a loaded kernel module and two specific PCI devices (both of which
 must be present):
 
 ```yaml
@@ -1274,10 +1286,12 @@ must be present):
       - feature: kernel.loadedmodule
         matchExpressions:
           my-driver-module: {op: Exists}
-      - pci.device:
-          vendor: "0fff"
-          device: "1234"
-      - pci.device:
-          vendor: "0fff"
-          device: "abcd"
+      - feature: pci.device
+        matchExpressions:
+          vendor: {op: In, value: ["0fff"]}
+          device: {op: In, value: ["1234"]}
+      - feature: pci.device
+        matchExpressions:
+          vendor: {op: In, value: ["0fff"]}
+          device: {op: In, value: ["abcd"]}
 ```
