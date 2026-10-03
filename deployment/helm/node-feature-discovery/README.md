@@ -69,7 +69,7 @@ helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace 
 To specify each parameter separately you can provide them to helm install command:
 
 ```bash
-helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master
+helm install --set nameOverride=nfdinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd oci://gcr.io/k8s-staging-nfd/charts/node-feature-discovery --version 0.0.0-master
 ```
 
 ## Upgrading the chart
@@ -194,10 +194,10 @@ NFD.
 | master.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | master.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | master.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD master pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy). |
-| master.config | string | `nil` | NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference). |
+| master.config | object | `nil` | NFD master [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/master-configuration-reference). |
 | master.port | int | `8080` | Port on which to serve http for metrics and healthz endpoints. |
 | master.instance | string | `nil` | Instance name. Used to separate annotation namespaces for multiple parallel deployments. |
-| master.resyncPeriod | int | `nil` | NFD API controller resync period. Time duration string (e.g. "5m", "1h", "2h45m"). |
+| master.resyncPeriod | string | `nil` | NFD API controller resync period. Time duration string (e.g. "5m", "1h", "2h45m"). |
 | master.denyLabelNs | list | `[]` | Label namespaces to deny. Labels with these prefixes will not be published to the nodes. |
 | master.extraLabelNs | list | `[]` | Additional label namespaces to publish. Labels with these prefixes are allowed even if otherwise denied by `master.denyLabelNs`. |
 | master.enableTaints | bool | `false` | Enable node tainting. |
@@ -225,17 +225,17 @@ NFD.
 | master.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-master pods. |
 | master.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-master pods. |
 | master.affinity | object | `{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"preference":{"matchExpressions":[{"key":"node-role.kubernetes.io/control-plane","operator":"In","values":[""]}]},"weight":1}]}}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-master pods. |
-| master.startupProbe | object | - | Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-startup-probes). |
+| master.startupProbe | object | - | Startup probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes). |
 | master.startupProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
 | master.startupProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | master.startupProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
 | master.startupProbe.failureThreshold | int | `30` | The number of consecutive failures for the probe before considering the pod as not ready. |
-| master.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
+| master.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-http-request). |
 | master.livenessProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
 | master.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | master.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
-| master.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| master.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
+| master.livenessProbe.failureThreshold | int | `nil` | The number of consecutive failures for the probe before considering the container as failed and restarting it. |
+| master.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes). |
 | master.readinessProbe.initialDelaySeconds | int | `nil` | The number of seconds after the container has started before probe is initiated. |
 | master.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | master.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -252,19 +252,19 @@ NFD.
 | worker.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-worker container. |
 | worker.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | worker.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
-| worker.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
-| worker.config | string | `nil` | NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference). |
+| worker.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD worker pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy). |
+| worker.config | object | `nil` | NFD worker [configuration](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/worker-configuration-reference). |
 | worker.port | int | `8080` | Port on which to serve http for metrics and healthz endpoints. |
 | worker.daemonsetAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker DaemonSet. |
 | worker.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-worker pods. |
 | worker.initContainers | list | `[]` | [Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-worker pods. |
 | worker.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true}` | [SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-worker container. |
-| worker.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
+| worker.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-http-request). |
 | worker.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | worker.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | worker.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
-| worker.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| worker.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
+| worker.livenessProbe.failureThreshold | int | `nil` | The number of consecutive failures for the probe before considering the container as failed and restarting it. |
+| worker.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes). |
 | worker.readinessProbe.initialDelaySeconds | int | `5` | The number of seconds after the container has started before probe is initiated. |
 | worker.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | worker.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -275,7 +275,7 @@ NFD.
 | worker.serviceAccount.name | string | `nil` | Name of the service account to use. If not set and create is true, a name is generated using the fullname template |
 | worker.revisionHistoryLimit | int | `nil` | Specifies the number of old history for the DaemonSet to retain to allow rollback. |
 | worker.rbac.create | bool | `true` | Create [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) configuration for nfd-worker. |
-| worker.mountUsrSrc | bool | `false` | Mount host path /user/src inside the container. Does not work on systems without /usr/src AND a read-only /usr. |
+| worker.mountUsrSrc | bool | `false` | Mount host path /usr/src inside the container. Does not work on systems without /usr/src AND a read-only /usr. |
 | worker.resources.limits | object | `{"memory":"512Mi"}` | Resource [limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the nfd-worker container. |
 | worker.resources.requests | object | `{"cpu":"5m","memory":"64Mi"}` | Resource [requests](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for the nfd-worker container. |
 | worker.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) for the nfd-worker pods. |
@@ -293,14 +293,14 @@ NFD.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| topologyUpdater.config | string | `nil` | Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details. |
+| topologyUpdater.config | object | `nil` | Configuration for the topology updater. See the [configuration reference](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-configuration-reference) for details. |
 | topologyUpdater.enable | bool | `false` | Specifies whether nfd-topology-updater should be deployed. |
-| topologyUpdater.createCRDs | bool | `false` | Create the NodeResourceTopology CRD. This MUST be set to true when 'enable' is true, unless the CRD is installed separately (e.g., by another Helm release or external tool). If the CRD is missing, the topology-updater pods will fail with "NodeResourceTopology CRD is not installed" error. |
+| topologyUpdater.createCRDs | bool | `false` | Create the NodeResourceTopology CRD. This MUST be set to true when 'enable' is true, unless the CRD is installed separately (e.g., by another Helm release or external tool). If the CRD is missing, the topology-updater pods keep running but publish nothing; they log "waiting for NodeResourceTopology CRD to be created" and retry indefinitely. |
 | topologyUpdater.extraArgs | list | `[]` | Additional [command line arguments](https://kubernetes-sigs.github.io/node-feature-discovery/master/reference/topology-updater-commandline-reference) to pass to nfd-topology-updater. |
 | topologyUpdater.extraEnvs | list | `[]` | Additional environment variables to set in the nfd-topology-updater container. |
 | topologyUpdater.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | topologyUpdater.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
-| topologyUpdater.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD topology updater pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
+| topologyUpdater.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD topology updater pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy). |
 | topologyUpdater.serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
 | topologyUpdater.serviceAccount.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account. |
 | topologyUpdater.serviceAccount.name | string | `nil` | Name or the service account to use. If not set and create is true, a name is generated using the fullname template. |
@@ -315,12 +315,12 @@ NFD.
 | topologyUpdater.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-topology-updater pods. |
 | topologyUpdater.initContainers | list | `[]` | [Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-topology-updater pods. |
 | topologyUpdater.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsUser":0}` | [SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-topology-updater container. |
-| topologyUpdater.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
+| topologyUpdater.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-http-request). |
 | topologyUpdater.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | topologyUpdater.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | topologyUpdater.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
-| topologyUpdater.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| topologyUpdater.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
+| topologyUpdater.livenessProbe.failureThreshold | int | `nil` | The number of consecutive failures for the probe before considering the container as failed and restarting it. |
+| topologyUpdater.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes). |
 | topologyUpdater.readinessProbe.initialDelaySeconds | int | `5` | The number of seconds after the container has started before probe is initiated. |
 | topologyUpdater.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | topologyUpdater.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -349,7 +349,7 @@ NFD.
 | gc.hostNetwork | bool | `false` | Run the container in the host's network namespace. |
 | gc.hostUsers | bool | `nil` | Run the container with host user ids. NOTE: if hostNetwork is true, hostUsers should be true. |
 | gc.replicaCount | int | `1` | The number of desired replicas for the nfd-gc Deployment. |
-| gc.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD gc pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-policy). |
+| gc.dnsPolicy | string | `"ClusterFirstWithHostNet"` | NFD gc pod [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy). |
 | gc.serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
 | gc.serviceAccount.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the service account. |
 | gc.serviceAccount.name | string | `nil` | Name of the service account to use. If not set and create is true, a name is generated using the fullname template. |
@@ -357,12 +357,12 @@ NFD.
 | gc.interval | string | `"1h"` | Time between periodic garbage collector runs. |
 | gc.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-gc pods. |
 | gc.initContainers | list | `[]` | [Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-gc pods. |
-| gc.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
+| gc.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-http-request). |
 | gc.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | gc.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | gc.livenessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
-| gc.livenessProbe.failureThreshold | int | `nil` | Minimum consecutive successes for the probe before considering the pod as ready. |
-| gc.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-readiness-probes). |
+| gc.livenessProbe.failureThreshold | int | `nil` | The number of consecutive failures for the probe before considering the container as failed and restarting it. |
+| gc.readinessProbe | object | - | Readiness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes). |
 | gc.readinessProbe.initialDelaySeconds | int | `5` | The number of seconds after the container has started before probe is initiated. |
 | gc.readinessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
 | gc.readinessProbe.periodSeconds | int | `nil` | How often (in seconds) to perform the probe. |
@@ -377,7 +377,7 @@ NFD.
 | gc.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-gc pods. |
 | gc.deploymentAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc  Deployment. |
 | gc.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-gc pods. |
-| gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-master Deployment. |
+| gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-gc Deployment. |
 | gc.podDisruptionBudget.minAvailable | int | `1` | Minimum number (or percentage) of pods that must be available after the eviction. |
 | gc.podDisruptionBudget.unhealthyPodEvictionPolicy | string | `"AlwaysAllow"` | Policy to evict unhealthy pods when a PodDisruptionBudget is defined. |
 | gc.revisionHistoryLimit | int | `nil` | Specifies the number of old history for the Deployment to retain to allow rollback. |
