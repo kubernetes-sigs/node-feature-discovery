@@ -100,6 +100,7 @@ spec:
           {{- if .Values.gc.interval | empty | not }}
           - "-gc-interval={{ .Values.gc.interval }}"
           {{- end }}
+          - "-port={{ .Values.gc.port | default "8080"}}"
           {{- with .Values.gc.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
