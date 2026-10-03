@@ -12,7 +12,9 @@ sort: 4
 NFD-Worker is preferably run as a Kubernetes DaemonSet. This assures
 re-labeling on regular intervals capturing changes in the system configuration
 and makes sure that new nodes are labeled as they are added to the cluster.
-Worker connects to the nfd-master service to advertise hardware features.
+Worker advertises the discovered features by creating or updating a
+[NodeFeature](custom-resources.md#nodefeature) object for its node, which
+nfd-master processes into node labels.
 
 When run as a daemonset, nodes are re-labeled at an default interval of 60s.
 This can be changed by using the
@@ -24,8 +26,9 @@ config option.
 NFD-Worker supports configuration through a configuration file. The
 default location is `/etc/kubernetes/node-feature-discovery/nfd-worker.conf`,
 but, this can be changed by specifying the`-config` command line flag.
-Configuration file is re-read whenever it is modified which makes run-time
-re-configuration of nfd-worker straightforward.
+The configuration file is read only when nfd-worker starts; configuration
+changes take effect after the nfd-worker pods are restarted (see the note
+below).
 
 Worker configuration file is read inside the container, and thus, Volumes and
 VolumeMounts are needed to make your configuration available for NFD. The
