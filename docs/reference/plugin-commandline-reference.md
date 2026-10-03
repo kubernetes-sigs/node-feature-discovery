@@ -15,9 +15,9 @@ sort: 8
 
 ---
 
-To quickly view available command line flags execute `kubectl nfd -help`.
+To quickly view available command line flags execute `kubectl nfd --help`.
 
-### -h, -help
+### -h, --help
 
 Print usage and exit.
 
@@ -32,17 +32,13 @@ to validate.
 
 ## Test
 
-Test a NodeFeatureRule file against a node without applying it.
+Test a NodeFeatureRule file against a node without applying it. NodeFeature
+objects of the node are looked up in all namespaces.
 
 ### -k, --kubeconfig
 
 The `--kubeconfig` flag specifies the path to the kubeconfig file to use for
 CLI requests.
-
-### -s, --namespace
-
-The `--namespace` flag specifies the namespace to use for CLI requests.
-Default: `default`.
 
 ### -n, --nodename
 
