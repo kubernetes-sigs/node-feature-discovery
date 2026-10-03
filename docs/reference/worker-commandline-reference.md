@@ -87,7 +87,8 @@ nfd-worker -kubeconfig ${HOME}/.kube/config
 ### -feature-sources
 
 The `-feature-sources` flag specifies a comma-separated list of enabled feature
-sources. A special value `all` enables all sources. Prefixing a source name
+sources. A special value `all` enables all sources except
+[`fake`](worker-configuration-reference.md#sourcesfake). Prefixing a source name
 with `-` indicates that the source will be disabled instead - this is only
 meaningful when used in conjunction with `all`. This command line flag allows
 completely disabling the feature detection so that neither standard feature
@@ -109,7 +110,8 @@ nfd-worker -feature-sources=all,-pci
 ### -label-sources
 
 The `-label-sources` flag specifies a comma-separated list of enabled label
-sources. A special value `all` enables all sources. Prefixing a source name
+sources. A special value `all` enables all sources except
+[`fake`](worker-configuration-reference.md#sourcesfake). Prefixing a source name
 with `-` indicates that the source will be disabled instead - this is only
 meaningful when used in conjunction with `all`. Consider using the
 `core.labelSources` config file option, instead, allowing dynamic
