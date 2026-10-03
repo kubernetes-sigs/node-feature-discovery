@@ -32,8 +32,15 @@ See [customizing the build](#customizing-the-build) below for altering the
 container image registry, for example.
 
 ```bash
-make
+make image
 ```
+
+This builds the minimal image variant,
+`<IMAGE_REGISTRY>/node-feature-discovery:<IMAGE_TAG_NAME>` (also tagged with a
+`-minimal` suffix), and the full variant,
+`<IMAGE_REGISTRY>/node-feature-discovery:<IMAGE_TAG_NAME>-full`. It also
+generates a `kustomization.yaml` in the root of the source tree (see
+[Deployment](#deployment) below).
 
 #### Push the container image
 
@@ -45,8 +52,9 @@ docker push <IMAGE_TAG>
 
 ### Docker multi-arch builds with buildx
 
-The default set of architectures enabled for mulit-arch builds are `linux/amd64`
-and `linux/arm64`. If more architectures are needed one can override the
+The default set of architectures enabled for multi-arch builds is
+`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/s390x` and
+`linux/ppc64le`. If more architectures are needed one can override the
 `IMAGE_ALL_PLATFORMS` variable with a comma separated list of `OS/ARCH` tuples.
 
 #### Build the manifest-list with a container image per arch
@@ -55,9 +63,11 @@ and `linux/arm64`. If more architectures are needed one can override the
 make image-all
 ```
 
-Currently `docker` does not support loading of manifest-lists meaning the images
-are not shown when executing `docker images`, see:
-[buildx issue #59](https://github.com/docker/buildx/issues/59).
+`make image-all` builds with the `nfd-builder` buildx builder (docker-container
+driver, set up by `hack/init-buildx.sh`) and passes neither `--load` nor
+`--push`, so the images stay in the build cache and are not shown by
+`docker images`. Use `make push-all` to publish them (loading multi-platform
+images into the local image store requires the containerd image store).
 
 #### Push the manifest-list with container image per arch
 
@@ -79,8 +89,8 @@ attribute in the spec template(s) to the new location
 
 ### Deployment
 
-The `yamls` makefile generates a `kustomization.yaml` matching your locally
-built image and using the `deploy/overlays/default` deployment. See
+The `yamls` make target generates a `kustomization.yaml` matching your locally
+built image and using the `deployment/overlays/default` deployment. See
 [build customization](#customizing-the-build) below for configurability, e.g.
 changing the deployment namespace.
 
@@ -111,11 +121,16 @@ makefile overrides.
 
 | Variable                   | Description                                                       | Default value |
 | -------------------------- | ----------------------------------------------------------------- | ------------- |
+| BASE_IMAGE_FULL            | Base image of the full image variant                              | debian:bookworm-slim |
+| BASE_IMAGE_MINIMAL         | Base image of the minimal image variant                           | scratch |
+| BUILDER_IMAGE              | Go builder image for the container build (must be Debian-based)   | golang:1.26-trixie |
+| CONTAINER_RUN_CMD          | Command to run helper containers (docs build, mdlint)             | docker run |
+| GO_CMD                     | Go command used to build and test                                 | go |
 | HOSTMOUNT_PREFIX           | Prefix of system directories for feature discovery (local builds) | / (*local builds*) /host- (*container builds*) |
 | IMAGE_BUILD_CMD            | Command to build the image                                        | docker build |
 | IMAGE_BUILD_EXTRA_OPTS     | Extra options to pass to build command                            | *empty* |
-| IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull |
-| IMAGE_ALL_PLATFORMS        | Comma separated list of OS/ARCH tuples for mulit-arch builds       | linux/amd64,linux/arm64 |
+| IMAGE_BUILDX_CMD           | Command to build and push multi-arch images with buildx           | DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --builder=nfd-builder --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull |
+| IMAGE_ALL_PLATFORMS        | Comma separated list of OS/ARCH tuples for multi-arch builds      | linux/amd64,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le |
 | IMAGE_PUSH_CMD             | Command to push the image to remote registry                      | docker push |
 | IMAGE_REGISTRY             | Container image registry to use                                   | registry.k8s.io/nfd |
 | IMAGE_TAG_NAME             | Container image tag name                                          | &lt;nfd version&gt; |
@@ -125,7 +140,7 @@ makefile overrides.
 For example, to use a custom registry:
 
 ```bash
-make IMAGE_REGISTRY=<my custom registry uri>
+make image IMAGE_REGISTRY=<my custom registry uri>
 ```
 
 Or to specify a build tool different from Docker, It can be done in 2 ways:
@@ -133,19 +148,19 @@ Or to specify a build tool different from Docker, It can be done in 2 ways:
 1. via environment
 
     ```bash
-    IMAGE_BUILD_CMD="buildah bud" make
+    IMAGE_BUILD_CMD="buildah bud" make image
     ```
 
 1. by overriding the variable value
 
     ```bash
-    make  IMAGE_BUILD_CMD="buildah bud"
+    make image IMAGE_BUILD_CMD="buildah bud"
     ```
 
 ### Testing
 
-Unit tests are automatically run as part of the container image build. You can
-also run them manually in the source code tree by running:
+Unit tests are not run as part of the container image build (CI runs them via
+`scripts/test-infra/verify.sh`). Run them in the source code tree with:
 
 ```bash
 make test
@@ -164,7 +179,7 @@ e2e-tests:
 
 | Variable                   | Description                                                       | Default value |
 | -------------------------- | ----------------------------------------------------------------- | ------------- |
-| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty* |
+| KUBECONFIG                 | Kubeconfig for running e2e-tests (use a disposable test cluster)  | $HOME/.kube/config |
 | E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty* |
 | E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false |
 | E2E_TEST_FULL_IMAGE        | Run e2e-test also against the Full Image tag                      | false |
@@ -181,7 +196,7 @@ stale annotations.
 
 ```bash
 make build
-NODE_NAME=<EXISTING_NODE> ./nfd-master -no-publish -kubeconfig ~/.kube/config
+NODE_NAME=<EXISTING_NODE> ./bin/nfd-master -no-publish -kubeconfig ~/.kube/config
 ```
 
 ### NFD-Worker
@@ -207,9 +222,13 @@ For development and debugging it is possible to run nfd-topology-updater as a
 stand-alone binary outside the cluster. However, it requires access to the
 kubelet's local pod-resources socket and the kubelet http api so in practice it
 needs to be run on a host acting as a Kubernetes node and thus running
-kubelet. Running kubelet with `--read-only-port=10255` (or `readOnlyPort:
-10255` in config) makes it possible to connect to kubelet without auth-token
-(never do this in a production cluster). Also, the `-no-publish` flag can be
+kubelet. The kubelet configuration is read from the URI given with
+`-kubelet-config-uri`, which supports `file://` (e.g.
+`file:///var/lib/kubelet/config.yaml`) and `https://` (the kubelet `/configz`
+endpoint on the secure port 10250, authenticated with the token from
+`-api-auth-token-file`). `http://` URIs such as the kubelet read-only port are
+not supported, and the read-only port does not serve `/configz`.
+Also, the `-no-publish` flag can be
 used to prevent nfd-topology-updater from creating NodeResourceTopology objects
 in the target cluster. If the `-no-publish` is not set, nfd-topology-updater
 also requires the `NODE_NAME` and `KUBERNETES_NAMESPACE` environment variables
@@ -217,7 +236,7 @@ to be defined.
 
 ```bash
 make build
-KUBERNETES_NAMESPACE=default NODE_NAME=nonexistent-node ./bin/nfd-topology-updater -kubeconfig ~/.kube/config -kubelet-config-uri http://127.0.0.1:10255
+KUBERNETES_NAMESPACE=default NODE_NAME=<this-node> ./bin/nfd-topology-updater -kubeconfig ~/.kube/config -kubelet-config-uri file:///var/lib/kubelet/config.yaml
 ```
 
 ## Running with Tilt
@@ -229,6 +248,19 @@ manually but instead let the Tilt take care of it. Tiltfile is a configuration f
 for the Tilt and is located at the root directory. To develop NFD with Tilt, follow
 the steps below.
 
+> **NOTE:** The Tiltfile sets `default_registry('ttl.sh')`. If Tilt detects a
+> local registry in the cluster (the `local-registry-hosting` ConfigMap in
+> `kube-public`, which kind's
+> [local registry setup](https://kind.sigs.k8s.io/docs/user/local-registry/)
+> creates), it pushes images there and ignores `default_registry`. Without
+> such a registry, Tilt loads the image straight into the cluster where the
+> cluster supports it (for example kind or Docker Desktop). Only when neither
+> works, for example on a kubeadm cluster (context
+> `kubernetes-admin@kubernetes`, which the Tiltfile allows), does Tilt push
+> images built from your working tree to the public, anonymous ttl.sh
+> registry. Edit `default_registry()` in the Tiltfile if that is not
+> acceptable.
+
 ### Prerequisites
 
 1. Install [Docker](https://docs.docker.com/engine/install/)
@@ -237,7 +269,8 @@ the steps below.
 1. Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
 1. Install [tilt](https://docs.tilt.dev/install.html)
 1. Create a local Kubernetes cluster
-    - Create image registry first
+    - Create a local image registry first, for example with kind's
+      [local registry setup](https://kind.sigs.k8s.io/docs/user/local-registry/)
     - Create a Kubernetes cluster. Please note that docker containers will be
       served as controller node and worker nodes, and NFD-worker will run as a
       DaemonSet in nested container. Therefore, to make sure the NFD-worker can
