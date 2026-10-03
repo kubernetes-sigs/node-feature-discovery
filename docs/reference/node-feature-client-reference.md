@@ -64,6 +64,13 @@ The `--registry-password-stdin` flag enables reading of registry password from s
 
 The `--registry-token-stdin` flag enables reading of registry token from stdin.
 
+`--registry-password-stdin` and `--registry-token-stdin` cannot be used together.
+
+## completion
+
+Generate the autocompletion script for the specified shell (`bash`, `fish`,
+`powershell` or `zsh`), for example `nfd completion bash`.
+
 ## export
 
 Export node features to stdout or a file.
@@ -72,7 +79,7 @@ Export node features to stdout or a file.
 
 Export features of the system in JSON format to stdout or a file.
 
-#### --path
+#### -p, --path
 
 The `--path` flag specifies a file to write the output to.
 
@@ -80,6 +87,6 @@ The `--path` flag specifies a file to write the output to.
 
 Export feature labels of the system in JSON format to stdout or a file.
 
-#### --path
+#### -p, --path
 
 The `--path` flag specifies a file to write the output to.
