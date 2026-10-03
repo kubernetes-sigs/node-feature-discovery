@@ -42,10 +42,12 @@ image and the host.
 - **compatibilities** - *array of object*  
   This REQUIRED property is a list of compatibility sets.
 
-  - **rules** - *object*  
-    This REQUIRED property is a reference to the spec of the [NodeFeatureGroup API](./custom-resources.md#nodefeaturegroup).
-    The spec allows image requirements to be described using the features
-    discovered from NFD sources. For more details, please refer to [the documentation](./custom-resources.md#nodefeaturegroup).
+  - **rules** - *array of object*  
+    This REQUIRED property is a list of rules. Each rule has the format of an
+    item of `spec.featureGroupRules` in the
+    [NodeFeatureGroup API](./custom-resources.md#nodefeaturegroup) (`name`,
+    `vars`, `varsTemplate`, `matchFeatures`, `matchAny`). Variables set with
+    `vars` can be referenced by later rules through the `rule.matched` feature.
 
   - **weight** - *int*  
     This OPTIONAL property specifies the [node affinity weight](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity-weight).
@@ -118,10 +120,14 @@ Example manifest:
     "size": 7682
   },
   "annotations": {
-    "oci.opencontainers.image.created": "2024-03-27T08:08:08Z"
+    "org.opencontainers.image.created": "2024-03-27T08:08:08Z"
   }
 }
 ```
+
+When several compatibility artifacts are attached to the same image, `nfd`
+uses the newest one according to its `org.opencontainers.image.created`
+annotation.
 
 #### Attach the artifact to the image
 
@@ -142,7 +148,13 @@ directly within the tool rather than using a separate command.
 
 ### Validate the host against the image compatibility specification
 
-1. Build `nfd` client: `make build`
+1. Build the `nfd` client: `make build-nfd`. On Linux arm64, arm, ppc64le and
+   s390x hosts the Makefile builds with `CGO_ENABLED=0`, which drops the
+   cgo-only CPU feature code, so the build fails with
+   `undefined: getCpuidFlags`. On those hosts run
+   `make build-nfd GO_CMD="env CGO_ENABLED=1 go"` or
+   `CGO_ENABLED=1 go build -o bin/ ./cmd/nfd` instead (both require a C
+   compiler such as gcc).
 1. Run `./bin/nfd compat validate-node --image <image-url>`
 
 For more information about the available commands and flags, refer to
@@ -151,9 +163,15 @@ For more information about the available commands and flags, refer to
 ### Validate the k8s cluster node with the validate-image Job
 
 **Note**: This does not require installation of NFD master and workers.
-Additionally, public registry certificates must be included in the job.
-In the example below, this is done using hostPath,
-but it can be done using any Kubernetes-supported method.
+Additionally, the job needs the CA certificates of the registry, as the NFD
+container images do not include any. In the example below, the node's
+`/etc/ssl/certs` directory is mounted with hostPath, which works on nodes where
+it holds a regular CA bundle file, such as `ca-certificates.crt` on Debian and
+Ubuntu. On RHEL-family nodes the files there are symlinks into `/etc/pki` that
+do not resolve inside the container; mount `/etc/pki/ca-trust/extracted/pem`
+at the same path instead. Any other Kubernetes-supported method works too, for
+example mounting a CA bundle file and pointing the `SSL_CERT_FILE` environment
+variable at it.
 
 ```yaml
 apiVersion: batch/v1
@@ -195,6 +213,9 @@ spec:
           - mountPath: /host-proc
             name: host-proc
             readOnly: true
+          - mountPath: /etc/ssl/certs
+            name: certs
+            readOnly: true
       volumes:
       - hostPath:
           path: /boot
@@ -221,7 +242,7 @@ spec:
           type: ""
         name: host-proc
       - hostPath:
-          path: "<path-to-registry-public-certs>"
+          path: /etc/ssl/certs
           type: ""
         name: certs
 ```
