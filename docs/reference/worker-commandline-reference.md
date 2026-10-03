@@ -271,6 +271,20 @@ Log to standard error as well as files.
 
 Default: false
 
+#### -alsologtostderrthreshold
+
+Logs at or above this threshold go to stderr when -alsologtostderr=true (no
+effect when -logtostderr=true).
+
+Default: 0
+
+#### -legacy_stderr_threshold_behavior
+
+If true, stderrthreshold is ignored when logtostderr=true (legacy behavior). If
+false, stderrthreshold is honored even when logtostderr=true.
+
+Default: true
+
 #### -log_backtrace_at
 
 When logging hits line file:N, emit a stack trace.
@@ -301,6 +315,13 @@ Default: 1800
 Log to standard error instead of files
 
 Default: true
+
+#### -one_output
+
+If true, only write logs to their native severity level (vs also writing to
+each lower severity level; no effect when -logtostderr=true).
+
+Default: false
 
 #### -skip_headers
 

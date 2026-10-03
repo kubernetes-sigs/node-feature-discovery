@@ -272,6 +272,21 @@ Log to standard error as well as files.
 
 Default: `false`
 
+#### core.klog.alsologtostderrthreshold
+
+Logs at or above this threshold go to stderr when `alsologtostderr` is true (no
+effect when `logtostderr` is true).
+
+Default: `0`
+
+#### core.klog.legacyStderrThresholdBehavior
+
+If true, `stderrthreshold` is ignored when `logtostderr` is true (legacy
+behavior). If false, `stderrthreshold` is honored even when `logtostderr` is
+true.
+
+Default: `true`
+
 #### core.klog.logBacktraceAt
 
 When logging hits line file:N, emit a stack trace.
@@ -302,6 +317,13 @@ Default: `1800`
 Log to standard error instead of files
 
 Default: `true`
+
+#### core.klog.oneOutput
+
+If true, only write logs to their native severity level (vs also writing to
+each lower severity level; no effect when `logtostderr` is true).
+
+Default: `false`
 
 #### core.klog.skipHeaders
 
