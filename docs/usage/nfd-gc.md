@@ -20,7 +20,10 @@ NodeResourceTopology objects upon them. It also runs periodically to make sure
 no node delete event was missed and to remove any NodeFeature or
 NodeResourceTopology objects that were created without corresponding node. The
 default garbage collector interval is set to 1h which is the value when no
--gc-interval is specified.
+-gc-interval is specified. NodeFeature objects whose
+`nfd.node.kubernetes.io/node-name` label is missing or empty are treated as
+having no corresponding node and are deleted by this periodic pass (at startup
+and every `-gc-interval`).
 
 ## Configuration
 
