@@ -38,7 +38,7 @@ The list of available feature gates can be found in the [feature gates documenta
 Example:
 
 ```bash
-nfd-master -feature-gates NodeFeatureGroupAPI=true
+nfd-worker -feature-gates NodeFeatureGroupAPI=true
 ```
 
 ### -config
@@ -163,11 +163,14 @@ nfd-worker -port=12345
 
 ### -no-publish
 
-The `-no-publish` flag disables all communication with the nfd-master and the
-Kubernetes API server. It is effectively a "dry-run" flag for nfd-worker.
-NFD-Worker runs feature detection normally, but no labeling requests are sent
-to nfd-master and no NodeFeature objects are created or updated in the API
-server.
+The `-no-publish` flag disables publishing of the discovered features. It is
+effectively a "dry-run" flag for nfd-worker: NFD-Worker runs feature detection
+normally, but no NodeFeature objects are created or updated in the API server.
+nfd-worker still needs a Kubernetes client configuration (in-cluster
+configuration or `-kubeconfig`). It also still queries the API server to
+resolve owner references: with the default `-owner-refs=pod,ds` it reads its
+own Pod when `POD_NAME` is set (as in the DaemonSet), and with `node` it reads
+its Node. Use `-owner-refs=` to make no API server requests at all.
 
 > **NOTE:** This flag takes precedence over the
 > [`core.noPublish`](worker-configuration-reference.md#corenopublish)
