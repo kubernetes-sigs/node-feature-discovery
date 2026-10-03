@@ -179,7 +179,7 @@ e2e-tests:
 
 | Variable                   | Description                                                       | Default value |
 | -------------------------- | ----------------------------------------------------------------- | ------------- |
-| KUBECONFIG                 | Kubeconfig for running e2e-tests                                  | *empty* |
+| KUBECONFIG                 | Kubeconfig for running e2e-tests (use a disposable test cluster)  | $HOME/.kube/config |
 | E2E_TEST_CONFIG            | Parameterization file of e2e-tests (see [example][e2e-config-sample]) | *empty* |
 | E2E_PULL_IF_NOT_PRESENT    | True-ish value makes the image pull policy IfNotPresent (to be used only in e2e tests) | false |
 | E2E_TEST_FULL_IMAGE        | Run e2e-test also against the Full Image tag                      | false |
@@ -196,7 +196,7 @@ stale annotations.
 
 ```bash
 make build
-NODE_NAME=<EXISTING_NODE> ./nfd-master -no-publish -kubeconfig ~/.kube/config
+NODE_NAME=<EXISTING_NODE> ./bin/nfd-master -no-publish -kubeconfig ~/.kube/config
 ```
 
 ### NFD-Worker
@@ -222,9 +222,13 @@ For development and debugging it is possible to run nfd-topology-updater as a
 stand-alone binary outside the cluster. However, it requires access to the
 kubelet's local pod-resources socket and the kubelet http api so in practice it
 needs to be run on a host acting as a Kubernetes node and thus running
-kubelet. Running kubelet with `--read-only-port=10255` (or `readOnlyPort:
-10255` in config) makes it possible to connect to kubelet without auth-token
-(never do this in a production cluster). Also, the `-no-publish` flag can be
+kubelet. The kubelet configuration is read from the URI given with
+`-kubelet-config-uri`, which supports `file://` (e.g.
+`file:///var/lib/kubelet/config.yaml`) and `https://` (the kubelet `/configz`
+endpoint on the secure port 10250, authenticated with the token from
+`-api-auth-token-file`). `http://` URIs such as the kubelet read-only port are
+not supported, and the read-only port does not serve `/configz`.
+Also, the `-no-publish` flag can be
 used to prevent nfd-topology-updater from creating NodeResourceTopology objects
 in the target cluster. If the `-no-publish` is not set, nfd-topology-updater
 also requires the `NODE_NAME` and `KUBERNETES_NAMESPACE` environment variables
@@ -232,7 +236,7 @@ to be defined.
 
 ```bash
 make build
-KUBERNETES_NAMESPACE=default NODE_NAME=nonexistent-node ./bin/nfd-topology-updater -kubeconfig ~/.kube/config -kubelet-config-uri http://127.0.0.1:10255
+KUBERNETES_NAMESPACE=default NODE_NAME=<this-node> ./bin/nfd-topology-updater -kubeconfig ~/.kube/config -kubelet-config-uri file:///var/lib/kubelet/config.yaml
 ```
 
 ## Running with Tilt
@@ -244,6 +248,19 @@ manually but instead let the Tilt take care of it. Tiltfile is a configuration f
 for the Tilt and is located at the root directory. To develop NFD with Tilt, follow
 the steps below.
 
+> **NOTE:** The Tiltfile sets `default_registry('ttl.sh')`. If Tilt detects a
+> local registry in the cluster (the `local-registry-hosting` ConfigMap in
+> `kube-public`, which kind's
+> [local registry setup](https://kind.sigs.k8s.io/docs/user/local-registry/)
+> creates), it pushes images there and ignores `default_registry`. Without
+> such a registry, Tilt loads the image straight into the cluster where the
+> cluster supports it (for example kind or Docker Desktop). Only when neither
+> works, for example on a kubeadm cluster (context
+> `kubernetes-admin@kubernetes`, which the Tiltfile allows), does Tilt push
+> images built from your working tree to the public, anonymous ttl.sh
+> registry. Edit `default_registry()` in the Tiltfile if that is not
+> acceptable.
+
 ### Prerequisites
 
 1. Install [Docker](https://docs.docker.com/engine/install/)
@@ -252,7 +269,8 @@ the steps below.
 1. Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
 1. Install [tilt](https://docs.tilt.dev/install.html)
 1. Create a local Kubernetes cluster
-    - Create image registry first
+    - Create a local image registry first, for example with kind's
+      [local registry setup](https://kind.sigs.k8s.io/docs/user/local-registry/)
     - Create a Kubernetes cluster. Please note that docker containers will be
       served as controller node and worker nodes, and NFD-worker will run as a
       DaemonSet in nested container. Therefore, to make sure the NFD-worker can
