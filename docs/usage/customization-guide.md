@@ -93,6 +93,7 @@ In addition, the example requests directly the
 
 The `nfd.node.kubernetes.io/node-name=<node-name>` must be in place for each
 NodeFeature object as NFD uses it to determine the node which it is targeting.
+NodeFeature objects without it are deleted by nfd-gc.
 
 ### Feature types
 
