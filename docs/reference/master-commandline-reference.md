@@ -74,6 +74,12 @@ that each of them can store metadata independently. The instance name must
 start and end with an alphanumeric character and may only contain alphanumeric
 characters, `-`, `_` or `.`.
 
+The instance name is added as a prefix to the feature-labels,
+feature-annotations and extended-resources annotations (for example
+`network.nfd.node.kubernetes.io/feature-labels`). The
+`nfd.node.kubernetes.io/taints` annotation does not get the prefix and is not
+separated between deployments.
+
 Default: *empty*
 
 Example:
