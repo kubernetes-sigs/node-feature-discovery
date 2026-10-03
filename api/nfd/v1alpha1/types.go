@@ -34,6 +34,7 @@ type NodeFeatureList struct {
 
 // NodeFeature resource holds the features discovered for one node in the
 // cluster.
+// NodeFeature is namespaced.
 // +kubebuilder:object:root=true
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -42,6 +43,7 @@ type NodeFeature struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Specification of the NodeFeature, containing features discovered for a node.
+	// +kubebuilder:validation:Required
 	Spec NodeFeatureSpec `json:"spec"`
 }
 
@@ -49,9 +51,11 @@ type NodeFeature struct {
 type NodeFeatureSpec struct {
 	// Features is the full "raw" features data that has been discovered.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Features Features `json:"features"`
 	// Labels is the set of node labels that are requested to be created.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels"`
 }
 
@@ -59,36 +63,43 @@ type NodeFeatureSpec struct {
 type Features struct {
 	// Flags contains all the flag-type features of the node.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Flags map[string]FlagFeatureSet `json:"flags"`
 	// Attributes contains all the attribute-type features of the node.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Attributes map[string]AttributeFeatureSet `json:"attributes"`
 	// Instances contains all the instance-type features of the node.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Instances map[string]InstanceFeatureSet `json:"instances"`
 }
 
 // FlagFeatureSet is a set of simple features only containing names without values.
 type FlagFeatureSet struct {
 	// Individual features of the feature set.
+	// +kubebuilder:validation:Required
 	Elements map[string]Nil `json:"elements"`
 }
 
 // AttributeFeatureSet is a set of features having string value.
 type AttributeFeatureSet struct {
 	// Individual features of the feature set.
+	// +kubebuilder:validation:Required
 	Elements map[string]string `json:"elements"`
 }
 
 // InstanceFeatureSet is a set of features each of which is an instance having multiple attributes.
 type InstanceFeatureSet struct {
 	// Individual features of the feature set.
+	// +kubebuilder:validation:Required
 	Elements []InstanceFeature `json:"elements"`
 }
 
 // InstanceFeature represents one instance of a complex features, e.g. a device.
 type InstanceFeature struct {
 	// Attributes of the instance feature.
+	// +kubebuilder:validation:Required
 	Attributes map[string]string `json:"attributes"`
 }
 
@@ -109,6 +120,7 @@ type NodeFeatureRuleList struct {
 
 // NodeFeatureRule resource specifies a configuration for feature-based
 // customization of node objects, such as node labeling.
+// NodeFeatureRule is cluster-scoped (short name `nfr`).
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=nfr
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -119,16 +131,20 @@ type NodeFeatureRule struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the rules to be evaluated.
+	// +kubebuilder:validation:Required
 	Spec NodeFeatureRuleSpec `json:"spec"`
 }
 
 // NodeFeatureRuleSpec describes a NodeFeatureRule.
 type NodeFeatureRuleSpec struct {
 	// Rules is a list of node customization rules.
+	// +kubebuilder:validation:Required
 	Rules []Rule `json:"rules"`
 }
 
-// NodeFeatureGroup resource holds Node pools by featureGroup
+// NodeFeatureGroup resource holds Node pools by featureGroup.
+// NodeFeatureGroup is namespaced (short name `nfg`) and has a status subresource.
+// Only objects in the namespace of nfd-master are processed.
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,shortName=nfg
 // +kubebuilder:subresource:status
@@ -139,22 +155,28 @@ type NodeFeatureGroup struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the rules to be evaluated.
+	// +kubebuilder:validation:Required
 	Spec NodeFeatureGroupSpec `json:"spec"`
 
 	// Status of the NodeFeatureGroup after the most recent evaluation of the
 	// specification.
+	// +kubebuilder:validation:Optional
 	Status NodeFeatureGroupStatus `json:"status,omitempty"`
 }
 
 // NodeFeatureGroupSpec describes a NodeFeatureGroup object.
 type NodeFeatureGroupSpec struct {
 	// List of rules to evaluate to determine nodes that belong in this group.
+	// +kubebuilder:validation:Required
 	Rules []GroupRule `json:"featureGroupRules"`
 }
 
+// NodeFeatureGroupStatus is the status of a NodeFeatureGroup, i.e. the result
+// of the most recent evaluation of its rules.
 type NodeFeatureGroupStatus struct {
 	// Nodes is a list of FeatureGroupNode in the cluster that match the featureGroupRules
 	// +optional
+	// +kubebuilder:validation:Optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	// +listType=map
@@ -162,8 +184,10 @@ type NodeFeatureGroupStatus struct {
 	Nodes []FeatureGroupNode `json:"nodes"`
 }
 
+// FeatureGroupNode is a node that matches the rules of a NodeFeatureGroup.
 type FeatureGroupNode struct {
 	// Name of the node.
+	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 }
 
@@ -181,45 +205,54 @@ type NodeFeatureGroupList struct {
 // GroupRule defines a rule for nodegroup filtering.
 type GroupRule struct {
 	// Name of the rule.
+	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
 	// Vars is the variables to store if the rule matches. Variables can be
 	// referenced from other rules enabling more complex rule hierarchies.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Vars map[string]string `json:"vars"`
 
 	// VarsTemplate specifies a template to expand for dynamically generating
 	// multiple variables. Data (after template expansion) must be keys with an
 	// optional value (<key>[=<value>]) separated by newlines.
 	// +optional
+	// +kubebuilder:validation:Optional
 	VarsTemplate string `json:"varsTemplate"`
 
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
+	// +kubebuilder:validation:Optional
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`
 
 	// MatchAny specifies a list of matchers one of which must match.
 	// +optional
+	// +kubebuilder:validation:Optional
 	MatchAny []MatchAnyElem `json:"matchAny"`
 }
 
 // Rule defines a rule for node customization such as labeling.
 type Rule struct {
 	// Name of the rule.
+	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
 	// Labels to create if the rule matches.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels"`
 
 	// LabelsTemplate specifies a template to expand for dynamically generating
 	// multiple labels. Data (after template expansion) must be keys with an
 	// optional value (<key>[=<value>]) separated by newlines.
 	// +optional
+	// +kubebuilder:validation:Optional
 	LabelsTemplate string `json:"labelsTemplate"`
 
 	// Annotations to create if the rule matches.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations"`
 
 	// Vars is the variables to store if the rule matches. Variables do not
@@ -227,38 +260,45 @@ type Rule struct {
 	// referenced from other rules enabling more complex rule hierarchies,
 	// without exposing intermediary output values as labels.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Vars map[string]string `json:"vars"`
 
 	// VarsTemplate specifies a template to expand for dynamically generating
 	// multiple variables. Data (after template expansion) must be keys with an
 	// optional value (<key>[=<value>]) separated by newlines.
 	// +optional
+	// +kubebuilder:validation:Optional
 	VarsTemplate string `json:"varsTemplate"`
 
 	// Taints to create if the rule matches.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Taints []corev1.Taint `json:"taints,omitempty"`
 
 	// ExtendedResources to create if the rule matches.
 	// +optional
+	// +kubebuilder:validation:Optional
 	ExtendedResources map[string]string `json:"extendedResources"`
 
 	// MatchFeatures specifies a set of matcher terms all of which must match.
 	// +optional
+	// +kubebuilder:validation:Optional
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`
 
 	// MatchAny specifies a list of matchers one of which must match.
 	// +optional
+	// +kubebuilder:validation:Optional
 	MatchAny []MatchAnyElem `json:"matchAny"`
 }
 
 // MatchAnyElem specifies one sub-matcher of MatchAny.
 type MatchAnyElem struct {
 	// MatchFeatures specifies a set of matcher terms all of which must match.
+	// +kubebuilder:validation:Required
 	MatchFeatures FeatureMatcher `json:"matchFeatures"`
 }
 
-// FeatureMatcher specifies a set of feature matcher terms (i.e. per-feature
+// FeatureMatcher is a list (array) of FeatureMatcherTerm (i.e. per-feature
 // matchers), all of which must match.
 type FeatureMatcher []FeatureMatcherTerm
 
@@ -267,14 +307,17 @@ type FeatureMatcher []FeatureMatcherTerm
 // element in the feature set.
 type FeatureMatcherTerm struct {
 	// Feature is the name of the feature set to match against.
+	// +kubebuilder:validation:Required
 	Feature string `json:"feature"`
 	// MatchExpressions is the set of per-element expressions evaluated. These
 	// match against the value of the specified elements.
 	// +optional
+	// +kubebuilder:validation:Optional
 	MatchExpressions *MatchExpressionSet `json:"matchExpressions"`
 	// MatchName in an expression that is matched against the name of each
 	// element in the feature set.
 	// +optional
+	// +kubebuilder:validation:Optional
 	MatchName *MatchExpression `json:"matchName"`
 }
 
@@ -287,6 +330,7 @@ type MatchExpressionSet map[string]*MatchExpression
 // an array of values that the operator evaluates the input against.
 type MatchExpression struct {
 	// Op is the operator to be applied.
+	// +kubebuilder:validation:Required
 	Op MatchOp `json:"op"`
 
 	// Value is the list of values that the operand evaluates the input
@@ -295,11 +339,13 @@ type MatchExpression struct {
 	// operator is Gt or Lt and exactly two elements if the operator is GtLt.
 	// In other cases Value should contain at least one element.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Value MatchValue `json:"value,omitempty"`
 
 	// Type defines the value type for specific operators.
 	// The currently supported type is 'version' for Gt,Ge,Lt,Le,GtLt,GeLe operators.
 	// +optional
+	// +kubebuilder:validation:Optional
 	Type ValueType `json:"type,omitempty"`
 }
 
