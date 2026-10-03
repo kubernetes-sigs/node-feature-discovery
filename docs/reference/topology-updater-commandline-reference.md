@@ -132,7 +132,10 @@ nfd-topology-updater -watch-namespace=rte
 ### -kubelet-config-uri
 
 The `-kubelet-config-uri` specifies the path to the Kubelet's configuration.
-Note that the URi could either be a local host file or an HTTP endpoint.
+Note that the URI can either be a local file (`file://` scheme, for example
+`file:///var/lib/kubelet/config.yaml`; a bare path without `file://` is
+rejected) or an HTTPS endpoint (`https://` scheme). Other schemes, including
+`http://`, are rejected at startup.
 
 Default:  `https://${NODE_ADDRESS}:10250/configz`
 
@@ -157,7 +160,7 @@ Default:  `/var/run/secrets/kubernetes.io/serviceaccount/token`
 Example:
 
 ```bash
-nfd-topology-updater -token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+nfd-topology-updater -api-auth-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
 ```
 
 ### -podresources-socket
