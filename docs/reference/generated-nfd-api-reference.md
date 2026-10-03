@@ -58,7 +58,7 @@ _Appears in:_
 
 #### FeatureMatcher
 
-_Underlying type:_ _[FeatureMatcherTerm](#featurematcherterm)_
+_Underlying type:_ _[FeatureMatcherTerm](#featurematcherterm) array_
 
 FeatureMatcher is a list (array) of FeatureMatcherTerm (i.e. per-feature
 matchers), all of which must match.
@@ -202,7 +202,7 @@ _Appears in:_
 
 #### MatchExpression
 
-_Underlying type:_ _[struct{Op MatchOp "json:\"op\""; Value MatchValue "json:\"value,omitempty\""; Type ValueType "json:\"type,omitempty\""}](#struct{op-matchop-"json:\"op\"";-value-matchvalue-"json:\"value,omitempty\"";-type-valuetype-"json:\"type,omitempty\""})_
+
 
 MatchExpression specifies an expression to evaluate against a set of input
 values. It contains an operator that is applied when matching the input and
@@ -212,12 +212,18 @@ an array of values that the operator evaluates the input against.
 
 _Appears in:_
 - [FeatureMatcherTerm](#featurematcherterm)
+- [MatchExpressionSet](#matchexpressionset)
 
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `op` _[MatchOp](#matchop)_ | Op is the operator to be applied. |  | Enum: [In NotIn InRegexp Exists DoesNotExist Gt Ge Lt Le GtLt GeLe IsTrue IsFalse] <br />Required: \{\} <br /> |
+| `value` _[MatchValue](#matchvalue)_ | Value is the list of values that the operand evaluates the input<br />against. Value should be empty if the operator is Exists, DoesNotExist,<br />IsTrue or IsFalse. Value should contain exactly one element if the<br />operator is Gt or Lt and exactly two elements if the operator is GtLt.<br />In other cases Value should contain at least one element. |  | Optional: \{\} <br /> |
+| `type` _[ValueType](#valuetype)_ | Type defines the value type for specific operators.<br />The currently supported type is 'version' for Gt,Ge,Lt,Le,GtLt,GeLe operators. |  | Optional: \{\} <br /> |
 
 
 #### MatchExpressionSet
 
-_Underlying type:_ _[map[string]*MatchExpression](#map[string]*matchexpression)_
+_Underlying type:_ _object (keys:string, values:[MatchExpression](#matchexpression))_
 
 MatchExpressionSet contains a set of MatchExpressions, each of which is
 evaluated against a set of input values.
@@ -229,7 +235,46 @@ _Appears in:_
 
 
 
+#### MatchOp
 
+_Underlying type:_ _string_
+
+MatchOp is the match operator that is applied on values when evaluating a
+MatchExpression.
+
+_Validation:_
+- Enum: [In NotIn InRegexp Exists DoesNotExist Gt Ge Lt Le GtLt GeLe IsTrue IsFalse]
+
+_Appears in:_
+- [MatchExpression](#matchexpression)
+
+| Field | Description |
+| --- | --- |
+| `In` | MatchIn returns true if any of the values stored in the expression is<br />equal to the input.<br /> |
+| `NotIn` | MatchNotIn returns true if none of the values in the expression are<br />equal to the input.<br /> |
+| `InRegexp` | MatchInRegexp treats values of the expression as regular expressions and<br />returns true if any of them matches the input.<br /> |
+| `Exists` | MatchExists returns true if the input is valid. The expression must not<br />have any values.<br /> |
+| `DoesNotExist` | MatchDoesNotExist returns true if the input is not valid. The expression<br />must not have any values.<br /> |
+| `Gt` | MatchGt returns true if the input is greater than the value of the<br />expression (number of values in the expression must be exactly one).<br />Both the input and value must be integer numbers, otherwise an error is<br />returned.<br /> |
+| `Ge` | MatchGe returns true if the input is greater than or equal to the value of the<br />expression (number of values in the expression must be exactly one).<br />Both the input and value must be integer numbers, otherwise an error is<br />returned.<br /> |
+| `Lt` | MatchLt returns true if the input is less  than the value of the<br />expression (number of values in the expression must be exactly one).<br />Both the input and value must be integer numbers, otherwise an error is<br />returned.<br /> |
+| `Le` | MatchLe returns true if the input is less than or equal to the value of the<br />expression (number of values in the expression must be exactly one).<br />Both the input and value must be integer numbers, otherwise an error is<br />returned.<br /> |
+| `GtLt` | MatchGtLt returns true if the input is between two values, i.e. greater<br />than the first value and less than the second value of the expression<br />(number of values in the expression must be exactly two). Both the input<br />and values must be integer numbers, otherwise an error is returned.<br /> |
+| `GeLe` | MatchGeLe returns true if the input is between two values including the boundary values,<br />i.e. greater than or equal to the first value and less than or equal to the second value<br />of the expression (number of values in the expression must be exactly two). Both the input<br />and values must be integer numbers, otherwise an error is returned.<br /> |
+| `IsTrue` | MatchIsTrue returns true if the input holds the value "true". The<br />expression must not have any values.<br /> |
+| `IsFalse` | MatchIsFalse returns true if the input holds the value "false". The<br />expression must not have any values.<br /> |
+
+
+#### MatchValue
+
+_Underlying type:_ _string array_
+
+MatchValue is the list of values associated with a MatchExpression.
+
+
+
+_Appears in:_
+- [MatchExpression](#matchexpression)
 
 
 
@@ -456,5 +501,19 @@ _Appears in:_
 | `matchAny` _[MatchAnyElem](#matchanyelem) array_ | MatchAny specifies a list of matchers one of which must match. |  | Optional: \{\} <br /> |
 
 
+#### ValueType
+
+_Underlying type:_ _string_
+
+ValueType represents the type of value in the expression.
+
+
+
+_Appears in:_
+- [MatchExpression](#matchexpression)
+
+| Field | Description |
+| --- | --- |
+| `version` | TypeVersion represents a version with the following supported formats (major.minor.patch):<br />%d.%d.%d (e.g., 1.2.3),<br />%d.%d (e.g., 1.2),<br />%d (e.g., 1)<br /> |
 
 
