@@ -43,7 +43,8 @@ core:
 ### core.featureSources
 
 `core.featureSources` specifies the list of enabled feature sources. A special
-value `all` enables all sources. Prefixing a source name with `-` indicates
+value `all` enables all sources except [`fake`](#sourcesfake), which must be
+named explicitly. Prefixing a source name with `-` indicates
 that the source will be disabled instead - this is only meaningful when used in
 conjunction with `all`. This option allows completely disabling the feature
 detection so that neither standard feature labels are generated nor the raw
@@ -73,7 +74,8 @@ core:
 ### core.labelSources
 
 `core.labelSources` specifies the list of enabled label sources. A special
-value `all` enables all sources. Prefixing a source name with `-` indicates
+value `all` enables all sources except [`fake`](#sourcesfake), which must be
+named explicitly. Prefixing a source name with `-` indicates
 that the source will be disabled instead - this is only meaningful when used in
 conjunction with `all`. This configuration option affects the generation of
 node labels but not the actual discovery of the underlying feature data that is
@@ -161,11 +163,17 @@ core:
 
 ### core.noPublish
 
-Setting `core.noPublish` to `true` disables all communication with the
-nfd-master and the Kubernetes API server. It is effectively a "dry-run" option.
-NFD-Worker runs feature detection normally, but no labeling requests are sent
-to nfd-master and no [NodeFeature](../usage/custom-resources.md#nodefeature)
-objects are created or updated in the API server.
+Setting `core.noPublish` to `true` disables publishing of the discovered
+features. It is effectively a "dry-run" option: NFD-Worker runs feature
+detection normally, but no
+[NodeFeature](../usage/custom-resources.md#nodefeature) objects are created or
+updated in the API server. nfd-worker still needs a Kubernetes client
+configuration (in-cluster or
+[`-kubeconfig`](worker-commandline-reference.md#-kubeconfig)) to start, and it
+still contacts the API server to resolve the
+[owner references](#coreownerrefs): with the default `[pod, ds]` it reads its
+own Pod when `POD_NAME` is set, as in the DaemonSet (requires `get` on pods),
+and with `node` it reads its Node.
 
 > **NOTE:** Overridden by the
 > [`-no-publish`](worker-commandline-reference.md#-no-publish)
@@ -264,6 +272,21 @@ Log to standard error as well as files.
 
 Default: `false`
 
+#### core.klog.alsologtostderrthreshold
+
+Logs at or above this threshold go to stderr when `alsologtostderr` is true (no
+effect when `logtostderr` is true).
+
+Default: `0`
+
+#### core.klog.legacyStderrThresholdBehavior
+
+If true, `stderrthreshold` is ignored when `logtostderr` is true (legacy
+behavior). If false, `stderrthreshold` is honored even when `logtostderr` is
+true.
+
+Default: `true`
+
 #### core.klog.logBacktraceAt
 
 When logging hits line file:N, emit a stack trace.
@@ -294,6 +317,13 @@ Default: `1800`
 Log to standard error instead of files
 
 Default: `true`
+
+#### core.klog.oneOutput
+
+If true, only write logs to their native severity level (vs also writing to
+each lower severity level; no effect when `logtostderr` is true).
+
+Default: `false`
 
 #### core.klog.skipHeaders
 
@@ -338,8 +368,8 @@ Prevent publishing cpuid features listed in this option.
 > **NOTE:** overridden by `sources.cpu.cpuid.attributeWhitelist` (if specified)
 
 Default: `[AVX10, BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT, MMX, MMXEXT,
-NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3, SSE4.1,
-SSE4.2, SSSE3, TDX_GUEST]`
+NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3, SSE4,
+SSE42, SSSE3, TDX_GUEST]`
 
 Example:
 
@@ -474,7 +504,7 @@ Example:
 
 ```yaml
 sources:
-  pci:
+  usb:
     deviceLabelFields: [class, vendor]
 ```
 
@@ -506,4 +536,32 @@ sources:
           matchExpressions:
             class: {op: In, value: ["0200"]}
             vendor: {op: In, value: ["8086"]}
+```
+
+### sources.fake
+
+The `fake` feature source generates static features and labels for testing. It
+is disabled by default: it is not included in `all` and must be named
+explicitly in [`core.featureSources`](#corefeaturesources) and
+[`core.labelSources`](#corelabelsources) (e.g. `[all, fake]`). It publishes the
+features `fake.flag`, `fake.attribute` and `fake.instance`, and labels with the
+`feature.node.kubernetes.io/fake-` prefix.
+
+Options: `labels` (map of label name to value; default `fakefeature1`,
+`fakefeature2`, `fakefeature3` = `"true"`), `flagFeatures` (list; default
+`[flag_1, flag_2, flag_3]`), `attributeFeatures` (map; default
+`attr_1: "true"`, `attr_2: "false"`, `attr_3: "10"`), `instanceFeatures` (list
+of attribute maps; default `instance_1`..`instance_3`). Map options are merged
+with the defaults rather than replacing them.
+
+Example:
+
+```yaml
+core:
+  featureSources: [all, fake]
+  labelSources: [all, fake]
+sources:
+  fake:
+    labels:
+      my-fake-label: "foo"
 ```
