@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+    {{- include "node-feature-discovery-operator.labels" . | nindent 4 }}
+  name: {{ include "node-feature-discovery-operator.fullname" . }}-controller-manager
+  namespace: {{ include "node-feature-discovery-operator.namespace" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      {{- include "node-feature-discovery-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "node-feature-discovery-operator.selectorLabels" . | nindent 8 }}
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=:8443
+        - --leader-elect
+        command:
+        - /node-feature-discovery-operator
+        env:
+        - name: WATCH_NAMESPACE
+          value: {{ include "node-feature-discovery-operator.namespace" . }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: node-feature-discovery-operator
+        - name: NODE_FEATURE_DISCOVERY_IMAGE
+          value: "{{ .Values.nfd.image.repository }}:{{ .Values.nfd.image.tag | default "v0.19.0" }}"
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+      terminationGracePeriodSeconds: 10

@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/fsnotify/fsnotify v1.10.1
+	github.com/go-logr/logr v1.4.4
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/jaypipes/ghw v0.25.0
@@ -22,6 +23,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	github.com/vektra/errors v0.0.0-20140903201135-c64d83aba85a
+	go.uber.org/mock v0.6.0
 	golang.org/x/time v0.16.0
 	google.golang.org/grpc v1.83.2
 	k8s.io/api v0.35.7
@@ -36,6 +38,7 @@ require (
 	k8s.io/pod-security-admission v0.35.3
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	oras.land/oras-go/v2 v2.6.2
+	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2
@@ -63,11 +66,11 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/elastic/crd-ref-docs v0.2.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
@@ -178,6 +181,7 @@ require (
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
@@ -246,6 +250,7 @@ tool (
 	github.com/losisin/helm-values-schema-json/v2
 	github.com/norwoodj/helm-docs/cmd/helm-docs
 	github.com/vektra/mockery/v2
+	go.uber.org/mock/mockgen
 	k8s.io/code-generator
 	sigs.k8s.io/controller-tools/cmd/controller-gen
 )
