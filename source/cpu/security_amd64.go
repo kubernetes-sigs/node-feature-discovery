@@ -22,6 +22,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -56,6 +57,10 @@ func discoverSecurity() map[string]string {
 		elems["tdx.protected"] = "true"
 	}
 
+	for k, v := range discoverTDXVersions() {
+		elems[k] = v
+	}
+
 	if sevParameterEnabled("sev") {
 		elems["sev.enabled"] = "true"
 
@@ -79,6 +84,36 @@ func discoverSecurity() map[string]string {
 	}
 
 	return elems
+}
+
+func discoverTDXVersions() map[string]string {
+	versions := make(map[string]string)
+	raw, err := os.ReadFile(hostpath.SysfsDir.Path("devices/faux/tdx_host/version"))
+	if err != nil {
+		return versions
+	}
+
+	for component, value := range parseTDXVersion(strings.TrimSpace(string(raw))) {
+		versions["tdx.module-version."+component] = value
+	}
+
+	return versions
+}
+
+func parseTDXVersion(raw string) map[string]string {
+	re := regexp.MustCompile(`^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)$`)
+	match := re.FindStringSubmatch(raw)
+	if match == nil {
+		return nil
+	}
+
+	version := map[string]string{"full": raw}
+	for i, name := range re.SubexpNames() {
+		if i != 0 && name != "" {
+			version[name] = match[i]
+		}
+	}
+	return version
 }
 
 func sgxEnabled() uint64 {
