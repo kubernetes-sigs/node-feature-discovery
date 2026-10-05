@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/jaypipes/ghw v0.25.0
+	github.com/jaypipes/ghw v0.26.0
 	github.com/jedib0t/go-pretty/v6 v6.8.3
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.4
 	github.com/k8stopologyawareschedwg/podfingerprint v0.3.0
