@@ -30,7 +30,7 @@ helm install -n node-feature-discovery --create-namespace nfd {{ site.helm_oci_r
 Alternatively, you can deploy using kubectl and kustomize:
 
 ```bash
-kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
 ```
 
 ### Verify the deployment
