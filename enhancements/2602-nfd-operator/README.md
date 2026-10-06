@@ -108,9 +108,8 @@ The operator keeps building its operand the way it does today (see [Operand obje
   a single squashed commit that links to the operator repository.
 - **controller-runtime lags behind client-go.** The main module gains a dependency on
   controller-runtime, which is released after each Kubernetes minor and can hold back NFD's k8s.io bumps.
-  Mitigation: if that happens, the operator code (`api/operator`, `pkg/operator`,
-  `cmd/nfd-operator`) moves under one directory with its own `go.mod`, which takes controller-runtime out of
-  the main module.
+  Mitigation: if that happens, the operator code (`pkg/operator`, `cmd/nfd-operator`) moves under one
+  directory with its own `go.mod`, which takes controller-runtime out of the main module.
 - **The operator's operand objects drift from the operand chart.** The operator keeps its own copy of the
   operand's flags, probes and RBAC (see [Operand objects](#operand-objects)), so an operand change has to
   be repeated there. Mitigation: the operator e2e test runs on every pull request, next to the operand e2e
@@ -138,10 +137,21 @@ The operator repository's own build, CI and repository files (Makefile, go.mod, 
 `scripts`, `OWNERS`, `README.md` and similar) are not imported; this repository's equivalents take over.
 Its documentation is migrated into `docs/` by a later pull request.
 
+Go code that imports the operator types changes its import path from
+`sigs.k8s.io/node-feature-discovery-operator/api/v1` to `sigs.k8s.io/node-feature-discovery/api/operator/v1`.
+The API group and version, `nfd.kubernetes.io/v1`, do not change, so existing `NodeFeatureDiscovery`
+resources are not affected.
+
 ### Dependencies
 
 The operator adds `sigs.k8s.io/controller-runtime` (v0.23.3, which builds with the k8s.io v0.35 modules
 NFD already uses) and `go.uber.org/mock` (for its existing unit tests) to the main module.
+
+The operator API is its own Go module, `sigs.k8s.io/node-feature-discovery/api/operator`, like `api/nfd`,
+so that other projects can import the `NodeFeatureDiscovery` types without the main module's
+dependencies. Its scheme registration moves from controller-runtime's `scheme.Builder` to
+`runtime.NewSchemeBuilder` from `k8s.io/apimachinery`, the way `api/nfd` registers its types, so the module
+needs only `k8s.io/api` and `k8s.io/apimachinery`.
 
 ### Operand objects
 
@@ -190,7 +200,7 @@ are deferred until after the first release, in coordination with the downstream 
 |---|---|---|
 | 1 | This proposal | The design and the roadmap |
 | 2 | Import the operator code | History and code in the paths above; builds and tests in NFD CI; not built into the image, not published, no docs |
-| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD, RBAC and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
+| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; `api/operator` as its own Go module; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD, RBAC and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
 | 4 | Operator e2e | An operator mode for `test/e2e`: install the operator chart with the pull request's image, apply a `NodeFeatureDiscovery`, check the operand, node labels and a `NodeFeatureRule`; a required presubmit job that runs on every pull request, next to the operand e2e tests |
 | 5 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart |
 | 6 | Docs and ownership | Operator deployment docs, a migration guide from operator v0.6.0, `OWNERS` for the operator code |
@@ -230,6 +240,8 @@ yet, and the operator ships in v0.21.
   the operand from the chart becomes a later step.
 - 2026-10-04: after review, rendering the operand from the chart is dropped from this proposal; the
   operator keeps building its operand in Go (see [Alternatives Considered](#alternatives-considered)).
+- 2026-10-06: after review, the operator API becomes its own Go module, and the import path change for Go
+  users is written down.
 
 ## Alternatives Considered
 
@@ -255,6 +267,4 @@ yet, and the operator ships in v0.21.
 
 ## Open Questions
 
-- Should the operator API (`api/operator/v1`) live in the main module, or in its own Go module like
-  `api/nfd`, so that downstream projects can import the types without the main module's dependencies?
 - Who should review the operator code (`OWNERS` for `pkg/operator`)?
