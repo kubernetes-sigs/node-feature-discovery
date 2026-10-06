@@ -177,8 +177,9 @@ The operator chart owns the `NodeFeatureDiscovery` CRD. The NFD CRDs (`NodeFeatu
 operator chart's `crds/` directory instead: `make generate` copies the same generated file there,
 the way it already copies it into the operand chart, and a CI check added with the build wiring (3) fails
 if the copies drift. The `NodeResourceTopology` CRD, which the operand chart renders from a template when
-`topologyUpdater.createCRDs` is set, also ships in the operator chart's `crds/` directory. The operator
-never applies a CRD and needs no permission to create or change one, and every CRD has one owner.
+`topologyUpdater.enable` and `topologyUpdater.createCRDs` are both set, also ships in the operator chart's
+`crds/` directory. The operator never applies a CRD and needs no permission to create or change one, and
+every CRD has one owner.
 
 ### Versioning
 
