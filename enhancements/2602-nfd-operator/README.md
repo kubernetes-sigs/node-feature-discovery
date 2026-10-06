@@ -181,6 +181,13 @@ if the copies drift. The `NodeResourceTopology` CRD, which the operand chart ren
 `crds/` directory. The operator never applies a CRD and needs no permission to create or change one, and
 every CRD has one owner.
 
+Helm creates the CRDs in a chart's `crds/` directory when the chart is installed, and never creates or
+changes them on `helm upgrade`. An upgrade of the operator chart therefore applies the CRDs with
+`kubectl apply` first, as the operand chart's upgrade instructions already do (`docs/deployment/helm.md`).
+From operator v0.6.0 the step is required: the v0.6.0 chart has no `NodeFeatureGroup` CRD, and its
+`NodeFeatureDiscovery` CRD has no `spec.enableTaints`, so the API server rejects or drops that field until
+the new CRD is applied. The migration guide (6) and the upgrade test from v0.6.0 include the step.
+
 ### Versioning
 
 The operator's version jumps from its last release (v0.6.0 today) to the NFD version of the release that
@@ -221,9 +228,11 @@ The operator ships once 1 to 6 are in. The end-to-end test (4) runs on every pul
 - An operator mode for the e2e tests that installs the operator from the pull request's image, applies a
   `NodeFeatureDiscovery`, waits for the operand and checks node labels and a `NodeFeatureRule`. It runs as a
   required presubmit on every pull request, next to the operand e2e tests.
-- An upgrade test from operator v0.6.0: the resource survives, the operand is reconciled and node labels
-  are not removed. The v0.6.0 chart's kube-rbac-proxy image (`gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0`)
-  is no longer published, so the test replaces it in the rendered manifests.
+- An upgrade test from operator v0.6.0: the CRDs are applied with `kubectl apply` before `helm upgrade`,
+  as the migration guide does; afterwards all five CRDs carry the new schemas, the resource survives, the
+  operand is reconciled and node labels are not removed. The v0.6.0 chart's kube-rbac-proxy image
+  (`gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0`) is no longer published, so the test replaces it in the
+  rendered manifests.
 
 ### Graduation Criteria
 
@@ -243,6 +252,7 @@ yet, and the operator ships in v0.21.
   operator keeps building its operand in Go (see [Alternatives Considered](#alternatives-considered)).
 - 2026-10-06: after review, the operator API becomes its own Go module, and the import path change for Go
   users is written down.
+- 2026-10-06: after review, an upgrade applies the CRDs with `kubectl apply` before `helm upgrade`.
 
 ## Alternatives Considered
 
