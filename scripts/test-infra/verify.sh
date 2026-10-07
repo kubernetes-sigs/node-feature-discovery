@@ -6,7 +6,8 @@ this_dir=`dirname $0`
 GOLANGCI_LINT_VERSION="v2.11.4"
 HELM_VERSION="v3.17.3"
 KUBECTL_VERSION="v1.22.1"
-CODECOV_CLI_URL="https://cli.codecov.io/latest/linux"
+CODECOV_CLI_VERSION="v11.3.1"
+CODECOV_CLI_URL="https://cli.codecov.io/${CODECOV_CLI_VERSION}/linux"
 CODECOV_PGP_KEY_URL="https://keybase.io/codecovsecops/pgp_keys.asc"
 CODECOV_PGP_FINGERPRINT="27034E7FDB850E0BBC2C62FF806BB28AED779869"
 
@@ -62,12 +63,14 @@ upload_coverage() (
     curl -fsSL "${CODECOV_CLI_URL}/codecov" -o "${codecov_dir}/codecov" || exit 1
     curl -fsSL "${CODECOV_CLI_URL}/codecov.SHA256SUM" -o "${codecov_dir}/codecov.SHA256SUM" || exit 1
     curl -fsSL "${CODECOV_CLI_URL}/codecov.SHA256SUM.sig" -o "${codecov_dir}/codecov.SHA256SUM.sig" || exit 1
-    gpg --batch --homedir "${gpg_home}" --verify \
-        "${codecov_dir}/codecov.SHA256SUM.sig" "${codecov_dir}/codecov.SHA256SUM" || exit 1
+    gpg --batch --homedir "${gpg_home}" --status-fd 1 --verify \
+        "${codecov_dir}/codecov.SHA256SUM.sig" "${codecov_dir}/codecov.SHA256SUM" \
+        | grep -q "^\[GNUPG:\] VALIDSIG .* ${CODECOV_PGP_FINGERPRINT}\$" || exit 1
     (cd "${codecov_dir}" && sha256sum --check codecov.SHA256SUM) || exit 1
     chmod +x "${codecov_dir}/codecov" || exit 1
 
     "${codecov_dir}/codecov" upload-process \
+        --fail-on-error \
         --token "${CODECOV_TOKEN}" \
         --commit-sha "${PULL_PULL_SHA}" \
         --slug "${REPO_OWNER}/${REPO_NAME}" \
