@@ -837,7 +837,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 	if err != nil {
 		return fmt.Errorf("failed to get nodes: %w", err)
 	}
-	nodeFeaturesList := make([]*nfdv1alpha1.Features, 0)
+	nodeFeaturesList := make([]*nfdv1alpha1.NodeFeature, 0)
 	for _, node := range nodes.Items {
 		// Merge all NodeFeature objects into a single NodeFeatureSpec
 		nodeFeatures, _, err := m.getAndMergeNodeFeatures(node.Name)
@@ -848,13 +848,14 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 			// Nothing to do for this node
 			continue
 		}
-		nodeFeaturesList = append(nodeFeaturesList, &nodeFeatures.Spec.Features)
+		nodeFeaturesList = append(nodeFeaturesList, nodeFeatures)
 	}
 
 	// Execute rules and create matching groups
 	nodePool := make([]nfdv1alpha1.FeatureGroupNode, 0)
 	nodeGroupValidator := make(map[string]bool)
-	for _, features := range nodeFeaturesList {
+	for _, nodeFeatures := range nodeFeaturesList {
+		features := &nodeFeatures.Spec.Features
 		for _, rule := range nodeFeatureGroup.Spec.Rules {
 			ruleOut, err := nodefeaturerule.ExecuteGroupRule(&rule, features, true)
 			if err != nil {
@@ -863,8 +864,7 @@ func (m *nfdMaster) nfdAPIUpdateNodeFeatureGroup(nfdClient nfdclientset.Interfac
 			}
 
 			if ruleOut.MatchStatus.IsMatch {
-				system := features.Attributes["system.name"]
-				nodeName := system.Elements["nodename"]
+				nodeName := nodeFeatures.Name
 				if _, ok := nodeGroupValidator[nodeName]; !ok {
 					nodePool = append(nodePool, nfdv1alpha1.FeatureGroupNode{
 						Name: nodeName,
