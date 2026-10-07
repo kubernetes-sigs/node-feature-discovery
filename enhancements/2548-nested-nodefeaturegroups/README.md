@@ -192,7 +192,9 @@ not required to flatten transitive group references into the parent status.
 need cardinality can read `nodeCount` without expanding references.
 
 Consumers that need the full node set must recursively resolve `status.groups`
-and union those groups' effective members with `status.nodes`.
+and union those groups' effective members with `status.nodes`. They must also
+watch every group that they resolve, because a membership change in a
+referenced group does not always change the parent's status.
 
 ### Conditions
 
