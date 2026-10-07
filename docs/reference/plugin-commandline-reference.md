@@ -25,9 +25,9 @@ Print usage and exit.
 
 Validate a NodeFeatureRule file.
 
-### -f / --nodefeaturerule-file
+### -f / --rule-file
 
-The `--nodefeaturerule-file` flag specifies the path to the NodeFeatureRule file
+The `--rule-file` flag specifies the path to the NodeFeatureRule file
 to validate.
 
 ## Test
@@ -49,18 +49,18 @@ Default: `default`.
 The `--nodename` flag specifies the name of the node to test the
 NodeFeatureRule against.
 
-### -f, --nodefeaturerule-file
+### -f, --rule-file
 
-The `--nodefeaturerule-file` flag specifies the path to the NodeFeatureRule file
+The `--rule-file` flag specifies the path to the NodeFeatureRule file
 to test.
 
 ## DryRun
 
 Process a NodeFeatureRule file against a NodeFeature file.
 
-### -f, --nodefeaturerule-file
+### -f, --rule-file
 
-The `--nodefeaturerule-file` flag specifies the path to the NodeFeatureRule file
+The `--rule-file` flag specifies the path to the NodeFeatureRule file
 to test.
 
 ### -n, --nodefeature-file
