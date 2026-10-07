@@ -32,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -1159,6 +1160,71 @@ func TestProcessedOnceNodeGetsLabelsRemovedOnReprocess(t *testing.T) {
 			// Stale label should be removed
 			_, exists := updatedNode.Labels[nfdv1alpha1.FeatureLabelNs+"/stale-label"]
 			So(exists, ShouldBeFalse)
+		})
+	})
+}
+
+func TestNfdAPIUpdateNodeFeatureGroup(t *testing.T) {
+	Convey("When evaluating a NodeFeatureGroup", t, func() {
+		const namespace = "nfd"
+		newNodeFeature := func(nodeName, value string) *nfdv1alpha1.NodeFeature {
+			features := nfdv1alpha1.NewFeatures()
+			features.Attributes["fake.attribute"] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"key": value})
+			return &nfdv1alpha1.NodeFeature{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "third-party-" + nodeName,
+					Namespace: namespace,
+					Labels:    map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName},
+				},
+				Spec: nfdv1alpha1.NodeFeatureSpec{Features: *features},
+			}
+		}
+		nfg := &nfdv1alpha1.NodeFeatureGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-group", Namespace: namespace},
+			Spec: nfdv1alpha1.NodeFeatureGroupSpec{
+				Rules: []nfdv1alpha1.GroupRule{
+					{
+						Name: "fake-attribute",
+						MatchFeatures: nfdv1alpha1.FeatureMatcher{
+							{
+								Feature: "fake.attribute",
+								MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+									"key": &nfdv1alpha1.MatchExpression{Op: nfdv1alpha1.MatchIn, Value: nfdv1alpha1.MatchValue{"value"}},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		k8sCli := fakeclient.NewClientset(
+			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-a"}},
+			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-b"}},
+			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-c"}},
+		)
+		//nolint:staticcheck
+		nfdCli := fakenfdclient.NewSimpleClientset(
+			newNodeFeature("node-a", "value"),
+			newNodeFeature("node-b", "value"),
+			newNodeFeature("node-c", "other"),
+			nfg,
+		)
+		fakeMaster := newFakeMaster(WithKubernetesClient(k8sCli))
+		fakeMaster.namespace = namespace
+		fakeMaster.nfdController = newFakeNfdAPIController(nfdCli)
+		defer fakeMaster.nfdController.stop()
+
+		So(func() interface{} {
+			nodeFeatures, _ := fakeMaster.featureLister.List(k8slabels.Everything())
+			return len(nodeFeatures)
+		}, withTimeout, 2*time.Second, ShouldEqual, 3)
+
+		Convey("Matching nodes without a system.name feature are listed by Node name", func() {
+			err := fakeMaster.nfdAPIUpdateNodeFeatureGroup(nfdCli, nfg)
+			So(err, ShouldBeNil)
+			updated, err := nfdCli.NfdV1alpha1().NodeFeatureGroups(namespace).Get(context.TODO(), nfg.Name, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+			So(updated.Status.Nodes, ShouldResemble, []nfdv1alpha1.FeatureGroupNode{{Name: "node-a"}, {Name: "node-b"}})
 		})
 	})
 }
