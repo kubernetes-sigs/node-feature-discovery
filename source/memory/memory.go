@@ -17,10 +17,12 @@ limitations under the License.
 package memory
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -36,6 +38,9 @@ import (
 
 // Name of this feature source
 const Name = "memory"
+
+// MemoryFeature is the total memory on a node.
+const MemoryFeature = "memory"
 
 // NvFeature is the name of the feature set that holds all discovered NVDIMM devices.
 const NvFeature = "nv"
@@ -72,6 +77,9 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 	labels := source.FeatureLabels{}
 	features := s.GetFeatures()
 
+	// Memory
+	labels["memory"] = s.features.Attributes[MemoryFeature].Elements["total"]
+
 	// NUMA
 	if isNuma, ok := features.Attributes[NumaFeature].Elements["is_numa"]; ok && isNuma == "true" {
 		labels["numa"] = true
@@ -99,6 +107,13 @@ func (s *memorySource) GetLabels() (source.FeatureLabels, error) {
 // Discover method of the FeatureSource interface
 func (s *memorySource) Discover() error {
 	s.features = nfdv1alpha1.NewFeatures()
+
+	// Detect memory
+	if memory, err := detectMemory(); err != nil {
+		klog.ErrorS(err, "failed to detect memory")
+	} else {
+		s.features.Attributes[MemoryFeature] = nfdv1alpha1.AttributeFeatureSet{Elements: memory}
+	}
 
 	// Detect NUMA
 	if numa, err := detectNuma(); err != nil {
@@ -139,6 +154,43 @@ func (s *memorySource) GetFeatures() *nfdv1alpha1.Features {
 		s.features = nfdv1alpha1.NewFeatures()
 	}
 	return s.features
+}
+
+func detectMemory() (map[string]string, error) {
+	// Open /proc/meminfo file
+	file, err := os.Open("/proc/meminfo")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open /proc/meminfo: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var totalMemory string
+
+	for scanner.Scan() {
+		// Check for the line that contains MemTotal
+		line := scanner.Text()
+		if strings.HasPrefix(line, "MemTotal:") {
+			totalMemory = line
+			break
+		}
+	}
+
+	// Check for errors
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading /proc/meminfo: %w", err)
+	}
+
+	re := regexp.MustCompile(`\d+`)
+
+	matches := re.FindStringSubmatch(totalMemory)
+	if len(matches) != 1 {
+		return nil, fmt.Errorf("failed to parse total memory total from /proc/meminfo")
+	}
+
+	return map[string]string{
+		"total": matches[0],
+	}, nil
 }
 
 // detectSwap detects Swap node information
