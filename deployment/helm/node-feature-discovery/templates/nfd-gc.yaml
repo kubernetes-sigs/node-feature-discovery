@@ -106,11 +106,7 @@ spec:
         resources:
       {{- toYaml .Values.gc.resources | nindent 12 }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: [ "ALL" ]
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
+      {{- toYaml .Values.gc.securityContext | nindent 12 }}
         ports:
           - name: http
             containerPort: {{ .Values.gc.port | default "8080"}}

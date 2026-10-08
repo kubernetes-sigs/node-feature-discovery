@@ -283,7 +283,7 @@ NFD.
 | worker.annotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-worker pods. |
 | worker.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-worker pods. |
 | worker.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-worker pods. |
-| worker.priorityClassName | string | `nil` | The name of the PriorityClass to be used for the nfd-worker pods. |
+| worker.priorityClassName | string | `nil` | The name of the PriorityClass to be used for the nfd-worker pods. Takes precedence over the top-level `priorityClassName`. |
 | worker.updateStrategy | object | `{"rollingUpdate":{"maxUnavailable":"10%"}}` | Update strategy for the nfd-worker DaemonSet. Defaults to a rolling update with `maxUnavailable: "10%"` so upgrades complete in a bounded number of waves on clusters of any size (the Kubernetes default of `maxUnavailable: 1` rolls one node at a time and makes Helm wait and Flux HelmRelease timeouts likely on large clusters). nfd-worker is stateless and node labels persist while a worker pod restarts, so a faster roll is safe. Set `maxUnavailable: 1` to restore the Kubernetes default. To use `type: OnDelete`, also set `rollingUpdate: null` (Helm deep-merges maps). [More info](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set) |
 | worker.networkPolicy.enabled | bool | `false` | Should a networkPolicy be deployed for the nfd-worker pods |
 | worker.networkPolicy.egress | list | `[{"ports":[{"port":80,"protocol":"TCP"},{"port":443,"protocol":"TCP"},{"port":53,"protocol":"TCP"},{"port":53,"protocol":"UDP"},{"port":6443,"protocol":"TCP"}]}]` | [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-worker pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp |
@@ -357,6 +357,7 @@ NFD.
 | gc.interval | string | `"1h"` | Time between periodic garbage collector runs. |
 | gc.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-gc pods. |
 | gc.initContainers | list | `[]` | [Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-gc pods. |
+| gc.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true}` | [SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-gc container. |
 | gc.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
 | gc.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | gc.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
@@ -377,7 +378,7 @@ NFD.
 | gc.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-gc pods. |
 | gc.deploymentAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc  Deployment. |
 | gc.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-gc pods. |
-| gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-master Deployment. |
+| gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-gc Deployment. |
 | gc.podDisruptionBudget.minAvailable | int | `1` | Minimum number (or percentage) of pods that must be available after the eviction. |
 | gc.podDisruptionBudget.unhealthyPodEvictionPolicy | string | `"AlwaysAllow"` | Policy to evict unhealthy pods when a PodDisruptionBudget is defined. |
 | gc.revisionHistoryLimit | int | `nil` | Specifies the number of old history for the Deployment to retain to allow rollback. |
