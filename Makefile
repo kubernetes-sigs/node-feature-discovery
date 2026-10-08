@@ -113,9 +113,8 @@ image: yamls
 	$(IMAGE_BUILD_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_MINIMAL)
 
 image-all: ensure-buildx yamls
-# --load : not implemented yet, see: https://github.com/docker/buildx/issues/59
-	$(IMAGE_BUILDX_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)
-	$(IMAGE_BUILDX_CMD) $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_MINIMAL)
+	$(IMAGE_BUILDX_CMD) --load $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_FULL)
+	$(IMAGE_BUILDX_CMD) --load $(IMAGE_BUILD_ARGS) $(IMAGE_BUILD_ARGS_MINIMAL)
 
 # Local cross-build smoke test for the full release matrix. Does NOT push;
 # does NOT --load. Exits non-zero on the first platform that fails to build.
