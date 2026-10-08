@@ -236,6 +236,11 @@
                         "null"
                     ]
                 },
+                "securityContext": {
+                    "description": "[SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-gc container.",
+                    "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.SecurityContext",
+                    "type": "object"
+                },
                 "serviceAccount": {
                     "type": "object",
                     "properties": {
