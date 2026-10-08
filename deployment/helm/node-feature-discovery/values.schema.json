@@ -1106,7 +1106,7 @@
                     "minimum": 1
                 },
                 "priorityClassName": {
-                    "description": "The name of the PriorityClass to be used for the nfd-worker pods.",
+                    "description": "The name of the PriorityClass to be used for the nfd-worker pods. Takes precedence over the top-level `priorityClassName`.",
                     "type": [
                         "string",
                         "null"
