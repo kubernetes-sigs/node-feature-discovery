@@ -375,6 +375,7 @@ NFD.
 | gc.interval | string | `"1h"` | Time between periodic garbage collector runs. |
 | gc.podSecurityContext | object | `{}` | [Pod SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) of the nfd-gc pods. |
 | gc.initContainers | list | `[]` | [Init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to add to the nfd-gc pods. |
+| gc.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true}` | [SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-gc container. |
 | gc.livenessProbe | object | - | Liveness probe configuration. [More information](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-liveness-probes). |
 | gc.livenessProbe.initialDelaySeconds | int | `10` | The number of seconds after the container has started before probe is initiated. |
 | gc.livenessProbe.timeoutSeconds | int | `nil` | The number of seconds after which the probe times out. |
@@ -395,7 +396,7 @@ NFD.
 | gc.labels | object | `{}` | [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to the nfd-gc pods. |
 | gc.deploymentAnnotations | object | `{}` | [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations) to add to the nfd-gc  Deployment. |
 | gc.affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the nfd-gc pods. |
-| gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-master Deployment. |
+| gc.podDisruptionBudget.enable | bool | `false` | Configure PodDisruptionBudget for the nfd-gc Deployment. |
 | gc.podDisruptionBudget.minAvailable | int | `1` | Minimum number (or percentage) of pods that must be available after the eviction. |
 | gc.podDisruptionBudget.unhealthyPodEvictionPolicy | string | `"AlwaysAllow"` | Policy to evict unhealthy pods when a PodDisruptionBudget is defined. |
 | gc.revisionHistoryLimit | int | `nil` | Specifies the number of old history for the Deployment to retain to allow rollback. |

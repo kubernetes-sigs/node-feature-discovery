@@ -152,7 +152,7 @@
                     "type": "object",
                     "properties": {
                         "enable": {
-                            "description": "Configure PodDisruptionBudget for the nfd-master Deployment.",
+                            "description": "Configure PodDisruptionBudget for the nfd-gc Deployment.",
                             "type": "boolean"
                         }
                     }
@@ -235,6 +235,11 @@
                         "integer",
                         "null"
                     ]
+                },
+                "securityContext": {
+                    "description": "[SecurityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container) of the nfd-gc container.",
+                    "$ref": "#/$defs/_definitions.json/definitions/io.k8s.api.core.v1.SecurityContext",
+                    "type": "object"
                 },
                 "serviceAccount": {
                     "type": "object",
