@@ -29,18 +29,54 @@ import (
 type KlogConfigOpts map[string]string
 
 // InitKlogFlags function is responsible for initializing klog flags.
-func InitKlogFlags(flagset *flag.FlagSet) map[string]*utils.KlogFlagVal {
+// It returns an error if the NFD-level klog defaults cannot be applied
+// (e.g., a future klog version renames the flags); callers should treat
+// this as fatal to avoid silently reverting to broken behavior.
+func InitKlogFlags(flagset *flag.FlagSet) (map[string]*utils.KlogFlagVal, error) {
 	klogFlags := make(map[string]*utils.KlogFlagVal)
 
 	flags := flag.NewFlagSet("klog flags", flag.ContinueOnError)
 	klog.InitFlags(flags)
+
+	// Opt into the corrected klog behavior and set NFD-level defaults
+	// *before* VisitAll so that DefValue is propagated to KlogFlagVal.
+	// MergeKlogConfiguration uses DefValue() as fallback when neither the
+	// CLI nor the config file sets the option, so this preserves the opt-in
+	// while still allowing config-file and CLI overrides to win.
+	// Ref: kubernetes/klog#212, kubernetes/klog#432
+	if err := applyStderrThresholdDefaults(flags); err != nil {
+		return nil, fmt.Errorf("applying stderrthreshold defaults: %w", err)
+	}
+
 	flags.VisitAll(func(f *flag.Flag) {
 		name := klogConfigOptName(f.Name)
 		klogFlags[name] = utils.NewKlogFlagVal(f)
 		flagset.Var(klogFlags[name], f.Name, f.Usage)
 	})
 
-	return klogFlags
+	return klogFlags, nil
+}
+
+// applyStderrThresholdDefaults sets the NFD-level defaults on the inner klog
+// flagset and updates DefValue so that MergeKlogConfiguration preserves them
+// when neither the CLI nor the config file provides an override.
+func applyStderrThresholdDefaults(flags *flag.FlagSet) error {
+	// Disable legacy stderr threshold behavior.
+	if err := flags.Set("legacy_stderr_threshold_behavior", "false"); err != nil {
+		return fmt.Errorf("setting legacy_stderr_threshold_behavior: %w", err)
+	}
+	if f := flags.Lookup("legacy_stderr_threshold_behavior"); f != nil {
+		f.DefValue = "false"
+	}
+	// Set stderrthreshold to INFO (0) so NFD daemons continue to emit
+	// INFO and WARNING logs to stderr (klog's default is ERROR).
+	if err := flags.Set("stderrthreshold", "INFO"); err != nil {
+		return fmt.Errorf("setting stderrthreshold: %w", err)
+	}
+	if f := flags.Lookup("stderrthreshold"); f != nil {
+		f.DefValue = "0"
+	}
+	return nil
 }
 
 // MergeKlogConfiguration merges klog command line flags to klog configuration file options
