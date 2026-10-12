@@ -400,6 +400,12 @@ sources:
 
 ### sources.local
 
+The `local` feature source has no configuration options. It reads
+[feature files](../usage/customization-guide.md#feature-files) from
+`/etc/kubernetes/node-feature-discovery/features.d/`. See the
+[local feature source](../usage/customization-guide.md#local-feature-source)
+documentation for the file format and usage.
+
 ### sources.pci
 
 #### sources.pci.deviceClassWhitelist
