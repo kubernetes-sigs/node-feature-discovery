@@ -13,12 +13,8 @@ instructions, GPUs, network adapters, or kernel features.
 For full documentation see the **[Documentation][documentation]** site.
 
 > **Using a release?** Read the docs for your version, not this branch.
-> The `main` branch reflects work in progress and may not match your deployment.
->
-> | NFD version | Docs |
-> |---|---|
-> | v0.19 (latest) | [v0.19 docs][documentation] |
-> | v0.18 | [v0.18 docs](https://kubernetes-sigs.github.io/node-feature-discovery/v0.18) |
+> The `master` branch reflects work in progress and may not match your deployment.
+> The [documentation][documentation] site has a list of versions.
 
 ## How it works
 
@@ -67,8 +63,8 @@ $ kubectl get no -o json | jq ".items[].metadata.labels"
 }
 ```
 
-`nfd-worker` has labeled every node with the features it detected. You can now
-use those labels in a Pod's `nodeSelector`:
+NFD has labeled every node with the features it detected. You can now use those
+labels in a Pod's `nodeSelector`:
 
 ```yaml
 nodeSelector:
@@ -81,11 +77,6 @@ NFD is compatible with Kubernetes v1.24 and later. The two most recent NFD
 minor releases are supported. See the [versions reference][versions] for the
 full deprecation policy.
 
-| NFD version | Kubernetes |
-|---|---|
-| v0.19.x | v1.24+ |
-| v0.18.x | v1.24+ |
-
 ## Community
 
 - Slack: [#node-feature-discovery](https://kubernetes.slack.com/messages/node-feature-discovery)
@@ -97,4 +88,4 @@ NFD is a [SIG-Node](https://github.com/kubernetes/community/blob/master/sig-node
 subproject under the [Kubernetes SIGs](https://github.com/kubernetes-sigs) organization.
 
 [documentation]: https://kubernetes-sigs.github.io/node-feature-discovery/v0.19
-[versions]: https://kubernetes-sigs.github.io/node-feature-discovery/v0.19/reference/versions
+[versions]: https://kubernetes-sigs.github.io/node-feature-discovery/stable/reference/versions
