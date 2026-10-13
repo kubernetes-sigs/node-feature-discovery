@@ -134,6 +134,14 @@ func (n *nfdGarbageCollector) deleteNodeHandler(object interface{}) {
 	}
 	nodeName := meta.GetName()
 
+	// The informer removes the Node from its cache before it calls this
+	// handler. A Node in the cache was created again with the same name
+	// while the event waited, and the objects belong to it.
+	if _, err := n.factory.ForResource(gvrNode).Lister().Get(nodeName); err == nil {
+		klog.InfoS("node exists again, skipping deletion of its NodeFeature and NodeResourceTopology objects", "nodeName", nodeName)
+		return
+	}
+
 	n.deleteNRT(nodeName)
 
 	// Delete all NodeFeature objects (from all namespaces) targeting the deleted node
