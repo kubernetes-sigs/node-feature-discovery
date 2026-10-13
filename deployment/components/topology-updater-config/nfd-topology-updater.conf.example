@@ -4,4 +4,4 @@
 #excludeList:
 #  node1: [cpu]
 #  node2: [memory, example/deviceA]
-#  *: [hugepages-2Mi]
+#  '*': [hugepages-2Mi]

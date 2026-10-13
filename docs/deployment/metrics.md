@@ -6,10 +6,15 @@ sort: 6
 
 # Metrics
 
-Metrics are configured to be exposed using [prometheus operator](https://github.com/prometheus-operator/prometheus-operator)
-API's by default. If you want to expose metrics using the prometheus operator
-API's you need to install the prometheus operator in your cluster.
-By default NFD Master and Worker expose metrics on port 8081.
+All NFD components expose Prometheus metrics on their `/metrics` HTTP endpoint
+by default. Collecting them through the
+[prometheus operator](https://github.com/prometheus-operator/prometheus-operator)
+is opt-in: it creates a `PodMonitor` object, which requires the
+prometheus-operator CRDs to be installed in the cluster.
+By default nfd-master, nfd-worker, nfd-gc and nfd-topology-updater serve
+Prometheus metrics at `/metrics` on port 8080. This is the same HTTP port that
+serves `/healthz`, and it is set with each daemon's `-port` command-line flag.
+In Helm, `master.port`, `worker.port` and `topologyUpdater.port` set that flag.
 
 The exposed metrics are
 
@@ -19,9 +24,8 @@ The exposed metrics are
 | `nfd_worker_build_info`                                  | Gauge     | Version from which nfd-worker was built                                    |
 | `nfd_gc_build_info`                                      | Gauge     | Version from which nfd-gc was built                                        |
 | `nfd_topology_updater_build_info`                        | Gauge     | Version from which nfd-topology-updater was built                          |
-| `nfd_master_node_update_requests_total`                  | Counter   | Number of node update requests received by the master over gRPC            |
+| `nfd_master_node_update_requests_total`                  | Counter   | Number of node update requests processed by the master                     |
 | `nfd_master_node_updates_total`                          | Counter   | Number of nodes updated                                                    |
-| `nfd_master_node_feature_group_update_requests_total`    | Counter   | Number of cluster feature update requests processed by the master          |
 | `nfd_master_node_update_failures_total`                  | Counter   | Number of nodes update failures                                            |
 | `nfd_master_node_labels_rejected_total`                  | Counter   | Number of nodes labels rejected by nfd-master                              |
 | `nfd_master_node_extendedresources_rejected_total`       | Counter   | Number of nodes extended resources rejected by nfd-master                  |

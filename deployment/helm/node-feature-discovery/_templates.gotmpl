@@ -63,7 +63,7 @@ helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace 
 To specify each parameter separately you can provide them to helm install command:
 
 ```bash
-helm install --set nameOverride=NFDinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd {{ template "metadata.oci_repo" . }} --version {{ template "metadata.oci_tag" . }}
+helm install --set nameOverride=nfdinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd {{ template "metadata.oci_repo" . }} --version {{ template "metadata.oci_tag" . }}
 ```
 
 ## Upgrading the chart

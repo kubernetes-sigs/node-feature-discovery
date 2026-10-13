@@ -77,7 +77,9 @@ kubectl kustomize "https://github.com/kubernetes-sigs/node-feature-discovery/dep
     kubectl apply -f -
 ```
 
-The example above launches as many jobs as there are non-master nodes. Note that
+The example above creates one Job that runs as many worker pods as there are
+nodes in the cluster (including control-plane nodes, which only get a pod if
+they are not tainted). Note that
 this approach does not guarantee running once on every node. For example,
 tainted, non-ready nodes or some other reasons in Job scheduling may cause some
 node(s) will run extra job instance(s) to satisfy the request.
@@ -132,21 +134,24 @@ deployment.  Beware that this will also delete the namespace that NFD is
 running in. For example, in case the default overlay from the repo was used:
 
 ```bash
-kubectl delete -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}
+kubectl delete -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref={{ site.release }}"
 ```
 
-Alternatively you can delete create objects one-by-one, depending on the type
-of deployment, for example:
+Alternatively you can delete created objects one-by-one, depending on the type
+of deployment, for example (default overlay):
 
 ```bash
 NFD_NS=node-feature-discovery
 kubectl -n $NFD_NS delete ds nfd-worker
-kubectl -n $NFD_NS delete deploy nfd-master
-kubectl -n $NFD_NS delete svc nfd-master
-kubectl -n $NFD_NS delete sa nfd-master
-kubectl delete clusterrole nfd-master
-kubectl delete clusterrolebinding nfd-master
+kubectl -n $NFD_NS delete deploy nfd-master nfd-gc
+kubectl -n $NFD_NS delete sa nfd-master nfd-worker nfd-gc
+kubectl -n $NFD_NS delete role,rolebinding nfd-worker
+kubectl delete clusterrole nfd-master nfd-gc
+kubectl delete clusterrolebinding nfd-master nfd-gc
 ```
+
+This leaves the nfd-master and nfd-worker ConfigMaps (their names have a hash
+suffix), the NFD CRDs and the namespace in place.
 
 <!-- Links -->
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
