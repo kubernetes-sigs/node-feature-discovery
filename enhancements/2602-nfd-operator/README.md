@@ -142,6 +142,13 @@ Go code that imports the operator types changes its import path from
 The API group and version, `nfd.kubernetes.io/v1`, do not change, so existing `NodeFeatureDiscovery`
 resources are not affected.
 
+The types move to `api/operator/v1` rather than keeping the operator repository's `api/v1` because Go does
+not allow a module path to end in `/v1`: as its own module, `sigs.k8s.io/node-feature-discovery/api/v1` is
+rejected as a malformed module path. The types would then have to stay in NFD's main module, and every
+project that imports them would pull in all of NFD's dependencies (see [Dependencies](#dependencies)).
+Keeping `api/v1` would not have kept existing Go code building either, since the module prefix changes
+from `sigs.k8s.io/node-feature-discovery-operator` to `sigs.k8s.io/node-feature-discovery` in both cases.
+
 ### Dependencies
 
 The operator adds `sigs.k8s.io/controller-runtime` (v0.23.3, which builds with the k8s.io v0.35 modules
@@ -253,6 +260,7 @@ yet, and the operator ships in v0.21.
 - 2026-10-06: after review, the operator API becomes its own Go module, and the import path change for Go
   users is written down.
 - 2026-10-06: after review, an upgrade applies the CRDs with `kubectl apply` before `helm upgrade`.
+- 2026-10-13: after review, the reason for `api/operator/v1` instead of `api/v1` is written down.
 
 ## Alternatives Considered
 
