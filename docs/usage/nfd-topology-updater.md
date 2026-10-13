@@ -17,14 +17,15 @@ resources and hence the allocatable resources on a per-zone basis by updating
 It makes sure that new NodeResourceTopology instances are created for each new
 nodes that get added to the cluster.
 
-Because of the design and implementation of Kubernetes, only resources exclusively
-allocated to [Guaranteed Quality of Service](https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/#guaranteed)
-pods will be accounted.
-This includes
-[CPU cores](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy),
+Because of the design and implementation of Kubernetes, only exclusively
+allocated resources are accounted:
+[CPU cores](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy-configuration)
+(pods of the [Guaranteed Quality of Service](https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/#guaranteed)
+class requesting whole CPUs),
 [memory](https://kubernetes.io/docs/tasks/administer-cluster/memory-manager/#policy-static)
-and
-[devices](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/).
+(Guaranteed QoS pods) and
+[devices](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/)
+allocated by device plugins (for pods of any QoS class).
 
 When run as a daemonset, nodes are re-examined for the allocated resources
 (to determine the information of the allocatable resources on a per-zone basis
@@ -46,31 +47,30 @@ given a configuration of resources to exclude via [`-excludeList`](../reference/
 ## Deployment Notes
 
 Kubelet [PodResource API][podresource-api] with the
-[GetAllocatableResources][getallocatableresources] functionality enabled is a
-prerequisite for nfd-topology-updater to be able to run (i.e. Kubernetes v1.21
-or later is required).
-
-Preceding Kubernetes v1.23, the `kubelet` must be started with
-`--feature-gates=KubeletPodResourcesGetAllocatable=true`.
-
-Starting from Kubernetes v1.23, the `KubeletPodResourcesGetAllocatable`
-[feature gate][feature-gate].  is enabled by default
+[GetAllocatableResources][getallocatableresources] functionality is a
+prerequisite for nfd-topology-updater to be able to run. It is enabled by
+default on all Kubernetes versions supported by NFD (v1.24 and later), so no
+kubelet feature gate needs to be set.
 
 ### NodeResourceTopology CRD
 
 The NFD-Topology-Updater requires the `NodeResourceTopology` Custom Resource
-Definition (CRD) to be installed in the cluster. Without this CRD, the
-topology-updater pods will fail with an error:
+Definition (CRD) to be installed in the cluster. Without this CRD the
+topology-updater does not publish anything: the pods stay Running and Ready
+while the updater retries (backoff from 5s up to 60s) and logs:
 
 ```plaintext
-NodeResourceTopology CRD "noderesourcetopologies.topology.node.k8s.io" is not installed
+waiting for NodeResourceTopology CRD to be created. If using Helm, ensure 'topologyUpdater.createCRDs=true' is set
 ```
+
+The updater continues automatically once the CRD exists.
 
 When deploying with Helm, you **must** set `topologyUpdater.createCRDs=true`
 along with `topologyUpdater.enable=true`:
 
 ```bash
-helm install nfd node-feature-discovery \
+helm install nfd --namespace node-feature-discovery --create-namespace \
+  {{ site.helm_oci_repo }} --version {{ site.helm_chart_version }} \
   --set topologyUpdater.enable=true \
   --set topologyUpdater.createCRDs=true
 ```
@@ -82,8 +82,8 @@ deploying the topology-updater
 ## Topology-Updater Configuration
 
 NFD-Topology-Updater supports configuration through a configuration file. The
-default location is `/etc/kubernetes/node-feature-discovery/topology-updater.conf`,
-but, this can be changed by specifying the`-config` command line flag.
+default location is `/etc/kubernetes/node-feature-discovery/nfd-topology-updater.conf`,
+but this can be changed by specifying the `-config` command line flag.
 
 Topology-Updater configuration file is read inside the container,
 and thus, Volumes and VolumeMounts are needed
@@ -107,9 +107,9 @@ for more details.
 The (empty-by-default)
 [example config](https://github.com/kubernetes-sigs/node-feature-discovery/blob/{{site.release}}/deployment/components/topology-updater-config/nfd-topology-updater.conf.example)
 contains all available configuration options and can be used as a reference
-for creating a configuration.
+for creating a configuration. Quote the `*` key of `excludeList` (`'*'`): a
+bare `*` is YAML alias syntax and fails to parse.
 
 <!-- Links -->
 [podresource-api]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#monitoring-device-plugin-resources
-[feature-gate]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates
 [getallocatableresources]: https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#grpc-endpoint-getallocatableresources

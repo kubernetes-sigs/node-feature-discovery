@@ -44,8 +44,14 @@ nfd-master -feature-gates NodeFeatureGroupAPI=true
 ### -prune
 
 The `-prune` flag is a sub-command like option for cleaning up the cluster. It
-causes nfd-master to remove all NFD related labels, annotations and extended
-resources from all Node objects of the cluster and exit.
+causes nfd-master to remove all NFD related labels, annotations, extended
+resources and taints from all Node objects of the cluster and exit. Pruning is
+skipped if `-no-publish` (or the `noPublish` configuration option) is set.
+
+> **NOTE:** Currently, if NFD taints are enabled, the first `nfd-master -prune`
+> run may exit with `failed to patch the node` and leave the NFD taints on the
+> node. Run it again. The Helm post-delete hook and the prune kustomize overlay
+> run prune as a Job, which retries automatically.
 
 ### -port
 
@@ -67,6 +73,12 @@ parallel. In practice, it separates the node annotations between deployments so
 that each of them can store metadata independently. The instance name must
 start and end with an alphanumeric character and may only contain alphanumeric
 characters, `-`, `_` or `.`.
+
+The instance name is added as a prefix to the feature-labels,
+feature-annotations and extended-resources annotations (for example
+`network.nfd.node.kubernetes.io/feature-labels`). The
+`nfd.node.kubernetes.io/taints` annotation does not get the prefix and is not
+separated between deployments.
 
 Default: *empty*
 
@@ -153,14 +165,21 @@ nfd-master -extra-label-ns=vendor-1.com,vendor-2.io
 The `-deny-label-ns` flag specifies a comma-separated list of excluded
 label namespaces. By default, nfd-master allows creating labels in all
 namespaces, excluding `kubernetes.io` namespace and its sub-namespaces
-(i.e. `*.kubernetes.io`). However, you should note that
-`kubernetes.io` and its sub-namespaces are always denied.
+(i.e. `*.kubernetes.io`). `kubernetes.io` and its sub-namespaces (except
+`feature.node.kubernetes.io`, `profile.node.kubernetes.io` and their
+sub-namespaces) stay denied whatever `-deny-label-ns` is set to. A specific
+namespace can only be allowed by listing it in `-extra-label-ns`.
 For example, `nfd-master -deny-label-ns=""` would still disallow
 `kubernetes.io` and `*.kubernetes.io`.
 This option can be used to exclude some vendors or application specific
 namespaces.
-Note that the namespaces `feature.node.kubernetes.io` and `profile.node.kubernetes.io`
-and their sub-namespaces are always allowed and cannot be denied.
+Note that the `feature.node.kubernetes.io` and `profile.node.kubernetes.io`
+namespaces and their sub-namespaces are allowed by default even though they
+are under `kubernetes.io`. They can still be denied explicitly: for example
+`-deny-label-ns=feature.node.kubernetes.io` removes all built-in feature
+labels, and `-deny-label-ns=*.kubernetes.io` removes the labels in all of these
+namespaces. A namespace listed in `-extra-label-ns` is allowed even when
+`-deny-label-ns` denies it.
 
 Default: *empty*
 
@@ -257,6 +276,20 @@ Log to standard error as well as files.
 
 Default: false
 
+#### -alsologtostderrthreshold
+
+Logs at or above this threshold go to stderr when -alsologtostderr=true (no
+effect when -logtostderr=true).
+
+Default: 0
+
+#### -legacy_stderr_threshold_behavior
+
+If true, stderrthreshold is ignored when logtostderr=true (legacy behavior). If
+false, stderrthreshold is honored even when logtostderr=true.
+
+Default: true
+
 #### -log_backtrace_at
 
 When logging hits line file:N, emit a stack trace.
@@ -287,6 +320,13 @@ Default: 1800
 Log to standard error instead of files
 
 Default: true
+
+#### -one_output
+
+If true, only write logs to their native severity level (vs also writing to
+each lower severity level; no effect when -logtostderr=true).
+
+Default: false
 
 #### -skip_headers
 
