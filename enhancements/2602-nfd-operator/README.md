@@ -151,8 +151,9 @@ from `sigs.k8s.io/node-feature-discovery-operator` to `sigs.k8s.io/node-feature-
 
 ### Dependencies
 
-The operator adds `sigs.k8s.io/controller-runtime` (v0.23.3, which builds with the k8s.io v0.35 modules
-NFD already uses) and `go.uber.org/mock` (for its existing unit tests) to the main module.
+The operator adds `sigs.k8s.io/controller-runtime` (v0.25.2, which builds with the k8s.io v0.37 modules
+NFD uses since its Kubernetes v1.37 update) and `go.uber.org/mock` (for its existing unit tests) to the
+main module.
 
 The operator API is its own Go module, `sigs.k8s.io/node-feature-discovery/api/operator`, like `api/nfd`,
 so that other projects can import the `NodeFeatureDiscovery` types without the main module's
@@ -261,6 +262,7 @@ yet, and the operator ships in v0.21.
   users is written down.
 - 2026-10-06: after review, an upgrade applies the CRDs with `kubectl apply` before `helm upgrade`.
 - 2026-10-13: after review, the reason for `api/operator/v1` instead of `api/v1` is written down.
+- 2026-10-13: controller-runtime v0.25, following NFD's update to Kubernetes v1.37.
 
 ## Alternatives Considered
 
