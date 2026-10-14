@@ -3,13 +3,26 @@
 this_dir=`dirname $0`
 
 # Tool versions
-GOLANGCI_LINT_VERSION="v2.11.4"
+GOLANGCI_LINT_VERSION="v2.14.0"
+# SHA-256 of golangci-lint-<version>-linux-amd64.tar.gz, from the release's
+# checksums file. Update it together with GOLANGCI_LINT_VERSION.
+GOLANGCI_LINT_SHA256="ab90aeb7b066f92a33415b638a50fe5344bbb75a0d32ad30cc248d88f81032ab"
 HELM_VERSION="v3.17.3"
 KUBECTL_VERSION="v1.22.1"
 
 # Install deps
 gobinpath="$(go env GOPATH)/bin"
-curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b "$gobinpath" $GOLANGCI_LINT_VERSION
+mkdir -p "$gobinpath"
+
+# golangci-lint's install.sh cannot install v2.13.0 or later: those checksums
+# files also list a .sbom.json per tarball, and its unanchored grep picks up
+# both lines. Fetch the tarball directly and check it against the pinned hash.
+gcl_name="golangci-lint-${GOLANGCI_LINT_VERSION#v}-linux-amd64"
+gcl_tmp="$(mktemp -d)"
+curl -sSfL -o "$gcl_tmp/$gcl_name.tar.gz" "https://github.com/golangci/golangci-lint/releases/download/$GOLANGCI_LINT_VERSION/$gcl_name.tar.gz"
+echo "$GOLANGCI_LINT_SHA256  $gcl_tmp/$gcl_name.tar.gz" | sha256sum -c -
+tar -xzf "$gcl_tmp/$gcl_name.tar.gz" -C "$gobinpath" --strip-components=1 "$gcl_name/golangci-lint"
+rm -rf "$gcl_tmp"
 export PATH=$PATH:$(go env GOPATH)/bin
 
 curl -sfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -s -- --version $HELM_VERSION
