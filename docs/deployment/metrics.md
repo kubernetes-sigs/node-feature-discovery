@@ -26,6 +26,7 @@ The exposed metrics are
 | `nfd_topology_updater_build_info`                        | Gauge     | Version from which nfd-topology-updater was built                          |
 | `nfd_master_node_update_requests_total`                  | Counter   | Number of node update requests processed by the master                     |
 | `nfd_master_node_updates_total`                          | Counter   | Number of nodes updated                                                    |
+| `nfd_master_node_feature_group_update_requests_total`    | Counter   | Number of cluster feature update requests processed by the master          |
 | `nfd_master_node_update_failures_total`                  | Counter   | Number of nodes update failures                                            |
 | `nfd_master_node_labels_rejected_total`                  | Counter   | Number of nodes labels rejected by nfd-master                              |
 | `nfd_master_node_extendedresources_rejected_total`       | Counter   | Number of nodes extended resources rejected by nfd-master                  |
