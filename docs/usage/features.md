@@ -48,7 +48,7 @@ feature.node.kubernetes.io/<feature> = <value>
 | ----------------------------------- | ------ | --------------------------------------------------------------------------- |
 | **`cpu-cpuid.<cpuid-flag>`**        | true   | CPU capability is supported. **NOTE:** the capability might be supported but not enabled. |
 | **`cpu-cpuid.<cpuid-attribute>`**   | string | CPU attribute value |
-| **`cpu-hardware_multithreading`**   | true   | Hardware multithreading, such as Intel HTT, enabled (number of logical CPUs is greater than physical CPUs) |
+| **`cpu-hardware_multithreading`**   | bool   | Set to 'true' if hardware multithreading, such as Intel HTT, is enabled (number of logical CPUs is greater than physical CPUs), 'false' otherwise. |
 | **`cpu-coprocessor.nx_gzip`**       | true   | Nest Accelerator for GZIP is supported(Power). |
 | **`cpu-power.sst_bf.enabled`**      | true   | Intel SST-BF ([Intel Speed Select Technology][intel-sst] - Base frequency) enabled |
 | **`cpu-pstate.status`**             | string | The status of the [Intel pstate][intel-pstate] driver when in use and enabled, either 'active' or 'passive'. |
@@ -65,6 +65,7 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-model.vendor_id`**           | string | Comparable CPU vendor ID. |
 | **`cpu-model.family`**              | int    | CPU family. |
 | **`cpu-model.id`**                  | int    | CPU model number. |
+| **`cpu-model.hypervisor`**          | string | Hypervisor the node runs under. On x86_64: 'none' if the CPUID hypervisor bit is not set, otherwise the lowercase hypervisor vendor (e.g. 'kvm', 'vmware', 'msvm'), the sanitized raw vendor string if the vendor is not recognized, or 'unknown' if that string is empty. On s390x: the "Control Program" from `/proc/sysinfo` (sanitized), or 'none' if absent. On other architectures (e.g. arm64) always 'none': hypervisor detection is not supported there. |
 
 The CPU label source is configurable, see
 [worker configuration](nfd-worker.md#worker-configuration) and
@@ -123,8 +124,8 @@ configuration options for details.
 
 By default, the following CPUID flags have been blacklisted: AVX10 (use
 AVX10_VERSION instead), BMI1, BMI2, CLMUL, CMOV, CX16, ERMS, F16C, HTT, LZCNT,
-MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SSE, SSE2, SSE3, SSE4,
-SSE42, SSSE3 and TDX_GUEST. See
+MMX, MMXEXT, NX, POPCNT, RDRAND, RDSEED, RDTSCP, SGX, SGXLC, SSE, SSE2, SSE3,
+SSE4, SSE42, SSSE3 and TDX_GUEST. See
 [`sources.cpu`](../reference/worker-configuration-reference.md#sourcescpu)
 configuration options to change the behavior.
 
@@ -158,11 +159,11 @@ See the full list in [github.com/klauspost/cpuid][klauspost-cpuid].
 | Flag      | Description                                                      |
 | --------- | ---------------------------------------------------------------- |
 | AES       | Announcing the Advanced Encryption Standard                       |
-| EVSTRM    | Event Stream Frequency Features                                   |
+| EVTSTRM   | Event Stream Frequency Features                                   |
 | FPHP      | Half Precision(16bit) Floating Point Data Processing Instructions |
 | ASIMDHP   | Half Precision(16bit) Asimd Data Processing Instructions          |
 | ATOMICS   | Atomic Instructions to the A64                                    |
-| ASIMRDM   | Support for Rounding Double Multiply Add/Subtract                 |
+| ASIMDRDM  | Support for Rounding Double Multiply Add/Subtract                 |
 | PMULL     | Optional Cryptographic and CRC32 Instructions                     |
 | JSCVT     | Perform Conversion to Match Javascript                            |
 | DCPOP     | Persistent Memory Support                                         |
@@ -190,7 +191,7 @@ configuration options for details.
 | **`memory-numa`**    | true  | Multiple memory nodes i.e. NUMA architecture detected     |
 | **`memory-nv.present`** | true | NVDIMM device(s) are present                              |
 | **`memory-nv.dax`** | true  | NVDIMM region(s) configured in DAX mode are present        |
-| **`memory-swap.enabled`** | true  | Swap is enabled on the node                          |
+| **`memory-swap`**    | true  | Swap is enabled on the node                          |
 
 ### Network
 
@@ -245,12 +246,13 @@ instructions.
 
 The custom label source is designed for creating
 [user defined labels](#user-defined-labels). However, it has a few statically
-defined built-in labels:
+defined built-in labels. Like all custom rules, they are not prefixed with the
+source name:
 
 | Feature                      | Value | Description                                                 |
 | ---------------------------- | ----- | ----------------------------------------------------------- |
-| **`custom-rdma.capable`**    | true  | The node has an RDMA capable Network adapter                 |
-| **`custom-rdma.enabled`**    | true  | The node has the needed RDMA modules loaded to run RDMA traffic |
+| **`rdma.capable`**    | true  | The node has an RDMA capable Network adapter (PCI vendor `15b3`) |
+| **`rdma.available`**  | true  | The node has the needed RDMA modules (`ib_uverbs`, `rdma_ucm`) loaded to run RDMA traffic |
 |                              |       |                                                             |
 
 ## User defined labels
@@ -276,7 +278,7 @@ and the Kubernetes scheduler to schedule such PODs to only those nodes which
 have a sufficient capacity of said resource left.
 
 <!-- Links -->
-[klauspost-cpuid]: https://github.com/klauspost/cpuid#x86-cpu-instructions
+[klauspost-cpuid]: https://github.com/klauspost/cpuid#x86--amd64
 [intel-pstate]: https://www.kernel.org/doc/Documentation/cpu-freq/intel-pstate.txt
 [intel-sst]: https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
 [sriov]: http://www.intel.com/content/www/us/en/pci-express/pci-sig-sr-iov-primer-sr-iov-technology-paper.html
