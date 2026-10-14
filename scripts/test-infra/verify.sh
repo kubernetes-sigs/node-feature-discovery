@@ -3,7 +3,7 @@
 this_dir=`dirname $0`
 
 # Tool versions
-GOLANGCI_LINT_VERSION="v2.11.4"
+GOLANGCI_LINT_VERSION="v2.14.0"
 HELM_VERSION="v3.17.3"
 KUBECTL_VERSION="v1.22.1"
 
