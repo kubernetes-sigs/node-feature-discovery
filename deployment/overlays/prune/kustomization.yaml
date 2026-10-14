@@ -4,16 +4,12 @@ kind: Kustomization
 namespace: node-feature-discovery
 
 resources:
-- ../../base/rbac
 - namespace.yaml
+- prune-serviceaccount.yaml
+- prune-clusterrole.yaml
+- prune-clusterrolebinding.yaml
 - master-job.yaml
 
 components:
 - ../../components/common
 - ../../components/master-config
-
-patches:
-- path: master-clusterrole.yaml
-  target:
-    kind: ClusterRole
-    name: nfd-master

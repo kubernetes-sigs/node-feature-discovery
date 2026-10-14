@@ -107,6 +107,76 @@ func CreateNodeResourceTopologies(ctx context.Context, extClient extclient.Inter
 	return extClient.ApiextensionsV1().CustomResourceDefinitions().Create(ctx, crd, metav1.CreateOptions{})
 }
 
+// EnsureNodeResourceTopologies creates the NodeResourceTopology CRD if it is missing,
+// waits until it is established, and deletes all NodeResourceTopology objects.
+//
+// Unlike CreateNodeResourceTopologies, it never deletes the CRD. The garbage collector
+// reads API discovery only every 30 seconds, so it misses a CRD that is deleted and
+// re-created in between. Re-creating the CRD before every spec delays garbage
+// collection of new objects by tens of seconds.
+func EnsureNodeResourceTopologies(ctx context.Context, extClient extclient.Interface, topologyClient topologyclientset.Interface) (*apiextensionsv1.CustomResourceDefinition, error) {
+	crd, err := NewNodeResourceTopologies()
+	if err != nil {
+		return nil, err
+	}
+	crdClient := extClient.ApiextensionsV1().CustomResourceDefinitions()
+
+	// The API server rejects new objects for a terminating CRD. Wait until it is gone.
+	var current *apiextensionsv1.CustomResourceDefinition
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+		c, err := crdClient.Get(ctx, crd.Name, metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			current = nil
+			return true, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		current = c
+		return c.DeletionTimestamp == nil, nil
+	}); err != nil {
+		return nil, fmt.Errorf("failed waiting for any NodeResourceTopology CRD deletion to finish: %w", err)
+	}
+
+	if current == nil {
+		if _, err := crdClient.Create(ctx, crd, metav1.CreateOptions{}); err != nil {
+			return nil, fmt.Errorf("failed to create NodeResourceTopology CRD: %w", err)
+		}
+	}
+
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+		c, err := crdClient.Get(ctx, crd.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		for _, cond := range c.Status.Conditions {
+			if cond.Type == apiextensionsv1.Established && cond.Status == apiextensionsv1.ConditionTrue {
+				current = c
+				return true, nil
+			}
+		}
+		return false, nil
+	}); err != nil {
+		return nil, fmt.Errorf("NodeResourceTopology CRD not established: %w", err)
+	}
+
+	nrtClient := topologyClient.TopologyV1alpha2().NodeResourceTopologies()
+	if err := nrtClient.DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		return nil, fmt.Errorf("failed to delete stale NodeResourceTopology objects: %w", err)
+	}
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+		nrts, err := nrtClient.List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+		return len(nrts.Items) == 0, nil
+	}); err != nil {
+		return nil, fmt.Errorf("stale NodeResourceTopology objects were not deleted: %w", err)
+	}
+
+	return current, nil
+}
+
 // CreateNodeResourceTopology creates a dummy NodeResourceTopology object for a node
 func CreateNodeResourceTopology(ctx context.Context, topologyClient *topologyclientset.Clientset, nodeName string) error {
 	nrt := &v1alpha2.NodeResourceTopology{

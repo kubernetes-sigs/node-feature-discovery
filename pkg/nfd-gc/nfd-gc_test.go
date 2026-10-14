@@ -27,10 +27,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	metadataclient "k8s.io/client-go/metadata"
 	"k8s.io/client-go/metadata/fake"
 	"k8s.io/client-go/metadata/metadatainformer"
+
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -88,6 +91,32 @@ func TestNRTGC(t *testing.T) {
 	})
 }
 
+func TestDeleteNodeHandler(t *testing.T) {
+	Convey("When nfd-gc handles a Node delete event", t, func() {
+		gc := newMockGC([]string{"node1"}, []string{"node1"})
+		nf := createPartialObjectMetadata("nfd.k8s-sigs.io/v1alpha1", "NodeFeature", "nfd", "node1-features")
+		nf.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node1"}
+		_, err := gc.client.Resource(gvrNF).Namespace("nfd").(fake.MetadataClient).CreateFake(nf, metav1.CreateOptions{})
+		So(err, ShouldBeNil)
+		So(gc.startNodeInformer(), ShouldBeNil)
+		defer gc.Stop()
+
+		Convey("Objects are kept when a Node with the same name exists again", func() {
+			gc.deleteNodeHandler(createPartialObjectMetadata("v1", "Node", "", "node1"))
+
+			So(gc.client, shouldEventuallyHaveNRTs, "node1")
+			So(gc.client, shouldEventuallyHaveNodeFeatures, "node1-features")
+		})
+
+		Convey("Objects are deleted when the Node is gone", func() {
+			So(gc.client.Resource(gvrNode).Delete(context.TODO(), "node1", metav1.DeleteOptions{}), ShouldBeNil)
+
+			So(gc.client, shouldEventuallyHaveNRTs)
+			So(gc.client, shouldEventuallyHaveNodeFeatures)
+		})
+	})
+}
+
 func newMockGC(nodes, nrts []string) *mockGC {
 	// Create fake objects
 	objs := []runtime.Object{}
@@ -134,13 +163,20 @@ type mockGC struct {
 }
 
 func shouldEventuallyHaveNRTs(actualI interface{}, expectedI ...interface{}) string {
+	return shouldEventuallyHaveObjects(gvrNRT, actualI, expectedI...)
+}
+
+func shouldEventuallyHaveNodeFeatures(actualI interface{}, expectedI ...interface{}) string {
+	return shouldEventuallyHaveObjects(gvrNF, actualI, expectedI...)
+}
+
+func shouldEventuallyHaveObjects(gvr schema.GroupVersionResource, actualI interface{}, expectedI ...interface{}) string {
 	cli := actualI.(metadataclient.Interface)
 	expected := sets.Set[string]{}
 	for _, e := range expectedI {
 		expected.Insert(e.(string))
 	}
 	actual := sets.Set[string]{}
-	gvr := topologyv1alpha2.SchemeGroupVersion.WithResource("noderesourcetopologies")
 	for range 2 {
 		rsp, err := cli.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {

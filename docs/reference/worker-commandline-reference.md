@@ -38,7 +38,7 @@ The list of available feature gates can be found in the [feature gates documenta
 Example:
 
 ```bash
-nfd-master -feature-gates NodeFeatureGroupAPI=true
+nfd-worker -feature-gates NodeFeatureGroupAPI=true
 ```
 
 ### -config
@@ -87,7 +87,8 @@ nfd-worker -kubeconfig ${HOME}/.kube/config
 ### -feature-sources
 
 The `-feature-sources` flag specifies a comma-separated list of enabled feature
-sources. A special value `all` enables all sources. Prefixing a source name
+sources. A special value `all` enables all sources except
+[`fake`](worker-configuration-reference.md#sourcesfake). Prefixing a source name
 with `-` indicates that the source will be disabled instead - this is only
 meaningful when used in conjunction with `all`. This command line flag allows
 completely disabling the feature detection so that neither standard feature
@@ -109,7 +110,8 @@ nfd-worker -feature-sources=all,-pci
 ### -label-sources
 
 The `-label-sources` flag specifies a comma-separated list of enabled label
-sources. A special value `all` enables all sources. Prefixing a source name
+sources. A special value `all` enables all sources except
+[`fake`](worker-configuration-reference.md#sourcesfake). Prefixing a source name
 with `-` indicates that the source will be disabled instead - this is only
 meaningful when used in conjunction with `all`. Consider using the
 `core.labelSources` config file option, instead, allowing dynamic
@@ -163,11 +165,14 @@ nfd-worker -port=12345
 
 ### -no-publish
 
-The `-no-publish` flag disables all communication with the nfd-master and the
-Kubernetes API server. It is effectively a "dry-run" flag for nfd-worker.
-NFD-Worker runs feature detection normally, but no labeling requests are sent
-to nfd-master and no NodeFeature objects are created or updated in the API
-server.
+The `-no-publish` flag disables publishing of the discovered features. It is
+effectively a "dry-run" flag for nfd-worker: NFD-Worker runs feature detection
+normally, but no NodeFeature objects are created or updated in the API server.
+nfd-worker still needs a Kubernetes client configuration (in-cluster
+configuration or `-kubeconfig`). It also still queries the API server to
+resolve owner references: with the default `-owner-refs=pod,ds` it reads its
+own Pod when `POD_NAME` is set (as in the DaemonSet), and with `node` it reads
+its Node. Use `-owner-refs=` to make no API server requests at all.
 
 > **NOTE:** This flag takes precedence over the
 > [`core.noPublish`](worker-configuration-reference.md#corenopublish)
@@ -268,6 +273,20 @@ Log to standard error as well as files.
 
 Default: false
 
+#### -alsologtostderrthreshold
+
+Logs at or above this threshold go to stderr when -alsologtostderr=true (no
+effect when -logtostderr=true).
+
+Default: 0
+
+#### -legacy_stderr_threshold_behavior
+
+If true, stderrthreshold is ignored when logtostderr=true (legacy behavior). If
+false, stderrthreshold is honored even when logtostderr=true.
+
+Default: true
+
 #### -log_backtrace_at
 
 When logging hits line file:N, emit a stack trace.
@@ -298,6 +317,13 @@ Default: 1800
 Log to standard error instead of files
 
 Default: true
+
+#### -one_output
+
+If true, only write logs to their native severity level (vs also writing to
+each lower severity level; no effect when -logtostderr=true).
+
+Default: false
 
 #### -skip_headers
 

@@ -4,21 +4,14 @@
 
 ### Contributor License Agreements
 
-We'd love to accept your patches! Before we can take them, we have to jump a
-couple of legal hurdles.
+We'd love to accept your patches! Before we can take them, you need to sign the
+Cloud Native Computing Foundation (CNCF) Contributor License Agreement (CLA),
+either as an individual or for your company.
 
-Please fill out either the individual or corporate Contributor License Agreement
-(CLA).
-
-  * If you are an individual writing original source code and you're sure you
-    own the intellectual property, then you'll need to sign an
-    [individual CLA](http://code.google.com/legal/individual-cla-v1.0.html).
-  * If you work for a company that wants to allow you to contribute your work,
-    then you'll need to sign a
-    [corporate CLA](http://code.google.com/legal/corporate-cla-v1.0.html).
-
-Follow either of the two links above to access the appropriate CLA and
-instructions for how to sign and return it. Once we receive it, we'll be able to
+After you open your first pull request, the EasyCLA bot replies with your CLA
+status and a link to sign the CLA. See
+[CLA.md](https://github.com/kubernetes/community/blob/main/CLA.md) in the
+Kubernetes community repository for details. Once the CLA is signed, we can
 accept your pull requests.
 
 ### Contributing a Patch
@@ -32,5 +25,5 @@ accept your pull requests.
 
 ### Adding dependencies
 
-If your patch depends on new packages, add that package with
-[`glide`](https://github.com/Masterminds/glide).
+If your patch depends on new packages, add them with Go modules (`go get`), run
+`go mod tidy` and commit the updated `go.mod` and `go.sum` files.

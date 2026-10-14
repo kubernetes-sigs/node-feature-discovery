@@ -59,9 +59,9 @@ var _ = NFDDescribe(Label("nfd-gc"), func() {
 			var err error
 			crds, err = testutils.CreateNfdCRDs(ctx, extClient)
 			Expect(err).NotTo(HaveOccurred())
-			crd, err := testutils.CreateNodeResourceTopologies(ctx, extClient)
+			By("Ensuring the node resource topologies CRD exists without stale objects")
+			_, err = testutils.EnsureNodeResourceTopologies(ctx, extClient, topologyClient)
 			Expect(err).NotTo(HaveOccurred())
-			crds = append(crds, crd)
 		})
 
 		AfterAll(func(ctx context.Context) {

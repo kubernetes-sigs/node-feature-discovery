@@ -28,7 +28,7 @@ NFD-Master acts as the controller for
 It applies the rules specified in NodeFeatureRule objects on raw feature data
 and creates node labels accordingly. The feature data used as the input is
 received from nfd-worker instances through
-[NodeFeature](custom-resources.md#nodefeature-custom-resource) objects.
+[NodeFeature](custom-resources.md#nodefeature) objects.
 
 ## Master configuration
 
@@ -45,7 +45,7 @@ The provided deployment methods (Helm and Kustomize) create an empty configmap
 and mount it inside the nfd-master containers.
 
 In Helm deployments,
-[Master pod parameter](../deployment/helm.md#master-pod-parameters)
+[Master pod parameter](../deployment/helm.md#nfd-master)
 `master.config` can be used to edit the respective configuration.
 
 In Kustomize deployments, modify the `nfd-master-conf` ConfigMap with a custom
@@ -90,5 +90,6 @@ labels. The provided template will configure these for you.
 When NFD Master starts up it starts an informer on the nodefeatures resources.
 These resources can be large and in a large cluster this initial list call
 to sync the informer cache can be expensive and heavy on api-server/etcd.
-You can use the `informer-list-size` argument to NFD master to
-control pagination size to help control the load during NFD-Master restart.
+You can use the `-informer-page-size` command line flag (or the
+`informerPageSize` configuration option) of nfd-master to control pagination
+size to help control the load during NFD-Master restart.
