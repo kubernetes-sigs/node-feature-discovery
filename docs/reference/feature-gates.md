@@ -14,27 +14,31 @@ They are used to enable or disable certain features of NFD.
 The feature gates are set using the `-feature-gates` command line flag or
 `featureGates` value in the Helm chart. The following feature gates are available:
 
-| Name                  | Default | Stage  | Since   | Until  |
-| --------------------- | ------- | ------ | ------- | ------ |
-| `NodeFeatureAPI`      | true    | Beta   | V0.14   | v0.16  |
-| `NodeFeatureAPI`      | true    | GA     | V0.17   |        |
-| `DisableAutoPrefix`   | false   | Alpha  | V0.16   |        |
-| `NodeFeatureGroupAPI` | false   | Alpha  | V0.16   |        |
+| Name                  | Default       | Stage  | Since   | Until  |
+| --------------------- | ------------- | ------ | ------- | ------ |
+| `NodeFeatureAPI`      | true          | Beta   | v0.14   | v0.16  |
+| `NodeFeatureAPI`      | true (locked) | GA     | v0.17   |        |
+| `DisableAutoPrefix`   | false         | Alpha  | v0.16   |        |
+| `NodeFeatureGroupAPI` | false         | Alpha  | v0.16   |        |
 
 ## NodeFeatureAPI
 
-The `NodeFeatureAPI` feature gate enables the Node Feature API.
-When enabled, NFD will register the Node Feature API with the Kubernetes API
-server. The Node Feature API is used to expose node-specific hardware and
-software features to the Kubernetes scheduler. The Node Feature API is a beta
-feature and is enabled by default.
+The `NodeFeatureAPI` feature gate enables the NodeFeature API (the
+`NodeFeature` custom resource) as the communication channel between nfd-worker
+and nfd-master. The feature gate is GA since NFD v0.17 and locked to `true`:
+setting `-feature-gates=NodeFeatureAPI=false` fails with "cannot set feature
+gate NodeFeatureAPI to false, feature is locked to true". The gate will be
+removed in a future release. The NFD custom resource definitions are installed
+by the deployment (the Helm chart or the kustomize base), not by NFD itself.
 
 ## NodeFeatureGroupAPI
 
-The `NodeFeatureGroupAPI` feature gate enables the Node Feature Group API.
-When enabled, NFD will register the Node Feature Group API with the Kubernetes API
-server. The Node Feature Group API is used to create node groups based on
-hardware and software features. The Node Feature Group API is an alpha feature
+The `NodeFeatureGroupAPI` feature gate enables processing of NodeFeatureGroup
+objects in nfd-master. When enabled, nfd-master evaluates the rules of each
+NodeFeatureGroup in its own namespace and writes the matching nodes to the
+object's status. The NodeFeatureGroup CRD is installed by the deployment
+regardless of this gate; with the gate disabled such objects can be created but
+their status is never updated. The Node Feature Group API is an alpha feature
 and is disabled by default.
 
 ## DisableAutoPrefix
@@ -57,3 +61,16 @@ will be automatically prefixed, resulting in the node label
 `feature.node.kubernetes.io/foo=bar`. However, when `DisableAutoPrefix` is set
 to `true`, no prefix is added, and the label remains as `foo=bar`. Note that
 taint keys are not affected by this feature gate.
+
+Note: nfd-master does not remove the unprefixed labels, annotations and
+extended resources that it created while this gate was enabled when they are no
+longer produced, for example when the NodeFeatureRule is deleted or changed, or
+when the gate is set back to `false`. They stay on the node until removed
+manually:
+
+```bash
+kubectl label node <node> <key>-
+kubectl annotate node <node> <key>-
+kubectl patch node <node> --subresource=status --type=json \
+  -p '[{"op":"remove","path":"/status/capacity/<name>"},{"op":"remove","path":"/status/allocatable/<name>"}]'
+```
