@@ -123,7 +123,6 @@ type Args struct {
 	Prune                bool
 	Options              string
 	EnableLeaderElection bool
-	MetricsPort          int
 
 	Overrides ConfigOverrideArgs
 }
