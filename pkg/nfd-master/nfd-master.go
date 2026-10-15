@@ -33,7 +33,6 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -310,18 +309,7 @@ func (m *nfdMaster) Run() error {
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
-	promRegistry := prometheus.NewRegistry()
-	promRegistry.MustRegister(
-		buildInfo,
-		nodeUpdateRequests,
-		nodeUpdates,
-		nodeUpdateFailures,
-		nodeLabelsRejected,
-		nodeERsRejected,
-		nodeTaintsRejected,
-		nfrProcessingTime,
-		nfrProcessingErrors)
-	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
+	httpMux.Handle("/metrics", promhttp.HandlerFor(newMetricsRegistry(), promhttp.HandlerOpts{}))
 	registerVersion(version.Get())
 
 	// Run updater that handles events from the nfd CRD API.

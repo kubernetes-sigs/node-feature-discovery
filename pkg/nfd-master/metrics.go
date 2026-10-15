@@ -103,6 +103,23 @@ var (
 	})
 )
 
+// newMetricsRegistry returns a Prometheus registry with all nfd-master metrics.
+func newMetricsRegistry() *prometheus.Registry {
+	promRegistry := prometheus.NewRegistry()
+	promRegistry.MustRegister(
+		buildInfo,
+		nodeUpdateRequests,
+		nodeFeatureGroupUpdateRequests,
+		nodeUpdates,
+		nodeUpdateFailures,
+		nodeLabelsRejected,
+		nodeERsRejected,
+		nodeTaintsRejected,
+		nfrProcessingTime,
+		nfrProcessingErrors)
+	return promRegistry
+}
+
 // registerVersion exposes the Operator build version.
 func registerVersion(version string) {
 	buildInfo.SetToCurrentTime()
