@@ -23,7 +23,7 @@ For backwards compatibility a container image tag with suffix `-minimal`
 
 ## Full
 
-This image is based on [debian:bookworm-slim](https://hub.docker.com/_/debian)
+This image is based on [debian:trixie-slim](https://hub.docker.com/_/debian)
 and contains a full Linux system for doing live debugging and diagnosis
 of the NFD images.
 
