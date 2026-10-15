@@ -92,7 +92,7 @@ func (c *Client) FetchCompatibilitySpec(ctx context.Context) (*compatv1alpha1.Sp
 
 	descs, err := registry.Referrers(ctx, repo, targetDesc, compatv1alpha1.ArtifactType)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	} else if len(descs) < 1 {
 		return nil, fmt.Errorf("compatibility artifact not found")
 	}
