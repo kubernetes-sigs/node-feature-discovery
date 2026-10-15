@@ -68,6 +68,10 @@ var validateNodeCmd = &cobra.Command{
 
 		if readAccessToken && readPassword {
 			return fmt.Errorf("cannot use --registry-token-stdin and --registry-password-stdin at the same time")
+		} else if readPassword && username == "" {
+			return fmt.Errorf("--registry-password-stdin requires --registry-username")
+		} else if username != "" && !readPassword && !readAccessToken {
+			return fmt.Errorf("--registry-username requires --registry-password-stdin")
 		} else if readAccessToken {
 			accessToken, err = readStdin()
 			if err != nil {
