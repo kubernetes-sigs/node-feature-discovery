@@ -58,6 +58,7 @@ feature.node.kubernetes.io/<feature> = <value>
 | **`cpu-security.sgx.enabled`**      | true   | Set to 'true' if Intel SGX is enabled in BIOS (based on a non-zero sum value of SGX EPC section sizes). |
 | **`cpu-security.se.enabled`**       | true   | Set to 'true' if IBM Secure Execution for Linux (IBM Z & LinuxONE) is available and enabled (requires `/sys/firmware/uv/prot_virt_host` facility) |
 | **`cpu-security.tdx.enabled`**      | true   | Set to 'true' if Intel TDX is available on the host and has been enabled (requires `/sys/module/kvm_intel/parameters/tdx`). |
+| **`cpu-security.tdx.module-version.<component>`** | string | Version of the loaded Intel TDX module, where component is `full`, `major`, `minor`, or `revision` (requires `/sys/devices/faux/tdx_host/version`). |
 | **`cpu-security.tdx.protected`**    | true   | Set to 'true' if Intel TDX was used to start the guest node, based on the existence of the "TDX_GUEST" information as part of cpuid features. |
 | **`cpu-security.sev.enabled`**      | true   | Set to 'true' if ADM SEV is available on the host and has been enabled (requires `/sys/module/kvm_amd/parameters/sev`). |
 | **`cpu-security.sev.es.enabled`**   | true   | Set to 'true' if ADM SEV-ES is available on the host and has been enabled (requires `/sys/module/kvm_amd/parameters/sev_es`). |
