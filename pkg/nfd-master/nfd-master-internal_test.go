@@ -1245,3 +1245,68 @@ func TestNfdAPIUpdateNodeFeatureGroup(t *testing.T) {
 		})
 	})
 }
+
+func TestUnprefixedKeysAreRemoved(t *testing.T) {
+	// Register the feature gates so that the test also works when run alone.
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+		t.Fatal(err)
+	}
+	gateWasEnabled := features.NFDFeatureGate.Enabled(features.DisableAutoPrefix)
+	t.Cleanup(func() {
+		_ = features.NFDMutableFeatureGate.Set(fmt.Sprintf("DisableAutoPrefix=%t", gateWasEnabled))
+	})
+
+	const (
+		unprefixed = "unprefixed"
+		prefixed   = nfdv1alpha1.FeatureLabelNs + "/prefixed"
+	)
+
+	Convey("When DisableAutoPrefix is enabled", t, func() {
+		So(features.NFDMutableFeatureGate.Set("DisableAutoPrefix=true"), ShouldBeNil)
+
+		// Real nodes always have labels and annotations; JSON patch "add"
+		// needs the parent maps to exist.
+		testNode := newTestNode()
+		testNode.Labels["kubernetes.io/hostname"] = testNodeName
+		testNode.Annotations["node.alpha.kubernetes.io/ttl"] = "0"
+		fakeCli := fakeclient.NewClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+		fetchNode := func() *corev1.Node {
+			node, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+			return node
+		}
+
+		Convey("Unprefixed and prefixed labels and annotations are removed when no longer wanted", func() {
+			err := fakeMaster.updateNodeObject(fakeCli, testNode,
+				Labels{unprefixed: "a", prefixed: "b"},
+				Annotations{unprefixed: "a", prefixed: "b"},
+				nil, nil, false)
+			So(err, ShouldBeNil)
+			node := fetchNode()
+			So(node.Labels, ShouldContainKey, unprefixed)
+			So(node.Labels, ShouldContainKey, prefixed)
+			So(node.Annotations, ShouldContainKey, unprefixed)
+			So(node.Annotations, ShouldContainKey, prefixed)
+
+			// e.g. the NodeFeatureRule was deleted
+			err = fakeMaster.updateNodeObject(fakeCli, node, Labels{}, Annotations{}, nil, nil, false)
+			So(err, ShouldBeNil)
+			node = fetchNode()
+			So(node.Labels, ShouldNotContainKey, unprefixed)
+			So(node.Labels, ShouldNotContainKey, prefixed)
+			So(node.Annotations, ShouldNotContainKey, unprefixed)
+			So(node.Annotations, ShouldNotContainKey, prefixed)
+		})
+
+		Convey("Default-namespace labels tracked by older versions are still removed", func() {
+			testNode.Labels[prefixed] = "b"
+			testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "prefixed"
+			fakeCli = fakeclient.NewClientset(testNode)
+
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, nil, nil, false)
+			So(err, ShouldBeNil)
+			So(fetchNode().Labels, ShouldNotContainKey, prefixed)
+		})
+	})
+}
