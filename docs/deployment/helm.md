@@ -96,12 +96,15 @@ To upgrade the `node-feature-discovery` deployment to {{ site.release }} via Hel
 
 ### Rolling-update pace on large clusters
 
-The nfd-worker DaemonSet rolls out updates with `maxUnavailable: "10%"` by
-default, so an upgrade completes in roughly ten waves regardless of cluster
-size. nfd-worker is stateless and node labels persist while a worker pod
-restarts, so tuning the pace only affects how quickly feature updates resume
-on each node. Adjust it via `worker.updateStrategy.rollingUpdate.maxUnavailable`
-(e.g. `1` restores the Kubernetes default of one node at a time; to use
+The nfd-worker and nfd-topology-updater DaemonSets roll out updates with
+`maxUnavailable: "10%"` by default, so an upgrade completes in roughly ten
+waves regardless of cluster size. Both are stateless: node labels persist
+while a worker pod restarts, and nfd-topology-updater recomputes
+NodeResourceTopology objects on restart. Tuning the pace therefore only
+affects how quickly updates resume on each node. Adjust it via
+`worker.updateStrategy.rollingUpdate.maxUnavailable` and
+`topologyUpdater.updateStrategy.rollingUpdate.maxUnavailable` (e.g. `1`
+restores the Kubernetes default of one node at a time; to use
 `type: OnDelete`, also set `rollingUpdate: null` as Helm deep-merges maps).
 
 When driving upgrades through `helm upgrade --wait` or GitOps health checks
