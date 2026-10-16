@@ -34,13 +34,13 @@ NFD runs three components:
 
 ```bash
 helm install -n node-feature-discovery --create-namespace nfd \
-  oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.19.0
+  oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0
 ```
 
 ### Kustomize
 
 ```bash
-kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.19.0"
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.20.0"
 ```
 
 ### Verify
@@ -87,5 +87,5 @@ full deprecation policy.
 NFD is a [SIG-Node](https://github.com/kubernetes/community/blob/master/sig-node/README.md)
 subproject under the [Kubernetes SIGs](https://github.com/kubernetes-sigs) organization.
 
-[documentation]: https://kubernetes-sigs.github.io/node-feature-discovery/v0.19
+[documentation]: https://kubernetes-sigs.github.io/node-feature-discovery/v0.20
 [versions]: https://kubernetes-sigs.github.io/node-feature-discovery/stable/reference/versions
