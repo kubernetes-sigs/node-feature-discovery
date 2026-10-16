@@ -58,17 +58,26 @@ func getBuiltinModules() ([]string, error) {
 		return nil, fmt.Errorf("failed to read file %s: %s", kBuiltinModPath, err.Error())
 	}
 
-	lines := strings.Split(string(out), "\n")
+	return parseBuiltinModules(string(out)), nil
+}
+
+// parseBuiltinModules returns the names of the modules listed in a
+// modules.builtin file. modules.builtin lists object file paths, which may
+// contain dashes (e.g. kernel/drivers/md/dm-mod.ko), but the kernel always
+// names a module with underscores (dm_mod in /proc/modules and /sys/module).
+// Convert dashes so that the same module has the same name whether it is
+// loaded or built in.
+func parseBuiltinModules(content string) []string {
+	lines := strings.Split(content, "\n")
 	builtinMods := make([]string, 0, len(lines))
 	for _, line := range lines {
-		// skip empty lines
 		line = strings.TrimSpace(line)
 		if !strings.HasSuffix(line, ".ko") {
 			continue
 		}
 
-		// append loaded module
-		builtinMods = append(builtinMods, strings.TrimSuffix(path.Base(line), ".ko"))
+		name := strings.TrimSuffix(path.Base(line), ".ko")
+		builtinMods = append(builtinMods, strings.ReplaceAll(name, "-", "_"))
 	}
-	return builtinMods, nil
+	return builtinMods
 }
