@@ -17,9 +17,12 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -56,6 +59,14 @@ func main() {
 		klog.ErrorS(err, "failed to initialize nfd garbage collector instance")
 		os.Exit(1)
 	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		gc.Stop()
+	}()
 
 	if err = gc.Run(); err != nil {
 		klog.ErrorS(err, "error while running")
