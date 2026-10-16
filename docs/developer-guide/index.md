@@ -121,9 +121,9 @@ makefile overrides.
 
 | Variable                   | Description                                                       | Default value |
 | -------------------------- | ----------------------------------------------------------------- | ------------- |
-| BASE_IMAGE_FULL            | Base image of the full image variant                              | debian:bookworm-slim |
+| BASE_IMAGE_FULL            | Base image of the full image variant                              | debian:trixie-slim |
 | BASE_IMAGE_MINIMAL         | Base image of the minimal image variant                           | scratch |
-| BUILDER_IMAGE              | Go builder image for the container build (must be Debian-based)   | golang:1.26-trixie |
+| BUILDER_IMAGE              | Go builder image for the container build (must be Debian-based)   | golang:1.27-trixie |
 | CONTAINER_RUN_CMD          | Command to run helper containers (docs build, mdlint)             | docker run |
 | GO_CMD                     | Go command used to build and test                                 | go |
 | HOSTMOUNT_PREFIX           | Prefix of system directories for feature discovery (local builds) | / (*local builds*) /host- (*container builds*) |
