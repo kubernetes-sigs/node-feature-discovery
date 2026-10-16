@@ -1,0 +1,22 @@
+# This patch makes the manager serve /metrics on :8443 over TLS. Every
+# request needs a bearer token that passes a TokenReview and a
+# SubjectAccessReview for GET /metrics (controller-runtime's
+# WithAuthenticationAndAuthorization filter).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfd-controller-manager
+  namespace: node-feature-discovery-operator
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - "--health-probe-bind-address=:8081"
+        - "--metrics-bind-address=:8443"
+        - "--leader-elect"
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
