@@ -12,6 +12,7 @@ function getVersionListItems() {
     { name: 'v0.17', url: '/node-feature-discovery/v0.17' },
     { name: 'v0.18', url: '/node-feature-discovery/v0.18' },
     { name: 'v0.19', url: '/node-feature-discovery/v0.19' },
+    { name: 'v0.20', url: '/node-feature-discovery/v0.20' },
     { name: 'v0.6', url: '/node-feature-discovery/v0.6' },
     { name: 'v0.7', url: '/node-feature-discovery/v0.7' },
     { name: 'v0.8', url: '/node-feature-discovery/v0.8' },
