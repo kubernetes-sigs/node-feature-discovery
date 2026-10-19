@@ -154,7 +154,10 @@ func newFakeMaster(opts ...NfdMasterOption) *nfdMaster {
 	return m.(*nfdMaster)
 }
 
-func newFakeMasterWithFeatureGate(opts ...NfdMasterOption) *nfdMaster {
+// newFakeMasterWithFeatureGate returns a fake master with the DisableAutoPrefix
+// feature gate enabled. The gate is global, so it is disabled again when the
+// test ends to keep other tests independent of the order they run in.
+func newFakeMasterWithFeatureGate(t *testing.T, opts ...NfdMasterOption) *nfdMaster {
 	//nolint:staticcheck
 	nfdCli := fakenfdclient.NewSimpleClientset()
 	k8sCli := fakeclient.NewClientset()
@@ -175,6 +178,11 @@ func newFakeMasterWithFeatureGate(opts ...NfdMasterOption) *nfdMaster {
 	if err := features.NFDMutableFeatureGate.Set("DisableAutoPrefix=true"); err != nil {
 		panic(err)
 	}
+	t.Cleanup(func() {
+		if err := features.NFDMutableFeatureGate.Set("DisableAutoPrefix=false"); err != nil {
+			t.Error(err)
+		}
+	})
 	// Enable DisableAutoPrefix feature gate
 	if !features.NFDFeatureGate.Enabled(features.DisableAutoPrefix) {
 		err = errors.New("DisableAutoPrefix feature gate is not enabled")
@@ -514,7 +522,7 @@ func TestFilterLabels(t *testing.T) {
 	}
 
 	// Create a new fake master with the feature gate enabled
-	fakeMaster = newFakeMasterWithFeatureGate()
+	fakeMaster = newFakeMasterWithFeatureGate(t)
 	tcs = []TC{
 		{
 			description:   "Unprefixed label & annotation should be allowed",
