@@ -1,0 +1,79 @@
+suite: rbac
+templates:
+  - clusterrole.yaml
+  - clusterrolebinding.yaml
+  - role.yaml
+  - rolebinding.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: matches the snapshot with default values
+    asserts:
+      - matchSnapshot: {}
+
+  - it: adds a worker ClusterRole only when ownerRefs includes node
+    template: clusterrole.yaml
+    set:
+      worker:
+        ownerRefs:
+          - node
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.name
+          value: nfd-node-feature-discovery-worker
+        documentIndex: 1
+      - equal:
+          path: rules
+          value:
+            - apiGroups: [""]
+              resources: [nodes]
+              verbs: [get]
+        documentIndex: 1
+
+  - it: adds a worker ClusterRoleBinding only when ownerRefs includes node
+    template: clusterrolebinding.yaml
+    set:
+      worker:
+        ownerRefs:
+          - node
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: subjects[0].name
+          value: nfd-node-feature-discovery-worker
+        documentIndex: 1
+
+  - it: adds topology-updater RBAC when it is enabled
+    template: clusterrole.yaml
+    set:
+      topologyUpdater:
+        enable: true
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.name
+          value: nfd-node-feature-discovery-topology-updater
+        documentIndex: 1
+
+  - it: creates no RBAC when every component disables it
+    set:
+      master:
+        rbac:
+          create: false
+      worker:
+        rbac:
+          create: false
+      gc:
+        rbac:
+          create: false
+    asserts:
+      - hasDocuments:
+          count: 0

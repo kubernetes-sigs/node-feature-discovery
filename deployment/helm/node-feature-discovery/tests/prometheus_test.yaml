@@ -1,0 +1,39 @@
+suite: prometheus
+templates:
+  - prometheus.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: is not rendered by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: matches the snapshot when enabled with default values
+    set:
+      prometheus:
+        enable: true
+    asserts:
+      - matchSnapshot: {}
+
+  - it: adds custom labels and scrape interval
+    set:
+      prometheus:
+        enable: true
+        scrapeInterval: 30s
+        labels:
+          release: kube-prometheus-stack
+    asserts:
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: node-feature-discovery
+      - equal:
+          path: spec.podMetricsEndpoints[0].interval
+          value: 30s

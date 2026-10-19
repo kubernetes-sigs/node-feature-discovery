@@ -1,0 +1,30 @@
+matches the snapshot when enabled with default values:
+  1: |
+    apiVersion: monitoring.coreos.com/v1
+    kind: PodMonitor
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/name: node-feature-discovery
+      name: nfd-node-feature-discovery
+      namespace: nfd-system
+    spec:
+      namespaceSelector:
+        matchNames:
+          - nfd-system
+      podMetricsEndpoints:
+        - honorLabels: true
+          interval: 10s
+          path: /metrics
+          port: http
+          scheme: http
+      selector:
+        matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: In
+            values:
+              - nfd
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+              - node-feature-discovery

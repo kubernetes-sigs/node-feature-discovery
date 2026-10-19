@@ -166,6 +166,25 @@ Unit tests are not run as part of the container image build (CI runs them via
 make test
 ```
 
+The Helm chart has its own unit tests under
+`deployment/helm/node-feature-discovery/tests/`. Run them with:
+
+```bash
+make helm-unittest
+```
+
+This installs the [helm-unittest](https://github.com/helm-unittest/helm-unittest)
+plugin at `HELM_UNITTEST_VERSION` if it is not installed yet. An already
+installed plugin is used as is, whatever its version.
+
+The chart rendered with default values is compared against snapshots in
+`tests/__snapshot__/`. After an intended template change, review and refresh
+them with:
+
+```bash
+helm unittest -u deployment/helm/node-feature-discovery/
+```
+
 End-to-end tests are built on top of the e2e test framework of Kubernetes, and,
 they required a cluster to run them on. For running the tests on your test
 cluster you need to specify the kubeconfig to be used:

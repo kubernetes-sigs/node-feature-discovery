@@ -1,0 +1,61 @@
+suite: pod disruption budgets
+templates:
+  - master-pdb.yaml
+  - nfd-gc-pdb.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: is not rendered by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: matches the snapshot when enabled with default values
+    set:
+      master:
+        podDisruptionBudget:
+          enable: true
+      gc:
+        podDisruptionBudget:
+          enable: true
+    asserts:
+      - matchSnapshot: {}
+
+  - it: renders the gc PodDisruptionBudget when enabled
+    template: nfd-gc-pdb.yaml
+    set:
+      gc:
+        podDisruptionBudget:
+          enable: true
+          minAvailable: null
+          maxUnavailable: 1
+    asserts:
+      - equal:
+          path: metadata.name
+          value: nfd-node-feature-discovery-gc
+      - equal:
+          path: spec.selector.matchLabels.role
+          value: gc
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - notExists:
+          path: spec.minAvailable
+
+  - it: is not rendered when the component is disabled
+    set:
+      master:
+        enable: false
+        podDisruptionBudget:
+          enable: true
+      gc:
+        enable: false
+        podDisruptionBudget:
+          enable: true
+    asserts:
+      - hasDocuments:
+          count: 0

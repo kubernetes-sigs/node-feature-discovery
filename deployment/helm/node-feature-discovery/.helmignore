@@ -21,6 +21,8 @@
 .idea/
 *.tmproj
 .vscode/
+# helm-unittest test suites
+tests/
 # Sources for autogeneration
 README.md.gotmpl
 _metadata.gotmpl

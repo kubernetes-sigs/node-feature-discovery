@@ -1,0 +1,126 @@
+matches the snapshot when enabled with default values:
+  1: |
+    apiVersion: v1
+    data:
+      nfd-topology-updater.conf: "null"
+    kind: ConfigMap
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+      name: nfd-node-feature-discovery-topology-updater-conf
+      namespace: nfd-system
+  2: |
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: topology-updater
+      name: nfd-node-feature-discovery-topology-updater
+      namespace: nfd-system
+    spec:
+      revisionHistoryLimit: null
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: topology-updater
+      template:
+        metadata:
+          annotations:
+            checksum/config: 52e4792ceebdb5abcd824ad22975c16bf135694d4a74da5a1d45d38bc5682551
+          labels:
+            app.kubernetes.io/instance: nfd
+            app.kubernetes.io/name: node-feature-discovery
+            role: topology-updater
+        spec:
+          containers:
+            - args:
+                - -podresources-socket=/host-var/lib/kubelet-podresources/kubelet.sock
+                - -sleep-interval=60s
+                - -watch-namespace=*
+                - -port=8080
+              command:
+                - nfd-topology-updater
+              env:
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                - name: NODE_ADDRESS
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.hostIP
+              image: registry.k8s.io/nfd/node-feature-discovery:v0.0.0-test
+              imagePullPolicy: Always
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: http
+                initialDelaySeconds: 10
+              name: topology-updater
+              ports:
+                - containerPort: 8080
+                  name: http
+              readinessProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /healthz
+                  port: http
+                initialDelaySeconds: 5
+              resources:
+                limits:
+                  memory: 60Mi
+                requests:
+                  cpu: 50m
+                  memory: 40Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsUser: 0
+              volumeMounts:
+                - mountPath: /host-var/lib/kubelet-podresources/kubelet.sock
+                  name: kubelet-podresources-sock
+                - mountPath: /host-sys
+                  name: host-sys
+                - mountPath: /host-var/lib/kubelet
+                  name: kubelet-state-files
+                  readOnly: true
+                - mountPath: /etc/kubernetes/node-feature-discovery
+                  name: nfd-topology-updater-conf
+                  readOnly: true
+          dnsPolicy: ClusterFirstWithHostNet
+          hostNetwork: false
+          imagePullSecrets: null
+          securityContext: {}
+          serviceAccountName: nfd-node-feature-discovery-topology-updater
+          volumes:
+            - hostPath:
+                path: /sys
+              name: host-sys
+            - hostPath:
+                path: /var/lib/kubelet/pod-resources/kubelet.sock
+              name: kubelet-podresources-sock
+            - hostPath:
+                path: /var/lib/kubelet
+              name: kubelet-state-files
+            - configMap:
+                items:
+                  - key: nfd-topology-updater.conf
+                    path: nfd-topology-updater.conf
+                name: nfd-node-feature-discovery-topology-updater-conf
+              name: nfd-topology-updater-conf
+      updateStrategy:
+        rollingUpdate:
+          maxUnavailable: 10%

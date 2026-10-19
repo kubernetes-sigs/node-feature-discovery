@@ -1,0 +1,138 @@
+suite: nfd-worker
+templates:
+  - worker.yaml
+  - nfd-worker-conf.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: matches the snapshot with default values
+    set:
+      image:
+        # hack/prepare-release.sh rewrites the default repository and pullPolicy on release branches
+        repository: registry.k8s.io/nfd/node-feature-discovery
+        pullPolicy: Always
+    asserts:
+      - matchSnapshot: {}
+
+  - it: is not rendered when disabled
+    set:
+      worker:
+        enable: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: passes ownerRefs to -owner-refs
+    template: worker.yaml
+    set:
+      worker:
+        ownerRefs:
+          - node
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -owner-refs=node
+
+  - it: renders an empty -owner-refs when ownerRefs is empty
+    template: worker.yaml
+    set:
+      worker:
+        ownerRefs: []
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -owner-refs=
+
+  - it: allows switching the update strategy to OnDelete
+    template: worker.yaml
+    set:
+      worker:
+        updateStrategy:
+          type: OnDelete
+          rollingUpdate: null
+    asserts:
+      - equal:
+          path: spec.updateStrategy
+          value:
+            type: OnDelete
+
+  - it: mounts /usr/src only when mountUsrSrc is set
+    template: worker.yaml
+    set:
+      worker:
+        mountUsrSrc: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: host-usr-src
+            hostPath:
+              path: /usr/src
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: host-usr-src
+            mountPath: /host-usr/src
+            readOnly: true
+
+  - it: inherits the top-level priorityClassName
+    template: worker.yaml
+    set:
+      priorityClassName: global-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: global-priority
+
+  - it: prefers worker.priorityClassName over the top-level one
+    template: worker.yaml
+    set:
+      priorityClassName: global-priority
+      worker:
+        priorityClassName: worker-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: worker-priority
+
+  - it: renders the worker config into its ConfigMap
+    template: nfd-worker-conf.yaml
+    set:
+      worker:
+        config:
+          core:
+            sleepInterval: 30s
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: nfd-node-feature-discovery-worker-conf
+      - equal:
+          path: data["nfd-worker.conf"]
+          value: |-
+            core:
+              sleepInterval: 30s
+
+  - it: appends extraArgs and extraEnvs
+    template: worker.yaml
+    set:
+      worker:
+        extraArgs:
+          - -v=2
+        extraEnvs:
+          - name: FOO
+            value: bar
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -v=2
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FOO
+            value: bar
