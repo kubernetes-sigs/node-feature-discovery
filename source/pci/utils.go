@@ -20,12 +20,27 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
+)
+
+// Attributes of a pci.device instance that identify the device and its
+// placement rather than its type.
+const (
+	// AddressAttr is the PCI address (domain:bus:device.function) of the
+	// device, as named by its sysfs entry.
+	AddressAttr = "address"
+	// NumaNodeAttr is the NUMA node the device is attached to. It is omitted
+	// when the kernel reports no node.
+	NumaNodeAttr = "numa_node"
+	// PhysfnAttr is the PCI address of the parent physical function. It is
+	// only present on SR-IOV virtual functions.
+	PhysfnAttr = "physfn"
 )
 
 var mandatoryDevAttrs = []string{"class", "vendor", "device", "subsystem_vendor", "subsystem_device"}
@@ -65,7 +80,40 @@ func readPciDevInfo(devPath string) (*nfdv1alpha1.InstanceFeature, error) {
 			attrs[attr] = attrVal
 		}
 	}
+	attrs[AddressAttr] = filepath.Base(devPath)
+	if numaNode, ok := readNumaNode(devPath); ok {
+		attrs[NumaNodeAttr] = numaNode
+	}
+	if physfn, ok := readPhysfn(devPath); ok {
+		attrs[PhysfnAttr] = physfn
+	}
 	return nfdv1alpha1.NewInstanceFeature(attrs), nil
+}
+
+// readNumaNode returns the NUMA node of the device. The kernel reports -1 when
+// the node is unknown; that, and anything that is not a non-negative integer,
+// yields ok == false so that an unknown node is never published as a value.
+func readNumaNode(devPath string) (string, bool) {
+	data, err := os.ReadFile(filepath.Join(devPath, "numa_node"))
+	if err != nil {
+		return "", false
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err == nil && n >= 0 {
+		return strconv.Itoa(n), true
+	}
+	return "", false
+}
+
+// readPhysfn returns the PCI address of the parent physical function of an
+// SR-IOV virtual function, taken from the target of its physfn symlink. It
+// yields ok == false when the device has no physfn link.
+func readPhysfn(devPath string) (string, bool) {
+	target, err := os.Readlink(filepath.Join(devPath, "physfn"))
+	if err != nil {
+		return "", false
+	}
+	return filepath.Base(target), true
 }
 
 // detectPci detects available PCI devices and retrieves their device attributes.
