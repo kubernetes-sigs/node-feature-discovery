@@ -34,13 +34,13 @@ NFD runs three components:
 
 ```bash
 helm install -n node-feature-discovery --create-namespace nfd \
-  oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0
+  oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1
 ```
 
 ### Kustomize
 
 ```bash
-kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.20.0"
+kubectl apply -k "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.20.1"
 ```
 
 ### Verify
