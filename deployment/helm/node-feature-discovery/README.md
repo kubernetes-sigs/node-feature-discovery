@@ -1,6 +1,6 @@
 # node-feature-discovery
 
-![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.20.0](https://img.shields.io/badge/AppVersion-v0.20.0-informational?style=flat-square)
+![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.20.1](https://img.shields.io/badge/AppVersion-v0.20.1-informational?style=flat-square)
 Node Feature Discovery (NFD) is a Kubernetes add-on for detecting hardware
 features and system configuration. Detected features are advertised as node
 labels. NFD provides flexible configuration and extension points for a wide
@@ -20,7 +20,7 @@ The NFD project provides Helm charts in an OCI compliant repository. Install
 NFD with the default configuration
 
 ```bash
-helm install nfd --namespace node-feature-discovery --create-namespace oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0
+helm install nfd --namespace node-feature-discovery --create-namespace oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1
 ```
 
 See the [configuration](#configuration) section below for instructions how to
@@ -63,18 +63,18 @@ helm install nfd ./node-feature-discovery/ --namespace node-feature-discovery --
 You can override values from `values.yaml` and provide a file with custom values:
 
 ```bash
-helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0
+helm install -f <path/to/custom/values.yaml> --namespace nfd --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1
 ```
 
 To specify each parameter separately you can provide them to helm install command:
 
 ```bash
-helm install --set nameOverride=nfdinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0
+helm install --set nameOverride=nfdinstance --set master.replicaCount=2 --namespace nfd --create-namespace nfd oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1
 ```
 
 ## Upgrading the chart
 
-To upgrade the `node-feature-discovery` deployment to v0.20.0 via Helm.
+To upgrade the `node-feature-discovery` deployment to v0.20.1 via Helm.
 
 ### Rolling-update pace on large clusters
 
@@ -111,11 +111,11 @@ export HELM_INSTALL_NAME=nfd
 # Uninstall the old NFD deployment
 helm uninstall $HELM_INSTALL_NAME --namespace $NFD_NS
 # Install the new NFD deployment
-helm install $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0 --namespace $NFD_NS --set master.enable=false
+helm install $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1 --namespace $NFD_NS --set master.enable=false
 # Wait for NFD Worker to be ready
 kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
 # Enable the NFD Master
-helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0 --namespace $NFD_NS --set master.enable=true
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1 --namespace $NFD_NS --set master.enable=true
 ```
 
 ### From v0.12 - v0.13
@@ -127,13 +127,13 @@ The API was not enabled by default.
 export NFD_NS=node-feature-discovery
 export HELM_INSTALL_NAME=nfd
 # Install and upgrade CRD's
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.20.0/deployment/base/nfd-crds/nfd-api-crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.20.1/deployment/base/nfd-crds/nfd-api-crds.yaml
 # Install the new NFD deployment
-helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0 --namespace $NFD_NS --set master.enable=false
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1 --namespace $NFD_NS --set master.enable=false
 # Wait for NFD Worker to be ready
 kubectl wait --timeout=-1s --for=condition=ready pod -l app.kubernetes.io/name=node-feature-discovery --namespace $NFD_NS
 # Enable the NFD Master
-helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0 --namespace $NFD_NS --set master.enable=true
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1 --namespace $NFD_NS --set master.enable=true
 ```
 
 ### From v0.14+
@@ -145,9 +145,9 @@ and the CRD `NodeFeature` is enabled by default.
 export NFD_NS=node-feature-discovery
 export HELM_INSTALL_NAME=nfd
 # Install and upgrade CRD's
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.20.0/deployment/base/nfd-crds/nfd-api-crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.20.1/deployment/base/nfd-crds/nfd-api-crds.yaml
 # Install the new NFD deployment
-helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.0 --namespace $NFD_NS
+helm upgrade $HELM_INSTALL_NAME oci://registry.k8s.io/nfd/charts/node-feature-discovery --version 0.20.1 --namespace $NFD_NS
 ```
 
 ## Uninstalling the chart
