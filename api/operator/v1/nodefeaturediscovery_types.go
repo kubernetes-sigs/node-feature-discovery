@@ -152,10 +152,6 @@ type NodeFeatureDiscoveryList struct {
 	Items           []NodeFeatureDiscovery `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&NodeFeatureDiscovery{}, &NodeFeatureDiscoveryList{})
-}
-
 // ImagePath returns a compiled full valid image string
 func (o *OperandSpec) ImagePath() string {
 	return o.Image
