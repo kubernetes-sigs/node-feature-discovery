@@ -1,0 +1,223 @@
+suite: nfd-master
+templates:
+  - master.yaml
+  - nfd-master-conf.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: matches the snapshot with default values
+    set:
+      image:
+        # hack/prepare-release.sh rewrites the default repository and pullPolicy on release branches
+        repository: registry.k8s.io/nfd/node-feature-discovery
+        pullPolicy: Always
+    asserts:
+      - matchSnapshot: {}
+
+  - it: is not rendered when disabled
+    template: master.yaml
+    set:
+      master:
+        enable: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: defaults the image tag to the chart appVersion
+    template: master.yaml
+    set:
+      image:
+        repository: registry.k8s.io/nfd/node-feature-discovery
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.k8s.io/nfd/node-feature-discovery:v0.0.0-test
+
+  - it: uses image.tag when set
+    template: master.yaml
+    set:
+      image:
+        repository: registry.example.com/nfd
+        tag: v1.2.3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/nfd:v1.2.3
+
+  - it: enables leader election with more than one replica
+    template: master.yaml
+    set:
+      master:
+        replicaCount: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -enable-leader-election
+
+  - it: renders optional flags from values
+    template: master.yaml
+    set:
+      master:
+        instance: blue
+        extraLabelNs:
+          - a.example.com
+          - b.example.com
+        denyLabelNs:
+          - c.example.com
+        enableTaints: true
+        resyncPeriod: 2h
+        nfdApiParallelism: 5
+        port: 9090
+        extraArgs:
+          - -v=4
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -instance=blue
+            - -extra-label-ns=a.example.com,b.example.com
+            - -deny-label-ns=c.example.com
+            - -enable-taints
+            - -resync-period=2h
+            - -nfd-api-parallelism=5
+            - -port=9090
+            - -v=4
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9090
+
+  - it: passes feature gates as flags
+    template: master.yaml
+    set:
+      featureGates:
+        NodeFeatureGroupAPI: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -feature-gates=NodeFeatureGroupAPI=true
+
+  - it: renders hostUsers only when it is a boolean
+    template: master.yaml
+    set:
+      master:
+        hostUsers: false
+    asserts:
+      - equal:
+          path: spec.template.spec.hostUsers
+          value: false
+
+  - it: honours fullnameOverride and namespaceOverride
+    template: master.yaml
+    set:
+      fullnameOverride: custom
+      namespaceOverride: other-ns
+    asserts:
+      - equal:
+          path: metadata.name
+          value: custom-master
+      - equal:
+          path: metadata.namespace
+          value: other-ns
+      - equal:
+          path: spec.template.spec.volumes[0].configMap.name
+          value: custom-master-conf
+
+  - it: uses the release name as fullname when it contains the chart name
+    template: master.yaml
+    release:
+      name: my-node-feature-discovery
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-node-feature-discovery-master
+
+  - it: falls back to global.imagePullSecrets
+    template: master.yaml
+    set:
+      global:
+        imagePullSecrets:
+          - name: global-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: global-secret
+
+  - it: prefers imagePullSecrets over global.imagePullSecrets
+    template: master.yaml
+    set:
+      imagePullSecrets:
+        - name: local-secret
+      global:
+        imagePullSecrets:
+          - name: global-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: local-secret
+
+  - it: uses a custom service account when not created by the chart
+    template: master.yaml
+    set:
+      master:
+        serviceAccount:
+          create: false
+          name: existing-sa
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: existing-sa
+
+  - it: checksums only the config values when checksumValuesOnly is set
+    template: master.yaml
+    set:
+      checksumValuesOnly: true
+      master:
+        config:
+          noPublish: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 81da806229aef504d01f18e2cf390913032b438012aaf01002a0f1ebf464d8b6
+
+  - it: adds pod labels, annotations and scheduling constraints
+    template: master.yaml
+    set:
+      master:
+        labels:
+          team: infra
+        annotations:
+          example.com/note: hello
+        deploymentAnnotations:
+          example.com/deploy: annotated
+        nodeSelector:
+          kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: infra
+      - equal:
+          path: spec.template.metadata.labels.role
+          value: master
+      - equal:
+          path: spec.template.metadata.annotations["example.com/note"]
+          value: hello
+      - equal:
+          path: metadata.annotations["example.com/deploy"]
+          value: annotated
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: system-cluster-critical

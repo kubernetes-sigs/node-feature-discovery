@@ -1,0 +1,120 @@
+matches the snapshot with default values:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: master
+      name: nfd-node-feature-discovery-master
+      namespace: nfd-system
+    spec:
+      replicas: 1
+      revisionHistoryLimit: null
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: master
+      template:
+        metadata:
+          annotations:
+            checksum/config: 9eb57da4b6d3746c44ed0b3c63cd66c720a47601474e0c84bd82dc3765419527
+          labels:
+            app.kubernetes.io/instance: nfd
+            app.kubernetes.io/name: node-feature-discovery
+            role: master
+        spec:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - preference:
+                    matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: In
+                        values:
+                          - ""
+                  weight: 1
+          containers:
+            - args:
+                - -port=8080
+              command:
+                - nfd-master
+              env:
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+              image: registry.k8s.io/nfd/node-feature-discovery:v0.0.0-test
+              imagePullPolicy: Always
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: http
+              name: master
+              ports:
+                - containerPort: 8080
+                  name: http
+              readinessProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /healthz
+                  port: http
+              resources:
+                limits:
+                  memory: 4Gi
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+              startupProbe:
+                failureThreshold: 30
+                httpGet:
+                  path: /healthz
+                  port: http
+              volumeMounts:
+                - mountPath: /etc/kubernetes/node-feature-discovery
+                  name: nfd-master-conf
+                  readOnly: true
+          dnsPolicy: ClusterFirstWithHostNet
+          enableServiceLinks: false
+          hostNetwork: false
+          imagePullSecrets: null
+          securityContext: {}
+          serviceAccountName: nfd-node-feature-discovery
+          tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/control-plane
+              operator: Equal
+              value: ""
+          volumes:
+            - configMap:
+                items:
+                  - key: nfd-master.conf
+                    path: nfd-master.conf
+                name: nfd-node-feature-discovery-master-conf
+              name: nfd-master-conf
+  2: |
+    apiVersion: v1
+    data:
+      nfd-master.conf: "null"
+    kind: ConfigMap
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+      name: nfd-node-feature-discovery-master-conf
+      namespace: nfd-system

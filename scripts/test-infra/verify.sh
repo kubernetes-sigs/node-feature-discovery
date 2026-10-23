@@ -7,7 +7,10 @@ GOLANGCI_LINT_VERSION="v2.14.0"
 # SHA-256 of golangci-lint-<version>-linux-amd64.tar.gz, from the release's
 # checksums file. Update it together with GOLANGCI_LINT_VERSION.
 GOLANGCI_LINT_SHA256="ab90aeb7b066f92a33415b638a50fe5344bbb75a0d32ad30cc248d88f81032ab"
-HELM_VERSION="v3.17.3"
+# The helm-unittest plugin installed by 'make helm-unittest' needs Helm v3.18.0
+# or later: its plugin.yaml uses the platformHooks field, which older Helm
+# versions reject.
+HELM_VERSION="v3.22.1"
 KUBECTL_VERSION="v1.22.1"
 
 # Install deps
@@ -42,6 +45,9 @@ make ci-lint
 
 echo "Running Helm lint"
 make helm-lint
+
+echo "Running Helm unit tests"
+make helm-unittest
 
 echo "Running logcheck"
 logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./pkg/...  ./source/...

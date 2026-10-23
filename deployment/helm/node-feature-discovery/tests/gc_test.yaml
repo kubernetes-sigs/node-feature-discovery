@@ -1,0 +1,53 @@
+suite: nfd-gc
+templates:
+  - nfd-gc.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: matches the snapshot with default values
+    set:
+      image:
+        # hack/prepare-release.sh rewrites the default repository and pullPolicy on release branches
+        repository: registry.k8s.io/nfd/node-feature-discovery
+        pullPolicy: Always
+    asserts:
+      - matchSnapshot: {}
+
+  - it: is not rendered when disabled
+    set:
+      gc:
+        enable: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: omits -gc-interval when interval is empty
+    set:
+      gc:
+        interval: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value: ["-port=8080"]
+
+  - it: uses custom interval, port and extraArgs
+    set:
+      gc:
+        interval: 30m
+        port: 9091
+        extraArgs:
+          - -v=3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -gc-interval=30m
+            - -port=9091
+            - -v=3
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9091

@@ -1,0 +1,41 @@
+matches the snapshot when enabled with default values:
+  1: |
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+      name: nfd-node-feature-discovery-master
+      namespace: nfd-system
+    spec:
+      minAvailable: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: master
+      unhealthyPodEvictionPolicy: AlwaysAllow
+  2: |
+    apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+      name: nfd-node-feature-discovery-gc
+      namespace: nfd-system
+    spec:
+      minAvailable: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: gc
+      unhealthyPodEvictionPolicy: AlwaysAllow

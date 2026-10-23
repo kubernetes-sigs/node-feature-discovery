@@ -1,0 +1,153 @@
+matches the snapshot when enabled with default values:
+  1: |
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: master
+      name: nfd-node-feature-discovery-master-network-policy
+      namespace: nfd-system
+    spec:
+      egress:
+        - ports:
+            - port: 80
+              protocol: TCP
+            - port: 443
+              protocol: TCP
+            - port: 53
+              protocol: TCP
+            - port: 53
+              protocol: UDP
+            - port: 6443
+              protocol: TCP
+      ingress:
+        - ports:
+            - port: http
+              protocol: TCP
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: master
+      policyTypes:
+        - Egress
+        - Ingress
+  2: |
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: gc
+      name: nfd-node-feature-discovery-gc-network-policy
+      namespace: nfd-system
+    spec:
+      egress:
+        - ports:
+            - port: 80
+              protocol: TCP
+            - port: 443
+              protocol: TCP
+            - port: 53
+              protocol: TCP
+            - port: 53
+              protocol: UDP
+            - port: 6443
+              protocol: TCP
+      ingress:
+        - ports:
+            - port: http
+              protocol: TCP
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: gc
+      policyTypes:
+        - Egress
+        - Ingress
+  3: |
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: topology-updater
+      name: nfd-node-feature-discovery-topology-updater-network-policy
+      namespace: nfd-system
+    spec:
+      egress:
+        - ports:
+            - port: 80
+              protocol: TCP
+            - port: 443
+              protocol: TCP
+            - port: 53
+              protocol: TCP
+            - port: 53
+              protocol: UDP
+            - port: 6443
+              protocol: TCP
+      ingress:
+        - ports:
+            - port: http
+              protocol: TCP
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: topology-updater
+      policyTypes:
+        - Egress
+        - Ingress
+  4: |
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: worker
+      name: nfd-node-feature-discovery-worker-network-policy
+      namespace: nfd-system
+    spec:
+      egress:
+        - ports:
+            - port: 80
+              protocol: TCP
+            - port: 443
+              protocol: TCP
+            - port: 53
+              protocol: TCP
+            - port: 53
+              protocol: UDP
+            - port: 6443
+              protocol: TCP
+      ingress:
+        - ports:
+            - port: http
+              protocol: TCP
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: worker
+      policyTypes:
+        - Egress
+        - Ingress

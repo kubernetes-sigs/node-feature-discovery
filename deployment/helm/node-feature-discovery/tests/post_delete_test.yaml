@@ -1,0 +1,37 @@
+suite: post-delete cleanup
+templates:
+  - post-delete-job.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: matches the snapshot with default values
+    set:
+      image:
+        # hack/prepare-release.sh rewrites the default repository and pullPolicy on release branches
+        repository: registry.k8s.io/nfd/node-feature-discovery
+        pullPolicy: Always
+    asserts:
+      - matchSnapshot: {}
+
+  - it: passes the master instance name to the prune job
+    set:
+      master:
+        instance: blue
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value: ["-prune", "-instance=blue"]
+
+  - it: is not rendered when postDeleteCleanup is disabled
+    set:
+      postDeleteCleanup: false
+    asserts:
+      - hasDocuments:
+          count: 0

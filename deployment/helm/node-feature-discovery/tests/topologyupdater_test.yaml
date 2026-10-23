@@ -1,0 +1,112 @@
+suite: nfd-topology-updater
+templates:
+  - topologyupdater.yaml
+  - nfd-topologyupdater-conf.yaml
+  - topologyupdater-crds.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: is not rendered by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: matches the snapshot when enabled with default values
+    set:
+      topologyUpdater:
+        enable: true
+      image:
+        # hack/prepare-release.sh rewrites the default repository and pullPolicy on release branches
+        repository: registry.k8s.io/nfd/node-feature-discovery
+        pullPolicy: Always
+    asserts:
+      - matchSnapshot: {}
+
+  - it: disables kubelet state tracking when kubeletStateDir is empty
+    template: topologyupdater.yaml
+    set:
+      topologyUpdater:
+        enable: true
+        kubeletStateDir: ""
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -kubelet-state-dir=
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: kubelet-state-files
+            hostPath:
+              path: /var/lib/kubelet
+
+  - it: mounts the kubelet config and custom socket path
+    template: topologyupdater.yaml
+    set:
+      topologyUpdater:
+        enable: true
+        kubeletConfigPath: /etc/kubernetes/kubelet.conf
+        kubeletPodResourcesSockPath: /run/kubelet/pod-resources.sock
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -kubelet-config-uri=file:///host-var/kubelet-config
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: kubelet-config
+            hostPath:
+              path: /etc/kubernetes/kubelet.conf
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: kubelet-podresources-sock
+            hostPath:
+              path: /run/kubelet/pod-resources.sock
+
+  - it: disables pod fingerprinting when podSetFingerprint is false
+    template: topologyupdater.yaml
+    set:
+      topologyUpdater:
+        enable: true
+        podSetFingerprint: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -pods-fingerprint=false
+
+  - it: does not render the CRD unless createCRDs is set
+    template: topologyupdater-crds.yaml
+    set:
+      topologyUpdater:
+        enable: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders the NodeResourceTopology CRD when createCRDs is set
+    template: topologyupdater-crds.yaml
+    set:
+      topologyUpdater:
+        enable: true
+        createCRDs: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: CustomResourceDefinition
+      - equal:
+          path: metadata.name
+          value: noderesourcetopologies.topology.node.k8s.io
+
+  - it: does not render the CRD when createCRDs is set but the updater is disabled
+    template: topologyupdater-crds.yaml
+    set:
+      topologyUpdater:
+        createCRDs: true
+    asserts:
+      - hasDocuments:
+          count: 0

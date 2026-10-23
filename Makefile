@@ -36,6 +36,8 @@ VERSION := $(shell git describe --tags --dirty --always --match "v*")
 
 CHART_VERSION ?= $(shell echo $(VERSION) | cut -c2-)
 CHART_EXTRA_VERSIONS ?=
+# helm-unittest v1.1.0 and later need Helm v3.18.0 or later
+HELM_UNITTEST_VERSION ?= v1.2.1
 
 IMAGE_REGISTRY ?= registry.k8s.io/nfd
 IMAGE_TAG_NAME ?= $(VERSION)
@@ -238,6 +240,12 @@ helm-docs:
 
 helm-lint:
 	helm lint --strict deployment/helm/node-feature-discovery/
+
+.PHONY: helm-unittest
+helm-unittest:
+	@helm plugin list | grep -q '^unittest[[:space:]]' || \
+	    helm plugin install https://github.com/helm-unittest/helm-unittest --version $(HELM_UNITTEST_VERSION)
+	helm unittest deployment/helm/node-feature-discovery/
 
 helm-push:
 	for v in $(CHART_VERSION) $(CHART_EXTRA_VERSIONS); do \

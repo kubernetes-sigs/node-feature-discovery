@@ -1,0 +1,154 @@
+matches the snapshot with default values:
+  1: |
+    apiVersion: v1
+    data:
+      nfd-worker.conf: "null"
+    kind: ConfigMap
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+      name: nfd-node-feature-discovery-worker-conf
+      namespace: nfd-system
+  2: |
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      labels:
+        app.kubernetes.io/instance: nfd
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: node-feature-discovery
+        app.kubernetes.io/version: v0.0.0-test
+        helm.sh/chart: node-feature-discovery-0.0.0-test
+        role: worker
+      name: nfd-node-feature-discovery-worker
+      namespace: nfd-system
+    spec:
+      revisionHistoryLimit: null
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: nfd
+          app.kubernetes.io/name: node-feature-discovery
+          role: worker
+      template:
+        metadata:
+          annotations:
+            checksum/config: 92a2042374c829cf0c421cfe466a99326decced29c33b688fcdb4b942899785c
+          labels:
+            app.kubernetes.io/instance: nfd
+            app.kubernetes.io/name: node-feature-discovery
+            role: worker
+        spec:
+          containers:
+            - args:
+                - -owner-refs=pod,ds
+                - -port=8080
+              command:
+                - nfd-worker
+              env:
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_UID
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.uid
+              image: registry.k8s.io/nfd/node-feature-discovery:v0.0.0-test
+              imagePullPolicy: Always
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: http
+                initialDelaySeconds: 10
+              name: worker
+              ports:
+                - containerPort: 8080
+                  name: http
+              readinessProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /healthz
+                  port: http
+                initialDelaySeconds: 5
+              resources:
+                limits:
+                  memory: 512Mi
+                requests:
+                  cpu: 5m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+              volumeMounts:
+                - mountPath: /host-boot
+                  name: host-boot
+                  readOnly: true
+                - mountPath: /host-etc/os-release
+                  name: host-os-release
+                  readOnly: true
+                - mountPath: /host-sys
+                  name: host-sys
+                  readOnly: true
+                - mountPath: /host-usr/lib
+                  name: host-usr-lib
+                  readOnly: true
+                - mountPath: /host-lib
+                  name: host-lib
+                  readOnly: true
+                - mountPath: /host-proc/swaps
+                  name: host-proc-swaps
+                  readOnly: true
+                - mountPath: /etc/kubernetes/node-feature-discovery/features.d/
+                  name: features-d
+                  readOnly: true
+                - mountPath: /etc/kubernetes/node-feature-discovery
+                  name: nfd-worker-conf
+                  readOnly: true
+          dnsPolicy: ClusterFirstWithHostNet
+          hostNetwork: false
+          imagePullSecrets: null
+          securityContext: {}
+          serviceAccountName: nfd-node-feature-discovery-worker
+          volumes:
+            - hostPath:
+                path: /boot
+              name: host-boot
+            - hostPath:
+                path: /etc/os-release
+              name: host-os-release
+            - hostPath:
+                path: /sys
+              name: host-sys
+            - hostPath:
+                path: /usr/lib
+              name: host-usr-lib
+            - hostPath:
+                path: /lib
+              name: host-lib
+            - hostPath:
+                path: /proc/swaps
+              name: host-proc-swaps
+            - hostPath:
+                path: /etc/kubernetes/node-feature-discovery/features.d/
+              name: features-d
+            - configMap:
+                items:
+                  - key: nfd-worker.conf
+                    path: nfd-worker.conf
+                name: nfd-node-feature-discovery-worker-conf
+              name: nfd-worker-conf
+      updateStrategy:
+        rollingUpdate:
+          maxUnavailable: 10%

@@ -1,0 +1,52 @@
+suite: network policies
+templates:
+  - master-networkpolicy.yaml
+  - worker-networkpolicy.yaml
+  - nfd-gc-networkpolicy.yaml
+  - topologyupdater-networkpolicy.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: is not rendered by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: matches the snapshot when enabled with default values
+    set:
+      master:
+        networkPolicy:
+          enabled: true
+      worker:
+        networkPolicy:
+          enabled: true
+      gc:
+        networkPolicy:
+          enabled: true
+      topologyUpdater:
+        networkPolicy:
+          enabled: true
+    asserts:
+      - matchSnapshot: {}
+
+  - it: uses custom egress rules
+    template: master-networkpolicy.yaml
+    set:
+      master:
+        networkPolicy:
+          enabled: true
+          egress:
+            - to:
+                - ipBlock:
+                    cidr: 10.0.0.0/8
+    asserts:
+      - equal:
+          path: spec.egress
+          value:
+            - to:
+                - ipBlock:
+                    cidr: 10.0.0.0/8
