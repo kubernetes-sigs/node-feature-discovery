@@ -54,8 +54,10 @@ func TestPciSource(t *testing.T) {
 					Elements: []nfdv1alpha1.InstanceFeature{
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:04.0",
 								"class":            "0880",
 								"device":           "2021",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -63,8 +65,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:11.1",
 								"class":            "ff00",
 								"device":           "a1ed",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -72,8 +76,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:11.5",
 								"class":            "0106",
 								"device":           "a1d2",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -81,8 +87,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:14.2",
 								"class":            "1180",
 								"device":           "a1b1",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -90,8 +98,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:16.0",
 								"class":            "0780",
 								"device":           "a1ba",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -99,8 +109,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:1c.0",
 								"class":            "0604",
 								"device":           "a193",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -108,8 +120,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:00:1f.5",
 								"class":            "0c80",
 								"device":           "a1a4",
+								"numa_node":        "0",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
 								"vendor":           "8086",
@@ -117,8 +131,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:02:00.0",
 								"class":            "0300",
 								"device":           "2000",
+								"numa_node":        "0",
 								"subsystem_device": "2000",
 								"subsystem_vendor": "1a03",
 								"vendor":           "1a03",
@@ -126,10 +142,12 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":                   "0000:3b:00.0",
 								"class":                     "0b40",
 								"device":                    "37c8",
 								"iommu/intel-iommu/version": "1:0",
 								"iommu_group/type":          "identity",
+								"numa_node":                 "0",
 								"sriov_totalvfs":            "16",
 								"subsystem_device":          "35cf",
 								"subsystem_vendor":          "8086",
@@ -138,8 +156,10 @@ func TestPciSource(t *testing.T) {
 						},
 						{
 							Attributes: map[string]string{
+								"address":          "0000:3f:00.0",
 								"class":            "0200",
 								"device":           "37d2",
+								"numa_node":        "0",
 								"sriov_totalvfs":   "32",
 								"subsystem_device": "35cf",
 								"subsystem_vendor": "8086",
@@ -211,6 +231,18 @@ func TestPciSource(t *testing.T) {
 			},
 			expectedLabels: source.FeatureLabels{
 				"0c80.present": true,
+			},
+		},
+		{
+			name:   "new attrs rejected as label fields",
+			rootfs: "rootfs-1",
+			config: &Config{
+				DeviceClassWhitelist: []string{"0b40"},
+				DeviceLabelFields:    []string{"address", "numa_node", "physfn", "vendor"},
+			},
+			expectedLabels: source.FeatureLabels{
+				"8086.present":       true,
+				"8086.sriov.capable": true,
 			},
 		},
 		{
