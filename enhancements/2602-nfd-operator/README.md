@@ -116,7 +116,7 @@ The operator keeps building its operand the way it does today (see [Operand obje
   tests, so an operand change that the operator does not follow fails CI. The test only covers what it
   runs: a flag used only on a path the test does not reach, or RBAC that grants more than the operand
   needs, does not fail it and is left to review.
-- **Release timing.** If any of the pull requests that ship the operator (3 to 6 in the roadmap) is not
+- **Release timing.** If any of the pull requests that ship the operator (3 to 7 in the roadmap) is not
   merged before the v0.21 branch is cut, v0.21 ships only the code that is not user-visible yet, and the
   operator ships in the next minor release.
 
@@ -194,7 +194,7 @@ changes them on `helm upgrade`. An upgrade of the operator chart therefore appli
 `kubectl apply` first, as the operand chart's upgrade instructions already do (`docs/deployment/helm.md`).
 From operator v0.6.0 the step is required: the v0.6.0 chart has no `NodeFeatureGroup` CRD, and its
 `NodeFeatureDiscovery` CRD has no `spec.enableTaints`, so the API server rejects or drops that field until
-the new CRD is applied. The migration guide (6) and the upgrade test from v0.6.0 include the step.
+the new CRD is applied. The migration guide (7) and the upgrade test from v0.6.0 include the step.
 
 ### Versioning
 
@@ -216,19 +216,20 @@ are deferred until after the first release, in coordination with the downstream 
 |---|---|---|
 | 1 | This proposal | The design and the roadmap |
 | 2 | Import the operator code | History and code in the paths above; builds and tests in NFD CI; not built into the image, not published, no docs |
-| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; `api/operator` as its own Go module; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD, RBAC and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
+| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; `api/operator` as its own Go module; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
 | 4 | Operator e2e | An operator mode for `test/e2e`: install the operator chart with the pull request's image, apply a `NodeFeatureDiscovery`, check the operand, node labels and a `NodeFeatureRule`; a required presubmit job that runs on every pull request, next to the operand e2e tests |
-| 5 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart |
-| 6 | Docs and ownership | Operator deployment docs, a migration guide from operator v0.6.0, `OWNERS` for the operator code |
+| 5 | Operator RBAC | `+kubebuilder:rbac` markers become the source of truth and the operator's ClusterRole is generated from them; the leader-election Role keeps only leases and events; the operator chart gets a dedicated ServiceAccount; the permissions in the OLM bundle are narrowed |
+| 6 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart |
+| 7 | Docs and ownership | Operator deployment docs, a migration guide from operator v0.6.0, `OWNERS` for the operator code |
 
 Two changes outside this repository go with them: a presubmit job in kubernetes/test-infra (with 4), and a
-promoter entry in kubernetes/k8s.io for the operator chart (with 5); the operator binary needs no new
+promoter entry in kubernetes/k8s.io for the operator chart (with 6); the operator binary needs no new
 image entry because it ships in the NFD image.
 
 After the operator ships, the operator repository gets a README that points here, its open issues and pull
 requests are closed with pointers, and it is archived.
 
-The operator ships once 1 to 6 are in. The end-to-end test (4) runs on every pull request from then on.
+The operator ships once 1 to 7 are in. The end-to-end test (4) runs on every pull request from then on.
 
 ### Test Plan
 
@@ -244,7 +245,7 @@ The operator ships once 1 to 6 are in. The end-to-end test (4) runs on every pul
 
 ### Graduation Criteria
 
-The operator ships in the first NFD release that contains pull requests 1 to 6, with the target of
+The operator ships in the first NFD release that contains pull requests 1 to 7, with the target of
 v0.21. v0.20 was released without any of them. If any of them misses the v0.21 branch cut, v0.21
 contains only the code that is not user-visible yet, and the operator ships in the next minor release.
 
@@ -264,6 +265,8 @@ contains only the code that is not user-visible yet, and the operator ships in t
 - 2026-10-13: after review, the reason for `api/operator/v1` instead of `api/v1` is written down.
 - 2026-10-13: controller-runtime v0.25, following NFD's update to Kubernetes v1.37.
 - 2026-10-23: the target moves to v0.21, since v0.20.0 was released on 2026-10-16 without the operator.
+- 2026-10-23: the operator's RBAC becomes its own pull request (5), after the e2e test, so the e2e test
+  guards every permission it removes.
 
 ## Alternatives Considered
 
