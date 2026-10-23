@@ -34,7 +34,7 @@ require (
 	k8s.io/kubernetes v1.37.1
 	k8s.io/pod-security-admission v0.37.1
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
-	oras.land/oras-go/v2 v2.6.2
+	oras.land/oras-go/v2 v2.6.4
 	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2
@@ -195,7 +195,7 @@ require (
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
