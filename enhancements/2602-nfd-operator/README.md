@@ -117,8 +117,8 @@ The operator keeps building its operand the way it does today (see [Operand obje
   runs: a flag used only on a path the test does not reach, or RBAC that grants more than the operand
   needs, does not fail it and is left to review.
 - **Release timing.** If any of the pull requests that ship the operator (3 to 6 in the roadmap) is not
-  merged before the v0.20 branch is cut, v0.20 ships only the code that is not user-visible yet, and the
-  operator ships in v0.21.
+  merged before the v0.21 branch is cut, v0.21 ships only the code that is not user-visible yet, and the
+  operator ships in the next minor release.
 
 ## Design Details
 
@@ -245,8 +245,8 @@ The operator ships once 1 to 6 are in. The end-to-end test (4) runs on every pul
 ### Graduation Criteria
 
 The operator ships in the first NFD release that contains pull requests 1 to 6, with the target of
-v0.20. If any of them misses the v0.20 branch cut, v0.20 contains only the code that is not user-visible
-yet, and the operator ships in v0.21.
+v0.21. v0.20 was released without any of them. If any of them misses the v0.21 branch cut, v0.21
+contains only the code that is not user-visible yet, and the operator ships in the next minor release.
 
 ## Implementation History
 
@@ -263,6 +263,7 @@ yet, and the operator ships in v0.21.
 - 2026-10-06: after review, an upgrade applies the CRDs with `kubectl apply` before `helm upgrade`.
 - 2026-10-13: after review, the reason for `api/operator/v1` instead of `api/v1` is written down.
 - 2026-10-13: controller-runtime v0.25, following NFD's update to Kubernetes v1.37.
+- 2026-10-23: the target moves to v0.21, since v0.20.0 was released on 2026-10-16 without the operator.
 
 ## Alternatives Considered
 
