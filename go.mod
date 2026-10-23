@@ -11,7 +11,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.8.3
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.4
 	github.com/k8stopologyawareschedwg/podfingerprint v0.3.0
-	github.com/klauspost/cpuid/v2 v2.4.0
+	github.com/klauspost/cpuid/v2 v2.4.1
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 	github.com/opencontainers/image-spec v1.1.1
