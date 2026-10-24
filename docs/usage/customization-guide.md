@@ -988,6 +988,7 @@ The following features are available for matching:
 | **`network.device`** | instance |          |            | Physical (non-virtual) network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `sriov_numvfs`, `sriov_totalvfs`, `mtu` |
+|                  |              | **`bus_info`** | string | Bus address of the parent device of the interface (e.g. PCI address `0000:3b:00.0`). Several interfaces can share one parent device, e.g. SR-IOV VF representors in switchdev mode |
 | **`network.virtual`** | instance |          |            | Virtual network interfaces present in the system |
 |                  |              | **`name`** | string   | Name of the network interface |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `mtu` |

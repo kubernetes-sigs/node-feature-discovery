@@ -17,9 +17,13 @@ limitations under the License.
 package network
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
@@ -75,6 +79,38 @@ func TestGetLabelsSriovAggregation(t *testing.T) {
 				"sriov.capable":    true,
 				"sriov.configured": true,
 				"sriov.total_vfs":  24,
+				"sriov.num_vfs":    6,
+			},
+		},
+		{
+			name: "netdevs sharing one parent device are counted once",
+			devices: []map[string]string{
+				{
+					// PF netdev
+					"name":           "ens1f0np0",
+					"bus_info":       "0000:3b:00.0",
+					"sriov_totalvfs": "8",
+					"sriov_numvfs":   "4",
+				},
+				{
+					// switchdev VF representor, parent is the PF
+					"name":           "ens1f0r0",
+					"bus_info":       "0000:3b:00.0",
+					"sriov_totalvfs": "8",
+					"sriov_numvfs":   "4",
+				},
+				{
+					// second PF of the same NIC
+					"name":           "ens1f1np1",
+					"bus_info":       "0000:3b:00.1",
+					"sriov_totalvfs": "8",
+					"sriov_numvfs":   "2",
+				},
+			},
+			expected: map[string]interface{}{
+				"sriov.capable":    true,
+				"sriov.configured": true,
+				"sriov.total_vfs":  16,
 				"sriov.num_vfs":    6,
 			},
 		},
@@ -197,4 +233,23 @@ func TestGetLabelsSriovAggregation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReadBusInfo(t *testing.T) {
+	// Mimic sysfs: class/net/<iface>/device is a relative symlink to the
+	// parent device, shared by the PF and its switchdev representor.
+	root := t.TempDir()
+	pciDev := filepath.Join(root, "devices", "pci0000:00", "0000:3b:00.0")
+	require.NoError(t, os.MkdirAll(pciDev, 0o755))
+	for _, iface := range []string{"ens1f0np0", "ens1f0r0"} {
+		ifaceDir := filepath.Join(root, "class", "net", iface)
+		require.NoError(t, os.MkdirAll(ifaceDir, 0o755))
+		require.NoError(t, os.Symlink("../../../devices/pci0000:00/0000:3b:00.0", filepath.Join(ifaceDir, "device")))
+		assert.Equal(t, "0000:3b:00.0", readBusInfo(ifaceDir))
+	}
+
+	// No parent device
+	noDev := filepath.Join(root, "class", "net", "lo")
+	require.NoError(t, os.MkdirAll(noDev, 0o755))
+	assert.Empty(t, readBusInfo(noDev))
 }
