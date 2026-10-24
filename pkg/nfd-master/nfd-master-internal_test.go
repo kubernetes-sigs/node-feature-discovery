@@ -154,7 +154,10 @@ func newFakeMaster(opts ...NfdMasterOption) *nfdMaster {
 	return m.(*nfdMaster)
 }
 
-func newFakeMasterWithFeatureGate(opts ...NfdMasterOption) *nfdMaster {
+// newFakeMasterWithFeatureGate returns a fake master with the DisableAutoPrefix
+// feature gate enabled. The gate is global, so it is disabled again when the
+// test ends to keep other tests independent of the order they run in.
+func newFakeMasterWithFeatureGate(t *testing.T, opts ...NfdMasterOption) *nfdMaster {
 	//nolint:staticcheck
 	nfdCli := fakenfdclient.NewSimpleClientset()
 	k8sCli := fakeclient.NewClientset()
@@ -175,6 +178,11 @@ func newFakeMasterWithFeatureGate(opts ...NfdMasterOption) *nfdMaster {
 	if err := features.NFDMutableFeatureGate.Set("DisableAutoPrefix=true"); err != nil {
 		panic(err)
 	}
+	t.Cleanup(func() {
+		if err := features.NFDMutableFeatureGate.Set("DisableAutoPrefix=false"); err != nil {
+			t.Error(err)
+		}
+	})
 	// Enable DisableAutoPrefix feature gate
 	if !features.NFDFeatureGate.Enabled(features.DisableAutoPrefix) {
 		err = errors.New("DisableAutoPrefix feature gate is not enabled")
@@ -514,7 +522,7 @@ func TestFilterLabels(t *testing.T) {
 	}
 
 	// Create a new fake master with the feature gate enabled
-	fakeMaster = newFakeMasterWithFeatureGate()
+	fakeMaster = newFakeMasterWithFeatureGate(t)
 	tcs = []TC{
 		{
 			description:   "Unprefixed label & annotation should be allowed",
@@ -1242,6 +1250,96 @@ func TestNfdAPIUpdateNodeFeatureGroup(t *testing.T) {
 			updated, err := nfdCli.NfdV1alpha1().NodeFeatureGroups(namespace).Get(context.TODO(), nfg.Name, metav1.GetOptions{})
 			So(err, ShouldBeNil)
 			So(updated.Status.Nodes, ShouldResemble, []nfdv1alpha1.FeatureGroupNode{{Name: "node-a"}, {Name: "node-b"}})
+		})
+	})
+}
+
+func TestUnprefixedKeysAreRemoved(t *testing.T) {
+	// Register the feature gates so that the test also works when run alone.
+	if err := features.NFDMutableFeatureGate.Add(features.DefaultNFDFeatureGates); err != nil {
+		t.Fatal(err)
+	}
+	gateWasEnabled := features.NFDFeatureGate.Enabled(features.DisableAutoPrefix)
+	t.Cleanup(func() {
+		_ = features.NFDMutableFeatureGate.Set(fmt.Sprintf("DisableAutoPrefix=%t", gateWasEnabled))
+	})
+
+	const (
+		unprefixed = "unprefixed"
+		prefixed   = nfdv1alpha1.FeatureLabelNs + "/prefixed"
+	)
+
+	Convey("When DisableAutoPrefix is enabled", t, func() {
+		So(features.NFDMutableFeatureGate.Set("DisableAutoPrefix=true"), ShouldBeNil)
+
+		// Real nodes always have labels and annotations; JSON patch "add"
+		// needs the parent maps to exist.
+		testNode := newTestNode()
+		testNode.Labels["kubernetes.io/hostname"] = testNodeName
+		testNode.Annotations["node.alpha.kubernetes.io/ttl"] = "0"
+		fakeCli := fakeclient.NewClientset(testNode)
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+		fetchNode := func() *corev1.Node {
+			node, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+			return node
+		}
+
+		Convey("Unprefixed and prefixed labels and annotations are removed when no longer wanted", func() {
+			err := fakeMaster.updateNodeObject(fakeCli, testNode,
+				Labels{unprefixed: "a", prefixed: "b"},
+				Annotations{unprefixed: "a", prefixed: "b"},
+				nil, nil, false)
+			So(err, ShouldBeNil)
+			node := fetchNode()
+			So(node.Labels, ShouldContainKey, unprefixed)
+			So(node.Labels, ShouldContainKey, prefixed)
+			So(node.Annotations, ShouldContainKey, unprefixed)
+			So(node.Annotations, ShouldContainKey, prefixed)
+
+			// e.g. the NodeFeatureRule was deleted
+			err = fakeMaster.updateNodeObject(fakeCli, node, Labels{}, Annotations{}, nil, nil, false)
+			So(err, ShouldBeNil)
+			node = fetchNode()
+			So(node.Labels, ShouldNotContainKey, unprefixed)
+			So(node.Labels, ShouldNotContainKey, prefixed)
+			So(node.Annotations, ShouldNotContainKey, unprefixed)
+			So(node.Annotations, ShouldNotContainKey, prefixed)
+		})
+
+		Convey("Default-namespace labels tracked by older versions are still removed", func() {
+			testNode.Labels[prefixed] = "b"
+			testNode.Annotations[nfdv1alpha1.FeatureLabelsAnnotation] = "prefixed"
+			fakeCli = fakeclient.NewClientset(testNode)
+
+			err := fakeMaster.updateNodeObject(fakeCli, testNode, Labels{}, Annotations{}, nil, nil, false)
+			So(err, ShouldBeNil)
+			So(fetchNode().Labels, ShouldNotContainKey, prefixed)
+		})
+
+		Convey("An unprefixed label not created by NFD survives when NFD manages the prefixed one", func() {
+			// The user owns "foo"; NFD produces "feature.node.kubernetes.io/foo".
+			// The tracking annotation must record the prefixed name, otherwise
+			// "foo" in it would also match the user's label and remove it.
+			const userLabel = "foo"
+			nfdLabel := nfdv1alpha1.FeatureLabelNs + "/" + userLabel
+			testNode.Labels[userLabel] = "user"
+			fakeCli = fakeclient.NewClientset(testNode)
+
+			for range 2 {
+				err := fakeMaster.updateNodeObject(fakeCli, fetchNode(), Labels{nfdLabel: "nfd"}, Annotations{}, nil, nil, false)
+				So(err, ShouldBeNil)
+			}
+			node := fetchNode()
+			So(node.Labels[nfdLabel], ShouldEqual, "nfd")
+			So(node.Labels[userLabel], ShouldEqual, "user")
+
+			// NFD stops producing its label: only that one is removed.
+			err := fakeMaster.updateNodeObject(fakeCli, node, Labels{}, Annotations{}, nil, nil, false)
+			So(err, ShouldBeNil)
+			node = fetchNode()
+			So(node.Labels, ShouldNotContainKey, nfdLabel)
+			So(node.Labels[userLabel], ShouldEqual, "user")
 		})
 	})
 }
