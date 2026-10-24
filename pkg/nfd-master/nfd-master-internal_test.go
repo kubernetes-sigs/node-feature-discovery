@@ -1316,5 +1316,30 @@ func TestUnprefixedKeysAreRemoved(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(fetchNode().Labels, ShouldNotContainKey, prefixed)
 		})
+
+		Convey("An unprefixed label not created by NFD survives when NFD manages the prefixed one", func() {
+			// The user owns "foo"; NFD produces "feature.node.kubernetes.io/foo".
+			// The tracking annotation must record the prefixed name, otherwise
+			// "foo" in it would also match the user's label and remove it.
+			const userLabel = "foo"
+			nfdLabel := nfdv1alpha1.FeatureLabelNs + "/" + userLabel
+			testNode.Labels[userLabel] = "user"
+			fakeCli = fakeclient.NewClientset(testNode)
+
+			for range 2 {
+				err := fakeMaster.updateNodeObject(fakeCli, fetchNode(), Labels{nfdLabel: "nfd"}, Annotations{}, nil, nil, false)
+				So(err, ShouldBeNil)
+			}
+			node := fetchNode()
+			So(node.Labels[nfdLabel], ShouldEqual, "nfd")
+			So(node.Labels[userLabel], ShouldEqual, "user")
+
+			// NFD stops producing its label: only that one is removed.
+			err := fakeMaster.updateNodeObject(fakeCli, node, Labels{}, Annotations{}, nil, nil, false)
+			So(err, ShouldBeNil)
+			node = fetchNode()
+			So(node.Labels, ShouldNotContainKey, nfdLabel)
+			So(node.Labels[userLabel], ShouldEqual, "user")
+		})
 	})
 }
