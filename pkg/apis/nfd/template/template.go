@@ -67,7 +67,7 @@ func NewHelper(name string) (*Helper, error) {
 	return &Helper{template: tmpl}, nil
 }
 
-func (h *Helper) execute(data interface{}) (string, error) {
+func (h *Helper) execute(data any) (string, error) {
 	var tmp bytes.Buffer
 	if err := h.template.Execute(&tmp, data); err != nil {
 		return "", err
@@ -78,7 +78,7 @@ func (h *Helper) execute(data interface{}) (string, error) {
 // ExpandMap is a helper for expanding a template in to a map of strings. Data
 // after executing the template is expected to be key=value pairs separated by
 // newlines.
-func (h *Helper) ExpandMap(data interface{}) (map[string]string, error) {
+func (h *Helper) ExpandMap(data any) (map[string]string, error) {
 	expanded, err := h.execute(data)
 	if err != nil {
 		return nil, err

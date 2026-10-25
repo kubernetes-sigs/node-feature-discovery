@@ -191,8 +191,8 @@ var _ = NFDDescribe(Label("nfd-gc"), func() {
 })
 
 // haveNames is a helper that returns a slice of Gomega matchers for asserting the names of k8s API objects
-func haveNames(names ...string) []interface{} {
-	m := make([]interface{}, len(names))
+func haveNames(names ...string) []any {
+	m := make([]any, len(names))
 	for i, n := range names {
 		m[i] = HaveField("Name", n)
 	}

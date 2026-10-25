@@ -40,12 +40,10 @@ const (
 // building the matched-node set.
 func newNfgTestNodeFeature() *nfdv1alpha1.NodeFeature {
 	return &nfdv1alpha1.NodeFeature{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testNodeName + "-features",
-			Namespace: nfgTestMasterNamespace,
-			Labels: map[string]string{
-				nfdv1alpha1.NodeFeatureObjNodeNameLabel: testNodeName,
-			},
+		Name:      testNodeName + "-features",
+		Namespace: nfgTestMasterNamespace,
+		Labels: map[string]string{
+			nfdv1alpha1.NodeFeatureObjNodeNameLabel: testNodeName,
 		},
 		Spec: nfdv1alpha1.NodeFeatureSpec{
 			Features: nfdv1alpha1.Features{
@@ -65,10 +63,8 @@ func newNfgTestNodeFeature() *nfdv1alpha1.NodeFeature {
 // empty).
 func newNfgMatchAll(namespace string) *nfdv1alpha1.NodeFeatureGroup {
 	return &nfdv1alpha1.NodeFeatureGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nfgTestName,
-			Namespace: namespace,
-		},
+		Name:      nfgTestName,
+		Namespace: namespace,
 		Spec: nfdv1alpha1.NodeFeatureGroupSpec{
 			Rules: []nfdv1alpha1.GroupRule{
 				{Name: "match-all"},

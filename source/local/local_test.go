@@ -165,12 +165,10 @@ func TestSetNotifyChannel_ConcurrentCalls(t *testing.T) {
 	// Make multiple concurrent calls to SetNotifyChannel
 	var wg sync.WaitGroup
 	numCalls := 10
-	for i := 0; i < numCalls; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range numCalls {
+		wg.Go(func() {
 			_ = testSrc.SetNotifyChannel(ctx, ch)
-		}()
+		})
 	}
 
 	// Wait for all calls to complete

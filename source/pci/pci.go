@@ -118,17 +118,17 @@ func (s *pciSource) GetLabels() (source.FeatureLabels, error) {
 		class := attrs["class"]
 		for _, white := range s.config.DeviceClassWhitelist {
 			if strings.HasPrefix(string(class), strings.ToLower(white)) {
-				devLabel := ""
+				var devLabel strings.Builder
 				for i, attr := range deviceLabelFields {
-					devLabel += attrs[attr]
+					devLabel.WriteString(attrs[attr])
 					if i < len(deviceLabelFields)-1 {
-						devLabel += "_"
+						devLabel.WriteString("_")
 					}
 				}
-				labels[devLabel+".present"] = true
+				labels[devLabel.String()+".present"] = true
 
 				if _, ok := attrs["sriov_totalvfs"]; ok {
-					labels[devLabel+".sriov.capable"] = true
+					labels[devLabel.String()+".sriov.capable"] = true
 				}
 				break
 			}

@@ -55,9 +55,9 @@ func TestMatchExpression_AcceptsDepthAtCap(t *testing.T) {
 		"depth at cap should not trigger ErrJSONTooDeep; got %v", err)
 }
 
-type BoolAssertionFunc func(assert.TestingT, bool, ...interface{}) bool
+type BoolAssertionFunc func(assert.TestingT, bool, ...any) bool
 
-type ValueAssertionFunc func(assert.TestingT, interface{}, ...interface{}) bool
+type ValueAssertionFunc func(assert.TestingT, any, ...any) bool
 
 func TestMatchExpressionValidate(t *testing.T) {
 	type V = MatchValue

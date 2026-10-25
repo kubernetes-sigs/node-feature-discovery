@@ -19,6 +19,7 @@ package featuregate
 import (
 	"flag"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -55,11 +56,15 @@ func TestFeatureGateFlag(t *testing.T) {
 		t.Run(test.arg, func(t *testing.T) {
 			fs := flag.NewFlagSet("testfeaturegateflag", flag.ContinueOnError)
 			f := NewFeatureGate()
-			_ = f.Add(map[Feature]FeatureSpec{
+			fg, ok := f.(*featureGate)
+			if !ok {
+				t.Fatalf("unexpected feature gate type: %v", reflect.TypeOf(f))
+			}
+			_ = fg.Add(map[Feature]FeatureSpec{
 				testAlphaGate: {Default: false, PreRelease: Alpha},
 				testBetaGate:  {Default: false, PreRelease: Beta},
 			})
-			f.AddFlag(fs)
+			fg.AddFlag(fs)
 
 			err := fs.Parse([]string{fmt.Sprintf("--%s=%s", flagName, test.arg)})
 			if test.parseError != "" {
@@ -70,7 +75,7 @@ func TestFeatureGateFlag(t *testing.T) {
 				t.Errorf("%d: Parse() Expected nil, Got %v", i, err)
 			}
 			for k, v := range test.expect {
-				if actual := f.enabled.Load().(map[Feature]bool)[k]; actual != v {
+				if actual := fg.enabled.Load().(map[Feature]bool)[k]; actual != v {
 					t.Errorf("%d: expected %s=%v, Got %v", i, k, v, actual)
 				}
 			}
@@ -282,9 +287,13 @@ func TestFeatureGateString(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("SetFromMap %s", test.expect), func(t *testing.T) {
 			f := NewFeatureGate()
+			fg, ok := f.(*featureGate)
+			if !ok {
+				t.Fatalf("unexpected feature gate type: %v", reflect.TypeOf(f))
+			}
 			_ = f.Add(featuremap)
 			_ = f.SetFromMap(test.setmap)
-			result := f.String()
+			result := fg.String()
 			if result != test.expect {
 				t.Errorf("%d: SetFromMap(%#v) Expected %s, Got %s", i, test.setmap, test.expect, result)
 			}

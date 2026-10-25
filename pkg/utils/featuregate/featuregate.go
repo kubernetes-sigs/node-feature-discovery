@@ -117,7 +117,7 @@ var _ flag.Value = &featureGate{}
 
 var nfdfg = "NFD_FEATURE_GATES"
 
-func NewFeatureGate() *featureGate {
+func NewFeatureGate() MutableFeatureGate {
 	f := &featureGate{
 		featureGateName: nfdfg,
 	}
@@ -160,9 +160,7 @@ func (f *featureGate) SetFromMap(m map[string]bool) error {
 	maps.Copy(known, f.known.Load().(map[Feature]FeatureSpec))
 
 	enabled := map[Feature]bool{}
-	for k, v := range f.enabled.Load().(map[Feature]bool) {
-		enabled[k] = v
-	}
+	maps.Copy(enabled, f.enabled.Load().(map[Feature]bool))
 
 	for k, v := range m {
 		k := Feature(k)
@@ -241,9 +239,7 @@ func (f *featureGate) OverrideDefault(name Feature, override bool) error {
 	}
 
 	known := map[Feature]FeatureSpec{}
-	for name, spec := range f.known.Load().(map[Feature]FeatureSpec) {
-		known[name] = spec
-	}
+	maps.Copy(known, f.known.Load().(map[Feature]FeatureSpec))
 
 	spec, ok := known[name]
 	switch {
@@ -267,9 +263,7 @@ func (f *featureGate) OverrideDefault(name Feature, override bool) error {
 // GetAll returns a copy of the map of known feature names to feature specs.
 func (f *featureGate) GetAll() map[Feature]FeatureSpec {
 	retval := map[Feature]FeatureSpec{}
-	for k, v := range f.known.Load().(map[Feature]FeatureSpec) {
-		retval[k] = v
-	}
+	maps.Copy(retval, f.known.Load().(map[Feature]FeatureSpec))
 	return retval
 }
 

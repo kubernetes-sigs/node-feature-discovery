@@ -55,10 +55,11 @@ const (
 )
 
 func newTestNode() *corev1.Node {
-	n := corev1.Node{}
-	n.Name = testNodeName
-	n.Labels = map[string]string{}
-	n.Annotations = map[string]string{}
+	n := corev1.Node{
+		Name:        testNodeName,
+		Labels:      map[string]string{},
+		Annotations: map[string]string{},
+	}
 	n.Status.Capacity = corev1.ResourceList{"cpu": resource.MustParse("2")}
 	return &n
 }
@@ -75,9 +76,9 @@ func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	// Add informer for NodeFeature objects
 	featureInformer := informerFactory.Nfd().V1alpha1().NodeFeatures()
 	if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) {},
-		UpdateFunc: func(oldObj, newObj interface{}) {},
-		DeleteFunc: func(obj interface{}) {},
+		AddFunc:    func(obj any) {},
+		UpdateFunc: func(oldObj, newObj any) {},
+		DeleteFunc: func(obj any) {},
 	}); err != nil {
 		return nil
 	}
@@ -86,9 +87,9 @@ func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	// Add informer for NodeFeatureRule objects
 	ruleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
 	if _, err := ruleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(object interface{}) {},
-		UpdateFunc: func(oldObject, newObject interface{}) {},
-		DeleteFunc: func(object interface{}) {},
+		AddFunc:    func(object any) {},
+		UpdateFunc: func(oldObject, newObject any) {},
+		DeleteFunc: func(object any) {},
 	}); err != nil {
 		return nil
 	}
@@ -97,9 +98,9 @@ func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	// Add informer for NodeFeatureGroup objects
 	nodeFeatureGroupInformer := informerFactory.Nfd().V1alpha1().NodeFeatureGroups()
 	if _, err := nodeFeatureGroupInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(object interface{}) {},
-		UpdateFunc: func(oldObject, newObject interface{}) {},
-		DeleteFunc: func(object interface{}) {},
+		AddFunc:    func(object any) {},
+		UpdateFunc: func(oldObject, newObject any) {},
+		DeleteFunc: func(object any) {},
 	}); err != nil {
 		return nil
 	}
@@ -627,12 +628,10 @@ func TestCreatePatches(t *testing.T) {
 func TestRemoveLabelsWithPrefix(t *testing.T) {
 	Convey("When removing labels", t, func() {
 		n := &corev1.Node{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					"single-label": "123",
-					"multiple_A":   "a",
-					"multiple_B":   "b",
-				},
+			Labels: map[string]string{
+				"single-label": "123",
+				"multiple_A":   "a",
+				"multiple_B":   "b",
 			},
 		}
 
@@ -744,11 +743,11 @@ leaderElection:
 func newTestNodeList() *corev1.NodeList {
 	l := corev1.NodeList{}
 
-	for i := 0; i < 1000; i++ {
-		n := corev1.Node{}
-		n.Name = fmt.Sprintf("node %v", i)
-		n.Labels = map[string]string{}
-		n.Annotations = map[string]string{}
+	for i := range 1000 {
+		n := corev1.Node{
+			Name:        fmt.Sprintf("node %v", i),
+			Labels:      map[string]string{},
+			Annotations: map[string]string{}}
 		n.Status.Capacity = corev1.ResourceList{}
 
 		l.Items = append(l.Items, n)
@@ -780,8 +779,8 @@ func BenchmarkNfdAPIUpdateAllNodes(b *testing.B) {
 // expected[0] is a time.Duration value specifying the timeout
 // expected[1] is  the "real" assertion function to be called
 // expected[2:] are the arguments for the "real" assertion function
-func withTimeout(actual interface{}, expected ...interface{}) string {
-	getter, ok := actual.(func() interface{})
+func withTimeout(actual any, expected ...any) string {
+	getter, ok := actual.(func() any)
 	if !ok {
 		return "not getterFunc"
 	}
@@ -789,7 +788,7 @@ func withTimeout(actual interface{}, expected ...interface{}) string {
 	if !ok {
 		return "not time.Duration"
 	}
-	f, ok := expected[1].(func(interface{}, ...interface{}) string)
+	f, ok := expected[1].(func(any, ...any) string)
 	if !ok {
 		return "not an assert func"
 	}
@@ -1188,16 +1187,14 @@ func TestNfdAPIUpdateNodeFeatureGroup(t *testing.T) {
 			features := nfdv1alpha1.NewFeatures()
 			features.Attributes["fake.attribute"] = nfdv1alpha1.NewAttributeFeatures(map[string]string{"key": value})
 			return &nfdv1alpha1.NodeFeature{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "third-party-" + nodeName,
-					Namespace: namespace,
-					Labels:    map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName},
-				},
-				Spec: nfdv1alpha1.NodeFeatureSpec{Features: *features},
+				Name:      "third-party-" + nodeName,
+				Namespace: namespace,
+				Labels:    map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName},
+				Spec:      nfdv1alpha1.NodeFeatureSpec{Features: *features},
 			}
 		}
 		nfg := &nfdv1alpha1.NodeFeatureGroup{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-group", Namespace: namespace},
+			Name: "test-group", Namespace: namespace,
 			Spec: nfdv1alpha1.NodeFeatureGroupSpec{
 				Rules: []nfdv1alpha1.GroupRule{
 					{
@@ -1215,9 +1212,9 @@ func TestNfdAPIUpdateNodeFeatureGroup(t *testing.T) {
 			},
 		}
 		k8sCli := fakeclient.NewClientset(
-			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-a"}},
-			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-b"}},
-			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-c"}},
+			&corev1.Node{Name: "node-a"},
+			&corev1.Node{Name: "node-b"},
+			&corev1.Node{Name: "node-c"},
 		)
 		//nolint:staticcheck
 		nfdCli := fakenfdclient.NewSimpleClientset(
@@ -1231,7 +1228,7 @@ func TestNfdAPIUpdateNodeFeatureGroup(t *testing.T) {
 		fakeMaster.nfdController = newFakeNfdAPIController(nfdCli)
 		defer fakeMaster.nfdController.stop()
 
-		So(func() interface{} {
+		So(func() any {
 			nodeFeatures, _ := fakeMaster.featureLister.List(k8slabels.Everything())
 			return len(nodeFeatures)
 		}, withTimeout, 2*time.Second, ShouldEqual, 3)

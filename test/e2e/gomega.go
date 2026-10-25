@@ -161,7 +161,7 @@ type nodePropertyMatcher[T any] interface {
 }
 
 // Match method of the GomegaMatcher interface.
-func (m *nodeListPropertyMatcher[T]) Match(actual interface{}) (bool, error) {
+func (m *nodeListPropertyMatcher[T]) Match(actual any) (bool, error) {
 	nodes, ok := actual.([]corev1.Node)
 	if !ok {
 		return false, fmt.Errorf("expected []corev1.Node, got: %T", actual)
@@ -187,12 +187,12 @@ func (m *nodeListPropertyMatcher[T]) Match(actual interface{}) (bool, error) {
 }
 
 // FailureMessage method of the GomegaMatcher interface.
-func (m *nodeListPropertyMatcher[T]) FailureMessage(actual interface{}) string {
+func (m *nodeListPropertyMatcher[T]) FailureMessage(actual any) string {
 	return m.matcher.message()
 }
 
 // NegatedFailureMessage method of the GomegaMatcher interface.
-func (m *nodeListPropertyMatcher[T]) NegatedFailureMessage(actual interface{}) string {
+func (m *nodeListPropertyMatcher[T]) NegatedFailureMessage(actual any) string {
 	return m.matcher.negatedMessage()
 }
 

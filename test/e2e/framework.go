@@ -18,6 +18,6 @@ package e2e
 
 import "github.com/onsi/ginkgo/v2"
 
-func NFDDescribe(args ...interface{}) bool {
+func NFDDescribe(args ...any) bool {
 	return ginkgo.Describe("[k8s-sigs/node-feature-discovery]", append(args, ginkgo.Label("nfd-all"))...)
 }

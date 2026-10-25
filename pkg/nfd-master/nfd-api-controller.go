@@ -81,7 +81,7 @@ func init() {
 // therefore return false, letting the handler skip an unnecessary reconcile.
 // It fails open (returns true) when the objects cannot be type-asserted, so a
 // needed reconcile is never wrongly skipped.
-func specChanged[T any](oldObj, newObj interface{}, specOf func(*T) any) bool {
+func specChanged[T any](oldObj, newObj any, specOf func(*T) any) bool {
 	oldT, ok1 := oldObj.(*T)
 	newT, ok2 := newObj.(*T)
 	if !ok1 || !ok2 {
@@ -93,7 +93,7 @@ func specChanged[T any](oldObj, newObj interface{}, specOf func(*T) any) bool {
 // nodeFeaturePublishMetadataChanged reports metadata updates that prove a new
 // worker publication or change the requested lifecycle of the NodeFeature.
 // Other metadata-only writes remain irrelevant to node reconciliation.
-func nodeFeaturePublishMetadataChanged(oldObj, newObj interface{}) bool {
+func nodeFeaturePublishMetadataChanged(oldObj, newObj any) bool {
 	oldNF, oldOK := oldObj.(*nfdv1alpha1.NodeFeature)
 	newNF, newOK := newObj.(*nfdv1alpha1.NodeFeature)
 	if !oldOK || !newOK {
@@ -210,7 +210,7 @@ func (c *nfdController) addNodeFeatureInformer(informerFactory nfdinformers.Shar
 	return nil
 }
 
-func (c *nfdController) onNodeFeatureAdd(obj interface{}) {
+func (c *nfdController) onNodeFeatureAdd(obj any) {
 	nfr := obj.(*nfdv1alpha1.NodeFeature)
 	klog.V(2).InfoS("NodeFeature added", "nodefeature", klog.KObj(nfr))
 	if c.isNamespaceSelected(nfr.Namespace) {
@@ -223,7 +223,7 @@ func (c *nfdController) onNodeFeatureAdd(obj interface{}) {
 	}
 }
 
-func (c *nfdController) onNodeFeatureUpdate(oldObj, newObj interface{}) {
+func (c *nfdController) onNodeFeatureUpdate(oldObj, newObj any) {
 	nodeFeatureSpecChanged := specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeature) any { return o.Spec })
 	if !nodeFeatureSpecChanged && !nodeFeaturePublishMetadataChanged(oldObj, newObj) {
 		return
@@ -239,7 +239,7 @@ func (c *nfdController) onNodeFeatureUpdate(oldObj, newObj interface{}) {
 	}
 }
 
-func (c *nfdController) onNodeFeatureDelete(obj interface{}) {
+func (c *nfdController) onNodeFeatureDelete(obj any) {
 	// obj may be a DeletedFinalStateUnknown if the watch was missed
 	if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
 		klog.V(2).InfoS("found stale NodeFeature object", "object", obj)
@@ -280,18 +280,18 @@ func (c *nfdController) onNodeFeatureDelete(obj interface{}) {
 func (c *nfdController) addNodeFeatureRuleInformer(informerFactory nfdinformers.SharedInformerFactory) error {
 	nodeFeatureRuleInformer := informerFactory.Nfd().V1alpha1().NodeFeatureRules()
 	if _, err := nodeFeatureRuleInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(object interface{}) {
+		AddFunc: func(object any) {
 			klog.V(2).InfoS("NodeFeatureRule added", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
 			c.updateAllNodes()
 		},
-		UpdateFunc: func(oldObject, newObject interface{}) {
+		UpdateFunc: func(oldObject, newObject any) {
 			if !specChanged(oldObject, newObject, func(o *nfdv1alpha1.NodeFeatureRule) any { return o.Spec }) {
 				return
 			}
 			klog.V(2).InfoS("NodeFeatureRule updated", "nodefeaturerule", klog.KObj(newObject.(metav1.Object)))
 			c.updateAllNodes()
 		},
-		DeleteFunc: func(object interface{}) {
+		DeleteFunc: func(object any) {
 			klog.V(2).InfoS("NodeFeatureRule deleted", "nodefeaturerule", klog.KObj(object.(metav1.Object)))
 			c.updateAllNodes()
 		},
@@ -317,13 +317,13 @@ func (c *nfdController) addNodeFeatureGroupInformer(informerFactory nfdinformers
 	return nil
 }
 
-func (c *nfdController) onNodeFeatureGroupAdd(obj interface{}) {
+func (c *nfdController) onNodeFeatureGroupAdd(obj any) {
 	nfg := obj.(*nfdv1alpha1.NodeFeatureGroup)
 	klog.V(2).InfoS("NodeFeatureGroup added", "nodeFeatureGroup", klog.KObj(nfg))
 	c.enqueueNodeFeatureGroup(nfg)
 }
 
-func (c *nfdController) onNodeFeatureGroupUpdate(oldObj, newObj interface{}) {
+func (c *nfdController) onNodeFeatureGroupUpdate(oldObj, newObj any) {
 	if !specChanged(oldObj, newObj, func(o *nfdv1alpha1.NodeFeatureGroup) any { return o.Spec }) {
 		return
 	}
@@ -332,7 +332,7 @@ func (c *nfdController) onNodeFeatureGroupUpdate(oldObj, newObj interface{}) {
 	c.enqueueNodeFeatureGroup(nfg)
 }
 
-func (c *nfdController) onNodeFeatureGroupDelete(obj interface{}) {
+func (c *nfdController) onNodeFeatureGroupDelete(obj any) {
 	// obj may be a DeletedFinalStateUnknown if the watch was missed
 	if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
 		klog.V(2).InfoS("found stale NodeFeatureGroup object", "object", obj)

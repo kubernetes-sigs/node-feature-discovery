@@ -328,23 +328,21 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 
 			newTargetNode := func() *corev1.Node {
 				return &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: targetNodeName,
-						// A real kubelet-registered Node always has its labels and
-						// annotations maps populated. nfd-master patches the Node with
-						// JSON Patch "add" operations, which require the parent
-						// /metadata/labels and /metadata/annotations objects to already
-						// exist, so seed them here to mimic a genuine Node.
-						//
-						// Deliberately omit the hostname label: the "restores labels"
-						// spec pauses the daemonset by pointing its nodeSelector at
-						// {hostname: targetNodeName}, which must match no node.
-						Labels: map[string]string{
-							corev1.LabelOSStable: "linux",
-						},
-						Annotations: map[string]string{
-							"node.alpha.kubernetes.io/ttl": "0",
-						},
+					Name: targetNodeName,
+					// A real kubelet-registered Node always has its labels and
+					// annotations maps populated. nfd-master patches the Node with
+					// JSON Patch "add" operations, which require the parent
+					// /metadata/labels and /metadata/annotations objects to already
+					// exist, so seed them here to mimic a genuine Node.
+					//
+					// Deliberately omit the hostname label: the "restores labels"
+					// spec pauses the daemonset by pointing its nodeSelector at
+					// {hostname: targetNodeName}, which must match no node.
+					Labels: map[string]string{
+						corev1.LabelOSStable: "linux",
+					},
+					Annotations: map[string]string{
+						"node.alpha.kubernetes.io/ttl": "0",
 					},
 					Spec: corev1.NodeSpec{Unschedulable: true},
 				}

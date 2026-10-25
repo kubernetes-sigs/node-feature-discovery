@@ -162,10 +162,8 @@ func UpdateNodeFeatureRulesFromFile(ctx context.Context, cli nfdclientset.Interf
 // CreateNodeFeature creates a dummy NodeFeature object for a node
 func CreateNodeFeature(ctx context.Context, cli nfdclientset.Interface, namespace, name, nodeName string) error {
 	nr := &nfdv1alpha1.NodeFeature{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName},
-		},
+		Name:   name,
+		Labels: map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName},
 	}
 	_, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(ctx, nr, metav1.CreateOptions{})
 	return err

@@ -30,7 +30,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	corev1listers "k8s.io/client-go/listers/core/v1"
@@ -93,10 +92,8 @@ func TestNewPodResourcesScannerRequiresKubernetesClient(t *testing.T) {
 func TestIsWatchable(t *testing.T) {
 	Convey("When pod is missing from the lister and live GET succeeds", t, func() {
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod",
-				Namespace: "default",
-			},
+			Name:      "test-pod",
+			Namespace: "default",
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
@@ -274,14 +271,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -391,14 +384,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -485,14 +474,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -575,14 +560,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -659,14 +640,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -745,14 +722,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -879,14 +852,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -941,14 +910,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "pod-res-test",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "pod-res-test",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -1027,14 +992,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -1088,14 +1049,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "default",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "default",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -1151,14 +1108,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "pod-res-test",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "pod-res-test",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -1232,14 +1185,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "pod-res-test",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "pod-res-test",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -1326,14 +1275,10 @@ func TestPodScanner(t *testing.T) {
 			}
 			mockPodResClient.On("List", mock.AnythingOfType("*context.timerCtx"), mock.AnythingOfType("*v1.ListPodResourcesRequest")).Return(resp, nil)
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod-0",
-					Namespace: "pod-res-test",
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod-0",
+				Namespace:  "pod-res-test",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{

@@ -30,7 +30,7 @@ func TestAnnotation(t *testing.T) {
 		name  string
 		key   string
 		value string
-		want  interface{}
+		want  any
 	}{
 		{
 			name:  "Valid annotation",
@@ -250,7 +250,7 @@ func TestLabel(t *testing.T) {
 		name  string
 		key   string
 		value string
-		want  interface{}
+		want  any
 	}{
 		{
 			name:  "Valid label",
@@ -356,7 +356,7 @@ func TestExtendedResource(t *testing.T) {
 		name  string
 		key   string
 		value string
-		want  interface{}
+		want  any
 	}{
 		{
 			name:  "Valid extended resource",

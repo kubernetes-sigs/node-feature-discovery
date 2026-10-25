@@ -119,7 +119,7 @@ func (n *nfdGarbageCollector) deleteNRT(nodeName string) {
 	objectsDeleted.WithLabelValues(kind).Inc()
 }
 
-func (n *nfdGarbageCollector) deleteNodeHandler(object interface{}) {
+func (n *nfdGarbageCollector) deleteNodeHandler(object any) {
 	// handle a case when we are starting up and need to clear stale NRT resources
 	obj := object
 	if deletedFinalStateUnknown, ok := object.(cache.DeletedFinalStateUnknown); ok {

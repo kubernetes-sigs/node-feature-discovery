@@ -28,8 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/ptr"
-
 	fakenfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
@@ -118,8 +116,8 @@ func TestOwnerReferenceMigrationWithUnchangedSpec(t *testing.T) {
 				APIVersion:         "v1",
 				Kind:               "Node",
 				Name:               "fake-node",
-				UID:                types.UID("node-uid"),
-				BlockOwnerDeletion: ptr.To(false),
+				UID:                "node-uid",
+				BlockOwnerDeletion: new(false),
 			},
 		})
 	})

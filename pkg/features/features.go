@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	NFDMutableFeatureGate featuregate.MutableFeatureGate = featuregate.NewFeatureGate()
+	NFDMutableFeatureGate = featuregate.NewFeatureGate()
 
 	// NFDFeatureGate is a shared global FeatureGate.
 	// Top-level commands/options setup that needs to modify this feature gate should use NFDMutableFeatureGate.

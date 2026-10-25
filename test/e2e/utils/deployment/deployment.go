@@ -24,16 +24,14 @@ import (
 	"sigs.k8s.io/node-feature-discovery/test/e2e/utils/pod"
 )
 
-// NFDGC returns a deplooyment for NFD Garbage Collector
+// NFDGC returns a deployment for NFD Garbage Collector
 func NFDGC(opts ...pod.SpecOption) *appsv1.Deployment {
-	return new("nfd-gc", pod.NFDGCSpec(opts...))
+	return newDeployment("nfd-gc", pod.NFDGCSpec(opts...))
 }
 
-func new(name string, podSpec *corev1.PodSpec) *appsv1.Deployment {
+func newDeployment(name string, podSpec *corev1.PodSpec) *appsv1.Deployment {
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+		Name: name,
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"name": name},

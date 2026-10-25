@@ -152,7 +152,7 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	raw := new(interface{})
+	raw := new(any)
 
 	err := json.Unmarshal(data, raw)
 	if err != nil {
@@ -166,7 +166,7 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 		*m = *newMatchExpression(MatchIn, strconv.FormatBool(v))
 	case float64:
 		*m = *newMatchExpression(MatchIn, strconv.FormatFloat(v, 'f', -1, 64))
-	case []interface{}:
+	case []any:
 		values := make([]string, len(v))
 		for i, value := range v {
 			str, ok := value.(string)
@@ -176,7 +176,7 @@ func (m *MatchExpression) UnmarshalJSON(data []byte) error {
 			values[i] = str
 		}
 		*m = *newMatchExpression(MatchIn, values...)
-	case map[string]interface{}:
+	case map[string]any:
 		helper := &matchExpression{}
 		if err := json.Unmarshal(data, &helper); err != nil {
 			return err
@@ -243,7 +243,7 @@ func (m *MatchOp) UnmarshalJSON(data []byte) error {
 
 // UnmarshalJSON implements the Unmarshaler interface of "encoding/json".
 func (m *MatchValue) UnmarshalJSON(data []byte) error {
-	var raw interface{}
+	var raw any
 
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -256,7 +256,7 @@ func (m *MatchValue) UnmarshalJSON(data []byte) error {
 		*m = []string{strconv.FormatBool(v)}
 	case float64:
 		*m = []string{strconv.FormatFloat(v, 'f', -1, 64)}
-	case []interface{}:
+	case []any:
 		values := make([]string, len(v))
 		for i, value := range v {
 			str, ok := value.(string)

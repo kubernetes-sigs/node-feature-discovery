@@ -24,9 +24,9 @@ import (
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
-type BoolAssertionFunc func(assert.TestingT, bool, ...interface{}) bool
+type BoolAssertionFunc func(assert.TestingT, bool, ...any) bool
 
-type ValueAssertionFunc func(assert.TestingT, interface{}, ...interface{}) bool
+type ValueAssertionFunc func(assert.TestingT, any, ...any) bool
 
 func TestCompileRegexp(t *testing.T) {
 	// The same pattern must return the same cached instance (no recompile).
@@ -56,7 +56,7 @@ func TestEvaluateMatchExpression(t *testing.T) {
 		name   string
 		op     nfdv1alpha1.MatchOp
 		values V
-		input  interface{}
+		input  any
 		valid  bool
 		result BoolAssertionFunc
 	}
