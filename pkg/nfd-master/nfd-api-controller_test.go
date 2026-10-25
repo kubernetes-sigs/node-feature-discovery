@@ -31,7 +31,7 @@ import (
 
 func TestGetNodeNameForObj(t *testing.T) {
 	// Test missing label
-	obj := &nfdv1alpha1.NodeFeature{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"}}
+	obj := &nfdv1alpha1.NodeFeature{Name: "foo", Namespace: "bar"}
 	_, err := getNodeNameForObj(obj)
 	assert.Error(t, err)
 
@@ -56,11 +56,9 @@ func TestControllerStop(t *testing.T) {
 
 func newTestNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				"name": name,
-			},
+		Name: name,
+		Labels: map[string]string{
+			"name": name,
 		},
 	}
 }
@@ -126,7 +124,7 @@ func TestSpecChanged(t *testing.T) {
 
 	// NodeFeature: Spec{Features, Labels}, no status subresource.
 	nf := &nfdv1alpha1.NodeFeature{
-		ObjectMeta: metav1.ObjectMeta{Name: "n", ResourceVersion: "1"},
+		Name: "n", ResourceVersion: "1",
 		Spec: nfdv1alpha1.NodeFeatureSpec{
 			Features: nfdv1alpha1.Features{
 				Attributes: map[string]nfdv1alpha1.AttributeFeatureSet{
@@ -149,8 +147,8 @@ func TestSpecChanged(t *testing.T) {
 
 	// NodeFeatureRule: Spec{Rules}, no status. UpdateFunc triggers a full reconcile.
 	nfr := &nfdv1alpha1.NodeFeatureRule{
-		ObjectMeta: metav1.ObjectMeta{Name: "r", ResourceVersion: "1"},
-		Spec:       nfdv1alpha1.NodeFeatureRuleSpec{Rules: []nfdv1alpha1.Rule{{Name: "rule-1"}}},
+		Name: "r", ResourceVersion: "1",
+		Spec: nfdv1alpha1.NodeFeatureRuleSpec{Rules: []nfdv1alpha1.Rule{{Name: "rule-1"}}},
 	}
 	nfrMetaOnly := nfr.DeepCopy()
 	nfrMetaOnly.ResourceVersion = "2"
@@ -162,8 +160,8 @@ func TestSpecChanged(t *testing.T) {
 	// NodeFeatureGroup: Spec{Rules} AND Status; master writes its status, so a
 	// status-only update must NOT reconcile (else it feeds back on itself).
 	nfg := &nfdv1alpha1.NodeFeatureGroup{
-		ObjectMeta: metav1.ObjectMeta{Name: "g", ResourceVersion: "1"},
-		Spec:       nfdv1alpha1.NodeFeatureGroupSpec{Rules: []nfdv1alpha1.GroupRule{{Name: "grule-1"}}},
+		Name: "g", ResourceVersion: "1",
+		Spec: nfdv1alpha1.NodeFeatureGroupSpec{Rules: []nfdv1alpha1.GroupRule{{Name: "grule-1"}}},
 	}
 	nfgStatusOnly := nfg.DeepCopy()
 	nfgStatusOnly.ResourceVersion = "2"
@@ -200,12 +198,10 @@ func TestSpecChanged(t *testing.T) {
 
 func TestNodeFeaturePublishMetadataChanged(t *testing.T) {
 	base := &nfdv1alpha1.NodeFeature{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            "node-1",
-			ResourceVersion: "1",
-			Annotations: map[string]string{
-				nfdv1alpha1.WorkerVersionAnnotation: "v0.19.0",
-			},
+		Name:            "node-1",
+		ResourceVersion: "1",
+		Annotations: map[string]string{
+			nfdv1alpha1.WorkerVersionAnnotation: "v0.19.0",
 		},
 	}
 
@@ -223,8 +219,8 @@ func TestNodeFeaturePublishMetadataChanged(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		old  interface{}
-		new  interface{}
+		old  any
+		new  any
 		want bool
 	}{
 		{name: "resource version only", old: base, new: resourceVersionOnly, want: false},
@@ -243,11 +239,9 @@ func TestNodeFeaturePublishMetadataChanged(t *testing.T) {
 
 func TestNodeFeatureMetadataUpdateQueuesOnlyTargetNode(t *testing.T) {
 	oldNF := &nfdv1alpha1.NodeFeature{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "node-1",
-			Labels: map[string]string{
-				nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node-1",
-			},
+		Name: "node-1",
+		Labels: map[string]string{
+			nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node-1",
 		},
 	}
 	newNF := oldNF.DeepCopy()

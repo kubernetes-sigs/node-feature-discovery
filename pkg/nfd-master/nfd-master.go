@@ -611,9 +611,7 @@ func (m *nfdMaster) nfdAPIUpdateAllNodes() error {
 // "NodeFeature exists but is filtered out by namespace selector".
 func (m *nfdMaster) getAndMergeNodeFeatures(nodeName string) (*nfdv1alpha1.NodeFeature, bool, error) {
 	nodeFeatures := &nfdv1alpha1.NodeFeature{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: nodeName,
-		},
+		Name: nodeName,
 	}
 
 	sel := k8slabels.SelectorFromSet(k8slabels.Set{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodeName})
@@ -1030,7 +1028,7 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 		taintSet := make(map[string]struct{})
 		allTaintStrs := []string{}
 		if val, ok := node.Annotations[nfdv1alpha1.NodeTaintsAnnotation]; ok && val != "" {
-			for _, s := range strings.Split(val, ",") {
+			for s := range strings.SplitSeq(val, ",") {
 				s = strings.TrimSpace(s)
 				if _, exists := taintSet[s]; !exists {
 					taintSet[s] = struct{}{}

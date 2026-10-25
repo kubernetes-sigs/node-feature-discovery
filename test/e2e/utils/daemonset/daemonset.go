@@ -29,20 +29,18 @@ import (
 
 // NFDWorker provides the NFD daemon set worker definition
 func NFDWorker(opts ...pod.SpecOption) *appsv1.DaemonSet {
-	return new("nfd-worker", &pod.NFDWorker(opts...).Spec)
+	return newDaemonset("nfd-worker", &pod.NFDWorker(opts...).Spec)
 }
 
 // NFDTopologyUpdater provides the NFD daemon set topology updater
 func NFDTopologyUpdater(kc utils.KubeletConfig, opts ...pod.SpecOption) *appsv1.DaemonSet {
-	return new("nfd-topology-updater", pod.NFDTopologyUpdaterSpec(kc, opts...))
+	return newDaemonset("nfd-topology-updater", pod.NFDTopologyUpdaterSpec(kc, opts...))
 }
 
-// new provide the new daemon set
-func new(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
+// newDaemonset provides a new daemon set
+func newDaemonset(name string, podSpec *corev1.PodSpec) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name + "-" + uuid.New().String(),
-		},
+		Name: name + "-" + uuid.New().String(),
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"name": name},

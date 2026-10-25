@@ -145,14 +145,10 @@ func newMockGC(nodes, nrts []string) *mockGC {
 
 func createPartialObjectMetadata(apiVersion, kind, namespace, name string) *metav1.PartialObjectMetadata {
 	return &metav1.PartialObjectMetadata{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiVersion,
-			Kind:       kind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      name,
-		},
+		APIVersion: apiVersion,
+		Kind:       kind,
+		Namespace:  namespace,
+		Name:       name,
 	}
 }
 
@@ -162,15 +158,15 @@ type mockGC struct {
 	client metadataclient.Interface
 }
 
-func shouldEventuallyHaveNRTs(actualI interface{}, expectedI ...interface{}) string {
+func shouldEventuallyHaveNRTs(actualI any, expectedI ...any) string {
 	return shouldEventuallyHaveObjects(gvrNRT, actualI, expectedI...)
 }
 
-func shouldEventuallyHaveNodeFeatures(actualI interface{}, expectedI ...interface{}) string {
+func shouldEventuallyHaveNodeFeatures(actualI any, expectedI ...any) string {
 	return shouldEventuallyHaveObjects(gvrNF, actualI, expectedI...)
 }
 
-func shouldEventuallyHaveObjects(gvr schema.GroupVersionResource, actualI interface{}, expectedI ...interface{}) string {
+func shouldEventuallyHaveObjects(gvr schema.GroupVersionResource, actualI any, expectedI ...any) string {
 	cli := actualI.(metadataclient.Interface)
 	expected := sets.Set[string]{}
 	for _, e := range expectedI {

@@ -89,14 +89,13 @@ type EventSource interface {
 }
 
 // FeatureLabelValue represents the value of one feature label
-type FeatureLabelValue interface{}
+type FeatureLabelValue any
 
 // FeatureLabels is a collection of feature labels
 type FeatureLabels map[string]FeatureLabelValue
 
 // Config is the generic interface for source configuration data
-type Config interface {
-}
+type Config any
 
 // sources contain all registered sources
 var sources = make(map[string]Source)

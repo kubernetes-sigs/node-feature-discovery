@@ -29,8 +29,6 @@ import (
 	"github.com/vektra/errors"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/ptr"
-
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/source"
@@ -52,7 +50,7 @@ func TestDeprecatedNoOwnerRefsWarning(t *testing.T) {
 		overrides string
 	}{
 		{name: "configuration option", args: &Args{}, overrides: `{"core":{"noOwnerRefs":true}}`},
-		{name: "command-line flag", args: &Args{Overrides: ConfigOverrideArgs{NoOwnerRefs: ptr.To(true)}}},
+		{name: "command-line flag", args: &Args{Overrides: ConfigOverrideArgs{NoOwnerRefs: new(true)}}},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

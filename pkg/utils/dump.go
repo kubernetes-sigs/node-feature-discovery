@@ -23,7 +23,7 @@ import (
 )
 
 type dumper struct {
-	obj interface{}
+	obj any
 }
 
 // String implements the fmt.Stringer interface
@@ -34,12 +34,12 @@ func (d *dumper) String() string {
 // DelayedDumper delays the dumping of an object. Useful in logging to delay
 // the processing (JSON marshalling) until (or if) the object is actually
 // evaluated.
-func DelayedDumper(obj interface{}) fmt.Stringer {
+func DelayedDumper(obj any) fmt.Stringer {
 	return &dumper{obj: obj}
 }
 
 // Dump dumps an object into YAML textual format
-func Dump(obj interface{}) string {
+func Dump(obj any) string {
 	out, err := yaml.Marshal(obj)
 	if err != nil {
 		return fmt.Sprintf("<!!! FAILED TO MARSHAL %T (%v) !!!>\n", obj, err)

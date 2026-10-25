@@ -26,7 +26,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
@@ -199,7 +198,7 @@ func TestUpdateNodeResourceTopologyApplies(t *testing.T) {
 func TestUpdateNodeResourceTopologyUsesCachedTopologyInfo(t *testing.T) {
 	Convey("When NodeResourceTopology is refreshed after an interval update", t, func() {
 		topoClient := faketopologyclientset.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-node"},
+			Name: "test-node",
 		})
 		updater := newTestTopologyUpdater(topoClient)
 		kubeletConfigReads := 0
@@ -285,7 +284,7 @@ func TestUpdateNodeResourceTopologyUsesCachedTopologyInfo(t *testing.T) {
 func TestUpdateNodeResourceTopologyRetriesMissingTopologyInfo(t *testing.T) {
 	Convey("Given topology-manager information is not cached", t, func() {
 		topoClient := faketopologyclientset.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-node"},
+			Name: "test-node",
 		})
 		updater := newTestTopologyUpdater(topoClient)
 		kubeletConfigReads := 0
@@ -333,7 +332,7 @@ func TestUpdateNodeResourceTopologyApplyErrors(t *testing.T) {
 
 	Convey("Given the NodeResourceTopology resource is unavailable", t, func() {
 		topoClient := faketopologyclientset.NewSimpleClientset(&v1alpha2.NodeResourceTopology{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-node"},
+			Name: "test-node",
 		})
 		notFoundErr := apierrors.NewNotFound(
 			v1alpha2.SchemeGroupVersion.WithResource(resource).GroupResource(),
@@ -368,10 +367,8 @@ func newTestTopologyUpdater(topoClient topologyclientset.Interface) *nfdTopology
 		nodeName:            "test-node",
 		kubernetesNamespace: "node-feature-discovery",
 		k8sClient: fakeclient.NewClientset(&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "node-feature-discovery",
-				UID:  types.UID("namespace-uid"),
-			},
+			Name: "node-feature-discovery",
+			UID:  types.UID("namespace-uid"),
 		}),
 		topoClient: topoClient,
 		kubeletConfigFunc: func(context.Context) (*kubeletconfigv1beta1.KubeletConfiguration, error) {

@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/utils/ptr"
 )
 
 func TestOwnerRefSourcesSet(t *testing.T) {
@@ -93,14 +92,14 @@ func TestResolveOwnerReferences(t *testing.T) {
 		Kind:               "Node",
 		Name:               "fake-node",
 		UID:                types.UID("node-uid"),
-		BlockOwnerDeletion: ptr.To(false),
+		BlockOwnerDeletion: new(false),
 	}
 	podRef := metav1.OwnerReference{
 		APIVersion:         "v1",
 		Kind:               "Pod",
 		Name:               "fake-worker",
 		UID:                types.UID("pod-uid"),
-		BlockOwnerDeletion: ptr.To(false),
+		BlockOwnerDeletion: new(false),
 	}
 	dsRef := metav1.OwnerReference{
 		APIVersion:         "apps/v1",
@@ -108,7 +107,7 @@ func TestResolveOwnerReferences(t *testing.T) {
 		Name:               "nfd-worker",
 		UID:                types.UID("ds-uid"),
 		Controller:         &controller,
-		BlockOwnerDeletion: ptr.To(false),
+		BlockOwnerDeletion: new(false),
 	}
 
 	client := fakeclient.NewSimpleClientset(
@@ -122,9 +121,9 @@ func TestResolveOwnerReferences(t *testing.T) {
 						APIVersion:         "apps/v1",
 						Kind:               "DaemonSet",
 						Name:               "nfd-worker",
-						UID:                types.UID("ds-uid"),
+						UID:                "ds-uid",
 						Controller:         &controller,
-						BlockOwnerDeletion: ptr.To(true),
+						BlockOwnerDeletion: new(true),
 					},
 				},
 			},

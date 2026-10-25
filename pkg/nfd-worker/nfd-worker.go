@@ -39,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/ptr"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
 
@@ -419,7 +418,7 @@ func (w *nfdWorker) resolveNodeOwnerReference() (*metav1.OwnerReference, error) 
 		Kind:               "Node",
 		Name:               node.Name,
 		UID:                node.UID,
-		BlockOwnerDeletion: ptr.To(false),
+		BlockOwnerDeletion: new(false),
 	}, nil
 }
 
@@ -434,7 +433,7 @@ func resolvePodOwnerReference() *metav1.OwnerReference {
 		Kind:               "Pod",
 		Name:               podName,
 		UID:                types.UID(podUID),
-		BlockOwnerDeletion: ptr.To(false),
+		BlockOwnerDeletion: new(false),
 	}
 }
 
@@ -456,7 +455,7 @@ func (w *nfdWorker) resolveDaemonSetOwnerReference() (*metav1.OwnerReference, er
 		klog.InfoS("Cannot resolve DaemonSet owner reference, worker Pod is not owned by a DaemonSet", "pod", podName)
 		return nil, nil
 	}
-	daemonSetOwner.BlockOwnerDeletion = ptr.To(false)
+	daemonSetOwner.BlockOwnerDeletion = new(false)
 	return daemonSetOwner, nil
 }
 

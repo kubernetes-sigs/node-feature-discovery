@@ -180,8 +180,8 @@ func EnsureNodeResourceTopologies(ctx context.Context, extClient extclient.Inter
 // CreateNodeResourceTopology creates a dummy NodeResourceTopology object for a node
 func CreateNodeResourceTopology(ctx context.Context, topologyClient *topologyclientset.Clientset, nodeName string) error {
 	nrt := &v1alpha2.NodeResourceTopology{
-		ObjectMeta: metav1.ObjectMeta{Name: nodeName},
-		Zones:      v1alpha2.ZoneList{},
+		Name:  nodeName,
+		Zones: v1alpha2.ZoneList{},
 	}
 	_, err := topologyClient.TopologyV1alpha2().NodeResourceTopologies().Create(ctx, nrt, metav1.CreateOptions{})
 	return err

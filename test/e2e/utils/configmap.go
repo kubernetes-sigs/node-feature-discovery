@@ -17,34 +17,13 @@ limitations under the License.
 package utils
 
 import (
-	"context"
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 )
 
-// CreateConfigMap is a helper for creating a simple ConfigMap object with one key.
+// NewConfigMap creates a simple ConfigMap object with one key.
 func NewConfigMap(name, key, data string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+		Name: name,
 		Data: map[string]string{key: data},
 	}
-}
-
-// UpdateConfigMap is a helper for updating a ConfigMap object.
-func UpdateConfigMap(ctx context.Context, c clientset.Interface, name, namespace, key, data string) error {
-	cm, err := c.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("configmap %s is not found", name)
-	}
-	cm.Data[key] = data
-	_, err = c.CoreV1().ConfigMaps(namespace).Update(ctx, cm, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("error while updating configmap with name %s", name)
-	}
-	return nil
 }

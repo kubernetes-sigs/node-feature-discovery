@@ -26,9 +26,9 @@ import (
 	api "sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/nodefeaturerule"
 )
 
-type BoolAssertionFunc func(assert.TestingT, bool, ...interface{}) bool
+type BoolAssertionFunc func(assert.TestingT, bool, ...any) bool
 
-type ValueAssertionFunc func(assert.TestingT, interface{}, ...interface{}) bool
+type ValueAssertionFunc func(assert.TestingT, any, ...any) bool
 
 func TestMatchKeys(t *testing.T) {
 	type I = map[string]nfdv1alpha1.Nil

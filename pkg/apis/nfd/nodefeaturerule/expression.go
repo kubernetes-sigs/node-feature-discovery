@@ -95,7 +95,7 @@ func compileRegexp(pattern string) (*regexp.Regexp, error) {
 }
 
 // evaluateMatchExpression evaluates the MatchExpression against a single input value.
-func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value interface{}) (bool, error) {
+func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value any) (bool, error) {
 	if _, ok := matchOps[m.Op]; !ok {
 		return false, fmt.Errorf("invalid Op %q", m.Op)
 	}
@@ -125,19 +125,15 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value i
 			if len(m.Value) == 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
 			}
-			for _, v := range m.Value {
-				if value == v {
-					return true, nil
-				}
+			if slices.Contains(m.Value, value) {
+				return true, nil
 			}
 		case nfdv1alpha1.MatchNotIn:
 			if len(m.Value) == 0 {
 				return false, fmt.Errorf("invalid expression, 'value' field must be non-empty for Op %q", m.Op)
 			}
-			for _, v := range m.Value {
-				if value == v {
-					return false, nil
-				}
+			if slices.Contains(m.Value, value) {
+				return false, nil
 			}
 			return true, nil
 		case nfdv1alpha1.MatchInRegexp:
@@ -473,9 +469,7 @@ func MatchGetInstances(m *nfdv1alpha1.MatchExpressionSet, instances []nfdv1alpha
 			matchedElements = append(matchedElements, i.Attributes)
 		}
 		if expressionSet != nil {
-			for name, exp := range *expressionSet {
-				(*matchedExpressions)[name] = exp
-			}
+			maps.Copy(*matchedExpressions, *expressionSet)
 		}
 	}
 	return len(matchedElements) > 0, matchedElements, matchedExpressions, nil
@@ -568,9 +562,7 @@ func MatchMulti(m *nfdv1alpha1.MatchExpressionSet, keys map[string]nfdv1alpha1.N
 	isMatch = isMatch || ma
 	matchedElems = append(matchedElems, melems...)
 	if mexps != nil {
-		for k, v := range *mexps {
-			matchedExpressions[k] = v
-		}
+		maps.Copy(matchedExpressions, *mexps)
 	}
 
 	return isMatch, matchedElems, &matchedExpressions, nil

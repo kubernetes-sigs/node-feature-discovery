@@ -170,7 +170,7 @@ type DurationVal struct {
 
 // UnmarshalJSON implements the Unmarshaler interface from "encoding/json"
 func (d *DurationVal) UnmarshalJSON(data []byte) error {
-	var v interface{}
+	var v any
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}

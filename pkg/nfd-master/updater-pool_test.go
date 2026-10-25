@@ -75,7 +75,7 @@ func TestNodeUpdaterStop(t *testing.T) {
 		})
 		Convey("Node updater pool queue should be removed", func() {
 			// Wait for the wg.Done()
-			So(func() interface{} {
+			So(func() any {
 				return updaterPool.queue.ShuttingDown()
 			}, withTimeout, 2*time.Second, ShouldBeTrue)
 		})
@@ -94,7 +94,7 @@ func TestRunNodeUpdater(t *testing.T) {
 	})
 	updaterPool.queue.Add(testNodeName)
 	Convey("Added element to the queue should be removed", t, func() {
-		So(func() interface{} { return updaterPool.queue.Len() },
+		So(func() any { return updaterPool.queue.Len() },
 			withTimeout, 2*time.Second, ShouldEqual, 0)
 	})
 }
@@ -111,7 +111,7 @@ func TestRunNodeFeatureGroupUpdater(t *testing.T) {
 	})
 	updaterPool.nfgQueue.Add(testNodeName)
 	Convey("Added element to the queue should be removed", t, func() {
-		So(func() interface{} { return updaterPool.queue.Len() },
+		So(func() any { return updaterPool.queue.Len() },
 			withTimeout, 2*time.Second, ShouldEqual, 0)
 	})
 }

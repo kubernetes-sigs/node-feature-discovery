@@ -177,10 +177,8 @@ func DeconfigureRBAC(ctx context.Context, cs clientset.Interface, ns string) err
 // Configure service account
 func createServiceAccount(ctx context.Context, cs clientset.Interface, name, ns string) (*corev1.ServiceAccount, error) {
 	sa := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
+		Name:      name,
+		Namespace: ns,
 	}
 	return cs.CoreV1().ServiceAccounts(ns).Create(ctx, sa, metav1.CreateOptions{})
 }
@@ -188,9 +186,7 @@ func createServiceAccount(ctx context.Context, cs clientset.Interface, name, ns 
 // Configure cluster role required by NFD Master
 func createClusterRoleMaster(ctx context.Context, cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 	cr := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-master-e2e",
-		},
+		Name: "nfd-master-e2e",
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -235,10 +231,8 @@ func createClusterRoleMaster(ctx context.Context, cs clientset.Interface) (*rbac
 // Configure role required by NFD Worker
 func createRoleWorker(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.Role, error) {
 	cr := &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nfd-worker-e2e",
-			Namespace: ns,
-		},
+		Name:      "nfd-worker-e2e",
+		Namespace: ns,
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"nfd.k8s-sigs.io"},
@@ -258,9 +252,7 @@ func createRoleWorker(ctx context.Context, cs clientset.Interface, ns string) (*
 // Configure cluster role required by NFD Worker for Node owner references.
 func createClusterRoleWorker(ctx context.Context, cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 	cr := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-worker-e2e",
-		},
+		Name: "nfd-worker-e2e",
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -275,9 +267,7 @@ func createClusterRoleWorker(ctx context.Context, cs clientset.Interface) (*rbac
 // Configure cluster role required by NFD GC
 func createClusterRoleGC(ctx context.Context, cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 	cr := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-gc-e2e",
-		},
+		Name: "nfd-gc-e2e",
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -302,9 +292,7 @@ func createClusterRoleGC(ctx context.Context, cs clientset.Interface) (*rbacv1.C
 // Configure cluster role required by NFD Topology Updater
 func createClusterRoleTopologyUpdater(ctx context.Context, cs clientset.Interface) (*rbacv1.ClusterRole, error) {
 	cr := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-topology-updater-e2e",
-		},
+		Name: "nfd-topology-updater-e2e",
 		// the Topology Updater doesn't need to access any kube object:
 		// it reads from the podresources socket and it updates the noderesourcetopologies
 		Rules: []rbacv1.PolicyRule{
@@ -344,9 +332,7 @@ func createClusterRoleTopologyUpdater(ctx context.Context, cs clientset.Interfac
 // Configure cluster role binding required by NFD Master
 func createClusterRoleBindingMaster(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.ClusterRoleBinding, error) {
 	crb := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-master-e2e",
-		},
+		Name: "nfd-master-e2e",
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      rbacv1.ServiceAccountKind,
@@ -367,10 +353,8 @@ func createClusterRoleBindingMaster(ctx context.Context, cs clientset.Interface,
 // Configure role binding required by NFD Master
 func createRoleBindingWorker(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.RoleBinding, error) {
 	crb := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nfd-worker-e2e",
-			Namespace: ns,
-		},
+		Name:      "nfd-worker-e2e",
+		Namespace: ns,
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      rbacv1.ServiceAccountKind,
@@ -391,9 +375,7 @@ func createRoleBindingWorker(ctx context.Context, cs clientset.Interface, ns str
 // Configure cluster role binding required by NFD Worker.
 func createClusterRoleBindingWorker(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.ClusterRoleBinding, error) {
 	crb := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-worker-e2e",
-		},
+		Name: "nfd-worker-e2e",
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      rbacv1.ServiceAccountKind,
@@ -414,9 +396,7 @@ func createClusterRoleBindingWorker(ctx context.Context, cs clientset.Interface,
 // Configure cluster role binding required by NFD GC
 func createClusterRoleBindingGC(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.ClusterRoleBinding, error) {
 	crb := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-gc-e2e",
-		},
+		Name: "nfd-gc-e2e",
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      rbacv1.ServiceAccountKind,
@@ -437,9 +417,7 @@ func createClusterRoleBindingGC(ctx context.Context, cs clientset.Interface, ns 
 // Configure cluster role binding required by NFD Topology Updater
 func createClusterRoleBindingTopologyUpdater(ctx context.Context, cs clientset.Interface, ns string) (*rbacv1.ClusterRoleBinding, error) {
 	crb := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "nfd-topology-updater-e2e",
-		},
+		Name: "nfd-topology-updater-e2e",
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      rbacv1.ServiceAccountKind,
