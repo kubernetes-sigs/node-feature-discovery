@@ -397,3 +397,4 @@ NFD.
 | prometheus.enable | bool | `false` | Create PodMonitor object for enabling metrics collection by Prometheus Operator. |
 | prometheus.scrapeInterval | string | `"10s"` | Interval at which metrics are scraped. |
 | prometheus.labels | object | `{}` | Labels to add to the PodMonitor object. |
+| prometheus.components | list | `["master","worker","topology-updater","gc"]` | Components whose pods the PodMonitor scrapes, matched by the pod `role` label. Valid values are `master`, `worker`, `topology-updater`, and `gc`. To stop scraping, set `prometheus.enable` to `false`. |

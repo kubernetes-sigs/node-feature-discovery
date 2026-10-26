@@ -37,3 +37,92 @@ tests:
       - equal:
           path: spec.podMetricsEndpoints[0].interval
           value: 30s
+
+  - it: selects every component by default
+    set:
+      prometheus:
+        enable: true
+    asserts:
+      - contains:
+          path: spec.selector.matchExpressions
+          content:
+            key: role
+            operator: In
+            values:
+              - master
+              - worker
+              - topology-updater
+              - gc
+
+  - it: selects only the listed components
+    set:
+      prometheus:
+        enable: true
+        components:
+          - master
+          - gc
+    asserts:
+      - equal:
+          path: spec.selector.matchExpressions
+          value:
+            - key: app.kubernetes.io/instance
+              operator: In
+              values:
+                - nfd
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - node-feature-discovery
+            - key: role
+              operator: In
+              values:
+                - master
+                - gc
+
+  - it: does not filter by role when components is unset
+    set:
+      prometheus:
+        enable: true
+        components: null
+    asserts:
+      - equal:
+          path: spec.selector.matchExpressions
+          value:
+            - key: app.kubernetes.io/instance
+              operator: In
+              values:
+                - nfd
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - node-feature-discovery
+
+  - it: rejects an empty component list
+    set:
+      prometheus:
+        enable: true
+        components: []
+    asserts:
+      - failedTemplate:
+          errorMessage: "prometheus.components must list at least one component. To stop scraping, set prometheus.enable to false."
+
+  - it: rejects an unknown component
+    set:
+      prometheus:
+        enable: true
+        components:
+          - prune
+    asserts:
+      - failedTemplate:
+          errorPattern: "at '/prometheus/components/0': value must be one of"
+
+  - it: rejects a duplicate component
+    set:
+      prometheus:
+        enable: true
+        components:
+          - master
+          - master
+    asserts:
+      - failedTemplate:
+          errorPattern: "at '/prometheus/components': items at 0 and 1 are equal"

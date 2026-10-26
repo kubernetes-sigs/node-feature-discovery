@@ -52,6 +52,15 @@ to scrape metrics from NFD, you need to pass the following values to Helm:
 --set prometheus.enable=true
 ```
 
+By default the PodMonitor scrapes all NFD components. To scrape only some of
+them, list their `role` label values in `prometheus.components`. Valid values
+are `master`, `worker`, `topology-updater` and `gc`. For example, to scrape only
+nfd-master and nfd-gc:
+
+```bash
+--set prometheus.enable=true --set 'prometheus.components={master,gc}'
+```
+
 For more info on Helm deployment, see [Helm](helm.md).
 
 It is recommended to specify

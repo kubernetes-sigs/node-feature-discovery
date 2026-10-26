@@ -663,6 +663,23 @@
         "prometheus": {
             "type": "object",
             "properties": {
+                "components": {
+                    "description": "Components whose pods the PodMonitor scrapes, matched by the pod `role` label. Valid values are `master`, `worker`, `topology-updater`, and `gc`. To stop scraping, set `prometheus.enable` to `false`.",
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "master",
+                            "worker",
+                            "topology-updater",
+                            "gc"
+                        ]
+                    }
+                },
                 "enable": {
                     "description": "Create PodMonitor object for enabling metrics collection by Prometheus Operator.",
                     "type": "boolean"

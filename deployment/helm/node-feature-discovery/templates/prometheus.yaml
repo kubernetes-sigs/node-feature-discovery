@@ -24,4 +24,10 @@ spec:
     matchExpressions:
     - {key: app.kubernetes.io/instance, operator: In, values: ["{{ .Release.Name }}"]}
     - {key: app.kubernetes.io/name, operator: In, values: ["{{ include "node-feature-discovery.name" . }}"]}
+    {{- /* Null or missing, as after "helm upgrade --reuse-values" from an older chart, means no role filter. */}}
+    {{- if .Values.prometheus.components }}
+    - {key: role, operator: In, values: {{ toJson .Values.prometheus.components }}}
+    {{- else if kindIs "slice" .Values.prometheus.components }}
+    {{- fail "prometheus.components must list at least one component. To stop scraping, set prometheus.enable to false." }}
+    {{- end }}
 {{- end }}

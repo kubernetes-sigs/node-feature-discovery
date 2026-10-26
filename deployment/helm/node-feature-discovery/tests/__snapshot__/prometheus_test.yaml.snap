@@ -28,3 +28,10 @@ matches the snapshot when enabled with default values:
             operator: In
             values:
               - node-feature-discovery
+          - key: role
+            operator: In
+            values:
+              - master
+              - worker
+              - topology-updater
+              - gc
