@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/yaml"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
@@ -556,4 +557,188 @@ var-2=
 	m, err = Execute(r4, f, true)
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, map[string]string(nil), m.Labels, "instances should have matched")
+}
+
+// TestRuleSameInstanceMatching pins how matchExpressions in one matchFeatures
+// term bind to a single instance, and that matchName does not.
+func TestRuleSameInstanceMatching(t *testing.T) {
+	const sameDeviceRule = `
+name: same-device
+labels:
+  matched: "true"
+matchFeatures:
+  - feature: pci.device
+    matchExpressions:
+      vendor: { op: In, value: ["10de"] }
+      numaNode: { op: In, value: ["1"] }
+`
+	const sameNumaRule = `
+name: gpu-nic-same-numa
+labels:
+  matched: "true"
+matchAny:
+  - matchFeatures:
+      - feature: pci.device
+        matchExpressions:
+          vendor: { op: In, value: ["10de"] }
+          numaNode: { op: In, value: ["0"] }
+      - feature: pci.device
+        matchExpressions:
+          vendor: { op: In, value: ["15b3"] }
+          numaNode: { op: In, value: ["0"] }
+  - matchFeatures:
+      - feature: pci.device
+        matchExpressions:
+          vendor: { op: In, value: ["10de"] }
+          numaNode: { op: In, value: ["1"] }
+      - feature: pci.device
+        matchExpressions:
+          vendor: { op: In, value: ["15b3"] }
+          numaNode: { op: In, value: ["1"] }
+`
+	const physfnInRule = `
+name: vfs-of-pf
+labels:
+  matched: "true"
+matchFeatures:
+  - feature: pci.device
+    matchExpressions:
+      physfn: { op: In, value: ["0002:01:00.0"] }
+`
+	const physfnOtherPfRule = `
+name: vfs-of-other-pf
+labels:
+  matched: "true"
+matchFeatures:
+  - feature: pci.device
+    matchExpressions:
+      physfn: { op: In, value: ["0005:01:00.0"] }
+`
+	const physfnExistsRule = `
+name: any-vf
+labels:
+  matched: "true"
+matchFeatures:
+  - feature: pci.device
+    matchExpressions:
+      physfn: { op: Exists }
+`
+	const matchNameRule = `
+name: match-name-separate
+labels:
+  matched: "true"
+matchFeatures:
+  - feature: pci.device
+    matchExpressions:
+      vendor: { op: In, value: ["10de"] }
+    matchName: { op: In, value: ["physfn"] }
+`
+
+	matched := map[string]string{"matched": "true"}
+	tests := []struct {
+		name      string
+		rule      string
+		instances []map[string]string
+		labels    map[string]string
+	}{
+		{
+			name: "same device vendor and numa",
+			rule: sameDeviceRule,
+			instances: []map[string]string{
+				{"vendor": "10de", "numaNode": "1"},
+				{"vendor": "15b3", "numaNode": "0"},
+			},
+			labels: matched,
+		},
+		{
+			name: "split across devices",
+			rule: sameDeviceRule,
+			instances: []map[string]string{
+				{"vendor": "10de", "numaNode": "0"},
+				{"vendor": "15b3", "numaNode": "1"},
+			},
+			labels: map[string]string(nil),
+		},
+		{
+			name: "gpu and nic same numa via matchAny",
+			rule: sameNumaRule,
+			instances: []map[string]string{
+				{"vendor": "10de", "numaNode": "1"},
+				{"vendor": "15b3", "numaNode": "1"},
+			},
+			labels: matched,
+		},
+		{
+			name: "gpu and nic different numa via matchAny",
+			rule: sameNumaRule,
+			instances: []map[string]string{
+				{"vendor": "10de", "numaNode": "0"},
+				{"vendor": "15b3", "numaNode": "1"},
+			},
+			labels: map[string]string(nil),
+		},
+		{
+			name: "in matches attribute value",
+			rule: physfnInRule,
+			instances: []map[string]string{
+				{"pciBusID": "0002:01:00.2", "physfn": "0002:01:00.0"},
+				{"pciBusID": "0012:01:00.1", "physfn": "0012:01:00.0"},
+			},
+			labels: matched,
+		},
+		{
+			name: "in rejects other value",
+			rule: physfnOtherPfRule,
+			instances: []map[string]string{
+				{"pciBusID": "0002:01:00.2", "physfn": "0002:01:00.0"},
+				{"pciBusID": "0012:01:00.1", "physfn": "0012:01:00.0"},
+			},
+			labels: map[string]string(nil),
+		},
+		{
+			name: "exists positive control",
+			rule: physfnExistsRule,
+			instances: []map[string]string{
+				{"pciBusID": "0002:01:00.2", "physfn": "0002:01:00.0"},
+			},
+			labels: matched,
+		},
+		{
+			name: "exists absent",
+			rule: physfnExistsRule,
+			instances: []map[string]string{
+				{"pciBusID": "0002:01:00.0"},
+			},
+			labels: map[string]string(nil),
+		},
+		{
+			name: "matchName is evaluated separately",
+			rule: matchNameRule,
+			instances: []map[string]string{
+				{"vendor": "10de"},
+				{"vendor": "15b3", "physfn": "0000:02:00.0"},
+			},
+			labels: matched,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rule := &nfdv1alpha1.Rule{}
+			if err := yaml.UnmarshalStrict([]byte(tc.rule), rule); err != nil {
+				t.Fatalf("failed to parse rule: %v", err)
+			}
+
+			elems := make([]nfdv1alpha1.InstanceFeature, 0, len(tc.instances))
+			for _, attrs := range tc.instances {
+				elems = append(elems, *nfdv1alpha1.NewInstanceFeature(attrs))
+			}
+			features := nfdv1alpha1.NewFeatures()
+			features.Instances["pci.device"] = nfdv1alpha1.NewInstanceFeatures(elems...)
+
+			out, err := Execute(rule, features, true)
+			assert.Nilf(t, err, "unexpected error: %v", err)
+			assert.Equal(t, tc.labels, out.Labels)
+		})
+	}
 }
