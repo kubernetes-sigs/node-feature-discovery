@@ -38,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/yaml"
@@ -938,51 +939,57 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		}
 	}
 
-	// TODO: we could implement some simple caching of the object, only get it
-	// every 10 minutes or so because nobody else should really be modifying it
-	if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
-		nfr = &nfdv1alpha1.NodeFeature{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            nodename,
-				Annotations:     annotations,
-				Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
-				OwnerReferences: m.ownerReference,
-			},
-			Spec: nfdv1alpha1.NodeFeatureSpec{
+	// Other controllers may update metadata, e.g. GC removing an old Pod owner.
+	// Re-fetch on every attempt instead of retrying an outdated resource version.
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
+			nfr = &nfdv1alpha1.NodeFeature{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            nodename,
+					Annotations:     annotations,
+					Labels:          map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename},
+					OwnerReferences: m.ownerReference,
+				},
+				Spec: nfdv1alpha1.NodeFeatureSpec{
+					Features: *features,
+					Labels:   labels,
+				},
+			}
+			klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
+
+			nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
+			if err != nil {
+				return err
+			}
+
+			klog.V(4).InfoS("NodeFeature object created", "nodeFeature", utils.DelayedDumper(nfrCreated))
+		} else if err != nil {
+			return err
+		} else {
+			nfrUpdated := nfr.DeepCopy()
+			nfrUpdated.Annotations = annotations
+			nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
+			nfrUpdated.OwnerReferences = m.ownerReference
+			nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
 				Features: *features,
 				Labels:   labels,
-			},
-		}
-		klog.InfoS("creating NodeFeature object", "nodefeature", klog.KObj(nfr))
-
-		nfrCreated, err := cli.NfdV1alpha1().NodeFeatures(namespace).Create(context.TODO(), nfr, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to create NodeFeature object %q: %w", nfr.Name, err)
-		}
-
-		klog.V(4).InfoS("NodeFeature object created", "nodeFeature", utils.DelayedDumper(nfrCreated))
-	} else if err != nil {
-		return fmt.Errorf("failed to get NodeFeature object: %w", err)
-	} else {
-		nfrUpdated := nfr.DeepCopy()
-		nfrUpdated.Annotations = annotations
-		nfrUpdated.Labels = map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: nodename}
-		nfrUpdated.OwnerReferences = m.ownerReference
-		nfrUpdated.Spec = nfdv1alpha1.NodeFeatureSpec{
-			Features: *features,
-			Labels:   labels,
-		}
-
-		if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
-			klog.InfoS("updating NodeFeature object", "nodefeature", klog.KObj(nfr))
-			nfrUpdated, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), nfrUpdated, metav1.UpdateOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to update NodeFeature object %q: %w", nfr.Name, err)
 			}
-			klog.V(4).InfoS("NodeFeature object updated", "nodeFeature", utils.DelayedDumper(nfrUpdated))
-		} else {
-			klog.V(1).InfoS("no changes in NodeFeature object, not updating", "nodefeature", klog.KObj(nfr))
+
+			if !apiequality.Semantic.DeepEqual(nfr, nfrUpdated) {
+				klog.InfoS("updating NodeFeature object", "nodefeature", klog.KObj(nfr))
+				nfrUpdated, err = cli.NfdV1alpha1().NodeFeatures(namespace).Update(context.TODO(), nfrUpdated, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+				klog.V(4).InfoS("NodeFeature object updated", "nodeFeature", utils.DelayedDumper(nfrUpdated))
+			} else {
+				klog.V(1).InfoS("no changes in NodeFeature object, not updating", "nodefeature", klog.KObj(nfr))
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to publish NodeFeature object %q: %w", nodename, err)
 	}
 	return nil
 }
