@@ -163,7 +163,11 @@ The effective membership of `vendor-ab` is:
 
 Each entry in `.spec.featureGroupRules` continues to contribute to the group by
 logical union. A rule matches a node when its existing feature-match fields
-match that node. A rule with `containsGroups` contributes the effective
+match that node. A rule with `containsGroups` and no feature-match fields
+matches no node directly. Today's evaluator matches every node with a
+`NodeFeature` when `matchFeatures` and `matchAny` are both empty, so the
+controller must check `containsGroups` first. Rules without `containsGroups`
+keep today's behavior. A rule with `containsGroups` contributes the effective
 membership of each referenced group.
 
 If a rule contains both feature-match fields and `containsGroups`, the
