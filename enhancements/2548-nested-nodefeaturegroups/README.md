@@ -67,6 +67,8 @@ type GroupRule struct {
     // ContainsGroups specifies NodeFeatureGroups whose effective node
     // membership is included in this rule.
     // +optional
+    // +listType=set
+    // +kubebuilder:validation:items:MaxLength=253
     ContainsGroups []string `json:"containsGroups,omitempty"`
 }
 ```
@@ -81,19 +83,32 @@ type NodeFeatureGroupStatus struct {
     // Groups is the list of NodeFeatureGroups whose effective membership is
     // included in this group.
     // +optional
+    // +listType=map
+    // +listMapKey=name
     Groups []FeatureGroupReference `json:"groups,omitempty"`
 
     // NodeCount is the effective number of unique nodes in this group,
     // including nodes represented by referenced groups.
     // +optional
+    // +kubebuilder:validation:Minimum=0
     NodeCount int64 `json:"nodeCount,omitempty"`
 }
 
 type FeatureGroupReference struct {
     // Name of the referenced NodeFeatureGroup.
+    // +kubebuilder:validation:MaxLength=253
     Name string `json:"name"`
 }
 ```
+
+Add the same `+kubebuilder:validation:MaxLength=253` marker to the existing
+`FeatureGroupNode.Name` field. Node and `NodeFeatureGroup` names use DNS
+subdomain naming, which allows at most 253 characters. `containsGroups` is a
+set, so duplicate names within a rule are rejected. `status.groups` is a map
+list keyed by name, matching the existing `status.nodes` list semantics, so
+duplicate group entries are rejected. `status.nodeCount` must be nonnegative.
+References to the same group from different rules still contribute its members
+only once to the effective membership.
 
 For compact YAML, the API may also use `groups: []string` in status. A structured
 reference type is preferred because it leaves room for future fields such as
@@ -229,16 +244,37 @@ With nested groups, evaluation should be split into two phases:
 2. Resolve group references as a directed graph and compute effective
    membership, `status.groups`, and `status.nodeCount`.
 
-The graph edge direction is `parent -> referenced group`. The controller must
-topologically evaluate the graph where possible. If a group references a missing
-group or a cycle is detected, the controller should mark that group invalid and
-avoid publishing a misleading status update for it.
+The graph edge direction is `parent -> referenced group`. If a group references
+a missing group or a cycle is detected, the controller should mark that group
+invalid and avoid publishing a misleading status update for it.
 
-Any `NodeFeatureGroup` spec change can affect its parents. The informer should
-enqueue the changed group and all transitive parents that reference it. A simple
-initial implementation may enqueue all groups when any group reference changes,
-matching the existing large-cluster correctness model before optimizing with a
-reverse-reference index.
+Creating, deleting, or changing a `NodeFeatureGroup` can affect groups that
+reference it, directly or transitively. Changes in direct node membership can
+also affect those parents. The controller must reconcile the affected groups
+when any of these changes occurs.
+
+The controller can maintain a namespace-local reverse-reference index from each
+referenced group name to its direct parents. The index is derived from parent
+specs, including references to groups that do not yet exist. On a group create,
+delete, or relevant update, the controller can traverse the index to enqueue all
+transitive parents, tracking visited groups so cycles do not cause an infinite
+traversal. Reconciliation resolves the current graph and recomputes membership
+and counts; if a reference is missing or cyclic, the affected groups retain
+their last valid status as described below. When a parent spec changes or the
+parent is deleted, its entries in the index must be updated or removed.
+
+A simple initial implementation may instead enqueue all groups on these events;
+the reverse-reference index is an optimization and must preserve the same
+behavior.
+
+The existing updater pool can reconcile groups concurrently. Enqueueing a child
+and its parents therefore does not guarantee that the child is evaluated first.
+The implementation must define how a parent obtains a current, complete view
+of its dependencies and how it retries when those dependencies change during
+reconciliation. Merely reading a child's last published status can produce an
+incorrect parent membership or count. The consistency guarantee and the choice
+between computing membership from the graph or coordinating child status
+updates remain to be resolved before implementation.
 
 ### Cycle Handling
 
@@ -343,6 +379,9 @@ larger API design.
 
 - Unit tests for API defaulting, deepcopy, generated clients, and CRD schema
   validation for `containsGroups`, `status.groups`, and `status.nodeCount`.
+- CRD validation tests for names at the 253-character limit and over it,
+  duplicate names in `containsGroups`, `status.groups`, and `status.nodes`,
+  and a negative `status.nodeCount`.
 - Unit tests for graph resolution:
   - single-level references
   - transitive references
@@ -351,8 +390,14 @@ larger API design.
   - self-reference
   - multi-group cycles
   - maximum-depth enforcement
-- Controller tests that verify updates to a child group enqueue and refresh
-  parent groups.
+- Controller tests that verify child creation, deletion, spec updates, and direct
+  membership changes reconcile transitive parents. Cover a parent created before
+  its child, preservation of the last valid status after child deletion, and
+  recovery when the child is recreated.
+- Tests for reverse-reference index maintenance when parent references change or
+  parents are deleted, and for traversal of a cyclic graph without looping.
+- Controller tests with concurrent group workers that verify parents converge
+  to the correct membership and count even when reconciled before their children.
 - E2E test with two directly matched groups and one nested group, verifying
   compact status and effective `nodeCount`.
 - Large synthetic test that verifies a nested parent can represent membership
