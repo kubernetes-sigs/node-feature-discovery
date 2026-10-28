@@ -289,7 +289,9 @@ be updated to resolve `status.groups`.
 
 ### Upgrade and Downgrade
 
-On upgrade, no status changes occur until users add `containsGroups`.
+On upgrade, nfd-master adds `status.nodeCount` to each existing group that has
+members, in one status update. `status.nodes` and group membership do not
+change until users add `containsGroups`.
 
 On downgrade to a version that does not understand `containsGroups` or
 `status.groups`, nested groups will not be evaluated correctly. Documentation
