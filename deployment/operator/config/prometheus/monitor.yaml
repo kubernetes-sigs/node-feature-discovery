@@ -1,0 +1,17 @@
+
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: nfd-controller-manager
+  name: nfd-controller-manager-metrics-monitor
+  namespace: node-feature-discovery-operator
+spec:
+  endpoints:
+    - path: /metrics
+      port: https
+  selector:
+    matchLabels:
+      control-plane: nfd-controller-manager
+
