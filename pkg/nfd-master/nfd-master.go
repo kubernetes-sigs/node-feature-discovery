@@ -1152,7 +1152,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		labelKeys := make([]string, 0, len(labels))
 		for key := range labels {
 			// Drop the ns part for labels in the default ns
-			labelKeys = append(labelKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
+			labelKeys = append(labelKeys, trackingName(key, nfdv1alpha1.FeatureLabelNs))
 		}
 		sort.Strings(labelKeys)
 		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation)] = strings.Join(labelKeys, ",")
@@ -1166,7 +1166,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		extendedResourceKeys := make([]string, 0, len(extendedResources))
 		for key := range extendedResources {
 			// Drop the ns part if in the default ns
-			extendedResourceKeys = append(extendedResourceKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureLabelNs+"/"))
+			extendedResourceKeys = append(extendedResourceKeys, trackingName(key, nfdv1alpha1.FeatureLabelNs))
 		}
 		sort.Strings(extendedResourceKeys)
 		annotations[m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation)] = strings.Join(extendedResourceKeys, ",")
@@ -1178,7 +1178,7 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 		annotationKeys := make([]string, 0, len(featureAnnotations))
 		for key := range featureAnnotations {
 			// Drop the ns part for annotations in the default ns
-			annotationKeys = append(annotationKeys, strings.TrimPrefix(key, nfdv1alpha1.FeatureAnnotationNs+"/"))
+			annotationKeys = append(annotationKeys, trackingName(key, nfdv1alpha1.FeatureAnnotationNs))
 		}
 		sort.Strings(annotationKeys)
 		annotations[m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation)] = strings.Join(annotationKeys, ",")
@@ -1421,16 +1421,38 @@ func splitNs(fullname string) (string, string) {
 	return "", fullname
 }
 
+// trackingName returns the name under which key is stored in an NFD tracking
+// annotation (feature-labels, feature-annotations, extended-resources).
+// Names in the default namespace ns are stored without it to keep the
+// annotation short. With DisableAutoPrefix, keys without any namespace are
+// allowed, so the namespace is kept: otherwise "foo" in the annotation could be
+// either "foo" or "<ns>/foo".
+func trackingName(key, ns string) string {
+	if nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
+		return key
+	}
+	return strings.TrimPrefix(key, ns+"/")
+}
+
 // stringToNsNames is a helper for converting a string of comma-separated names
-// into a slice of fully namespaced names
+// read from a tracking annotation into a slice of fully namespaced names
 func stringToNsNames(cslist, ns string) []string {
+	if cslist == "" {
+		return nil
+	}
 	var names []string
-	if cslist != "" {
-		names = strings.Split(cslist, ",")
-		for i, name := range names {
-			// Expect that names may omit the ns part
-			names[i] = addNs(name, ns)
+	for _, name := range strings.Split(cslist, ",") {
+		if strings.Contains(name, "/") {
+			names = append(names, name)
+			continue
 		}
+		if nfdfeatures.NFDFeatureGate.Enabled(nfdfeatures.DisableAutoPrefix) {
+			// A key without a namespace, stored as is by trackingName.
+			names = append(names, name)
+		}
+		// A name in the default namespace, as stored without DisableAutoPrefix
+		// or by NFD versions before trackingName kept the namespace.
+		names = append(names, addNs(name, ns))
 	}
 	return names
 }
