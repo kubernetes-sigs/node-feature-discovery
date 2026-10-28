@@ -1278,3 +1278,11 @@ prometheus:
   # -- Labels to add to the PodMonitor object.
   # @section -- Prometheus
   labels: {}
+  # @schema type:[array, null];uniqueItems:true;item:string;itemEnum:["master","worker","topology-updater","gc"]
+  # -- Components whose pods the PodMonitor scrapes, matched by the pod `role` label. Valid values are `master`, `worker`, `topology-updater`, and `gc`. To stop scraping, set `prometheus.enable` to `false`.
+  # @section -- Prometheus
+  components:
+    - master
+    - worker
+    - topology-updater
+    - gc
