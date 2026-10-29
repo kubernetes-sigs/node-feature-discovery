@@ -17,9 +17,12 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"k8s.io/klog/v2"
 
@@ -65,6 +68,14 @@ func main() {
 		klog.ErrorS(err, "failed to initialize NfdWorker instance")
 		os.Exit(1)
 	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		instance.Stop()
+	}()
 
 	if err = instance.Run(); err != nil {
 		klog.ErrorS(err, "error while running")
