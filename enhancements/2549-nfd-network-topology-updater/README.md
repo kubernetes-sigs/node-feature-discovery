@@ -107,6 +107,132 @@ This KEP therefore proposes a hybrid: Node labels for tiered fabric, outside the
 scope of the updater, and `NodeFeatureGroup` for network groups. Consumers can combine
 both. Network group memberships may coincide with or overlap fabric locality groups.
 
+### Use Cases
+
+The three use cases below show which mechanism fits which topology. Label keys,
+group types, and annotation names are illustrative.
+
+#### Use Case 1: Tiered Fabric (Leaf, Spine, Core): Labels Only
+
+Every node belongs to exactly one domain per tier, so one Node label per tier
+describes the topology completely. Cloud providers and tools such as
+[Topograph](https://github.com/dsx-ai-factory/topograph/blob/main/docs/reference/node-labels.md)
+already publish these labels (`{a,b}` is shorthand for one label per value):
+
+| Provider | Node labels |
+| --- | --- |
+| AWS (EKS) | `topology.k8s.aws/network-node-layer-{1,2,3}` |
+| GCP (GKE) | `cloud.google.com/gce-topology-{block,subblock,host}` |
+| OCI (OKE) | `oci.oraclecloud.com/rdma.{hpc_island_id,network_block_id,local_block_id}` |
+| Topograph | `fabric.topograph.run/tier-{1,2,3}` |
+
+```yaml
+# Node worker-a: one value per tier
+labels:
+  fabric.topograph.run/tier-3: core-1
+  fabric.topograph.run/tier-2: spine-4
+  fabric.topograph.run/tier-1: leaf-17
+```
+
+Pod affinity, topology spread constraints, and label-based schedulers consume
+these labels directly through `topologyKey`. The updater publishes nothing for
+this case: no `NodeFeature`, no `NodeFeatureGroup`.
+
+#### Use Case 2: Overlapping Accelerated Cliques: NodeFeatureGroup Only
+
+Nodes are connected in fully connected cliques, for example accelerator
+interconnect domains. A node can belong to several cliques, possibly of different
+types, and cliques can overlap. A label key holds one value and cannot list
+members, so labels do not fit. Each clique is a network group, published as a
+`network.groups` instance on the node's `NodeFeature` and as one
+`NodeFeatureGroup`.
+
+```yaml
+# NodeFeature for worker-a: member of two cliques
+instances:
+  network.groups:
+    elements:
+      - attributes: {source: example-provider, type: accelerated-clique, guid: clique-1}
+      - attributes: {source: example-provider, type: accelerated-clique, guid: clique-2}
+```
+
+```yaml
+# One NodeFeatureGroup per clique (clique-2 is analogous)
+kind: NodeFeatureGroup
+metadata:
+  name: network-topology-clique-1
+  annotations:
+    network-topology.nfd.k8s-sigs.io/group-type: accelerated-clique
+    network-topology.nfd.k8s-sigs.io/group-guid: clique-1
+spec:
+  featureGroupRules:
+    - name: clique-1 members
+      matchFeatures:
+        - feature: network.groups
+          matchExpressions:
+            type: {op: In, value: [accelerated-clique]}
+            guid: {op: In, value: [clique-1]}
+```
+
+`nfd-master` maintains `status.nodes` for each group. Schedulers and DRA drivers
+read the groups to place multi-node workloads inside one clique.
+
+#### Use Case 3: Dragonfly: Labels And NodeFeatureGroup
+
+A dragonfly has nodes attached to routers, fully connected routers inside a
+group, and groups connected by global links. Typical sizes are tens to a few
+hundred groups with about 32 routers per group, so thousands of routers in
+total. Locality is hierarchical, so labels carry it:
+
+```yaml
+# Node worker-a
+labels:
+  network.example.com/dragonfly-router: g7-r3   # unique cluster-wide
+  network.example.com/dragonfly-group: g7
+```
+
+Router locality stays on labels only. A `NodeFeatureGroup` per router would add
+thousands of objects that `nfd-master` re-evaluates on every `NodeFeature`
+change, with no new capability. One `NodeFeatureGroup` per dragonfly group adds
+what labels cannot provide: a member list and count without querying all Nodes,
+and a named set that combines with other features, such as accelerator model.
+The group id is also published in the node's `NodeFeature`, because groups match
+`NodeFeature` data and not Node labels:
+
+```yaml
+instances:
+  network.groups:
+    elements:
+      - attributes: {source: example-provider, type: dragonfly-group, guid: g7}
+```
+
+```yaml
+kind: NodeFeatureGroup
+metadata:
+  name: network-topology-dragonfly-g7
+  annotations:
+    network-topology.nfd.k8s-sigs.io/group-type: dragonfly-group
+    network-topology.nfd.k8s-sigs.io/group-guid: g7
+    # Optional, sparse: only links that differ from the fabric default
+    network-topology.nfd.k8s-sigs.io/group-links: "g8:hops=1,bandwidth=400Gb/s"
+spec:
+  featureGroupRules:
+    - name: dragonfly g7 members
+      matchFeatures:
+        - feature: network.groups
+          matchExpressions:
+            type: {op: In, value: [dragonfly-group]}
+            guid: {op: In, value: [g7]}
+```
+
+Consumers compute locality by comparing labels: equal router means the same
+router, equal group means one local router hop, and different groups use a global
+link. In a canonical dragonfly all groups are directly connected, so no pairwise
+link data is needed. Irregular fabrics can record exceptions in the optional
+per-group `group-links` annotation, which keeps link data in small per-group
+objects instead of one matrix object. Each link is written on both groups. A
+dedicated link-characteristics API is out of scope for this KEP.
+
 ### Discovery And Ownership
 
 Network group discovery and publication can be performed by external services. The
