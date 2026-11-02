@@ -50,7 +50,7 @@ echo "Running Helm unit tests"
 make helm-unittest
 
 echo "Running logcheck"
-logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./pkg/...  ./source/...
+logcheck -config "${this_dir}/logcheck.conf" ./cmd/... ./internal/... ./pkg/...  ./source/...
 
 echo "Running unit tests"
 make test
