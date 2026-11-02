@@ -108,7 +108,7 @@ The operator keeps building its operand the way it does today (see [Operand obje
   a single squashed commit that links to the operator repository.
 - **controller-runtime lags behind client-go.** The main module gains a dependency on
   controller-runtime, which is released after each Kubernetes minor and can hold back NFD's k8s.io bumps.
-  Mitigation: if that happens, the operator code (`pkg/operator`, `cmd/nfd-operator`) moves under one
+  Mitigation: if that happens, the operator code (`internal/operator`, `cmd/nfd-operator`) moves under one
   directory with its own `go.mod`, which takes controller-runtime out of the main module.
 - **The operator's operand objects drift from the operand chart.** The operator keeps its own copy of the
   operand's flags, probes and RBAC (see [Operand objects](#operand-objects)), so an operand change has to
@@ -127,7 +127,7 @@ The operator keeps building its operand the way it does today (see [Operand obje
 | Operator repository | This repository |
 |---|---|
 | `api/v1/` | `api/operator/v1/` |
-| `internal/*` | `pkg/operator/*` |
+| `internal/*` | `internal/operator/*` |
 | `main.go`, `main_test.go` | `cmd/nfd-operator/` |
 | `deploy/helm/nfd-operator/` | `deployment/helm/nfd-operator/` |
 | `config/` | `deployment/operator/config/` |
@@ -136,6 +136,10 @@ The operator keeps building its operand the way it does today (see [Operand obje
 The operator repository's own build, CI and repository files (Makefile, go.mod, Dockerfiles, `.github`,
 `scripts`, `OWNERS`, `README.md` and similar) are not imported; this repository's equivalents take over.
 Its documentation is migrated into `docs/` by a later pull request.
+
+The operator's packages stay under an `internal` directory, as in the operator repository, so Go does not
+let code outside this repository import them. Moving them to `pkg/` later would break no one, while
+moving them from `pkg/` to `internal/` would break every project that imports them.
 
 Go code that imports the operator types changes its import path from
 `sigs.k8s.io/node-feature-discovery-operator/api/v1` to `sigs.k8s.io/node-feature-discovery/api/operator/v1`.
@@ -165,7 +169,7 @@ needs only `k8s.io/api` and `k8s.io/apimachinery`.
 
 The operator keeps building the operand the way it does today. Its Go code creates the nfd-master and
 nfd-gc Deployments, the nfd-worker and nfd-topology-updater DaemonSets, the nfd-worker ConfigMap and the
-prune Job from the `NodeFeatureDiscovery` spec (`pkg/operator/deployment`, `daemonset`, `configmap` and
+prune Job from the `NodeFeatureDiscovery` spec (`internal/operator/deployment`, `daemonset`, `configmap` and
 `job`), and the operand's ServiceAccounts and RBAC ship with the operator chart and its kustomize
 manifests. When a pull request changes the operand's flags, probes or RBAC, the operator's copy changes in
 the same pull request, and the operator e2e test (4) is the check that catches a missed one (see
@@ -267,6 +271,8 @@ contains only the code that is not user-visible yet, and the operator ships in t
 - 2026-10-23: the target moves to v0.21, since v0.20.0 was released on 2026-10-16 without the operator.
 - 2026-10-23: the operator's RBAC becomes its own pull request (5), after the e2e test, so the e2e test
   guards every permission it removes.
+- 2026-11-02: after review, the operator code moves to `internal/operator` instead of `pkg/operator`, so
+  it stays internal as it was in the operator repository.
 
 ## Alternatives Considered
 
@@ -292,4 +298,4 @@ contains only the code that is not user-visible yet, and the operator ships in t
 
 ## Open Questions
 
-- Who should review the operator code (`OWNERS` for `pkg/operator`)?
+- Who should review the operator code (`OWNERS` for `internal/operator`)?
