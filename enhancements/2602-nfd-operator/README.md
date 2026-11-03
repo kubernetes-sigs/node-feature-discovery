@@ -208,11 +208,16 @@ release notes say so, and link to the migration guide.
 
 ### OLM bundle
 
-The bundle manifests move with the code. The build wiring (3) repairs `make bundle`, which fails on the
-operator's master today (the ClusterServiceVersions carry the non-semver version `master`, and the bundle
-holds a stale extra ClusterServiceVersion and a stale `NodeFeatureRule` CRD), and runs
-`operator-sdk bundle validate` in CI. Publishing the bundle image and submitting it to community-operators
-are deferred until after the first release, in coordination with the downstream distributors that use OLM.
+The bundle's sources move with the code: the ClusterServiceVersion base and the kustomize manifests
+under `deployment/operator/config/`. The generated bundle (`deployment/operator/bundle/` and
+`bundle.Dockerfile`) does not stay in the repository: the import brings it with its history, and the
+build wiring (3) removes it. A copy on the main branch would carry a development version that nobody
+installs, and would have to be generated again for every release anyway, since the version, the
+`replaces` field and the image change with each one. The build wiring repairs `make bundle`, which fails
+on the operator's master today (the ClusterServiceVersions carry the non-semver version `master`), and CI
+generates the bundle and runs `operator-sdk bundle validate` on it. Each release generates its bundle
+with `make bundle`. Publishing the bundle image and submitting it to community-operators are deferred
+until after the first release, in coordination with the downstream distributors that use OLM.
 
 ### Pull request roadmap
 
@@ -220,7 +225,7 @@ are deferred until after the first release, in coordination with the downstream 
 |---|---|---|
 | 1 | This proposal | The design and the roadmap |
 | 2 | Import the operator code | History and code in the paths above; builds and tests in NFD CI; not built into the image, not published, no docs |
-| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; `api/operator` as its own Go module; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; `make bundle` repaired and `operator-sdk bundle validate` in CI |
+| 3 | Build wiring and operand image | `nfd-operator` in the image and Makefile; `api/operator` as its own Go module; the operator's default operand image is its own image, set by the operator chart through an environment variable (`spec.operand.image` overrides it); code generation for the operator CRD and mocks, with a CI check that fails when generated files or CRD copies drift; Helm lint for the operator chart; the generated OLM bundle removed from the repository, `make bundle` repaired, and CI generating the bundle and running `operator-sdk bundle validate` on it |
 | 4 | Operator e2e | An operator mode for `test/e2e`: install the operator chart with the pull request's image, apply a `NodeFeatureDiscovery`, check the operand, node labels and a `NodeFeatureRule`; a required presubmit job that runs on every pull request, next to the operand e2e tests |
 | 5 | Operator RBAC | `+kubebuilder:rbac` markers become the source of truth and the operator's ClusterRole is generated from them; the leader-election Role keeps only leases and events; the operator chart gets a dedicated ServiceAccount; the permissions in the OLM bundle are narrowed |
 | 6 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart |
@@ -273,6 +278,8 @@ contains only the code that is not user-visible yet, and the operator ships in t
   guards every permission it removes.
 - 2026-11-02: after review, the operator code moves to `internal/operator` instead of `pkg/operator`, so
   it stays internal as it was in the operator repository.
+- 2026-11-03: after review, the OLM bundle is generated for each release instead of being kept in the
+  repository.
 
 ## Alternatives Considered
 
