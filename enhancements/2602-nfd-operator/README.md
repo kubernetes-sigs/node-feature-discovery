@@ -141,6 +141,11 @@ The operator's packages stay under an `internal` directory, as in the operator r
 let code outside this repository import them. Moving them to `pkg/` later would break no one, while
 moving them from `pkg/` to `internal/` would break every project that imports them.
 
+NFD's own packages under `pkg/` move under `internal/` as well, in a later pull request (8), so Go does
+not let other projects import them either; its release notes list the import paths that go away.
+`source/` stays where it is, because other projects import NFD's feature sources. Where under `internal/`
+the packages go is settled in that pull request.
+
 Go code that imports the operator types changes its import path from
 `sigs.k8s.io/node-feature-discovery-operator/api/v1` to `sigs.k8s.io/node-feature-discovery/api/operator/v1`.
 The API group and version, `nfd.kubernetes.io/v1`, do not change, so existing `NodeFeatureDiscovery`
@@ -230,6 +235,7 @@ until after the first release, in coordination with the downstream distributors 
 | 5 | Operator RBAC | `+kubebuilder:rbac` markers become the source of truth and the operator's ClusterRole is generated from them; the leader-election Role keeps only leases and events; the operator chart gets a dedicated ServiceAccount; the permissions in the OLM bundle are narrowed |
 | 6 | Operator chart publishing | Chart documentation and values schema; publish the chart next to the operand chart |
 | 7 | Docs and ownership | Operator deployment docs, a migration guide from operator v0.6.0, `OWNERS` for the operator code |
+| 8 | NFD packages under `internal/` | NFD's own packages move from `pkg/` to `internal/` (`source/` stays); the release notes list the import paths that go away |
 
 Two changes outside this repository go with them: a presubmit job in kubernetes/test-infra (with 4), and a
 promoter entry in kubernetes/k8s.io for the operator chart (with 6); the operator binary needs no new
@@ -238,7 +244,8 @@ image entry because it ships in the NFD image.
 After the operator ships, the operator repository gets a README that points here, its open issues and pull
 requests are closed with pointers, and it is archived.
 
-The operator ships once 1 to 7 are in. The end-to-end test (4) runs on every pull request from then on.
+The operator ships once 1 to 7 are in, whether or not 8 is. The end-to-end test (4) runs on every pull
+request from then on.
 
 ### Test Plan
 
@@ -280,6 +287,8 @@ contains only the code that is not user-visible yet, and the operator ships in t
   it stays internal as it was in the operator repository.
 - 2026-11-03: after review, the OLM bundle is generated for each release instead of being kept in the
   repository.
+- 2026-11-03: after review, NFD's own packages move from `pkg/` to `internal/` in a later pull request
+  (8).
 
 ## Alternatives Considered
 
