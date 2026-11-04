@@ -17,17 +17,200 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"strconv"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/watch"
+	clientfeatures "k8s.io/client-go/features"
+	clientfeaturestesting "k8s.io/client-go/features/testing"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
+	restfake "k8s.io/client-go/rest/fake"
 	clienttesting "k8s.io/client-go/testing"
 
+	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
+	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
+
+func TestNodeFeatureInformerPagination(t *testing.T) {
+	clientfeaturestesting.SetFeatureDuringTest(t, clientfeatures.WatchListClient, false)
+
+	testCases := []struct {
+		name       string
+		listSize   int64
+		expirePage bool
+		relist     bool
+		wantLimits []int64
+	}{
+		{name: "paginated list", listSize: 2, wantLimits: []int64{2, 2}},
+		{name: "expired continuation", listSize: 2, expirePage: true, wantLimits: []int64{2, 2, 2, 2, 0}},
+		{name: "relist after watch failure", listSize: 2, relist: true, wantLimits: []int64{2, 2, 2}},
+		{name: "pagination disabled", listSize: 0, wantLimits: []int64{0}},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			features := []nfdv1alpha1.NodeFeature{
+				{ObjectMeta: metav1.ObjectMeta{Name: "feature-a", Namespace: "default", Labels: map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node-a"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "feature-b", Namespace: "default", Labels: map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node-b"}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "feature-c", Namespace: "default", Labels: map[string]string{nfdv1alpha1.NodeFeatureObjNodeNameLabel: "node-c"}}},
+			}
+			var mu sync.Mutex
+			var limits []int64
+			var resourceVersions []string
+			watchCount := 0
+			relistReady := make(chan struct{})
+			t.Cleanup(func() {
+				mu.Lock()
+				defer mu.Unlock()
+				t.Logf("LIST request limits: %v", limits)
+			})
+			httpClient := restfake.CreateHTTPClient(func(r *http.Request) (*http.Response, error) {
+				response := &http.Response{
+					StatusCode: http.StatusOK,
+					Header:     http.Header{"Content-Type": []string{"application/json"}},
+				}
+				var body bytes.Buffer
+				response.Body = io.NopCloser(&body)
+				if r.URL.Query().Get("watch") == "true" {
+					mu.Lock()
+					watchCount++
+					currentWatch := watchCount
+					mu.Unlock()
+					if tc.relist && currentWatch == 2 {
+						response.StatusCode = http.StatusInternalServerError
+						err := apierrors.NewInternalError(assert.AnError)
+						err.ErrStatus.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Status"}
+						assert.NoError(t, json.NewEncoder(&body).Encode(err.ErrStatus))
+						return response, nil
+					}
+					reader, writer := io.Pipe()
+					response.Body = reader
+					go func() {
+						defer func() { assert.NoError(t, writer.Close()) }()
+						if tc.relist && currentWatch == 1 {
+							// A bookmark makes this a successful watch even when it closes quickly.
+							assert.NoError(t, json.NewEncoder(writer).Encode(map[string]any{
+								"type": "BOOKMARK", "object": map[string]any{
+									"apiVersion": nfdv1alpha1.SchemeGroupVersion.String(), "kind": "NodeFeature",
+									"metadata": map[string]string{"resourceVersion": "1"},
+								},
+							}))
+							select {
+							case <-relistReady:
+							case <-r.Context().Done():
+							}
+							return
+						}
+						<-r.Context().Done()
+					}()
+					return response, nil
+				}
+
+				limit := int64(0)
+				if value := r.URL.Query().Get("limit"); value != "" {
+					var err error
+					limit, err = strconv.ParseInt(value, 10, 64)
+					if !assert.NoError(t, err) {
+						response.StatusCode = http.StatusBadRequest
+						return response, nil
+					}
+				}
+				mu.Lock()
+				limits = append(limits, limit)
+				resourceVersions = append(resourceVersions, r.URL.Query().Get("resourceVersion"))
+				initialList := tc.relist && watchCount == 0
+				mu.Unlock()
+
+				start := 0
+				if r.URL.Query().Get("continue") != "" {
+					if tc.expirePage {
+						response.StatusCode = http.StatusGone
+						err := apierrors.NewResourceExpired("continuation expired")
+						err.ErrStatus.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Status"}
+						assert.NoError(t, json.NewEncoder(&body).Encode(err.ErrStatus))
+						return response, nil
+					}
+					start = 2
+				}
+				end := len(features)
+				if initialList {
+					end = 1
+				}
+				if limit > 0 && int64(end-start) > limit {
+					end = start + int(limit)
+				}
+				result := nfdv1alpha1.NodeFeatureList{
+					TypeMeta: metav1.TypeMeta{APIVersion: nfdv1alpha1.SchemeGroupVersion.String(), Kind: "NodeFeatureList"},
+					ListMeta: metav1.ListMeta{ResourceVersion: "1"},
+					Items:    features[start:end],
+				}
+				if !initialList && end < len(features) {
+					result.Continue = "next"
+				}
+				assert.NoError(t, json.NewEncoder(&body).Encode(result))
+				return response, nil
+			})
+
+			client, err := nfdclientset.NewForConfigAndClient(&rest.Config{Host: "http://nfd.test"}, httpClient)
+			require.NoError(t, err)
+			factory := nfdinformers.NewSharedInformerFactory(client, 0)
+			controller := &nfdController{
+				updateOneNodeChan:       make(chan string, len(features)),
+				disableNodeFeatureGroup: true,
+			}
+			require.NoError(t, controller.addNodeFeatureInformer(factory, tc.listSize))
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			t.Cleanup(func() {
+				cancel()
+				factory.Shutdown()
+			})
+			factory.Start(ctx.Done())
+			for resource, synced := range factory.WaitForCacheSync(ctx.Done()) {
+				require.True(t, synced, "informer failed to sync: %v", resource)
+			}
+
+			if tc.relist {
+				cached, err := controller.featureLister.List(labels.Everything())
+				require.NoError(t, err)
+				require.Len(t, cached, 1, "startup must fit in one page so the reflector does not paginate relists")
+				close(relistReady)
+				require.Eventually(t, func() bool {
+					cached, err := controller.featureLister.List(labels.Everything())
+					return err == nil && len(cached) == len(features)
+				}, 5*time.Second, 10*time.Millisecond, "relist did not load all NodeFeatures")
+			}
+
+			cached, err := controller.featureLister.List(labels.Everything())
+			require.NoError(t, err)
+			names := make([]string, 0, len(cached))
+			for _, feature := range cached {
+				names = append(names, feature.Name)
+			}
+			assert.ElementsMatch(t, []string{"feature-a", "feature-b", "feature-c"}, names)
+			mu.Lock()
+			assert.Equal(t, tc.wantLimits, limits)
+			if tc.relist {
+				assert.Equal(t, []string{"", "1", ""}, resourceVersions)
+			}
+			mu.Unlock()
+		})
+	}
+}
 
 func TestGetNodeNameForObj(t *testing.T) {
 	// Test missing label

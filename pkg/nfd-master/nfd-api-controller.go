@@ -17,21 +17,24 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	k8sclient "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/pager"
 	"k8s.io/klog/v2"
 
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdscheme "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/scheme"
 	nfdinformers "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions"
-	nfdinformersv1alpha1 "sigs.k8s.io/node-feature-discovery/api/generated/informers/externalversions/nfd/v1alpha1"
 	nfdlisters "sigs.k8s.io/node-feature-discovery/api/generated/listers/nfd/v1alpha1"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
@@ -195,18 +198,51 @@ func (c *nfdController) addNodeFeatureInformer(informerFactory nfdinformers.Shar
 		if opts.ResourceVersion == "0" {
 			opts.ResourceVersion = ""
 		}
-		opts.Limit = listSize // value of 0 disables pagination
+		if opts.Limit > 0 {
+			opts.Limit = listSize // value of 0 disables pagination
+		}
 	}
 
-	featureInformer := nfdinformersv1alpha1.New(informerFactory, "", tweakListOpts).NodeFeatures()
-	if _, err := featureInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	informer := informerFactory.InformerFor(&nfdv1alpha1.NodeFeature{}, func(client nfdclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+		nodeFeatures := client.NfdV1alpha1().NodeFeatures("")
+		listPage := func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
+			return nodeFeatures.List(ctx, opts)
+		}
+		lw := &cache.ListWatch{
+			ListWithContextFunc: func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
+				tweakListOpts(&opts)
+				if opts.Limit > 0 {
+					return listPage(ctx, opts)
+				}
+				// client-go sends Limit=0 for relists that it does not paginate and
+				// for the full list after a continuation expires. The pager pages
+				// these lists and falls back to one unpaged list if its own
+				// continuation expires.
+				p := pager.New(listPage)
+				p.PageSize = listSize
+				list, _, err := p.ListWithAlloc(ctx, opts)
+				return list, err
+			},
+			WatchFuncWithContext: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+				tweakListOpts(&opts)
+				return nodeFeatures.Watch(ctx, opts)
+			},
+		}
+		return cache.NewSharedIndexInformer(
+			cache.ToListWatcherWithWatchListSemantics(lw, client),
+			&nfdv1alpha1.NodeFeature{},
+			resyncPeriod,
+			cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
+		)
+	})
+	if _, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    c.onNodeFeatureAdd,
 		UpdateFunc: c.onNodeFeatureUpdate,
 		DeleteFunc: c.onNodeFeatureDelete,
 	}); err != nil {
 		return err
 	}
-	c.featureLister = featureInformer.Lister()
+	c.featureLister = nfdlisters.NewNodeFeatureLister(informer.GetIndexer())
 	return nil
 }
 
