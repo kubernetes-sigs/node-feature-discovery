@@ -209,13 +209,11 @@ e2e-tests:
 
 For development and debugging it is possible to run nfd-master as a stand-alone
 binary outside the cluster. The `-no-publish` flag can be used to prevent
-nfd-master making changes to the nodes. If `-no-publish` is not set, nfd-master
-also requires the `NODE_NAME` environment variable to be set for cleaning up
-stale annotations.
+nfd-master making changes to the nodes.
 
 ```bash
 make build
-NODE_NAME=<EXISTING_NODE> ./bin/nfd-master -no-publish -kubeconfig ~/.kube/config
+./bin/nfd-master -no-publish -kubeconfig ~/.kube/config
 ```
 
 ### NFD-Worker
