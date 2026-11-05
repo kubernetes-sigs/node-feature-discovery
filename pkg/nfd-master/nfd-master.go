@@ -1009,14 +1009,14 @@ func (m *nfdMaster) setTaints(cli k8sclient.Interface, taints []corev1.Taint, no
 		var updated bool
 		newNode, updated, err = taintutils.AddOrUpdateTaint(newNode, &taint)
 		if err != nil {
-			return fmt.Errorf("failed to add %q taint on node %v", taint, node.Name)
+			return fmt.Errorf("failed to add %q taint on node %v: %w", taint, node.Name, err)
 		}
 		taintsUpdated = taintsUpdated || updated
 	}
 
 	if taintsUpdated {
 		if err := controller.PatchNodeTaints(context.TODO(), cli, node.Name, node, newNode); err != nil {
-			return fmt.Errorf("failed to patch the node %v", node.Name)
+			return fmt.Errorf("failed to patch the node %v: %w", node.Name, err)
 		}
 		klog.InfoS("updated node taints", "nodeName", node.Name)
 	}
@@ -1232,6 +1232,13 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 	if len(patches) > 0 || len(statusPatches) > 0 {
 		nodeUpdates.Inc()
 		klog.InfoS("node updated", "nodeName", node.Name)
+
+		// The taint patch checks the resourceVersion of the node it is given,
+		// so get the node again after the patches above changed it.
+		node, err = getNode(cli, node.Name)
+		if err != nil {
+			return fmt.Errorf("error while getting node object: %w", err)
+		}
 	} else {
 		klog.V(1).InfoS("no updates to node", "nodeName", node.Name)
 	}
