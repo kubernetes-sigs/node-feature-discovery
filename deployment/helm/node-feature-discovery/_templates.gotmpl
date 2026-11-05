@@ -144,6 +144,19 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/node-feature-
 helm upgrade $HELM_INSTALL_NAME {{ template "metadata.oci_repo" . }} --version {{ template "metadata.oci_tag" . }} --namespace $NFD_NS
 ```
 
+### Stale version annotations
+
+NFD v0.14 and older set the `[<instance>.]nfd.node.kubernetes.io/master.version`
+and `[<instance>.]nfd.node.kubernetes.io/worker.version` annotations on nodes.
+NFD no longer sets or removes them. After upgrading directly from v0.14 or
+older, remove them with:
+
+```bash
+kubectl annotate nodes --all nfd.node.kubernetes.io/master.version- nfd.node.kubernetes.io/worker.version-
+```
+
+If `master.instance` was set, add the `<instance>.` prefix to both keys.
+
 ## Uninstalling the chart
 
 To uninstall the `node-feature-discovery` deployment:
