@@ -18,6 +18,7 @@ package nfdmaster
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -30,6 +31,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
@@ -261,6 +263,42 @@ func TestUpdateNodeObject(t *testing.T) {
 			})
 		})
 
+		Convey("When the same update changes labels and taints", func() {
+			node := newTestNode()
+			node.Labels[nfdv1alpha1.FeatureLabelNs+"/old-feature"] = "old-value"
+			node.Annotations[nfdv1alpha1.AnnotationNs+"/feature-labels"] = "old-feature"
+			node.ResourceVersion = "1"
+			cli := fakeclient.NewClientset(node)
+			// Like the API server, change the resourceVersion on every node
+			// patch and reject a patch that carries a stale one.
+			cli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				obj, err := cli.Tracker().Get(corev1.SchemeGroupVersion.WithResource("nodes"), "", testNodeName)
+				if err != nil {
+					return true, nil, err
+				}
+				current := obj.(*corev1.Node)
+				var patch struct {
+					Metadata metav1.ObjectMeta `json:"metadata"`
+				}
+				_ = json.Unmarshal(action.(clienttesting.PatchAction).GetPatch(), &patch)
+				if rv := patch.Metadata.ResourceVersion; rv != "" && rv != current.ResourceVersion {
+					return true, nil, apierrors.NewConflict(corev1.Resource("nodes"), testNodeName, errors.New("stale resourceVersion"))
+				}
+				current.ResourceVersion += "1"
+				if err := cli.Tracker().Update(corev1.SchemeGroupVersion.WithResource("nodes"), current, ""); err != nil {
+					return true, nil, err
+				}
+				return false, nil, nil
+			})
+			taint := corev1.Taint{Key: nfdv1alpha1.TaintNs + "/fake-taint", Value: "true", Effect: corev1.TaintEffectNoSchedule}
+
+			err := fakeMaster.updateNodeObject(cli, node, featureLabels, nil, nil, []corev1.Taint{taint}, false)
+
+			So(err, ShouldBeNil)
+			updatedNode, err := cli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
+			So(err, ShouldBeNil)
+			So(updatedNode.Spec.Taints, ShouldContain, taint)
+		})
 	})
 }
 
