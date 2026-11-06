@@ -1024,6 +1024,10 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `mtu` |
 | **`pci.device`** | instance     |          |            | PCI devices present in the system |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`, `iommu/intel-iommu/version` |
+|                  |              | **`pciBusID`** | string | Full PCI address (`<domain>:<bus>:<device>.<function>`) of the device, as named in sysfs. Named after the Kubernetes DRA standard attribute `resource.kubernetes.io/pciBusID`. PCI domains wider than four hex digits, such as Intel VMD domains (`10000:01:00.0`), are kept, although the DRA `deviceattribute` helpers reject them |
+|                  |              | **`numaNode`** | string | Physical NUMA node of the device, from the kernel's `numa_node` sysfs file (the scalar form of the DRA standard attribute `resource.kubernetes.io/numaNode`). Not present when the kernel reports no NUMA affinity (`-1`) or the value cannot be read |
+|                  |              | **`pcieRoot`** | string | PCIe root complex of the device (`pci<domain>:<bus>`, e.g. `pci0000:3a`), the first component under `devices/` of the target of its `/sys/bus/pci/devices` entry. Named after the Kubernetes DRA standard attribute `resource.kubernetes.io/pcieRoot`. Not present when the sysfs entry is not a relative link to `devices/pci.../<address>` |
+|                  |              | **`physfn`** | string | PCI address of the parent physical function. Present only on SR-IOV virtual functions whose `physfn` link resolves |
 | **`storage.block`** | instance |          |             | Block storage devices present in the system |
 |                  |              | **`name`** | string   | Name of the block device |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned` |
@@ -1053,6 +1057,55 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `serial` |
 | **`rule.matched`** | attribute  |          |            | Previously matched rules |
 |                  |              | **`<label-or-var>`** | string | Label or var from a preceding rule that matched |
+
+#### PCI device locality
+
+All `matchExpressions` in one `matchFeatures` term are evaluated against the
+same `pci.device` instance, so a term with both `vendor` and `numaNode` only
+matches a single device that satisfies both. A `matchName` in the same term is
+evaluated separately across all instances, so it may match a different device.
+Separate terms may match different devices. To require a GPU and a NIC on the
+same NUMA node, use one [`matchAny`](#matchany) element per NUMA node:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: gpu-nic-same-numa
+spec:
+  rules:
+    - name: "gpu and nic on the same numa node"
+      labels:
+        feature.node.kubernetes.io/gpu-nic-same-numa: "true"
+      matchAny:
+        - matchFeatures:
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["10de"]}
+                numaNode: {op: In, value: ["0"]}
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["15b3"]}
+                numaNode: {op: In, value: ["0"]}
+        - matchFeatures:
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["10de"]}
+                numaNode: {op: In, value: ["1"]}
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["15b3"]}
+                numaNode: {op: In, value: ["1"]}
+```
+
+The same `matchAny` pattern works with `pcieRoot` in place of `numaNode`, with
+one element per PCIe root complex, to require a GPU and a NIC under the same
+root complex.
+
+Match expressions cannot join two devices on an arbitrary attribute value,
+such as a shared `physfn`, without listing the values; a
+[`labelsTemplate`](#labelstemplate) can compute such a join over the matched
+instances.
 
 #### Intel RDT flags
 
