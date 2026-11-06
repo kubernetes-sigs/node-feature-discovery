@@ -243,10 +243,7 @@ func evaluateMatchAnyElem(e *nfdv1alpha1.MatchAnyElem, features *nfdv1alpha1.Fea
 }
 
 func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1.Features, failFast bool) (bool, *MatchFeatureStatus, error) {
-	var (
-		isMatch     = true
-		isTermMatch = true
-	)
+	isMatch := true
 	status := &MatchFeatureStatus{
 		MatchedFeatures: make(matchedFeatures, len(*m)),
 	}
@@ -271,6 +268,7 @@ func evaluateFeatureMatcher(m *nfdv1alpha1.FeatureMatcher, features *nfdv1alpha1
 		var matchedElems []MatchedElement
 		var matchedExpressions *nfdv1alpha1.MatchExpressionSet
 		var err error
+		isTermMatch := true
 
 		matchedFeatureTerm := nfdv1alpha1.FeatureMatcherTerm{
 			Feature: featureName,
