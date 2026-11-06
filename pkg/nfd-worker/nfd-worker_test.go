@@ -29,6 +29,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
@@ -129,17 +130,23 @@ func TestOwnerReferenceMigrationWithUnchangedSpec(t *testing.T) {
 	})
 }
 
-func TestRunNodeFeatureUpdateConflicts(t *testing.T) {
+func TestRunNodeFeatureUpdateRetries(t *testing.T) {
 	initializeFeatureGates()
 	for _, tc := range []struct {
-		name         string
-		conflicts    int
-		forbidden    bool
-		wantAttempts int
+		name          string
+		conflicts     int
+		forbidden     bool
+		deleted       bool
+		namespaceGone bool
+		wantGets      int
+		wantUpdates   int
+		wantCreates   int
 	}{
-		{name: "re-fetch after conflict", conflicts: 1, wantAttempts: 2},
-		{name: "bounded conflict retries", conflicts: retry.DefaultRetry.Steps, wantAttempts: retry.DefaultRetry.Steps},
-		{name: "do not retry forbidden", forbidden: true, wantAttempts: 1},
+		{name: "re-fetch after conflict", conflicts: 1, wantGets: 2, wantUpdates: 2},
+		{name: "bounded conflict retries", conflicts: retry.DefaultRetry.Steps, wantGets: retry.DefaultRetry.Steps, wantUpdates: retry.DefaultRetry.Steps},
+		{name: "do not retry forbidden", forbidden: true, wantGets: 1, wantUpdates: 1},
+		{name: "re-create after deletion", deleted: true, wantGets: 2, wantUpdates: 1, wantCreates: 1},
+		{name: "bounded not-found retries", deleted: true, namespaceGone: true, wantGets: retry.DefaultRetry.Steps, wantUpdates: 1, wantCreates: retry.DefaultRetry.Steps - 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("NODE_NAME", "fake-node")
@@ -149,19 +156,24 @@ func TestRunNodeFeatureUpdateConflicts(t *testing.T) {
 
 			dsOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "DaemonSet", Name: "fake-worker", UID: "ds-uid", Controller: new(true), BlockOwnerDeletion: new(false)}
 			initial := &nfdv1alpha1.NodeFeature{ObjectMeta: metav1.ObjectMeta{
-				Name: "fake-node", Namespace: "fake-ns", ResourceVersion: "1",
+				Name: "fake-node", Namespace: "fake-ns", UID: "old-nodefeature-uid", ResourceVersion: "1",
 				OwnerReferences: []metav1.OwnerReference{
 					{APIVersion: "v1", Kind: "Pod", Name: "old-worker", UID: "old-pod-uid"},
 					dsOwner,
 				},
 			}}
+			if tc.deleted {
+				// With Pod-only ownership, GC may delete the object when the old
+				// worker Pod disappears, rather than just removing its owner reference.
+				initial.OwnerReferences = initial.OwnerReferences[:1]
+			}
 			//nolint:staticcheck // NewClientset cannot field-manage NodeFeature with the generated schema.
 			nfdCli := fakenfdclient.NewSimpleClientset(initial)
 			k8sCli := fakeclient.NewClientset(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{
 				Name: "replacement-worker", Namespace: "fake-ns", OwnerReferences: []metav1.OwnerReference{dsOwner},
 			}})
 			resource := nfdv1alpha1.SchemeGroupVersion.WithResource("nodefeatures")
-			gets, updates := 0, 0
+			gets, updates, creates := 0, 0, 0
 			nfdCli.PrependReactor("get", "nodefeatures", func(clienttesting.Action) (bool, runtime.Object, error) {
 				gets++
 				return false, nil, nil
@@ -170,6 +182,12 @@ func TestRunNodeFeatureUpdateConflicts(t *testing.T) {
 				updates++
 				if tc.forbidden {
 					return true, nil, apierrors.NewForbidden(resource.GroupResource(), "fake-node", fmt.Errorf("denied"))
+				}
+				if tc.deleted {
+					if err := nfdCli.Tracker().Delete(resource, "fake-ns", "fake-node"); err != nil {
+						t.Fatalf("simulate concurrent NodeFeature deletion: %v", err)
+					}
+					return true, nil, apierrors.NewNotFound(resource.GroupResource(), "fake-node")
 				}
 				if updates == 1 {
 					// The real API enforces resource versions; the fake tracker does
@@ -187,10 +205,25 @@ func TestRunNodeFeatureUpdateConflicts(t *testing.T) {
 				}
 				return false, nil, nil
 			})
+			nfdCli.PrependReactor("create", "nodefeatures", func(action clienttesting.Action) (bool, runtime.Object, error) {
+				creates++
+				created := action.(clienttesting.CreateAction).GetObject().(*nfdv1alpha1.NodeFeature)
+				if created.UID != "" || created.ResourceVersion != "" {
+					t.Fatalf("re-create must not reuse deleted object identity: %#v", created.ObjectMeta)
+				}
+				if tc.namespaceGone {
+					return true, nil, apierrors.NewNotFound(schema.GroupResource{Resource: "namespaces"}, "fake-ns")
+				}
+				return false, nil, nil
+			})
 
 			args := &worker.Args{Oneshot: true, Overrides: worker.ConfigOverrideArgs{
 				FeatureSources: &utils.StringSliceVal{"fake"}, LabelSources: &utils.StringSliceVal{"fake"},
 			}}
+			if tc.deleted {
+				podOwnerRefs := worker.OwnerRefSources{"pod"}
+				args.Overrides.OwnerRefs = &podOwnerRefs
+			}
 			w, err := worker.NewNfdWorker(worker.WithArgs(args), worker.WithKubernetesClient(k8sCli), worker.WithNFDClient(nfdCli))
 			if err != nil {
 				t.Fatalf("create worker: %v", err)
@@ -201,17 +234,21 @@ func TestRunNodeFeatureUpdateConflicts(t *testing.T) {
 				if !apierrors.IsForbidden(err) {
 					t.Fatalf("expected Forbidden error, got %v", err)
 				}
+			case tc.namespaceGone:
+				if !apierrors.IsNotFound(err) {
+					t.Fatalf("expected NotFound after retry exhaustion, got %v", err)
+				}
 			case tc.conflicts == retry.DefaultRetry.Steps:
 				if !apierrors.IsConflict(err) {
 					t.Fatalf("expected Conflict after retry exhaustion, got %v", err)
 				}
 			default:
 				if err != nil {
-					t.Fatalf("worker must recover from a transient update conflict: %v", err)
+					t.Fatalf("worker must recover from a transient update error: %v", err)
 				}
 			}
-			if gets != tc.wantAttempts || updates != tc.wantAttempts {
-				t.Fatalf("got %d GETs and %d UPDATEs, want %d of each", gets, updates, tc.wantAttempts)
+			if gets != tc.wantGets || updates != tc.wantUpdates || creates != tc.wantCreates {
+				t.Fatalf("got %d GETs, %d UPDATEs and %d CREATEs, want %d, %d and %d", gets, updates, creates, tc.wantGets, tc.wantUpdates, tc.wantCreates)
 			}
 			if err != nil {
 				return
@@ -232,7 +269,13 @@ func TestRunNodeFeatureUpdateConflicts(t *testing.T) {
 				{APIVersion: "v1", Kind: "Pod", Name: "replacement-worker", UID: "replacement-pod-uid", BlockOwnerDeletion: new(false)},
 				dsOwner,
 			}
-			if !reflect.DeepEqual(nf.OwnerReferences, wantOwners) || nf.ResourceVersion != "2" {
+			wantResourceVersion := "2"
+			if tc.deleted {
+				wantOwners = wantOwners[:1]
+				// The fake tracker does not assign a resource version on CREATE.
+				wantResourceVersion = ""
+			}
+			if !reflect.DeepEqual(nf.OwnerReferences, wantOwners) || nf.ResourceVersion != wantResourceVersion {
 				t.Fatalf("unexpected owners or stale resource version after retry: %#v", nf.ObjectMeta)
 			}
 		})

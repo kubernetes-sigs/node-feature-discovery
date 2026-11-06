@@ -939,9 +939,12 @@ func (m *nfdWorker) updateNodeFeatureObject(labels Labels) error {
 		}
 	}
 
-	// Other controllers may update metadata, e.g. GC removing an old Pod owner.
+	// Other controllers may update metadata, e.g. GC removing an old Pod owner,
+	// or delete the object when its last owner disappears.
 	// Re-fetch on every attempt instead of retrying an outdated resource version.
-	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	err = retry.OnError(retry.DefaultRetry, func(err error) bool {
+		return errors.IsConflict(err) || errors.IsNotFound(err)
+	}, func() error {
 		if nfr, err := cli.NfdV1alpha1().NodeFeatures(namespace).Get(context.TODO(), nodename, metav1.GetOptions{}); errors.IsNotFound(err) {
 			nfr = &nfdv1alpha1.NodeFeature{
 				ObjectMeta: metav1.ObjectMeta{
