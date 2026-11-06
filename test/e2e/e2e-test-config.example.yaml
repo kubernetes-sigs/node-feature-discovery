@@ -104,7 +104,6 @@ defaultFeatures:
         - "feature.node.kubernetes.io/system-os_release.VERSION_ID"
         - "feature.node.kubernetes.io/system-os_release.VERSION_ID.minor"
       expectedAnnotationKeys:
-        - "nfd.node.kubernetes.io/worker.version"
         - "nfd.node.kubernetes.io/feature-labels"
   kubelet:
     configPath: "/var/lib/kubelet/config.yaml"

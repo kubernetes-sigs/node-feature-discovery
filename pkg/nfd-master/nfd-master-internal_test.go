@@ -120,10 +120,6 @@ func newFakeNfdAPIController(client *fakenfdclient.Clientset) *nfdController {
 	return c
 }
 
-func withNodeName(nodeName string) NfdMasterOption {
-	return &nfdMasterOpt{f: func(n *nfdMaster) { n.nodeName = nodeName }}
-}
-
 func withConfig(config *NFDConfig) NfdMasterOption {
 	return &nfdMasterOpt{f: func(n *nfdMaster) { n.config = config }}
 }
@@ -139,7 +135,6 @@ func newFakeMaster(opts ...NfdMasterOption) *nfdMaster {
 	nfdCli := fakenfdclient.NewSimpleClientset()
 	k8sCli := fakeclient.NewClientset()
 	defaultOpts := []NfdMasterOption{
-		withNodeName(testNodeName),
 		withConfig(&NFDConfig{Restrictions: Restrictions{AllowOverwrite: true}}),
 		WithKubernetesClient(k8sCli),
 		withNFDClient(nfdCli),
@@ -160,7 +155,6 @@ func newFakeMasterWithFeatureGate(opts ...NfdMasterOption) *nfdMaster {
 	nfdCli := fakenfdclient.NewSimpleClientset()
 	k8sCli := fakeclient.NewClientset()
 	defaultOpts := []NfdMasterOption{
-		withNodeName(testNodeName),
 		withConfig(&NFDConfig{Restrictions: Restrictions{AllowOverwrite: true}}),
 		WithKubernetesClient(k8sCli),
 		withNFDClient(nfdCli),
@@ -267,53 +261,6 @@ func TestUpdateNodeObject(t *testing.T) {
 			})
 		})
 
-	})
-}
-
-func TestUpdateMasterNode(t *testing.T) {
-	Convey("When updating the nfd-master node", t, func() {
-		testNode := newTestNode()
-		testNode.Annotations["nfd.node.kubernetes.io/master.version"] = "foo"
-
-		Convey("When update operation succeeds", func() {
-			fakeCli := fakeclient.NewClientset(testNode)
-			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
-			err := fakeMaster.updateMasterNode()
-			Convey("No error should be returned", func() {
-				So(err, ShouldBeNil)
-			})
-
-			Convey("Master version annotation was removed", func() {
-				updatedNode, err := fakeCli.CoreV1().Nodes().Get(context.TODO(), testNodeName, metav1.GetOptions{})
-				So(err, ShouldBeNil)
-				So(updatedNode.Annotations, ShouldBeEmpty)
-			})
-		})
-
-		Convey("When getting API node object fails", func() {
-			fakeCli := fakeclient.NewClientset(testNode)
-			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
-			fakeMaster.nodeName = "does-not-exist"
-
-			err := fakeMaster.updateMasterNode()
-			Convey("An error should be returned", func() {
-				So(err, ShouldBeError)
-			})
-		})
-
-		Convey("When updating node object fails", func() {
-			fakeErr := errors.New("Fake error when patching node")
-			fakeCli := fakeclient.NewClientset(testNode)
-			fakeCli.CoreV1().(*fakecorev1client.FakeCoreV1).PrependReactor("patch", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-				return true, &corev1.Node{}, fakeErr
-			})
-			fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
-
-			err := fakeMaster.updateMasterNode()
-			Convey("An error should be returned", func() {
-				So(err, ShouldWrap, fakeErr)
-			})
-		})
 	})
 }
 

@@ -300,13 +300,6 @@ func (m *nfdMaster) Run() error {
 
 	m.updaterPool.start(m.config.NfdApiParallelism)
 
-	if !m.config.NoPublish {
-		err := m.updateMasterNode()
-		if err != nil {
-			return fmt.Errorf("failed to update master node: %w", err)
-		}
-	}
-
 	httpMux := http.NewServeMux()
 
 	// Register to metrics server
@@ -459,30 +452,6 @@ func (m *nfdMaster) prune() error {
 			return fmt.Errorf("failed to prune annotations from node %q: %v", node.Name, err)
 		}
 	}
-	return nil
-}
-
-// Update annotations on the node where nfd-master is running. Currently the
-// only function is to remove the deprecated
-// "nfd.node.kubernetes.io/master.version" annotation, if it exists.
-// TODO: Drop when nfdv1alpha1.MasterVersionAnnotation is removed.
-func (m *nfdMaster) updateMasterNode() error {
-	node, err := getNode(m.k8sClient, m.nodeName)
-	if err != nil {
-		return err
-	}
-
-	// Advertise NFD version as an annotation
-	p := createPatches(sets.New([]string{m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation)}...),
-		node.Annotations,
-		nil,
-		"/metadata/annotations", m.config.Restrictions.AllowOverwrite)
-
-	err = patchNode(m.k8sClient, node.Name, p)
-	if err != nil {
-		return fmt.Errorf("failed to patch node annotations: %w", err)
-	}
-
 	return nil
 }
 
@@ -1207,9 +1176,6 @@ func (m *nfdMaster) updateNodeObject(cli k8sclient.Interface, node *corev1.Node,
 			m.instanceAnnotation(nfdv1alpha1.FeatureLabelsAnnotation),
 			m.instanceAnnotation(nfdv1alpha1.ExtendedResourceAnnotation),
 			m.instanceAnnotation(nfdv1alpha1.FeatureAnnotationsTrackingAnnotation),
-			// Clean up deprecated/stale nfd version annotations
-			m.instanceAnnotation(nfdv1alpha1.MasterVersionAnnotation),
-			m.instanceAnnotation(nfdv1alpha1.WorkerVersionAnnotation),
 		)
 	}
 
