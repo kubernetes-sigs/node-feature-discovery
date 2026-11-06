@@ -138,18 +138,27 @@ func (s *kernelSource) Discover() error {
 		s.legacyKconfig = legacyKconfig
 	}
 
+	// enabledmodule is the union of loaded and builtin modules. Publish it when
+	// either list could be read, so that a node without a readable
+	// modules.builtin still reports its loaded modules.
 	var enabledModules []string
+	haveModules := false
 	if kmods, err := getLoadedModules(); err != nil {
 		klog.ErrorS(err, "failed to get loaded kernel modules")
 	} else {
 		enabledModules = append(enabledModules, kmods...)
 		s.features.Flags[LoadedModuleFeature] = nfdv1alpha1.NewFlagFeatures(kmods...)
+		haveModules = true
 	}
 
 	if builtinMods, err := getBuiltinModules(); err != nil {
 		klog.ErrorS(err, "failed to get builtin kernel modules")
 	} else {
 		enabledModules = append(enabledModules, builtinMods...)
+		haveModules = true
+	}
+
+	if haveModules {
 		s.features.Flags[EnabledModuleFeature] = nfdv1alpha1.NewFlagFeatures(enabledModules...)
 	}
 
