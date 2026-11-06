@@ -62,11 +62,13 @@ will be automatically prefixed, resulting in the node label
 to `true`, no prefix is added, and the label remains as `foo=bar`. Note that
 taint keys are not affected by this feature gate.
 
-Note: nfd-master does not remove the unprefixed labels, annotations and
-extended resources that it created while this gate was enabled when they are no
-longer produced, for example when the NodeFeatureRule is deleted or changed, or
-when the gate is set back to `false`. They stay on the node until removed
-manually:
+While the gate is enabled, nfd-master removes the unprefixed labels,
+annotations and extended resources that it created when they are no longer
+produced, for example when the NodeFeatureRule is deleted or changed.
+
+Note: when the gate is set back to `false`, nfd-master does not remove the
+unprefixed labels, annotations and extended resources that it created while the
+gate was enabled. They stay on the node until removed manually:
 
 ```bash
 kubectl label node <node> <key>-
