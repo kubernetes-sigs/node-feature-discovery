@@ -22,10 +22,10 @@ GO_CMD=${1:-go}
 NFD_ROOT=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 
 # Go generate
-"${GO_CMD}" generate ./cmd/... ./pkg/... ./source/...
+"${GO_CMD}" generate ./cmd/... ./internal/... ./pkg/... ./source/...
 
 # Generate CRDs
-go tool controller-gen object crd output:crd:stdout paths=./api/... > deployment/base/nfd-crds/nfd-api-crds.yaml
+go tool controller-gen object crd output:crd:stdout paths=./api/nfd/... > deployment/base/nfd-crds/nfd-api-crds.yaml
 mkdir -p deployment/helm/node-feature-discovery/crds
 cp deployment/base/nfd-crds/nfd-api-crds.yaml deployment/helm/node-feature-discovery/crds
 

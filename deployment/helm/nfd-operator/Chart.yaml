@@ -1,0 +1,16 @@
+apiVersion: v2
+name: nfd-operator
+description: |
+  The Node Feature Discovery Operator is a Kubernetes operator that deploys and 
+  manages the Node Feature Discovery (NFD) lifecycle.
+
+type: application
+version: 0.1.0
+appVersion: master
+sources:
+ - https://github.com/kubernetes-sigs/node-feature-discovery-operator
+home: https://github.com/kubernetes-sigs/node-feature-discovery-operator
+keywords:
+  - feature-discovery
+  - feature-detection
+  - node-labels
