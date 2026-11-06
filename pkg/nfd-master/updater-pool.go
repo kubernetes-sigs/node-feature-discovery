@@ -17,6 +17,7 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -27,7 +28,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	nfdclientset "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
-	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 type updaterPool struct {
@@ -59,13 +59,22 @@ func (u *updaterPool) processNodeUpdateRequest(cli k8sclient.Interface) bool {
 	nodeUpdateRequests.Inc()
 
 	// Check if node exists
-	if node, err := getNode(cli, nodeName); apierrors.IsNotFound(err) {
+	node, err := getNode(cli, nodeName)
+	if apierrors.IsNotFound(err) {
 		klog.InfoS("node not found, skip update", "nodeName", nodeName)
 		// Clean up any stale tracking data for this non-existent node.
 		// This prevents memory leaks when nodes are deleted from the cluster.
 		u.nfdMaster.consumePendingDelete(nodeName)
 		u.nfdMaster.clearNodeProcessedOnce(nodeName)
-	} else if err := u.nfdMaster.nfdAPIUpdateOneNode(cli, node); err != nil {
+		u.queue.Forget(nodeName)
+		return true
+	}
+	if err != nil {
+		err = fmt.Errorf("failed to get node: %w", err)
+	} else {
+		err = u.nfdMaster.nfdAPIUpdateOneNode(cli, node)
+	}
+	if err != nil {
 		if n := u.queue.NumRequeues(nodeName); n < 15 {
 			klog.InfoS("retrying node update", "nodeName", nodeName, "lastError", err, "numRetries", n)
 		} else {
@@ -113,14 +122,22 @@ func (u *updaterPool) processNodeFeatureGroupUpdateRequest(cli nfdclientset.Inte
 	}
 
 	// Check if NodeFeatureGroup exists
-	var nfg *nfdv1alpha1.NodeFeatureGroup
-	if nfg, err = getNodeFeatureGroup(cli, namespace, name); apierrors.IsNotFound(err) {
+	nfg, err := getNodeFeatureGroup(cli, namespace, name)
+	if apierrors.IsNotFound(err) {
 		klog.InfoS("NodeFeatureGroup not found, skip update", "nodeFeatureGroup", klog.KRef(namespace, name))
-	} else if err := u.nfdMaster.nfdAPIUpdateNodeFeatureGroup(u.nfdMaster.nfdClient, nfg); err != nil {
+		u.nfgQueue.Forget(key)
+		return true
+	}
+	if err != nil {
+		err = fmt.Errorf("failed to get NodeFeatureGroup: %w", err)
+	} else {
+		err = u.nfdMaster.nfdAPIUpdateNodeFeatureGroup(u.nfdMaster.nfdClient, nfg)
+	}
+	if err != nil {
 		if n := u.nfgQueue.NumRequeues(key); n < 15 {
-			klog.InfoS("retrying NodeFeatureGroup update", "nodeFeatureGroup", klog.KObj(nfg), "lastError", err)
+			klog.InfoS("retrying NodeFeatureGroup update", "nodeFeatureGroup", klog.KRef(namespace, name), "lastError", err, "numRetries", n)
 		} else {
-			klog.ErrorS(err, "failed to update NodeFeatureGroup, queueing for retry", "nodeFeatureGroup", klog.KObj(nfg), "lastError", err, "numRetries", n)
+			klog.ErrorS(err, "failed to update NodeFeatureGroup, queueing for retry", "nodeFeatureGroup", klog.KRef(namespace, name), "lastError", err, "numRetries", n)
 		}
 		u.nfgQueue.AddRateLimited(key)
 		return true
