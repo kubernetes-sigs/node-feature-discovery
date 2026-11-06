@@ -43,8 +43,10 @@ func parseVersion(raw string) map[string]string {
 
 	version["full"] = full
 
-	// Regexp for parsing version components
-	re := regexp.MustCompile(`^(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<revision>\d+))?(-.*)?$`)
+	// Regexp for parsing version components. The suffix may start with '-'
+	// or with '_', which is what '+' and other forbidden symbols were
+	// replaced with above (e.g. Debian "6.12.48+deb13-amd64").
+	re := regexp.MustCompile(`^(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<revision>\d+))?([-_].*)?$`)
 	if m := re.FindStringSubmatch(full); m != nil {
 		for i, name := range re.SubexpNames() {
 			if i != 0 && name != "" {

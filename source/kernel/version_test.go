@@ -63,6 +63,24 @@ func TestParseVersion(t *testing.T) {
 				"revision": "10",
 			},
 		},
+		{
+			raw: "6.12.48+deb13-amd64",
+			expected: map[string]string{
+				"full":     "6.12.48_deb13-amd64",
+				"major":    "6",
+				"minor":    "12",
+				"revision": "48",
+			},
+		},
+		{
+			raw: "6.6.51+rpt-rpi-v8",
+			expected: map[string]string{
+				"full":     "6.6.51_rpt-rpi-v8",
+				"major":    "6",
+				"minor":    "6",
+				"revision": "51",
+			},
+		},
 	}
 
 	for _, test := range tests {
