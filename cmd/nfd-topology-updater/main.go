@@ -17,12 +17,15 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -57,6 +60,14 @@ func main() {
 		klog.ErrorS(err, "failed to initialize topology updater instance")
 		os.Exit(1)
 	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		instance.Stop()
+	}()
 
 	if err = instance.Run(); err != nil {
 		klog.ErrorS(err, "error while running")
