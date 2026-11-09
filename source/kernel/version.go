@@ -44,7 +44,7 @@ func parseVersion(raw string) map[string]string {
 	version["full"] = full
 
 	// Regexp for parsing version components
-	re := regexp.MustCompile(`^(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<revision>\d+))?(-.*)?$`)
+	re := regexp.MustCompile(`^(?P<major>\d+)(\.(?P<minor>\d+))?(\.(?P<revision>\d+))?([^\d.].*)?$`)
 	if m := re.FindStringSubmatch(full); m != nil {
 		for i, name := range re.SubexpNames() {
 			if i != 0 && name != "" {
