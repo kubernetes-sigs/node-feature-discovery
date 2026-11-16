@@ -11,6 +11,13 @@ assignees: adrianchiris, ArangoGutierrez, fmuyassarov, jjacobelli, kad, marquiz,
 Please do not remove items from the checklist
 -->
 - [ ] Verify that the changelog in this issue is up-to-date
+- [ ] Update dependencies on the release branch, which Dependabot does not cover:
+  - [ ] Run `go run golang.org/x/vuln/cmd/govulncheck@latest -C cmd/nfd -scan module` and
+        `go run golang.org/x/vuln/cmd/govulncheck@latest -C api/nfd/v1alpha1 -scan module`,
+        and bump every module reported with a fixed version (in `go.mod` and `api/nfd/go.mod`)
+  - [ ] Bump `BUILDER_IMAGE` in the `Makefile` to the latest Go patch release, and confirm that
+        `BASE_IMAGE_FULL` still names a supported Debian release
+  - [ ] Submit a PR against the release branch
 - [ ] Run `hack/prepare-release.sh $VERSION` to turn references to point to the upcoming release
       (README, deployment templates, docs configuration, test/e2e flags), submit a PR against the release branch
 - An OWNER prepares a draft release
