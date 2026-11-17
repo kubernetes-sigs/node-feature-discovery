@@ -101,6 +101,14 @@ func TestEvaluateMatchExpression(t *testing.T) {
 		{name: "MatchGtLt-3", op: nfdv1alpha1.MatchGtLt, values: V{"1", "10"}, input: "10", valid: true, result: assert.False},
 		{name: "MatchGtLt-4", op: nfdv1alpha1.MatchGtLt, values: V{"1", "10"}, input: "2", valid: true, result: assert.True},
 
+		{name: "MatchGeLe-1", op: nfdv1alpha1.MatchGeLe, values: V{"1", "10"}, input: "5", valid: false, result: assert.False},
+		{name: "MatchGeLe-2", op: nfdv1alpha1.MatchGeLe, values: V{"1", "10"}, input: "0", valid: true, result: assert.False},
+		{name: "MatchGeLe-3", op: nfdv1alpha1.MatchGeLe, values: V{"1", "10"}, input: "1", valid: true, result: assert.True},
+		{name: "MatchGeLe-4", op: nfdv1alpha1.MatchGeLe, values: V{"1", "10"}, input: "10", valid: true, result: assert.True},
+		// value[0] == value[1] is a valid closed interval matching a single value.
+		{name: "MatchGeLe-5", op: nfdv1alpha1.MatchGeLe, values: V{"5", "5"}, input: "5", valid: true, result: assert.True},
+		{name: "MatchGeLe-6", op: nfdv1alpha1.MatchGeLe, values: V{"5", "5"}, input: "6", valid: true, result: assert.False},
+
 		{name: "MatchIsTrue-1", op: nfdv1alpha1.MatchIsTrue, input: true, valid: false, result: assert.False},
 		{name: "MatchIsTrue-2", op: nfdv1alpha1.MatchIsTrue, input: true, valid: true, result: assert.True},
 		{name: "MatchIsTrue-3", op: nfdv1alpha1.MatchIsTrue, input: false, valid: true, result: assert.False},
@@ -150,6 +158,15 @@ func TestEvaluateMatchExpression(t *testing.T) {
 		{name: "MatchGtLt-err-4", op: nfdv1alpha1.MatchGtLt, values: V{"1", "2", "3"}, input: "1"},
 		{name: "MatchGtLt-err-5", op: nfdv1alpha1.MatchGtLt, values: V{"a", "2"}, input: "1"},
 		{name: "MatchGtLt-err-6", op: nfdv1alpha1.MatchGtLt, values: V{"1", "10"}, input: "1.0"},
+		// value[0] == value[1] is an empty open interval for GtLt.
+		{name: "MatchGtLt-err-7", op: nfdv1alpha1.MatchGtLt, values: V{"5", "5"}, input: "5"},
+
+		{name: "MatchGeLe-err-1", op: nfdv1alpha1.MatchGeLe, input: "1"},
+		{name: "MatchGeLe-err-2", op: nfdv1alpha1.MatchGeLe, values: V{"1"}, input: "1"},
+		{name: "MatchGeLe-err-3", op: nfdv1alpha1.MatchGeLe, values: V{"10", "1"}, input: "5"},
+		{name: "MatchGeLe-err-4", op: nfdv1alpha1.MatchGeLe, values: V{"1", "2", "3"}, input: "1"},
+		{name: "MatchGeLe-err-5", op: nfdv1alpha1.MatchGeLe, values: V{"a", "2"}, input: "1"},
+		{name: "MatchGeLe-err-6", op: nfdv1alpha1.MatchGeLe, values: V{"1", "10"}, input: "1.0"},
 
 		{name: "MatchIsTrue-err-1", op: nfdv1alpha1.MatchIsTrue, values: V{"1"}, input: "true"},
 
