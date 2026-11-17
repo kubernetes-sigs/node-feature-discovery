@@ -12,14 +12,48 @@ updates:
     labels:
     - dependencies
     - ok-to-test
+    allow:
+    # By default, version updates cover only direct dependencies, and
+    # Dependabot treats "// indirect" go.mod requires as non-direct.
+    # golang.org/x/* is mostly indirect here, so allow it explicitly.
+    - dependency-type: "direct"
+    - dependency-name: "golang.org/x/*"
+      dependency-type: "all"
     groups:
       k8sio:
         patterns:
         - k8s.io/*
+      golang-x:
+        patterns:
+        - golang.org/x/*
     ignore:
     # controller-runtime minor releases need the matching k8s.io minor, which
     # the replace block in go.mod pins: update them together with k8s.io.
     - dependency-name: "sigs.k8s.io/controller-runtime"
+      update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # api/nfd is a separate module imported by API consumers. It keeps an older
+  # Kubernetes floor than the root module on purpose, so k8s.io/* and
+  # sigs.k8s.io/* get patch updates only. Most of its requires are indirect.
+  - package-ecosystem: "gomod"
+    target-branch: master
+    directory: "/api/nfd"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    labels:
+    - dependencies
+    - ok-to-test
+    allow:
+    - dependency-type: "all"
+    groups:
+      api-nfd:
+        patterns:
+        - "*"
+    ignore:
+    - dependency-name: "k8s.io/*"
+      update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    - dependency-name: "sigs.k8s.io/*"
       update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: "github-actions"
