@@ -557,3 +557,33 @@ var-2=
 	assert.Nilf(t, err, "unexpected error: %v", err)
 	assert.Equal(t, map[string]string(nil), m.Labels, "instances should have matched")
 }
+
+func TestEvaluateFeatureMatcherNoFailFast(t *testing.T) {
+	f := nfdv1alpha1.NewFeatures()
+	f.Flags["domain-1.kf-1"] = nfdv1alpha1.NewFlagFeatures("key-1")
+	f.Flags["domain-1.kf-2"] = nfdv1alpha1.NewFlagFeatures("flag-1")
+
+	m := nfdv1alpha1.FeatureMatcher{
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature: "domain-1.kf-1",
+			MatchExpressions: &nfdv1alpha1.MatchExpressionSet{
+				"key-na": newMatchExpression(nfdv1alpha1.MatchExists),
+			},
+		},
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature:   "domain-1.kf-2",
+			MatchName: newMatchExpression(nfdv1alpha1.MatchInRegexp, "^flag"),
+		},
+	}
+
+	isMatch, status, err := evaluateFeatureMatcher(&m, f, false)
+	assert.NoError(t, err)
+	assert.False(t, isMatch)
+	assert.Equal(t, nfdv1alpha1.FeatureMatcher{
+		nfdv1alpha1.FeatureMatcherTerm{
+			Feature:   "domain-1.kf-2",
+			MatchName: newMatchExpression(nfdv1alpha1.MatchInRegexp, "^flag"),
+		},
+	}, status.MatchedFeaturesTerms, "matchName of the second term should be evaluated even though the first term did not match")
+	assert.Equal(t, []MatchedElement{{"Name": "flag-1"}}, status.MatchedFeatures["domain-1"]["kf-2"])
+}
