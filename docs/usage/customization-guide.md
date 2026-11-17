@@ -1024,6 +1024,10 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `operstate`, `speed`, `mtu` |
 | **`pci.device`** | instance     |          |            | PCI devices present in the system |
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `subsystem_vendor`, `subsystem_device`, `sriov_totalvfs`, `iommu_group/type`, `iommu/intel-iommu/version` |
+|                  |              | **`pciBusID`** | string | Full PCI address (`<domain>:<bus>:<device>.<function>`) of the device, as named in sysfs. Named after the Kubernetes DRA standard attribute `resource.kubernetes.io/pciBusID`. PCI domains wider than four hex digits, such as Intel VMD domains (`10000:01:00.0`), are kept, although the DRA `deviceattribute` helpers reject them |
+|                  |              | **`pcieRoot`** | string | PCIe root complex of the device (`pci<domain>:<bus>`, e.g. `pci0000:3a`), the first component under `devices/` of the target of its `/sys/bus/pci/devices` entry. Named after the Kubernetes DRA standard attribute `resource.kubernetes.io/pcieRoot`. Not present when the sysfs entry is not a relative link to `devices/pci.../<address>` |
+|                  |              | **`pciePath`** | string | Path from the PCIe root complex to the device: the components of the sysfs link target between `pcieRoot` and the device, root first and separated by `/`. These are usually the root port and any switch ports, e.g. `0000:3a:00.0/0000:3b:00.0/0000:3c:08.0` for a device behind root port `0000:3a:00.0` and a switch with upstream port `0000:3b:00.0`. A device behind Intel VMD also lists the VMD device and its root bus (`0000:00:0e.0/pci10000:00/10000:00:02.0`). Present only together with `pcieRoot`, and not present for a device directly on the root bus |
+|                  |              | **`physfn`** | string | PCI address of the parent physical function. Present only on SR-IOV virtual functions whose `physfn` link resolves |
 | **`storage.block`** | instance |          |             | Block storage devices present in the system |
 |                  |              | **`name`** | string   | Name of the block device |
 |                  |              | **`<sysfs-attribute>`** | string | Sysfs network interface attribute, available attributes: `dax`, `rotational`, `nr_zones`, `zoned` |
@@ -1053,6 +1057,63 @@ The following features are available for matching:
 |                  |              | **`<sysfs-attribute>`** | string | Value of the sysfs device attribute, available attributes: `class`, `vendor`, `device`, `serial` |
 | **`rule.matched`** | attribute  |          |            | Previously matched rules |
 |                  |              | **`<label-or-var>`** | string | Label or var from a preceding rule that matched |
+
+#### PCI device locality
+
+All `matchExpressions` in one `matchFeatures` term are evaluated against the
+same `pci.device` instance, so a term with both `vendor` and `pcieRoot` only
+matches a single device that satisfies both. A `matchName` in the same term is
+evaluated separately across all instances, so it may match a different device.
+Separate terms may match different devices. To require a GPU and a NIC under
+the same PCIe root complex, use one [`matchAny`](#matchany) element per root
+complex:
+
+```yaml
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: gpu-nic-same-pcie-root
+spec:
+  rules:
+    - name: "gpu and nic under the same pcie root complex"
+      labels:
+        feature.node.kubernetes.io/gpu-nic-same-pcie-root: "true"
+      matchAny:
+        - matchFeatures:
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["10de"]}
+                pcieRoot: {op: In, value: ["pci0000:3a"]}
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["15b3"]}
+                pcieRoot: {op: In, value: ["pci0000:3a"]}
+        - matchFeatures:
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["10de"]}
+                pcieRoot: {op: In, value: ["pci0000:ae"]}
+            - feature: pci.device
+              matchExpressions:
+                vendor: {op: In, value: ["15b3"]}
+                pcieRoot: {op: In, value: ["pci0000:ae"]}
+```
+
+To select devices behind a given PCIe switch or port, match a prefix of
+`pciePath` with `InRegexp`. The regular expression is not anchored, so start
+it with `^`. This expression matches a GPU behind the switch whose upstream
+port is `0000:3b:00.0`:
+
+```yaml
+matchExpressions:
+  vendor: {op: In, value: ["10de"]}
+  pciePath: {op: InRegexp, value: ["^0000:3a:00.0/0000:3b:00.0"]}
+```
+
+Match expressions cannot join two devices on an arbitrary attribute value,
+such as a shared `physfn`, without listing the values; a
+[`labelsTemplate`](#labelstemplate) can compute such a join over the matched
+instances.
 
 #### Intel RDT flags
 
