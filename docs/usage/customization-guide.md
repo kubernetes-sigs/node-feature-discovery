@@ -991,7 +991,7 @@ The following features are available for matching:
 | **`kernel.config`** | attribute |          |            | Kernel configuration options |
 |                  |              | **`<config-flag>`** | string | Value of the kconfig option |
 | **`kernel.loadedmodule`** | flag |         |            | Kernel modules loaded on the node as reported by `/proc/modules` |
-| **`kernel.enabledmodule`** | flag |        |            | Kernel modules loaded on the node and available as built-ins as reported by `modules.builtin` |
+| **`kernel.enabledmodule`** | flag |        |            | Kernel modules loaded on the node and available as built-ins as reported by `modules.builtin`. Names use underscores, like in `/proc/modules` (e.g. `dm_mod`, not `dm-mod`) |
 |                  |              | **`mod-name`** |      | Kernel module `<mod-name>` is loaded |
 | **`kernel.selinux`** | attribute |         |            | Kernel SELinux related features |
 |                  |              | **`enabled`** | bool  | `true` if SELinux has been enabled and is in enforcing mode, otherwise `false` |
