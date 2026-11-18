@@ -17,13 +17,20 @@ limitations under the License.
 package nfdmaster
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	fakek8sclient "k8s.io/client-go/kubernetes/fake"
+	clienttesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/util/workqueue"
 	fakenfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned/fake"
+	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 )
 
 func newFakeupdaterPool(nfdMaster *nfdMaster) *updaterPool {
@@ -113,5 +120,51 @@ func TestRunNodeFeatureGroupUpdater(t *testing.T) {
 	Convey("Added element to the queue should be removed", t, func() {
 		So(func() any { return updaterPool.queue.Len() },
 			withTimeout, 2*time.Second, ShouldEqual, 0)
+	})
+}
+
+func TestProcessNodeUpdateRequest(t *testing.T) {
+	Convey("When processing a node update request", t, func() {
+		fakeCli := fakek8sclient.NewClientset()
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakeCli))
+		//nolint:staticcheck
+		fakeMaster.nfdController = newFakeNfdAPIController(fakenfdclient.NewSimpleClientset())
+		updaterPool := newFakeupdaterPool(fakeMaster)
+		updaterPool.queue = workqueue.NewTypedRateLimitingQueue(workqueue.DefaultTypedControllerRateLimiter[string]())
+		defer updaterPool.queue.ShutDown()
+		updaterPool.queue.Add(testNodeName)
+
+		Convey("When the node does not exist, it is not queued for retry", func() {
+			So(updaterPool.processNodeUpdateRequest(fakeCli), ShouldBeTrue)
+			So(updaterPool.queue.NumRequeues(testNodeName), ShouldEqual, 0)
+		})
+
+		Convey("When getting the node fails with an error other than NotFound, it is queued for retry", func() {
+			fakeCli.PrependReactor("get", "nodes", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				return true, nil, apierrors.NewForbidden(corev1.Resource("nodes"), testNodeName, errors.New("fake error"))
+			})
+			So(updaterPool.processNodeUpdateRequest(fakeCli), ShouldBeTrue)
+			So(updaterPool.queue.NumRequeues(testNodeName), ShouldEqual, 1)
+		})
+	})
+}
+
+func TestProcessNodeFeatureGroupUpdateRequestGetError(t *testing.T) {
+	Convey("When getting the NodeFeatureGroup fails with an error other than NotFound, it is queued for retry", t, func() {
+		//nolint:staticcheck
+		nfdCli := fakenfdclient.NewSimpleClientset()
+		nfdCli.PrependReactor("get", "nodefeaturegroups", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+			return true, nil, apierrors.NewForbidden(nfdv1alpha1.SchemeGroupVersion.WithResource("nodefeaturegroups").GroupResource(), "nfg", errors.New("fake error"))
+		})
+		fakeMaster := newFakeMaster(WithKubernetesClient(fakek8sclient.NewClientset(newTestNode())), withNFDClient(nfdCli))
+		fakeMaster.nfdController = newFakeNfdAPIController(nfdCli)
+		updaterPool := newFakeupdaterPool(fakeMaster)
+		updaterPool.nfgQueue = workqueue.NewTypedRateLimitingQueue(workqueue.DefaultTypedControllerRateLimiter[string]())
+		defer updaterPool.nfgQueue.ShutDown()
+		key := "default/nfg"
+		updaterPool.nfgQueue.Add(key)
+
+		So(updaterPool.processNodeFeatureGroupUpdateRequest(nfdCli), ShouldBeTrue)
+		So(updaterPool.nfgQueue.NumRequeues(key), ShouldEqual, 1)
 	})
 }
