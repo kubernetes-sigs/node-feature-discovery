@@ -1,0 +1,39 @@
+ARG BUILDER_IMAGE
+ARG BASE_IMAGE_DEBUG
+ARG BASE_IMAGE_PROD
+# Build the manager binary
+FROM ${BUILDER_IMAGE} AS builder
+
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY go.mod go.sum ./
+COPY api/nfd/go.mod api/nfd/go.sum ./api/nfd/
+
+# Cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
+# Build
+COPY . .
+ARG VERSION
+RUN make build-operator VERSION="${VERSION}"
+
+# Debug image for running the operator
+FROM ${BASE_IMAGE_DEBUG} AS debug
+COPY --from=builder /workspace/bin/node-feature-discovery-operator /
+
+# Run as unprivileged user
+USER 65534:65534
+
+ENTRYPOINT ["/node-feature-discovery-operator"]
+LABEL io.k8s.display-name="node-feature-discovery-operator"
+
+# Production image for running the operator
+FROM ${BASE_IMAGE_PROD} AS prod
+COPY --from=builder /workspace/bin/node-feature-discovery-operator /
+
+# Run as unprivileged user
+USER 65534:65534
+
+ENTRYPOINT ["/node-feature-discovery-operator"]
+LABEL io.k8s.display-name="node-feature-discovery-operator"

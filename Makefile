@@ -3,6 +3,7 @@
 
 GO_CMD ?= go
 GO_FMT ?= gofmt
+KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 
 IMAGE_BUILD_CMD ?= docker build
 IMAGE_BUILD_EXTRA_OPTS ?=
@@ -32,7 +33,10 @@ SITE_BASEURL ?=
 SITE_DESTDIR ?= _site
 JEKYLL_OPTS := -d '$(SITE_DESTDIR)' $(if $(SITE_BASEURL),-b '$(SITE_BASEURL)',)
 
+# Image builds pass VERSION explicitly because .git is outside the build context.
+ifneq ($(origin VERSION),command line)
 VERSION := $(shell git describe --tags --dirty --always --match "v*")
+endif
 
 CHART_VERSION ?= $(shell echo $(VERSION) | cut -c2-)
 CHART_EXTRA_VERSIONS ?=
@@ -49,6 +53,66 @@ IMAGE_TAG := $(IMAGE_REPO):$(IMAGE_TAG_NAME)
 IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(IMAGE_REPO):$(tag))
 
 K8S_NAMESPACE ?= node-feature-discovery
+
+# Operator images and deployment are separate from the operand.
+# Set OPERATOR_VERSION for operator releases. Development builds identify the
+# commit without using the operand's release tags. Keep VERSION=... compatible
+# with the original operator build and the Dockerfile's version argument.
+ifeq ($(origin OPERATOR_VERSION),undefined)
+ifeq ($(origin VERSION),command line)
+OPERATOR_VERSION := $(VERSION)
+else
+OPERATOR_VERSION := $(shell git describe --always --dirty --exclude='*')
+endif
+endif
+OPERATOR_IMAGE_REPO ?= $(IMAGE_REGISTRY)/node-feature-discovery-operator
+OPERATOR_IMAGE_TAG_NAME ?= $(OPERATOR_VERSION)
+OPERATOR_IMAGE_TAG ?= $(OPERATOR_IMAGE_REPO):$(OPERATOR_IMAGE_TAG_NAME)
+OPERATOR_IMAGE_EXTRA_TAGS := $(foreach tag,$(IMAGE_EXTRA_TAG_NAMES),$(OPERATOR_IMAGE_REPO):$(tag))
+OPERATOR_BASE_IMAGE_DEBUG ?= debian:bookworm-slim
+OPERATOR_BASE_IMAGE_PROD ?= gcr.io/distroless/base
+
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+OPERATOR_GOOS ?= linux
+OPERATOR_BIN ?= bin/node-feature-discovery-operator
+OPERATOR_MAIN_PACKAGE ?= ./cmd/nfd-operator
+OPERATOR_LDFLAGS ?= -ldflags "-s -w -X main.version=$(OPERATOR_VERSION)"
+OPERATOR_PACKAGES := ./api/operator/... ./cmd/nfd-operator/... ./internal/operator/...
+OPERATOR_TESTS ?= $(OPERATOR_PACKAGES)
+CRD_OPTIONS ?= "crd"
+CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
+GOLANGCI_LINT = $(PROJECT_DIR)/bin/golangci-lint
+
+# Operator bundle versions must be supplied explicitly; repository tags belong
+# to the operand. For releases, set OPERATOR_VERSION and BUNDLE_VERSION.
+BUNDLE_VERSION ?=
+BUNDLE_IMG ?= controller-bundle:$(OPERATOR_VERSION)
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+
+OPERATOR_IMAGE_BUILD_ARGS = -f Dockerfile.operator \
+                           --build-arg VERSION=$(OPERATOR_VERSION) \
+                           --build-arg BUILDER_IMAGE=$(BUILDER_IMAGE) \
+                           --build-arg BASE_IMAGE_DEBUG=$(OPERATOR_BASE_IMAGE_DEBUG) \
+                           --build-arg BASE_IMAGE_PROD=$(OPERATOR_BASE_IMAGE_PROD)
+
+# Preserve the operator's documentation recipes using this repository's docs.
+# The shared Gemfile.lock requires Ruby >= 3.2, so use the current Ruby image.
+OPERATOR_RUBY_IMAGE_VERSION ?= $(RUBY_IMAGE_VERSION)
+OPERATOR_SITE_BUILD_CMD := $(CONTAINER_RUN_CMD) --rm -i -u "`id -u`:`id -g`" \
+	$(shell [ -t 0 ] && echo '-t') \
+	-e JEKYLL_ENV=$(JEKYLL_ENV) \
+	-e JEKYLL_GITHUB_TOKEN="$$JEKYLL_GITHUB_TOKEN" \
+	$(shell [ "$(JEKYLL_ENV)" = "development" ] && echo '-e PAGES_DISABLE_NETWORK=1') \
+	--volume="$$PWD/docs:/work" \
+	--volume="$$PWD/docs/vendor/bundle:/usr/local/bundle" \
+	-w /work \
+	--network=host ruby:$(OPERATOR_RUBY_IMAGE_VERSION)
 
 OPENSHIFT ?=
 
@@ -153,6 +217,181 @@ yamls:
 
 deploy: yamls
 	kubectl apply -k .
+
+.PHONY: all-operator build-operator run-operator go_mod-operator
+.SILENT: go_mod-operator
+all-operator: build-operator
+
+go_mod-operator:
+	@$(GO_CMD) mod download
+
+build-operator: go_mod-operator
+	GOOS=$(OPERATOR_GOOS) GO111MODULE=on CGO_ENABLED=0 $(GO_CMD) build \
+	    -o "$(OPERATOR_BIN)" $(OPERATOR_LDFLAGS) $(OPERATOR_MAIN_PACKAGE)
+
+run-operator: generate-operator fmt-operator vet-operator manifests-operator
+	$(GO_CMD) run $(OPERATOR_MAIN_PACKAGE)
+
+.PHONY: test-operator unit-test-operator fmt-operator vet-operator verify-operator verify-gofmt-operator ci-lint-operator
+test-operator: generate-operator fmt-operator vet-operator manifests-operator
+	$(GO_CMD) test $(OPERATOR_PACKAGES) -coverprofile cover.out
+
+unit-test-operator: vet-operator
+	$(GO_CMD) test $(OPERATOR_TESTS) -coverprofile cover.out
+
+fmt-operator:
+	@$(GO_FMT) -w -l $$(find api/operator cmd/nfd-operator internal/operator -name '*.go')
+
+vet-operator:
+	$(GO_CMD) vet $(OPERATOR_PACKAGES)
+
+verify-operator: verify-gofmt-operator ci-lint-operator
+
+verify-gofmt-operator:
+	@out=`$(GO_FMT) -l -d $$(find api/operator cmd/nfd-operator internal/operator -name '*.go')`; \
+	if [ -n "$$out" ]; then echo "$$out"; exit 1; fi
+
+ci-lint-operator:
+	golangci-lint run --timeout 5m0s $(OPERATOR_PACKAGES)
+
+.PHONY: manifests-operator generate-operator
+# RBAC is maintained by hand, as in the operator repository.
+manifests-operator: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) webhook paths="./api/operator/..." \
+	    output:crd:artifacts:config=deployment/operator/config/crd/bases
+
+generate-operator: controller-gen mockgen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./api/operator/..."
+	PATH=$(PROJECT_DIR)/bin:$$PATH $(GO_CMD) generate $(OPERATOR_PACKAGES)
+
+.PHONY: image-operator image-debug-operator push-operator push-debug-operator
+image-operator:
+	$(IMAGE_BUILD_CMD) $(OPERATOR_IMAGE_BUILD_ARGS) --target prod \
+	    -t $(OPERATOR_IMAGE_TAG) \
+	    $(foreach tag,$(OPERATOR_IMAGE_EXTRA_TAGS),-t $(tag)) \
+	    $(IMAGE_BUILD_EXTRA_OPTS) ./
+
+image-debug-operator:
+	$(IMAGE_BUILD_CMD) $(OPERATOR_IMAGE_BUILD_ARGS) --target debug \
+	    -t $(OPERATOR_IMAGE_TAG)-debug \
+	    $(foreach tag,$(OPERATOR_IMAGE_EXTRA_TAGS),-t $(tag)-debug) \
+	    $(IMAGE_BUILD_EXTRA_OPTS) ./
+
+push-operator:
+	$(IMAGE_PUSH_CMD) $(OPERATOR_IMAGE_TAG)
+	for tag in $(OPERATOR_IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag; done
+
+push-debug-operator:
+	$(IMAGE_PUSH_CMD) $(OPERATOR_IMAGE_TAG)-debug
+	for tag in $(OPERATOR_IMAGE_EXTRA_TAGS); do $(IMAGE_PUSH_CMD) $$tag-debug; done
+
+.PHONY: install-operator uninstall-operator
+install-operator: manifests-operator kustomize
+	$(KUSTOMIZE) build deployment/operator/config/crd | kubectl apply -f -
+
+uninstall-operator: manifests-operator kustomize
+	$(KUSTOMIZE) build deployment/operator/config/crd | kubectl delete -f -
+
+clean-operator-manifests = (cd deployment/operator/config/manager && $(KUSTOMIZE) edit set image controller=registry.k8s.io/nfd/node-feature-discovery-operator:0.4.2)
+
+# Keep the operator repository's edit, deploy and reset workflow.
+.PHONY: deploy-operator undeploy-operator
+deploy-operator: kustomize
+	cd $(PROJECT_DIR)/deployment/operator/config/manager && \
+	    $(KUSTOMIZE) edit set image controller=$(OPERATOR_IMAGE_TAG)
+	$(KUSTOMIZE) build deployment/operator/config/default | kubectl apply -f -
+	@$(call clean-operator-manifests)
+
+undeploy-operator:
+	$(KUSTOMIZE) build deployment/operator/config/default | kubectl delete -f -
+
+.PHONY: clean-operator clean-labels-operator
+clean-operator:
+	$(GO_CMD) clean $(OPERATOR_PACKAGES)
+	rm -f "$(OPERATOR_BIN)"
+
+clean-labels-operator:
+	kubectl get no -o yaml | sed -e '/^\s*nfd.node.kubernetes.io/d' -e '/^\s*feature.node.kubernetes.io/d' | kubectl replace -f -
+
+.PHONY: mdlint-operator site-build-operator site-serve-operator
+mdlint-operator:
+	$(CONTAINER_RUN_CMD) -u "`id -u`:`id -g`" \
+	--rm \
+	--volume "$${PWD}:/workdir:ro,z" \
+	--workdir /workdir \
+	ruby:slim \
+	/workdir/scripts/test-infra/mdlint.sh
+
+site-build-operator:
+	@mkdir -p docs/vendor/bundle
+	$(OPERATOR_SITE_BUILD_CMD) sh -c "bundle plugin install bundler-override && bundle install && jekyll build $(JEKYLL_OPTS)"
+
+site-serve-operator:
+	@mkdir -p docs/vendor/bundle
+	$(OPERATOR_SITE_BUILD_CMD) sh -c "bundle plugin install bundler-override && bundle install && jekyll serve $(JEKYLL_OPTS) -H 127.0.0.1"
+
+.PHONY: controller-gen mockgen golangci-lint kustomize
+controller-gen:
+	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.18.0
+
+mockgen:
+	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install go.uber.org/mock/mockgen@v0.6.0
+
+golangci-lint:
+	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4
+
+kustomize:
+	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install sigs.k8s.io/kustomize/kustomize/v5@v5.8.1
+
+# Download operator-sdk locally if necessary.
+# v1.37.0 is the last release with the go.kubebuilder.io/v3 plugin that
+# PROJECT declares; v1.38.0 removed the go/v2 and go/v3 layouts.
+# The binary is checked against the SHA-256 from that release's checksums.txt,
+# pinned here so a changed download is rejected. Update the sums with the
+# version.
+OPERATOR_SDK_VERSION ?= v1.37.0
+OPERATOR_SDK_SHA256_linux_amd64 = 20da1fcba9ef70b1e23283ae820a2c3387b529f04ce09cf318597b33f5d59a52
+OPERATOR_SDK_SHA256_linux_arm64 = df746275d76c0570f00de57128a063e1118dd67c7235a12cb84d7e0ade93098a
+OPERATOR_SDK_SHA256_darwin_amd64 = ca3e4028cd62f21f4ed988907b884be530098e7c40523e89046dd8c5b0178eb9
+OPERATOR_SDK_SHA256_darwin_arm64 = 2a58cd10865655937c3a298368b45379937e18be205f8cb429a4a1c51a5f92af
+OPERATOR_SDK_PLATFORM = $(shell $(GO_CMD) env GOOS)_$(shell $(GO_CMD) env GOARCH)
+OPERATOR_SDK_SHA256 = $(OPERATOR_SDK_SHA256_$(OPERATOR_SDK_PLATFORM))
+OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk
+.PHONY: operator-sdk
+operator-sdk:
+	@test -x $(OPERATOR_SDK) && $(OPERATOR_SDK) version | grep -q '"$(OPERATOR_SDK_VERSION)"' || { \
+		set -e; \
+		test -n "$(OPERATOR_SDK_SHA256)" || { echo "no pinned operator-sdk checksum for $(OPERATOR_SDK_PLATFORM)" >&2; exit 1; }; \
+		mkdir -p $(PROJECT_DIR)/bin; \
+		curl -sSfL -o $(OPERATOR_SDK).download https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/operator-sdk_$(OPERATOR_SDK_PLATFORM); \
+		sum=$$( (sha256sum $(OPERATOR_SDK).download 2>/dev/null || shasum -a 256 $(OPERATOR_SDK).download) | cut -d' ' -f1); \
+		if [ "$$sum" != "$(OPERATOR_SDK_SHA256)" ]; then \
+			rm -f $(OPERATOR_SDK).download; \
+			echo "operator-sdk checksum mismatch: got $$sum, want $(OPERATOR_SDK_SHA256)" >&2; exit 1; \
+		fi; \
+		chmod +x $(OPERATOR_SDK).download; mv -f $(OPERATOR_SDK).download $(OPERATOR_SDK); }
+
+.PHONY: bundle-operator bundle-build-operator bundle-push-operator
+bundle-operator: manifests-operator kustomize operator-sdk
+	@test -n "$(BUNDLE_VERSION)" || { echo "Set BUNDLE_VERSION to the operator release version (without a v prefix)." >&2; exit 1; }
+	# The SDK parses the base CSV before applying --version; master is not valid.
+	sed -i.bak 's/^  version: .*/  version: $(BUNDLE_VERSION)/' deployment/operator/config/manifests/bases/nfd-operator.clusterserviceversion.yaml
+	rm -f deployment/operator/config/manifests/bases/nfd-operator.clusterserviceversion.yaml.bak
+	cd deployment/operator && $(OPERATOR_SDK) generate kustomize manifests -q --apis-dir ../../api/operator
+	cd deployment/operator/config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_IMAGE_TAG)
+	# The SDK writes nfd-operator.clusterserviceversion.yaml; remove the imported
+	# CSV under the old package name so the bundle contains only one CSV.
+	rm -f deployment/operator/bundle/manifests/node-feature-discovery-operator.clusterserviceversion.yaml
+	cd deployment/operator && \
+	    $(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q \
+	        --overwrite --version $(BUNDLE_VERSION) $(BUNDLE_METADATA_OPTS)
+	cd deployment/operator && $(OPERATOR_SDK) bundle validate ./bundle
+
+bundle-build-operator:
+	$(IMAGE_BUILD_CMD) -f deployment/operator/bundle.Dockerfile -t $(BUNDLE_IMG) deployment/operator
+
+bundle-push-operator:
+	$(IMAGE_PUSH_CMD) $(BUNDLE_IMG)
 
 templates:
 	@# Need to prepend each line in the sample config with spaces in order to
