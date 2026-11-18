@@ -232,8 +232,12 @@ func evaluateMatchExpression(m *nfdv1alpha1.MatchExpression, valid bool, value a
 						return false, fmt.Errorf("not a number %q in %v", m.Value[i], m)
 					}
 				}
-				if lr[0] >= lr[1] {
-					return false, fmt.Errorf("invalid expression, value[0] must be less than Value[1] for Op %q (have %v)", m.Op, m.Value)
+				// GtLt is an open interval so it requires value[0] <
+				// value[1], whereas GeLe is a closed interval and also
+				// accepts value[0] == value[1] (matching a single value).
+				if (m.Op == nfdv1alpha1.MatchGtLt && lr[0] >= lr[1]) ||
+					(m.Op == nfdv1alpha1.MatchGeLe && lr[0] > lr[1]) {
+					return false, fmt.Errorf("invalid expression, value[0] must not be greater than value[1] for Op %q (have %v)", m.Op, m.Value)
 				}
 				return (v > lr[0] && v < lr[1] && m.Op == nfdv1alpha1.MatchGtLt) ||
 					(v >= lr[0] && v <= lr[1] && m.Op == nfdv1alpha1.MatchGeLe), nil
