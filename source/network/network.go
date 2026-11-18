@@ -26,6 +26,7 @@ import (
 	"strings"
 	"syscall"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
@@ -45,6 +46,10 @@ const (
 )
 
 const sysfsBaseDir = "class/net"
+
+// busInfoAttr is the network.device attribute holding the bus address of the
+// parent device of the interface.
+const busInfoAttr = "bus_info"
 
 // networkSource implements the FeatureSource and LabelSource interfaces.
 type networkSource struct {
@@ -76,24 +81,65 @@ func (s *networkSource) Priority() int { return 0 }
 func (s *networkSource) GetLabels() (source.FeatureLabels, error) {
 	labels := source.FeatureLabels{}
 	features := s.GetFeatures()
+	totalVFsAll := 0
+	numVFsAll := 0
+	sriovCapable := false
+	// The sriov_* attributes belong to the parent device, not to the netdev.
+	// Several netdevs can share one parent (switchdev VF representors, ports
+	// of a multi-port single-function NIC), so count each parent once.
+	seenParents := sets.New[string]()
 
 	for _, dev := range features.Instances[DeviceFeature].Elements {
 		attrs := dev.Attributes
-		for attr, feature := range map[string]string{
-			"sriov_totalvfs": "sriov.capable",
-			"sriov_numvfs":   "sriov.configured"} {
 
-			if v, ok := attrs[attr]; ok {
-				t, err := strconv.Atoi(v)
-				if err != nil {
-					klog.ErrorS(err, "failed to parse sriov attribute", "attributeName", attr, "deviceName", attrs["name"])
-					continue
-				}
-				if t > 0 {
-					labels[feature] = true
-				}
+		if parent := attrs[busInfoAttr]; parent != "" {
+			if seenParents.Has(parent) {
+				continue
+			}
+			seenParents.Insert(parent)
+		}
+
+		totalVFs := 0
+		numVFs := 0
+
+		// Parse total VFs
+		if v, ok := attrs["sriov_totalvfs"]; ok {
+			t, err := strconv.Atoi(v)
+			if err != nil {
+				klog.ErrorS(err, "failed to parse sriov_totalvfs", "deviceName", attrs["name"], "value", v)
+			} else {
+				totalVFs = t
 			}
 		}
+
+		// Parse configured VFs
+		if v, ok := attrs["sriov_numvfs"]; ok {
+			t, err := strconv.Atoi(v)
+			if err != nil {
+				klog.ErrorS(err, "failed to parse sriov_numvfs", "deviceName", attrs["name"], "value", v)
+			} else {
+				numVFs = t
+			}
+		}
+
+		if totalVFs > 0 {
+			sriovCapable = true
+			totalVFsAll += totalVFs
+		}
+
+		if numVFs > 0 {
+			numVFsAll += numVFs
+		}
+	}
+
+	if sriovCapable {
+		labels["sriov.capable"] = true
+		labels["sriov.total_vfs"] = totalVFsAll
+	}
+
+	if numVFsAll > 0 {
+		labels["sriov.configured"] = true
+		labels["sriov.num_vfs"] = numVFsAll
 	}
 	return labels, nil
 }
@@ -141,13 +187,28 @@ func detectNetDevices() ([]nfdv1alpha1.InstanceFeature, []nfdv1alpha1.InstanceFe
 	for _, iface := range ifaces {
 		name := iface.Name()
 		if _, err := os.Stat(filepath.Join(sysfsBasePath, name, "device")); err == nil {
-			devIfacesinfo = append(devIfacesinfo, readIfaceInfo(filepath.Join(sysfsBasePath, name), devIfaceAttrs))
+			info := readIfaceInfo(filepath.Join(sysfsBasePath, name), devIfaceAttrs)
+			if busInfo := readBusInfo(filepath.Join(sysfsBasePath, name)); busInfo != "" {
+				info.Attributes[busInfoAttr] = busInfo
+			}
+			devIfacesinfo = append(devIfacesinfo, info)
 		} else {
 			virtualIfacesinfo = append(virtualIfacesinfo, readIfaceInfo(filepath.Join(sysfsBasePath, name), virtualIfaceAttrs))
 		}
 	}
 
 	return devIfacesinfo, virtualIfacesinfo, nil
+}
+
+// readBusInfo returns the bus address of the parent device of a network
+// interface, e.g. the PCI address "0000:3b:00.0", like "bus-info" of ethtool.
+func readBusInfo(ifacePath string) string {
+	dev, err := filepath.EvalSymlinks(filepath.Join(ifacePath, "device"))
+	if err != nil {
+		klog.V(3).InfoS("failed to resolve parent device of net iface", "path", ifacePath, "err", err)
+		return ""
+	}
+	return filepath.Base(dev)
 }
 
 func readIfaceInfo(path string, attrFiles []string) nfdv1alpha1.InstanceFeature {
