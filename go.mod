@@ -37,7 +37,7 @@ require (
 	k8s.io/pod-security-admission v0.37.1
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
 	oras.land/oras-go/v2 v2.7.0
-	sigs.k8s.io/controller-runtime v0.25.2
+	sigs.k8s.io/controller-runtime v0.25.3
 	sigs.k8s.io/e2e-framework v0.7.0
 	sigs.k8s.io/node-feature-discovery/api/nfd v0.0.0-00010101000000-000000000000
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2
