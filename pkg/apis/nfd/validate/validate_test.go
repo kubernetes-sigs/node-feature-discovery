@@ -123,7 +123,7 @@ func TestTaint(t *testing.T) {
 	tests := []struct {
 		name  string
 		taint *corev1.Taint
-		want  error
+		want  any
 	}{
 		{
 			name: "Valid taint",
@@ -152,6 +152,34 @@ func TestTaint(t *testing.T) {
 			},
 			want: ErrNSNotAllowed,
 		},
+		// The API server rejects a node with such a taint, and with it every
+		// other taint in the same patch, so these must be ignored here.
+		{
+			name: "Invalid taint key name",
+			taint: &corev1.Taint{
+				Key:    "feature.node.kubernetes.io/invalid key",
+				Value:  "true",
+				Effect: corev1.TaintEffectNoSchedule,
+			},
+			want: "invalid taint key \"feature.node.kubernetes.io/invalid key\": ",
+		},
+		{
+			name: "Invalid taint value",
+			taint: &corev1.Taint{
+				Key:    "feature.node.kubernetes.io/taint",
+				Value:  "invalid value",
+				Effect: corev1.TaintEffectNoSchedule,
+			},
+			want: "invalid value \"invalid value\": ",
+		},
+		{
+			name: "Valid taint without a value",
+			taint: &corev1.Taint{
+				Key:    "feature.node.kubernetes.io/taint",
+				Effect: corev1.TaintEffectNoExecute,
+			},
+			want: nil,
+		},
 		{
 			name: "Empty taint effect",
 			taint: &corev1.Taint{
@@ -174,8 +202,12 @@ func TestTaint(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Taint(tt.taint)
-			assert.Equal(t, tt.want, got)
+			err := Taint(tt.taint)
+			if str, ok := tt.want.(string); ok {
+				assert.ErrorContains(t, err, str)
+			} else {
+				assert.Equal(t, tt.want, err)
+			}
 		})
 	}
 }

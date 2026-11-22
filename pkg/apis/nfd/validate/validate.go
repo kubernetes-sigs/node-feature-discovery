@@ -176,6 +176,10 @@ func Taints(taints []corev1.Taint) []error {
 // Taint validates a taint key and value and returns an error if the key or
 // value is invalid.
 func Taint(taint *corev1.Taint) error {
+	// Validate the taint key the way the API server does for node taints
+	if err := k8svalidation.IsQualifiedName(taint.Key); len(err) > 0 {
+		return fmt.Errorf("invalid taint key %q: %s", taint.Key, strings.Join(err, "; "))
+	}
 	ns, _ := splitNs(taint.Key)
 	// And is not empty
 	if ns == "" {
@@ -187,6 +191,11 @@ func Taint(taint *corev1.Taint) error {
 		if ns != nfdv1alpha1.TaintNs && !strings.HasSuffix(ns, nfdv1alpha1.TaintSubNsSuffix) {
 			return ErrNSNotAllowed
 		}
+	}
+
+	// Validate taint value, which follows the rules of a label value
+	if err := k8svalidation.IsValidLabelValue(taint.Value); len(err) > 0 {
+		return fmt.Errorf("invalid value %q: %s", taint.Value, strings.Join(err, "; "))
 	}
 
 	// Validate taint effect is not empty
