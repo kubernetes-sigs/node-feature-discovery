@@ -130,10 +130,12 @@ func getWorkerVolumeMounts() *[]corev1.VolumeMount {
 		{
 			Name:      "nfd-hooks",
 			MountPath: "/etc/kubernetes/node-feature-discovery/source.d",
+			ReadOnly:  true,
 		},
 		{
 			Name:      "nfd-features",
 			MountPath: "/etc/kubernetes/node-feature-discovery/features.d",
+			ReadOnly:  true,
 		},
 		{
 			Name:      "host-usr-lib",
