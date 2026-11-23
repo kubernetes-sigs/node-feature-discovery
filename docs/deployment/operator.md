@@ -71,6 +71,27 @@ is recommended to be done via
    EOF
    ```
 
+## Worker AppArmor profile and SELinux options
+
+On nodes that confine nfd-worker with a custom AppArmor profile or SELinux
+policy, set `spec.operand.workerSecurityContext`, for example:
+
+```yaml
+spec:
+  operand:
+    workerSecurityContext:
+      appArmorProfile:
+        type: Localhost
+        localhostProfile: nfd-worker
+```
+
+Only `appArmorProfile` and `seLinuxOptions` can be set. The operator keeps
+its own worker security context (non-root, read-only root filesystem, no
+privilege escalation, all capabilities dropped, `RuntimeDefault` seccomp)
+and adds these two fields to it. AppArmor type `Unconfined` and the SELinux
+types `spc_t` and `unconfined_t` are rejected. The profile or policy must be
+loaded on every node the worker runs on.
+
 ## Uninstallation
 
 If you followed the deployment instructions above you can uninstall NFD with:
