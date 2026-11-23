@@ -113,6 +113,32 @@ type OperandSpec struct {
 
 	// WorkerPriorityClassName allows setting a specific priority class for the worker pods
 	WorkerPriorityClassName string `json:"workerPriorityClassName,omitempty"`
+
+	// WorkerSecurityContext sets the AppArmor profile and SELinux options of
+	// the nfd-worker container, for nodes that confine it with a custom
+	// AppArmor profile or SELinux policy. The operator always applies its own
+	// worker security context (non-root, read-only root filesystem, no
+	// privilege escalation, all capabilities dropped, RuntimeDefault seccomp)
+	// and adds only the fields set here; no other securityContext field can
+	// be set. AppArmor type Unconfined and the SELinux types spc_t and
+	// unconfined_t are rejected.
+	// +optional
+	WorkerSecurityContext *WorkerSecurityContext `json:"workerSecurityContext,omitempty"`
+}
+
+// WorkerSecurityContext holds the nfd-worker container securityContext
+// fields that a NodeFeatureDiscovery may set.
+type WorkerSecurityContext struct {
+	// AppArmorProfile is the AppArmor profile of the nfd-worker container,
+	// e.g. type Localhost with the name of a profile loaded on every node
+	// the worker runs on. Type Unconfined is rejected.
+	// +optional
+	AppArmorProfile *corev1.AppArmorProfile `json:"appArmorProfile,omitempty"`
+
+	// SELinuxOptions is the SELinux context of the nfd-worker container.
+	// The types spc_t and unconfined_t are rejected.
+	// +optional
+	SELinuxOptions *corev1.SELinuxOptions `json:"seLinuxOptions,omitempty"`
 }
 
 // ConfigMap describes configuration options for the NFD worker

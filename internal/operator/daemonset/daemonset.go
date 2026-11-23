@@ -234,6 +234,11 @@ func getVolumes() []corev1.Volume {
 }
 
 func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance *nfdv1.NodeFeatureDiscovery, workerDS *appsv1.DaemonSet) error {
+	securityContext, err := getWorkerSecurityContext(nfdInstance)
+	if err != nil {
+		return err
+	}
+
 	workerDS.Labels = map[string]string{"app": "nfd"}
 
 	workerDS.Spec = appsv1.DaemonSetSpec{
@@ -259,7 +264,7 @@ func (d *daemonset) SetWorkerDaemonsetAsDesired(ctx context.Context, nfdInstance
 						Args:            []string{},
 						VolumeMounts:    *getWorkerVolumeMounts(),
 						ImagePullPolicy: getImagePullPolicy(nfdInstance),
-						SecurityContext: getWorkerSecurityContext(),
+						SecurityContext: securityContext,
 					},
 				},
 				Volumes:           getWorkerVolumes(),
