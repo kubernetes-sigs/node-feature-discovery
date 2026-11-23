@@ -134,7 +134,8 @@ func initFlags(flagset *flag.FlagSet) (*master.Args, *master.ConfigOverrideArgs)
 		"Prune all NFD related attributes from all nodes of the cluster and exit.")
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
-			"in the same format as in the config file (i.e. json or yaml). These options")
+			"in the same format as in the config file (i.e. json or yaml). These options "+
+			"will override the corresponding values from the config file.")
 	flagset.BoolVar(&args.EnableLeaderElection, "enable-leader-election", false,
 		"Enables a leader election. Enable this when running more than one replica on nfd master.")
 
