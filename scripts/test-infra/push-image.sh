@@ -23,3 +23,9 @@ go install helm.sh/helm/v3/cmd/helm@$HELM_VERSION
 go install oras.land/oras/cmd/oras@$ORAS_VERSION
 
 make helm-push $VERSION_OVERRIDE $MAKE_VARS
+
+# Publish the operator image from master with the same version and branch tags.
+if [[ $_PULL_BASE_REF == master ]]; then
+    make image-operator $MAKE_VARS
+    make push-operator $MAKE_VARS
+fi
