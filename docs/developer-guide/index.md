@@ -42,6 +42,8 @@ This builds the minimal image variant,
 generates a `kustomization.yaml` in the root of the source tree (see
 [Deployment](#deployment) below).
 
+If you run `docker build` directly, pass `-f Dockerfile.operand`.
+
 #### Push the container image
 
 Optional, this example with Docker.

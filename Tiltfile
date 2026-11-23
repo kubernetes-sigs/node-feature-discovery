@@ -22,6 +22,7 @@ def build_image():
     docker_build(
         TAGGED_IMAGE,
         context='.',
+        dockerfile='Dockerfile.operand',
         build_args={
         "BUILDER_IMAGE": BUILDER_IMAGE,
         "BASE_IMAGE_MINIMAL": BASE_IMAGE_MINIMAL,
