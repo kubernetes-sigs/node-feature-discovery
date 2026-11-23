@@ -9,7 +9,7 @@ require (
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-cmp v0.7.0
 	github.com/jaypipes/ghw v0.27.0
-	github.com/jedib0t/go-pretty/v6 v6.8.3
+	github.com/jedib0t/go-pretty/v6 v6.9.2
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.4
 	github.com/k8stopologyawareschedwg/podfingerprint v0.3.0
 	github.com/klauspost/cpuid/v2 v2.4.2
