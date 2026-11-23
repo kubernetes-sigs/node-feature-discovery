@@ -81,8 +81,10 @@ spec:
           name: nfd-worker-config
         - mountPath: /etc/kubernetes/node-feature-discovery/source.d
           name: nfd-hooks
+          readOnly: true
         - mountPath: /etc/kubernetes/node-feature-discovery/features.d
           name: nfd-features
+          readOnly: true
         - mountPath: /host-usr/lib
           name: host-usr-lib
           readOnly: true

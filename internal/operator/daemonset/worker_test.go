@@ -229,3 +229,25 @@ var _ = Describe("getWorkerToleration", func() {
 		Expect(res).To(Equal(expectedTolerations))
 	})
 })
+
+var _ = Describe("worker host mounts", func() {
+
+	DescribeTable("are read-only",
+		func(mountPath string) {
+			c, err := desiredWorkerContainer(nfdFromYAML(`
+spec:
+  operand:
+    image: test-image
+`))
+			Expect(err).NotTo(HaveOccurred())
+
+			readOnly := map[string]bool{}
+			for _, m := range c.VolumeMounts {
+				readOnly[m.MountPath] = m.ReadOnly
+			}
+			Expect(readOnly).To(HaveKeyWithValue(mountPath, true))
+		},
+		Entry("source.d", "/etc/kubernetes/node-feature-discovery/source.d"),
+		Entry("features.d", "/etc/kubernetes/node-feature-discovery/features.d"),
+	)
+})
