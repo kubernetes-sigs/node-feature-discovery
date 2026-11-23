@@ -17,6 +17,8 @@ limitations under the License.
 package daemonset
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/utils/ptr"
@@ -60,8 +62,14 @@ func getWorkerAffinity() *corev1.Affinity {
 	}
 }
 
-func getWorkerSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
+// getWorkerSecurityContext returns the nfd-worker container security
+// context: the operator's hardened context plus the AppArmor profile and
+// SELinux options from spec.operand.workerSecurityContext. The override
+// cannot change the hardened fields, because WorkerSecurityContext does not
+// carry them. An override that turns AppArmor or SELinux confinement off is
+// rejected.
+func getWorkerSecurityContext(nfdInstance *nfdv1.NodeFeatureDiscovery) (*corev1.SecurityContext, error) {
+	sc := &corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   ptr.To(true),
 		RunAsNonRoot:             ptr.To(true),
 		AllowPrivilegeEscalation: ptr.To(false),
@@ -72,6 +80,29 @@ func getWorkerSecurityContext() *corev1.SecurityContext {
 			Drop: []corev1.Capability{"ALL"},
 		},
 	}
+
+	override := nfdInstance.Spec.Operand.WorkerSecurityContext
+	if override == nil {
+		return sc, nil
+	}
+
+	if p := override.AppArmorProfile; p != nil {
+		if p.Type == corev1.AppArmorProfileTypeUnconfined {
+			return nil, fmt.Errorf("spec.operand.workerSecurityContext.appArmorProfile.type %q is not allowed: nfd-worker must run confined", p.Type)
+		}
+		sc.AppArmorProfile = p.DeepCopy()
+	}
+
+	if o := override.SELinuxOptions; o != nil {
+		// Both types run a container without SELinux confinement.
+		switch o.Type {
+		case "spc_t", "unconfined_t":
+			return nil, fmt.Errorf("spec.operand.workerSecurityContext.seLinuxOptions.type %q is not allowed: nfd-worker must run confined", o.Type)
+		}
+		sc.SELinuxOptions = o.DeepCopy()
+	}
+
+	return sc, nil
 }
 
 func getWorkerVolumeMounts() *[]corev1.VolumeMount {

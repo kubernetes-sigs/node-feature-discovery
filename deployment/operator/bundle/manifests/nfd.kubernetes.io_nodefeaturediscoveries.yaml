@@ -116,7 +116,9 @@ spec:
                               description: Selects a key of a ConfigMap.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -321,7 +323,9 @@ spec:
                               description: Selects a key of a ConfigMap.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -452,6 +456,64 @@ spec:
                     description: WorkerPriorityClassName allows setting a specific
                       priority class for the worker pods
                     type: string
+                  workerSecurityContext:
+                    description: |-
+                      WorkerSecurityContext sets the AppArmor profile and SELinux options of
+                      the nfd-worker container, for nodes that confine it with a custom
+                      AppArmor profile or SELinux policy. The operator always applies its own
+                      worker security context (non-root, read-only root filesystem, no
+                      privilege escalation, all capabilities dropped, RuntimeDefault seccomp)
+                      and adds only the fields set here; no other securityContext field can
+                      be set. AppArmor type Unconfined and the SELinux types spc_t and
+                      unconfined_t are rejected.
+                    properties:
+                      appArmorProfile:
+                        description: |-
+                          AppArmorProfile is the AppArmor profile of the nfd-worker container,
+                          e.g. type Localhost with the name of a profile loaded on every node
+                          the worker runs on. Type Unconfined is rejected.
+                        properties:
+                          localhostProfile:
+                            description: |-
+                              localhostProfile indicates a profile loaded on the node that should be used.
+                              The profile must be preconfigured on the node to work.
+                              Must match the loaded name of the profile.
+                              Must be set if and only if type is "Localhost".
+                            type: string
+                          type:
+                            description: |-
+                              type indicates which kind of AppArmor profile will be applied.
+                              Valid options are:
+                                Localhost - a profile pre-loaded on the node.
+                                RuntimeDefault - the container runtime's default profile.
+                                Unconfined - no AppArmor enforcement.
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      seLinuxOptions:
+                        description: |-
+                          SELinuxOptions is the SELinux context of the nfd-worker container.
+                          The types spc_t and unconfined_t are rejected.
+                        properties:
+                          level:
+                            description: Level is SELinux level label that applies
+                              to the container.
+                            type: string
+                          role:
+                            description: Role is a SELinux role label that applies
+                              to the container.
+                            type: string
+                          type:
+                            description: Type is a SELinux type label that applies
+                              to the container.
+                            type: string
+                          user:
+                            description: User is a SELinux user label that applies
+                              to the container.
+                            type: string
+                        type: object
+                    type: object
                   workerTolerations:
                     description: WorkerTolerations defines tolerations to be applied
                       to the worker Daemonset
