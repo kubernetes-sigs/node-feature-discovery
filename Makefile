@@ -143,7 +143,8 @@ ensure-buildx:
 
 IMAGE_BUILDX_CMD ?= DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --builder=nfd-builder --platform=${IMAGE_ALL_PLATFORMS} --progress=auto --pull
 
-IMAGE_BUILD_ARGS = --build-arg VERSION=$(VERSION) \
+IMAGE_BUILD_ARGS = -f Dockerfile.operand \
+                --build-arg VERSION=$(VERSION) \
                 --build-arg HOSTMOUNT_PREFIX=$(CONTAINER_HOSTMOUNT_PREFIX) \
                 --build-arg BUILDER_IMAGE=$(BUILDER_IMAGE) \
                 --build-arg BASE_IMAGE_FULL=$(BASE_IMAGE_FULL) \
