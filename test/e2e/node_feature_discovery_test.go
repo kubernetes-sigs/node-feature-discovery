@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 	taintutils "k8s.io/kubernetes/pkg/util/taints"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
@@ -394,10 +395,16 @@ var _ = NFDDescribe(Label("nfd-master"), func() {
 				return node.Labels[nfdv1alpha1.FeatureLabelNs+"/fake-fakefeature1"], nil
 			}
 			updateWorkerDaemonSet := func(ctx context.Context, mutate func(*appsv1.DaemonSet)) {
-				workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Get(ctx, workerDSName, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				mutate(workerDS)
-				_, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Update(ctx, workerDS, metav1.UpdateOptions{})
+				// The DaemonSet controller may still be writing status, so the Update can hit a conflict.
+				err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					workerDS, err := f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Get(ctx, workerDSName, metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+					mutate(workerDS)
+					_, err = f.ClientSet.AppsV1().DaemonSets(f.Namespace.Name).Update(ctx, workerDS, metav1.UpdateOptions{})
+					return err
+				})
 				Expect(err).NotTo(HaveOccurred())
 			}
 			expectDefaultOwners := func(ctx context.Context, workerPod *corev1.Pod) {
