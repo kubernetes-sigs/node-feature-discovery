@@ -24,6 +24,7 @@ import (
 
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 )
 
 func TestParseArgs(t *testing.T) {
@@ -40,6 +41,18 @@ func TestParseArgs(t *testing.T) {
 				So(args.Overrides.OwnerRefs, ShouldBeNil)
 				So(args.Overrides.FeatureSources, ShouldBeNil)
 				So(args.Overrides.LabelSources, ShouldBeNil)
+			})
+
+			Convey("the metrics endpoint serves plain HTTP", func() {
+				So(args.TLS, ShouldResemble, httpserver.TLSFiles{})
+			})
+		})
+
+		Convey("When the TLS flags are specified", func() {
+			args := parseArgs(flags, "-tls-cert-file=/certs/tls.crt", "-tls-private-key-file=/certs/tls.key")
+
+			Convey("args.TLS names both files", func() {
+				So(args.TLS, ShouldResemble, httpserver.TLSFiles{CertFile: "/certs/tls.crt", KeyFile: "/certs/tls.key"})
 			})
 		})
 

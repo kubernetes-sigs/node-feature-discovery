@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 
@@ -40,6 +41,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/features"
 	worker "sigs.k8s.io/node-feature-discovery/pkg/nfd-worker"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 )
 
 var initializeFeatureGatesOnce sync.Once
@@ -51,6 +53,15 @@ func initializeFeatureGates() {
 			os.Exit(1)
 		}
 	})
+}
+
+func TestNewNfdWorkerRejectsHalfTLSPair(t *testing.T) {
+	_, err := worker.NewNfdWorker(worker.WithArgs(&worker.Args{
+		TLS: httpserver.TLSFiles{CertFile: "/certs/tls.crt"},
+	}))
+	if err == nil || !strings.Contains(err.Error(), "-tls-private-key-file") {
+		t.Fatalf("NewNfdWorker() = %v, want an error naming -tls-private-key-file", err)
+	}
 }
 
 func TestOwnerReferenceMigrationWithUnchangedSpec(t *testing.T) {

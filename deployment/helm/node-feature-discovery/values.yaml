@@ -1266,6 +1266,17 @@ gc:
         port: http
 
 #
+# TLS for the metrics and health endpoints
+#
+tls:
+  # -- Serve the `/metrics` and `/healthz` endpoints of every NFD component over HTTPS. The probes switch to HTTPS and the PodMonitor scrapes with the `https` scheme.
+  # @section -- TLS
+  enable: false
+  # -- Name of an existing Secret in the release namespace that holds `tls.crt` and `tls.key`, for example one written by a cert-manager Certificate. Required when `tls.enable` is true. Renewed certificates are served without restarting the pods.
+  # @section -- TLS
+  secretName: ""
+
+#
 # Prometheus configuration
 #
 prometheus:
@@ -1286,3 +1297,6 @@ prometheus:
     - worker
     - topology-updater
     - gc
+  # -- TLS settings for scraping over HTTPS, copied verbatim to `podMetricsEndpoints[].tlsConfig` of the PodMonitor. Pods are scraped by IP, so to verify the certificate set `serverName` to a DNS name in it together with `ca`, or set `insecureSkipVerify` to `true`.
+  # @section -- Prometheus
+  tlsConfig: {}

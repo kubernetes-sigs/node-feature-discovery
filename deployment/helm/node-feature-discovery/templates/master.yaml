@@ -60,9 +60,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           startupProbe:
-            httpGet:
-              path: /healthz
-              port: http
+            {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 12 }}
           {{- with .Values.master.startupProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ . }}
           {{- end }}
@@ -76,9 +74,7 @@ spec:
             timeoutSeconds: {{ . }}
           {{- end }}
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
+            {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 12 }}
           {{- with .Values.master.livenessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ . }}
           {{- end }}
@@ -92,9 +88,7 @@ spec:
             timeoutSeconds: {{ . }}
           {{- end }}
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: http
+            {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 12 }}
           {{- with .Values.master.readinessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ . }}
           {{- end }}
@@ -152,6 +146,9 @@ spec:
             - "-feature-gates={{ $key }}={{ $value }}"
             {{- end }}
             - "-port={{ .Values.master.port | default "8080" }}"
+            {{- with include "node-feature-discovery.tls.args" . }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with .Values.master.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -159,6 +156,9 @@ spec:
             - name: nfd-master-conf
               mountPath: "/etc/kubernetes/node-feature-discovery"
               readOnly: true
+            {{- with include "node-feature-discovery.tls.volumeMount" . }}
+            {{- . | nindent 12 }}
+            {{- end }}
       volumes:
         - name: nfd-master-conf
           configMap:
@@ -166,6 +166,9 @@ spec:
             items:
               - key: nfd-master.conf
                 path: nfd-master.conf
+        {{- with include "node-feature-discovery.tls.volume" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
     {{- with .Values.master.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

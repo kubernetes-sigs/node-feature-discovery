@@ -421,6 +421,13 @@ NFD.
 | gc.networkPolicy.egress | list | `[{"ports":[{"port":80,"protocol":"TCP"},{"port":443,"protocol":"TCP"},{"port":53,"protocol":"TCP"},{"port":53,"protocol":"UDP"},{"port":6443,"protocol":"TCP"}]}]` | [Egress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-gc pods. The minimum egress ports required to function are: DNS (53/udp, 53/tcp, API server (80/tcp, 443/tcp, 6443/tcp). NOTE: OKD and Openshift use 6443/tcp |
 | gc.networkPolicy.ingress | list | `[{"ports":[{"port":"http","protocol":"TCP"}]}]` | [Ingress](https://kubernetes.io/docs/concepts/services-networking/network-policies/#network-traffic-filtering) for the nfd-gc pods. |
 
+### TLS
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| tls.enable | bool | `false` | Serve the `/metrics` and `/healthz` endpoints of every NFD component over HTTPS. The probes switch to HTTPS and the PodMonitor scrapes with the `https` scheme. |
+| tls.secretName | string | `""` | Name of an existing Secret in the release namespace that holds `tls.crt` and `tls.key`, for example one written by a cert-manager Certificate. Required when `tls.enable` is true. Renewed certificates are served without restarting the pods. |
+
 ### Prometheus
 
 | Key | Type | Default | Description |
@@ -429,3 +436,4 @@ NFD.
 | prometheus.scrapeInterval | string | `"10s"` | Interval at which metrics are scraped. |
 | prometheus.labels | object | `{}` | Labels to add to the PodMonitor object. |
 | prometheus.components | list | `["master","worker","topology-updater","gc"]` | Components whose pods the PodMonitor scrapes, matched by the pod `role` label. Valid values are `master`, `worker`, `topology-updater`, and `gc`. To stop scraping, set `prometheus.enable` to `false`. |
+| prometheus.tlsConfig | object | `{}` | TLS settings for scraping over HTTPS, copied verbatim to `podMetricsEndpoints[].tlsConfig` of the PodMonitor. Pods are scraped by IP, so to verify the certificate set `serverName` to a DNS name in it together with `ca`, or set `insecureSkipVerify` to `true`. |

@@ -1,0 +1,330 @@
+suite: tls
+templates:
+  - master.yaml
+  - nfd-master-conf.yaml
+  - worker.yaml
+  - nfd-worker-conf.yaml
+  - topologyupdater.yaml
+  - nfd-topologyupdater-conf.yaml
+  - nfd-gc.yaml
+  - prometheus.yaml
+release:
+  name: nfd
+  namespace: nfd-system
+chart:
+  version: 0.0.0-test
+  appVersion: v0.0.0-test
+tests:
+  - it: serves master over plain HTTP by default
+    template: master.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name == 'tls-certs')]
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name == 'tls-certs')]
+
+  - it: serves master over HTTPS when tls.enable is set
+    template: master.yaml
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tls-certs
+            mountPath: /etc/kubernetes/node-feature-discovery/certs
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-certs
+            secret:
+              secretName: nfd-metrics-tls
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: serves worker over plain HTTP by default
+    template: worker.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name == 'tls-certs')]
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name == 'tls-certs')]
+
+  - it: serves worker over HTTPS when tls.enable is set
+    template: worker.yaml
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tls-certs
+            mountPath: /etc/kubernetes/node-feature-discovery/certs
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-certs
+            secret:
+              secretName: nfd-metrics-tls
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: serves topology-updater over plain HTTP by default
+    template: topologyupdater.yaml
+    set:
+      topologyUpdater:
+        enable: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name == 'tls-certs')]
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name == 'tls-certs')]
+
+  - it: serves topology-updater over HTTPS when tls.enable is set
+    template: topologyupdater.yaml
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+      topologyUpdater:
+        enable: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tls-certs
+            mountPath: /etc/kubernetes/node-feature-discovery/certs
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-certs
+            secret:
+              secretName: nfd-metrics-tls
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: serves gc over plain HTTP by default
+    template: nfd-gc.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name == 'tls-certs')]
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name == 'tls-certs')]
+
+  - it: serves gc over HTTPS when tls.enable is set
+    template: nfd-gc.yaml
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key"
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tls-certs
+            mountPath: /etc/kubernetes/node-feature-discovery/certs
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-certs
+            secret:
+              secretName: nfd-metrics-tls
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: passes the TLS flags before extraArgs
+    template: master.yaml
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+      master:
+        extraArgs:
+          - -v=3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -port=8080
+            - -tls-cert-file=/etc/kubernetes/node-feature-discovery/certs/tls.crt
+            - -tls-private-key-file=/etc/kubernetes/node-feature-discovery/certs/tls.key
+            - -v=3
+
+  - it: rejects tls.enable without tls.secretName
+    template: master.yaml
+    set:
+      tls:
+        enable: true
+      worker:
+        enable: false
+      gc:
+        enable: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "tls.secretName must name an existing Secret with tls.crt and tls.key when tls.enable is true"
+
+  - it: rejects tls.enable without tls.secretName when only the PodMonitor renders
+    template: prometheus.yaml
+    set:
+      tls:
+        enable: true
+      master:
+        enable: false
+      worker:
+        enable: false
+      gc:
+        enable: false
+      prometheus:
+        enable: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "tls.secretName must name an existing Secret with tls.crt and tls.key when tls.enable is true"
+
+  - it: treats a missing tls block as plain HTTP
+    set:
+      tls: null
+      prometheus:
+        enable: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+        template: master.yaml
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name == 'tls-certs')]
+        template: master.yaml
+      - equal:
+          path: spec.podMetricsEndpoints[0].scheme
+          value: http
+        template: prometheus.yaml
+
+  - it: keeps a numeric-looking tls.secretName a string
+    template: master.yaml
+    set:
+      tls:
+        enable: true
+        secretName: "123"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-certs
+            secret:
+              secretName: "123"
+              items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key

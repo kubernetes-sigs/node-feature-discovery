@@ -52,9 +52,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+          {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 10 }}
         {{- with .Values.gc.livenessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -68,9 +66,7 @@ spec:
           timeoutSeconds: {{ . }}
         {{- end }}
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+          {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 10 }}
         {{- with .Values.gc.readinessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -101,6 +97,9 @@ spec:
           - "-gc-interval={{ .Values.gc.interval }}"
           {{- end }}
           - "-port={{ .Values.gc.port | default "8080"}}"
+          {{- with include "node-feature-discovery.tls.args" . }}
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.gc.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -111,6 +110,14 @@ spec:
         ports:
           - name: http
             containerPort: {{ .Values.gc.port | default "8080"}}
+        {{- with include "node-feature-discovery.tls.volumeMount" . }}
+        volumeMounts:
+          {{- . | nindent 10 }}
+        {{- end }}
+      {{- with include "node-feature-discovery.tls.volume" . }}
+      volumes:
+        {{- . | nindent 8 }}
+      {{- end }}
 
     {{- with .Values.gc.nodeSelector }}
       nodeSelector:

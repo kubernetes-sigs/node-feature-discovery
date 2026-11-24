@@ -19,6 +19,7 @@ package nfdgarbagecollector
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,9 +35,17 @@ import (
 	"k8s.io/client-go/metadata/metadatainformer"
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestNewRejectsHalfTLSPair(t *testing.T) {
+	_, err := New(&Args{TLS: httpserver.TLSFiles{CertFile: "/certs/tls.crt"}})
+	if err == nil || !strings.Contains(err.Error(), "-tls-private-key-file") {
+		t.Fatalf("New() = %v, want an error naming -tls-private-key-file", err)
+	}
+}
 
 func TestNRTGC(t *testing.T) {
 	Convey("When theres is old NRT ", t, func() {

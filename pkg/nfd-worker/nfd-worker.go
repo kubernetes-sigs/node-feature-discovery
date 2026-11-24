@@ -48,6 +48,7 @@ import (
 	nfdclient "sigs.k8s.io/node-feature-discovery/api/generated/clientset/versioned"
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/node-feature-discovery/source"
 
@@ -189,6 +190,7 @@ type Args struct {
 	Oneshot     bool
 	Options     string
 	Port        int
+	TLS         httpserver.TLSFiles
 	NoOwnerRefs bool
 
 	Overrides ConfigOverrideArgs
@@ -206,6 +208,7 @@ type ConfigOverrideArgs struct {
 
 type nfdWorker struct {
 	args                Args
+	servingCert         *httpserver.ServingCert
 	configFilePath      string
 	config              *NFDConfig
 	kubernetesNamespace string
@@ -271,6 +274,12 @@ func NewNfdWorker(opts ...NfdWorkerOption) (NfdWorker, error) {
 	for _, o := range opts {
 		o.apply(nfd)
 	}
+
+	servingCert, err := nfd.args.TLS.Load()
+	if err != nil {
+		return nfd, err
+	}
+	nfd.servingCert = servingCert
 
 	if nfd.args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
@@ -516,11 +525,7 @@ func (w *nfdWorker) Run() error {
 	httpMux.HandleFunc("/healthz", w.Healthz)
 
 	// Start HTTP server
-	httpServer := http.Server{Addr: fmt.Sprintf(":%d", w.args.Port), Handler: httpMux}
-	go func() {
-		klog.InfoS("http server starting", "port", httpServer.Addr)
-		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
-	}()
+	httpServer := httpserver.Start(w.args.Port, w.servingCert, httpMux)
 	defer httpServer.Close() // nolint: errcheck
 
 	for {
