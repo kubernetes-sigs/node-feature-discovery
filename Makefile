@@ -81,7 +81,6 @@ OPERATOR_PACKAGES := ./api/operator/... ./cmd/nfd-operator/... ./internal/operat
 OPERATOR_TESTS ?= $(OPERATOR_PACKAGES)
 CRD_OPTIONS ?= "crd"
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
-GOLANGCI_LINT = $(PROJECT_DIR)/bin/golangci-lint
 
 # Operator bundle versions must be supplied explicitly; repository tags belong
 # to the operand. For releases, set OPERATOR_VERSION and BUNDLE_VERSION.
@@ -330,15 +329,12 @@ site-serve-operator:
 	@mkdir -p docs/vendor/bundle
 	$(OPERATOR_SITE_BUILD_CMD) sh -c "bundle plugin install bundler-override && bundle install && jekyll serve $(JEKYLL_OPTS) -H 127.0.0.1"
 
-.PHONY: controller-gen mockgen golangci-lint kustomize
+.PHONY: controller-gen mockgen kustomize
 controller-gen:
 	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.18.0
 
 mockgen:
 	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install go.uber.org/mock/mockgen@v0.6.0
-
-golangci-lint:
-	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4
 
 kustomize:
 	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install sigs.k8s.io/kustomize/kustomize/v5@v5.8.1
