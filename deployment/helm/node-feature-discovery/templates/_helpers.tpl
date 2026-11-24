@@ -124,3 +124,64 @@ imagePullSecrets helper - uses local values or falls back to global values
 {{- $imagePullSecrets | toJson }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+"true" when the metrics and health endpoints are served over HTTPS, empty otherwise.
+Every TLS helper calls it, so the tls.secretName check runs for whichever
+component renders. A missing tls block, as after "helm upgrade --reuse-values"
+from an older chart, means plain HTTP.
+*/}}
+{{- define "node-feature-discovery.tls.enabled" -}}
+{{- $tls := .Values.tls | default dict -}}
+{{- if $tls.enable -}}
+{{- if not $tls.secretName -}}
+{{- fail "tls.secretName must name an existing Secret with tls.crt and tls.key when tls.enable is true" -}}
+{{- end -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "node-feature-discovery.tls.mountPath" -}}
+/etc/kubernetes/node-feature-discovery/certs
+{{- end -}}
+
+{{/*
+The httpGet handler of the startup, liveness and readiness probes. They hit the
+metrics port, so they switch to HTTPS with tls.enable.
+*/}}
+{{- define "node-feature-discovery.healthzProbeHandler" -}}
+httpGet:
+  path: /healthz
+  port: http
+  {{- if include "node-feature-discovery.tls.enabled" . }}
+  scheme: HTTPS
+  {{- end }}
+{{- end -}}
+
+{{- define "node-feature-discovery.tls.args" -}}
+{{- if include "node-feature-discovery.tls.enabled" . -}}
+- "-tls-cert-file={{ include "node-feature-discovery.tls.mountPath" . }}/tls.crt"
+- "-tls-private-key-file={{ include "node-feature-discovery.tls.mountPath" . }}/tls.key"
+{{- end -}}
+{{- end -}}
+
+{{- define "node-feature-discovery.tls.volumeMount" -}}
+{{- if include "node-feature-discovery.tls.enabled" . -}}
+- name: tls-certs
+  mountPath: {{ include "node-feature-discovery.tls.mountPath" . | quote }}
+  readOnly: true
+{{- end -}}
+{{- end -}}
+
+{{- define "node-feature-discovery.tls.volume" -}}
+{{- if include "node-feature-discovery.tls.enabled" . -}}
+- name: tls-certs
+  secret:
+    secretName: {{ .Values.tls.secretName | quote }}
+    items:
+      - key: tls.crt
+        path: tls.crt
+      - key: tls.key
+        path: tls.key
+{{- end -}}
+{{- end -}}

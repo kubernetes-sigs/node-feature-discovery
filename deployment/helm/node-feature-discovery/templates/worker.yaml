@@ -62,9 +62,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+          {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 10 }}
         {{- with .Values.worker.livenessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -78,9 +76,7 @@ spec:
           timeoutSeconds: {{ . }}
         {{- end }}
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+          {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 10 }}
         {{- with .Values.worker.readinessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -123,6 +119,9 @@ spec:
         {{- end }}
         - "-owner-refs={{ join "," .Values.worker.ownerRefs }}"
         - "-port={{ .Values.worker.port | default "8080"}}"
+        {{- with include "node-feature-discovery.tls.args" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
         {{- with .Values.worker.extraArgs }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -159,6 +158,9 @@ spec:
         - name: nfd-worker-conf
           mountPath: "/etc/kubernetes/node-feature-discovery"
           readOnly: true
+        {{- with include "node-feature-discovery.tls.volumeMount" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       volumes:
         - name: host-boot
           hostPath:
@@ -192,6 +194,9 @@ spec:
             items:
               - key: nfd-worker.conf
                 path: nfd-worker.conf
+        {{- with include "node-feature-discovery.tls.volume" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       {{- with .Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

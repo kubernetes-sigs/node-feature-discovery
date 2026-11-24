@@ -16,7 +16,11 @@ spec:
       interval: {{ .Values.prometheus.scrapeInterval }}
       path: /metrics
       port: http
-      scheme: http
+      scheme: {{ if include "node-feature-discovery.tls.enabled" . }}https{{ else }}http{{ end }}
+      {{- with .Values.prometheus.tlsConfig }}
+      tlsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
   namespaceSelector:
     matchNames:
     - {{ include "node-feature-discovery.namespace" . }}

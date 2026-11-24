@@ -101,6 +101,73 @@ stop being a valid pair, the daemon logs an error and keeps serving the last
 certificate that loaded until the files are fixed. Probes keep passing, so the
 pods do not restart. Scrapers that verify the certificate fail once it expires.
 
+### Helm
+
+To serve metrics over HTTPS with Helm, point `tls.secretName` at a Secret that
+holds `tls.crt` and `tls.key`. The Secret must be in the release namespace and
+must exist before the pods can start. The same Secret serves all components.
+
+```bash
+--set tls.enable=true --set tls.secretName=nfd-metrics-tls
+```
+
+Helm mounts the Secret read-only at `/etc/kubernetes/node-feature-discovery/certs`
+in every component and sets both flags. The startup, liveness and readiness
+probes switch to HTTPS, and the PodMonitor scrapes with the `https` scheme.
+The kubelet does not verify the certificate of an HTTPS probe.
+
+The Secret is typically written by [cert-manager](https://cert-manager.io/).
+For example, this `Certificate` creates the `nfd-metrics-tls` Secret in the
+`node-feature-discovery` namespace and renews it before it expires:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nfd-metrics
+  namespace: node-feature-discovery
+spec:
+  secretName: nfd-metrics-tls
+  dnsNames:
+    - nfd-metrics.node-feature-discovery.svc
+  issuerRef:
+    name: my-issuer
+    kind: Issuer
+```
+
+### Scraping over TLS
+
+The PodMonitor reaches each pod by its IP address. Pod IPs change, so the
+certificate does not name the address Prometheus connects to. Use
+`prometheus.tlsConfig` to tell Prometheus how to check it. Helm copies the
+value verbatim to the PodMonitor's `podMetricsEndpoints[].tlsConfig`.
+
+To verify the certificate, set `serverName` to a DNS name in the certificate
+and give Prometheus the CA that signed it. The name does not need to resolve.
+
+```yaml
+prometheus:
+  enable: true
+  tlsConfig:
+    serverName: nfd-metrics.node-feature-discovery.svc
+    ca:
+      secret:
+        name: nfd-metrics-tls
+        key: ca.crt
+```
+
+The `ca.crt` key is present when the issuer provides a CA certificate, as the
+cert-manager CA issuer does.
+
+To skip verification instead, use:
+
+```yaml
+prometheus:
+  enable: true
+  tlsConfig:
+    insecureSkipVerify: true
+```
+
 ## Grafana dashboard
 
 NFD contains an example Grafana dashboard. You can import

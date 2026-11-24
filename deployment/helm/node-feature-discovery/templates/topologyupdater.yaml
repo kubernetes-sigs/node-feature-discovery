@@ -60,9 +60,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: "{{ .Values.image.pullPolicy }}"
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+          {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 10 }}
         {{- with .Values.topologyUpdater.livenessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -76,9 +74,7 @@ spec:
           timeoutSeconds: {{ . }}
         {{- end }}
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+          {{- include "node-feature-discovery.healthzProbeHandler" . | nindent 10 }}
         {{- with .Values.topologyUpdater.readinessProbe.initialDelaySeconds }}
           initialDelaySeconds: {{ . }}
         {{- end }}
@@ -131,6 +127,9 @@ spec:
           - "-kubelet-state-dir="
           {{- end }}
           - "-port={{ .Values.topologyUpdater.port | default "8080"}}"
+          {{- with include "node-feature-discovery.tls.args" . }}
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.topologyUpdater.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -154,6 +153,9 @@ spec:
         - name: nfd-topology-updater-conf
           mountPath: "/etc/kubernetes/node-feature-discovery"
           readOnly: true
+        {{- with include "node-feature-discovery.tls.volumeMount" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
 
         resources:
       {{- toYaml .Values.topologyUpdater.resources | nindent 12 }}
@@ -186,6 +188,9 @@ spec:
           items:
             - key: nfd-topology-updater.conf
               path: nfd-topology-updater.conf
+      {{- with include "node-feature-discovery.tls.volume" . }}
+      {{- . | nindent 6 }}
+      {{- end }}
 
     {{- with .Values.topologyUpdater.nodeSelector }}
       nodeSelector:

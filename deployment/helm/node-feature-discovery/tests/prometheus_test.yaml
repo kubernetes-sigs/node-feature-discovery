@@ -38,6 +38,60 @@ tests:
           path: spec.podMetricsEndpoints[0].interval
           value: 30s
 
+  - it: scrapes the http port over plain HTTP by default
+    set:
+      prometheus:
+        enable: true
+    asserts:
+      - equal:
+          path: spec.podMetricsEndpoints[0].port
+          value: http
+      - equal:
+          path: spec.podMetricsEndpoints[0].scheme
+          value: http
+      - notExists:
+          path: spec.podMetricsEndpoints[0].tlsConfig
+
+  - it: scrapes over HTTPS when tls.enable is set
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+      prometheus:
+        enable: true
+    asserts:
+      - equal:
+          path: spec.podMetricsEndpoints[0].port
+          value: http
+      - equal:
+          path: spec.podMetricsEndpoints[0].scheme
+          value: https
+      - notExists:
+          path: spec.podMetricsEndpoints[0].tlsConfig
+
+  - it: copies tlsConfig verbatim to the endpoint
+    set:
+      tls:
+        enable: true
+        secretName: nfd-metrics-tls
+      prometheus:
+        enable: true
+        tlsConfig:
+          serverName: nfd-metrics.nfd-system.svc
+          ca:
+            secret:
+              name: nfd-metrics-tls
+              key: ca.crt
+    asserts:
+      - equal:
+          path: spec.podMetricsEndpoints[0].tlsConfig
+          value:
+            serverName: nfd-metrics.nfd-system.svc
+            ca:
+              secret:
+                name: nfd-metrics-tls
+                key: ca.crt
+
   - it: selects every component by default
     set:
       prometheus:
