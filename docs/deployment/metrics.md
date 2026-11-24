@@ -71,6 +71,36 @@ to scrape metrics from any PodMonitor.
 or setting labels on the PodMonitor via the helm parameter `prometheus.labels`
 to control which Prometheus instances will scrape this PodMonitor.
 
+## Serving metrics over HTTPS
+
+By default the metrics and health endpoints use plain HTTP. All four daemons
+can serve them over HTTPS instead, using a certificate and private key from
+files. Both endpoints share one port, so `/healthz` moves to HTTPS together
+with `/metrics`.
+
+HTTPS is enabled with two command-line flags:
+
+- `-tls-cert-file` is the path to the PEM-encoded certificate.
+- `-tls-private-key-file` is the path to the PEM-encoded private key.
+
+Set both flags or neither. A daemon exits at startup if only one of them is
+set, or if the files are missing, unreadable, not PEM encoded, or not a
+matching pair. It does not fall back to plain HTTP.
+
+The server accepts TLS 1.3 or later and speaks HTTP/1.1 only. FIPS-only Go
+clients built with Go 1.21 to 1.23 support only TLS 1.2, so they cannot
+connect.
+
+Each failed TLS handshake adds a warning to the daemon's log. A TCP health
+check that connects and closes without a handshake counts as a failed
+handshake, so it adds one warning per check.
+
+A daemon reads both files again on every new connection. After a certificate
+is renewed, the next connection gets the new one, with no restart. If the files
+stop being a valid pair, the daemon logs an error and keeps serving the last
+certificate that loaded until the files are fixed. Probes keep passing, so the
+pods do not restart. Scrapers that verify the certificate fail once it expires.
+
 ## Grafana dashboard
 
 NFD contains an example Grafana dashboard. You can import

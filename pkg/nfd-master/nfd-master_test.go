@@ -22,6 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 	m "sigs.k8s.io/node-feature-discovery/pkg/nfd-master"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 )
 
 func TestNewNfdMaster(t *testing.T) {
@@ -35,6 +36,18 @@ func TestNewNfdMaster(t *testing.T) {
 				m.WithKubernetesClient(k8sCli))
 			Convey("An error should not be returned", func() {
 				So(err, ShouldBeNil)
+			})
+		})
+		Convey("When only -tls-cert-file is supplied", func() {
+			k8sCli := fakeclient.NewClientset()
+			_, err := m.NewNfdMaster(
+				m.WithArgs(&m.Args{
+					TLS: httpserver.TLSFiles{CertFile: "/certs/tls.crt"},
+				}),
+				m.WithKubernetesClient(k8sCli))
+			Convey("An error naming -tls-private-key-file should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "-tls-private-key-file")
 			})
 		})
 	})

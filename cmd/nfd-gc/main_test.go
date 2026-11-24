@@ -22,6 +22,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 )
 
 func TestArgsParse(t *testing.T) {
@@ -34,6 +36,18 @@ func TestArgsParse(t *testing.T) {
 
 			Convey("args.GCPeriod is set to appropriate values", func() {
 				So(args.GCPeriod, ShouldEqual, 30*time.Second)
+			})
+
+			Convey("the metrics endpoint serves plain HTTP", func() {
+				So(args.TLS, ShouldResemble, httpserver.TLSFiles{})
+			})
+		})
+
+		Convey("When the TLS flags are specified", func() {
+			args := parseArgs(flags, "-tls-cert-file=/certs/tls.crt", "-tls-private-key-file=/certs/tls.key")
+
+			Convey("args.TLS names both files", func() {
+				So(args.TLS, ShouldResemble, httpserver.TLSFiles{CertFile: "/certs/tls.crt", KeyFile: "/certs/tls.key"})
 			})
 		})
 

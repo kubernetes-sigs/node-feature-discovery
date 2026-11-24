@@ -52,6 +52,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/topologypolicy"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/hostpath"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils/kubeconf"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 	"sigs.k8s.io/yaml"
@@ -83,6 +84,7 @@ var errTopologyManagerInfoUnavailable = errors.New("topology-manager information
 // Args are the command line arguments
 type Args struct {
 	Port            int
+	TLS             httpserver.TLSFiles
 	NoPublish       bool
 	Oneshot         bool
 	KubeConfigFile  string
@@ -105,6 +107,7 @@ type NfdTopologyUpdater interface {
 type nfdTopologyUpdater struct {
 	nodeName             string
 	args                 Args
+	servingCert          *httpserver.ServingCert
 	topoClient           topologyclientset.Interface
 	resourcemonitorArgs  resourcemonitor.Args
 	stop                 chan struct{} // channel for signaling stop
@@ -123,6 +126,11 @@ type nfdTopologyUpdater struct {
 
 // NewTopologyUpdater creates a new NfdTopologyUpdater instance.
 func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (NfdTopologyUpdater, error) {
+	servingCert, err := args.TLS.Load()
+	if err != nil {
+		return nil, err
+	}
+
 	eventSource := make(chan kubeletnotifier.Info)
 
 	ntf, err := kubeletnotifier.New(resourcemonitorArgs.SleepInterval, eventSource, args.KubeletStateDir)
@@ -138,6 +146,7 @@ func NewTopologyUpdater(args Args, resourcemonitorArgs resourcemonitor.Args) (Nf
 
 	nfd := &nfdTopologyUpdater{
 		args:                 args,
+		servingCert:          servingCert,
 		resourcemonitorArgs:  resourcemonitorArgs,
 		stop:                 make(chan struct{}),
 		nodeName:             utils.NodeName(),
@@ -227,11 +236,7 @@ func (w *nfdTopologyUpdater) Run() error {
 	httpMux.Handle("/metrics", promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{}))
 	registerVersion(version.Get())
 
-	httpServer := http.Server{Addr: fmt.Sprintf(":%d", w.args.Port), Handler: httpMux}
-	go func() {
-		klog.InfoS("http server starting", "port", httpServer.Addr)
-		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
-	}()
+	httpServer := httpserver.Start(w.args.Port, w.servingCert, httpMux)
 	defer httpServer.Close() // nolint: errcheck
 
 	podResClient, err := podres.GetPodResClient(context.TODO(), w.resourcemonitorArgs.PodResourceSocketPath)

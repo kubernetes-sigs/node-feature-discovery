@@ -38,6 +38,7 @@ import (
 
 	nfdv1alpha1 "sigs.k8s.io/node-feature-discovery/api/nfd/v1alpha1"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
 
@@ -52,6 +53,7 @@ type Args struct {
 	GCPeriod   time.Duration
 	Kubeconfig string
 	Port       int
+	TLS        httpserver.TLSFiles
 	ListSize   int64
 }
 
@@ -61,13 +63,19 @@ type NfdGarbageCollector interface {
 }
 
 type nfdGarbageCollector struct {
-	args     *Args
-	stopChan chan struct{}
-	client   metadataclient.Interface
-	factory  metadatainformer.SharedInformerFactory
+	args        *Args
+	servingCert *httpserver.ServingCert
+	stopChan    chan struct{}
+	client      metadataclient.Interface
+	factory     metadatainformer.SharedInformerFactory
 }
 
 func New(args *Args) (NfdGarbageCollector, error) {
+	servingCert, err := args.TLS.Load()
+	if err != nil {
+		return nil, err
+	}
+
 	kubeconfig, err := utils.GetKubeconfig(args.Kubeconfig)
 	if err != nil {
 		return nil, err
@@ -76,10 +84,11 @@ func New(args *Args) (NfdGarbageCollector, error) {
 	cli := metadataclient.NewForConfigOrDie(kubeconfig)
 
 	return &nfdGarbageCollector{
-		args:     args,
-		stopChan: make(chan struct{}),
-		client:   cli,
-		factory:  metadatainformer.NewSharedInformerFactory(cli, 0),
+		args:        args,
+		servingCert: servingCert,
+		stopChan:    make(chan struct{}),
+		client:      cli,
+		factory:     metadatainformer.NewSharedInformerFactory(cli, 0),
 	}, nil
 }
 
@@ -269,15 +278,7 @@ func (n *nfdGarbageCollector) Run() error {
 	httpMux.HandleFunc("/healthz", n.Healthz)
 
 	// Start HTTP server
-	httpServer := http.Server{Addr: fmt.Sprintf(":%d", n.args.Port), Handler: httpMux}
-	go func() {
-		klog.InfoS("starting HTTP server", "port", n.args.Port)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			klog.ErrorS(err, "failed to start HTTP server")
-		} else {
-			klog.InfoS("HTTP server stopped")
-		}
-	}()
+	httpServer := httpserver.Start(n.args.Port, n.servingCert, httpMux)
 	defer httpServer.Close() // nolint:errcheck
 
 	if err := n.startNodeInformer(); err != nil {

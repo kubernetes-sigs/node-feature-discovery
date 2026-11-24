@@ -99,6 +99,39 @@ Example:
 nfd-topology-updater -port=12345
 ```
 
+### -tls-cert-file
+
+The `-tls-cert-file` flag specifies a file with the PEM-encoded certificate
+(chain) for serving the metrics and healthz endpoints over HTTPS. It requires
+`-tls-private-key-file`: set both or neither. The certificate and key are loaded
+at startup, and an unreadable, invalid or mismatched pair stops
+nfd-topology-updater with an error. They are re-read on every new connection, so
+a renewed certificate is served without a restart. If a later read fails, the
+last certificate that loaded stays in use. HTTPS requires TLS 1.3 or later and
+uses HTTP/1.1.
+
+Default: *empty* (plain HTTP)
+
+Example:
+
+```bash
+nfd-topology-updater -tls-cert-file=/certs/tls.crt -tls-private-key-file=/certs/tls.key
+```
+
+### -tls-private-key-file
+
+The `-tls-private-key-file` flag specifies a file with the PEM-encoded private
+key that matches `-tls-cert-file`. It requires `-tls-cert-file`: set both or
+neither.
+
+Default: *empty* (plain HTTP)
+
+Example:
+
+```bash
+nfd-topology-updater -tls-cert-file=/certs/tls.crt -tls-private-key-file=/certs/tls.key
+```
+
 ### -sleep-interval
 
 The `-sleep-interval` specifies the interval between resource hardware

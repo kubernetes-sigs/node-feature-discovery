@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,6 +40,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"sigs.k8s.io/node-feature-discovery/pkg/resourcemonitor"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 )
 
 func TestTopologyUpdater(t *testing.T) {
@@ -126,6 +128,13 @@ func findAttributeByName(attrList v1alpha2.AttributeList, name string) (v1alpha2
 		}
 	}
 	return v1alpha2.AttributeInfo{}, fmt.Errorf("Attribute Not Found name:=%s", name)
+}
+
+func TestNewTopologyUpdaterRejectsHalfTLSPair(t *testing.T) {
+	_, err := NewTopologyUpdater(Args{TLS: httpserver.TLSFiles{CertFile: "/certs/tls.crt"}}, resourcemonitor.Args{})
+	if err == nil || !strings.Contains(err.Error(), "-tls-private-key-file") {
+		t.Fatalf("NewTopologyUpdater() = %v, want an error naming -tls-private-key-file", err)
+	}
 }
 
 func TestUpdateNodeResourceTopologyApplies(t *testing.T) {

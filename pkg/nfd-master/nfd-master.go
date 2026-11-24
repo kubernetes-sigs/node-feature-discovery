@@ -56,6 +56,7 @@ import (
 	"sigs.k8s.io/node-feature-discovery/pkg/apis/nfd/validate"
 	nfdfeatures "sigs.k8s.io/node-feature-discovery/pkg/features"
 	"sigs.k8s.io/node-feature-discovery/pkg/utils"
+	"sigs.k8s.io/node-feature-discovery/pkg/utils/httpserver"
 	klogutils "sigs.k8s.io/node-feature-discovery/pkg/utils/klog"
 	"sigs.k8s.io/node-feature-discovery/pkg/version"
 )
@@ -120,6 +121,7 @@ type Args struct {
 	Klog                 map[string]*utils.KlogFlagVal
 	Kubeconfig           string
 	Port                 int
+	TLS                  httpserver.TLSFiles
 	Prune                bool
 	Options              string
 	EnableLeaderElection bool
@@ -141,6 +143,7 @@ type nfdMaster struct {
 	*nfdController
 
 	args           Args
+	servingCert    *httpserver.ServingCert
 	namespace      string
 	nodeName       string
 	configFilePath string
@@ -190,6 +193,12 @@ func NewNfdMaster(opts ...NfdMasterOption) (NfdMaster, error) {
 				"alphanumerics, `-`, `_` or `.`", nfd.args.Instance)
 		}
 	}
+
+	servingCert, err := nfd.args.TLS.Load()
+	if err != nil {
+		return nfd, err
+	}
+	nfd.servingCert = servingCert
 
 	if nfd.args.ConfigFile != "" {
 		nfd.configFilePath = filepath.Clean(nfd.args.ConfigFile)
@@ -318,11 +327,7 @@ func (m *nfdMaster) Run() error {
 	httpMux.HandleFunc("/healthz", m.Healthz)
 
 	// Start HTTP server
-	httpServer := http.Server{Addr: fmt.Sprintf(":%d", m.args.Port), Handler: httpMux}
-	go func() {
-		klog.InfoS("http server starting", "port", httpServer.Addr)
-		klog.InfoS("http server stopped", "exitCode", httpServer.ListenAndServe())
-	}()
+	httpServer := httpserver.Start(m.args.Port, m.servingCert, httpMux)
 	defer httpServer.Close() // nolint: errcheck
 
 	<-m.stop

@@ -114,6 +114,7 @@ func initFlags(flagset *flag.FlagSet) (*worker.Args, *worker.ConfigOverrideArgs)
 		"Do not publish feature labels")
 	flagset.IntVar(&args.Port, "port", 8080,
 		"Port on which to metrics and healthz endpoints are served")
+	args.TLS.AddFlags(flagset)
 	flagset.StringVar(&args.Options, "options", "",
 		"Specify config options from command line. Config options are specified "+
 			"in the same format as in the config file (i.e. json or yaml). These options")
