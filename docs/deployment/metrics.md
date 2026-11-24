@@ -101,7 +101,7 @@ stop being a valid pair, the daemon logs an error and keeps serving the last
 certificate that loaded until the files are fixed. Probes keep passing, so the
 pods do not restart. Scrapers that verify the certificate fail once it expires.
 
-### Helm
+### Enabling HTTPS with Helm
 
 To serve metrics over HTTPS with Helm, point `tls.secretName` at a Secret that
 holds `tls.crt` and `tls.key`. The Secret must be in the release namespace and
