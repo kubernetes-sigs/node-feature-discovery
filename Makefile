@@ -500,7 +500,8 @@ helm-push:
 
 # TODO: Remove TOOOLCHAIN_MODE variable when fixed in upstream Go toolchain. Ref: https://github.com/golang/go/issues/75031
 test:
-	GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./cmd/... ./internal/... ./pkg/... ./source/...
+	GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out \
+	    ./api/operator/... ./cmd/... ./internal/... ./pkg/... ./source/...
 	cd api/nfd && GOTOOLCHAIN=${TOOOLCHAIN_MODE} $(GO_CMD) test -covermode=atomic -coverprofile=coverage.out ./...
 
 install-crds:
