@@ -236,9 +236,17 @@ func ExtendedResource(key, value string) error {
 	}
 
 	// Validate extended resource value
-	_, err := k8sQuantity.ParseQuantity(value)
+	quantity, err := k8sQuantity.ParseQuantity(value)
 	if err != nil {
 		return fmt.Errorf("invalid value %q: %w", value, err)
+	}
+	// The API server accepts only non-negative whole numbers for extended
+	// resources in node capacity, and rejects the whole patch otherwise.
+	if quantity.Sign() < 0 {
+		return fmt.Errorf("invalid value %q: must be greater than or equal to 0", value)
+	}
+	if quantity.MilliValue()%1000 != 0 {
+		return fmt.Errorf("invalid value %q: must be an integer", value)
 	}
 
 	return nil
