@@ -388,6 +388,30 @@ func TestExtendedResource(t *testing.T) {
 			value: "123",
 			want:  ErrNSNotAllowed,
 		},
+		{
+			name:  "Zero extended resource value",
+			key:   "feature.node.kubernetes.io/extended-resource",
+			value: "0",
+			want:  nil,
+		},
+		{
+			name:  "Extended resource value with a suffix",
+			key:   "feature.node.kubernetes.io/extended-resource",
+			value: "1.5Ki",
+			want:  nil,
+		},
+		{
+			name:  "Fractional extended resource value",
+			key:   "feature.node.kubernetes.io/extended-resource",
+			value: "500m",
+			want:  "invalid value \"500m\": must be an integer",
+		},
+		{
+			name:  "Negative extended resource value",
+			key:   "feature.node.kubernetes.io/extended-resource",
+			value: "-1",
+			want:  "invalid value \"-1\": must be greater than or equal to 0",
+		},
 	}
 
 	for _, tt := range tests {
