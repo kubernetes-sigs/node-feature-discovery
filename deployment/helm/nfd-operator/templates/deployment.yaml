@@ -18,6 +18,10 @@ spec:
         {{- include "node-feature-discovery-operator.selectorLabels" . | nindent 8 }}
         control-plane: controller-manager
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - args:
         - --health-probe-bind-address=:8081
